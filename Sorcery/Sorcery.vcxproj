@@ -114,6 +114,7 @@
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\Compress.cpp" />
+    <ClCompile Include="src\DirectionalShadowMapArray.cpp" />
     <ClCompile Include="src\FileIo.cpp" />
     <ClCompile Include="src\GUI.cpp" />
     <ClCompile Include="src\MemoryAllocation.cpp" />
@@ -143,6 +144,7 @@
     <ClCompile Include="src\RigidBodyComponent.cpp" />
     <ClCompile Include="src\SwapChain.cpp" />
     <ClCompile Include="src\Util.cpp" />
+    <ClInclude Include="src\DirectionalShadowMapArray.hpp" />
     <ClInclude Include="src\Pool.hpp" />
     <ClInclude Include="src\PoolAllocator.hpp" />
     <ClInclude Include="src\FileIo.hpp" />

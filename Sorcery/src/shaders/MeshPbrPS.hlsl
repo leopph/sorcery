@@ -12,7 +12,7 @@ TEXTURE2D(gAoMap, float, RES_SLOT_AO_MAP);
 TEXTURE2D(gNormalMap, float3, RES_SLOT_NORMAL_MAP);
 TEXTURE2D(gOpacityMask, float, RES_SLOT_OPACITY_MASK);
 TEXTURE2D(gPunctualShadowAtlas, float, RES_SLOT_PUNCTUAL_SHADOW_ATLAS);
-TEXTURE2D(gDirShadowAtlas, float, RES_SLOT_DIR_SHADOW_ATLAS);
+TEXTURE2DARRAY(gDirShadowMapArr, float, RES_SLOT_DIR_SHADOW_MAP_ARRAY);
 
 STRUCTUREDBUFFER(gLights, ShaderLight, RES_SLOT_LIGHTS);
 
@@ -83,6 +83,28 @@ inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const fl
 }
 
 
+float SampleShadowCascadeFromArray(const Texture2DArray<float> shadowMapArray, const float3 fragWorldPos, const uint lightIdx, const uint cascadeIdx) {
+  const float4 posLClip = mul(float4(fragWorldPos, 1), gLights[lightIdx].shadowViewProjMatrices[cascadeIdx]);
+  float3 posLNdc = posLClip.xyz / posLClip.w;
+  posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
+
+  switch (gPerFrameConstants.shadowFilteringMode) {
+    case SHADOW_FILTERING_NONE:
+        return SampleShadowMapArrayNoFilter(shadowMapArray, posLNdc.xy, cascadeIdx, posLNdc.z);
+    case SHADOW_FILTERING_HARDWARE_PCF:
+        return SampleShadowMapArrayHardwarePCF(shadowMapArray, posLNdc.xy, cascadeIdx, posLNdc.z);
+    case SHADOW_FILTERING_PCF_3x3:
+        return SampleShadowMapArrayPCF3x34TapFast(shadowMapArray, posLNdc.xy, cascadeIdx, posLNdc.z);
+    case SHADOW_FILTERING_PCF_TENT_3x3:
+        return SampleShadowMapArrayPCF3x3Tent4Tap(shadowMapArray, posLNdc.xy, cascadeIdx, posLNdc.z);
+    case SHADOW_FILTERING_PCF_TENT_5x5:
+        return SampleShadowMapArrayPCF5x5Tent9Tap(shadowMapArray, posLNdc.xy, cascadeIdx, posLNdc.z);
+    default:
+        return 1.0;
+  }
+}
+
+
 inline float CalculateAttenuation(const float distance) {
     return 1 / pow(distance, 2);
 }
@@ -108,7 +130,7 @@ inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 alb
 
         [branch]
         if (cascadeIdx < gPerFrameConstants.shadowCascadeCount) {
-            lighting *= SampleShadowCascadeFromAtlas(gDirShadowAtlas, fragPosWorld, lightIdx, cascadeIdx, N);
+            lighting *= SampleShadowCascadeFromArray(gDirShadowMapArr, fragPosWorld, lightIdx, cascadeIdx);
         }
     }
 

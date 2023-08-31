@@ -75,13 +75,24 @@ void GetTent5GroupWeights(const float4 weightsXA, const float2 weightsXB, const 
 
 
 float2 GetShadowMapSize(const Texture2D<float> shadowMap) {
-    float2 shadowMapSize;
-    shadowMap.GetDimensions(shadowMapSize.x, shadowMapSize.y);
-    return shadowMapSize;
+  float2 shadowMapSize;
+  shadowMap.GetDimensions(shadowMapSize.x, shadowMapSize.y);
+  return shadowMapSize;
+}
+
+
+float3 GetShadowMapArraySize(const Texture2DArray<float> shadowMapArray) {
+  float3 shadowMapArraySize;
+  shadowMapArray.GetDimensions(shadowMapArraySize.x, shadowMapArraySize.y, shadowMapArraySize.z);
+  return shadowMapArraySize;
 }
 
 
 float2 GetShadowMapTexelSize(const float2 shadowMapSize) {
+    return 1.0 / shadowMapSize;
+}
+
+float3 GetShadowMapArrayTexelSize(const float3 shadowMapSize) {
     return 1.0 / shadowMapSize;
 }
 
@@ -90,14 +101,28 @@ float2 GetShadowMapTexelSize(const Texture2D<float> shadowMap) {
     return GetShadowMapTexelSize(GetShadowMapSize(shadowMap));
 }
 
+float3 GetShadowMapArrayTexelSize(const Texture2DArray<float> shadowMapArray) {
+  return GetShadowMapArrayTexelSize(GetShadowMapArraySize(shadowMapArray));
+}
+
 
 float SampleShadowMapNoFilter(const Texture2D<float> shadowMap, const float2 uv, const float depth) {
     return shadowMap.SampleCmpLevelZero(gSamplerCmpPoint, uv, depth);
 }
 
 
+float SampleShadowMapArrayNoFilter(const Texture2DArray<float> shadowMapArray, const float2 uv, const int arraySlice, const float cmpDepth) {
+  return shadowMapArray.SampleCmpLevelZero(gSamplerCmpPoint, float3(uv, arraySlice), cmpDepth);
+}
+
+
 float SampleShadowMapHardwarePCF(const Texture2D<float> shadowMap, const float2 uv, const float depth) {
     return shadowMap.SampleCmpLevelZero(gSamplerCmpPcf, uv, depth);
+}
+
+
+float SampleShadowMapArrayHardwarePCF(const Texture2DArray<float> shadowMapArray, const float2 uv, const int arraySlice, const float cmpDepth) {
+  return shadowMapArray.SampleCmpLevelZero(gSamplerCmpPcf, float3(uv, arraySlice), cmpDepth);
 }
 
 
@@ -112,6 +137,20 @@ float SampleShadowMapPCF3x34TapFast(const Texture2D<float> shadowMap, const floa
     result.w = SampleShadowMapHardwarePCF(shadowMap, float2(uv.x + uvOffset.x, uv.y - uvOffset.y), depth);
 
     return dot(result, 0.25);
+}
+
+
+float SampleShadowMapArrayPCF3x34TapFast(const Texture2DArray<float> shadowMapArray, const float2 uv, const int arraySlice, const float depth) {
+const float2 texelSize = GetShadowMapArrayTexelSize(shadowMapArray);
+  const float2 uvOffset = texelSize * 0.5;
+
+  float4 result;
+  result.x = SampleShadowMapArrayHardwarePCF(shadowMapArray, float2(uv.x + uvOffset.x, uv.y + uvOffset.y), arraySlice, depth);
+  result.y = SampleShadowMapArrayHardwarePCF(shadowMapArray, float2(uv.x - uvOffset.x, uv.y + uvOffset.y), arraySlice, depth);
+  result.z = SampleShadowMapArrayHardwarePCF(shadowMapArray, float2(uv.x - uvOffset.x, uv.y - uvOffset.y), arraySlice, depth);
+  result.w = SampleShadowMapArrayHardwarePCF(shadowMapArray, float2(uv.x + uvOffset.x, uv.y - uvOffset.y), arraySlice, depth);
+
+  return dot(result, 0.25);
 }
 
 
@@ -140,6 +179,34 @@ float SampleShadowMapPCF3x3Tent4Tap(const Texture2D<float> shadowMap, const floa
     tap4.w = SampleShadowMapHardwarePCF(shadowMap, uv3, depth);
 
     return dot(tap4, weights);
+}
+
+
+float SampleShadowMapArrayPCF3x3Tent4Tap(const Texture2DArray<float> shadowMapArray, const float2 uv, const int arraySlice, const float depth) {
+  const float2 shadowMapSize = GetShadowMapArraySize(shadowMapArray);
+  const float2 texelSize = GetShadowMapTexelSize(shadowMapSize);
+
+  const float2 texelCoord = shadowMapSize * uv;
+  const float2 texelOriginal = round(texelCoord);
+  const float2 kernelOffset = texelCoord - texelOriginal;
+
+  float4 weightsX, weightsY;
+  GetTent3Weights(kernelOffset, weightsX, weightsY);
+
+  const float2 uv0 = GetGroupTapUV(texelSize, texelOriginal + float2(-1, -1), weightsX.xy, weightsY.xy);
+  const float2 uv1 = GetGroupTapUV(texelSize, texelOriginal + float2(1, -1), weightsX.zw, weightsY.xy);
+  const float2 uv2 = GetGroupTapUV(texelSize, texelOriginal + float2(-1, 1), weightsX.xy, weightsY.zw);
+  const float2 uv3 = GetGroupTapUV(texelSize, texelOriginal + float2(1, 1), weightsX.zw, weightsY.zw);
+
+  const float4 weights = GetTent3GroupWeights(weightsX, weightsY);
+
+  float4 tap4;
+  tap4.x = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv0, arraySlice, depth);
+  tap4.y = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv1, arraySlice, depth);
+  tap4.z = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv2, arraySlice, depth);
+  tap4.w = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv3, arraySlice, depth);
+
+  return dot(tap4, weights);
 }
 
 
@@ -186,6 +253,52 @@ float SampleShadowMapPCF5x5Tent9Tap(const Texture2D<float> shadowMap, const floa
     tapC.z = SampleShadowMapHardwarePCF(shadowMap, uv8, depth);
     
     return dot(tapA, groupWeightsA) + dot(tapB, groupWeightsB) + dot(tapC, groupWeightsC);
+}
+
+
+float SampleShadowMapArrayPCF5x5Tent9Tap(const Texture2DArray<float> shadowMapArray, const float2 uv, const int arraySlice, const float depth) {
+  const float2 shadowMapSize = GetShadowMapArraySize(shadowMapArray);
+  const float2 texelSize = GetShadowMapTexelSize(shadowMapSize);
+
+  const float2 texelCoord = shadowMapSize * uv;
+  const float2 texelOriginal = round(texelCoord);
+  const float2 kernelOffset = texelCoord - texelOriginal;
+
+  float4 weightsXA, weightsYA;
+  float2 weightsXB, weightsYB;
+  GetTent5Weights(kernelOffset.x, weightsXA, weightsXB);
+  GetTent5Weights(kernelOffset.y, weightsYA, weightsYB);
+
+  const float2 uv0 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, -2), weightsXA.xy, weightsYA.xy);
+  const float2 uv1 = GetGroupTapUV(texelSize, texelOriginal + float2(0, -2), weightsXA.zw, weightsYA.xy);
+  const float2 uv2 = GetGroupTapUV(texelSize, texelOriginal + float2(2, -2), weightsXB.xy, weightsYA.xy);
+
+  const float2 uv3 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, 0), weightsXA.xy, weightsYA.zw);
+  const float2 uv4 = GetGroupTapUV(texelSize, texelOriginal + float2(0, 0), weightsXA.zw, weightsYA.zw);
+  const float2 uv5 = GetGroupTapUV(texelSize, texelOriginal + float2(2, 0), weightsXB.xy, weightsYA.zw);
+
+  const float2 uv6 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, 2), weightsXA.xy, weightsYB.xy);
+  const float2 uv7 = GetGroupTapUV(texelSize, texelOriginal + float2(0, 2), weightsXA.zw, weightsYB.xy);
+  const float2 uv8 = GetGroupTapUV(texelSize, texelOriginal + float2(2, 2), weightsXB.xy, weightsYB.xy);
+
+  float3 groupWeightsA, groupWeightsB, groupWeightsC;
+  GetTent5GroupWeights(weightsXA, weightsXB, weightsYA, weightsYB, groupWeightsA, groupWeightsB, groupWeightsC);
+
+  float3 tapA, tapB, tapC;
+
+  tapA.y = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv1, arraySlice, depth);
+  tapA.x = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv0, arraySlice, depth);
+  tapA.z = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv2, arraySlice, depth);
+                                                                
+  tapB.x = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv3, arraySlice, depth);
+  tapB.y = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv4, arraySlice, depth);
+  tapB.z = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv5, arraySlice, depth);
+                                                                
+  tapC.x = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv6, arraySlice, depth);
+  tapC.y = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv7, arraySlice, depth);
+  tapC.z = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv8, arraySlice, depth);
+    
+  return dot(tapA, groupWeightsA) + dot(tapB, groupWeightsB) + dot(tapC, groupWeightsC);
 }
 
 #endif

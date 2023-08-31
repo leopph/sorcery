@@ -143,8 +143,6 @@ auto DirectionalShadowAtlas::Update(std::span<LightComponent const* const> const
       auto const shadowMapSize{GetSize() / GetSubdivisionSize()};
       auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
 
-      //sphereRadius = std::round(sphereRadius / worldUnitsPerTexel) * worldUnitsPerTexel;
-
       Matrix4 const shadowViewMtx{Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up())};
       cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
       cascadeCenterWS /= worldUnitsPerTexel;

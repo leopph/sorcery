@@ -28,6 +28,7 @@ using uint = unsigned;
 typedef bool BOOL;
 #define CBUFFER(name, slot) cbuffer name : register(b##slot)
 #define TEXTURE2D(name, type, slot) Texture2D<type> name : register(t##slot)
+#define TEXTURE2DARRAY(name, type, slot) Texture2DArray<type> name : register(t##slot)
 #define TEXTURECUBE(name, type, slot) TextureCube<type> name : register(t##slot)
 #define SAMPLERCOMPARISONSTATE(name, slot) SamplerComparisonState name : register(s##slot)
 #define SAMPLERSTATE(name, slot) SamplerState name : register(s##slot)
@@ -50,6 +51,7 @@ typedef bool BOOL;
 #define RES_SLOT_OPACITY_MASK 5
 #define RES_SLOT_PUNCTUAL_SHADOW_ATLAS 6
 #define RES_SLOT_DIR_SHADOW_ATLAS 7
+#define RES_SLOT_DIR_SHADOW_MAP_ARRAY 7
 #define RES_SLOT_LIGHTS 8
 #define RES_SLOT_POST_PROCESS_SRC 0
 #define RES_SLOT_SKYBOX_CUBEMAP 0

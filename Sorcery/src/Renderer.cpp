@@ -34,6 +34,7 @@
 #endif
 
 #include "DirectionalShadowAtlas.hpp"
+#include "DirectionalShadowMapArray.hpp"
 #include "MemoryAllocation.hpp"
 #include "PunctualShadowAtlas.hpp"
 #include "RenderTarget.hpp"
@@ -215,7 +216,8 @@ class Renderer::Impl {
   ObserverPtr<Mesh> mCubeMesh{nullptr};
   ObserverPtr<Mesh> mPlaneMesh{nullptr};
 
-  std::unique_ptr<DirectionalShadowAtlas> mDirectionalShadowAtlas;
+  //std::unique_ptr<DirectionalShadowAtlas> mDirectionalShadowAtlas;
+  std::unique_ptr<DirectionalShadowMapArray> mDirShadowMapArr;
   std::unique_ptr<PunctualShadowAtlas> mPunctualShadowAtlas;
 
   std::unique_ptr<SwapChain> mSwapChain;
@@ -242,7 +244,6 @@ class Renderer::Impl {
   int mCascadeCount{4};
   float mShadowDistance{100};
   bool mVisualizeShadowCascades{false};
-  ShadowFilteringMode mShadowFilteringMode{ShadowFilteringMode::None};
   ShadowFilteringMode mShadowFilteringMode{ShadowFilteringMode::PCFTent5x5};
 
 
@@ -790,7 +791,8 @@ auto Renderer::Impl::CreateDepthStencilStates() -> void {
 
 
 auto Renderer::Impl::CreateShadowAtlases() -> void {
-  mDirectionalShadowAtlas = std::make_unique<DirectionalShadowAtlas>(mDevice.Get(), 4096);
+  //mDirectionalShadowAtlas = std::make_unique<DirectionalShadowAtlas>(mDevice.Get(), 4096);
+  mDirShadowMapArr = std::make_unique<DirectionalShadowMapArray>(mDevice.Get(), 4096);
   mPunctualShadowAtlas = std::make_unique<PunctualShadowAtlas>(mDevice.Get(), 4096);
 }
 
@@ -1427,8 +1429,175 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   mImmediateContext->PSSetShader(nullptr, nullptr, 0);
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-  mDirectionalShadowAtlas->Update(mLights, visibility, cam, shadowCascadeBoundaries, rtAspect, mCascadeCount);
-  DrawShadowMaps(*mDirectionalShadowAtlas);
+  std::array<Matrix4, MAX_CASCADE_COUNT> shadowViewProjMatrices;
+
+  for (auto const lightIdx : visibility.lightIndices) {
+    if (auto const light{mLights[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
+      float const camNear{cam.GetNearClipPlane()};
+      float const camFar{cam.GetFarClipPlane()};
+
+      enum FrustumVertex : int {
+        FrustumVertex_NearTopRight    = 0,
+        FrustumVertex_NearTopLeft     = 1,
+        FrustumVertex_NearBottomLeft  = 2,
+        FrustumVertex_NearBottomRight = 3,
+        FrustumVertex_FarTopRight     = 4,
+        FrustumVertex_FarTopLeft      = 5,
+        FrustumVertex_FarBottomLeft   = 6,
+        FrustumVertex_FarBottomRight  = 7,
+      };
+
+      // Order of vertices is CCW from top right, near first
+      auto const frustumVertsWS{
+        [&cam, rtAspect, camNear, camFar] {
+          std::array<Vector3, 8> ret;
+
+          Vector3 const nearWorldForward{cam.GetPosition() + cam.GetForwardAxis() * camNear};
+          Vector3 const farWorldForward{cam.GetPosition() + cam.GetForwardAxis() * camFar};
+
+          switch (cam.GetType()) {
+            case Camera::Type::Perspective: {
+              float const tanHalfFov{std::tan(ToRadians(cam.GetHorizontalPerspectiveFov() / 2.0f))};
+              float const nearExtentX{camNear * tanHalfFov};
+              float const nearExtentY{nearExtentX / rtAspect};
+              float const farExtentX{camFar * tanHalfFov};
+              float const farExtentY{farExtentX / rtAspect};
+
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
+              ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+              ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
+              ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+              ret[FrustumVertex_FarBottomRight] = farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+              break;
+            }
+            case Camera::Type::Orthographic: {
+              float const extentX{cam.GetHorizontalOrthographicSize() / 2.0f};
+              float const extentY{extentX / rtAspect};
+
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_FarBottomRight] = farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              break;
+            }
+          }
+
+          return ret;
+        }()
+      };
+
+      auto const frustumDepth{camFar - camNear};
+
+      for (auto cascadeIdx{0}; cascadeIdx < mCascadeCount; cascadeIdx++) {
+        // cascade vertices in world space
+        auto const cascadeVertsWS{
+          [&frustumVertsWS, &shadowCascadeBoundaries, cascadeIdx, camNear, frustumDepth] {
+            auto const [cascadeNear, cascadeFar]{shadowCascadeBoundaries[cascadeIdx]};
+
+            float const cascadeNearNorm{(cascadeNear - camNear) / frustumDepth};
+            float const cascadeFarNorm{(cascadeFar - camNear) / frustumDepth};
+
+            std::array<Vector3, 8> ret;
+
+            for (int j = 0; j < 4; j++) {
+              Vector3 const& from{frustumVertsWS[j]};
+              Vector3 const& to{frustumVertsWS[j + 4]};
+
+              ret[j] = Lerp(from, to, cascadeNearNorm);
+              ret[j + 4] = Lerp(from, to, cascadeFarNorm);
+            }
+
+            return ret;
+          }()
+        };
+
+        Vector3 cascadeCenterWS{Vector3::Zero()};
+
+        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
+          cascadeCenterWS += cascadeVertWS;
+        }
+
+        cascadeCenterWS /= 8.0f;
+
+        float sphereRadius{0.0f};
+
+        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
+          sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
+        }
+
+        auto const shadowMapSize{mDirShadowMapArr->GetSize()};
+        auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
+
+        Matrix4 const shadowViewMtx{Matrix4::LookToLH(Vector3::Zero(), light->GetDirection(), Vector3::Up())};
+        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
+        cascadeCenterWS /= worldUnitsPerTexel;
+        cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
+        cascadeCenterWS[1] = std::floor(cascadeCenterWS[1]);
+        cascadeCenterWS *= worldUnitsPerTexel;
+        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Inverse()};
+
+        auto shadowNearClipPlane{-sphereRadius - light->GetShadowExtension()};
+        auto shadowFarClipPlane{sphereRadius};
+        Graphics::AdjustClipPlanesForReversedDepth(shadowNearClipPlane, shadowFarClipPlane);
+        Matrix4 const shadowProjMtx{Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius, sphereRadius, -sphereRadius, shadowNearClipPlane, shadowFarClipPlane)};
+
+        shadowViewProjMatrices[cascadeIdx] = Matrix4::LookToLH(cascadeCenterWS, light->GetDirection(), Vector3::Up()) * shadowProjMtx;
+
+        mImmediateContext->OMSetRenderTargets(0, nullptr, mDirShadowMapArr->GetDsv(cascadeIdx));
+        mImmediateContext->OMSetDepthStencilState(GetShadowDrawDssForReversedDepth().Get(), 0);
+
+        mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
+        mImmediateContext->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
+
+        mImmediateContext->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
+
+        mImmediateContext->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForReversedDepth(), 0);
+
+        mImmediateContext->RSSetState(mShadowPassRs.Get());
+
+        mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
+
+        D3D11_VIEWPORT const shadowViewport{
+          .TopLeftX = 0,
+          .TopLeftY = 0,
+          .Width = static_cast<float>(shadowMapSize),
+          .Height = static_cast<float>(shadowMapSize),
+          .MinDepth = 0,
+          .MaxDepth = 1
+        };
+
+        mImmediateContext->RSSetViewports(1, &shadowViewport);
+
+        D3D11_MAPPED_SUBRESOURCE mapped;
+        mImmediateContext->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+        auto const depthOnlyCbData{static_cast<DepthOnlyCB*>(mapped.pData)};
+        depthOnlyCbData->gDepthOnlyViewProjMtx = shadowViewProjMatrices[cascadeIdx];
+        mImmediateContext->Unmap(mDepthOnlyCb.Get(), 0);
+
+        Frustum const shadowFrustumWS{shadowViewProjMatrices[cascadeIdx]};
+
+        Visibility perLightVisibility{
+          .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
+          .staticMeshIndices = std::pmr::vector<int>{&GetTmpMemRes()}
+        };
+
+        CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
+        DrawMeshes(perLightVisibility.staticMeshIndices);
+      }
+
+      break;
+    }
+  }
+
+  //mDirectionalShadowAtlas->Update(mLights, visibility, cam, shadowCascadeBoundaries, rtAspect, mCascadeCount);
+  //DrawShadowMaps(*mDirectionalShadowAtlas);
 
   mPunctualShadowAtlas->Update(mLights, visibility, cam, camViewProjMtx, mShadowDistance);
   DrawShadowMaps(*mPunctualShadowAtlas);
@@ -1500,7 +1669,20 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     }
   }
 
-  mDirectionalShadowAtlas->SetLookUpInfo(lightBufferData);
+  for (auto i{0}; i < lightCount; i++) {
+    if (auto const light{mLights[visibility.lightIndices[i]]}; light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
+      lightBufferData[i].isCastingShadow = TRUE;
+
+      for (auto cascadeIdx{0}; cascadeIdx < mCascadeCount; cascadeIdx++) {
+        lightBufferData[i].sampleShadowMap[cascadeIdx] = TRUE;
+        lightBufferData[i].shadowViewProjMatrices[cascadeIdx] = shadowViewProjMatrices[cascadeIdx];
+      }
+
+      break;
+    }
+  }
+
+  //mDirectionalShadowAtlas->SetLookUpInfo(lightBufferData);
   mPunctualShadowAtlas->SetLookUpInfo(lightBufferData);
 
   mLightBuffer->Unmap();
@@ -1514,7 +1696,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   mImmediateContext->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
   mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
   mImmediateContext->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
-  mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, std::array{mDirectionalShadowAtlas->GetSrv()}.data());
+  mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{mDirShadowMapArr->GetSrv()}.data());
   mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
 
   mImmediateContext->RSSetViewports(1, &viewport);
@@ -1750,16 +1932,8 @@ auto Renderer::Impl::SetNormalizedShadowCascadeSplit(int const idx, float const 
     return;
   }
 
-  float const clampMin{
-    idx == 0
-      ? 0.0f
-      : mCascadeSplits[idx - 1]
-  };
-  float const clampMax{
-    idx == splitCount - 1
-      ? 1.0f
-      : mCascadeSplits[idx + 1]
-  };
+  float const clampMin{idx == 0 ? 0.0f : mCascadeSplits[idx - 1]};
+  float const clampMax{idx == splitCount - 1 ? 1.0f : mCascadeSplits[idx + 1]};
 
   mCascadeSplits[idx] = std::clamp(split, clampMin, clampMax);
 }
@@ -1833,44 +2007,202 @@ auto Renderer::ShutDown() -> void {
 }
 
 
-auto Renderer::DrawCamera(Camera const& cam, RenderTarget const* rt) -> void { mImpl->DrawCamera(cam, rt); }
-auto Renderer::DrawAllCameras(RenderTarget const* rt) -> void { mImpl->DrawAllCameras(rt); }
-auto Renderer::DrawGizmos(RenderTarget const* const rt) -> void { mImpl->DrawGizmos(rt); }
-auto Renderer::BindAndClearMainRt() noexcept -> void { mImpl->BindAndClearMainRt(); }
-auto Renderer::BlitMainRtToSwapChain() noexcept -> void { mImpl->BlitMainRtToSwapChain(); }
-auto Renderer::Present() noexcept -> void { mImpl->Present(); }
-auto Renderer::GetSyncInterval() noexcept -> u32 { return mImpl->GetSyncInterval(); }
-auto Renderer::SetSyncInterval(u32 const interval) noexcept -> void { mImpl->SetSyncInterval(interval); }
-auto Renderer::RegisterStaticMesh(StaticMeshComponent const* staticMesh) -> void { mImpl->RegisterStaticMesh(staticMesh); }
-auto Renderer::UnregisterStaticMesh(StaticMeshComponent const* staticMesh) -> void { mImpl->UnregisterStaticMesh(staticMesh); }
-auto Renderer::GetDevice() noexcept -> ID3D11Device* { return mImpl->GetDevice(); }
-auto Renderer::GetImmediateContext() noexcept -> ID3D11DeviceContext* { return mImpl->GetImmediateContext(); }
-auto Renderer::RegisterLight(LightComponent const* light) -> void { mImpl->RegisterLight(light); }
-auto Renderer::UnregisterLight(LightComponent const* light) -> void { mImpl->UnregisterLight(light); }
-auto Renderer::GetDefaultMaterial() noexcept -> ObserverPtr<Material> { return mImpl->GetDefaultMaterial(); }
-auto Renderer::GetCubeMesh() noexcept -> ObserverPtr<Mesh> { return mImpl->GetCubeMesh(); }
-auto Renderer::GetPlaneMesh() noexcept -> ObserverPtr<Mesh> { return mImpl->GetPlaneMesh(); }
-auto Renderer::GetGamma() noexcept -> f32 { return mImpl->GetGamma(); }
-auto Renderer::SetGamma(f32 const gamma) noexcept -> void { mImpl->SetGamma(gamma); }
-auto Renderer::RegisterSkybox(SkyboxComponent const* skybox) -> void { mImpl->RegisterSkybox(skybox); }
-auto Renderer::UnregisterSkybox(SkyboxComponent const* skybox) -> void { mImpl->UnregisterSkybox(skybox); }
-auto Renderer::RegisterGameCamera(Camera const& cam) -> void { mImpl->RegisterGameCamera(cam); }
-auto Renderer::UnregisterGameCamera(Camera const& cam) -> void { mImpl->UnregisterGameCamera(cam); }
-auto Renderer::CullLights(Frustum const& frustumWS, Visibility& visibility) -> void { mImpl->CullLights(frustumWS, visibility); }
-auto Renderer::CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) -> void { mImpl->CullStaticMeshComponents(frustumWS, visibility); }
-auto Renderer::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void { mImpl->DrawLineAtNextRender(from, to, color); }
-auto Renderer::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget& { return mImpl->GetTemporaryRenderTarget(desc); }
-auto Renderer::GetShadowCascadeCount() noexcept -> int { return mImpl->GetShadowCascadeCount(); }
-auto Renderer::SetShadowCascadeCount(int const cascadeCount) noexcept -> void { mImpl->SetShadowCascadeCount(cascadeCount); }
-auto Renderer::GetMaxShadowCascadeCount() noexcept -> int { return mImpl->GetMaxShadowCascadeCount(); }
-auto Renderer::GetNormalizedShadowCascadeSplits() noexcept -> std::span<float const> { return mImpl->GetNormalizedShadowCascadeSplits(); }
-auto Renderer::SetNormalizedShadowCascadeSplit(int const idx, float const split) noexcept -> void { mImpl->SetNormalizedShadowCascadeSplit(idx, split); }
-auto Renderer::GetShadowDistance() noexcept -> float { return mImpl->GetShadowDistance(); }
-auto Renderer::SetShadowDistance(float const shadowDistance) noexcept -> void { mImpl->SetShadowDistance(shadowDistance); }
-auto Renderer::IsVisualizingShadowCascades() noexcept -> bool { return mImpl->IsVisualizingShadowCascades(); }
-auto Renderer::VisualizeShadowCascades(bool visualize) noexcept -> void { mImpl->VisualizeShadowCascades(visualize); }
-auto Renderer::GetShadowFilteringMode() noexcept -> ShadowFilteringMode { return mImpl->GetShadowFilteringMode(); }
-auto Renderer::SetShadowFilteringMode(ShadowFilteringMode filteringMode) noexcept -> void { mImpl->SetShadowFilteringMode(filteringMode); }
-auto Renderer::GetInFlightFrameCount() noexcept -> int { return mImpl->GetInFlightFrameCount(); }
-auto Renderer::SetInFlightFrameCount(int const count) -> void { mImpl->SetInFlightFrameCount(count); }
+auto Renderer::DrawCamera(Camera const& cam, RenderTarget const* rt) -> void {
+  mImpl->DrawCamera(cam, rt);
+}
+
+
+auto Renderer::DrawAllCameras(RenderTarget const* rt) -> void {
+  mImpl->DrawAllCameras(rt);
+}
+
+
+auto Renderer::DrawGizmos(RenderTarget const* const rt) -> void {
+  mImpl->DrawGizmos(rt);
+}
+
+
+auto Renderer::BindAndClearMainRt() noexcept -> void {
+  mImpl->BindAndClearMainRt();
+}
+
+
+auto Renderer::BlitMainRtToSwapChain() noexcept -> void {
+  mImpl->BlitMainRtToSwapChain();
+}
+
+
+auto Renderer::Present() noexcept -> void {
+  mImpl->Present();
+}
+
+
+auto Renderer::GetSyncInterval() noexcept -> u32 {
+  return mImpl->GetSyncInterval();
+}
+
+
+auto Renderer::SetSyncInterval(u32 const interval) noexcept -> void {
+  mImpl->SetSyncInterval(interval);
+}
+
+
+auto Renderer::RegisterStaticMesh(StaticMeshComponent const* staticMesh) -> void {
+  mImpl->RegisterStaticMesh(staticMesh);
+}
+
+
+auto Renderer::UnregisterStaticMesh(StaticMeshComponent const* staticMesh) -> void {
+  mImpl->UnregisterStaticMesh(staticMesh);
+}
+
+
+auto Renderer::GetDevice() noexcept -> ID3D11Device* {
+  return mImpl->GetDevice();
+}
+
+
+auto Renderer::GetImmediateContext() noexcept -> ID3D11DeviceContext* {
+  return mImpl->GetImmediateContext();
+}
+
+
+auto Renderer::RegisterLight(LightComponent const* light) -> void {
+  mImpl->RegisterLight(light);
+}
+
+
+auto Renderer::UnregisterLight(LightComponent const* light) -> void {
+  mImpl->UnregisterLight(light);
+}
+
+
+auto Renderer::GetDefaultMaterial() noexcept -> ObserverPtr<Material> {
+  return mImpl->GetDefaultMaterial();
+}
+
+
+auto Renderer::GetCubeMesh() noexcept -> ObserverPtr<Mesh> {
+  return mImpl->GetCubeMesh();
+}
+
+
+auto Renderer::GetPlaneMesh() noexcept -> ObserverPtr<Mesh> {
+  return mImpl->GetPlaneMesh();
+}
+
+
+auto Renderer::GetGamma() noexcept -> f32 {
+  return mImpl->GetGamma();
+}
+
+
+auto Renderer::SetGamma(f32 const gamma) noexcept -> void {
+  mImpl->SetGamma(gamma);
+}
+
+
+auto Renderer::RegisterSkybox(SkyboxComponent const* skybox) -> void {
+  mImpl->RegisterSkybox(skybox);
+}
+
+
+auto Renderer::UnregisterSkybox(SkyboxComponent const* skybox) -> void {
+  mImpl->UnregisterSkybox(skybox);
+}
+
+
+auto Renderer::RegisterGameCamera(Camera const& cam) -> void {
+  mImpl->RegisterGameCamera(cam);
+}
+
+
+auto Renderer::UnregisterGameCamera(Camera const& cam) -> void {
+  mImpl->UnregisterGameCamera(cam);
+}
+
+
+auto Renderer::CullLights(Frustum const& frustumWS, Visibility& visibility) -> void {
+  mImpl->CullLights(frustumWS, visibility);
+}
+
+
+auto Renderer::CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) -> void {
+  mImpl->CullStaticMeshComponents(frustumWS, visibility);
+}
+
+
+auto Renderer::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void {
+  mImpl->DrawLineAtNextRender(from, to, color);
+}
+
+
+auto Renderer::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget& {
+  return mImpl->GetTemporaryRenderTarget(desc);
+}
+
+
+auto Renderer::GetShadowCascadeCount() noexcept -> int {
+  return mImpl->GetShadowCascadeCount();
+}
+
+
+auto Renderer::SetShadowCascadeCount(int const cascadeCount) noexcept -> void {
+  mImpl->SetShadowCascadeCount(cascadeCount);
+}
+
+
+auto Renderer::GetMaxShadowCascadeCount() noexcept -> int {
+  return mImpl->GetMaxShadowCascadeCount();
+}
+
+
+auto Renderer::GetNormalizedShadowCascadeSplits() noexcept -> std::span<float const> {
+  return mImpl->GetNormalizedShadowCascadeSplits();
+}
+
+
+auto Renderer::SetNormalizedShadowCascadeSplit(int const idx, float const split) noexcept -> void {
+  mImpl->SetNormalizedShadowCascadeSplit(idx, split);
+}
+
+
+auto Renderer::GetShadowDistance() noexcept -> float {
+  return mImpl->GetShadowDistance();
+}
+
+
+auto Renderer::SetShadowDistance(float const shadowDistance) noexcept -> void {
+  mImpl->SetShadowDistance(shadowDistance);
+}
+
+
+auto Renderer::IsVisualizingShadowCascades() noexcept -> bool {
+  return mImpl->IsVisualizingShadowCascades();
+}
+
+
+auto Renderer::VisualizeShadowCascades(bool visualize) noexcept -> void {
+  mImpl->VisualizeShadowCascades(visualize);
+}
+
+
+auto Renderer::GetShadowFilteringMode() noexcept -> ShadowFilteringMode {
+  return mImpl->GetShadowFilteringMode();
+}
+
+
+auto Renderer::SetShadowFilteringMode(ShadowFilteringMode filteringMode) noexcept -> void {
+  mImpl->SetShadowFilteringMode(filteringMode);
+}
+
+
+auto Renderer::GetInFlightFrameCount() noexcept -> int {
+  return mImpl->GetInFlightFrameCount();
+}
+
+
+auto Renderer::SetInFlightFrameCount(int const count) -> void {
+  mImpl->SetInFlightFrameCount(count);
+}
 }
