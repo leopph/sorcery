@@ -9,10 +9,7 @@
 
 namespace sorcery::mage {
 auto SceneViewWindow::Draw(Application& context) -> void {
-  ImVec2 static constexpr sceneViewportMinSize{480, 270};
-
-  ImGui::SetNextWindowSize(sceneViewportMinSize, ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSizeConstraints(sceneViewportMinSize, ImGui::GetMainViewport()->WorkSize);
+  ImGui::SetNextWindowSizeConstraints(ImVec2{480, 270}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
   if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse)) {

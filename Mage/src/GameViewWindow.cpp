@@ -11,8 +11,7 @@ namespace sorcery::mage {
 auto GameViewWindow::Draw(bool const gameRunning) -> void {
   ImVec2 static constexpr gameViewportMinSize{480, 270};
 
-  ImGui::SetNextWindowSize(gameViewportMinSize, ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSizeConstraints(gameViewportMinSize, ImGui::GetMainViewport()->WorkSize);
+  ImGui::SetNextWindowSizeConstraints(gameViewportMinSize, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
   if (gameRunning) {

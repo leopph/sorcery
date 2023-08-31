@@ -235,6 +235,8 @@ ProjectWindow::ProjectWindow(Application& context)
 
 
 auto ProjectWindow::Draw() -> void {
+  ImGui::SetNextWindowSizeConstraints(ImVec2{150, 150}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
+
   if (ImGui::Begin("Project", &mIsOpen, ImGuiWindowFlags_NoCollapse)) {
     if ((!ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_ChildWindows) && ImGui::IsAnyItemHovered() && (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right))) || (!mSelectedPathResDirRel.empty() && !exists(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel))) {
       mSelectedPathResDirRel.clear();

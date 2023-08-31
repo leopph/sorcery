@@ -5,12 +5,14 @@
 
 namespace sorcery::mage {
 EntityHierarchyWindow::EntityHierarchyWindow(Application& app) :
-  mApp{ std::addressof(app) } {}
+  mApp{std::addressof(app)} {}
 
 
 auto EntityHierarchyWindow::Draw() -> void {
+  ImGui::SetNextWindowSizeConstraints(ImVec2{150, 150}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
+
   if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
-    auto const contextId{ "EntityHierarchyContextId" };
+    auto const contextId{"EntityHierarchyContextId"};
 
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
       ImGui::OpenPopup(contextId);
@@ -19,28 +21,28 @@ auto EntityHierarchyWindow::Draw() -> void {
     if (ImGui::BeginPopup(contextId)) {
       if (ImGui::MenuItem("Create New Entity")) {
         mApp->GetScene().SetActive();
-        auto const entity{ new Entity{} };
+        auto const entity{new Entity{}};
         entity->AddComponent(*new TransformComponent{});
       }
 
       ImGui::EndPopup();
     }
 
-    auto constexpr baseFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
-    auto constexpr entityPayloadType{ "ENTITY" };
+    auto constexpr baseFlags{ImGuiTreeNodeFlags_OpenOnArrow};
+    auto constexpr entityPayloadType{"ENTITY"};
 
     if (ImGui::BeginDragDropTarget()) {
-      if (auto const payload{ ImGui::AcceptDragDropPayload(entityPayloadType) }) {
+      if (auto const payload{ImGui::AcceptDragDropPayload(entityPayloadType)}) {
         static_cast<Entity*>(payload->Data)->GetTransform().SetParent(nullptr);
         ImGui::EndDragDropTarget();
       }
     }
 
-    std::span entities{ mApp->GetScene().GetEntities() };
+    std::span entities{mApp->GetScene().GetEntities()};
 
     std::function<void(Entity&)> displayEntityRecursive;
     displayEntityRecursive = [this, &entities, &displayEntityRecursive](Entity& entity) -> void {
-      ImGuiTreeNodeFlags nodeFlags{ baseFlags };
+      ImGuiTreeNodeFlags nodeFlags{baseFlags};
 
       if (entity.GetTransform().GetChildren().empty()) {
         nodeFlags |= ImGuiTreeNodeFlags_Leaf;
@@ -52,7 +54,7 @@ auto EntityHierarchyWindow::Draw() -> void {
         nodeFlags |= ImGuiTreeNodeFlags_Selected;
       }
 
-      bool const nodeOpen{ ImGui::TreeNodeEx(entity.GetName().data(), nodeFlags) };
+      bool const nodeOpen{ImGui::TreeNodeEx(entity.GetName().data(), nodeFlags)};
 
       if (ImGui::BeginDragDropSource()) {
         ImGui::SetDragDropPayload(entityPayloadType, &entity, sizeof entity);
@@ -61,7 +63,7 @@ auto EntityHierarchyWindow::Draw() -> void {
       }
 
       if (ImGui::BeginDragDropTarget()) {
-        if (auto const payload{ ImGui::AcceptDragDropPayload(entityPayloadType) }) {
+        if (auto const payload{ImGui::AcceptDragDropPayload(entityPayloadType)}) {
           static_cast<Entity*>(payload->Data)->GetTransform().SetParent(&entity.GetTransform());
         }
         ImGui::EndDragDropTarget();
@@ -71,7 +73,7 @@ auto EntityHierarchyWindow::Draw() -> void {
         mApp->SetSelectedObject(&entity);
       }
 
-      bool deleted{ false };
+      bool deleted{false};
 
       if (ImGui::BeginPopupContextItem()) {
         mApp->SetSelectedObject(&entity);
@@ -90,7 +92,7 @@ auto EntityHierarchyWindow::Draw() -> void {
 
       if (nodeOpen) {
         if (!deleted) {
-          for (std::size_t childIndex{ 0 }; childIndex < entity.GetTransform().GetChildren().size(); childIndex++) {
+          for (std::size_t childIndex{0}; childIndex < entity.GetTransform().GetChildren().size(); childIndex++) {
             ImGui::PushID(static_cast<int>(childIndex));
             displayEntityRecursive(entity.GetTransform().GetChildren()[childIndex]->GetEntity());
             ImGui::PopID();

@@ -9,11 +9,13 @@
 
 namespace sorcery::mage {
 auto DrawPerformanceCounterWindow() -> void {
-  if (ImGui::Begin("Performance")) {
-    std::chrono::duration<float, std::ratio<1>> const frameTimeSeconds{ timing::GetFrameTime() };
-    std::chrono::duration<float, std::milli> const frameTimeMillis{ frameTimeSeconds };
+  ImGui::SetNextWindowSizeConstraints(ImVec2{150, 150}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
 
-    auto constexpr static MAX_DATA_POINT_COUNT{ 500 };
+  if (ImGui::Begin("Performance")) {
+    std::chrono::duration<float, std::ratio<1>> const frameTimeSeconds{timing::GetFrameTime()};
+    std::chrono::duration<float, std::milli> const frameTimeMillis{frameTimeSeconds};
+
+    auto constexpr static MAX_DATA_POINT_COUNT{500};
     std::vector<float> static dataPoints;
 
     if (dataPoints.size() == MAX_DATA_POINT_COUNT) {
