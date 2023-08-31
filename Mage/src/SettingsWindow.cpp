@@ -85,7 +85,7 @@ auto SettingsWindow::Draw() -> void {
   auto const splitCount{std::ssize(cascadeSplits)};
 
   for (int i = 0; i < splitCount; i++) {
-    if (float cascadeSplit{cascadeSplits[i] * 100.0f}; ImGui::SliderFloat(std::format("Split %d (percent)", i + 1).data(), &cascadeSplit, 0, 100, "%.3f", ImGuiSliderFlags_NoInput)) {
+    if (float cascadeSplit{cascadeSplits[i] * 100.0f}; ImGui::SliderFloat(std::format("Split {} (percent)", i + 1).data(), &cascadeSplit, 0, 100, "%.3f", ImGuiSliderFlags_NoInput)) {
       gRenderer.SetNormalizedShadowCascadeSplit(i, cascadeSplit / 100.0f);
     }
   }
