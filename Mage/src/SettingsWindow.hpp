@@ -6,15 +6,15 @@
 
 
 namespace sorcery::mage {
-class EditorSettingsWindow {
+class SettingsWindow {
   bool mIsOpen;
   Application* mApp;
 
 public:
-  static std::string_view constexpr TITLE{"Editor Settings"};
+  static std::string_view constexpr TITLE{"Settings"};
   static auto constexpr DEFAULT_TARGET_FRAME_RATE{200};
 
-  explicit EditorSettingsWindow(Application& app);
+  explicit SettingsWindow(Application& app);
   auto Draw() -> void;
   auto SetOpen(bool isOpen) noexcept -> void;
 };

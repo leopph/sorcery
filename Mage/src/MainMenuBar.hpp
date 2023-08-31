@@ -1,16 +1,16 @@
 #pragma once
 
 #include "Application.hpp"
-#include "EditorSettingsWindow.hpp"
+#include "SettingsWindow.hpp"
 
 
 namespace sorcery::mage {
 class MainMenuBar {
   Application* mApp;
-  EditorSettingsWindow* mEditorSettingsWindow;
+  SettingsWindow* mEditorSettingsWindow;
 
 public:
-  MainMenuBar(Application& app, EditorSettingsWindow& editorSettingsWindow);
+  MainMenuBar(Application& app, SettingsWindow& editorSettingsWindow);
 
   auto Draw() -> void;
 };

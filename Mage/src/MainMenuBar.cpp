@@ -1,28 +1,22 @@
 #include "MainMenuBar.hpp"
 
-#include "ProjectSettingsWindow.hpp"
-#include "EditorSettingsWindow.hpp"
+#include "SettingsWindow.hpp"
 #include "ResourceManager.hpp"
 
 #include <nfd.h>
 
 
 namespace sorcery::mage {
-MainMenuBar::MainMenuBar(Application& app, EditorSettingsWindow& editorSettingsWindow) :
+MainMenuBar::MainMenuBar(Application& app, SettingsWindow& editorSettingsWindow) :
   mApp{&app},
   mEditorSettingsWindow{&editorSettingsWindow} { }
 
 
 auto MainMenuBar::Draw() -> void {
   auto static showDemoWindow{false};
-  auto static showProjectSettingsWindow{false};
 
   if (showDemoWindow) {
-    ImGui::ShowDemoWindow();
-  }
-
-  if (showProjectSettingsWindow) {
-    DrawProjectSettingsWindow(showProjectSettingsWindow);
+    ImGui::ShowDemoWindow(&showDemoWindow);
   }
 
   if (ImGui::BeginMainMenuBar()) {
@@ -60,26 +54,16 @@ auto MainMenuBar::Draw() -> void {
     }
 
     if (ImGui::BeginMenu("Options")) {
-      if (ImGui::MenuItem(EditorSettingsWindow::TITLE.data())) {
+      if (ImGui::MenuItem(SettingsWindow::TITLE.data())) {
         mEditorSettingsWindow->SetOpen(true);
-      }
-
-      if (ImGui::MenuItem(PROJECT_SETTINGS_WINDOW_TITLE.data())) {
-        showProjectSettingsWindow = true;
       }
 
       ImGui::EndMenu();
     }
 
     if (ImGui::BeginMenu("Debug")) {
-      if (showDemoWindow) {
-        if (ImGui::MenuItem("Hide Demo Window")) {
-          showDemoWindow = false;
-        }
-      } else {
-        if (ImGui::MenuItem("Show Demo Window")) {
-          showDemoWindow = true;
-        }
+      if (ImGui::MenuItem("ImGui Demo Window")) {
+        showDemoWindow = true;
       }
 
       ImGui::EndMenu();

@@ -1,6 +1,6 @@
 #include "Timing.hpp"
 #include "Application.hpp"
-#include "EditorSettingsWindow.hpp"
+#include "SettingsWindow.hpp"
 #include "EntityHierarchyWindow.hpp"
 #include "GameViewWindow.hpp"
 #include "ImGuiIntegration.hpp"
@@ -43,7 +43,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     sorcery::gRenderer.SetSyncInterval(0);
 
-    sorcery::timing::SetTargetFrameRate(sorcery::mage::EditorSettingsWindow::DEFAULT_TARGET_FRAME_RATE);
+    sorcery::timing::SetTargetFrameRate(sorcery::mage::SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
 
     ImGui::CreateContext();
     auto& imGuiIo = ImGui::GetIO();
@@ -95,7 +95,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto const sceneViewWindow{std::make_unique<sorcery::mage::SceneViewWindow>()};
     auto const gameViewWindow{std::make_unique<sorcery::mage::GameViewWindow>()};
     auto const propertiesWindow{std::make_unique<sorcery::mage::PropertiesWindow>(app)};
-    auto const editorSettingsWindow{std::make_unique<sorcery::mage::EditorSettingsWindow>(app)};
+    auto const editorSettingsWindow{std::make_unique<sorcery::mage::SettingsWindow>(app)};
     auto const mainMenuBar{std::make_unique<sorcery::mage::MainMenuBar>(app, *editorSettingsWindow)};
     auto const entityHierarchyWindow{std::make_unique<sorcery::mage::EntityHierarchyWindow>(app)};
 

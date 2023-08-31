@@ -98,7 +98,7 @@
     <ClCompile Include="src\ResourceImporters\TextureImporter.cpp" />
     <ClCompile Include="src\EditorCamera.cpp" />
     <ClCompile Include="src\Application.cpp" />
-    <ClCompile Include="src\EditorSettingsWindow.cpp" />
+    <ClCompile Include="src\SettingsWindow.cpp" />
     <ClCompile Include="src\EntityHierarchyWindow.cpp" />
     <ClCompile Include="src\GameViewWindow.cpp" />
     <ClCompile Include="src\ImGuiIntegration.cpp" />
@@ -107,7 +107,6 @@
     <ClCompile Include="src\PropertiesWindow.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\PerformanceCounterWindow.cpp" />
-    <ClCompile Include="src\ProjectSettingsWindow.cpp" />
     <ClCompile Include="src\ProjectWindow.cpp" />
     <ClCompile Include="src\ResourceDB.cpp" />
     <ClCompile Include="src\SceneViewWindow.cpp" />
@@ -124,7 +123,7 @@
     <ClInclude Include="src\ResourceImporters\TextureImporter.hpp" />
     <ClInclude Include="src\EditorCamera.hpp" />
     <ClInclude Include="src\Application.hpp" />
-    <ClInclude Include="src\EditorSettingsWindow.hpp" />
+    <ClInclude Include="src\SettingsWindow.hpp" />
     <ClInclude Include="src\EntityHierarchyWindow.hpp" />
     <ClInclude Include="src\GameViewWindow.hpp" />
     <ClInclude Include="src\ImGuiIntegration.hpp" />
@@ -134,7 +133,6 @@
     <ClInclude Include="src\ReflectionDisplayProperties.hpp" />
     <ClInclude Include="src\ResourceDB.hpp" />
     <ClInclude Include="src\PerformanceCounterWindow.hpp" />
-    <ClInclude Include="src\ProjectSettingsWindow.hpp" />
     <ClInclude Include="src\ProjectWindow.hpp" />
     <ClInclude Include="src\SceneViewWindow.hpp" />
     <ClInclude Include="src\StartupScreen.hpp" />
