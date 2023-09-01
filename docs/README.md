@@ -7,11 +7,11 @@ Some screenshots from Sorcery's editor, Mage!
 
 |  |  |
 |--|--|
-| ![A longhouse from the inside](Screenshots/longhouse-1.jpg) | ![A longhouse from the outside](Screenshots/longhouse-2.jpg) |
-| ![Sponza Second Level](Screenshots/sponza-1.jpg) | ![Sponza First Level](Screenshots/sponza-2.jpg) |
-| ![Sponza Columns](Screenshots/sponza-3.jpg) | ![A cottage from the front](Screenshots/cottage-1.jpg) |
-| ![Porch of a cottage](Screenshots/cottage-2.jpg) | ![Industrial assets](Screenshots/industrial-1.jpg) |
-| ![Shadow cascade split visualization](Screenshots/industrial-cascades.jpg) |
+| ![A longhouse from the inside](../Screenshots/longhouse-1.jpg) | ![A longhouse from the outside](../Screenshots/longhouse-2.jpg) |
+| ![Sponza Second Level](../Screenshots/sponza-1.jpg) | ![Sponza First Level](../Screenshots/sponza-2.jpg) |
+| ![Sponza Columns](../Screenshots/sponza-3.jpg) | ![A cottage from the front](../Screenshots/cottage-1.jpg) |
+| ![Porch of a cottage](../Screenshots/cottage-2.jpg) | ![Industrial assets](../Screenshots/industrial-1.jpg) |
+| ![Shadow cascade split visualization](../Screenshots/industrial-cascades.jpg) |
 
 ## Features
 ### Implemented
@@ -63,7 +63,7 @@ Some screenshots from Sorcery's editor, Mage!
   * Screen Space Shadows
   * Screen Space Reflections (SSR)
   * Screen Space Subsurface Scattering
-  * Screen Space Global Illumination (voxel-based or signed distance field-based)
+  * Screen Space Global Illumination (SSGI)
   * DX12 and Vulkan backends (possible but very time-consuming)
 * Nvidia PhysX integration for physics
 * Support for custom script compilation
