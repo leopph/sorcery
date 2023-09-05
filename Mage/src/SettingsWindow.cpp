@@ -90,6 +90,18 @@ auto SettingsWindow::Draw() -> void {
     }
   }
 
+  constexpr char const* msaaComboLabels[]{"Off", "2x", "4x", "8x"};
+
+  if (auto const msaaModeIdx{static_cast<int>(std::log2(static_cast<int>(gRenderer.GetMsaaMode())))}; ImGui::BeginCombo("MSAA", msaaComboLabels[msaaModeIdx])) {
+    for (auto i{0}; i < 4; i++) {
+      if (ImGui::Selectable(msaaComboLabels[i], msaaModeIdx == i)) {
+        gRenderer.SetMsaaMode(static_cast<MSAAMode>(static_cast<int>(std::pow(2, i))));
+      }
+    }
+
+    ImGui::EndCombo();
+  }
+
   ImGui::End();
 }
 

@@ -18,13 +18,21 @@
 
 
 namespace sorcery {
-enum class ShadowFilteringMode {
+enum class ShadowFilteringMode : int {
   None        = SHADOW_FILTERING_NONE,
   HardwarePCF = SHADOW_FILTERING_HARDWARE_PCF,
   PCF3x3      = SHADOW_FILTERING_PCF_3x3,
   PCFTent3x3  = SHADOW_FILTERING_PCF_TENT_3x3,
   PCFTent5x5  = SHADOW_FILTERING_PCF_TENT_5x5,
   PCSS        = SHADOW_FILTERING_PCSS
+};
+
+
+enum class MSAAMode : int {
+  Off = 0,
+  X2  = 2,
+  X4  = 4,
+  X8  = 8
 };
 
 
@@ -101,6 +109,9 @@ public:
   LEOPPHAPI auto SetInFlightFrameCount(int count) -> void;
   constexpr static int MIN_IN_FLIGHT_FRAME_COUNT{1};
   constexpr static int MAX_IN_FLIGHT_FRAME_COUNT{16};
+
+  [[nodiscard]] LEOPPHAPI auto GetMsaaMode() const noexcept -> MSAAMode;
+  LEOPPHAPI auto SetMsaaMode(MSAAMode mode) noexcept -> void;
 };
 
 

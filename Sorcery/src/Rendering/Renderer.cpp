@@ -244,6 +244,7 @@ class Renderer::Impl {
   float mShadowDistance{100};
   bool mVisualizeShadowCascades{false};
   ShadowFilteringMode mShadowFilteringMode{ShadowFilteringMode::PCFTent5x5};
+  MSAAMode mMsaaMode{MSAAMode::X8};
 
 
   struct TempRenderTargetRecord {
@@ -350,6 +351,9 @@ public:
   auto SetInFlightFrameCount(int count) -> void;
 
   auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget&;
+
+  [[nodiscard]] auto GetMsaaMode() const noexcept -> MSAAMode;
+  auto SetMsaaMode(MSAAMode mode) noexcept -> void;
 };
 
 
@@ -1363,7 +1367,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     .colorFormat = DXGI_FORMAT_R16G16B16A16_FLOAT,
     .depthBufferBitCount = 32,
     .stencilBufferBitCount = 0,
-    .sampleCount = 8,
+    .sampleCount = static_cast<int>(GetMsaaMode()),
     .debugName = "Camera HDR RenderTarget"
   };
 
@@ -1706,13 +1710,20 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   DrawMeshes(visibility.staticMeshIndices);
   DrawSkybox(camViewMtx, camProjMtx);
 
-  auto resolveHdrRtDesc{hdrRtDesc};
-  resolveHdrRtDesc.sampleCount = 1;
-  auto const& resolveHdrRt{GetTemporaryRenderTarget(resolveHdrRtDesc)};
-  mImmediateContext->ResolveSubresource(resolveHdrRt.GetColorTexture(), 0, hdrRt.GetColorTexture(), 0, *hdrRtDesc.colorFormat);
+  RenderTarget const* postProcessRt;
+
+  if (GetMsaaMode() == MSAAMode::Off) {
+    postProcessRt = std::addressof(hdrRt);
+  } else {
+    auto resolveHdrRtDesc{hdrRtDesc};
+    resolveHdrRtDesc.sampleCount = 1;
+    auto const& resolveHdrRt{GetTemporaryRenderTarget(resolveHdrRtDesc)};
+    mImmediateContext->ResolveSubresource(resolveHdrRt.GetColorTexture(), 0, hdrRt.GetColorTexture(), 0, *hdrRtDesc.colorFormat);
+    postProcessRt = std::addressof(resolveHdrRt);
+  }
 
   mImmediateContext->RSSetViewports(1, &viewport);
-  PostProcess(resolveHdrRt.GetColorSrv(), rt ? rt->GetRtv() : mSwapChain->GetRtv());
+  PostProcess(postProcessRt->GetColorSrv(), rt ? rt->GetRtv() : mSwapChain->GetRtv());
 }
 
 
@@ -1994,6 +2005,16 @@ auto Renderer::Impl::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) ->
 }
 
 
+auto Renderer::Impl::GetMsaaMode() const noexcept -> MSAAMode {
+  return mMsaaMode;
+}
+
+
+auto Renderer::Impl::SetMsaaMode(MSAAMode const mode) noexcept -> void {
+  mMsaaMode = mode;
+}
+
+
 Renderer::Renderer() :
   mImpl{std::make_unique<Impl>()} {}
 
@@ -2208,5 +2229,15 @@ auto Renderer::GetInFlightFrameCount() noexcept -> int {
 
 auto Renderer::SetInFlightFrameCount(int const count) -> void {
   mImpl->SetInFlightFrameCount(count);
+}
+
+
+auto Renderer::GetMsaaMode() const noexcept -> MSAAMode {
+  return mImpl->GetMsaaMode();
+}
+
+
+auto Renderer::SetMsaaMode(MSAAMode const mode) noexcept -> void {
+  mImpl->SetMsaaMode(mode);
 }
 }
