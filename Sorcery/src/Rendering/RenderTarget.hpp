@@ -8,7 +8,7 @@
 #include <optional>
 #include <string>
 
-#include "Core.hpp"
+#include "../Core.hpp"
 
 
 namespace sorcery {

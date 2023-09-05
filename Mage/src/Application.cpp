@@ -116,7 +116,7 @@ auto Application::GetProjectDirectoryAbsolute() const noexcept -> std::filesyste
 
 auto Application::OpenProject(std::filesystem::path const& targetPath) -> void {
   mSelectedObject = nullptr;
-  mScene = new Scene{};
+  mScene = CreateAndInitialize<Scene>();
   mProjDirAbs = absolute(targetPath);
   mResourceDB.ChangeProjectDir(mProjDirAbs);
   gWindow.SetTitle(std::string{WINDOW_TITLE_BASE} + " - " + targetPath.stem().string());

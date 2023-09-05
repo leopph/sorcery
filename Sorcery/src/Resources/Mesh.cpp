@@ -1,6 +1,6 @@
 #include "Mesh.hpp"
 
-#include "../Renderer.hpp"
+#include "../Rendering/Renderer.hpp"
 #include "../Serialization.hpp"
 
 #include <imgui.h>

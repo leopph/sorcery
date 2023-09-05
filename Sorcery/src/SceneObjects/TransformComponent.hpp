@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component.hpp"
-#include "Math.hpp"
+#include "../Math.hpp"
 
 
 namespace sorcery {
@@ -18,25 +18,25 @@ class TransformComponent : public Component {
 private:
   auto UpdateWorldDataRecursive() -> void;
 
-  Vector3 mLocalPosition{ 0, 0, 0 };
-  Quaternion mLocalRotation{ 1, 0, 0, 0 };
-  Vector3 mLocalScale{ 1, 1, 1 };
+  Vector3 mLocalPosition{0, 0, 0};
+  Quaternion mLocalRotation{1, 0, 0, 0};
+  Vector3 mLocalScale{1, 1, 1};
 
-  Vector3 mWorldPosition{ mLocalPosition };
-  Quaternion mWorldRotation{ mLocalRotation };
-  Vector3 mWorldScale{ mLocalScale };
+  Vector3 mWorldPosition{mLocalPosition};
+  Quaternion mWorldRotation{mLocalRotation};
+  Vector3 mWorldScale{mLocalScale};
 
-  Vector3 mForward{ Vector3::Forward() };
-  Vector3 mRight{ Vector3::Right() };
-  Vector3 mUp{ Vector3::Up() };
+  Vector3 mForward{Vector3::Forward()};
+  Vector3 mRight{Vector3::Right()};
+  Vector3 mUp{Vector3::Up()};
 
-  TransformComponent* mParent{ nullptr };
+  TransformComponent* mParent{nullptr};
   std::vector<ObserverPtr<TransformComponent>> mChildren;
 
-  Matrix4 mModelMat{ Matrix4::Identity() };
-  Matrix3 mNormalMat{ Matrix4::Identity() };
+  Matrix4 mModelMat{Matrix4::Identity()};
+  Matrix3 mNormalMat{Matrix4::Identity()};
 
-  bool mChanged{ false };
+  bool mChanged{false};
 
 public:
   [[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
@@ -81,8 +81,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto HasChanged() const noexcept -> bool;
   LEOPPHAPI auto SetChanged(bool changed) noexcept -> void;
 
-  LEOPPHAPI ~TransformComponent() override;
-
+  LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 };
 

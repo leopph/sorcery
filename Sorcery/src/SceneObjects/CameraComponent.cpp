@@ -1,9 +1,9 @@
 #include "CameraComponent.hpp"
 
 #include "Entity.hpp"
-#include "Renderer.hpp"
 #include "TransformComponent.hpp"
-#include "Reflection.hpp"
+#include "../Rendering/Renderer.hpp"
+#include "../Reflection.hpp"
 
 #include <imgui.h>
 
@@ -16,7 +16,7 @@ RTTR_REGISTRATION {
     rttr::value("Perspective", sorcery::CameraComponent::Type::Perspective)
   );
 
-  rttr::registration::class_<sorcery::CameraComponent>{ "Camera Component" }
+  rttr::registration::class_<sorcery::CameraComponent>{"Camera Component"}
     .REFLECT_REGISTER_SCENE_OBJECT_CTOR
     .property("fov", &sorcery::CameraComponent::GetHorizontalPerspectiveFov, &sorcery::CameraComponent::SetHorizontalPerspectiveFov)
     .property("size", &sorcery::CameraComponent::GetHorizontalOrthographicSize, &sorcery::CameraComponent::SetHorizontalOrthographicSize)
@@ -27,16 +27,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-CameraComponent::CameraComponent() {
-  gRenderer.RegisterGameCamera(*this);
-}
-
-
-CameraComponent::~CameraComponent() {
-  gRenderer.UnregisterGameCamera(*this);
-}
-
-
 auto CameraComponent::GetViewport() const -> NormalizedViewport const& {
   return mViewport;
 }
@@ -82,13 +72,25 @@ auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
 }
 
 
+auto CameraComponent::OnInit() -> void {
+  Component::OnInit();
+  gRenderer.RegisterGameCamera(*this);
+}
+
+
+auto CameraComponent::OnDestroy() -> void {
+  gRenderer.UnregisterGameCamera(*this);
+  Component::OnDestroy();
+}
+
+
 auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   Component::OnDrawProperties(changed);
 
   ImGui::Text("Type");
   ImGui::TableNextColumn();
 
-  constexpr char const* typeOptions[]{ "Perspective", "Orthographic" };
+  constexpr char const* typeOptions[]{"Perspective", "Orthographic"};
   int selection{
     GetType() == Camera::Type::Perspective
       ? 0
@@ -105,14 +107,14 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   if (GetType() == Camera::Type::Perspective) {
     ImGui::Text("Field Of View");
     ImGui::TableNextColumn();
-    float value{ GetHorizontalPerspectiveFov() };
+    float value{GetHorizontalPerspectiveFov()};
     if (ImGui::DragFloat("FOV", &value)) {
       SetHorizontalPerspectiveFov(value);
     }
   } else {
     ImGui::Text("Size");
     ImGui::TableNextColumn();
-    float value{ GetHorizontalOrthographicSize() };
+    float value{GetHorizontalOrthographicSize()};
     if (ImGui::DragFloat("OrthoSize", &value)) {
       SetHorizontalOrthographicSize(value);
     }
@@ -122,7 +124,7 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Near Clip Plane");
   ImGui::TableNextColumn();
 
-  float nearValue{ GetNearClipPlane() };
+  float nearValue{GetNearClipPlane()};
   if (ImGui::DragFloat("NearClip", &nearValue)) {
     SetNearClipPlane(nearValue);
   }
@@ -131,7 +133,7 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Far Clip Plane");
   ImGui::TableNextColumn();
 
-  float farValue{ GetFarClipPlane() };
+  float farValue{GetFarClipPlane()};
   if (ImGui::DragFloat("FarClip", &farValue)) {
     SetFarClipPlane(farValue);
   }
@@ -140,7 +142,7 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Viewport");
   ImGui::TableNextColumn();
 
-  auto viewport{ GetViewport() };
+  auto viewport{GetViewport()};
   if (ImGui::InputFloat("ViewportX", &viewport.position.x)) {
     SetViewport(viewport);
   }
@@ -158,7 +160,7 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Background Color");
   ImGui::TableNextColumn();
 
-  Vector4 color{ GetBackgroundColor() };
+  Vector4 color{GetBackgroundColor()};
   if (ImGui::ColorEdit4("###backgroundColor", color.GetData())) {
     SetBackgroundColor(color);
   }

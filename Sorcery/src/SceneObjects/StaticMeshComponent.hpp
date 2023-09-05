@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Component.hpp"
-#include "Resources/Material.hpp"
-#include "Resources/Mesh.hpp"
+#include "../Resources/Material.hpp"
+#include "../Resources/Mesh.hpp"
 
 #include <vector>
 
@@ -18,7 +18,6 @@ class StaticMeshComponent : public Component {
 
 public:
   LEOPPHAPI StaticMeshComponent();
-  ~StaticMeshComponent() override;
 
   [[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> ObserverPtr<Mesh>;
   LEOPPHAPI auto SetMesh(ObserverPtr<Mesh> mesh) noexcept -> void;
@@ -30,6 +29,8 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto CalculateBounds() const noexcept -> AABB;
 
+  LEOPPHAPI auto OnInit() -> void override;
+  LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 };
 }

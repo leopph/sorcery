@@ -1,9 +1,9 @@
 #include "DirectionalShadowAtlas.hpp"
 
-#include "Bounds.hpp"
-#include "Entity.hpp"
 #include "Graphics.hpp"
-#include "MemoryAllocation.hpp"
+#include "../Bounds.hpp"
+#include "../SceneObjects/Entity.hpp"
+#include "../MemoryAllocation.hpp"
 
 #include <array>
 #include <format>

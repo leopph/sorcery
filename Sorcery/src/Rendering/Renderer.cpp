@@ -2,46 +2,45 @@
 
 #include <dxgi1_5.h>
 
-#include "Entity.hpp"
 #include "Graphics.hpp"
-#include "Platform.hpp"
-#include "TransformComponent.hpp"
-#include "Util.hpp"
-
-#ifndef NDEBUG
-#include "shaders/generated/DepthOnlyVSBinDebug.h"
-#include "shaders/generated/DepthOnlyPSBinDebug.h"
-#include "shaders/generated/GizmoPSBinDebug.h"
-#include "shaders/generated/LineGizmoVSBinDebug.h"
-#include "shaders/generated/MeshVSBinDebug.h"
-#include "shaders/generated/MeshPbrPSBinDebug.h"
-#include "shaders/generated/PostProcessPSBinDebug.h"
-#include "shaders/generated/ScreenVSBinDebug.h"
-#include "shaders/generated/SkyboxVSBinDebug.h"
-#include "shaders/generated/SkyboxPSBinDebug.h"
-
-#else
-#include "shaders/generated/DepthOnlyVSBin.h"
-#include "shaders/generated/DepthOnlyPSBin.h"
-#include "shaders/generated/GizmoPSBin.h"
-#include "shaders/generated/LineGizmoVSBin.h"
-#include "shaders/generated/MeshVSBin.h"
-#include "shaders/generated/MeshPbrPSBin.h"
-#include "shaders/generated/PostProcessPSBin.h"
-#include "shaders/generated/ScreenVSBin.h"
-#include "shaders/generated/SkyboxVSBin.h"
-#include "shaders/generated/SkyboxPSBin.h"
-#endif
-
 #include "DirectionalShadowAtlas.hpp"
 #include "DirectionalShadowMapArray.hpp"
-#include "MemoryAllocation.hpp"
 #include "PunctualShadowAtlas.hpp"
 #include "RenderTarget.hpp"
 #include "ShadowCascadeBoundary.hpp"
 #include "StructuredBuffer.hpp"
 #include "SwapChain.hpp"
-#include "shaders/ShaderInterop.h"
+#include "../MemoryAllocation.hpp"
+#include "../Platform.hpp"
+#include "../Util.hpp"
+#include "../shaders/ShaderInterop.h"
+#include "../SceneObjects/Entity.hpp"
+#include "../SceneObjects/TransformComponent.hpp"
+
+#ifndef NDEBUG
+#include "../shaders/generated/DepthOnlyVSBinDebug.h"
+#include "../shaders/generated/DepthOnlyPSBinDebug.h"
+#include "../shaders/generated/GizmoPSBinDebug.h"
+#include "../shaders/generated/LineGizmoVSBinDebug.h"
+#include "../shaders/generated/MeshVSBinDebug.h"
+#include "../shaders/generated/MeshPbrPSBinDebug.h"
+#include "../shaders/generated/PostProcessPSBinDebug.h"
+#include "../shaders/generated/ScreenVSBinDebug.h"
+#include "../shaders/generated/SkyboxVSBinDebug.h"
+#include "../shaders/generated/SkyboxPSBinDebug.h"
+
+#else
+#include "../shaders/generated/DepthOnlyVSBin.h"
+#include "../shaders/generated/DepthOnlyPSBin.h"
+#include "../shaders/generated/GizmoPSBin.h"
+#include "../shaders/generated/LineGizmoVSBin.h"
+#include "../shaders/generated/MeshVSBin.h"
+#include "../shaders/generated/MeshPbrPSBin.h"
+#include "../shaders/generated/PostProcessPSBin.h"
+#include "../shaders/generated/ScreenVSBin.h"
+#include "../shaders/generated/SkyboxVSBin.h"
+#include "../shaders/generated/SkyboxPSBin.h"
+#endif
 
 #include <algorithm>
 #include <array>
@@ -300,23 +299,23 @@ public:
   auto BlitMainRtToSwapChain() noexcept -> void;
   auto Present() noexcept -> void;
 
-  auto GetSyncInterval() noexcept -> u32;
+  auto GetSyncInterval() const noexcept -> u32;
   auto SetSyncInterval(u32 interval) noexcept -> void;
 
   auto RegisterStaticMesh(StaticMeshComponent const* staticMesh) -> void;
   auto UnregisterStaticMesh(StaticMeshComponent const* staticMesh) -> void;
 
-  auto GetDevice() noexcept -> ID3D11Device*;
+  auto GetDevice() const noexcept -> ID3D11Device*;
   auto GetImmediateContext() noexcept -> ID3D11DeviceContext*;
 
   auto RegisterLight(LightComponent const* light) -> void;
   auto UnregisterLight(LightComponent const* light) -> void;
 
-  auto GetDefaultMaterial() noexcept -> ObserverPtr<Material>;
-  auto GetCubeMesh() noexcept -> ObserverPtr<Mesh>;
-  auto GetPlaneMesh() noexcept -> ObserverPtr<Mesh>;
+  auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
+  auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
+  auto GetPlaneMesh() const noexcept -> ObserverPtr<Mesh>;
 
-  auto GetGamma() noexcept -> f32;
+  auto GetGamma() const noexcept -> f32;
   auto SetGamma(f32 gamma) noexcept -> void;
 
   auto RegisterSkybox(SkyboxComponent const* skybox) -> void;
@@ -330,24 +329,24 @@ public:
 
   auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
 
-  auto GetShadowCascadeCount() noexcept -> int;
+  auto GetShadowCascadeCount() const noexcept -> int;
   auto SetShadowCascadeCount(int cascadeCount) noexcept -> void;
 
-  auto GetMaxShadowCascadeCount() noexcept -> int;
+  auto GetMaxShadowCascadeCount() const noexcept -> int;
 
   auto GetNormalizedShadowCascadeSplits() noexcept -> std::span<float const>;
   auto SetNormalizedShadowCascadeSplit(int idx, float split) noexcept -> void;
 
-  auto GetShadowDistance() noexcept -> float;
+  auto GetShadowDistance() const noexcept -> float;
   auto SetShadowDistance(float shadowDistance) noexcept -> void;
 
-  auto IsVisualizingShadowCascades() noexcept -> bool;
+  auto IsVisualizingShadowCascades() const noexcept -> bool;
   auto VisualizeShadowCascades(bool visualize) noexcept -> void;
 
-  auto GetShadowFilteringMode() noexcept -> ShadowFilteringMode;
+  auto GetShadowFilteringMode() const noexcept -> ShadowFilteringMode;
   auto SetShadowFilteringMode(ShadowFilteringMode filteringMode) noexcept -> void;
 
-  auto GetInFlightFrameCount() noexcept -> int;
+  auto GetInFlightFrameCount() const noexcept -> int;
   auto SetInFlightFrameCount(int count) -> void;
 
   auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget&;
@@ -971,7 +970,7 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
 
 
 auto Renderer::Impl::CreateDefaultAssets() -> void {
-  mDefaultMaterial = new Material{};
+  mDefaultMaterial = CreateAndInitialize<Material>();
   mDefaultMaterial->SetGuid(DEFAULT_MATERIAL_GUID);
   mDefaultMaterial->SetName("Default Material");
   gResourceManager.Add(mDefaultMaterial);
@@ -988,7 +987,7 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
   std::vector<Vector3> quadTangents;
   CalculateTangents(QUAD_POSITIONS, QUAD_UVS, QUAD_INDICES, quadTangents);
 
-  mCubeMesh = new Mesh{};
+  mCubeMesh = CreateAndInitialize<Mesh>();
   mCubeMesh->SetGuid(CUBE_MESH_GUID);
   mCubeMesh->SetName("Cube");
   mCubeMesh->SetPositions(CUBE_POSITIONS);
@@ -1002,7 +1001,7 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
   }
   gResourceManager.Add(mCubeMesh);
 
-  mPlaneMesh = new Mesh{};
+  mPlaneMesh = CreateAndInitialize<Mesh>();
   mPlaneMesh->SetGuid(PLANE_MESH_GUID);
   mPlaneMesh->SetName("Plane");
   mPlaneMesh->SetPositions(QUAD_POSITIONS);
@@ -1751,7 +1750,7 @@ auto Renderer::Impl::Present() noexcept -> void {
 }
 
 
-auto Renderer::Impl::GetSyncInterval() noexcept -> u32 {
+auto Renderer::Impl::GetSyncInterval() const noexcept -> u32 {
   return mSyncInterval;
 }
 
@@ -1771,7 +1770,7 @@ auto Renderer::Impl::UnregisterStaticMesh(StaticMeshComponent const* const stati
 }
 
 
-auto Renderer::Impl::GetDevice() noexcept -> ID3D11Device* {
+auto Renderer::Impl::GetDevice() const noexcept -> ID3D11Device* {
   return mDevice.Get();
 }
 
@@ -1791,22 +1790,22 @@ auto Renderer::Impl::UnregisterLight(LightComponent const* light) -> void {
 }
 
 
-auto Renderer::Impl::GetDefaultMaterial() noexcept -> ObserverPtr<Material> {
+auto Renderer::Impl::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
   return mDefaultMaterial;
 }
 
 
-auto Renderer::Impl::GetCubeMesh() noexcept -> ObserverPtr<Mesh> {
+auto Renderer::Impl::GetCubeMesh() const noexcept -> ObserverPtr<Mesh> {
   return mCubeMesh;
 }
 
 
-auto Renderer::Impl::GetPlaneMesh() noexcept -> ObserverPtr<Mesh> {
+auto Renderer::Impl::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
   return mPlaneMesh;
 }
 
 
-auto Renderer::Impl::GetGamma() noexcept -> f32 {
+auto Renderer::Impl::GetGamma() const noexcept -> f32 {
   return 1.f / mInvGamma;
 }
 
@@ -1900,7 +1899,7 @@ auto Renderer::Impl::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to
 }
 
 
-auto Renderer::Impl::GetShadowCascadeCount() noexcept -> int {
+auto Renderer::Impl::GetShadowCascadeCount() const noexcept -> int {
   return mCascadeCount;
 }
 
@@ -1915,7 +1914,7 @@ auto Renderer::Impl::SetShadowCascadeCount(int const cascadeCount) noexcept -> v
 }
 
 
-auto Renderer::Impl::GetMaxShadowCascadeCount() noexcept -> int {
+auto Renderer::Impl::GetMaxShadowCascadeCount() const noexcept -> int {
   return MAX_CASCADE_COUNT;
 }
 
@@ -1939,7 +1938,7 @@ auto Renderer::Impl::SetNormalizedShadowCascadeSplit(int const idx, float const 
 }
 
 
-auto Renderer::Impl::GetShadowDistance() noexcept -> float {
+auto Renderer::Impl::GetShadowDistance() const noexcept -> float {
   return mShadowDistance;
 }
 
@@ -1949,7 +1948,7 @@ auto Renderer::Impl::SetShadowDistance(float const shadowDistance) noexcept -> v
 }
 
 
-auto Renderer::Impl::IsVisualizingShadowCascades() noexcept -> bool {
+auto Renderer::Impl::IsVisualizingShadowCascades() const noexcept -> bool {
   return mVisualizeShadowCascades;
 }
 
@@ -1959,7 +1958,7 @@ auto Renderer::Impl::VisualizeShadowCascades(bool const visualize) noexcept -> v
 }
 
 
-auto Renderer::Impl::GetShadowFilteringMode() noexcept -> ShadowFilteringMode {
+auto Renderer::Impl::GetShadowFilteringMode() const noexcept -> ShadowFilteringMode {
   return mShadowFilteringMode;
 }
 
@@ -1969,7 +1968,7 @@ auto Renderer::Impl::SetShadowFilteringMode(ShadowFilteringMode const filteringM
 }
 
 
-auto Renderer::Impl::GetInFlightFrameCount() noexcept -> int {
+auto Renderer::Impl::GetInFlightFrameCount() const noexcept -> int {
   return mInFlightFrameCount;
 }
 
@@ -2077,22 +2076,22 @@ auto Renderer::UnregisterLight(LightComponent const* light) -> void {
 }
 
 
-auto Renderer::GetDefaultMaterial() noexcept -> ObserverPtr<Material> {
+auto Renderer::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
   return mImpl->GetDefaultMaterial();
 }
 
 
-auto Renderer::GetCubeMesh() noexcept -> ObserverPtr<Mesh> {
+auto Renderer::GetCubeMesh() const noexcept -> ObserverPtr<Mesh> {
   return mImpl->GetCubeMesh();
 }
 
 
-auto Renderer::GetPlaneMesh() noexcept -> ObserverPtr<Mesh> {
+auto Renderer::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
   return mImpl->GetPlaneMesh();
 }
 
 
-auto Renderer::GetGamma() noexcept -> f32 {
+auto Renderer::GetGamma() const noexcept -> f32 {
   return mImpl->GetGamma();
 }
 

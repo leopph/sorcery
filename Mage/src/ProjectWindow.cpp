@@ -156,7 +156,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
       }
 
       if (ImGui::MenuItem("Material")) {
-        auto const mtl{new Material{}};
+        auto const mtl{CreateAndInitialize<Material>()};
         auto const mtlPathAbs{GenerateUniquePath(workingDirAbs / "New Material.mtl")};
         mApp->GetResourceDatabase().CreateResource(*mtl, mtlPathAbs);
         mSelectedPathResDirRel = mtlPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath());
@@ -164,7 +164,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
       }
 
       if (ImGui::MenuItem("Scene")) {
-        auto const scene{new Scene{}};
+        auto const scene{CreateAndInitialize<Scene>()};
         auto const scenePathAbs{GenerateUniquePath(workingDirAbs / "New Scene.scene")};
         mApp->GetResourceDatabase().CreateResource(*scene, scenePathAbs);
         mApp->SetSelectedObject(scene);

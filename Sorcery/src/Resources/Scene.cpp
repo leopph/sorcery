@@ -1,6 +1,6 @@
 #include "Scene.hpp"
 
-#include "../SceneObject.hpp"
+#include "../SceneObjects/SceneObject.hpp"
 #include "../Platform.hpp"
 #include "../Serialization.hpp"
 #undef FindResource
@@ -19,7 +19,7 @@ std::vector<Scene*> Scene::sAllScenes;
 
 auto Scene::GetActiveScene() noexcept -> Scene* {
   if (!sActiveScene) {
-    sActiveScene = new Scene{};
+    sActiveScene = CreateAndInitialize<Scene>();
   }
 
   return sActiveScene;
@@ -42,13 +42,11 @@ Scene::~Scene() {
 
   // Strange loop needed because Entity dtor calls Scene::RemoveEntity
   while (!mEntities.empty()) {
-    delete mEntities.back();
+    Destroy(*mEntities.back());
   }
 
   if (sActiveScene == this) {
-    sActiveScene = sAllScenes.empty()
-                     ? nullptr
-                     : sAllScenes.back();
+    sActiveScene = sAllScenes.empty() ? nullptr : sAllScenes.back();
   }
 }
 
@@ -109,9 +107,7 @@ auto Scene::Save() -> void {
 
       if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
         auto const it{ptrFixUp.find(v.get_value<SceneObject*>())};
-        retNode = it != std::end(ptrFixUp)
-                    ? it->second
-                    : 0;
+        retNode = it != std::end(ptrFixUp) ? it->second : 0;
       }
 
       return retNode;
@@ -133,7 +129,8 @@ auto Scene::Load() -> void {
 
   auto const lastActiveScene{sActiveScene};
   sActiveScene = this;
-  mEntities.clear();
+
+  Clear();
 
   if (auto const version{mYamlData["version"]}; !version || !version.IsScalar() || version.as<int>(1) != 1) {
     throw std::runtime_error{std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName())};
@@ -143,7 +140,9 @@ auto Scene::Load() -> void {
     auto const typeNode{sceneObjectNode["type"]};
     auto const type{rttr::type::get_by_name(typeNode.as<std::string>())};
     auto const sceneObjectVariant{type.create()};
-    ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObjectVariant.get_value<SceneObject*>();
+    auto const sceneObj{sceneObjectVariant.get_value<SceneObject*>()};
+    sceneObj->OnInit();
+    ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObj;
   }
 
   auto const extensionFunc{
@@ -175,7 +174,7 @@ auto Scene::SetActive() -> void {
 auto Scene::Clear() -> void {
   // Entity destructor modifies this collection, hence the strange loop
   while (!mEntities.empty()) {
-    delete mEntities.back();
+    Destroy(*mEntities.back());
   }
 }
 }

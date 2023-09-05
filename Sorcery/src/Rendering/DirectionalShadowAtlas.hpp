@@ -2,7 +2,7 @@
 
 #include "ShadowAtlas.hpp"
 #include "Visibility.hpp"
-#include "LightComponents.hpp"
+#include "../SceneObjects/LightComponents.hpp"
 
 
 namespace sorcery {

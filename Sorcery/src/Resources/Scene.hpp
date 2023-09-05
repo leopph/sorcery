@@ -1,8 +1,8 @@
 #pragma once
 
 #include "NativeResource.hpp"
-#include "../Entity.hpp"
-#include "../Component.hpp"
+#include "../SceneObjects/Entity.hpp"
+#include "../SceneObjects/Component.hpp"
 
 #include <vector>
 #include <span>

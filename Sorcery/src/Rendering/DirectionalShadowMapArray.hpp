@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Core.hpp"
-#include "shaders/ShaderInterop.h"
+#include "../Core.hpp"
+#include "../shaders/ShaderInterop.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX

@@ -1,6 +1,6 @@
 #include "Cubemap.hpp"
 
-#include "../Renderer.hpp"
+#include "../Rendering/Renderer.hpp"
 
 
 RTTR_REGISTRATION {

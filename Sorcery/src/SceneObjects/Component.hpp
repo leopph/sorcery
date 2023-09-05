@@ -13,16 +13,9 @@ class Component : public SceneObject {
   ObserverPtr<Entity> mEntity{nullptr};
 
 public:
-  Component() = default;
-  Component(Component const&) = delete;
-  Component(Component&&) = delete;
-
-  LEOPPHAPI ~Component() override;
-
-  void operator=(Component const&) = delete;
-  void operator=(Component&&) = delete;
-
   [[nodiscard]] LEOPPHAPI auto GetEntity() const -> Entity&;
   LEOPPHAPI auto SetEntity(Entity& entity) -> void;
+
+  LEOPPHAPI auto OnDestroy() -> void override;
 };
 }

@@ -3,7 +3,7 @@
 #include "Reflection.hpp"
 #include "ExternalResource.hpp"
 #include "FileIo.hpp"
-#include "Renderer.hpp"
+#include "Rendering/Renderer.hpp"
 #include "Resources/Scene.hpp"
 
 #include <directxtk/DDSTextureLoader.h>
@@ -63,11 +63,11 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
       }
     }
   } else if (desc.pathAbs.extension() == SCENE_RESOURCE_EXT) {
-    auto const scene{new Scene{}};
+    auto const scene{CreateAndInitialize<Scene>()};
     scene->Deserialize(YAML::LoadFile(desc.pathAbs.string()));
     res = scene;
   } else if (desc.pathAbs.extension() == MATERIAL_RESOURCE_EXT) {
-    auto const mtl{new Material{}};
+    auto const mtl{CreateAndInitialize<Material>()};
     mtl->Deserialize(YAML::LoadFile(desc.pathAbs.string()));
     res = mtl;
   }
@@ -105,10 +105,14 @@ auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexce
     tex2D->GetDesc(&desc);
 
     if (desc.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) {
-      return new Cubemap{*tex2D.Get(), *srv.Get()};
+      auto const ret{new Cubemap{*tex2D.Get(), *srv.Get()}};
+      ret->OnInit();
+      return ret;
     }
 
-    return new Texture2D{*tex2D.Get(), *srv.Get()};
+    auto const ret{new Texture2D{*tex2D.Get(), *srv.Get()}};
+    ret->OnInit();
+    return ret;
   }
 
   return nullptr;
@@ -205,14 +209,16 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
       curBytes = curBytes.subspan(meshData.subMeshes[i].mtlSlotName.size() + 8);
     }
 
-    return new Mesh{std::move(meshData)};
+    auto const ret{new Mesh{std::move(meshData)}};
+    ret->OnInit();
+    return ret;
   }
 }
 
 
 auto ResourceManager::Unload(Guid const& guid) -> void {
   if (auto const it{mResources.find(guid)}; it != std::end(mResources)) {
-    delete *it;
+    Destroy(**it);
     mResources.erase(it);
   }
 }

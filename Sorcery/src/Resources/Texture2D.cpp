@@ -1,7 +1,7 @@
 #include "Texture2D.hpp"
 
 #include "../Util.hpp"
-#include "../Renderer.hpp"
+#include "../Rendering/Renderer.hpp"
 
 #include <imgui.h>
 

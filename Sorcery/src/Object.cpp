@@ -10,14 +10,28 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 std::vector<ObserverPtr<Object>> Object::sAllObjects;
+std::recursive_mutex Object::sAllObjectsMutex;
 
 
-Object::Object() {
+auto Object::GetName() const noexcept -> std::string const& {
+  return mName;
+}
+
+
+auto Object::SetName(std::string const& name) -> void {
+  mName = name;
+}
+
+
+auto Object::OnInit() -> void {
+  std::unique_lock const lock{sAllObjectsMutex};
   sAllObjects.emplace_back(this);
 }
 
 
-Object::~Object() {
+auto Object::OnDestroy() -> void {
+  std::unique_lock const lock{sAllObjectsMutex};
+
   std::erase(sAllObjects, this);
 
   for (auto const otherObj : sAllObjects) {
@@ -33,19 +47,17 @@ Object::~Object() {
 }
 
 
-auto Object::GetName() const noexcept -> std::string const& {
-  return mName;
-}
-
-
-auto Object::SetName(std::string const& name) -> void {
-  mName = name;
-}
-
-
 auto Object::DestroyAll() -> void {
+  std::unique_lock const lock{sAllObjectsMutex};
+
   while (!sAllObjects.empty()) {
-    delete sAllObjects.back();
+    Destroy(*sAllObjects.back());
   }
+}
+
+
+auto Destroy(Object& obj) -> void {
+  obj.OnDestroy();
+  delete std::addressof(obj);
 }
 }

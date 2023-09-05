@@ -1,6 +1,6 @@
 #include "Entity.hpp"
 
-#include "Resources/Scene.hpp"
+#include "../Resources/Scene.hpp"
 
 #include <functional>
 #include <iostream>
@@ -36,37 +36,7 @@ auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
 
 
 Entity::Entity() :
-  mScene{Scene::GetActiveScene()} {
-  auto constexpr defaultEntityName{"New Entity"};
-  SetName(defaultEntityName);
-  FindObjectsOfType(gEntityCache);
-
-  bool isNameUnique{false};
-  std::size_t index{1};
-  while (!isNameUnique) {
-    isNameUnique = true;
-    for (auto const entity : gEntityCache) {
-      if (entity != this && entity->GetName() == GetName()) {
-        SetName(std::format("{} ({})", defaultEntityName, index));
-        ++index;
-        isNameUnique = false;
-        break;
-      }
-    }
-  }
-
-  mScene->AddEntity(*this);
-}
-
-
-Entity::~Entity() {
-  mScene->RemoveEntity(*this);
-
-  // Entity destructor modifies this collection, hence the strange loop
-  while (!mComponents.empty()) {
-    delete mComponents.back();
-  }
-}
+  mScene{Scene::GetActiveScene()} {}
 
 
 auto Entity::GetScene() const -> Scene& {
@@ -94,6 +64,43 @@ auto Entity::RemoveComponent(Component& component) -> void {
   std::erase_if(mComponents, [&component](auto const storedComponent) {
     return storedComponent == &component;
   });
+}
+
+
+auto Entity::OnInit() -> void {
+  SceneObject::OnInit();
+
+  auto constexpr defaultEntityName{"New Entity"};
+  SetName(defaultEntityName);
+  FindObjectsOfType(gEntityCache);
+
+  bool isNameUnique{false};
+  std::size_t index{1};
+  while (!isNameUnique) {
+    isNameUnique = true;
+    for (auto const entity : gEntityCache) {
+      if (entity != this && entity->GetName() == GetName()) {
+        SetName(std::format("{} ({})", defaultEntityName, index));
+        ++index;
+        isNameUnique = false;
+        break;
+      }
+    }
+  }
+
+  mScene->AddEntity(*this);
+}
+
+
+auto Entity::OnDestroy() -> void {
+  mScene->RemoveEntity(*this);
+
+  // Entity destructor modifies this collection, hence the strange loop
+  while (!mComponents.empty()) {
+    Destroy(*mComponents.back());
+  }
+
+  SceneObject::OnDestroy();
 }
 
 
@@ -143,7 +150,7 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
       if (ImGui::MenuItem("Delete")) {
         auto const component{mComponents[i]};
         mComponents.erase(std::begin(mComponents) + i);
-        delete component;
+        Destroy(*component);
         ImGui::EndPopup();
         break;
       }
@@ -159,7 +166,9 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
   if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
     for (auto const& componentClass : rttr::type::get<Component>().get_derived_classes()) {
       if (ImGui::MenuItem(componentClass.get_name().data())) {
-        AddComponent(*componentClass.create().get_value<ObserverPtr<Component>>());
+        auto const component{componentClass.create().get_value<ObserverPtr<Component>>()};
+        component->OnInit();
+        AddComponent(*component);
         ImGui::CloseCurrentPopup();
       }
     }

@@ -1,19 +1,18 @@
 #pragma once
 
-#include "Core.hpp"
-#include "StaticMeshComponent.hpp"
-#include "LightComponents.hpp"
-#include "Util.hpp"
-#include "SkyboxComponent.hpp"
-#include "shaders/ShadowFilteringModes.h"
 #include "Camera.hpp"
+#include "RenderTarget.hpp"
 #include "Visibility.hpp"
+#include "../Core.hpp"
+#include "../Util.hpp"
+#include "../SceneObjects/StaticMeshComponent.hpp"
+#include "../SceneObjects/LightComponents.hpp"
+#include "../SceneObjects/SkyboxComponent.hpp"
+#include "../shaders/ShadowFilteringModes.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <d3d11.h>
-
-#include "RenderTarget.hpp"
 
 
 namespace sorcery {
@@ -63,11 +62,11 @@ public:
   LEOPPHAPI auto RegisterLight(LightComponent const* light) -> void;
   LEOPPHAPI auto UnregisterLight(LightComponent const* light) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() noexcept -> ObserverPtr<Material>;
-  [[nodiscard]] LEOPPHAPI auto GetCubeMesh() noexcept -> ObserverPtr<Mesh>;
-  [[nodiscard]] LEOPPHAPI auto GetPlaneMesh() noexcept -> ObserverPtr<Mesh>;
+  [[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
+  [[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
+  [[nodiscard]] LEOPPHAPI auto GetPlaneMesh() const noexcept -> ObserverPtr<Mesh>;
 
-  [[nodiscard]] LEOPPHAPI auto GetGamma() noexcept -> f32;
+  [[nodiscard]] LEOPPHAPI auto GetGamma() const noexcept -> f32;
   LEOPPHAPI auto SetGamma(f32 gamma) noexcept -> void;
 
   LEOPPHAPI auto RegisterSkybox(SkyboxComponent const* skybox) -> void;

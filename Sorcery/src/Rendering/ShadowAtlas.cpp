@@ -1,14 +1,14 @@
 #include "ShadowAtlas.hpp"
 
-#include "shaders/ShaderInterop.h"
+#include "../shaders/ShaderInterop.h"
 
 
 namespace sorcery {
 ShadowAtlas::ShadowAtlas(ID3D11Device* const device, int const size, int const subdivSize):
-  GridLike{ subdivSize },
-  mSize{ size } {
+  GridLike{subdivSize},
+  mSize{size} {
   if (!IsPowerOfTwo(mSize)) {
-    throw std::runtime_error{ "Shadow Atlas size must be power of 2." };
+    throw std::runtime_error{"Shadow Atlas size must be power of 2."};
   }
 
   D3D11_TEXTURE2D_DESC const texDesc{
@@ -17,7 +17,7 @@ ShadowAtlas::ShadowAtlas(ID3D11Device* const device, int const size, int const s
     .MipLevels = 1,
     .ArraySize = 1,
     .Format = DXGI_FORMAT_R32_TYPELESS,
-    .SampleDesc = { .Count = 1, .Quality = 0 },
+    .SampleDesc = {.Count = 1, .Quality = 0},
     .Usage = D3D11_USAGE_DEFAULT,
     .BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE,
     .CPUAccessFlags = 0,
@@ -25,34 +25,34 @@ ShadowAtlas::ShadowAtlas(ID3D11Device* const device, int const size, int const s
   };
 
   if (FAILED(device->CreateTexture2D(&texDesc, nullptr, mTex.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create Shadow Atlas texture." };
+    throw std::runtime_error{"Failed to create Shadow Atlas texture."};
   }
 
   D3D11_SHADER_RESOURCE_VIEW_DESC constexpr srvDesc{
     .Format = DXGI_FORMAT_R32_FLOAT,
     .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-    .Texture2D = { .MostDetailedMip = 0, .MipLevels = 1 }
+    .Texture2D = {.MostDetailedMip = 0, .MipLevels = 1}
   };
 
   if (FAILED(device->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create Shadow Atlas SRV." };
+    throw std::runtime_error{"Failed to create Shadow Atlas SRV."};
   }
 
   D3D11_DEPTH_STENCIL_VIEW_DESC constexpr dsvDesc{
     .Format = DXGI_FORMAT_D32_FLOAT,
     .ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
     .Flags = 0,
-    .Texture2D = { .MipSlice = 0 }
+    .Texture2D = {.MipSlice = 0}
   };
 
   if (FAILED(device->CreateDepthStencilView(mTex.Get(), &dsvDesc, mDsv.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create Shadow Atlas DSV." };
+    throw std::runtime_error{"Failed to create Shadow Atlas DSV."};
   }
 }
 
 
 ShadowAtlas::Cell::Cell(int const subdivSize):
-  GridLike{ subdivSize } {
+  GridLike{subdivSize} {
   mSubcells.resize(GetElementCount());
 }
 
@@ -94,10 +94,10 @@ auto ShadowAtlas::GetSize() const noexcept -> int {
 
 auto ShadowAtlas::SetLookUpInfo(std::span<ShaderLight> lights) const -> void {
   for (int i = 0; i < GetElementCount(); i++) {
-    auto const& cell{ GetCell(i) };
+    auto const& cell{GetCell(i)};
 
     for (int j = 0; j < cell.GetElementCount(); j++) {
-      if (auto const& subcell{ cell.GetSubcell(j) }) {
+      if (auto const& subcell{cell.GetSubcell(j)}) {
         lights[subcell->visibleLightIdxIdx].isCastingShadow = TRUE;
         lights[subcell->visibleLightIdxIdx].sampleShadowMap[subcell->shadowMapIdx] = TRUE;
         lights[subcell->visibleLightIdxIdx].shadowViewProjMatrices[subcell->shadowMapIdx] = subcell->shadowViewProjMtx;

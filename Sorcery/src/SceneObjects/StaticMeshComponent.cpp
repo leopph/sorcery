@@ -1,8 +1,8 @@
 #include "StaticMeshComponent.hpp"
 
 #include "Entity.hpp"
-#include "Gui.hpp"
-#include "Renderer.hpp"
+#include "../Gui.hpp"
+#include "../Rendering/Renderer.hpp"
 #include "TransformComponent.hpp"
 
 #include <imgui.h>
@@ -38,12 +38,6 @@ auto StaticMeshComponent::ResizeMaterialListToSubmeshCount() -> void {
 StaticMeshComponent::StaticMeshComponent() :
   mMesh{gRenderer.GetCubeMesh()} {
   ResizeMaterialListToSubmeshCount();
-  gRenderer.RegisterStaticMesh(this);
-}
-
-
-StaticMeshComponent::~StaticMeshComponent() {
-  gRenderer.UnregisterStaticMesh(this);
 }
 
 
@@ -92,6 +86,18 @@ auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
   }
 
   return AABB::FromVertices(boundsVertices);
+}
+
+
+auto StaticMeshComponent::OnInit() -> void {
+  Component::OnInit();
+  gRenderer.RegisterStaticMesh(this);
+}
+
+
+auto StaticMeshComponent::OnDestroy() -> void {
+  gRenderer.UnregisterStaticMesh(this);
+  Component::OnDestroy();
 }
 
 

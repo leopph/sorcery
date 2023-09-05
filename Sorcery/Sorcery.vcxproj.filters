@@ -18,13 +18,13 @@
     <ClCompile Include="src\Timing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Entity.cpp">
+    <ClCompile Include="src\SceneObjects\Entity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Color.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Renderer.cpp">
+    <ClCompile Include="src\Rendering\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform.cpp">
@@ -54,19 +54,19 @@
     <ClCompile Include="src\Resources\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Component.cpp">
+    <ClCompile Include="src\SceneObjects\Component.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TransformComponent.cpp">
+    <ClCompile Include="src\SceneObjects\TransformComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\CameraComponent.cpp">
+    <ClCompile Include="src\SceneObjects\CameraComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\StaticMeshComponent.cpp">
+    <ClCompile Include="src\SceneObjects\StaticMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\LightComponents.cpp">
+    <ClCompile Include="src\SceneObjects\LightComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Resources\Texture2D.cpp">
@@ -75,7 +75,7 @@
     <ClCompile Include="src\Resources\Cubemap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SkyboxComponent.cpp">
+    <ClCompile Include="src\SceneObjects\SkyboxComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Util.cpp">
@@ -87,28 +87,28 @@
     <ClCompile Include="src\PhysicsManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\RigidBodyComponent.cpp">
+    <ClCompile Include="src\SceneObjects\RigidBodyComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ShadowAtlas.cpp">
+    <ClCompile Include="src\Rendering\ShadowAtlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\GridLike.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DirectionalShadowAtlas.cpp">
+    <ClCompile Include="src\Rendering\DirectionalShadowAtlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Camera.cpp">
+    <ClCompile Include="src\Rendering\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\PunctualShadowAtlas.cpp">
+    <ClCompile Include="src\Rendering\PunctualShadowAtlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\RenderTarget.cpp">
+    <ClCompile Include="src\Rendering\RenderTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SwapChain.cpp">
+    <ClCompile Include="src\Rendering\SwapChain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ResourceManager.cpp">
@@ -117,7 +117,7 @@
     <ClCompile Include="src\Resources\Resource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObject.cpp">
+    <ClCompile Include="src\SceneObjects\SceneObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Math.cpp">
@@ -126,21 +126,21 @@
     <ClCompile Include="src\GUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Rendering\DirectionalShadowMapArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ExternalResource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\FileIo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MemoryAllocation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ExternalResource.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\DirectionalShadowMapArray.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Entity.hpp">
+    <ClInclude Include="src\SceneObjects\Entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Core.hpp">
@@ -161,7 +161,7 @@
     <ClInclude Include="src\Event.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer.hpp">
+    <ClInclude Include="src\Rendering\Renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Util.hpp">
@@ -191,31 +191,31 @@
     <ClInclude Include="src\Resources\Mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Component.hpp">
+    <ClInclude Include="src\SceneObjects\Component.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TransformComponent.hpp">
+    <ClInclude Include="src\SceneObjects\TransformComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\CameraComponent.hpp">
+    <ClInclude Include="src\SceneObjects\CameraComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\StaticMeshComponent.hpp">
+    <ClInclude Include="src\SceneObjects\StaticMeshComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\LightComponents.hpp">
+    <ClInclude Include="src\SceneObjects\LightComponents.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Resources\Texture2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObject.hpp">
+    <ClInclude Include="src\SceneObjects\SceneObject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Resources\Cubemap.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SkyboxComponent.hpp">
+    <ClInclude Include="src\SceneObjects\SkyboxComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\shaders\ShadowFilteringModes.h">
@@ -224,49 +224,43 @@
     <ClInclude Include="src\PhysicsManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\RigidBodyComponent.hpp">
+    <ClInclude Include="src\SceneObjects\RigidBodyComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ShadowAtlas.hpp">
+    <ClInclude Include="src\Rendering\ShadowAtlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\GridLike.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\DirectionalShadowAtlas.hpp">
+    <ClInclude Include="src\Rendering\DirectionalShadowAtlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Camera.hpp">
+    <ClInclude Include="src\Rendering\Camera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\PunctualShadowAtlas.hpp">
+    <ClInclude Include="src\Rendering\PunctualShadowAtlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\RenderTarget.hpp">
+    <ClInclude Include="src\Rendering\RenderTarget.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\StructuredBuffer.hpp">
+    <ClInclude Include="src\Rendering\StructuredBuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SwapChain.hpp">
+    <ClInclude Include="src\Rendering\SwapChain.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ShadowCascadeBoundary.hpp">
+    <ClInclude Include="src\Rendering\ShadowCascadeBoundary.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Graphics.hpp">
+    <ClInclude Include="src\Rendering\Graphics.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Visibility.hpp">
+    <ClInclude Include="src\Rendering\Visibility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ResourceManager.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\PoolAllocator.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Pool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Resources\Resource.hpp">
@@ -281,19 +275,25 @@
     <ClInclude Include="src\GUI.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\FileIo.hpp">
+    <ClInclude Include="src\Serialization.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\DirectionalShadowMapArray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ExternalResource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\FileIo.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\MemoryAllocation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Serialization.hpp">
+    <ClInclude Include="src\Pool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\DirectionalShadowMapArray.hpp">
+    <ClInclude Include="src\PoolAllocator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

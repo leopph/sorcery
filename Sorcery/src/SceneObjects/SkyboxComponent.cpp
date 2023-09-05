@@ -1,6 +1,6 @@
 #include "SkyboxComponent.hpp"
-#include "Renderer.hpp"
-#include "GUI.hpp"
+#include "../Rendering/Renderer.hpp"
+#include "../GUI.hpp"
 
 #include <imgui.h>
 
@@ -29,8 +29,9 @@ auto SkyboxComponent::SetCubemap(Cubemap* cubemap) noexcept -> void {
 }
 
 
-SkyboxComponent::~SkyboxComponent() {
+auto SkyboxComponent::OnDestroy() -> void {
   gRenderer.UnregisterSkybox(this);
+  Component::OnDestroy();
 }
 
 

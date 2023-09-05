@@ -1,6 +1,6 @@
 #include "TransformComponent.hpp"
 
-#include "Serialization.hpp"
+#include "../Serialization.hpp"
 
 #include <imgui.h>
 #include <iostream>
@@ -227,13 +227,15 @@ auto TransformComponent::SetChanged(bool const changed) noexcept -> void {
 }
 
 
-TransformComponent::~TransformComponent() {
+auto TransformComponent::OnDestroy() -> void {
   // SetParent(nullptr) on child removes it from this->mChildren so we cannot iterate
   while (!mChildren.empty()) {
     mChildren.back()->SetParent(nullptr);
   }
 
   SetParent(nullptr);
+
+  Component::OnDestroy();
 }
 
 

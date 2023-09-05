@@ -1,8 +1,8 @@
 #include "LightComponents.hpp"
 
-#include "Renderer.hpp"
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
+#include "../Rendering/Renderer.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -16,7 +16,7 @@ RTTR_REGISTRATION {
     rttr::value("Point", sorcery::LightComponent::Type::Point)
   );
 
-  rttr::registration::class_<sorcery::LightComponent>{ "Light Component" }
+  rttr::registration::class_<sorcery::LightComponent>{"Light Component"}
     .REFLECT_REGISTER_COMPONENT_CTOR
     .property("color", &sorcery::LightComponent::GetColor, &sorcery::LightComponent::SetColor)
     .property("intensity", &sorcery::LightComponent::GetIntensity, &sorcery::LightComponent::SetIntensity)
@@ -33,16 +33,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-LightComponent::LightComponent() {
-  gRenderer.RegisterLight(this);
-}
-
-
-LightComponent::~LightComponent() {
-  gRenderer.UnregisterLight(this);
-}
-
-
 auto LightComponent::GetColor() const -> Vector3 const& {
   return mColor;
 }
@@ -158,13 +148,25 @@ auto LightComponent::SetShadowExtension(float const shadowExtension) noexcept ->
 }
 
 
+auto LightComponent::OnInit() -> void {
+  Component::OnInit();
+  gRenderer.RegisterLight(this);
+}
+
+
+auto LightComponent::OnDestroy() -> void {
+  gRenderer.UnregisterLight(this);
+  Component::OnDestroy();
+}
+
+
 auto LightComponent::OnDrawProperties(bool& changed) -> void {
   Component::OnDrawProperties(changed);
 
   ImGui::Text("Color");
   ImGui::TableNextColumn();
 
-  Vector3 color{ GetColor() };
+  Vector3 color{GetColor()};
   if (ImGui::ColorEdit3("###lightColor", color.GetData())) {
     SetColor(color);
   }
@@ -173,7 +175,7 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Intensity");
   ImGui::TableNextColumn();
 
-  auto intensity{ GetIntensity() };
+  auto intensity{GetIntensity()};
   if (ImGui::DragFloat("###lightIntensity", &intensity, 0.1f, LightComponent::MIN_INTENSITY, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
     SetIntensity(intensity);
   }
@@ -182,7 +184,7 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Casts Shadow");
   ImGui::TableNextColumn();
 
-  auto castsShadow{ IsCastingShadow() };
+  auto castsShadow{IsCastingShadow()};
   if (ImGui::Checkbox("###lightCastsShadow", &castsShadow)) {
     SetCastingShadow(castsShadow);
   }
@@ -194,7 +196,7 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
       ImGui::Text("%s", "Shadow Extension");
       ImGui::TableNextColumn();
 
-      float shadowExt{ GetShadowExtension() };
+      float shadowExt{GetShadowExtension()};
       if (ImGui::DragFloat("##lightShadowExt", &shadowExt, 1.0f, LightComponent::MIN_SHADOW_EXTENSION, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
         SetShadowExtension(shadowExt);
       }
@@ -202,7 +204,7 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
       ImGui::Text("%s", "Shadow Near Plane");
       ImGui::TableNextColumn();
 
-      auto shadowNearPlane{ GetShadowNearPlane() };
+      auto shadowNearPlane{GetShadowNearPlane()};
       if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane, 0.01f, LightComponent::MIN_SHADOW_NEAR_PLANE, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
         SetShadowNearPlane(shadowNearPlane);
       }
@@ -212,7 +214,7 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("%s", "Shadow Depth Bias");
     ImGui::TableNextColumn();
 
-    auto shadowDepthBias{ GetShadowDepthBias() };
+    auto shadowDepthBias{GetShadowDepthBias()};
     if (ImGui::DragFloat("###lightShadowDephBias", &shadowDepthBias, 0.25f, 0, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       SetShadowDepthBias(shadowDepthBias);
     }
@@ -221,7 +223,7 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("%s", "Shadow Normal Bias");
     ImGui::TableNextColumn();
 
-    auto shadowNormalBias{ GetShadowNormalBias() };
+    auto shadowNormalBias{GetShadowNormalBias()};
     if (ImGui::DragFloat("###lightShadowNormalBias", &shadowNormalBias, 0.25f, 0, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       SetShadowNormalBias(shadowNormalBias);
     }
@@ -231,8 +233,8 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Type");
   ImGui::TableNextColumn();
 
-  constexpr char const* typeOptions[]{ "Directional", "Spot", "Point" };
-  int selection{ static_cast<int>(GetType()) };
+  constexpr char const* typeOptions[]{"Directional", "Spot", "Point"};
+  int selection{static_cast<int>(GetType())};
   if (ImGui::Combo("###LightType", &selection, typeOptions, 3)) {
     SetType(static_cast<LightComponent::Type>(selection));
   }
@@ -242,7 +244,7 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("Range");
     ImGui::TableNextColumn();
 
-    auto range{ GetRange() };
+    auto range{GetRange()};
     if (ImGui::DragFloat("###lightRange", &range, 1.0f, LightComponent::MIN_RANGE, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       SetRange(range);
     }
@@ -253,7 +255,7 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("Inner Angle");
     ImGui::TableNextColumn();
 
-    auto innerAngleRad{ ToRadians(GetInnerAngle()) };
+    auto innerAngleRad{ToRadians(GetInnerAngle())};
     if (ImGui::SliderAngle("###spotLightInnerAngle", &innerAngleRad, LightComponent::MIN_ANGLE_DEG, LightComponent::MAX_ANGLE_DEG, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       SetInnerAngle(ToDegrees(innerAngleRad));
     }
@@ -262,7 +264,7 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("Outer Angle");
     ImGui::TableNextColumn();
 
-    auto outerAngleRad{ ToRadians(GetOuterAngle()) };
+    auto outerAngleRad{ToRadians(GetOuterAngle())};
     if (ImGui::SliderAngle("###spotLightOuterAngle", &outerAngleRad, LightComponent::MIN_ANGLE_DEG, LightComponent::MAX_ANGLE_DEG, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       SetOuterAngle(ToDegrees(outerAngleRad));
     }
@@ -274,14 +276,14 @@ auto LightComponent::OnDrawGizmosSelected() -> void {
   Component::OnDrawGizmosSelected();
 
   if (GetType() == Type::Spot) {
-    auto const modelMtxNoScale{ CalculateModelMatrixNoScale(GetEntity().GetTransform()) };
-    auto vertices{ CalculateSpotLightLocalVertices(*this) };
+    auto const modelMtxNoScale{CalculateModelMatrixNoScale(GetEntity().GetTransform())};
+    auto vertices{CalculateSpotLightLocalVertices(*this)};
 
     for (auto& vertex : vertices) {
-      vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
+      vertex = Vector3{Vector4{vertex, 1} * modelMtxNoScale};
     }
 
-    Color const lineColor{ Color::Magenta() };
+    Color const lineColor{Color::Magenta()};
 
     // This highly depends on the order CalculateSpotLightLocalVertices returns the vertices
     for (int i = 0; i < 4; i++) {
@@ -309,14 +311,14 @@ auto AmbientLight::set_intensity(Vector3 const& intensity) -> void {
 
 
 auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5> {
-  auto const range{ spotLight.GetRange() };
-  auto const coneBaseRadius{ std::tan(ToRadians(spotLight.GetOuterAngle() / 2.0f)) * range };
+  auto const range{spotLight.GetRange()};
+  auto const coneBaseRadius{std::tan(ToRadians(spotLight.GetOuterAngle() / 2.0f)) * range};
 
   return std::array{
-    Vector3{ -coneBaseRadius, -coneBaseRadius, range },
-    Vector3{ coneBaseRadius, -coneBaseRadius, range },
-    Vector3{ coneBaseRadius, coneBaseRadius, range },
-    Vector3{ -coneBaseRadius, coneBaseRadius, range },
+    Vector3{-coneBaseRadius, -coneBaseRadius, range},
+    Vector3{coneBaseRadius, -coneBaseRadius, range},
+    Vector3{coneBaseRadius, coneBaseRadius, range},
+    Vector3{-coneBaseRadius, coneBaseRadius, range},
     Vector3::Zero()
   };
 }

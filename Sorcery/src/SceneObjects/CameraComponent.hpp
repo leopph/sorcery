@@ -1,22 +1,19 @@
 #pragma once
 
 #include "Component.hpp"
-#include "Renderer.hpp"
+#include "../Rendering/Renderer.hpp"
 
-#include "Math.hpp"
-#include "Util.hpp"
+#include "../Math.hpp"
+#include "../Util.hpp"
 
 
 namespace sorcery {
 class CameraComponent : public Component, public Camera {
   RTTR_ENABLE(Component)
-  NormalizedViewport mViewport{ { 0, 0 }, { 1, 1 } };
-  Vector4 mBackgroundColor{ 0, 0, 0, 1 };
+  NormalizedViewport mViewport{{0, 0}, {1, 1}};
+  Vector4 mBackgroundColor{0, 0, 0, 1};
 
 public:
-  LEOPPHAPI CameraComponent();
-  ~CameraComponent() override;
-
   // Viewport extents are normalized between 0 and 1.
   [[nodiscard]] LEOPPHAPI auto GetViewport() const -> NormalizedViewport const&;
   LEOPPHAPI auto SetViewport(NormalizedViewport const& viewport) -> void;
@@ -29,6 +26,8 @@ public:
   [[nodiscard]] auto LEOPPHAPI GetUpAxis() const noexcept -> Vector3 override;
   [[nodiscard]] auto LEOPPHAPI GetForwardAxis() const noexcept -> Vector3 override;
 
+  LEOPPHAPI auto OnInit() -> void override;
+  LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 };
 }

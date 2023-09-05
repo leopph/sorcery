@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component.hpp"
-#include "Math.hpp"
+#include "../Math.hpp"
 
 #include <array>
 
@@ -9,10 +9,8 @@
 namespace sorcery {
 class LightComponent : public Component {
   RTTR_ENABLE(Component)
-public:
-  LEOPPHAPI LightComponent();
-  LEOPPHAPI ~LightComponent() override;
 
+public:
   [[nodiscard]] LEOPPHAPI auto GetColor() const -> Vector3 const&;
   LEOPPHAPI auto SetColor(Vector3 const& color) -> void;
 
@@ -56,28 +54,30 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetShadowExtension() const noexcept -> float;
   LEOPPHAPI auto SetShadowExtension(float shadowExtension) noexcept -> void;
 
+  LEOPPHAPI auto OnInit() -> void override;
+  LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 
-  constexpr static auto MIN_INTENSITY{ 0.0f };
-  constexpr static auto MIN_SHADOW_NEAR_PLANE{ 0.1f };
-  constexpr static auto MIN_RANGE{ 0.0f };
-  constexpr static auto MIN_ANGLE_DEG{ 0.0f };
-  constexpr static auto MAX_ANGLE_DEG{ 179.0f };
-  constexpr static auto MIN_SHADOW_EXTENSION{ 0.0f };
+  constexpr static auto MIN_INTENSITY{0.0f};
+  constexpr static auto MIN_SHADOW_NEAR_PLANE{0.1f};
+  constexpr static auto MIN_RANGE{0.0f};
+  constexpr static auto MIN_ANGLE_DEG{0.0f};
+  constexpr static auto MAX_ANGLE_DEG{179.0f};
+  constexpr static auto MIN_SHADOW_EXTENSION{0.0f};
 
 private:
-  bool mCastsShadow{ false };
-  Vector3 mColor{ 1.f };
-  f32 mIntensity{ 1.f };
-  Type mType{ Type::Directional };
-  f32 mShadowNear{ MIN_SHADOW_NEAR_PLANE };
-  f32 mRange{ 10.f };
-  f32 mInnerAngle{ 30.f };
-  f32 mOuterAngle{ 30.f };
-  float mShadowNormalBias{ 0.0f };
-  float mShadowDepthBias{ 0.0f };
-  float mShadowExtension{ MIN_SHADOW_EXTENSION };
+  bool mCastsShadow{false};
+  Vector3 mColor{1.f};
+  f32 mIntensity{1.f};
+  Type mType{Type::Directional};
+  f32 mShadowNear{MIN_SHADOW_NEAR_PLANE};
+  f32 mRange{10.f};
+  f32 mInnerAngle{30.f};
+  f32 mOuterAngle{30.f};
+  float mShadowNormalBias{0.0f};
+  float mShadowDepthBias{0.0f};
+  float mShadowExtension{MIN_SHADOW_EXTENSION};
 };
 
 
@@ -103,7 +103,7 @@ public:
   auto operator=(AmbientLight&& other) -> AmbientLight& = delete;
 
 private:
-  Vector3 mIntensity{ 0.1f, 0.1f, 0.1f };
+  Vector3 mIntensity{0.1f, 0.1f, 0.1f};
 };
 
 

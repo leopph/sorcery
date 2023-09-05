@@ -1,10 +1,10 @@
 #include "PunctualShadowAtlas.hpp"
 
-#include "Bounds.hpp"
+#include "../Bounds.hpp"
 #include "Graphics.hpp"
-#include "TransformComponent.hpp"
-#include "Entity.hpp"
-#include "MemoryAllocation.hpp"
+#include "../SceneObjects/TransformComponent.hpp"
+#include "../SceneObjects/Entity.hpp"
+#include "../MemoryAllocation.hpp"
 
 
 namespace sorcery {

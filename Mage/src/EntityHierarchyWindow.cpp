@@ -21,8 +21,9 @@ auto EntityHierarchyWindow::Draw() -> void {
     if (ImGui::BeginPopup(contextId)) {
       if (ImGui::MenuItem("Create New Entity")) {
         mApp->GetScene().SetActive();
-        auto const entity{new Entity{}};
-        entity->AddComponent(*new TransformComponent{});
+        auto const entity{CreateAndInitialize<Entity>()};
+        auto const transform{CreateAndInitialize<TransformComponent>()};
+        entity->AddComponent(*transform);
       }
 
       ImGui::EndPopup();
@@ -79,7 +80,7 @@ auto EntityHierarchyWindow::Draw() -> void {
         mApp->SetSelectedObject(&entity);
 
         if (ImGui::MenuItem("Delete")) {
-          delete std::addressof(entity);
+          Destroy(entity);
           entities = mApp->GetScene().GetEntities();
           mApp->SetSelectedObject(nullptr);
           deleted = true;

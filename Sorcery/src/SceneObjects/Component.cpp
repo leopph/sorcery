@@ -13,11 +13,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Component::~Component() {
-  mEntity->RemoveComponent(*this);
-}
-
-
 auto Component::GetEntity() const -> Entity& {
   assert(mEntity);
   return *mEntity;
@@ -26,5 +21,11 @@ auto Component::GetEntity() const -> Entity& {
 
 auto Component::SetEntity(Entity& entity) -> void {
   mEntity = std::addressof(entity);
+}
+
+
+auto Component::OnDestroy() -> void {
+  mEntity->RemoveComponent(*this);
+  SceneObject::OnDestroy();
 }
 }

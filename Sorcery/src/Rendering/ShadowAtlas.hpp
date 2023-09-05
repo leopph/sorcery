@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GridLike.hpp"
 #include "Camera.hpp"
 #include "ShadowCascadeBoundary.hpp"
+#include "../GridLike.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
