@@ -138,12 +138,10 @@ public:
 
 
 PhysicsManager::PhysicsManager() :
-  mImpl{new Impl{}} {}
+  mImpl{std::make_unique<Impl>()} {}
 
 
-PhysicsManager::~PhysicsManager() {
-  delete mImpl;
-}
+PhysicsManager::~PhysicsManager() = default;
 
 
 auto PhysicsManager::StartUp() const -> void {

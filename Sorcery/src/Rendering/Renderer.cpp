@@ -1994,15 +1994,20 @@ auto Renderer::Impl::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) ->
 }
 
 
+Renderer::Renderer() :
+  mImpl{std::make_unique<Impl>()} {}
+
+
+Renderer::~Renderer() = default;
+
+
 auto Renderer::StartUp() -> void {
-  mImpl = new Impl{};
   mImpl->StartUp();
 }
 
 
 auto Renderer::ShutDown() -> void {
   mImpl->ShutDown();
-  delete mImpl;
 }
 
 

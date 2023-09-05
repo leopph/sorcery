@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Core.hpp"
-#include "Util.hpp"
+
+#include <memory>
 
 
 namespace sorcery {
@@ -16,8 +17,7 @@ class InternalRigidBody {
 
 class PhysicsManager {
   class Impl;
-
-  Impl* mImpl;
+  std::unique_ptr<Impl> mImpl;
 
 public:
   LEOPPHAPI PhysicsManager();
