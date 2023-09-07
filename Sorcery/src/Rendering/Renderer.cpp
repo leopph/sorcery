@@ -169,6 +169,8 @@ class Renderer::Impl {
   ComPtr<ID3D11Device> mDevice;
   ComPtr<ID3D11DeviceContext> mImmediateContext;
 
+  std::mutex mImmediateCtxMutex;
+
   ComPtr<IDXGIDevice1> mDxgiDevice;
 
   ComPtr<ID3D11PixelShader> mMeshPbrPs;
@@ -246,6 +248,8 @@ class Renderer::Impl {
   ShadowFilteringMode mShadowFilteringMode{ShadowFilteringMode::PCFTent5x5};
   MSAAMode mMsaaMode{MSAAMode::X8};
 
+  std::unordered_map<std::thread::id, ComPtr<ID3D11DeviceContext>> mPerThreadCtx;
+
 
   struct TempRenderTargetRecord {
     std::unique_ptr<RenderTarget> rt;
@@ -308,6 +312,9 @@ public:
 
   auto GetDevice() const noexcept -> ID3D11Device*;
   auto GetImmediateContext() noexcept -> ID3D11DeviceContext*;
+  [[nodiscard]] auto GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext>;
+
+  auto ExecuteCommandList(ObserverPtr<ID3D11CommandList> cmdList) noexcept -> void;
 
   auto RegisterLight(LightComponent const* light) -> void;
   auto UnregisterLight(LightComponent const* light) -> void;
@@ -1794,6 +1801,30 @@ auto Renderer::Impl::GetImmediateContext() noexcept -> ID3D11DeviceContext* {
 }
 
 
+auto Renderer::Impl::GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext> {
+  auto const thisThreadId{std::this_thread::get_id()};
+
+  if (auto const it{mPerThreadCtx.find(thisThreadId)}; it != std::end(mPerThreadCtx)) {
+    return it->second.Get();
+  }
+
+  ComPtr<ID3D11DeviceContext> thisThreadCtx;
+  [[maybe_unused]] auto const hr{mDevice->CreateDeferredContext(0, thisThreadCtx.GetAddressOf())};
+  assert(SUCCEEDED(hr));
+
+  [[maybe_unused]] auto const& [it, inserted]{mPerThreadCtx.emplace(thisThreadId, std::move(thisThreadCtx))};
+  assert(inserted);
+
+  return it->second.Get();
+}
+
+
+auto Renderer::Impl::ExecuteCommandList(ObserverPtr<ID3D11CommandList> const cmdList) noexcept -> void {
+  std::unique_lock const lock{mImmediateCtxMutex};
+  mImmediateContext->ExecuteCommandList(cmdList, FALSE);
+}
+
+
 auto Renderer::Impl::RegisterLight(LightComponent const* light) -> void {
   mLights.emplace_back(light);
 }
@@ -2097,6 +2128,16 @@ auto Renderer::GetDevice() noexcept -> ID3D11Device* {
 
 auto Renderer::GetImmediateContext() noexcept -> ID3D11DeviceContext* {
   return mImpl->GetImmediateContext();
+}
+
+
+auto Renderer::GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext> {
+  return mImpl->GetThreadContext();
+}
+
+
+auto Renderer::ExecuteCommandList(ObserverPtr<ID3D11CommandList> const cmdList) noexcept -> void {
+  mImpl->ExecuteCommandList(cmdList);
 }
 
 

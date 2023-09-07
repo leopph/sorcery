@@ -27,10 +27,21 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 auto Material::UpdateGPUData() const noexcept -> void {
-  D3D11_MAPPED_SUBRESOURCE mappedCB;
-  gRenderer.GetImmediateContext()->Map(mCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCB);
-  *static_cast<ShaderMaterial*>(mappedCB.pData) = mShaderMtl;
-  gRenderer.GetImmediateContext()->Unmap(mCB.Get(), 0);
+  auto const ctx{gRenderer.GetThreadContext()};
+
+  D3D11_MAPPED_SUBRESOURCE mapped;
+  [[maybe_unused]] auto hr{ctx->Map(mCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
+  assert(SUCCEEDED(hr));
+
+  *static_cast<ShaderMaterial*>(mapped.pData) = mShaderMtl;
+
+  ctx->Unmap(mCB.Get(), 0);
+
+  Microsoft::WRL::ComPtr<ID3D11CommandList> cmdList;
+  hr = ctx->FinishCommandList(FALSE, cmdList.GetAddressOf());
+  assert(SUCCEEDED(hr));
+
+  gRenderer.ExecuteCommandList(cmdList.Get());
 }
 
 

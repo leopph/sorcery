@@ -57,6 +57,8 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetDevice() noexcept -> ID3D11Device*;
   [[nodiscard]] LEOPPHAPI auto GetImmediateContext() noexcept -> ID3D11DeviceContext*;
+  [[nodiscard]] LEOPPHAPI auto GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext>;
+  LEOPPHAPI auto ExecuteCommandList(ObserverPtr<ID3D11CommandList> cmdList) noexcept -> void;
 
   LEOPPHAPI auto RegisterLight(LightComponent const* light) -> void;
   LEOPPHAPI auto UnregisterLight(LightComponent const* light) -> void;
