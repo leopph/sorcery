@@ -2,9 +2,9 @@
 
 #include <dxgi1_5.h>
 
-#include "Graphics.hpp"
 #include "DirectionalShadowAtlas.hpp"
 #include "DirectionalShadowMapArray.hpp"
+#include "Graphics.hpp"
 #include "PunctualShadowAtlas.hpp"
 #include "RenderTarget.hpp"
 #include "ShadowCascadeBoundary.hpp"
@@ -13,9 +13,9 @@
 #include "../MemoryAllocation.hpp"
 #include "../Platform.hpp"
 #include "../Util.hpp"
-#include "../shaders/ShaderInterop.h"
 #include "../SceneObjects/Entity.hpp"
 #include "../SceneObjects/TransformComponent.hpp"
+#include "../shaders/ShaderInterop.h"
 
 #ifndef NDEBUG
 #include "../shaders/generated/DepthOnlyVSBinDebug.h"
@@ -30,16 +30,16 @@
 #include "../shaders/generated/SkyboxPSBinDebug.h"
 
 #else
-#include "../shaders/generated/DepthOnlyVSBin.h"
 #include "../shaders/generated/DepthOnlyPSBin.h"
+#include "../shaders/generated/DepthOnlyVSBin.h"
 #include "../shaders/generated/GizmoPSBin.h"
 #include "../shaders/generated/LineGizmoVSBin.h"
-#include "../shaders/generated/MeshVSBin.h"
 #include "../shaders/generated/MeshPbrPSBin.h"
+#include "../shaders/generated/MeshVSBin.h"
 #include "../shaders/generated/PostProcessPSBin.h"
 #include "../shaders/generated/ScreenVSBin.h"
-#include "../shaders/generated/SkyboxVSBin.h"
 #include "../shaders/generated/SkyboxPSBin.h"
+#include "../shaders/generated/SkyboxVSBin.h"
 #endif
 
 #include <algorithm>
@@ -2015,20 +2015,15 @@ auto Renderer::Impl::SetMsaaMode(MSAAMode const mode) noexcept -> void {
 }
 
 
-Renderer::Renderer() :
-  mImpl{std::make_unique<Impl>()} {}
-
-
-Renderer::~Renderer() = default;
-
-
 auto Renderer::StartUp() -> void {
+  mImpl = new Impl{};
   mImpl->StartUp();
 }
 
 
 auto Renderer::ShutDown() -> void {
   mImpl->ShutDown();
+  delete mImpl;
 }
 
 

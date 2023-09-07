@@ -14,8 +14,6 @@
 #define NOMINMAX
 #include <d3d11.h>
 
-#include <memory>
-
 
 namespace sorcery {
 enum class ShadowFilteringMode : int {
@@ -38,18 +36,9 @@ enum class MSAAMode : int {
 
 class Renderer {
   class Impl;
-  std::unique_ptr<Impl> mImpl;
+  Impl* mImpl{nullptr};
 
 public:
-  LEOPPHAPI Renderer();
-  Renderer(Renderer const&) = delete;
-  Renderer(Renderer&&) = delete;
-
-  LEOPPHAPI ~Renderer();
-
-  auto operator=(Renderer const&) -> void = delete;
-  auto operator=(Renderer&&) -> void = delete;
-
   LEOPPHAPI auto StartUp() -> void;
   LEOPPHAPI auto ShutDown() -> void;
 
