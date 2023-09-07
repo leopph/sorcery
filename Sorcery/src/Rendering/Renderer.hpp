@@ -45,8 +45,8 @@ public:
   LEOPPHAPI auto DrawCamera(Camera const& cam, RenderTarget const* rt = nullptr) -> void;
   LEOPPHAPI auto DrawAllCameras(RenderTarget const* rt = nullptr) -> void;
   LEOPPHAPI auto DrawGizmos(RenderTarget const* rt = nullptr) -> void;
-  LEOPPHAPI auto BindAndClearMainRt() noexcept -> void;
-  LEOPPHAPI auto BlitMainRtToSwapChain() noexcept -> void;
+  LEOPPHAPI auto ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  LEOPPHAPI auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
   LEOPPHAPI auto Present() noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSyncInterval() noexcept -> u32;
@@ -56,7 +56,6 @@ public:
   LEOPPHAPI auto UnregisterStaticMesh(StaticMeshComponent const* staticMesh) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetDevice() noexcept -> ID3D11Device*;
-  [[nodiscard]] LEOPPHAPI auto GetImmediateContext() noexcept -> ID3D11DeviceContext*;
   [[nodiscard]] LEOPPHAPI auto GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext>;
   LEOPPHAPI auto ExecuteCommandList(ObserverPtr<ID3D11CommandList> cmdList) noexcept -> void;
 

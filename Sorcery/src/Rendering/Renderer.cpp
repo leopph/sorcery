@@ -300,8 +300,8 @@ public:
   auto DrawCamera(Camera const& cam, RenderTarget const* rt) -> void;
   auto DrawAllCameras(RenderTarget const* rt) -> void;
   auto DrawGizmos(RenderTarget const* rt) -> void;
-  auto BindAndClearMainRt() noexcept -> void;
-  auto BlitMainRtToSwapChain() noexcept -> void;
+  auto ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
   auto Present() noexcept -> void;
 
   auto GetSyncInterval() const noexcept -> u32;
@@ -311,7 +311,6 @@ public:
   auto UnregisterStaticMesh(StaticMeshComponent const* staticMesh) -> void;
 
   auto GetDevice() const noexcept -> ID3D11Device*;
-  auto GetImmediateContext() noexcept -> ID3D11DeviceContext*;
   [[nodiscard]] auto GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext>;
 
   auto ExecuteCommandList(ObserverPtr<ID3D11CommandList> cmdList) noexcept -> void;
@@ -1744,22 +1743,22 @@ auto Renderer::Impl::DrawAllCameras(RenderTarget const* const rt) -> void {
 }
 
 
-auto Renderer::Impl::BindAndClearMainRt() noexcept -> void {
+auto Renderer::Impl::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) noexcept -> void {
   auto const rtv{mMainRt->GetRtv()};
   FLOAT constexpr clearColor[]{0, 0, 0, 1};
-  mImmediateContext->ClearRenderTargetView(rtv, clearColor);
-  mImmediateContext->OMSetRenderTargets(1, &rtv, nullptr);
+  ctx->ClearRenderTargetView(rtv, clearColor);
+  ctx->OMSetRenderTargets(1, &rtv, nullptr);
 }
 
 
-auto Renderer::Impl::BlitMainRtToSwapChain() noexcept -> void {
+auto Renderer::Impl::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> const ctx) noexcept -> void {
   ComPtr<ID3D11Resource> mainRtColorTex;
   mMainRt->GetRtv()->GetResource(mainRtColorTex.GetAddressOf());
 
   ComPtr<ID3D11Resource> backBuf;
   mSwapChain->GetRtv()->GetResource(backBuf.GetAddressOf());
 
-  mImmediateContext->CopyResource(backBuf.Get(), mainRtColorTex.Get());
+  ctx->CopyResource(backBuf.Get(), mainRtColorTex.Get());
 }
 
 
@@ -1793,11 +1792,6 @@ auto Renderer::Impl::UnregisterStaticMesh(StaticMeshComponent const* const stati
 
 auto Renderer::Impl::GetDevice() const noexcept -> ID3D11Device* {
   return mDevice.Get();
-}
-
-
-auto Renderer::Impl::GetImmediateContext() noexcept -> ID3D11DeviceContext* {
-  return mImmediateContext.Get();
 }
 
 
@@ -2086,13 +2080,13 @@ auto Renderer::DrawGizmos(RenderTarget const* const rt) -> void {
 }
 
 
-auto Renderer::BindAndClearMainRt() noexcept -> void {
-  mImpl->BindAndClearMainRt();
+auto Renderer::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) noexcept -> void {
+  mImpl->ClearAndBindMainRt(ctx);
 }
 
 
-auto Renderer::BlitMainRtToSwapChain() noexcept -> void {
-  mImpl->BlitMainRtToSwapChain();
+auto Renderer::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> const ctx) noexcept -> void {
+  mImpl->BlitMainRtToSwapChain(ctx);
 }
 
 
@@ -2123,11 +2117,6 @@ auto Renderer::UnregisterStaticMesh(StaticMeshComponent const* staticMesh) -> vo
 
 auto Renderer::GetDevice() noexcept -> ID3D11Device* {
   return mImpl->GetDevice();
-}
-
-
-auto Renderer::GetImmediateContext() noexcept -> ID3D11DeviceContext* {
-  return mImpl->GetImmediateContext();
 }
 
 

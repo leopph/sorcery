@@ -60,7 +60,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       throw std::runtime_error{"Failed to initialize Dear ImGui Win32 Implementation."};
     }
 
-    if (!sorcery::mage::ImGui_ImplDX11_Init(sorcery::gRenderer.GetDevice(), sorcery::gRenderer.GetImmediateContext())) {
+    if (!sorcery::mage::ImGui_ImplDX11_Init(sorcery::gRenderer.GetDevice(), sorcery::gRenderer.GetThreadContext())) {
       throw std::runtime_error{"Failed to initialize Dear ImGui DX11 Implementation."};
     }
 
@@ -155,9 +155,17 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       }
 
       ImGui::Render();
-      sorcery::gRenderer.BindAndClearMainRt();
+
+      auto const ctx{sorcery::gRenderer.GetThreadContext()};
+      sorcery::gRenderer.ClearAndBindMainRt(ctx);
       sorcery::mage::ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-      sorcery::gRenderer.BlitMainRtToSwapChain();
+      sorcery::gRenderer.BlitMainRtToSwapChain(ctx);
+
+      Microsoft::WRL::ComPtr<ID3D11CommandList> cmdList;
+      [[maybe_unused]] auto const hr{ctx->FinishCommandList(FALSE, cmdList.GetAddressOf())};
+      assert(SUCCEEDED(hr));
+
+      sorcery::gRenderer.ExecuteCommandList(cmdList.Get());
       sorcery::gRenderer.Present();
 
       sorcery::GetTmpMemRes().Clear();
