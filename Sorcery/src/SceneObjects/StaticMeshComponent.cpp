@@ -115,21 +115,20 @@ auto StaticMeshComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
     ImGui::Text("%s", "Materials");
 
-    auto const submeshCount{mesh->GetSubmeshCount()};
+    auto const mtlSlots{mesh->GetMaterialSlots()};
+    auto const mtlCount{std::ssize(mtlSlots)};
 
     static std::vector<ObjectPicker<Material>> mtlPickers;
-    if (std::ssize(mtlPickers) < submeshCount) {
-      mtlPickers.resize(submeshCount);
+    if (std::ssize(mtlPickers) < mtlCount) {
+      mtlPickers.resize(mtlCount);
     }
 
     auto const mtls{GetMaterials()};
 
-    for (int i = 0; i < submeshCount; i++) {
-      std::string const& mtlSlotName{mesh->GetSubMeshes()[i].mtlSlotName};
-
+    for (int i = 0; i < mtlCount; i++) {
       ImGui::TableNextRow();
       ImGui::TableNextColumn();
-      ImGui::Text("%s", mtlSlotName.c_str());
+      ImGui::Text("%s", mtlSlots[i].name.c_str());
       ImGui::TableNextColumn();
       if (auto mtl{mtls[i]}; mtlPickers[i].Draw(mtl, true)) {
         SetMaterial(i, mtl);

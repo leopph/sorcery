@@ -30,12 +30,17 @@ class Mesh final : public Resource {
   };
 
 public:
-  struct SubMeshData {
+  struct MaterialSlotInfo {
+    std::string name;
+  };
+
+
+  struct SubMeshInfo {
     int baseVertex;
     int firstIndex;
     int indexCount;
-
-    std::string mtlSlotName;
+    int materialIndex;
+    AABB bounds;
   };
 
 
@@ -45,12 +50,14 @@ public:
     std::vector<Vector2> uvs;
     std::vector<Vector3> tangents;
     std::variant<std::vector<std::uint16_t>, std::vector<std::uint32_t>> indices;
-    std::vector<SubMeshData> subMeshes;
+    std::vector<MaterialSlotInfo> materialSlots;
+    std::vector<SubMeshInfo> subMeshes;
   };
 
 private:
   std::unique_ptr<GeometryData> mCpuData{nullptr};
-  std::vector<SubMeshData> mSubmeshes;
+  std::vector<SubMeshInfo> mSubmeshes;
+  std::vector<MaterialSlotInfo> mMtlSlots;
   AABB mBounds{};
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPosBuf;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mNormBuf;
@@ -94,9 +101,12 @@ public:
   LEOPPHAPI auto SetIndices(std::vector<std::uint16_t>&& indices) noexcept -> void;
   LEOPPHAPI auto SetIndices(std::vector<std::uint32_t>&& indices) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetSubMeshes() const noexcept -> std::span<SubMeshData const>;
-  LEOPPHAPI auto SetSubMeshes(std::span<SubMeshData const> submeshes) noexcept -> void;
-  LEOPPHAPI auto SetSubmeshes(std::vector<SubMeshData>&& submeshes) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const>;
+  LEOPPHAPI auto SetMaterialSlots(std::span<MaterialSlotInfo const> mtlSlots) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetSubMeshes() const noexcept -> std::span<SubMeshInfo const>;
+  LEOPPHAPI auto SetSubMeshes(std::span<SubMeshInfo const> submeshes) noexcept -> void;
+  LEOPPHAPI auto SetSubmeshes(std::vector<SubMeshInfo>&& submeshes) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
 

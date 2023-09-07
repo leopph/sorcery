@@ -68,9 +68,19 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     throw std::runtime_error{std::format("Failed to import model at {}: {}.", src.string(), importer.GetErrorString())};
   }
 
-  // Convert all mesh data
+  Mesh::Data meshData;
 
-  struct MeshInfo {
+  // Collect all info from aiMaterials
+
+  meshData.materialSlots.resize(scene->mNumMaterials);
+
+  for (unsigned i{0}; i < scene->mNumMaterials; i++) {
+    meshData.materialSlots[i].name = scene->mMaterials[i]->GetName().C_Str();
+  }
+
+  // Collect all info from aiMeshes
+
+  struct MeshProcessingData {
     std::vector<Vector3> vertices;
     std::vector<Vector3> normals;
     std::vector<Vector2> uvs;
@@ -79,7 +89,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     unsigned mtlIdx{};
   };
 
-  std::vector<MeshInfo> meshes;
+  std::vector<MeshProcessingData> meshes;
   meshes.reserve(scene->mNumMeshes);
 
   for (unsigned i = 0; i < scene->mNumMeshes; i++) {
@@ -100,9 +110,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     for (unsigned j = 0; j < mesh->mNumVertices; j++) {
       vertices.emplace_back(Convert(mesh->mVertices[j]));
       normals.emplace_back(Normalized(Convert(mesh->mNormals[j])));
-      uvs.emplace_back(mesh->HasTextureCoords(0)
-                         ? Vector2{Convert(mesh->mTextureCoords[0][j])}
-                         : Vector2{});
+      uvs.emplace_back(mesh->HasTextureCoords(0) ? Vector2{Convert(mesh->mTextureCoords[0][j])} : Vector2{});
       tangents.emplace_back(Convert(mesh->mTangents[j]));
     }
 
@@ -113,112 +121,84 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     mtlIdx = mesh->mMaterialIndex;
   }
 
-  // Flatten the hierarchy
+  // Accumulate node trafos
 
-  struct MeshReference {
+  struct MeshTrafoAndIndex {
     Matrix4 trafo;
     unsigned meshIdx;
   };
 
-  std::vector<MeshReference> flatHierarchy;
-
-  struct NodeProcessingInfo {
+  struct NodeAndAccumTrafo {
     Matrix4 accumParentTrafo;
     aiNode const* node;
   };
 
-  std::queue<NodeProcessingInfo> queue;
-  queue.emplace(Matrix4::Identity(), scene->mRootNode);
+  std::vector<MeshTrafoAndIndex> meshIndicesWithTrafos;
+  std::queue<NodeAndAccumTrafo> transformQueue;
+  transformQueue.emplace(Matrix4::Identity(), scene->mRootNode);
 
-  while (!queue.empty()) {
-    auto const& [accumParentTrafo, node] = queue.front();
+  while (!transformQueue.empty()) {
+    auto const& [accumParentTrafo, node] = transformQueue.front();
     auto const trafo{Convert(node->mTransformation).Transpose() * accumParentTrafo};
 
     for (unsigned i = 0; i < node->mNumMeshes; ++i) {
-      flatHierarchy.emplace_back(trafo, node->mMeshes[i]);
+      meshIndicesWithTrafos.emplace_back(trafo, node->mMeshes[i]);
     }
 
     for (unsigned i = 0; i < node->mNumChildren; ++i) {
-      queue.emplace(trafo, node->mChildren[i]);
+      transformQueue.emplace(trafo, node->mChildren[i]);
     }
 
-    queue.pop();
+    transformQueue.pop();
   }
 
-  // Sort and group meshes by material index
+  // Transform mesh geometry using trafos
 
-  struct SubmeshReference {
-    std::vector<MeshReference> meshes;
-  };
+  for (auto const& [trafo, meshIdx] : meshIndicesWithTrafos) {
+    auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshes[meshIdx]};
 
-  std::map<unsigned, SubmeshReference> submeshes;
+    Matrix4 const trafoInvTransp{trafo.Inverse().Transpose()};
 
-  for (auto const& [trafo, meshIdx] : flatHierarchy) {
-    submeshes[meshes[meshIdx].mtlIdx].meshes.emplace_back(trafo, meshIdx);
+    for (int i = 0; i < std::ssize(vertices); i++) {
+      vertices[i] = Vector3{Vector4{vertices[i], 1} * trafo};
+      normals[i] = Vector3{Vector4{normals[i], 0} * trafoInvTransp};
+      tangents[i] = Vector3{Vector4{tangents[i], 0} * trafoInvTransp};
+    }
   }
 
-  // Transform the vertices and create submeshes around material indices
+  // Store geometry data and create submeshes
 
-  Mesh::Data meshData;
+  meshData.subMeshes.reserve(std::size(meshes));
   meshData.indices.emplace<std::vector<std::uint32_t>>();
 
-  for (auto const& [submeshMtlIdx, submeshRef] : submeshes) {
-    int baseVertex{static_cast<int>(std::ssize(meshData.positions))};
-    int firstIndex{
-      std::visit([]<typename T>(std::vector<T> const& indices) {
-        return static_cast<int>(std::ssize(indices));
-      }, meshData.indices)
-    };
-    int indexCount{0};
+  for (auto const& [vertices, normals, uvs, tangents, indices, mtlIdx] : meshes) {
+    meshData.subMeshes.emplace_back(static_cast<int>(std::ssize(meshData.positions)), std::visit([]<typename T>(std::vector<T> const& indices) { return static_cast<int>(std::ssize(indices)); }, meshData.indices), static_cast<int>(std::ssize(indices)), static_cast<int>(mtlIdx), AABB{});
 
-    // Only needed to offset the indices of the meshes forming the submesh
-    int vertexCount{0};
+    std::ranges::copy(vertices, std::back_inserter(meshData.positions));
+    std::ranges::copy(normals, std::back_inserter(meshData.normals));
+    std::ranges::copy(uvs, std::back_inserter(meshData.uvs));
+    std::ranges::copy(tangents, std::back_inserter(meshData.tangents));
+    std::ranges::copy(indices, std::back_inserter(std::get<std::vector<std::uint32_t>>(meshData.indices)));
+  }
 
-    for (auto const& [trafo, meshIdx] : submeshRef.meshes) {
-      auto const& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshes[meshIdx]};
+  // Transform indices to 16-bit if possible
 
-      meshData.positions.reserve(meshData.positions.size() + vertices.size());
-      meshData.normals.reserve(meshData.normals.size() + normals.size());
-      meshData.uvs.reserve(meshData.uvs.size() + uvs.size());
-      meshData.tangents.reserve(meshData.tangents.size() + tangents.size());
+  if (auto const& indices32{std::get<std::vector<std::uint32_t>>(meshData.indices)}; std::ranges::all_of(indices32, [](std::uint32_t const idx) {
+    return idx <= std::numeric_limits<std::uint16_t>::max();
+  })) {
+    std::vector<std::uint16_t> indices16;
+    indices16.reserve(std::size(indices32));
 
-      Matrix4 const trafoInvTransp{trafo.Inverse().Transpose()};
-
-      for (int i = 0; i < std::ssize(vertices); i++) {
-        meshData.positions.emplace_back(Vector4{vertices[i], 1} * trafo);
-        meshData.normals.emplace_back(Vector4{normals[i], 0} * trafoInvTransp);
-        meshData.uvs.emplace_back(uvs[i]);
-        meshData.tangents.emplace_back(Vector4{tangents[i], 0} * trafoInvTransp);
-      }
-
-      // Submeshes use the baseVertex + firstIndex + indexCount technique but here we're composing a submesh from multiple assimp meshes so we manually have to offset each of their indices for the submesh
-
-      // If any of the offset indices would need a 32 bit variable, we change the format
-      if (std::ranges::any_of(indices, [vertexCount](auto const idx) {
-        return idx + vertexCount > std::numeric_limits<std::uint16_t>::max();
-      }) && std::holds_alternative<std::vector<std::uint16_t>>(meshData.indices)) {
-        std::vector<std::uint32_t> indices32;
-        std::ranges::copy(std::get<std::vector<std::uint16_t>>(meshData.indices), std::back_inserter(indices32));
-        meshData.indices.emplace<std::vector<std::uint32_t>>(std::move(indices32));
-      }
-
-      std::visit([&indices, vertexCount]<typename T>(std::vector<T>& finalIndices) {
-        std::ranges::transform(indices, std::back_inserter(finalIndices), [vertexCount](unsigned const idx) {
-          return static_cast<T>(idx + vertexCount);
-        });
-      }, meshData.indices);
-
-      indexCount += static_cast<int>(std::ssize(indices));
-      vertexCount += static_cast<int>(std::ssize(vertices));
-    }
-
-    meshData.subMeshes.emplace_back(baseVertex, firstIndex, indexCount, scene->mMaterials[submeshMtlIdx]->GetName().C_Str());
+    std::ranges::transform(indices32, std::back_inserter(indices16), [](std::uint32_t const idx) {
+      return static_cast<std::uint16_t>(idx);
+    });
   }
 
   SerializeToBinary(std::size(meshData.positions), bytes);
   std::visit([&bytes]<typename T>(std::vector<T> const& indices) {
     SerializeToBinary(std::size(indices), bytes);
   }, meshData.indices);
+  SerializeToBinary(std::ssize(meshData.materialSlots), bytes);
   SerializeToBinary(std::size(meshData.subMeshes), bytes);
   SerializeToBinary(static_cast<std::int32_t>(std::holds_alternative<std::vector<std::uint32_t>>(meshData.indices)), bytes);
 
@@ -240,11 +220,15 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   std::ranges::copy(tanBytes, std::back_inserter(bytes));
   std::ranges::copy(idxBytes, std::back_inserter(bytes));
 
-  for (auto const& [baseVertex, firstIndex, indexCount, mtlSlotName] : meshData.subMeshes) {
+  for (auto const& mtlSlot : meshData.materialSlots) {
+    SerializeToBinary(mtlSlot.name, bytes);
+  }
+
+  for (auto const& [baseVertex, firstIndex, indexCount, mtlSlotIdx, bounds] : meshData.subMeshes) {
     SerializeToBinary(baseVertex, bytes);
     SerializeToBinary(firstIndex, bytes);
     SerializeToBinary(indexCount, bytes);
-    SerializeToBinary(mtlSlotName, bytes);
+    SerializeToBinary(mtlSlotIdx, bytes);
   }
 
   categ = ExternalResourceCategory::Mesh;

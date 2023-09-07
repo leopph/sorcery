@@ -138,6 +138,13 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
     }
 
     curBytes = curBytes.subspan(sizeof idxCount);
+    std::uint64_t mtlCount;
+
+    if (!DeserializeFromBinary(curBytes, mtlCount)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(sizeof mtlCount);
     std::uint64_t submeshCount;
 
     if (!DeserializeFromBinary(curBytes, submeshCount)) {
@@ -181,6 +188,16 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
       curBytes = curBytes.subspan(idxCount * sizeof(T));
     }, meshData.indices);
 
+    meshData.materialSlots.resize(mtlCount);
+
+    for (auto i{0ull}; i < mtlCount; i++) {
+      if (!DeserializeFromBinary(curBytes, meshData.materialSlots[i].name)) {
+        return nullptr;
+      }
+
+      curBytes = curBytes.subspan(meshData.materialSlots[i].name.size() + 8);
+    }
+
     meshData.subMeshes.resize(submeshCount);
 
     for (auto i{0ull}; i < submeshCount; i++) {
@@ -202,11 +219,11 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 
       curBytes = curBytes.subspan(sizeof(int));
 
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].mtlSlotName)) {
+      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].materialIndex)) {
         return nullptr;
       }
 
-      curBytes = curBytes.subspan(meshData.subMeshes[i].mtlSlotName.size() + 8);
+      curBytes = curBytes.subspan(sizeof(int));
     }
 
     auto const ret{new Mesh{std::move(meshData)}};

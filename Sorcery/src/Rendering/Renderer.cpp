@@ -280,7 +280,7 @@ class Renderer::Impl {
   auto CreateDefaultAssets() -> void;
 
   auto DrawShadowMaps(ShadowAtlas const& atlas) -> void;
-  auto DrawMeshes(std::span<int const> meshComponentIndices) noexcept -> void;
+  auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> const culledIndices) noexcept -> void;
   auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
   auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) noexcept -> void;
 
@@ -999,7 +999,8 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
   mCubeMesh->SetUVs(CUBE_UVS);
   mCubeMesh->SetTangents(std::move(cubeTangents));
   mCubeMesh->SetIndices(CUBE_INDICES);
-  mCubeMesh->SetSubMeshes(std::vector{Mesh::SubMeshData{0, 0, static_cast<int>(CUBE_INDICES.size()), "Material"}});
+  mCubeMesh->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  mCubeMesh->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(CUBE_INDICES.size()), 0, AABB{}}});
   if (!mCubeMesh->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default cube mesh."};
   }
@@ -1013,7 +1014,8 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
   mPlaneMesh->SetUVs(QUAD_UVS);
   mPlaneMesh->SetTangents(std::move(quadTangents));
   mPlaneMesh->SetIndices(QUAD_INDICES);
-  mPlaneMesh->SetSubMeshes(std::vector{Mesh::SubMeshData{0, 0, static_cast<int>(QUAD_INDICES.size()), "Material"}});
+  mPlaneMesh->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  mPlaneMesh->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(QUAD_INDICES.size()), 0, AABB{}}});
   if (!mPlaneMesh->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default plane mesh."};
   }
@@ -1021,93 +1023,94 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
 }
 
 
-auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices) noexcept -> void {
+auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const culledIndices) noexcept -> void {
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
   mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
 
-  for (auto const meshComponentIdx : meshComponentIndices) {
-    auto const meshComponent{mStaticMeshComponents[meshComponentIdx]};
+  for (auto const& [meshIdx, submeshIdx] : culledIndices) {
+    auto const component{mStaticMeshComponents[meshIdx]};
+    auto const mesh{component->GetMesh()};
 
-    if (auto const mesh{meshComponent->GetMesh()}) {
-      std::array const vertexBuffers{mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get(), mesh->GetTangentBuffer().Get()};
-      UINT constexpr strides[]{sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3)};
-      UINT constexpr offsets[]{0, 0, 0, 0};
-      mImmediateContext->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
-      mImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), mesh->GetIndexFormat(), 0);
-
-      D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
-      mImmediateContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
-      auto const perDrawCbData{static_cast<PerDrawCB*>(mappedPerDrawCb.pData)};
-      perDrawCbData->gPerDrawConstants.modelMtx = meshComponent->GetEntity().GetTransform().GetModelMatrix();
-      perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{meshComponent->GetEntity().GetTransform().GetNormalMatrix()};
-      mImmediateContext->Unmap(mPerDrawCb.Get(), 0);
-
-      auto const subMeshes{mesh->GetSubMeshes()};
-      auto const& materials{meshComponent->GetMaterials()};
-      assert(std::ssize(subMeshes) == std::ssize(materials));
-
-      for (std::size_t i{0}; i < std::size(subMeshes); i++) {
-        auto const& [baseVertex, firstIndex, indexCount, mtlSlotName]{subMeshes[i]};
-
-        if (auto const mtl{materials[i]}) {
-          auto const mtlBuffer{mtl->GetBuffer()};
-          mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
-          mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
-
-          auto const albedoSrv{
-            [mtl] {
-              auto const albedoMap{mtl->GetAlbedoMap()};
-              return albedoMap ? albedoMap->GetSrv() : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
-
-          auto const metallicSrv{
-            [mtl] {
-              auto const metallicMap{mtl->GetMetallicMap()};
-              return metallicMap ? metallicMap->GetSrv() : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
-
-          auto const roughnessSrv{
-            [mtl] {
-              auto const roughnessMap{mtl->GetRoughnessMap()};
-              return roughnessMap ? roughnessMap->GetSrv() : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
-
-          auto const aoSrv{
-            [mtl] {
-              auto const aoMap{mtl->GetAoMap()};
-              return aoMap ? aoMap->GetSrv() : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
-
-          auto const normalSrv{
-            [&mtl] {
-              auto const normalMap{mtl->GetNormalMap()};
-              return normalMap ? normalMap->GetSrv() : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
-
-          auto const opacitySrv{
-            [&mtl] {
-              auto const opacityMask{mtl->GetOpacityMask()};
-              return opacityMask ? opacityMask->GetSrv() : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_OPACITY_MASK, 1, &opacitySrv);
-        }
-
-        mImmediateContext->DrawIndexed(indexCount, firstIndex, baseVertex);
-      }
+    if (!mesh) {
+      continue;
     }
+
+    std::array const vertexBuffers{mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get(), mesh->GetTangentBuffer().Get()};
+    UINT constexpr strides[]{sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3)};
+    UINT constexpr offsets[]{0, 0, 0, 0};
+    mImmediateContext->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
+    mImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), mesh->GetIndexFormat(), 0);
+
+    D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
+    mImmediateContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
+    auto const perDrawCbData{static_cast<PerDrawCB*>(mappedPerDrawCb.pData)};
+    perDrawCbData->gPerDrawConstants.modelMtx = component->GetEntity().GetTransform().GetModelMatrix();
+    perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{component->GetEntity().GetTransform().GetNormalMatrix()};
+    mImmediateContext->Unmap(mPerDrawCb.Get(), 0);
+
+    auto const submesh{mesh->GetSubMeshes()[submeshIdx]};
+    auto const mtl{component->GetMaterials()[submesh.materialIndex]};
+
+    if (!mtl) {
+      continue;
+    }
+
+    auto const mtlBuffer{mtl->GetBuffer()};
+    mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+    mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+
+    auto const albedoSrv{
+      [mtl] {
+        auto const albedoMap{mtl->GetAlbedoMap()};
+        return albedoMap ? albedoMap->GetSrv() : nullptr;
+      }()
+    };
+    mImmediateContext->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
+
+    auto const metallicSrv{
+      [mtl] {
+        auto const metallicMap{mtl->GetMetallicMap()};
+        return metallicMap ? metallicMap->GetSrv() : nullptr;
+      }()
+    };
+    mImmediateContext->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
+
+    auto const roughnessSrv{
+      [mtl] {
+        auto const roughnessMap{mtl->GetRoughnessMap()};
+        return roughnessMap ? roughnessMap->GetSrv() : nullptr;
+      }()
+    };
+    mImmediateContext->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
+
+    auto const aoSrv{
+      [mtl] {
+        auto const aoMap{mtl->GetAoMap()};
+        return aoMap ? aoMap->GetSrv() : nullptr;
+      }()
+    };
+    mImmediateContext->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
+
+    auto const normalSrv{
+      [&mtl] {
+        auto const normalMap{mtl->GetNormalMap()};
+        return normalMap ? normalMap->GetSrv() : nullptr;
+      }()
+    };
+    mImmediateContext->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
+
+    auto const opacitySrv{
+      [&mtl] {
+        auto const opacityMask{mtl->GetOpacityMask()};
+        return opacityMask ? opacityMask->GetSrv() : nullptr;
+      }()
+    };
+    mImmediateContext->PSSetShaderResources(RES_SLOT_OPACITY_MASK, 1, &opacitySrv);
+
+
+    mImmediateContext->DrawIndexed(submesh.indexCount, submesh.firstIndex, submesh.baseVertex);
   }
 }
 
@@ -1235,7 +1238,7 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 
         Visibility perLightVisibility{
           .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
-          .staticMeshIndices = std::pmr::vector<int>{&GetTmpMemRes()}
+          .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}
         };
 
         CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
@@ -1418,7 +1421,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   Visibility visibility{
     .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
-    .staticMeshIndices = std::pmr::vector<int>{&GetTmpMemRes()}
+    .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}
   };
   CullLights(camFrustWS, visibility);
 
@@ -1588,7 +1591,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
         Visibility perLightVisibility{
           .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
-          .staticMeshIndices = std::pmr::vector<int>{&GetTmpMemRes()}
+          .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}
         };
 
         CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
@@ -1898,7 +1901,17 @@ auto Renderer::Impl::CullStaticMeshComponents(Frustum const& frustumWS, Visibili
 
   for (int i = 0; i < static_cast<int>(mStaticMeshComponents.size()); i++) {
     if (frustumWS.Intersects(mStaticMeshComponents[i]->CalculateBounds())) {
-      visibility.staticMeshIndices.emplace_back(i);
+      auto const submeshes{mStaticMeshComponents[i]->GetMesh()->GetSubMeshes()};
+      for (int j{0}; j < std::ssize(submeshes); j++) {
+        auto const& modelMtx{mStaticMeshComponents[i]->GetEntity().GetTransform().GetModelMatrix()};
+        auto submeshBounds{submeshes[j].bounds};
+        submeshBounds.min = Vector3{Vector4{submeshBounds.min, 1} * modelMtx};
+        submeshBounds.max = Vector3{Vector4{submeshBounds.max, 1} * modelMtx};
+
+        if (frustumWS.Intersects(submeshBounds)) {
+          visibility.staticMeshIndices.emplace_back(i, j);
+        }
+      }
     }
   }
 }

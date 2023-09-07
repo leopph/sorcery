@@ -115,12 +115,26 @@ auto Mesh::UploadToGpu() noexcept -> void {
 
 
 auto Mesh::CalculateBounds() noexcept -> void {
-  mBounds.min = Vector3{std::numeric_limits<float>::max()};
-  mBounds.max = Vector3{std::numeric_limits<float>::lowest()};
+  auto constexpr floatMin{std::numeric_limits<float>::lowest()};
+  auto constexpr floatMax{std::numeric_limits<float>::max()};
 
-  for (auto const& position : mCpuData->positions) {
-    mBounds.min = Min(mBounds.min, position);
-    mBounds.max = Max(mBounds.max, position);
+  mBounds.min = Vector3{floatMax};
+  mBounds.max = Vector3{floatMin};
+
+  for (auto& submeshInfo : mSubmeshes) {
+    submeshInfo.bounds.min = Vector3{floatMax};
+    submeshInfo.bounds.max = Vector3{floatMin};
+
+    for (auto i{0}; i < submeshInfo.indexCount; i++) {
+      std::uint32_t const idx{mIdxFormat == DXGI_FORMAT_R16_UINT ? mCpuData->indices16[i + submeshInfo.firstIndex] : mCpuData->indices32[i + submeshInfo.firstIndex]};
+      auto const& position{mCpuData->positions[idx + submeshInfo.baseVertex]};
+
+      mBounds.min = Min(mBounds.min, position);
+      mBounds.max = Max(mBounds.max, position);
+
+      submeshInfo.bounds.min = Min(submeshInfo.bounds.min, position);
+      submeshInfo.bounds.max = Max(submeshInfo.bounds.max, position);
+    }
   }
 }
 
@@ -145,7 +159,8 @@ auto Mesh::Set16BitIndicesFrom32BitBuffer(std::span<std::uint32_t const> const i
 
 Mesh::Mesh(Data data, bool const keepDataInCpuMemory) noexcept {
   SetData(std::move(data));
-  std::ignore = ValidateAndUpdate(keepDataInCpuMemory);
+  [[maybe_unused]] auto const isValid{ValidateAndUpdate(keepDataInCpuMemory)};
+  assert(isValid);
 }
 
 
@@ -275,17 +290,27 @@ auto Mesh::SetIndices(std::vector<std::uint32_t>&& indices) noexcept -> void {
 }
 
 
-auto Mesh::GetSubMeshes() const noexcept -> std::span<SubMeshData const> {
+auto Mesh::GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const> {
+  return mMtlSlots;
+}
+
+
+auto Mesh::SetMaterialSlots(std::span<MaterialSlotInfo const> mtlSlots) noexcept -> void {
+  mMtlSlots.assign(std::begin(mtlSlots), std::end(mtlSlots));
+}
+
+
+auto Mesh::GetSubMeshes() const noexcept -> std::span<SubMeshInfo const> {
   return mSubmeshes;
 }
 
 
-auto Mesh::SetSubMeshes(std::span<SubMeshData const> submeshes) noexcept -> void {
+auto Mesh::SetSubMeshes(std::span<SubMeshInfo const> submeshes) noexcept -> void {
   mSubmeshes.assign(std::begin(submeshes), std::end(submeshes));
 }
 
 
-auto Mesh::SetSubmeshes(std::vector<SubMeshData>&& submeshes) noexcept -> void {
+auto Mesh::SetSubmeshes(std::vector<SubMeshInfo>&& submeshes) noexcept -> void {
   mSubmeshes = std::move(submeshes);
 }
 
@@ -304,6 +329,7 @@ auto Mesh::SetData(Data const& data) noexcept -> void {
   std::visit([this]<typename T>(std::vector<T> const& indices) {
     SetIndices(indices);
   }, data.indices);
+  SetMaterialSlots(data.materialSlots);
   SetSubMeshes(data.subMeshes);
 }
 
@@ -317,6 +343,7 @@ auto Mesh::SetData(Data&& data) noexcept -> void {
   std::visit([this]<typename T>(std::vector<T>& indices) {
     SetIndices(std::move(indices));
   }, data.indices);
+  SetMaterialSlots(std::move(data.materialSlots));
   SetSubMeshes(std::move(data.subMeshes));
 }
 
@@ -331,7 +358,7 @@ auto Mesh::ValidateAndUpdate(bool const keepDataInCpuMemory) noexcept -> bool {
     return false;
   }
 
-  for (auto const& [baseVertex, firstIdx, idxCount, mtlSlotName] : mSubmeshes) {
+  for (auto const& [baseVertex, firstIdx, idxCount, mtlSlotIdx, bounds] : mSubmeshes) {
     if (baseVertex >= std::ssize(mCpuData->positions)) {
       return false;
     }
@@ -350,6 +377,10 @@ auto Mesh::ValidateAndUpdate(bool const keepDataInCpuMemory) noexcept -> bool {
       if (auto const idx{std::ssize(mCpuData->indices16) > i ? mCpuData->indices16[i] : mCpuData->indices32[i]}; idx + baseVertex > std::size(mCpuData->positions)) {
         return false;
       }
+    }
+
+    if (mtlSlotIdx < 0 || mtlSlotIdx >= std::ssize(mMtlSlots)) {
+      return false;
     }
   }
 
