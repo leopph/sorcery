@@ -233,7 +233,7 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
 
     const float3 V = normalize(gPerCamConstants.camPos - vsOut.worldPos);
 
-    float3 outColor = 0.03 * albedo * ao;
+    float3 outColor = gPerFrameConstants.ambientLightColor * albedo * ao;
 
     uint lightCount;
     uint _;

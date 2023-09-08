@@ -102,6 +102,12 @@ auto SettingsWindow::Draw() -> void {
     ImGui::EndCombo();
   }
 
+  ImGui::SeparatorText("Lighting");
+
+  if (auto color{gRenderer.GetAmbientLightColor()}; ImGui::ColorEdit3("Ambient Light Color", color.GetData())) {
+    gRenderer.SetAmbientLightColor(color);
+  }
+
   ImGui::End();
 }
 

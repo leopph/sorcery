@@ -294,22 +294,6 @@ auto LightComponent::OnDrawGizmosSelected() -> void {
 }
 
 
-auto AmbientLight::get_instance() -> AmbientLight& {
-  static AmbientLight instance;
-  return instance;
-}
-
-
-auto AmbientLight::get_intensity() const -> Vector3 const& {
-  return mIntensity;
-}
-
-
-auto AmbientLight::set_intensity(Vector3 const& intensity) -> void {
-  mIntensity = intensity;
-}
-
-
 auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5> {
   auto const range{spotLight.GetRange()};
   auto const coneBaseRadius{std::tan(ToRadians(spotLight.GetOuterAngle() / 2.0f)) * range};

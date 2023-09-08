@@ -102,6 +102,9 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetMsaaMode() const noexcept -> MSAAMode;
   LEOPPHAPI auto SetMsaaMode(MSAAMode mode) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetAmbientLightColor() const noexcept -> Vector3 const&;
+  LEOPPHAPI auto SetAmbientLightColor(Vector3 const& color) noexcept -> void;
 };
 
 

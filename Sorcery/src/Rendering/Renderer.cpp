@@ -251,6 +251,9 @@ class Renderer::Impl {
   std::unordered_map<std::thread::id, ComPtr<ID3D11DeviceContext>> mPerThreadCtx;
   std::mutex mPerThreadCtxMutex;
 
+  constexpr static Vector3 DEFAULT_AMBIENT_LIGHT_COLOR{0.03};
+  Vector3 mAmbientLightColor{DEFAULT_AMBIENT_LIGHT_COLOR};
+
 
   struct TempRenderTargetRecord {
     std::unique_ptr<RenderTarget> rt;
@@ -361,6 +364,9 @@ public:
 
   [[nodiscard]] auto GetMsaaMode() const noexcept -> MSAAMode;
   auto SetMsaaMode(MSAAMode mode) noexcept -> void;
+
+  [[nodiscard]] auto GetAmbientLightColor() const noexcept -> Vector3 const&;
+  auto SetAmbientLightColor(Vector3 const& color) noexcept -> void;
 };
 
 
@@ -1414,6 +1420,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   perFrameCbData->gPerFrameConstants.shadowCascadeCount = mCascadeCount;
   perFrameCbData->gPerFrameConstants.visualizeShadowCascades = mVisualizeShadowCascades;
   perFrameCbData->gPerFrameConstants.shadowFilteringMode = static_cast<int>(mShadowFilteringMode);
+  perFrameCbData->gPerFrameConstants.ambientLightColor = mAmbientLightColor;
 
   mImmediateContext->Unmap(mPerFrameCb.Get(), 0);
 
@@ -2056,6 +2063,16 @@ auto Renderer::Impl::SetMsaaMode(MSAAMode const mode) noexcept -> void {
 }
 
 
+auto Renderer::Impl::GetAmbientLightColor() const noexcept -> Vector3 const& {
+  return mAmbientLightColor;
+}
+
+
+auto Renderer::Impl::SetAmbientLightColor(Vector3 const& color) noexcept -> void {
+  mAmbientLightColor = color;
+}
+
+
 auto Renderer::StartUp() -> void {
   mImpl = new Impl{};
   mImpl->StartUp();
@@ -2280,5 +2297,15 @@ auto Renderer::GetMsaaMode() const noexcept -> MSAAMode {
 
 auto Renderer::SetMsaaMode(MSAAMode const mode) noexcept -> void {
   mImpl->SetMsaaMode(mode);
+}
+
+
+auto Renderer::GetAmbientLightColor() const noexcept -> Vector3 const& {
+  return mImpl->GetAmbientLightColor();
+}
+
+
+auto Renderer::SetAmbientLightColor(Vector3 const& color) noexcept -> void {
+  mImpl->SetAmbientLightColor(color);
 }
 }

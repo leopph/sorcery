@@ -81,31 +81,5 @@ private:
 };
 
 
-class AmbientLight final {
-public:
-  LEOPPHAPI static auto get_instance() -> AmbientLight&;
-
-  [[nodiscard]] LEOPPHAPI auto get_intensity() const -> Vector3 const&;
-  LEOPPHAPI auto set_intensity(Vector3 const& intensity) -> void;
-
-private:
-  AmbientLight() = default;
-
-public:
-  AmbientLight(AmbientLight const& other) = delete;
-  AmbientLight(AmbientLight&& other) = delete;
-
-private:
-  ~AmbientLight() = default;
-
-public:
-  auto operator=(AmbientLight const& other) -> AmbientLight& = delete;
-  auto operator=(AmbientLight&& other) -> AmbientLight& = delete;
-
-private:
-  Vector3 mIntensity{0.1f, 0.1f, 0.1f};
-};
-
-
 [[nodiscard]] LEOPPHAPI auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5>;
 }
