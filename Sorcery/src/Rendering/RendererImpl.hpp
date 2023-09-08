@@ -121,6 +121,7 @@ class Renderer::Impl {
   std::mutex mLightMutex;
   std::mutex mSkyboxMutex;
   std::mutex mGameCameraMutex;
+  std::mutex mTmpRenderTargetsMutex;
 
   Vector3 mAmbientLightColor{DEFAULT_AMBIENT_LIGHT_COLOR};
 

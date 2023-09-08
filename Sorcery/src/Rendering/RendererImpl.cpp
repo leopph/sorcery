@@ -1567,6 +1567,8 @@ auto Renderer::Impl::ExecuteCommandList(ObserverPtr<ID3D11CommandList> const cmd
 
 
 auto Renderer::Impl::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget& {
+  std::unique_lock const lock{mTmpRenderTargetsMutex};
+
   for (auto& [rt, lastUseInFrames] : mTmpRenderTargets) {
     if (rt->GetDesc() == desc) {
       lastUseInFrames = 0;
