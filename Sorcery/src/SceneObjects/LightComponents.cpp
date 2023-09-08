@@ -150,12 +150,12 @@ auto LightComponent::SetShadowExtension(float const shadowExtension) noexcept ->
 
 auto LightComponent::OnInit() -> void {
   Component::OnInit();
-  gRenderer.RegisterLight(this);
+  gRenderer.Register(*this);
 }
 
 
 auto LightComponent::OnDestroy() -> void {
-  gRenderer.UnregisterLight(this);
+  gRenderer.Unregister(*this);
   Component::OnDestroy();
 }
 

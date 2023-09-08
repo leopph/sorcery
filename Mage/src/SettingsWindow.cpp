@@ -63,18 +63,18 @@ auto SettingsWindow::Draw() -> void {
   auto constexpr shadowFilteringModeNames{
     [] {
       std::array<char const*, 6> ret{};
-      ret[static_cast<int>(ShadowFilteringMode::None)] = "No Filtering";
-      ret[static_cast<int>(ShadowFilteringMode::HardwarePCF)] = "PCF 2x2 (hardware)";
-      ret[static_cast<int>(ShadowFilteringMode::PCF3x3)] = "PCF 3x3 (4 taps)";
-      ret[static_cast<int>(ShadowFilteringMode::PCFTent3x3)] = "PCF Tent 3x3 (4 taps)";
-      ret[static_cast<int>(ShadowFilteringMode::PCFTent5x5)] = "PCF Tent 5x5 (9 taps)";
-      ret[static_cast<int>(ShadowFilteringMode::PCSS)] = "PCSS (Not yet implemented)";
+      ret[static_cast<int>(Renderer::ShadowFilteringMode::None)] = "No Filtering";
+      ret[static_cast<int>(Renderer::ShadowFilteringMode::HardwarePCF)] = "PCF 2x2 (hardware)";
+      ret[static_cast<int>(Renderer::ShadowFilteringMode::PCF3x3)] = "PCF 3x3 (4 taps)";
+      ret[static_cast<int>(Renderer::ShadowFilteringMode::PCFTent3x3)] = "PCF Tent 3x3 (4 taps)";
+      ret[static_cast<int>(Renderer::ShadowFilteringMode::PCFTent5x5)] = "PCF Tent 5x5 (9 taps)";
+      ret[static_cast<int>(Renderer::ShadowFilteringMode::PCSS)] = "PCSS (Not yet implemented)";
       return ret;
     }()
   };
 
   if (int currentShadowFilteringModeIdx{static_cast<int>(gRenderer.GetShadowFilteringMode())}; ImGui::Combo("Shadow Filtering Mode", &currentShadowFilteringModeIdx, shadowFilteringModeNames.data(), static_cast<int>(std::ssize(shadowFilteringModeNames)))) {
-    gRenderer.SetShadowFilteringMode(static_cast<ShadowFilteringMode>(currentShadowFilteringModeIdx));
+    gRenderer.SetShadowFilteringMode(static_cast<Renderer::ShadowFilteringMode>(currentShadowFilteringModeIdx));
   }
 
   if (int cascadeCount{gRenderer.GetShadowCascadeCount()}; ImGui::SliderInt("Shadow Cascade Count", &cascadeCount, 1, gRenderer.GetMaxShadowCascadeCount(), "%d", ImGuiSliderFlags_NoInput)) {
@@ -92,10 +92,10 @@ auto SettingsWindow::Draw() -> void {
 
   constexpr char const* msaaComboLabels[]{"Off", "2x", "4x", "8x"};
 
-  if (auto const msaaModeIdx{static_cast<int>(std::log2(static_cast<int>(gRenderer.GetMsaaMode())))}; ImGui::BeginCombo("MSAA", msaaComboLabels[msaaModeIdx])) {
+  if (auto const msaaModeIdx{static_cast<int>(std::log2(static_cast<int>(gRenderer.GetMultisamplingMode())))}; ImGui::BeginCombo("MSAA", msaaComboLabels[msaaModeIdx])) {
     for (auto i{0}; i < 4; i++) {
       if (ImGui::Selectable(msaaComboLabels[i], msaaModeIdx == i)) {
-        gRenderer.SetMsaaMode(static_cast<MSAAMode>(static_cast<int>(std::pow(2, i))));
+        gRenderer.SetMultisamplingMode(static_cast<Renderer::MultisamplingMode>(static_cast<int>(std::pow(2, i))));
       }
     }
 

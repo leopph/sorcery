@@ -91,12 +91,12 @@ auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
 
 auto StaticMeshComponent::OnInit() -> void {
   Component::OnInit();
-  gRenderer.RegisterStaticMesh(this);
+  gRenderer.Register(*this);
 }
 
 
 auto StaticMeshComponent::OnDestroy() -> void {
-  gRenderer.UnregisterStaticMesh(this);
+  gRenderer.Unregister(*this);
   Component::OnDestroy();
 }
 

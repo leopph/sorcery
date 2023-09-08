@@ -19,18 +19,18 @@ auto SkyboxComponent::GetCubemap() const noexcept -> Cubemap* {
 
 
 auto SkyboxComponent::SetCubemap(Cubemap* cubemap) noexcept -> void {
-  gRenderer.UnregisterSkybox(this);
+  gRenderer.Unregister(*this);
 
   mCubemap = cubemap;
 
   if (mCubemap) {
-    gRenderer.RegisterSkybox(this);
+    gRenderer.Register(*this);
   }
 }
 
 
 auto SkyboxComponent::OnDestroy() -> void {
-  gRenderer.UnregisterSkybox(this);
+  gRenderer.Unregister(*this);
   Component::OnDestroy();
 }
 

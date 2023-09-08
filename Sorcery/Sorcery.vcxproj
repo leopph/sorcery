@@ -114,6 +114,7 @@
     <ClCompile Include="src\MemoryAllocation.cpp" />
     <ClCompile Include="src\Rendering\Camera.cpp" />
     <ClCompile Include="src\Rendering\DirectionalShadowMapArray.cpp" />
+    <ClCompile Include="src\Rendering\RendererImpl.cpp" />
     <ClCompile Include="src\SceneObjects\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\SceneObjects\Component.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="src\Rendering\DirectionalShadowMapArray.hpp" />
     <ClInclude Include="src\Rendering\Graphics.hpp" />
     <ClInclude Include="src\GUI.hpp" />
+    <ClInclude Include="src\Rendering\RendererImpl.hpp" />
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\Reflection.hpp" />
     <ClInclude Include="src\Resources\Resource.hpp" />

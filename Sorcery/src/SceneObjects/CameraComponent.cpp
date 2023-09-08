@@ -74,12 +74,12 @@ auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
 
 auto CameraComponent::OnInit() -> void {
   Component::OnInit();
-  gRenderer.RegisterGameCamera(*this);
+  gRenderer.Register(*this);
 }
 
 
 auto CameraComponent::OnDestroy() -> void {
-  gRenderer.UnregisterGameCamera(*this);
+  gRenderer.Unregister(*this);
   Component::OnDestroy();
 }
 
