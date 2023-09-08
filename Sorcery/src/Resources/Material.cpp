@@ -85,7 +85,7 @@ auto Material::SetAlbedoVector(Vector3 const& albedoVector) noexcept -> void {
 
 auto Material::GetAlbedoColor() const noexcept -> Color {
   auto const mulColorVec{GetAlbedoVector() * 255};
-  return Color{static_cast<u8>(mulColorVec[0]), static_cast<u8>(mulColorVec[1]), static_cast<u8>(mulColorVec[2]), static_cast<u8>(mulColorVec[3])};
+  return Color{static_cast<std::uint8_t>(mulColorVec[0]), static_cast<std::uint8_t>(mulColorVec[1]), static_cast<std::uint8_t>(mulColorVec[2]), static_cast<std::uint8_t>(mulColorVec[3])};
 }
 
 

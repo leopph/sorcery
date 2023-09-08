@@ -11,7 +11,7 @@ Window gWindow;
 
 
 namespace {
-enum class KeyState : u8 {
+enum class KeyState : std::uint8_t {
   Neutral = 0,
   Down    = 1,
   Held    = 2,
@@ -24,7 +24,7 @@ KeyState gKeyboardState[256]{};
 
 
 auto CALLBACK Window::WindowProc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) noexcept -> LRESULT {
-  if (auto const instance{ reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA)) }; instance) {
+  if (auto const instance{reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA))}; instance) {
     if (instance->mEventHook && instance->mEventHook(hwnd, msg, wparam, lparam)) {
       return true;
     }
@@ -36,7 +36,7 @@ auto CALLBACK Window::WindowProc(HWND const hwnd, UINT const msg, WPARAM const w
       }
 
       case WM_SIZE: {
-        instance->mOnSizeEvent.invoke({ LOWORD(lparam), HIWORD(lparam) });
+        instance->mOnSizeEvent.invoke({LOWORD(lparam), HIWORD(lparam)});
         return 0;
       }
 
@@ -129,13 +129,13 @@ auto Window::StartUp() -> void {
   };
 
   if (!RegisterClassExW(&wx)) {
-    throw std::runtime_error{ "Failed to register window class." };
+    throw std::runtime_error{"Failed to register window class."};
   }
 
   mHwnd = CreateWindowExW(0, wx.lpszClassName, Utf8ToWide(mTitle).c_str(), WND_BORDLERLESS_STYLE, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), nullptr, nullptr, wx.hInstance, nullptr);
 
   if (!mHwnd) {
-    throw std::runtime_error{ "Failed to create window." };
+    throw std::runtime_error{"Failed to create window."};
   }
 
   SetWindowLongPtrW(mHwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
@@ -149,7 +149,7 @@ auto Window::StartUp() -> void {
   };
 
   if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
-    throw std::runtime_error{ "Failed to register raw input devices." };
+    throw std::runtime_error{"Failed to register raw input devices."};
   }
 
   ShowWindow(mHwnd, SW_SHOWNORMAL);
@@ -166,7 +166,7 @@ auto Window::ShutDown() noexcept -> void {
 
 auto Window::ProcessEvents() -> void {
   // Null out delta in case a WM_INPUT is not triggered this frame to change it
-  mMouseDelta = { 0, 0 };
+  mMouseDelta = {0, 0};
 
   MSG msg;
   while (PeekMessageW(&msg, mHwnd, 0, 0, PM_REMOVE)) {
@@ -177,7 +177,7 @@ auto Window::ProcessEvents() -> void {
   BYTE newState[256];
 
   if (!GetKeyboardState(newState)) {
-    throw std::runtime_error{ "Failed to get keyboard state." };
+    throw std::runtime_error{"Failed to get keyboard state."};
   }
 
   for (int i = 0; i < 256; i++) {
@@ -203,19 +203,19 @@ auto Window::GetHandle() const noexcept -> HWND {
 }
 
 
-auto Window::GetCurrentClientAreaSize() const noexcept -> Extent2D<u32> {
+auto Window::GetCurrentClientAreaSize() const noexcept -> Extent2D<std::uint32_t> {
   RECT rect;
   GetClientRect(mHwnd, &rect);
-  return { static_cast<u32>(rect.right), static_cast<u32>(rect.bottom) };
+  return {static_cast<std::uint32_t>(rect.right), static_cast<std::uint32_t>(rect.bottom)};
 }
 
 
-auto Window::GetWindowedClientAreaSize() const noexcept -> Extent2D<u32> {
+auto Window::GetWindowedClientAreaSize() const noexcept -> Extent2D<std::uint32_t> {
   return mWindowedClientAreaSize;
 }
 
 
-auto Window::SetWindowedClientAreaSize(Extent2D<u32> const size) noexcept -> void {
+auto Window::SetWindowedClientAreaSize(Extent2D<std::uint32_t> const size) noexcept -> void {
   mWindowedClientAreaSize = size;
 
   if (!mBorderless) {
@@ -271,7 +271,7 @@ auto Window::IsCursorLocked() const noexcept -> bool {
 }
 
 
-auto Window::LockCursor(Point2D<i32> const pos) noexcept -> void {
+auto Window::LockCursor(Point2D<std::int32_t> const pos) noexcept -> void {
   mLockedCursorPos = pos;
 }
 
@@ -296,14 +296,14 @@ auto Window::SetEventHook(std::function<bool(HWND, UINT, WPARAM, LPARAM)> hook) 
 }
 
 
-auto Window::GetCursorPosition() const noexcept -> Point2D<i32> {
+auto Window::GetCursorPosition() const noexcept -> Point2D<std::int32_t> {
   POINT pos;
   GetCursorPos(&pos);
-  return { pos.x, pos.y };
+  return {pos.x, pos.y};
 }
 
 
-auto Window::GetMouseDelta() const noexcept -> Point2D<i32> {
+auto Window::GetMouseDelta() const noexcept -> Point2D<std::int32_t> {
   return mMouseDelta;
 }
 
@@ -318,17 +318,17 @@ auto Window::SetIgnoreManagedRequests(bool const ignore) noexcept -> void {
 }
 
 
-auto Window::ScreenCoordinateToClient(Point2D<i32> const screenCoord) const noexcept -> Point2D<i32> {
-  POINT p{ screenCoord.x, screenCoord.y };
+auto Window::ScreenCoordinateToClient(Point2D<std::int32_t> const screenCoord) const noexcept -> Point2D<std::int32_t> {
+  POINT p{screenCoord.x, screenCoord.y};
   ScreenToClient(mHwnd, &p);
-  return { p.x, p.y };
+  return {p.x, p.y};
 }
 
 
-auto Window::ClientCoordinateToScreen(Point2D<i32> const clientCoord) const noexcept -> Point2D<i32> {
-  POINT p{ clientCoord.x, clientCoord.y };
+auto Window::ClientCoordinateToScreen(Point2D<std::int32_t> const clientCoord) const noexcept -> Point2D<std::int32_t> {
+  POINT p{clientCoord.x, clientCoord.y};
   ClientToScreen(mHwnd, &p);
-  return { p.x, p.y };
+  return {p.x, p.y};
 }
 
 
@@ -344,17 +344,17 @@ auto Window::SetTitle(std::string title) -> void {
 
 
 auto GetKey(Key const key) noexcept -> bool {
-  return gKeyboardState[static_cast<u8>(key)] == KeyState::Down || gKeyboardState[static_cast<u8>(key)] == KeyState::Held;
+  return gKeyboardState[static_cast<std::uint8_t>(key)] == KeyState::Down || gKeyboardState[static_cast<std::uint8_t>(key)] == KeyState::Held;
 }
 
 
 auto GetKeyDown(Key const key) noexcept -> bool {
-  return gKeyboardState[static_cast<u8>(key)] == KeyState::Down;
+  return gKeyboardState[static_cast<std::uint8_t>(key)] == KeyState::Down;
 }
 
 
 auto GetKeyUp(Key const key) noexcept -> bool {
-  return gKeyboardState[static_cast<u8>(key)] == KeyState::Up;
+  return gKeyboardState[static_cast<std::uint8_t>(key)] == KeyState::Up;
 }
 
 
@@ -366,7 +366,7 @@ auto WideToUtf8(std::wstring_view const wstr) -> std::string {
 
 
 auto Utf8ToWide(std::string_view const str) -> std::wstring {
-  std::wstring ret(static_cast<std::size_t>(MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), nullptr, 0)), wchar_t{ 0 });
+  std::wstring ret(static_cast<std::size_t>(MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), nullptr, 0)), wchar_t{0});
   MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), ret.data(), static_cast<int>(ret.size()));
   return ret;
 }

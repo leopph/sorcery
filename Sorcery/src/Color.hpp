@@ -3,16 +3,18 @@
 #include "Core.hpp"
 #include "Math.hpp"
 
+#include <cstdint>
+
 
 namespace sorcery {
 struct Color {
-  u8 red;
-  u8 green;
-  u8 blue;
-  u8 alpha;
+  std::uint8_t red;
+  std::uint8_t green;
+  std::uint8_t blue;
+  std::uint8_t alpha;
 
   Color() = default;
-  LEOPPHAPI Color(u8 red, u8 green, u8 blue, u8 alpha);
+  LEOPPHAPI Color(std::uint8_t red, std::uint8_t green, std::uint8_t blue, std::uint8_t alpha);
   LEOPPHAPI explicit Color(Vector4 const& vec);
   LEOPPHAPI explicit operator Vector4() const;
 

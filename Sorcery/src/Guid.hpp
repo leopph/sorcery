@@ -2,20 +2,21 @@
 
 #include "Core.hpp"
 
+#include <cstdint>
 #include <compare>
 #include <string>
 
 
 namespace sorcery {
 class Guid {
-  u64 mLowBits{0};
-  u64 mHighBits{0};
+  std::uint64_t mLowBits{0};
+  std::uint64_t mHighBits{0};
 
 public:
   [[nodiscard]] LEOPPHAPI static auto Invalid() noexcept -> Guid;
 
   Guid() = default;
-  LEOPPHAPI Guid(u64 lowBits, u64 highBits);
+  LEOPPHAPI Guid(std::uint64_t lowBits, std::uint64_t highBits);
 
   [[nodiscard]] LEOPPHAPI static auto Generate() -> Guid;
   [[nodiscard]] LEOPPHAPI static auto Parse(std::string_view str) -> Guid;

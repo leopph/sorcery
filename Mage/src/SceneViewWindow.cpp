@@ -15,7 +15,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
   if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse)) {
     ImGui::PopStyleVar();
     auto const contentRegionSize{ImGui::GetContentRegionAvail()};
-    Extent2D const desiredRes{static_cast<u32>(contentRegionSize.x), static_cast<u32>(contentRegionSize.y)};
+    Extent2D const desiredRes{static_cast<std::uint32_t>(contentRegionSize.x), static_cast<std::uint32_t>(contentRegionSize.y)};
 
     if (!mRenderTarget || mRenderTarget->GetDesc().width != desiredRes.width || mRenderTarget->GetDesc().height != desiredRes.height) {
       mRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{

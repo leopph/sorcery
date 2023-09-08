@@ -145,7 +145,7 @@ class Renderer::Impl {
   auto ClearGizmoDrawQueue() noexcept -> void;
   auto ReleaseTempRenderTargets() noexcept -> void;
 
-  static auto OnWindowSize(Impl* self, Extent2D<u32> size) -> void;
+  static auto OnWindowSize(Impl* self, Extent2D<std::uint32_t> size) -> void;
 
 public:
   // LIFETIME FUNCTIONS

@@ -11,7 +11,7 @@ auto Guid::Invalid() noexcept -> Guid {
 }
 
 
-Guid::Guid(u64 const lowBits, u64 const highBits) :
+Guid::Guid(std::uint64_t const lowBits, std::uint64_t const highBits) :
   mLowBits{lowBits},
   mHighBits{highBits} { }
 

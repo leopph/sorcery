@@ -16,34 +16,34 @@
 
 
 namespace sorcery {
-enum class Key : u8;
+enum class Key : int;
 
 
 class Window {
   static auto CALLBACK WindowProc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) noexcept -> LRESULT;
   auto ApplyClientAreaSize() noexcept -> void;
 
-  wchar_t const constexpr static* WND_CLASS_NAME{ L"LeopphEngine" };
-  DWORD constexpr static WND_WINDOWED_STYLE{ WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME };
-  DWORD constexpr static WND_BORDLERLESS_STYLE{ WS_POPUP };
-  HCURSOR const inline static DEFAULT_CURSOR{ LoadCursorW(nullptr, IDC_ARROW) };
+  wchar_t const constexpr static* WND_CLASS_NAME{L"LeopphEngine"};
+  DWORD constexpr static WND_WINDOWED_STYLE{WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME};
+  DWORD constexpr static WND_BORDLERLESS_STYLE{WS_POPUP};
+  HCURSOR const inline static DEFAULT_CURSOR{LoadCursorW(nullptr, IDC_ARROW)};
 
-  HWND mHwnd{ nullptr };
-  bool mQuitSignaled{ false };
-  DWORD mCurrentStyle{ WND_BORDLERLESS_STYLE };
-  bool mMinimizeOnBorderlessFocusLoss{ false };
-  bool mBorderless{ true };
-  Extent2D<u32> mWindowedClientAreaSize{ .width = 1280, .height = 720 };
-  Event<Extent2D<u32>> mOnSizeEvent;
+  HWND mHwnd{nullptr};
+  bool mQuitSignaled{false};
+  DWORD mCurrentStyle{WND_BORDLERLESS_STYLE};
+  bool mMinimizeOnBorderlessFocusLoss{false};
+  bool mBorderless{true};
+  Extent2D<std::uint32_t> mWindowedClientAreaSize{.width = 1280, .height = 720};
+  Event<Extent2D<std::uint32_t>> mOnSizeEvent;
   Event<> mOnFocusGainEvent;
   Event<> mOnFocusLossEvent;
-  Point2D<i32> mMouseDelta{ 0, 0 };
-  std::optional<Point2D<i32>> mLockedCursorPos;
-  bool mHideCursor{ false };
-  bool mInFocus{ true };
-  std::function<bool(HWND, UINT, WPARAM, LPARAM)> mEventHook{ nullptr };
-  bool mIgnoreManagedRequests{ false };
-  std::string mTitle{ "LeopphEngine" };
+  Point2D<std::int32_t> mMouseDelta{0, 0};
+  std::optional<Point2D<std::int32_t>> mLockedCursorPos;
+  bool mHideCursor{false};
+  bool mInFocus{true};
+  std::function<bool(HWND, UINT, WPARAM, LPARAM)> mEventHook{nullptr};
+  bool mIgnoreManagedRequests{false};
+  std::string mTitle{"LeopphEngine"};
 
 public:
   Window() noexcept = default;
@@ -52,17 +52,17 @@ public:
   LEOPPHAPI auto StartUp() -> void;
   LEOPPHAPI auto ShutDown() noexcept -> void;
 
-  GuardedEventReference<Extent2D<u32>> OnWindowSize{ mOnSizeEvent };
-  GuardedEventReference<> OnWindowFocusGain{ mOnFocusGainEvent };
-  GuardedEventReference<> OnWindowFocusLoss{ mOnFocusLossEvent };
+  GuardedEventReference<Extent2D<std::uint32_t>> OnWindowSize{mOnSizeEvent};
+  GuardedEventReference<> OnWindowFocusGain{mOnFocusGainEvent};
+  GuardedEventReference<> OnWindowFocusLoss{mOnFocusLossEvent};
 
   LEOPPHAPI auto ProcessEvents() -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetHandle() const noexcept -> HWND;
 
-  [[nodiscard]] LEOPPHAPI auto GetCurrentClientAreaSize() const noexcept -> Extent2D<u32>;
-  [[nodiscard]] LEOPPHAPI auto GetWindowedClientAreaSize() const noexcept -> Extent2D<u32>;
-  LEOPPHAPI auto SetWindowedClientAreaSize(Extent2D<u32> size) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetCurrentClientAreaSize() const noexcept -> Extent2D<std::uint32_t>;
+  [[nodiscard]] LEOPPHAPI auto GetWindowedClientAreaSize() const noexcept -> Extent2D<std::uint32_t>;
+  LEOPPHAPI auto SetWindowedClientAreaSize(Extent2D<std::uint32_t> size) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto IsBorderless() const noexcept -> bool;
   LEOPPHAPI auto SetBorderless(bool borderless) noexcept -> void;
@@ -74,7 +74,7 @@ public:
   LEOPPHAPI auto SetQuitSignal(bool quit) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto IsCursorLocked() const noexcept -> bool;
-  LEOPPHAPI auto LockCursor(Point2D<i32> pos) noexcept -> void;
+  LEOPPHAPI auto LockCursor(Point2D<std::int32_t> pos) noexcept -> void;
   LEOPPHAPI auto UnlockCursor() noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto IsCursorHidden() const noexcept -> bool;
@@ -82,14 +82,14 @@ public:
 
   LEOPPHAPI auto SetEventHook(std::function<bool(HWND, UINT, WPARAM, LPARAM)> handler) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetCursorPosition() const noexcept -> Point2D<i32>;
-  [[nodiscard]] LEOPPHAPI auto GetMouseDelta() const noexcept -> Point2D<i32>;
+  [[nodiscard]] LEOPPHAPI auto GetCursorPosition() const noexcept -> Point2D<std::int32_t>;
+  [[nodiscard]] LEOPPHAPI auto GetMouseDelta() const noexcept -> Point2D<std::int32_t>;
 
   [[nodiscard]] LEOPPHAPI auto IsIgnoringManagedRequests() const noexcept -> bool;
   LEOPPHAPI auto SetIgnoreManagedRequests(bool ignore) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto ScreenCoordinateToClient(Point2D<i32> screenCoord) const noexcept -> Point2D<i32>;
-  [[nodiscard]] LEOPPHAPI auto ClientCoordinateToScreen(Point2D<i32> clientCoord) const noexcept -> Point2D<i32>;
+  [[nodiscard]] LEOPPHAPI auto ScreenCoordinateToClient(Point2D<std::int32_t> screenCoord) const noexcept -> Point2D<std::int32_t>;
+  [[nodiscard]] LEOPPHAPI auto ClientCoordinateToScreen(Point2D<std::int32_t> clientCoord) const noexcept -> Point2D<std::int32_t>;
 
   [[nodiscard]] LEOPPHAPI auto GetTitle() const noexcept -> std::string_view;
   LEOPPHAPI auto SetTitle(std::string title) -> void;
@@ -158,7 +158,7 @@ auto IsWindowCursorLocked() noexcept -> int {
 
 
 template<Window& Instance>
-auto LockCursor(Point2D<i32> const pos) noexcept -> void {
+auto LockCursor(Point2D<std::int32_t> const pos) noexcept -> void {
   Instance.LockCursor(pos);
 }
 
@@ -182,7 +182,7 @@ auto SetWindowCursorHiding(int const hide) noexcept -> void {
 }
 
 
-enum class Key : u8 {
+enum class Key : int {
   LeftMouseButton   = 0x01,
   RightMouseButton  = 0x02,
   Cancel            = 0x03,

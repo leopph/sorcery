@@ -11,25 +11,12 @@
 #endif
 
 
-#include <cstdint>
-
-
 namespace sorcery {
-using i8 = std::int8_t;
-using u8 = std::uint8_t;
-using i16 = std::int16_t;
-using u16 = std::uint16_t;
-using i32 = std::int32_t;
-using u32 = std::uint32_t;
-using i64 = std::int64_t;
-using u64 = std::uint64_t;
-
-// If building for Windows x86-64
-#if defined(_MSC_FULL_VER) && defined(_M_X64)
+static_assert(sizeof(float) == 4);
 using f32 = float;
-using f64 = double;
 
-constexpr auto CACHE_LINE_SIZE = 64;
+static_assert(sizeof(double) == 8);
+using f64 = double;
 
 template<typename T>
 using ObserverPtr = T*;
@@ -39,7 +26,4 @@ using NotNull = T;
 
 template<typename T>
 using MaybeNull = T;
-#else
-#error "Only Windows x86-64 is supported."
-#endif
 }

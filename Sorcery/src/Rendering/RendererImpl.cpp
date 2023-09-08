@@ -435,7 +435,7 @@ auto Renderer::Impl::ReleaseTempRenderTargets() noexcept -> void {
 }
 
 
-auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<u32> const size) -> void {
+auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<std::uint32_t> const size) -> void {
   self->mSwapChain->Resize(size.width, size.height);
 
   if (size.width != 0 && size.height != 0) {

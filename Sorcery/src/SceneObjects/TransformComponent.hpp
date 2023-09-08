@@ -5,7 +5,7 @@
 
 
 namespace sorcery {
-enum class Space : u8 {
+enum class Space : int {
   World = 0,
   Local = 1
 };
