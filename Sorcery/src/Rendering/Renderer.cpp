@@ -249,6 +249,7 @@ class Renderer::Impl {
   MSAAMode mMsaaMode{MSAAMode::X8};
 
   std::unordered_map<std::thread::id, ComPtr<ID3D11DeviceContext>> mPerThreadCtx;
+  std::mutex mPerThreadCtxMutex;
 
 
   struct TempRenderTargetRecord {
@@ -1797,6 +1798,8 @@ auto Renderer::Impl::GetDevice() const noexcept -> ID3D11Device* {
 
 auto Renderer::Impl::GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext> {
   auto const thisThreadId{std::this_thread::get_id()};
+
+  std::unique_lock const lock{mPerThreadCtxMutex};
 
   if (auto const it{mPerThreadCtx.find(thisThreadId)}; it != std::end(mPerThreadCtx)) {
     return it->second.Get();
