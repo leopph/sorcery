@@ -195,20 +195,20 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
 }
 
 
-auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
-  mImmediateContext->OMSetRenderTargets(0, nullptr, atlas.GetDsv());
-  mImmediateContext->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
+auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11DeviceContext> const ctx) -> void {
+  ctx->OMSetRenderTargets(0, nullptr, atlas.GetDsv());
+  ctx->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
 
-  mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-  mImmediateContext->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
+  ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
+  ctx->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
 
-  mImmediateContext->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
+  ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
-  mImmediateContext->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForReversedDepth(), 0);
+  ctx->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForReversedDepth(), 0);
 
-  mImmediateContext->RSSetState(mShadowPassRs.Get());
+  ctx->RSSetState(mShadowPassRs.Get());
 
-  mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
+  ctx->IASetInputLayout(mAllAttribsIl.Get());
 
   auto const cellSizeNorm{atlas.GetNormalizedElementSize()};
 
@@ -230,13 +230,13 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
           .MaxDepth = 1
         };
 
-        mImmediateContext->RSSetViewports(1, &viewport);
+        ctx->RSSetViewports(1, &viewport);
 
         D3D11_MAPPED_SUBRESOURCE mapped;
-        mImmediateContext->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+        ctx->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
         auto const depthOnlyCbData{static_cast<DepthOnlyCB*>(mapped.pData)};
         depthOnlyCbData->gDepthOnlyViewProjMtx = subcell->shadowViewProjMtx;
-        mImmediateContext->Unmap(mDepthOnlyCb.Get(), 0);
+        ctx->Unmap(mDepthOnlyCb.Get(), 0);
 
         Frustum const shadowFrustumWS{subcell->shadowViewProjMtx};
 
@@ -246,18 +246,18 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
         };
 
         CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
-        DrawMeshes(perLightVisibility.staticMeshIndices);
+        DrawMeshes(perLightVisibility.staticMeshIndices, ctx);
       }
     }
   }
 }
 
 
-auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const culledIndices) noexcept -> void {
-  mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const culledIndices, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
+  ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-  mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
-  mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
+  ctx->VSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
+  ctx->PSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
 
   for (auto const& [meshIdx, submeshIdx] : culledIndices) {
     auto const component{mStaticMeshComponents[meshIdx]};
@@ -270,15 +270,15 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
     std::array const vertexBuffers{mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get(), mesh->GetTangentBuffer().Get()};
     UINT constexpr strides[]{sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3)};
     UINT constexpr offsets[]{0, 0, 0, 0};
-    mImmediateContext->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
-    mImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), mesh->GetIndexFormat(), 0);
+    ctx->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
+    ctx->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), mesh->GetIndexFormat(), 0);
 
     D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
-    mImmediateContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
+    ctx->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
     auto const perDrawCbData{static_cast<PerDrawCB*>(mappedPerDrawCb.pData)};
     perDrawCbData->gPerDrawConstants.modelMtx = component->GetEntity().GetTransform().GetModelMatrix();
     perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{component->GetEntity().GetTransform().GetNormalMatrix()};
-    mImmediateContext->Unmap(mPerDrawCb.Get(), 0);
+    ctx->Unmap(mPerDrawCb.Get(), 0);
 
     auto const submesh{mesh->GetSubMeshes()[submeshIdx]};
     auto const mtl{component->GetMaterials()[submesh.materialIndex]};
@@ -288,8 +288,8 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
     }
 
     auto const mtlBuffer{mtl->GetBuffer()};
-    mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
-    mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+    ctx->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+    ctx->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
 
     auto const albedoSrv{
       [mtl] {
@@ -297,7 +297,7 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
         return albedoMap ? albedoMap->GetSrv() : nullptr;
       }()
     };
-    mImmediateContext->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
+    ctx->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
 
     auto const metallicSrv{
       [mtl] {
@@ -305,7 +305,7 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
         return metallicMap ? metallicMap->GetSrv() : nullptr;
       }()
     };
-    mImmediateContext->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
+    ctx->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
 
     auto const roughnessSrv{
       [mtl] {
@@ -313,7 +313,7 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
         return roughnessMap ? roughnessMap->GetSrv() : nullptr;
       }()
     };
-    mImmediateContext->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
+    ctx->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
 
     auto const aoSrv{
       [mtl] {
@@ -321,7 +321,7 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
         return aoMap ? aoMap->GetSrv() : nullptr;
       }()
     };
-    mImmediateContext->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
+    ctx->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
 
     auto const normalSrv{
       [&mtl] {
@@ -329,7 +329,7 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
         return normalMap ? normalMap->GetSrv() : nullptr;
       }()
     };
-    mImmediateContext->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
+    ctx->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
 
     auto const opacitySrv{
       [&mtl] {
@@ -337,87 +337,87 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
         return opacityMask ? opacityMask->GetSrv() : nullptr;
       }()
     };
-    mImmediateContext->PSSetShaderResources(RES_SLOT_OPACITY_MASK, 1, &opacitySrv);
+    ctx->PSSetShaderResources(RES_SLOT_OPACITY_MASK, 1, &opacitySrv);
 
 
-    mImmediateContext->DrawIndexed(submesh.indexCount, submesh.firstIndex, submesh.baseVertex);
+    ctx->DrawIndexed(submesh.indexCount, submesh.firstIndex, submesh.baseVertex);
   }
 }
 
 
-auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void {
+auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void {
   if (mSkyboxes.empty()) {
     return;
   }
 
   D3D11_MAPPED_SUBRESOURCE mappedSkyboxCB;
-  mImmediateContext->Map(mSkyboxCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSkyboxCB);
+  ctx->Map(mSkyboxCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSkyboxCB);
   auto const skyboxCBData{static_cast<SkyboxCB*>(mappedSkyboxCB.pData)};
   skyboxCBData->skyboxViewProjMtx = Matrix4{Matrix3{camViewMtx}} * camProjMtx;
-  mImmediateContext->Unmap(mSkyboxCb.Get(), 0);
+  ctx->Unmap(mSkyboxCb.Get(), 0);
 
   ID3D11Buffer* const vertexBuffer{mCubeMesh->GetPositionBuffer().Get()};
   UINT constexpr stride{sizeof(Vector3)};
   UINT constexpr offset{0};
-  mImmediateContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-  mImmediateContext->IASetIndexBuffer(mCubeMesh->GetIndexBuffer().Get(), mCubeMesh->GetIndexFormat(), 0);
-  mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
-  mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  ctx->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+  ctx->IASetIndexBuffer(mCubeMesh->GetIndexBuffer().Get(), mCubeMesh->GetIndexFormat(), 0);
+  ctx->IASetInputLayout(mAllAttribsIl.Get());
+  ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-  mImmediateContext->VSSetShader(mSkyboxVs.Get(), nullptr, 0);
-  mImmediateContext->PSSetShader(mSkyboxPs.Get(), nullptr, 0);
+  ctx->VSSetShader(mSkyboxVs.Get(), nullptr, 0);
+  ctx->PSSetShader(mSkyboxPs.Get(), nullptr, 0);
 
   auto const cubemapSrv{mSkyboxes[0]->GetCubemap()->GetSrv()};
-  mImmediateContext->PSSetShaderResources(RES_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
+  ctx->PSSetShaderResources(RES_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
 
   auto const cb{mSkyboxCb.Get()};
-  mImmediateContext->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
+  ctx->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
 
-  mImmediateContext->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
-  mImmediateContext->RSSetState(mSkyboxPassRs.Get());
+  ctx->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
+  ctx->RSSetState(mSkyboxPassRs.Get());
 
-  mImmediateContext->DrawIndexed(clamp_cast<UINT>(CUBE_INDICES.size()), 0, 0);
+  ctx->DrawIndexed(clamp_cast<UINT>(CUBE_INDICES.size()), 0, 0);
 
   // Restore state
-  mImmediateContext->OMSetDepthStencilState(nullptr, 0);
-  mImmediateContext->RSSetState(nullptr);
+  ctx->OMSetDepthStencilState(nullptr, 0);
+  ctx->RSSetState(nullptr);
 }
 
 
-auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst) noexcept -> void {
+auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
   // Back up old views to restore later.
 
   ComPtr<ID3D11RenderTargetView> rtvBackup;
   ComPtr<ID3D11DepthStencilView> dsvBackup;
   ComPtr<ID3D11ShaderResourceView> srvBackup;
-  mImmediateContext->OMGetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.GetAddressOf());
-  mImmediateContext->PSGetShaderResources(0, 1, srvBackup.GetAddressOf());
+  ctx->OMGetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.GetAddressOf());
+  ctx->PSGetShaderResources(0, 1, srvBackup.GetAddressOf());
 
   // Do the step
 
   D3D11_MAPPED_SUBRESOURCE mappedCb;
-  mImmediateContext->Map(mPostProcessCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb);
+  ctx->Map(mPostProcessCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb);
   auto const cbData{static_cast<PostProcessCB*>(mappedCb.pData)};
   cbData->invGamma = mInvGamma;
-  mImmediateContext->Unmap(mPostProcessCb.Get(), 0);
+  ctx->Unmap(mPostProcessCb.Get(), 0);
 
-  mImmediateContext->VSSetShader(mScreenVs.Get(), nullptr, 0);
-  mImmediateContext->PSSetShader(mPostProcessPs.Get(), nullptr, 0);
+  ctx->VSSetShader(mScreenVs.Get(), nullptr, 0);
+  ctx->PSSetShader(mPostProcessPs.Get(), nullptr, 0);
 
-  mImmediateContext->OMSetRenderTargets(1, &dst, nullptr);
+  ctx->OMSetRenderTargets(1, &dst, nullptr);
 
-  mImmediateContext->PSSetConstantBuffers(CB_SLOT_POST_PROCESS, 1, mPostProcessCb.GetAddressOf());
-  mImmediateContext->PSSetShaderResources(RES_SLOT_POST_PROCESS_SRC, 1, &src);
+  ctx->PSSetConstantBuffers(CB_SLOT_POST_PROCESS, 1, mPostProcessCb.GetAddressOf());
+  ctx->PSSetShaderResources(RES_SLOT_POST_PROCESS_SRC, 1, &src);
 
-  mImmediateContext->IASetInputLayout(nullptr);
-  mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  ctx->IASetInputLayout(nullptr);
+  ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-  mImmediateContext->Draw(6, 0);
+  ctx->Draw(6, 0);
 
   // Restore old view bindings to that we don't leave any input/output conflicts behind.
 
-  mImmediateContext->PSSetShaderResources(RES_SLOT_POST_PROCESS_SRC, 1, srvBackup.GetAddressOf());
-  mImmediateContext->OMSetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.Get());
+  ctx->PSSetShaderResources(RES_SLOT_POST_PROCESS_SRC, 1, srvBackup.GetAddressOf());
+  ctx->OMSetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.Get());
 }
 
 
@@ -496,9 +496,9 @@ auto Renderer::Impl::StartUp() -> void {
 
   mSwapChain = std::make_unique<SwapChain>(mDevice, dxgiFactory2.Get());
 
-  mLightBuffer = std::make_unique<StructuredBuffer<ShaderLight>>(mDevice, mImmediateContext);
-  mGizmoColorBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice, mImmediateContext);
-  mLineGizmoVertexDataBuffer = std::make_unique<StructuredBuffer<ShaderLineGizmoVertexData>>(mDevice, mImmediateContext);
+  mLightBuffer = std::make_unique<StructuredBuffer<ShaderLight>>(mDevice);
+  mGizmoColorBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice);
+  mLineGizmoVertexDataBuffer = std::make_unique<StructuredBuffer<ShaderLineGizmoVertexData>>(mDevice);
   mMainRt = std::make_unique<RenderTarget>(RenderTarget::Desc{
     .width = gWindow.GetCurrentClientAreaSize().width,
     .height = gWindow.GetCurrentClientAreaSize().height,
@@ -1085,6 +1085,8 @@ auto Renderer::Impl::ShutDown() -> void {
 
 
 auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt) -> void {
+  auto const ctx{GetThreadContext()};
+
   auto const rtWidth{rt ? rt->GetDesc().width : gWindow.GetCurrentClientAreaSize().width};
   auto const rtHeight{rt ? rt->GetDesc().height : gWindow.GetCurrentClientAreaSize().height};
   auto const rtAspect{static_cast<float>(rtWidth) / static_cast<float>(rtHeight)};
@@ -1102,7 +1104,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   auto const& hdrRt{GetTemporaryRenderTarget(hdrRtDesc)};
 
   FLOAT constexpr clearColor[]{0, 0, 0, 1};
-  mImmediateContext->ClearRenderTargetView(hdrRt.GetRtv(), clearColor);
+  ctx->ClearRenderTargetView(hdrRt.GetRtv(), clearColor);
 
 
   D3D11_VIEWPORT const viewport{
@@ -1114,17 +1116,17 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     .MaxDepth = 1
   };
 
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, GetShadowPcfSampler().GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, GetShadowPointSampler().GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_AF16, 1, mAf16Ss.GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_AF8, 1, mAf8Ss.GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_AF4, 1, mAf4Ss.GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_TRI, 1, mTrilinearSs.GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_BI, 1, mBilinearSs.GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_POINT, 1, mPointSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, GetShadowPcfSampler().GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, GetShadowPointSampler().GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF16, 1, mAf16Ss.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF8, 1, mAf8Ss.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF4, 1, mAf4Ss.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_TRI, 1, mTrilinearSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_BI, 1, mBilinearSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_POINT, 1, mPointSs.GetAddressOf());
 
   D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
-  if (FAILED(mImmediateContext->Map(mPerFrameCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB))) {
+  if (FAILED(ctx->Map(mPerFrameCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB))) {
     throw std::runtime_error{"Failed to map per frame CB."};
   }
 
@@ -1134,10 +1136,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   perFrameCbData->gPerFrameConstants.shadowFilteringMode = static_cast<int>(mShadowFilteringMode);
   perFrameCbData->gPerFrameConstants.ambientLightColor = mAmbientLightColor;
 
-  mImmediateContext->Unmap(mPerFrameCb.Get(), 0);
+  ctx->Unmap(mPerFrameCb.Get(), 0);
 
-  mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
-  mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
+  ctx->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
+  ctx->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
 
   auto const camPos{cam.GetPosition()};
   auto const camViewMtx{cam.CalculateViewMatrix()};
@@ -1156,10 +1158,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   auto const shadowCascadeBoundaries{CalculateCameraShadowCascadeBoundaries(cam)};
 
   ID3D11ShaderResourceView* const nullSrv{nullptr};
-  mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
-  mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, &nullSrv);
-  mImmediateContext->PSSetShader(nullptr, nullptr, 0);
-  mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
+  ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, &nullSrv);
+  ctx->PSSetShader(nullptr, nullptr, 0);
+  ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   std::array<Matrix4, MAX_CASCADE_COUNT> shadowViewProjMatrices;
 
@@ -1282,19 +1284,19 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
         shadowViewProjMatrices[cascadeIdx] = Matrix4::LookToLH(cascadeCenterWS, light->GetDirection(), Vector3::Up()) * shadowProjMtx;
 
-        mImmediateContext->OMSetRenderTargets(0, nullptr, mDirShadowMapArr->GetDsv(cascadeIdx));
-        mImmediateContext->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
+        ctx->OMSetRenderTargets(0, nullptr, mDirShadowMapArr->GetDsv(cascadeIdx));
+        ctx->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
 
-        mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-        mImmediateContext->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
+        ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
+        ctx->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
 
-        mImmediateContext->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
+        ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
-        mImmediateContext->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForReversedDepth(), 0);
+        ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForReversedDepth(), 0);
 
-        mImmediateContext->RSSetState(mShadowPassRs.Get());
+        ctx->RSSetState(mShadowPassRs.Get());
 
-        mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
+        ctx->IASetInputLayout(mAllAttribsIl.Get());
 
         D3D11_VIEWPORT const shadowViewport{
           .TopLeftX = 0,
@@ -1305,13 +1307,13 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
           .MaxDepth = 1
         };
 
-        mImmediateContext->RSSetViewports(1, &shadowViewport);
+        ctx->RSSetViewports(1, &shadowViewport);
 
         D3D11_MAPPED_SUBRESOURCE mapped;
-        mImmediateContext->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+        ctx->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
         auto const depthOnlyCbData{static_cast<DepthOnlyCB*>(mapped.pData)};
         depthOnlyCbData->gDepthOnlyViewProjMtx = shadowViewProjMatrices[cascadeIdx];
-        mImmediateContext->Unmap(mDepthOnlyCb.Get(), 0);
+        ctx->Unmap(mDepthOnlyCb.Get(), 0);
 
         Frustum const shadowFrustumWS{shadowViewProjMatrices[cascadeIdx]};
 
@@ -1321,7 +1323,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
         };
 
         CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
-        DrawMeshes(perLightVisibility.staticMeshIndices);
+        DrawMeshes(perLightVisibility.staticMeshIndices, ctx);
       }
 
       break;
@@ -1332,40 +1334,40 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   //DrawShadowMaps(*mDirectionalShadowAtlas);
 
   mPunctualShadowAtlas->Update(mLights, visibility, cam, camViewProjMtx, mShadowDistance);
-  DrawShadowMaps(*mPunctualShadowAtlas);
+  DrawShadowMaps(*mPunctualShadowAtlas, ctx);
 
   CullStaticMeshComponents(camFrustWS, visibility);
 
   // Depth pre-pass
 
-  mImmediateContext->OMSetRenderTargets(0, nullptr, hdrRt.GetDsv());
-  mImmediateContext->OMSetDepthStencilState(mDepthTestLessWriteDss.Get(), 0);
+  ctx->OMSetRenderTargets(0, nullptr, hdrRt.GetDsv());
+  ctx->OMSetDepthStencilState(mDepthTestLessWriteDss.Get(), 0);
 
-  mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-  mImmediateContext->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
+  ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
+  ctx->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
 
-  mImmediateContext->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
+  ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
-  mImmediateContext->RSSetViewports(1, &viewport);
-  mImmediateContext->RSSetState(nullptr);
+  ctx->RSSetViewports(1, &viewport);
+  ctx->RSSetState(nullptr);
 
-  mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
+  ctx->IASetInputLayout(mAllAttribsIl.Get());
 
-  mImmediateContext->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+  ctx->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
   D3D11_MAPPED_SUBRESOURCE mappedCb;
-  if (FAILED(mImmediateContext->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb))) {
+  if (FAILED(ctx->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb))) {
     throw std::runtime_error{"Failed to map CB for depth pre-pass."};
   }
   static_cast<DepthOnlyCB*>(mappedCb.pData)->gDepthOnlyViewProjMtx = camViewProjMtx;
-  mImmediateContext->Unmap(mDepthOnlyCb.Get(), 0);
+  ctx->Unmap(mDepthOnlyCb.Get(), 0);
 
-  DrawMeshes(visibility.staticMeshIndices);
+  DrawMeshes(visibility.staticMeshIndices, ctx);
 
   // Full forward lighting pass
 
   D3D11_MAPPED_SUBRESOURCE mappedPerCamCB;
-  if (FAILED(mImmediateContext->Map(mPerCamCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {
+  if (FAILED(ctx->Map(mPerCamCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {
     throw std::runtime_error{"Failed to map per camera CB."};
   }
 
@@ -1377,11 +1379,11 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     perCamCbData->gPerCamConstants.shadowCascadeSplitDistances[i] = shadowCascadeBoundaries[i].farClip;
   }
 
-  mImmediateContext->Unmap(mPerCamCb.Get(), 0);
+  ctx->Unmap(mPerCamCb.Get(), 0);
 
   auto const lightCount{std::ssize(visibility.lightIndices)};
   mLightBuffer->Resize(static_cast<int>(lightCount));
-  auto const lightBufferData{mLightBuffer->Map()};
+  auto const lightBufferData{mLightBuffer->Map(ctx)};
 
   for (int i = 0; i < lightCount; i++) {
     lightBufferData[i].color = mLights[visibility.lightIndices[i]]->GetColor();
@@ -1417,27 +1419,27 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   //mDirectionalShadowAtlas->SetLookUpInfo(lightBufferData);
   mPunctualShadowAtlas->SetLookUpInfo(lightBufferData);
 
-  mLightBuffer->Unmap();
+  mLightBuffer->Unmap(ctx);
 
-  mImmediateContext->VSSetShader(mMeshVs.Get(), nullptr, 0);
-  mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
+  ctx->VSSetShader(mMeshVs.Get(), nullptr, 0);
+  ctx->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
 
-  mImmediateContext->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
-  mImmediateContext->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
+  ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
+  ctx->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
 
-  mImmediateContext->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
-  mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
-  mImmediateContext->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
-  mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{mDirShadowMapArr->GetSrv()}.data());
-  mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
+  ctx->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
+  ctx->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
+  ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{mDirShadowMapArr->GetSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
 
-  mImmediateContext->RSSetViewports(1, &viewport);
-  mImmediateContext->RSSetState(nullptr);
+  ctx->RSSetViewports(1, &viewport);
+  ctx->RSSetState(nullptr);
 
-  mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
+  ctx->IASetInputLayout(mAllAttribsIl.Get());
 
-  DrawMeshes(visibility.staticMeshIndices);
-  DrawSkybox(camViewMtx, camProjMtx);
+  DrawMeshes(visibility.staticMeshIndices, ctx);
+  DrawSkybox(camViewMtx, camProjMtx, ctx);
 
   RenderTarget const* postProcessRt;
 
@@ -1447,12 +1449,18 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     auto resolveHdrRtDesc{hdrRtDesc};
     resolveHdrRtDesc.sampleCount = 1;
     auto const& resolveHdrRt{GetTemporaryRenderTarget(resolveHdrRtDesc)};
-    mImmediateContext->ResolveSubresource(resolveHdrRt.GetColorTexture(), 0, hdrRt.GetColorTexture(), 0, *hdrRtDesc.colorFormat);
+    ctx->ResolveSubresource(resolveHdrRt.GetColorTexture(), 0, hdrRt.GetColorTexture(), 0, *hdrRtDesc.colorFormat);
     postProcessRt = std::addressof(resolveHdrRt);
   }
 
-  mImmediateContext->RSSetViewports(1, &viewport);
-  PostProcess(postProcessRt->GetColorSrv(), rt ? rt->GetRtv() : mSwapChain->GetRtv());
+  ctx->RSSetViewports(1, &viewport);
+  PostProcess(postProcessRt->GetColorSrv(), rt ? rt->GetRtv() : mSwapChain->GetRtv(), ctx);
+
+  ComPtr<ID3D11CommandList> cmdList;
+  [[maybe_unused]] auto const hr{ctx->FinishCommandList(FALSE, cmdList.GetAddressOf())};
+  assert(SUCCEEDED(hr));
+
+  ExecuteCommandList(cmdList.Get());
 }
 
 
@@ -1470,29 +1478,33 @@ auto Renderer::Impl::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to
 
 
 auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
-  mImmediateContext->OMSetRenderTargets(1, std::array{
-    rt
-      ? rt->GetRtv()
-      : mSwapChain->GetRtv()
-  }.data(), nullptr);
+  auto const ctx{GetThreadContext()};
+
+  ctx->OMSetRenderTargets(1, std::array{rt ? rt->GetRtv() : mSwapChain->GetRtv()}.data(), nullptr);
 
   mGizmoColorBuffer->Resize(static_cast<int>(std::ssize(mGizmoColors)));
-  std::ranges::copy(mGizmoColors, std::begin(mGizmoColorBuffer->Map()));
-  mGizmoColorBuffer->Unmap();
+  std::ranges::copy(mGizmoColors, std::begin(mGizmoColorBuffer->Map(ctx)));
+  mGizmoColorBuffer->Unmap(ctx);
 
   mLineGizmoVertexDataBuffer->Resize(static_cast<int>(std::ssize(mLineGizmoVertexData)));
-  std::ranges::copy(mLineGizmoVertexData, std::begin(mLineGizmoVertexDataBuffer->Map()));
-  mLineGizmoVertexDataBuffer->Unmap();
+  std::ranges::copy(mLineGizmoVertexData, std::begin(mLineGizmoVertexDataBuffer->Map(ctx)));
+  mLineGizmoVertexDataBuffer->Unmap(ctx);
 
-  mImmediateContext->PSSetShader(mGizmoPs.Get(), nullptr, 0);
-  mImmediateContext->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, std::array{mGizmoColorBuffer->GetSrv()}.data());
+  ctx->PSSetShader(mGizmoPs.Get(), nullptr, 0);
+  ctx->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, std::array{mGizmoColorBuffer->GetSrv()}.data());
 
   if (!mLineGizmoVertexData.empty()) {
-    mImmediateContext->VSSetShader(mLineGizmoVs.Get(), nullptr, 0);
-    mImmediateContext->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1, std::array{mLineGizmoVertexDataBuffer->GetSrv()}.data());
-    mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-    mImmediateContext->DrawInstanced(2, static_cast<UINT>(mLineGizmoVertexData.size()), 0, 0);
+    ctx->VSSetShader(mLineGizmoVs.Get(), nullptr, 0);
+    ctx->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1, std::array{mLineGizmoVertexDataBuffer->GetSrv()}.data());
+    ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+    ctx->DrawInstanced(2, static_cast<UINT>(mLineGizmoVertexData.size()), 0, 0);
   }
+
+  ComPtr<ID3D11CommandList> cmdList;
+  [[maybe_unused]] auto const hr{ctx->FinishCommandList(FALSE, cmdList.GetAddressOf())};
+  assert(SUCCEEDED(hr));
+
+  ExecuteCommandList(cmdList.Get());
 }
 
 

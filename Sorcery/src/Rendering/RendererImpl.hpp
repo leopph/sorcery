@@ -137,10 +137,10 @@ class Renderer::Impl {
   auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) const -> void;
   auto CullLights(Frustum const& frustumWS, Visibility& visibility) const -> void;
 
-  auto DrawShadowMaps(ShadowAtlas const& atlas) -> void;
-  auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> culledIndices) noexcept -> void;
-  auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
-  auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) noexcept -> void;
+  auto DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11DeviceContext> ctx) -> void;
+  auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> culledIndices, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
+  auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
   auto ReleaseTempRenderTargets() noexcept -> void;

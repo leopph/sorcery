@@ -6,6 +6,7 @@
 #include <span>
 #include <wrl/client.h>
 
+#include <cassert>
 #include <stdexcept>
 
 
@@ -15,25 +16,25 @@ class StructuredBuffer {
   static_assert(sizeof(T) % 16 == 0, "StructuredBuffer contained type must have a size divisible by 16.");
 
   Microsoft::WRL::ComPtr<ID3D11Device> mDevice;
-  Microsoft::WRL::ComPtr<ID3D11DeviceContext> mContext;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mBuffer;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
-  T* mMappedPtr{ nullptr };
-  int mCapacity{ 1 };
-  int mSize{ 0 };
+  T* mMappedPtr{nullptr};
+  int mCapacity{1};
+  int mSize{0};
 
   auto RecreateBuffer() -> void;
   auto RecreateSrv() -> void;
 
 public:
-  StructuredBuffer(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context);
+  explicit StructuredBuffer(Microsoft::WRL::ComPtr<ID3D11Device> device);
 
   [[nodiscard]] auto GetSrv() const noexcept -> ID3D11ShaderResourceView*;
 
+  // The buffer must be in an unmapped state before the call!
   auto Resize(int newSize) -> void;
 
-  [[nodiscard]] auto Map() -> std::span<T>;
-  auto Unmap() -> void;
+  [[nodiscard]] auto Map(ObserverPtr<ID3D11DeviceContext> ctx) -> std::span<T>;
+  auto Unmap(ObserverPtr<ID3D11DeviceContext> ctx) -> void;
 };
 
 
@@ -49,7 +50,7 @@ auto StructuredBuffer<T>::RecreateBuffer() -> void {
   };
 
   if (FAILED(mDevice->CreateBuffer(&bufDesc, nullptr, mBuffer.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to recreate StructuredBuffer buffer." };
+    throw std::runtime_error{"Failed to recreate StructuredBuffer buffer."};
   }
 }
 
@@ -62,20 +63,19 @@ auto StructuredBuffer<T>::RecreateSrv() -> void {
     D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
       .Format = DXGI_FORMAT_UNKNOWN,
       .ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
-      .Buffer = { .FirstElement = 0, .NumElements = static_cast<UINT>(mSize) }
+      .Buffer = {.FirstElement = 0, .NumElements = static_cast<UINT>(mSize)}
     };
 
     if (FAILED(mDevice->CreateShaderResourceView(mBuffer.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
-      throw std::runtime_error{ "Failed to recreate StructuredBuffer SRV." };
+      throw std::runtime_error{"Failed to recreate StructuredBuffer SRV."};
     }
   }
 }
 
 
 template<typename T>
-StructuredBuffer<T>::StructuredBuffer(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context):
-  mDevice{ std::move(device) },
-  mContext{ std::move(context) } {
+StructuredBuffer<T>::StructuredBuffer(Microsoft::WRL::ComPtr<ID3D11Device> device):
+  mDevice{std::move(device)} {
   RecreateBuffer();
 }
 
@@ -88,6 +88,8 @@ auto StructuredBuffer<T>::GetSrv() const noexcept -> ID3D11ShaderResourceView* {
 
 template<typename T>
 auto StructuredBuffer<T>::Resize(int const newSize) -> void {
+  assert(!mMappedPtr);
+
   auto newCapacity = mCapacity;
 
   while (newCapacity < newSize) {
@@ -97,7 +99,6 @@ auto StructuredBuffer<T>::Resize(int const newSize) -> void {
   if (newCapacity != mCapacity) {
     mCapacity = newCapacity;
     mSize = newSize;
-    Unmap();
     RecreateBuffer();
     RecreateSrv();
   } else if (mSize != newSize) {
@@ -108,25 +109,25 @@ auto StructuredBuffer<T>::Resize(int const newSize) -> void {
 
 
 template<typename T>
-auto StructuredBuffer<T>::Map() -> std::span<T> {
+auto StructuredBuffer<T>::Map(ObserverPtr<ID3D11DeviceContext> const ctx) -> std::span<T> {
   if (mMappedPtr) {
-    return { mMappedPtr, static_cast<std::size_t>(mSize) };
+    return {mMappedPtr, static_cast<std::size_t>(mSize)};
   }
 
   D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-  if (FAILED(mContext->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource))) {
-    throw std::runtime_error{ "Failed to map Structured Buffer." };
+  if (FAILED(ctx->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource))) {
+    throw std::runtime_error{"Failed to map Structured Buffer."};
   }
 
   mMappedPtr = static_cast<T*>(mappedSubresource.pData);
-  return { static_cast<T*>(mMappedPtr), static_cast<std::size_t>(mSize) };
+  return {static_cast<T*>(mMappedPtr), static_cast<std::size_t>(mSize)};
 }
 
 
 template<typename T>
-auto StructuredBuffer<T>::Unmap() -> void {
+auto StructuredBuffer<T>::Unmap(ObserverPtr<ID3D11DeviceContext> const ctx) -> void {
   if (mMappedPtr) {
-    mContext->Unmap(mBuffer.Get(), 0);
+    ctx->Unmap(mBuffer.Get(), 0);
     mMappedPtr = nullptr;
   }
 }
