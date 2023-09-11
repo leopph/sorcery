@@ -25,7 +25,8 @@ auto StaticMeshComponent::ResizeMaterialListToSubmeshCount() -> void {
     return;
   }
 
-  if (auto const subMeshCount{std::size(mMesh->GetSubMeshes())}, mtlCount{std::size(mMaterials)}; subMeshCount != mtlCount) {
+  if (auto const subMeshCount{std::size(mMesh->GetSubMeshes())}, mtlCount{std::size(mMaterials)};
+    subMeshCount != mtlCount) {
     mMaterials.resize(subMeshCount);
 
     for (std::size_t i{mtlCount}; i < subMeshCount; i++) {
@@ -65,7 +66,9 @@ auto StaticMeshComponent::SetMaterials(std::vector<ObserverPtr<Material>> const&
 
 auto StaticMeshComponent::SetMaterial(int const idx, ObserverPtr<Material> const mtl) -> void {
   if (idx >= std::ssize(mMaterials)) {
-    throw std::runtime_error{std::format("Invalid index {} while attempting to replace material on StaticMeshComponent.", idx)};
+    throw std::runtime_error{
+      std::format("Invalid index {} while attempting to replace material on StaticMeshComponent.", idx)
+    };
   }
 
   mMaterials[idx] = mtl;
@@ -78,7 +81,7 @@ auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
   }
 
   auto const& localBounds{mMesh->GetBounds()};
-  auto const modelMtx{GetEntity().GetTransform().GetModelMatrix()};
+  auto const modelMtx{GetEntity().GetTransform().GetLocalToWorldMatrix()};
   auto boundsVertices{localBounds.CalculateVertices()};
 
   for (auto& vertex : boundsVertices) {

@@ -8,10 +8,14 @@
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::TransformComponent>{"Transform Component"}
     .constructor<>()(rttr::policy::ctor::as_raw_ptr)
-    .property("localPosition", &sorcery::TransformComponent::GetLocalPosition, &sorcery::TransformComponent::SetLocalPosition)
-    .property("localRotation", &sorcery::TransformComponent::GetLocalRotation, &sorcery::TransformComponent::SetLocalRotation)
-    .property("localScale", &sorcery::TransformComponent::GetLocalScale, &sorcery::TransformComponent::SetLocalScale)
-    .property("parent", &sorcery::TransformComponent::GetParent, &sorcery::TransformComponent::SetParent);
+    .property("localPosition", &sorcery::TransformComponent::GetLocalPosition,
+      &sorcery::TransformComponent::SetLocalPosition)
+    .property("localRotation", &sorcery::TransformComponent::GetLocalRotation,
+      &sorcery::TransformComponent::SetLocalRotation)
+    .property("localScale", &sorcery::TransformComponent::GetLocalScale,
+      &sorcery::TransformComponent::SetLocalScale)
+    .property("parent", &sorcery::TransformComponent::GetParent,
+      &sorcery::TransformComponent::SetParent);
 }
 
 
@@ -35,14 +39,10 @@ auto TransformComponent::UpdateWorldDataRecursive() -> void {
 
   // SRT transformation order
 
-  mModelMat[0] = Vector4{mRight * mWorldScale[0], 0};
-  mModelMat[1] = Vector4{mUp * mWorldScale[1], 0};
-  mModelMat[2] = Vector4{mForward * mWorldScale[2], 0};
-  mModelMat[3] = Vector4{mWorldPosition, 1};
-
-  mNormalMat[0] = mRight / mWorldScale[0];
-  mNormalMat[1] = mUp / mWorldScale[1];
-  mNormalMat[2] = mForward / mWorldScale[2];
+  mLocalToWorldMtx[0] = Vector4{mRight * mWorldScale[0], 0};
+  mLocalToWorldMtx[1] = Vector4{mUp * mWorldScale[1], 0};
+  mLocalToWorldMtx[2] = Vector4{mForward * mWorldScale[2], 0};
+  mLocalToWorldMtx[3] = Vector4{mWorldPosition, 1};
 
   for (auto* const child : mChildren) {
     child->UpdateWorldDataRecursive();
@@ -207,13 +207,20 @@ auto TransformComponent::GetChildren() const -> std::vector<ObserverPtr<Transfor
 }
 
 
-auto TransformComponent::GetModelMatrix() const -> Matrix4 const& {
-  return mModelMat;
+auto TransformComponent::GetLocalToWorldMatrix() const noexcept -> Matrix4 const& {
+  return mLocalToWorldMtx;
 }
 
 
-auto TransformComponent::GetNormalMatrix() const -> Matrix3 const& {
-  return mNormalMat;
+auto TransformComponent::CalculateLocalToWorldMatrixWithoutScale() const noexcept -> Matrix4 {
+  auto mtx{GetLocalToWorldMatrix()};
+  auto const scale{GetWorldScale()};
+
+  for (int i = 0; i < 3; i++) {
+    mtx[i] = Vector4{Vector3{mtx[i]} / scale, mtx[i][3]};
+  }
+
+  return mtx;
 }
 
 
@@ -282,17 +289,5 @@ auto TransformComponent::OnDrawProperties(bool& changed) -> void {
       SetLocalScale(localScale);
     }
   }
-}
-
-
-auto CalculateModelMatrixNoScale(TransformComponent const& transform) noexcept -> Matrix4 {
-  auto mtx{transform.GetModelMatrix()};
-  auto const scale{transform.GetWorldScale()};
-
-  for (int i = 0; i < 3; i++) {
-    mtx[i] = Vector4{Vector3{mtx[i]} / scale, mtx[i][3]};
-  }
-
-  return mtx;
 }
 }

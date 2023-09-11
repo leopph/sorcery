@@ -9,15 +9,20 @@
 
 namespace sorcery::mage {
 auto SceneViewWindow::Draw(Application& context) -> void {
-  ImGui::SetNextWindowSizeConstraints(ImVec2{480, 270}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
+  ImGui::SetNextWindowSizeConstraints(ImVec2{480, 270}, ImVec2{
+    std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
+  });
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
   if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse)) {
     ImGui::PopStyleVar();
     auto const contentRegionSize{ImGui::GetContentRegionAvail()};
-    Extent2D const desiredRes{static_cast<std::uint32_t>(contentRegionSize.x), static_cast<std::uint32_t>(contentRegionSize.y)};
+    Extent2D const desiredRes{
+      static_cast<std::uint32_t>(contentRegionSize.x), static_cast<std::uint32_t>(contentRegionSize.y)
+    };
 
-    if (!mRenderTarget || mRenderTarget->GetDesc().width != desiredRes.width || mRenderTarget->GetDesc().height != desiredRes.height) {
+    if (!mRenderTarget || mRenderTarget->GetDesc().width != desiredRes.width || mRenderTarget->GetDesc().height !=
+        desiredRes.height) {
       mRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
         .width = desiredRes.width,
         .height = desiredRes.height,
@@ -89,7 +94,8 @@ auto SceneViewWindow::Draw(Application& context) -> void {
     auto const editorCamViewMat{mEditorCam.CalculateViewMatrix()};
     auto const editorCamProjMat{mEditorCam.CalculateProjectionMatrix(windowAspectRatio)};
 
-    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(),
+      ImGui::GetWindowHeight());
     ImGuizmo::AllowAxisFlip(false);
     ImGuizmo::SetDrawlist();
 
@@ -100,7 +106,8 @@ auto SceneViewWindow::Draw(Application& context) -> void {
     }
 
     if (showGrid) {
-      ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), Matrix4::Identity().GetData(), mEditorCam.GetFarClipPlane());
+      ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), Matrix4::Identity().GetData(),
+        mEditorCam.GetFarClipPlane());
     }
 
     if (auto const selectedEntity{dynamic_cast<Entity*>(context.GetSelectedObject())}; selectedEntity) {
@@ -122,7 +129,8 @@ auto SceneViewWindow::Draw(Application& context) -> void {
         }
       }
 
-      if (Matrix4 modelMat{selectedEntity->GetTransform().GetModelMatrix()}; Manipulate(editorCamViewMat.GetData(), editorCamProjMat.GetData(), op, ImGuizmo::MODE::LOCAL, modelMat.GetData())) {
+      if (Matrix4 modelMat{selectedEntity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(
+        editorCamViewMat.GetData(), editorCamProjMat.GetData(), op, ImGuizmo::MODE::LOCAL, modelMat.GetData())) {
         Vector3 pos, euler, scale;
         ImGuizmo::DecomposeMatrixToComponents(modelMat.GetData(), pos.GetData(), euler.GetData(), scale.GetData());
         selectedEntity->GetTransform().SetWorldPosition(pos);

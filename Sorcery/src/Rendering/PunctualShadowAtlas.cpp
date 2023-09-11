@@ -13,7 +13,8 @@ PunctualShadowAtlas::PunctualShadowAtlas(ID3D11Device* const device, int const s
   mCells{Cell{1}, Cell{2}, Cell{4}, Cell{8}} {}
 
 
-auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewProjMtx, float const shadowDistance) -> void {
+auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility,
+                                 Camera const& cam, Matrix4 const& camViewProjMtx, float const shadowDistance) -> void {
   struct LightCascadeIndex {
     int lightIdxIdx;
     int shadowIdx;
@@ -74,19 +75,22 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
   };
 
   for (int i = 0; i < static_cast<int>(visibility.lightIndices.size()); i++) {
-    if (auto const light{allLights[visibility.lightIndices[i]]}; light->IsCastingShadow() && (light->GetType() == LightComponent::Type::Spot || light->GetType() == LightComponent::Type::Point)) {
+    if (auto const light{allLights[visibility.lightIndices[i]]};
+      light->IsCastingShadow() && (light->GetType() == LightComponent::Type::Spot || light->GetType() ==
+                                   LightComponent::Type::Point)) {
       Vector3 const& lightPos{light->GetEntity().GetTransform().GetWorldPosition()};
       float const lightRange{light->GetRange()};
 
       // Skip the light if its bounding sphere is farther than the shadow distance
-      if (Vector3 const camToLightDir{Normalize(lightPos - camPos)}; Distance(lightPos - camToLightDir * lightRange, cam.GetPosition()) > shadowDistance) {
+      if (Vector3 const camToLightDir{Normalize(lightPos - camPos)}; Distance(lightPos - camToLightDir * lightRange,
+                                                                       cam.GetPosition()) > shadowDistance) {
         continue;
       }
 
       if (light->GetType() == LightComponent::Type::Spot) {
         auto lightVertices{CalculateSpotLightLocalVertices(*light)};
 
-        for (auto const modelMtxNoScale{CalculateModelMatrixNoScale(light->GetEntity().GetTransform())};
+        for (auto const modelMtxNoScale{light->GetEntity().GetTransform().CalculateLocalToWorldMatrixWithoutScale()};
              auto& vertex : lightVertices) {
           vertex = Vector3{Vector4{vertex, 1} * modelMtxNoScale};
         }
@@ -122,18 +126,19 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
   }
 
   for (int i = 0; i < 4; i++) {
-    std::ranges::sort(lightIndexIndicesInCell[i], [&visibility, &camPos, &allLights](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
-      auto const leftLight{allLights[visibility.lightIndices[lhs.lightIdxIdx]]};
-      auto const rightLight{allLights[visibility.lightIndices[rhs.lightIdxIdx]]};
+    std::ranges::sort(lightIndexIndicesInCell[i],
+      [&visibility, &camPos, &allLights](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
+        auto const leftLight{allLights[visibility.lightIndices[lhs.lightIdxIdx]]};
+        auto const rightLight{allLights[visibility.lightIndices[rhs.lightIdxIdx]]};
 
-      auto const leftLightPos{leftLight->GetEntity().GetTransform().GetWorldPosition()};
-      auto const rightLightPos{rightLight->GetEntity().GetTransform().GetWorldPosition()};
+        auto const leftLightPos{leftLight->GetEntity().GetTransform().GetWorldPosition()};
+        auto const rightLightPos{rightLight->GetEntity().GetTransform().GetWorldPosition()};
 
-      auto const leftDist{Distance(leftLightPos, camPos)};
-      auto const rightDist{Distance(camPos, rightLightPos)};
+        auto const leftDist{Distance(leftLightPos, camPos)};
+        auto const rightDist{Distance(camPos, rightLightPos)};
 
-      return leftDist > rightDist;
-    });
+        return leftDist > rightDist;
+      });
 
     for (int j = 0; j < mCells[i].GetElementCount(); j++) {
       auto& subcell{mCells[i].GetSubcell(j)};
@@ -148,8 +153,14 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
       lightIndexIndicesInCell[i].pop_back();
 
       if (light->GetType() == LightComponent::Type::Spot) {
-        auto const shadowViewMtx{Matrix4::LookToLH(light->GetEntity().GetTransform().GetWorldPosition(), light->GetEntity().GetTransform().GetForwardAxis(), Vector3::Up())};
-        auto const shadowProjMtx{Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle()), 1.f, light->GetRange(), light->GetShadowNearPlane())};
+        auto const shadowViewMtx{
+          Matrix4::LookToLH(light->GetEntity().GetTransform().GetWorldPosition(),
+            light->GetEntity().GetTransform().GetForwardAxis(), Vector3::Up())
+        };
+        auto const shadowProjMtx{
+          Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle()), 1.f, light->GetRange(),
+            light->GetShadowNearPlane())
+        };
 
         subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
       } else if (light->GetType() == LightComponent::Type::Point) {

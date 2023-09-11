@@ -22,10 +22,14 @@ RTTR_REGISTRATION {
     .property("intensity", &sorcery::LightComponent::GetIntensity, &sorcery::LightComponent::SetIntensity)
     .property("type", &sorcery::LightComponent::GetType, &sorcery::LightComponent::SetType)
     .property("castsShadow", &sorcery::LightComponent::IsCastingShadow, &sorcery::LightComponent::SetCastingShadow)
-    .property("shadowNearClipPlane", &sorcery::LightComponent::GetShadowNearPlane, &sorcery::LightComponent::SetShadowNearPlane)
-    .property("shadowNormalBias", &sorcery::LightComponent::GetShadowNormalBias, &sorcery::LightComponent::SetShadowNormalBias)
-    .property("shadowDepthBias", &sorcery::LightComponent::GetShadowDepthBias, &sorcery::LightComponent::SetShadowDepthBias)
-    .property("shadowExtension", &sorcery::LightComponent::GetShadowExtension, &sorcery::LightComponent::SetShadowExtension)
+    .property("shadowNearClipPlane", &sorcery::LightComponent::GetShadowNearPlane,
+      &sorcery::LightComponent::SetShadowNearPlane)
+    .property("shadowNormalBias", &sorcery::LightComponent::GetShadowNormalBias,
+      &sorcery::LightComponent::SetShadowNormalBias)
+    .property("shadowDepthBias", &sorcery::LightComponent::GetShadowDepthBias,
+      &sorcery::LightComponent::SetShadowDepthBias)
+    .property("shadowExtension", &sorcery::LightComponent::GetShadowExtension,
+      &sorcery::LightComponent::SetShadowExtension)
     .property("range", &sorcery::LightComponent::GetRange, &sorcery::LightComponent::SetRange)
     .property("innerAngle", &sorcery::LightComponent::GetInnerAngle, &sorcery::LightComponent::SetInnerAngle)
     .property("outerAngle", &sorcery::LightComponent::GetOuterAngle, &sorcery::LightComponent::SetOuterAngle);
@@ -176,7 +180,8 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::TableNextColumn();
 
   auto intensity{GetIntensity()};
-  if (ImGui::DragFloat("###lightIntensity", &intensity, 0.1f, LightComponent::MIN_INTENSITY, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+  if (ImGui::DragFloat("###lightIntensity", &intensity, 0.1f, LightComponent::MIN_INTENSITY,
+    std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
     SetIntensity(intensity);
   }
 
@@ -197,7 +202,8 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
       ImGui::TableNextColumn();
 
       float shadowExt{GetShadowExtension()};
-      if (ImGui::DragFloat("##lightShadowExt", &shadowExt, 1.0f, LightComponent::MIN_SHADOW_EXTENSION, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+      if (ImGui::DragFloat("##lightShadowExt", &shadowExt, 1.0f, LightComponent::MIN_SHADOW_EXTENSION,
+        std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
         SetShadowExtension(shadowExt);
       }
     } else {
@@ -205,7 +211,8 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
       ImGui::TableNextColumn();
 
       auto shadowNearPlane{GetShadowNearPlane()};
-      if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane, 0.01f, LightComponent::MIN_SHADOW_NEAR_PLANE, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+      if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane, 0.01f, LightComponent::MIN_SHADOW_NEAR_PLANE,
+        std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
         SetShadowNearPlane(shadowNearPlane);
       }
     }
@@ -215,7 +222,8 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
 
     auto shadowDepthBias{GetShadowDepthBias()};
-    if (ImGui::DragFloat("###lightShadowDephBias", &shadowDepthBias, 0.25f, 0, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+    if (ImGui::DragFloat("###lightShadowDephBias", &shadowDepthBias, 0.25f, 0, FLT_MAX, "%.3f",
+      ImGuiSliderFlags_AlwaysClamp)) {
       SetShadowDepthBias(shadowDepthBias);
     }
 
@@ -224,7 +232,8 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
 
     auto shadowNormalBias{GetShadowNormalBias()};
-    if (ImGui::DragFloat("###lightShadowNormalBias", &shadowNormalBias, 0.25f, 0, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+    if (ImGui::DragFloat("###lightShadowNormalBias", &shadowNormalBias, 0.25f, 0, FLT_MAX, "%.3f",
+      ImGuiSliderFlags_AlwaysClamp)) {
       SetShadowNormalBias(shadowNormalBias);
     }
   }
@@ -245,7 +254,8 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
 
     auto range{GetRange()};
-    if (ImGui::DragFloat("###lightRange", &range, 1.0f, LightComponent::MIN_RANGE, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+    if (ImGui::DragFloat("###lightRange", &range, 1.0f, LightComponent::MIN_RANGE, std::numeric_limits<float>::max(),
+      "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       SetRange(range);
     }
   }
@@ -256,7 +266,8 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
 
     auto innerAngleRad{ToRadians(GetInnerAngle())};
-    if (ImGui::SliderAngle("###spotLightInnerAngle", &innerAngleRad, LightComponent::MIN_ANGLE_DEG, LightComponent::MAX_ANGLE_DEG, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+    if (ImGui::SliderAngle("###spotLightInnerAngle", &innerAngleRad, LightComponent::MIN_ANGLE_DEG,
+      LightComponent::MAX_ANGLE_DEG, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       SetInnerAngle(ToDegrees(innerAngleRad));
     }
 
@@ -265,7 +276,8 @@ auto LightComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
 
     auto outerAngleRad{ToRadians(GetOuterAngle())};
-    if (ImGui::SliderAngle("###spotLightOuterAngle", &outerAngleRad, LightComponent::MIN_ANGLE_DEG, LightComponent::MAX_ANGLE_DEG, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+    if (ImGui::SliderAngle("###spotLightOuterAngle", &outerAngleRad, LightComponent::MIN_ANGLE_DEG,
+      LightComponent::MAX_ANGLE_DEG, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       SetOuterAngle(ToDegrees(outerAngleRad));
     }
   }
@@ -276,7 +288,7 @@ auto LightComponent::OnDrawGizmosSelected() -> void {
   Component::OnDrawGizmosSelected();
 
   if (GetType() == Type::Spot) {
-    auto const modelMtxNoScale{CalculateModelMatrixNoScale(GetEntity().GetTransform())};
+    auto const modelMtxNoScale{GetEntity().GetTransform().CalculateLocalToWorldMatrixWithoutScale()};
     auto vertices{CalculateSpotLightLocalVertices(*this)};
 
     for (auto& vertex : vertices) {

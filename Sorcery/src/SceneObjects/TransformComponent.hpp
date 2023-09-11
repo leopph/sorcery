@@ -33,8 +33,7 @@ private:
   TransformComponent* mParent{nullptr};
   std::vector<ObserverPtr<TransformComponent>> mChildren;
 
-  Matrix4 mModelMat{Matrix4::Identity()};
-  Matrix3 mNormalMat{Matrix4::Identity()};
+  Matrix4 mLocalToWorldMtx{Matrix4::Identity()};
 
   bool mChanged{false};
 
@@ -75,8 +74,8 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetChildren() const -> std::vector<ObserverPtr<TransformComponent>> const&;
 
-  [[nodiscard]] LEOPPHAPI auto GetModelMatrix() const -> Matrix4 const&;
-  [[nodiscard]] LEOPPHAPI auto GetNormalMatrix() const -> Matrix3 const&;
+  [[nodiscard]] LEOPPHAPI auto GetLocalToWorldMatrix() const noexcept -> Matrix4 const&;
+  [[nodiscard]] LEOPPHAPI auto CalculateLocalToWorldMatrixWithoutScale() const noexcept -> Matrix4;
 
   [[nodiscard]] LEOPPHAPI auto HasChanged() const noexcept -> bool;
   LEOPPHAPI auto SetChanged(bool changed) noexcept -> void;
@@ -84,7 +83,4 @@ public:
   LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 };
-
-
-[[nodiscard]] LEOPPHAPI auto CalculateModelMatrixNoScale(TransformComponent const& transform) noexcept -> Matrix4;
 }

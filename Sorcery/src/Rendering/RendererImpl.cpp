@@ -134,7 +134,7 @@ auto Renderer::Impl::CullStaticMeshComponents(Frustum const& frustumWS, Visibili
     if (frustumWS.Intersects(mStaticMeshComponents[i]->CalculateBounds())) {
       auto const submeshes{mStaticMeshComponents[i]->GetMesh()->GetSubMeshes()};
       for (int j{0}; j < std::ssize(submeshes); j++) {
-        auto const& modelMtx{mStaticMeshComponents[i]->GetEntity().GetTransform().GetModelMatrix()};
+        auto const& modelMtx{mStaticMeshComponents[i]->GetEntity().GetTransform().GetLocalToWorldMatrix()};
         auto submeshBounds{submeshes[j].bounds};
         submeshBounds.min = Vector3{Vector4{submeshBounds.min, 1} * modelMtx};
         submeshBounds.max = Vector3{Vector4{submeshBounds.max, 1} * modelMtx};
@@ -163,7 +163,9 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
           [light] {
             auto vertices{CalculateSpotLightLocalVertices(*light)};
 
-            for (auto const modelMtxNoScale{CalculateModelMatrixNoScale(light->GetEntity().GetTransform())};
+            for (auto const modelMtxNoScale{
+                   light->GetEntity().GetTransform().CalculateLocalToWorldMatrixWithoutScale()
+                 };
                  auto& vertex : vertices) {
               vertex = Vector3{Vector4{vertex, 1} * modelMtxNoScale};
             }
@@ -219,7 +221,9 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11
 
     for (auto j = 0; j < cell.GetElementCount(); j++) {
       if (auto const& subcell{cell.GetSubcell(j)}) {
-        auto const subcellOffset{(cellOffsetNorm + cell.GetNormalizedElementOffset(j) * cellSizeNorm) * static_cast<float>(atlas.GetSize())};
+        auto const subcellOffset{
+          (cellOffsetNorm + cell.GetNormalizedElementOffset(j) * cellSizeNorm) * static_cast<float>(atlas.GetSize())
+        };
 
         D3D11_VIEWPORT const viewport{
           .TopLeftX = subcellOffset[0],
@@ -253,7 +257,8 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11
 }
 
 
-auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const culledIndices, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
+auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const culledIndices,
+                                ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
   ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   ctx->VSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
@@ -267,7 +272,10 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
       continue;
     }
 
-    std::array const vertexBuffers{mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get(), mesh->GetTangentBuffer().Get()};
+    std::array const vertexBuffers{
+      mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get(),
+      mesh->GetTangentBuffer().Get()
+    };
     UINT constexpr strides[]{sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3)};
     UINT constexpr offsets[]{0, 0, 0, 0};
     ctx->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
@@ -276,8 +284,10 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
     D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
     ctx->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
     auto const perDrawCbData{static_cast<PerDrawCB*>(mappedPerDrawCb.pData)};
-    perDrawCbData->gPerDrawConstants.modelMtx = component->GetEntity().GetTransform().GetModelMatrix();
-    perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{component->GetEntity().GetTransform().GetNormalMatrix()};
+    perDrawCbData->gPerDrawConstants.modelMtx = component->GetEntity().GetTransform().GetLocalToWorldMatrix();
+    perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{
+      component->GetEntity().GetTransform().GetLocalToWorldMatrix().Inverse().Transpose()
+    };
     ctx->Unmap(mPerDrawCb.Get(), 0);
 
     auto const submesh{mesh->GetSubMeshes()[submeshIdx]};
@@ -345,7 +355,8 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
 }
 
 
-auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void {
+auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx,
+                                ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void {
   if (mSkyboxes.empty()) {
     return;
   }
@@ -384,7 +395,8 @@ auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camPro
 }
 
 
-auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
+auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst,
+                                 ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
   // Back up old views to restore later.
 
   ComPtr<ID3D11RenderTargetView> rtvBackup;
@@ -457,7 +469,9 @@ auto Renderer::Impl::StartUp() -> void {
   creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-  if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, mDevice.GetAddressOf(), nullptr, mImmediateContext.GetAddressOf()))) {
+  if (FAILED(
+    D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1,
+      D3D11_SDK_VERSION, mDevice.GetAddressOf(), nullptr, mImmediateContext.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create D3D device."};
   }
 
@@ -549,7 +563,9 @@ auto Renderer::Impl::StartUp() -> void {
     }
   };
 
-  if (FAILED(mDevice->CreateInputLayout(inputDescs, ARRAYSIZE(inputDescs), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mAllAttribsIl.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateInputLayout(inputDescs, ARRAYSIZE(inputDescs), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mAllAttribsIl.
+      GetAddressOf()))) {
     throw std::runtime_error{"Failed to create all-attributes input layout."};
   }
 
@@ -569,35 +585,41 @@ auto Renderer::Impl::StartUp() -> void {
   char constexpr meshPbrPsName[]{"Mesh PBR Pixel Shader"};
   mMeshPbrPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(meshPbrPsName), meshPbrPsName);
 
-  if (FAILED(mDevice->CreatePixelShader(gPostProcessPSBin, ARRAYSIZE(gPostProcessPSBin), nullptr, mPostProcessPs.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreatePixelShader(gPostProcessPSBin, ARRAYSIZE(gPostProcessPSBin), nullptr, mPostProcessPs.GetAddressOf()
+    ))) {
     throw std::runtime_error{"Failed to create textured post process pixel shader."};
   }
 
   char constexpr postProcessPsName[]{"Postprocess Pixel Shader"};
   mPostProcessPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(postProcessPsName), postProcessPsName);
 
-  if (FAILED(mDevice->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, mSkyboxVs.ReleaseAndGetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, mSkyboxVs.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{"Failed to create skybox vertex shader."};
   }
 
   char constexpr skyboxVsName[]{"Skybox Vertex Shader"};
   mSkyboxVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(skyboxVsName), skyboxVsName);
 
-  if (FAILED(mDevice->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, mSkyboxPs.ReleaseAndGetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, mSkyboxPs.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{"Failed to create skybox pixel shader."};
   }
 
   char constexpr skyboxPsName[]{"Skybox Pixel Shader"};
   mSkyboxPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(skyboxPsName), skyboxPsName);
 
-  if (FAILED(mDevice->CreateVertexShader(gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), nullptr, mDepthOnlyVs.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateVertexShader(gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), nullptr, mDepthOnlyVs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-only vertex shader."};
   }
 
   char constexpr depthOnlyVsName[]{"Depth-Only Vertex Shader"};
   mDepthOnlyVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthOnlyVsName), depthOnlyVsName);
 
-  if (FAILED(mDevice->CreatePixelShader(gDepthOnlyPSBin, ARRAYSIZE(gDepthOnlyPSBin), nullptr, mDepthOnlyPs.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreatePixelShader(gDepthOnlyPSBin, ARRAYSIZE(gDepthOnlyPSBin), nullptr, mDepthOnlyPs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-only pixel shader."};
   }
 
@@ -611,7 +633,8 @@ auto Renderer::Impl::StartUp() -> void {
   char constexpr screenVsName[]{"Screen Vertex Shader"};
   mScreenVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(screenVsName), screenVsName);
 
-  if (FAILED(mDevice->CreateVertexShader(gLineGizmoVSBin, ARRAYSIZE(gLineGizmoVSBin), nullptr, mLineGizmoVs.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateVertexShader(gLineGizmoVSBin, ARRAYSIZE(gLineGizmoVSBin), nullptr, mLineGizmoVs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create line gizmo vertex shader."};
   }
 
@@ -816,7 +839,8 @@ auto Renderer::Impl::StartUp() -> void {
     }
   };
 
-  if (FAILED(mDevice->CreateDepthStencilState(&depthTestLessEqualNoWriteDesc, mDepthTestLessEqualNoWriteDss.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateDepthStencilState(&depthTestLessEqualNoWriteDesc, mDepthTestLessEqualNoWriteDss.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-test less-or-equal no-write DSS."};
   }
 
@@ -841,7 +865,9 @@ auto Renderer::Impl::StartUp() -> void {
     }
   };
 
-  if (FAILED(mDevice->CreateDepthStencilState(&depthTestGreaterEqualNoWriteDesc, mDepthTestGreaterEqualNoWriteDss.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateDepthStencilState(&depthTestGreaterEqualNoWriteDesc, mDepthTestGreaterEqualNoWriteDss.GetAddressOf()
+    ))) {
     throw std::runtime_error{"Failed to create depth-test greater-or-equal no-write DSS."};
   }
 
@@ -1166,7 +1192,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   std::array<Matrix4, MAX_CASCADE_COUNT> shadowViewProjMatrices;
 
   for (auto const lightIdx : visibility.lightIndices) {
-    if (auto const light{mLights[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
+    if (auto const light{mLights[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->
+                                             IsCastingShadow()) {
       float const camNear{cam.GetNearClipPlane()};
       float const camFar{cam.GetFarClipPlane()};
 
@@ -1197,28 +1224,44 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
               float const farExtentX{camFar * tanHalfFov};
               float const farExtentY{farExtentX / rtAspect};
 
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
-              ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
-              ret[FrustumVertex_FarBottomRight] = farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
+                                                nearExtentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
+                                               nearExtentY;
+              ret[FrustumVertex_NearBottomLeft] =
+                nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+              ret[FrustumVertex_NearBottomRight] =
+                nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() *
+                                               farExtentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() *
+                                              farExtentY;
+              ret[FrustumVertex_FarBottomLeft] =
+                farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+              ret[FrustumVertex_FarBottomRight] =
+                farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
               break;
             }
             case Camera::Type::Orthographic: {
               float const extentX{cam.GetHorizontalOrthographicSize() / 2.0f};
               float const extentY{extentX / rtAspect};
 
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarBottomRight] = farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                                extentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                               extentY;
+              ret[FrustumVertex_NearBottomLeft] =
+                nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_NearBottomRight] =
+                nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                               extentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                              extentY;
+              ret[FrustumVertex_FarBottomLeft] =
+                farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_FarBottomRight] =
+                farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
               break;
             }
           }
@@ -1280,9 +1323,13 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
         auto shadowNearClipPlane{-sphereRadius - light->GetShadowExtension()};
         auto shadowFarClipPlane{sphereRadius};
         Graphics::AdjustClipPlanesForReversedDepth(shadowNearClipPlane, shadowFarClipPlane);
-        Matrix4 const shadowProjMtx{Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius, sphereRadius, -sphereRadius, shadowNearClipPlane, shadowFarClipPlane)};
+        Matrix4 const shadowProjMtx{
+          Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius, sphereRadius, -sphereRadius, shadowNearClipPlane,
+            shadowFarClipPlane)
+        };
 
-        shadowViewProjMatrices[cascadeIdx] = Matrix4::LookToLH(cascadeCenterWS, light->GetDirection(), Vector3::Up()) * shadowProjMtx;
+        shadowViewProjMatrices[cascadeIdx] = Matrix4::LookToLH(cascadeCenterWS, light->GetDirection(), Vector3::Up()) *
+                                             shadowProjMtx;
 
         ctx->OMSetRenderTargets(0, nullptr, mDirShadowMapArr->GetDsv(cascadeIdx));
         ctx->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
@@ -1292,7 +1339,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
         ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
-        ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForReversedDepth(), 0);
+        ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH,
+          Graphics::GetDepthClearValueForReversedDepth(), 0);
 
         ctx->RSSetState(mShadowPassRs.Get());
 
@@ -1392,8 +1440,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     lightBufferData[i].direction = mLights[visibility.lightIndices[i]]->GetDirection();
     lightBufferData[i].isCastingShadow = FALSE;
     lightBufferData[i].range = mLights[visibility.lightIndices[i]]->GetRange();
-    lightBufferData[i].halfInnerAngleCos = std::cos(ToRadians(mLights[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
-    lightBufferData[i].halfOuterAngleCos = std::cos(ToRadians(mLights[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
+    lightBufferData[i].halfInnerAngleCos = std::cos(
+      ToRadians(mLights[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
+    lightBufferData[i].halfOuterAngleCos = std::cos(
+      ToRadians(mLights[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
     lightBufferData[i].position = mLights[visibility.lightIndices[i]]->GetEntity().GetTransform().GetWorldPosition();
     lightBufferData[i].depthBias = mLights[visibility.lightIndices[i]]->GetShadowDepthBias();
     lightBufferData[i].normalBias = mLights[visibility.lightIndices[i]]->GetShadowNormalBias();
@@ -1404,7 +1454,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   }
 
   for (auto i{0}; i < lightCount; i++) {
-    if (auto const light{mLights[visibility.lightIndices[i]]}; light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
+    if (auto const light{mLights[visibility.lightIndices[i]]};
+      light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
       lightBufferData[i].isCastingShadow = TRUE;
 
       for (auto cascadeIdx{0}; cascadeIdx < mCascadeCount; cascadeIdx++) {
