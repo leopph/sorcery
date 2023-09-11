@@ -101,8 +101,54 @@ float2 GetShadowMapTexelSize(const Texture2D<float> shadowMap) {
     return GetShadowMapTexelSize(GetShadowMapSize(shadowMap));
 }
 
+
 float3 GetShadowMapArrayTexelSize(const Texture2DArray<float> shadowMapArray) {
   return GetShadowMapArrayTexelSize(GetShadowMapArraySize(shadowMapArray));
+}
+
+
+void GetPCF3x3Tent4TapParams(const float2 uv, const float2 shadowMapSize, out float2 uv0, out float2 uv1, out float2 uv2, out float2 uv3, out float4 weights) {
+  const float2 texelSize = GetShadowMapTexelSize(shadowMapSize);
+
+  const float2 texelCoord = shadowMapSize * uv;
+  const float2 texelOriginal = round(texelCoord);
+  const float2 kernelOffset = texelCoord - texelOriginal;
+
+  float4 weightsX, weightsY;
+  GetTent3Weights(kernelOffset, weightsX, weightsY);
+
+  uv0 = GetGroupTapUV(texelSize, texelOriginal + float2(-1, -1), weightsX.xy, weightsY.xy);
+  uv1 = GetGroupTapUV(texelSize, texelOriginal + float2(1, -1), weightsX.zw, weightsY.xy);
+  uv2 = GetGroupTapUV(texelSize, texelOriginal + float2(-1, 1), weightsX.xy, weightsY.zw);
+  uv3 = GetGroupTapUV(texelSize, texelOriginal + float2(1, 1), weightsX.zw, weightsY.zw);
+
+  weights = GetTent3GroupWeights(weightsX, weightsY);
+}
+
+
+void GetPCF5x5Tent9TapParams(const float2 uv, const float2 shadowMapSize, out float2 uv0, out float2 uv1, out float2 uv2, out float2 uv3, out float2 uv4, out float2 uv5, out float2 uv6, out float2 uv7, out float2 uv8, out float3 groupWeightsA, out float3 groupWeightsB, out float3 groupWeightsC) {
+  const float2 texelSize = GetShadowMapTexelSize(shadowMapSize);
+
+  const float2 texelCoord = shadowMapSize * uv;
+  const float2 texelOriginal = round(texelCoord);
+  const float2 kernelOffset = texelCoord - texelOriginal;
+
+  float4 weightsXA, weightsYA;
+  float2 weightsXB, weightsYB;
+  GetTent5Weights(kernelOffset.x, weightsXA, weightsXB);
+  GetTent5Weights(kernelOffset.y, weightsYA, weightsYB);
+
+  uv0 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, -2), weightsXA.xy, weightsYA.xy);
+  uv1 = GetGroupTapUV(texelSize, texelOriginal + float2(0, -2), weightsXA.zw, weightsYA.xy);
+  uv2 = GetGroupTapUV(texelSize, texelOriginal + float2(2, -2), weightsXB.xy, weightsYA.xy);
+  uv3 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, 0), weightsXA.xy, weightsYA.zw);
+  uv4 = GetGroupTapUV(texelSize, texelOriginal + float2(0, 0), weightsXA.zw, weightsYA.zw);
+  uv5 = GetGroupTapUV(texelSize, texelOriginal + float2(2, 0), weightsXB.xy, weightsYA.zw);
+  uv6 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, 2), weightsXA.xy, weightsYB.xy);
+  uv7 = GetGroupTapUV(texelSize, texelOriginal + float2(0, 2), weightsXA.zw, weightsYB.xy);
+  uv8 = GetGroupTapUV(texelSize, texelOriginal + float2(2, 2), weightsXB.xy, weightsYB.xy);
+
+  GetTent5GroupWeights(weightsXA, weightsXB, weightsYA, weightsYB, groupWeightsA, groupWeightsB, groupWeightsC);
 }
 
 
@@ -155,50 +201,24 @@ const float2 texelSize = GetShadowMapArrayTexelSize(shadowMapArray);
 
 
 float SampleShadowMapPCF3x3Tent4Tap(const Texture2D<float> shadowMap, const float2 uv, const float depth) {
-    const float2 shadowMapSize = GetShadowMapSize(shadowMap);
-    const float2 texelSize = GetShadowMapTexelSize(shadowMapSize);
+  float2 uv0, uv1, uv2, uv3;
+  float4 weights;
+  GetPCF3x3Tent4TapParams(uv, GetShadowMapSize(shadowMap), uv0, uv1, uv2, uv3, weights);
 
-    const float2 texelCoord = shadowMapSize * uv;
-    const float2 texelOriginal = round(texelCoord);
-    const float2 kernelOffset = texelCoord - texelOriginal;
+  float4 tap4;
+  tap4.x = SampleShadowMapHardwarePCF(shadowMap, uv0, depth);
+  tap4.y = SampleShadowMapHardwarePCF(shadowMap, uv1, depth);
+  tap4.z = SampleShadowMapHardwarePCF(shadowMap, uv2, depth);
+  tap4.w = SampleShadowMapHardwarePCF(shadowMap, uv3, depth);
 
-    float4 weightsX, weightsY;
-    GetTent3Weights(kernelOffset, weightsX, weightsY);
-
-    const float2 uv0 = GetGroupTapUV(texelSize, texelOriginal + float2(-1, -1), weightsX.xy, weightsY.xy);
-    const float2 uv1 = GetGroupTapUV(texelSize, texelOriginal + float2(1, -1), weightsX.zw, weightsY.xy);
-    const float2 uv2 = GetGroupTapUV(texelSize, texelOriginal + float2(-1, 1), weightsX.xy, weightsY.zw);
-    const float2 uv3 = GetGroupTapUV(texelSize, texelOriginal + float2(1, 1), weightsX.zw, weightsY.zw);
-
-    const float4 weights = GetTent3GroupWeights(weightsX, weightsY);
-
-    float4 tap4;
-    tap4.x = SampleShadowMapHardwarePCF(shadowMap, uv0, depth);
-    tap4.y = SampleShadowMapHardwarePCF(shadowMap, uv1, depth);
-    tap4.z = SampleShadowMapHardwarePCF(shadowMap, uv2, depth);
-    tap4.w = SampleShadowMapHardwarePCF(shadowMap, uv3, depth);
-
-    return dot(tap4, weights);
+  return dot(tap4, weights);
 }
 
 
 float SampleShadowMapArrayPCF3x3Tent4Tap(const Texture2DArray<float> shadowMapArray, const float2 uv, const int arraySlice, const float depth) {
-  const float2 shadowMapSize = GetShadowMapArraySize(shadowMapArray);
-  const float2 texelSize = GetShadowMapTexelSize(shadowMapSize);
-
-  const float2 texelCoord = shadowMapSize * uv;
-  const float2 texelOriginal = round(texelCoord);
-  const float2 kernelOffset = texelCoord - texelOriginal;
-
-  float4 weightsX, weightsY;
-  GetTent3Weights(kernelOffset, weightsX, weightsY);
-
-  const float2 uv0 = GetGroupTapUV(texelSize, texelOriginal + float2(-1, -1), weightsX.xy, weightsY.xy);
-  const float2 uv1 = GetGroupTapUV(texelSize, texelOriginal + float2(1, -1), weightsX.zw, weightsY.xy);
-  const float2 uv2 = GetGroupTapUV(texelSize, texelOriginal + float2(-1, 1), weightsX.xy, weightsY.zw);
-  const float2 uv3 = GetGroupTapUV(texelSize, texelOriginal + float2(1, 1), weightsX.zw, weightsY.zw);
-
-  const float4 weights = GetTent3GroupWeights(weightsX, weightsY);
+  float2 uv0, uv1, uv2, uv3;
+  float4 weights;
+  GetPCF3x3Tent4TapParams(uv, GetShadowMapArraySize(shadowMapArray), uv0, uv1, uv2, uv3, weights);
 
   float4 tap4;
   tap4.x = SampleShadowMapArrayHardwarePCF(shadowMapArray, uv0, arraySlice, depth);
@@ -211,78 +231,32 @@ float SampleShadowMapArrayPCF3x3Tent4Tap(const Texture2DArray<float> shadowMapAr
 
 
 float SampleShadowMapPCF5x5Tent9Tap(const Texture2D<float> shadowMap, const float2 uv, const float depth) {
-    const float2 shadowMapSize = GetShadowMapSize(shadowMap);
-    const float2 texelSize = GetShadowMapTexelSize(shadowMapSize);
+  float2 uv0, uv1, uv2, uv3, uv4, uv5, uv6, uv7, uv8;
+  float3 groupWeightsA, groupWeightsB, groupWeightsC;
+  GetPCF5x5Tent9TapParams(uv, GetShadowMapSize(shadowMap), uv0, uv1, uv2, uv3, uv4, uv5, uv6, uv7, uv8, groupWeightsA, groupWeightsB, groupWeightsC);
 
-    const float2 texelCoord = shadowMapSize * uv;
-    const float2 texelOriginal = round(texelCoord);
-    const float2 kernelOffset = texelCoord - texelOriginal;
+  float3 tapA, tapB, tapC;
 
-    float4 weightsXA, weightsYA;
-    float2 weightsXB, weightsYB;
-    GetTent5Weights(kernelOffset.x, weightsXA, weightsXB);
-    GetTent5Weights(kernelOffset.y, weightsYA, weightsYB);
+  tapA.x = SampleShadowMapHardwarePCF(shadowMap, uv0, depth);
+  tapA.y = SampleShadowMapHardwarePCF(shadowMap, uv1, depth);
+  tapA.z = SampleShadowMapHardwarePCF(shadowMap, uv2, depth);
 
-    const float2 uv0 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, -2), weightsXA.xy, weightsYA.xy);
-    const float2 uv1 = GetGroupTapUV(texelSize, texelOriginal + float2(0, -2), weightsXA.zw, weightsYA.xy);
-    const float2 uv2 = GetGroupTapUV(texelSize, texelOriginal + float2(2, -2), weightsXB.xy, weightsYA.xy);
+  tapB.x = SampleShadowMapHardwarePCF(shadowMap, uv3, depth);
+  tapB.y = SampleShadowMapHardwarePCF(shadowMap, uv4, depth);
+  tapB.z = SampleShadowMapHardwarePCF(shadowMap, uv5, depth);
 
-    const float2 uv3 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, 0), weightsXA.xy, weightsYA.zw);
-    const float2 uv4 = GetGroupTapUV(texelSize, texelOriginal + float2(0, 0), weightsXA.zw, weightsYA.zw);
-    const float2 uv5 = GetGroupTapUV(texelSize, texelOriginal + float2(2, 0), weightsXB.xy, weightsYA.zw);
-
-    const float2 uv6 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, 2), weightsXA.xy, weightsYB.xy);
-    const float2 uv7 = GetGroupTapUV(texelSize, texelOriginal + float2(0, 2), weightsXA.zw, weightsYB.xy);
-    const float2 uv8 = GetGroupTapUV(texelSize, texelOriginal + float2(2, 2), weightsXB.xy, weightsYB.xy);
-
-    float3 groupWeightsA, groupWeightsB, groupWeightsC;
-    GetTent5GroupWeights(weightsXA, weightsXB, weightsYA, weightsYB, groupWeightsA, groupWeightsB, groupWeightsC);
-
-    float3 tapA, tapB, tapC;
-
-    tapA.x = SampleShadowMapHardwarePCF(shadowMap, uv0, depth);
-    tapA.y = SampleShadowMapHardwarePCF(shadowMap, uv1, depth);
-    tapA.z = SampleShadowMapHardwarePCF(shadowMap, uv2, depth);
-
-    tapB.x = SampleShadowMapHardwarePCF(shadowMap, uv3, depth);
-    tapB.y = SampleShadowMapHardwarePCF(shadowMap, uv4, depth);
-    tapB.z = SampleShadowMapHardwarePCF(shadowMap, uv5, depth);
-
-    tapC.x = SampleShadowMapHardwarePCF(shadowMap, uv6, depth);
-    tapC.y = SampleShadowMapHardwarePCF(shadowMap, uv7, depth);
-    tapC.z = SampleShadowMapHardwarePCF(shadowMap, uv8, depth);
-    
-    return dot(tapA, groupWeightsA) + dot(tapB, groupWeightsB) + dot(tapC, groupWeightsC);
+  tapC.x = SampleShadowMapHardwarePCF(shadowMap, uv6, depth);
+  tapC.y = SampleShadowMapHardwarePCF(shadowMap, uv7, depth);
+  tapC.z = SampleShadowMapHardwarePCF(shadowMap, uv8, depth);
+  
+  return dot(tapA, groupWeightsA) + dot(tapB, groupWeightsB) + dot(tapC, groupWeightsC);
 }
 
 
 float SampleShadowMapArrayPCF5x5Tent9Tap(const Texture2DArray<float> shadowMapArray, const float2 uv, const int arraySlice, const float depth) {
-  const float2 shadowMapSize = GetShadowMapArraySize(shadowMapArray);
-  const float2 texelSize = GetShadowMapTexelSize(shadowMapSize);
-
-  const float2 texelCoord = shadowMapSize * uv;
-  const float2 texelOriginal = round(texelCoord);
-  const float2 kernelOffset = texelCoord - texelOriginal;
-
-  float4 weightsXA, weightsYA;
-  float2 weightsXB, weightsYB;
-  GetTent5Weights(kernelOffset.x, weightsXA, weightsXB);
-  GetTent5Weights(kernelOffset.y, weightsYA, weightsYB);
-
-  const float2 uv0 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, -2), weightsXA.xy, weightsYA.xy);
-  const float2 uv1 = GetGroupTapUV(texelSize, texelOriginal + float2(0, -2), weightsXA.zw, weightsYA.xy);
-  const float2 uv2 = GetGroupTapUV(texelSize, texelOriginal + float2(2, -2), weightsXB.xy, weightsYA.xy);
-
-  const float2 uv3 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, 0), weightsXA.xy, weightsYA.zw);
-  const float2 uv4 = GetGroupTapUV(texelSize, texelOriginal + float2(0, 0), weightsXA.zw, weightsYA.zw);
-  const float2 uv5 = GetGroupTapUV(texelSize, texelOriginal + float2(2, 0), weightsXB.xy, weightsYA.zw);
-
-  const float2 uv6 = GetGroupTapUV(texelSize, texelOriginal + float2(-2, 2), weightsXA.xy, weightsYB.xy);
-  const float2 uv7 = GetGroupTapUV(texelSize, texelOriginal + float2(0, 2), weightsXA.zw, weightsYB.xy);
-  const float2 uv8 = GetGroupTapUV(texelSize, texelOriginal + float2(2, 2), weightsXB.xy, weightsYB.xy);
-
+  float2 uv0, uv1, uv2, uv3, uv4, uv5, uv6, uv7, uv8;
   float3 groupWeightsA, groupWeightsB, groupWeightsC;
-  GetTent5GroupWeights(weightsXA, weightsXB, weightsYA, weightsYB, groupWeightsA, groupWeightsB, groupWeightsC);
+  GetPCF5x5Tent9TapParams(uv, GetShadowMapArraySize(shadowMapArray), uv0, uv1, uv2, uv3, uv4, uv5, uv6, uv7, uv8, groupWeightsA, groupWeightsB, groupWeightsC);
 
   float3 tapA, tapB, tapC;
 
