@@ -143,4 +143,9 @@ auto SceneViewWindow::Draw(Application& context) -> void {
   }
   ImGui::End();
 }
+
+
+auto SceneViewWindow::GetCamera() noexcept -> EditorCamera& {
+  return mEditorCam;
+}
 }

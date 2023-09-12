@@ -31,7 +31,8 @@
 #include <exception>
 
 
-auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
+auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE,
+                     _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
   try {
     sorcery::gWindow.StartUp();
     sorcery::gRenderer.StartUp();
@@ -83,7 +84,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       }
 
       if (argc > 1) {
-        if (auto const scene{sorcery::gResourceManager.GetOrLoad<sorcery::Scene>(app.GetResourceDatabase().PathToGuid(argv[1]))}) {
+        if (auto const scene{
+          sorcery::gResourceManager.GetOrLoad<sorcery::Scene>(app.GetResourceDatabase().PathToGuid(argv[1]))
+        }) {
           app.OpenScene(*scene);
         }
       }
@@ -95,7 +98,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto const sceneViewWindow{std::make_unique<sorcery::mage::SceneViewWindow>()};
     auto const gameViewWindow{std::make_unique<sorcery::mage::GameViewWindow>()};
     auto const propertiesWindow{std::make_unique<sorcery::mage::PropertiesWindow>(app)};
-    auto const editorSettingsWindow{std::make_unique<sorcery::mage::SettingsWindow>(app)};
+    auto const editorSettingsWindow{std::make_unique<sorcery::mage::SettingsWindow>(app, sceneViewWindow->GetCamera())};
     auto const mainMenuBar{std::make_unique<sorcery::mage::MainMenuBar>(app, *editorSettingsWindow)};
     auto const entityHierarchyWindow{std::make_unique<sorcery::mage::EntityHierarchyWindow>(app)};
 
