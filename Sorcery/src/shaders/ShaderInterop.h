@@ -141,7 +141,7 @@ struct ShaderPerViewConstants {
   row_major float4x4 projMtx;
   row_major float4x4 viewProjMtx;
   float4 shadowCascadeSplitDistances;
-  float3 camPos;
+  float3 viewPos;
   float pad;
 };
 

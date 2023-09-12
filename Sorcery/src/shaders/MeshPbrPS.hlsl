@@ -64,7 +64,7 @@ inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const fl
     posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
 
     const float2 uv = posLNdc.xy * gLights[lightIdx].shadowAtlasCellSizes[shadowMapIdx] + gLights[lightIdx].shadowAtlasCellOffsets[shadowMapIdx];
-    const float depth = posLNdc.z + shadowMapTexelSize * gLights[lightIdx].depthBias;
+    const float depth = posLNdc.z - shadowMapTexelSize * gLights[lightIdx].depthBias * (gPerFrameConstants.isUsingReversedZ ? -1 : 1);
 
     switch (gPerFrameConstants.shadowFilteringMode) {
     case SHADOW_FILTERING_NONE:
@@ -83,22 +83,25 @@ inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const fl
 }
 
 
-float SampleShadowCascadeFromArray(const Texture2DArray<float> shadowMapArray, const float3 fragWorldPos, const uint lightIdx, const uint cascadeIdx) {
-  const float4 posLClip = mul(float4(fragWorldPos, 1), gLights[lightIdx].shadowViewProjMatrices[cascadeIdx]);
-  float3 posLNdc = posLClip.xyz / posLClip.w;
-  posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
+float SampleShadowCascadeFromArray(const Texture2DArray<float> shadowMapArray, const float3 fragPosWS, const float3 fragNormalWS, const uint lightIdx, const uint cascadeIdx) {
+  const float shadowMapTexelSize = GetShadowMapArrayTexelSize(shadowMapArray).x;
+
+  const float4 posLClip = mul(float4(fragPosWS + fragNormalWS * shadowMapTexelSize * gLights[lightIdx].normalBias, 1), gLights[lightIdx].shadowViewProjMatrices[cascadeIdx]);
+  const float3 posLNdc = posLClip.xyz / posLClip.w;
+  const float2 uv = posLNdc.xy * float2(0.5, -0.5) + 0.5;
+  const float depth = posLNdc.z - shadowMapTexelSize * gLights[lightIdx].depthBias * (gPerFrameConstants.isUsingReversedZ ? -1 : 1);
 
   switch (gPerFrameConstants.shadowFilteringMode) {
     case SHADOW_FILTERING_NONE:
-        return SampleShadowMapArrayNoFilter(shadowMapArray, posLNdc.xy, cascadeIdx, posLNdc.z);
+        return SampleShadowMapArrayNoFilter(shadowMapArray, uv, cascadeIdx, depth);
     case SHADOW_FILTERING_HARDWARE_PCF:
-        return SampleShadowMapArrayHardwarePCF(shadowMapArray, posLNdc.xy, cascadeIdx, posLNdc.z);
+        return SampleShadowMapArrayHardwarePCF(shadowMapArray, uv, cascadeIdx, depth);
     case SHADOW_FILTERING_PCF_3x3:
-        return SampleShadowMapArrayPCF3x34TapFast(shadowMapArray, posLNdc.xy, cascadeIdx, posLNdc.z);
+        return SampleShadowMapArrayPCF3x34TapFast(shadowMapArray, uv, cascadeIdx, depth);
     case SHADOW_FILTERING_PCF_TENT_3x3:
-        return SampleShadowMapArrayPCF3x3Tent4Tap(shadowMapArray, posLNdc.xy, cascadeIdx, posLNdc.z);
+        return SampleShadowMapArrayPCF3x3Tent4Tap(shadowMapArray, uv, cascadeIdx, depth);
     case SHADOW_FILTERING_PCF_TENT_5x5:
-        return SampleShadowMapArrayPCF5x5Tent9Tap(shadowMapArray, posLNdc.xy, cascadeIdx, posLNdc.z);
+        return SampleShadowMapArrayPCF5x5Tent9Tap(shadowMapArray, uv, cascadeIdx, depth);
     default:
         return 1.0;
   }
@@ -130,7 +133,7 @@ inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 alb
 
         [branch]
         if (cascadeIdx < gPerFrameConstants.shadowCascadeCount) {
-            lighting *= SampleShadowCascadeFromArray(gDirShadowMapArr, fragPosWorld, lightIdx, cascadeIdx);
+            lighting *= SampleShadowCascadeFromArray(gDirShadowMapArr, fragPosWorld, N, lightIdx, cascadeIdx);
         }
     }
 
@@ -231,7 +234,7 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
         N = normalize(mul(normalize(N), vsOut.tbnMtx));
     }
 
-    const float3 V = normalize(gPerViewConstants.camPos - vsOut.worldPos);
+    const float3 V = normalize(gPerViewConstants.viewPos - vsOut.worldPos);
 
     float3 outColor = gPerFrameConstants.ambientLightColor * albedo * ao;
 

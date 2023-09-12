@@ -230,7 +230,7 @@ auto Renderer::Impl::SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> const 
   perViewCbData->gPerViewConstants.viewMtx = viewMtx;
   perViewCbData->gPerViewConstants.projMtx = projMtx;
   perViewCbData->gPerViewConstants.viewProjMtx = viewMtx * projMtx;
-  perViewCbData->gPerViewConstants.camPos = viewPos;
+  perViewCbData->gPerViewConstants.viewPos = viewPos;
 
   for (int i = 0; i < MAX_CASCADE_COUNT; i++) {
     perViewCbData->gPerViewConstants.shadowCascadeSplitDistances[i] = shadowCascadeBoundaries[i].farClip;
@@ -953,13 +953,23 @@ auto Renderer::Impl::StartUp() -> void {
     throw std::runtime_error{"Failed to create skybox pass rasterizer state."};
   }
 
+  auto constexpr reversedZMultiplier{
+    [] {
+      if constexpr (Graphics::IsUsingReversedZ()) {
+        return -1;
+      } else {
+        return 1;
+      }
+    }()
+  };
+
   D3D11_RASTERIZER_DESC constexpr shadowPassRasterizerDesc{
     .FillMode = D3D11_FILL_SOLID,
     .CullMode = D3D11_CULL_BACK,
     .FrontCounterClockwise = FALSE,
-    .DepthBias = -1,
+    .DepthBias = 1 * reversedZMultiplier,
     .DepthBiasClamp = 0,
-    .SlopeScaledDepthBias = -2.5,
+    .SlopeScaledDepthBias = 2.5 * reversedZMultiplier,
     .DepthClipEnable = TRUE,
     .ScissorEnable = FALSE,
     .MultisampleEnable = FALSE,
@@ -1458,6 +1468,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
       sample = FALSE;
     }
   }
+
+  // Set directional light shadow constant data
 
   for (auto i{0}; i < lightCount; i++) {
     if (auto const light{mLights[visibility.lightIndices[i]]};
