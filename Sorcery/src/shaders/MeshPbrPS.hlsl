@@ -18,7 +18,7 @@ STRUCTUREDBUFFER(gLights, ShaderLight, RES_SLOT_LIGHTS);
 
 
 int CalculateShadowCascadeIdx(const float fragViewPosZ) {
-    return dot(gPerCamConstants.shadowCascadeSplitDistances < fragViewPosZ, 1.0);
+    return dot(gPerViewConstants.shadowCascadeSplitDistances < fragViewPosZ, 1.0);
 }
 
 
@@ -231,7 +231,7 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
         N = normalize(mul(normalize(N), vsOut.tbnMtx));
     }
 
-    const float3 V = normalize(gPerCamConstants.camPos - vsOut.worldPos);
+    const float3 V = normalize(gPerViewConstants.camPos - vsOut.worldPos);
 
     float3 outColor = gPerFrameConstants.ambientLightColor * albedo * ao;
 

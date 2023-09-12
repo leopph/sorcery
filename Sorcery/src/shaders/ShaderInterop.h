@@ -35,12 +35,10 @@ typedef bool BOOL;
 #endif
 
 #define CB_SLOT_PER_FRAME 0
-#define CB_SLOT_PER_CAM 1
+#define CB_SLOT_PER_VIEW 1
 #define CB_SLOT_PER_DRAW 2
 #define CB_SLOT_PER_MATERIAL 3
-#define CB_SLOT_POST_PROCESS 0
-#define CB_SLOT_SKYBOX_PASS 0
-#define CB_SLOT_DEPTH_ONLY_PASS 0
+#define CB_SLOT_POST_PROCESS 4
 
 #define RES_SLOT_ALBEDO_MAP 0
 #define RES_SLOT_METALLIC_MAP 1
@@ -133,11 +131,12 @@ struct ShaderPerFrameConstants {
   int shadowCascadeCount;
   BOOL visualizeShadowCascades;
   int shadowFilteringMode;
-  float2 pad;
+  BOOL isUsingReversedZ;
+  float pad;
 };
 
 
-struct ShaderPerCamConstants {
+struct ShaderPerViewConstants {
   row_major float4x4 viewMtx;
   row_major float4x4 projMtx;
   row_major float4x4 viewProjMtx;
@@ -158,8 +157,8 @@ CBUFFER(PerFrameCB, CB_SLOT_PER_FRAME) {
 };
 
 
-CBUFFER(PerCameraCB, CB_SLOT_PER_CAM) {
-  ShaderPerCamConstants gPerCamConstants;
+CBUFFER(PerViewCB, CB_SLOT_PER_VIEW) {
+  ShaderPerViewConstants gPerViewConstants;
 };
 
 
@@ -176,16 +175,6 @@ CBUFFER(PerMaterialCB, CB_SLOT_PER_MATERIAL) {
 CBUFFER(PostProcessCB, CB_SLOT_POST_PROCESS) {
   float invGamma;
   float3 pad;
-};
-
-
-CBUFFER(SkyboxCB, CB_SLOT_SKYBOX_PASS) {
-  row_major float4x4 skyboxViewProjMtx;
-};
-
-
-CBUFFER(DepthOnlyCB, CB_SLOT_DEPTH_ONLY_PASS) {
-  row_major float4x4 gDepthOnlyViewProjMtx;
 };
 
 

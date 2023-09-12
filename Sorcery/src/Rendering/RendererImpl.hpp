@@ -54,11 +54,9 @@ class Renderer::Impl {
   Microsoft::WRL::ComPtr<ID3D11VertexShader> mLineGizmoVs;
 
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPerFrameCb;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mPerCamCb;
+  Microsoft::WRL::ComPtr<ID3D11Buffer> mPerViewCb;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPerDrawCb;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPostProcessCb;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mSkyboxCb;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mDepthOnlyCb;
 
   Microsoft::WRL::ComPtr<ID3D11InputLayout> mAllAttribsIl;
 
@@ -138,6 +136,12 @@ class Renderer::Impl {
   auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) const -> void;
   auto CullLights(Frustum const& frustumWS, Visibility& visibility) const -> void;
 
+  auto SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
+  auto SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& viewMtx, Matrix4 const& projMtx,
+                           ShadowCascadeBoundaries const&
+                           shadowCascadeBoundaries, Vector3 const& viewPos) const noexcept -> void;
+  auto SetPerDrawConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& modelMtx) const noexcept -> void;
+
   auto DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect,
                                  ShadowCascadeBoundaries const& shadowCascadeBoundaries,
                                  std::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices,
@@ -145,8 +149,8 @@ class Renderer::Impl {
   auto DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11DeviceContext> ctx) -> void;
   auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> culledIndices,
                   ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
-  auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx,
-                  ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
+  auto DrawSkybox(
+    ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
   auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst,
                    ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
 

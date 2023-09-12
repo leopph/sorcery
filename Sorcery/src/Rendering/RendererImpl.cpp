@@ -199,6 +199,64 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
 }
 
 
+auto Renderer::Impl::SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
+  D3D11_MAPPED_SUBRESOURCE mapped;
+  [[maybe_unused]] auto const hr{ctx->Map(mPerFrameCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
+  assert(SUCCEEDED(hr));
+
+  *static_cast<PerFrameCB*>(mapped.pData) = PerFrameCB{
+    .gPerFrameConstants = ShaderPerFrameConstants{
+      .ambientLightColor = mAmbientLightColor,
+      .shadowCascadeCount = mCascadeCount,
+      .visualizeShadowCascades = mVisualizeShadowCascades,
+      .shadowFilteringMode = static_cast<int>(mShadowFilteringMode),
+      .isUsingReversedZ = Graphics::IsUsingReversedZ()
+    }
+  };
+
+  ctx->Unmap(mPerFrameCb.Get(), 0);
+}
+
+
+auto Renderer::Impl::SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> const ctx, Matrix4 const& viewMtx,
+                                         Matrix4 const& projMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries,
+                                         Vector3 const& viewPos) const noexcept -> void {
+  D3D11_MAPPED_SUBRESOURCE mapped;
+  [[maybe_unused]] auto const hr{ctx->Map(mPerViewCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
+  assert(SUCCEEDED(hr));
+
+  auto const perViewCbData{static_cast<PerViewCB*>(mapped.pData)};
+
+  perViewCbData->gPerViewConstants.viewMtx = viewMtx;
+  perViewCbData->gPerViewConstants.projMtx = projMtx;
+  perViewCbData->gPerViewConstants.viewProjMtx = viewMtx * projMtx;
+  perViewCbData->gPerViewConstants.camPos = viewPos;
+
+  for (int i = 0; i < MAX_CASCADE_COUNT; i++) {
+    perViewCbData->gPerViewConstants.shadowCascadeSplitDistances[i] = shadowCascadeBoundaries[i].farClip;
+  }
+
+  ctx->Unmap(mPerViewCb.Get(), 0);
+}
+
+
+auto Renderer::Impl::SetPerDrawConstants(ObserverPtr<ID3D11DeviceContext> const ctx,
+                                         Matrix4 const& modelMtx) const noexcept -> void {
+  D3D11_MAPPED_SUBRESOURCE mapped;
+  [[maybe_unused]] auto const hr{ctx->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
+  assert(SUCCEEDED(hr));
+
+  *static_cast<PerDrawCB*>(mapped.pData) = PerDrawCB{
+    .gPerDrawConstants = ShaderPerDrawConstants{
+      .modelMtx = modelMtx,
+      .invTranspModelMtx = modelMtx.Inverse().Transpose()
+    }
+  };
+
+  ctx->Unmap(mPerDrawCb.Get(), 0);
+}
+
+
 auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect,
                                                ShadowCascadeBoundaries const& shadowCascadeBoundaries, std
                                                ::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices,
@@ -324,7 +382,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
         auto const shadowMapSize{mDirShadowMapArr->GetSize()};
         auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
 
-        Matrix4 const shadowViewMtx{Matrix4::LookToLH(Vector3::Zero(), light->GetDirection(), Vector3::Up())};
+        Matrix4 shadowViewMtx{Matrix4::LookToLH(Vector3::Zero(), light->GetDirection(), Vector3::Up())};
         cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
         cascadeCenterWS /= worldUnitsPerTexel;
         cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
@@ -332,19 +390,18 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
         cascadeCenterWS *= worldUnitsPerTexel;
         cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Inverse()};
 
+        shadowViewMtx = Matrix4::LookToLH(cascadeCenterWS, light->GetDirection(), Vector3::Up());
         auto const shadowProjMtx{
           Graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius,
             sphereRadius, -sphereRadius, -sphereRadius - light->GetShadowExtension(), sphereRadius))
         };
 
-        shadowViewProjMatrices[cascadeIdx] = Matrix4::LookToLH(cascadeCenterWS, light->GetDirection(), Vector3::Up()) *
-                                             shadowProjMtx;
+        shadowViewProjMatrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
 
         ctx->OMSetRenderTargets(0, nullptr, mDirShadowMapArr->GetDsv(cascadeIdx));
         ctx->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
 
         ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-        ctx->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
 
         ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
@@ -366,11 +423,8 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
 
         ctx->RSSetViewports(1, &shadowViewport);
 
-        D3D11_MAPPED_SUBRESOURCE mapped;
-        ctx->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-        auto const depthOnlyCbData{static_cast<DepthOnlyCB*>(mapped.pData)};
-        depthOnlyCbData->gDepthOnlyViewProjMtx = shadowViewProjMatrices[cascadeIdx];
-        ctx->Unmap(mDepthOnlyCb.Get(), 0);
+        SetPerViewConstants(ctx, shadowViewMtx, shadowProjMtx, ShadowCascadeBoundaries{}, Vector3{});
+        ctx->VSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, std::array{mPerViewCb.Get()}.data());
 
         Frustum const shadowFrustumWS{shadowViewProjMatrices[cascadeIdx]};
 
@@ -394,7 +448,6 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11
   ctx->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
 
   ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-  ctx->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
 
   ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
@@ -428,11 +481,8 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11
 
         ctx->RSSetViewports(1, &viewport);
 
-        D3D11_MAPPED_SUBRESOURCE mapped;
-        ctx->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-        auto const depthOnlyCbData{static_cast<DepthOnlyCB*>(mapped.pData)};
-        depthOnlyCbData->gDepthOnlyViewProjMtx = subcell->shadowViewProjMtx;
-        ctx->Unmap(mDepthOnlyCb.Get(), 0);
+        SetPerViewConstants(ctx, Matrix4::Identity(), subcell->shadowViewProjMtx, ShadowCascadeBoundaries{}, Vector3{});
+        ctx->VSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, std::array{mPerViewCb.Get()}.data());
 
         Frustum const shadowFrustumWS{subcell->shadowViewProjMtx};
 
@@ -473,13 +523,7 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
     ctx->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
     ctx->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), mesh->GetIndexFormat(), 0);
 
-    D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
-    ctx->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
-    auto const perDrawCbData{static_cast<PerDrawCB*>(mappedPerDrawCb.pData)};
-    perDrawCbData->gPerDrawConstants.modelMtx = component->GetEntity().GetTransform().GetLocalToWorldMatrix();
-    perDrawCbData->gPerDrawConstants.invTranspModelMtx = component->GetEntity().GetTransform().GetLocalToWorldMatrix().
-                                                                    Inverse().Transpose();
-    ctx->Unmap(mPerDrawCb.Get(), 0);
+    SetPerDrawConstants(ctx, component->GetEntity().GetTransform().GetLocalToWorldMatrix());
 
     auto const submesh{mesh->GetSubMeshes()[submeshIdx]};
     auto const mtl{component->GetMaterials()[submesh.materialIndex]};
@@ -546,17 +590,10 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
 }
 
 
-auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx,
-                                ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void {
+auto Renderer::Impl::DrawSkybox(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
   if (mSkyboxes.empty()) {
     return;
   }
-
-  D3D11_MAPPED_SUBRESOURCE mappedSkyboxCB;
-  ctx->Map(mSkyboxCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSkyboxCB);
-  auto const skyboxCBData{static_cast<SkyboxCB*>(mappedSkyboxCB.pData)};
-  skyboxCBData->skyboxViewProjMtx = Matrix4{Matrix3{camViewMtx}} * camProjMtx;
-  ctx->Unmap(mSkyboxCb.Get(), 0);
 
   ID3D11Buffer* const vertexBuffer{mCubeMesh->GetPositionBuffer().Get()};
   UINT constexpr stride{sizeof(Vector3)};
@@ -572,10 +609,13 @@ auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camPro
   auto const cubemapSrv{mSkyboxes[0]->GetCubemap()->GetSrv()};
   ctx->PSSetShaderResources(RES_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
 
-  auto const cb{mSkyboxCb.Get()};
-  ctx->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
-
-  ctx->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
+  ctx->OMSetDepthStencilState([this] {
+    if constexpr (Graphics::IsUsingReversedZ()) {
+      return mDepthTestGreaterEqualNoWriteDss.Get();
+    } else {
+      return mDepthTestLessEqualNoWriteDss.Get();
+    }
+  }(), 0);
   ctx->RSSetState(mSkyboxPassRs.Get());
 
   ctx->DrawIndexed(clamp_cast<UINT>(CUBE_INDICES.size()), 0, 0);
@@ -855,8 +895,8 @@ auto Renderer::Impl::StartUp() -> void {
     throw std::runtime_error{"Failed to create per frame CB."};
   }
 
-  D3D11_BUFFER_DESC constexpr perCamCbDesc{
-    .ByteWidth = sizeof(PerCameraCB),
+  D3D11_BUFFER_DESC constexpr perViewCbDesc{
+    .ByteWidth = sizeof(PerViewCB),
     .Usage = D3D11_USAGE_DYNAMIC,
     .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
     .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -864,8 +904,8 @@ auto Renderer::Impl::StartUp() -> void {
     .StructureByteStride = 0
   };
 
-  if (FAILED(mDevice->CreateBuffer(&perCamCbDesc, nullptr, mPerCamCb.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create per camera CB."};
+  if (FAILED(mDevice->CreateBuffer(&perViewCbDesc, nullptr, mPerViewCb.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create per view CB."};
   }
 
   D3D11_BUFFER_DESC constexpr perDrawCbDesc{
@@ -892,32 +932,6 @@ auto Renderer::Impl::StartUp() -> void {
 
   if (FAILED(mDevice->CreateBuffer(&postProcessCbDesc, nullptr, mPostProcessCb.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create post-process CB."};
-  }
-
-  D3D11_BUFFER_DESC constexpr skyboxCbDesc{
-    .ByteWidth = sizeof(SkyboxCB),
-    .Usage = D3D11_USAGE_DYNAMIC,
-    .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
-    .MiscFlags = 0,
-    .StructureByteStride = 0
-  };
-
-  if (FAILED(mDevice->CreateBuffer(&skyboxCbDesc, nullptr, mSkyboxCb.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create skybox pass CB."};
-  }
-
-  D3D11_BUFFER_DESC constexpr depthOnlyCbDesc{
-    .ByteWidth = sizeof(DepthOnlyCB),
-    .Usage = D3D11_USAGE_DYNAMIC,
-    .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
-    .MiscFlags = 0,
-    .StructureByteStride = 0
-  };
-
-  if (FAILED(mDevice->CreateBuffer(&depthOnlyCbDesc, nullptr, mDepthOnlyCb.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create depth-only pass CB."};
   }
 
   // CREATE RASTERIZER STATES
@@ -1345,19 +1359,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->PSSetSamplers(SAMPLER_SLOT_BI, 1, mBilinearSs.GetAddressOf());
   ctx->PSSetSamplers(SAMPLER_SLOT_POINT, 1, mPointSs.GetAddressOf());
 
-  D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
-  if (FAILED(ctx->Map(mPerFrameCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB))) {
-    throw std::runtime_error{"Failed to map per frame CB."};
-  }
-
-  auto const perFrameCbData{static_cast<PerFrameCB*>(mappedPerFrameCB.pData)};
-  perFrameCbData->gPerFrameConstants.shadowCascadeCount = mCascadeCount;
-  perFrameCbData->gPerFrameConstants.visualizeShadowCascades = mVisualizeShadowCascades;
-  perFrameCbData->gPerFrameConstants.shadowFilteringMode = static_cast<int>(mShadowFilteringMode);
-  perFrameCbData->gPerFrameConstants.ambientLightColor = mAmbientLightColor;
-
-  ctx->Unmap(mPerFrameCb.Get(), 0);
-
+  SetPerFrameConstants(ctx);
   ctx->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
   ctx->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
 
@@ -1365,8 +1367,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   auto const camViewMtx{cam.CalculateViewMatrix()};
   auto const camProjMtx{Graphics::GetProjectionMatrixForRendering(cam.CalculateProjectionMatrix(rtAspect))};
   auto const camViewProjMtx{camViewMtx * camProjMtx};
-  Frustum const camFrustWS{camViewProjMtx};
 
+  Frustum const camFrustWS{camViewProjMtx};
   Visibility visibility{
     .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
     .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}
@@ -1401,6 +1403,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   annot->BeginEvent(L"Depth Pre-Pass");
 
+  SetPerViewConstants(ctx, camViewMtx, camProjMtx, shadowCascadeBoundaries, camPos);
+  ctx->VSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, std::array{mPerViewCb.Get()}.data());
+  ctx->PSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, std::array{mPerViewCb.Get()}.data());
+
   ctx->OMSetRenderTargets(0, nullptr, hdrRt.GetDsv());
   ctx->OMSetDepthStencilState([this] {
     if constexpr (Graphics::IsUsingReversedZ()) {
@@ -1411,7 +1417,6 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   }(), 0);
 
   ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-  ctx->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
 
   ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
@@ -1422,13 +1427,6 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   ctx->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForRendering(), 0);
 
-  D3D11_MAPPED_SUBRESOURCE mappedCb;
-  if (FAILED(ctx->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb))) {
-    throw std::runtime_error{"Failed to map CB for depth pre-pass."};
-  }
-  static_cast<DepthOnlyCB*>(mappedCb.pData)->gDepthOnlyViewProjMtx = camViewProjMtx;
-  ctx->Unmap(mDepthOnlyCb.Get(), 0);
-
   DrawMeshes(visibility.staticMeshIndices, ctx);
 
   annot->EndEvent();
@@ -1436,23 +1434,6 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   // Full forward lighting pass
 
   annot->BeginEvent(L"Forward Lit Pass");
-
-  D3D11_MAPPED_SUBRESOURCE mappedPerCamCB;
-  if (FAILED(ctx->Map(mPerCamCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {
-    throw std::runtime_error{"Failed to map per camera CB."};
-  }
-
-  auto const perCamCbData{static_cast<PerCameraCB*>(mappedPerCamCB.pData)};
-  perCamCbData->gPerCamConstants.viewMtx = camViewMtx;
-  perCamCbData->gPerCamConstants.projMtx = camProjMtx;
-  perCamCbData->gPerCamConstants.viewProjMtx = camViewProjMtx;
-  perCamCbData->gPerCamConstants.camPos = camPos;
-
-  for (int i = 0; i < MAX_CASCADE_COUNT; i++) {
-    perCamCbData->gPerCamConstants.shadowCascadeSplitDistances[i] = shadowCascadeBoundaries[i].farClip;
-  }
-
-  ctx->Unmap(mPerCamCb.Get(), 0);
 
   auto const lightCount{std::ssize(visibility.lightIndices)};
   mLightBuffer->Resize(static_cast<int>(lightCount));
@@ -1498,7 +1479,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   mLightBuffer->Unmap(ctx);
 
   ctx->VSSetShader(mMeshVs.Get(), nullptr, 0);
-  ctx->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
+  ctx->VSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, mPerViewCb.GetAddressOf());
 
   ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
   ctx->OMSetDepthStencilState([this] {
@@ -1510,7 +1491,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   }(), 0);
 
   ctx->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
-  ctx->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
+  ctx->PSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, mPerViewCb.GetAddressOf());
   ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
   ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{mDirShadowMapArr->GetSrv()}.data());
   ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
@@ -1525,7 +1506,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   annot->EndEvent();
 
   annot->BeginEvent(L"Skybox Pass");
-  DrawSkybox(camViewMtx, camProjMtx, ctx);
+  DrawSkybox(ctx);
   annot->EndEvent();
 
   annot->BeginEvent(L"Post-Process Pass");

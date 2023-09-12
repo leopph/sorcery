@@ -13,7 +13,7 @@ MeshVsOut main(MeshVSIn vsIn) {
 
     MeshVsOut ret;
     ret.worldPos = worldPos4.xyz;
-    ret.clipPos = mul(worldPos4, gPerCamConstants.viewProjMtx);
+    ret.clipPos = mul(worldPos4, gPerViewConstants.viewProjMtx);
     ret.normal = normalize(mul(vsIn.normal, (float3x3)gPerDrawConstants.invTranspModelMtx));
     ret.uv = vsIn.uv;
     ret.viewPosZ = ret.clipPos.w;

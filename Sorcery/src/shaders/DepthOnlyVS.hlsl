@@ -13,7 +13,7 @@ struct VsOut {
 
 VsOut main(const VsIn vsIn) {
   VsOut ret;
-  ret.posCS = mul(mul(float4(vsIn.posOS, 1), gPerDrawConstants.modelMtx), gDepthOnlyViewProjMtx);
+  ret.posCS = mul(mul(float4(vsIn.posOS, 1), gPerDrawConstants.modelMtx), gPerViewConstants.viewProjMtx);
   ret.uv = vsIn.uv;
   return ret;
 }

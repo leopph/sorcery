@@ -3,7 +3,7 @@
 
 struct SkyboxVSOut
 {
-    float4 clipPos : SV_POSITION;
+    float4 positionCS : SV_POSITION;
     float3 uv : TEXCOORD;
 };
 
