@@ -1,19 +1,23 @@
 #include "ShaderInterop.h"
 
 struct VsIn {
-  float3 posOS : POSITION;
+  float3 positionOS : POSITION;
   float3 normal : NORMAL;
   float2 uv : TEXCOORD;
 };
 
 struct VsOut {
-  float4 posCS : SV_POSITION;
+  float4 positionCS : SV_POSITION;
   float2 uv : TEXCOORD;
 };
 
 VsOut main(const VsIn vsIn) {
+  const float4 positionWS = mul(float4(vsIn.positionOS, 1), gPerDrawConstants.modelMtx);
+  const float4 positionVS = mul(positionWS, gPerViewConstants.viewMtx);
+  const float4 positionCS = mul(positionVS, gPerViewConstants.projMtx);
+
   VsOut ret;
-  ret.posCS = mul(mul(float4(vsIn.posOS, 1), gPerDrawConstants.modelMtx), gPerViewConstants.viewProjMtx);
+  ret.positionCS = positionCS;
   ret.uv = vsIn.uv;
   return ret;
 }

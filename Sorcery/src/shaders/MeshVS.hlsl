@@ -2,26 +2,30 @@
 #include "MeshVSOut.hlsli"
 
 struct MeshVSIn {
-    float3 position : POSITION;
-    float3 normal : NORMAL;
-    float2 uv : TEXCOORD;
-    float3 tangent : TANGENT;
+  float3 positionOS : POSITION;
+  float3 normalOS : NORMAL;
+  float2 uv : TEXCOORD;
+  float3 tangentOS : TANGENT;
 };
 
 MeshVsOut main(MeshVSIn vsIn) {
-    float4 worldPos4 = mul(float4(vsIn.position, 1), gPerDrawConstants.modelMtx);
+  const float4 positionWS = mul(float4(vsIn.positionOS, 1), gPerDrawConstants.modelMtx);
+  const float4 positionVS = mul(positionWS, gPerViewConstants.viewMtx);
+  const float4 positionCS = mul(positionVS, gPerViewConstants.projMtx);
 
-    MeshVsOut ret;
-    ret.worldPos = worldPos4.xyz;
-    ret.clipPos = mul(worldPos4, gPerViewConstants.viewProjMtx);
-    ret.normal = normalize(mul(vsIn.normal, (float3x3)gPerDrawConstants.invTranspModelMtx));
-    ret.uv = vsIn.uv;
-    ret.viewPosZ = ret.clipPos.w;
+  const float3 normalWS = normalize(mul(vsIn.normalOS, (float3x3)gPerDrawConstants.invTranspModelMtx));
+  float3 tangentWS = normalize(mul(vsIn.tangentOS, (float3x3)gPerDrawConstants.invTranspModelMtx));
+  tangentWS = normalize(tangentWS - dot(tangentWS, normalWS) * normalWS);
+  const float3 bitangentWS = cross(normalWS, tangentWS);
+  const float3x3 tbnMtxWS = float3x3(tangentWS, bitangentWS, normalWS);
 
-    float3 tangentWS = normalize(mul(vsIn.tangent, (float3x3)gPerDrawConstants.invTranspModelMtx));
-    tangentWS = normalize(tangentWS - dot(tangentWS, ret.normal) * ret.normal);
-    const float3 bitangentWS = cross(ret.normal, tangentWS);
-    ret.tbnMtx = float3x3(tangentWS, bitangentWS, ret.normal);
+  MeshVsOut ret;
+  ret.positionWS = positionWS.xyz;
+  ret.positionVS = positionVS.xyz;
+  ret.positionCS = positionCS;
+  ret.normalWS = normalWS;
+  ret.uv = vsIn.uv;
+  ret.tbnMtxWS = tbnMtxWS;
 
-    return ret;
+  return ret;
 }

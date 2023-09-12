@@ -225,16 +225,16 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
         ao *= gAoMap.Sample(gSamplerAf16, vsOut.uv).r;
     }
 
-    float3 N = normalize(vsOut.normal);
+    float3 N = normalize(vsOut.normalWS);
 
     if (material.sampleNormal) {
         N = gNormalMap.Sample(gSamplerAf16, vsOut.uv).rgb;
         N *= 2.0;
         N -= 1.0;
-        N = normalize(mul(normalize(N), vsOut.tbnMtx));
+        N = normalize(mul(normalize(N), vsOut.tbnMtxWS));
     }
 
-    const float3 V = normalize(gPerViewConstants.viewPos - vsOut.worldPos);
+    const float3 V = normalize(gPerViewConstants.viewPos - vsOut.positionWS);
 
     float3 outColor = gPerFrameConstants.ambientLightColor * albedo * ao;
 
@@ -245,15 +245,15 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
     for (uint i = 0; i < lightCount; i++) {
         switch (gLights[i].type) {
         case 0:{
-                outColor += CalculateDirLight(N, V, albedo, metallic, roughness, i, vsOut.worldPos, vsOut.viewPosZ);
+                outColor += CalculateDirLight(N, V, albedo, metallic, roughness, i, vsOut.positionWS, vsOut.positionVS.z);
                 break;
             }
         case 1:{
-                outColor += CalculateSpotLight(N, V, albedo, metallic, roughness, i, vsOut.worldPos);
+                outColor += CalculateSpotLight(N, V, albedo, metallic, roughness, i, vsOut.positionWS);
                 break;
             }
         case 2:{
-                outColor += CalculatePointLight(N, V, albedo, metallic, roughness, i, vsOut.worldPos);
+                outColor += CalculatePointLight(N, V, albedo, metallic, roughness, i, vsOut.positionWS);
                 break;
             }
         default:{
