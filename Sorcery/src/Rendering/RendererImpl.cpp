@@ -34,6 +34,8 @@
 #include "../shaders/generated/SkyboxVSBin.h"
 #endif
 
+#include <d3d11_1.h>
+
 using Microsoft::WRL::ComPtr;
 
 
@@ -197,6 +199,196 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
 }
 
 
+auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect,
+                                               ShadowCascadeBoundaries const& shadowCascadeBoundaries, std
+                                               ::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices,
+                                               ObserverPtr<ID3D11DeviceContext> const ctx) -> void {
+  for (auto const lightIdx : visibility.lightIndices) {
+    if (auto const light{mLights[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->
+                                             IsCastingShadow()) {
+      float const camNear{cam.GetNearClipPlane()};
+      float const camFar{cam.GetFarClipPlane()};
+
+      enum FrustumVertex : int {
+        FrustumVertex_NearTopRight    = 0,
+        FrustumVertex_NearTopLeft     = 1,
+        FrustumVertex_NearBottomLeft  = 2,
+        FrustumVertex_NearBottomRight = 3,
+        FrustumVertex_FarTopRight     = 4,
+        FrustumVertex_FarTopLeft      = 5,
+        FrustumVertex_FarBottomLeft   = 6,
+        FrustumVertex_FarBottomRight  = 7,
+      };
+
+      // Order of vertices is CCW from top right, near first
+      auto const frustumVertsWS{
+        [&cam, rtAspect, camNear, camFar] {
+          std::array<Vector3, 8> ret;
+
+          Vector3 const nearWorldForward{cam.GetPosition() + cam.GetForwardAxis() * camNear};
+          Vector3 const farWorldForward{cam.GetPosition() + cam.GetForwardAxis() * camFar};
+
+          switch (cam.GetType()) {
+            case Camera::Type::Perspective: {
+              float const tanHalfFov{std::tan(ToRadians(cam.GetHorizontalPerspectiveFov() / 2.0f))};
+              float const nearExtentX{camNear * tanHalfFov};
+              float const nearExtentY{nearExtentX / rtAspect};
+              float const farExtentX{camFar * tanHalfFov};
+              float const farExtentY{farExtentX / rtAspect};
+
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
+                                                nearExtentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
+                                               nearExtentY;
+              ret[FrustumVertex_NearBottomLeft] =
+                nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+              ret[FrustumVertex_NearBottomRight] =
+                nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() *
+                                               farExtentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() *
+                                              farExtentY;
+              ret[FrustumVertex_FarBottomLeft] =
+                farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+              ret[FrustumVertex_FarBottomRight] =
+                farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+              break;
+            }
+            case Camera::Type::Orthographic: {
+              float const extentX{cam.GetHorizontalOrthographicSize() / 2.0f};
+              float const extentY{extentX / rtAspect};
+
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                                extentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                               extentY;
+              ret[FrustumVertex_NearBottomLeft] =
+                nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_NearBottomRight] =
+                nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                               extentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                              extentY;
+              ret[FrustumVertex_FarBottomLeft] =
+                farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_FarBottomRight] =
+                farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              break;
+            }
+          }
+
+          return ret;
+        }()
+      };
+
+      auto const frustumDepth{camFar - camNear};
+
+      for (auto cascadeIdx{0}; cascadeIdx < mCascadeCount; cascadeIdx++) {
+        // cascade vertices in world space
+        auto const cascadeVertsWS{
+          [&frustumVertsWS, &shadowCascadeBoundaries, cascadeIdx, camNear, frustumDepth] {
+            auto const [cascadeNear, cascadeFar]{shadowCascadeBoundaries[cascadeIdx]};
+
+            float const cascadeNearNorm{(cascadeNear - camNear) / frustumDepth};
+            float const cascadeFarNorm{(cascadeFar - camNear) / frustumDepth};
+
+            std::array<Vector3, 8> ret;
+
+            for (int j = 0; j < 4; j++) {
+              Vector3 const& from{frustumVertsWS[j]};
+              Vector3 const& to{frustumVertsWS[j + 4]};
+
+              ret[j] = Lerp(from, to, cascadeNearNorm);
+              ret[j + 4] = Lerp(from, to, cascadeFarNorm);
+            }
+
+            return ret;
+          }()
+        };
+
+        Vector3 cascadeCenterWS{Vector3::Zero()};
+
+        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
+          cascadeCenterWS += cascadeVertWS;
+        }
+
+        cascadeCenterWS /= 8.0f;
+
+        float sphereRadius{0.0f};
+
+        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
+          sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
+        }
+
+        auto const shadowMapSize{mDirShadowMapArr->GetSize()};
+        auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
+
+        Matrix4 const shadowViewMtx{Matrix4::LookToLH(Vector3::Zero(), light->GetDirection(), Vector3::Up())};
+        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
+        cascadeCenterWS /= worldUnitsPerTexel;
+        cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
+        cascadeCenterWS[1] = std::floor(cascadeCenterWS[1]);
+        cascadeCenterWS *= worldUnitsPerTexel;
+        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Inverse()};
+
+        auto const shadowProjMtx{
+          Graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius,
+            sphereRadius, -sphereRadius, -sphereRadius - light->GetShadowExtension(), sphereRadius))
+        };
+
+        shadowViewProjMatrices[cascadeIdx] = Matrix4::LookToLH(cascadeCenterWS, light->GetDirection(), Vector3::Up()) *
+                                             shadowProjMtx;
+
+        ctx->OMSetRenderTargets(0, nullptr, mDirShadowMapArr->GetDsv(cascadeIdx));
+        ctx->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
+
+        ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
+        ctx->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
+
+        ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
+
+        ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH,
+          Graphics::GetDepthClearValueForRendering(), 0);
+
+        ctx->RSSetState(mShadowPassRs.Get());
+
+        ctx->IASetInputLayout(mAllAttribsIl.Get());
+
+        D3D11_VIEWPORT const shadowViewport{
+          .TopLeftX = 0,
+          .TopLeftY = 0,
+          .Width = static_cast<float>(shadowMapSize),
+          .Height = static_cast<float>(shadowMapSize),
+          .MinDepth = 0,
+          .MaxDepth = 1
+        };
+
+        ctx->RSSetViewports(1, &shadowViewport);
+
+        D3D11_MAPPED_SUBRESOURCE mapped;
+        ctx->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+        auto const depthOnlyCbData{static_cast<DepthOnlyCB*>(mapped.pData)};
+        depthOnlyCbData->gDepthOnlyViewProjMtx = shadowViewProjMatrices[cascadeIdx];
+        ctx->Unmap(mDepthOnlyCb.Get(), 0);
+
+        Frustum const shadowFrustumWS{shadowViewProjMatrices[cascadeIdx]};
+
+        Visibility perLightVisibility{
+          .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
+          .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}
+        };
+
+        CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
+        DrawMeshes(perLightVisibility.staticMeshIndices, ctx);
+      }
+
+      break;
+    }
+  }
+}
+
+
 auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11DeviceContext> const ctx) -> void {
   ctx->OMSetRenderTargets(0, nullptr, atlas.GetDsv());
   ctx->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
@@ -206,7 +398,7 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11
 
   ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
-  ctx->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForReversedDepth(), 0);
+  ctx->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForRendering(), 0);
 
   ctx->RSSetState(mShadowPassRs.Get());
 
@@ -285,9 +477,8 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
     ctx->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
     auto const perDrawCbData{static_cast<PerDrawCB*>(mappedPerDrawCb.pData)};
     perDrawCbData->gPerDrawConstants.modelMtx = component->GetEntity().GetTransform().GetLocalToWorldMatrix();
-    perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{
-      component->GetEntity().GetTransform().GetLocalToWorldMatrix().Inverse().Transpose()
-    };
+    perDrawCbData->gPerDrawConstants.invTranspModelMtx = component->GetEntity().GetTransform().GetLocalToWorldMatrix().
+                                                                    Inverse().Transpose();
     ctx->Unmap(mPerDrawCb.Get(), 0);
 
     auto const submesh{mesh->GetSubMeshes()[submeshIdx]};
@@ -1112,6 +1303,9 @@ auto Renderer::Impl::ShutDown() -> void {
 
 auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt) -> void {
   auto const ctx{GetThreadContext()};
+  ComPtr<ID3DUserDefinedAnnotation> annot;
+  [[maybe_unused]] auto hr{ctx->QueryInterface(IID_PPV_ARGS(annot.GetAddressOf()))};
+  assert(SUCCEEDED(hr));
 
   auto const rtWidth{rt ? rt->GetDesc().width : gWindow.GetCurrentClientAreaSize().width};
   auto const rtHeight{rt ? rt->GetDesc().height : gWindow.GetCurrentClientAreaSize().height};
@@ -1169,7 +1363,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   auto const camPos{cam.GetPosition()};
   auto const camViewMtx{cam.CalculateViewMatrix()};
-  auto const camProjMtx{cam.CalculateProjectionMatrix(rtAspect)};
+  auto const camProjMtx{Graphics::GetProjectionMatrixForRendering(cam.CalculateProjectionMatrix(rtAspect))};
   auto const camViewProjMtx{camViewMtx * camProjMtx};
   Frustum const camFrustWS{camViewProjMtx};
 
@@ -1181,8 +1375,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   // Shadow pass
 
-  auto const shadowCascadeBoundaries{CalculateCameraShadowCascadeBoundaries(cam)};
-
+  annot->BeginEvent(L"Directional Light Shadows");
   ID3D11ShaderResourceView* const nullSrv{nullptr};
   ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
   ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, &nullSrv);
@@ -1190,206 +1383,32 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   std::array<Matrix4, MAX_CASCADE_COUNT> shadowViewProjMatrices;
-
-  for (auto const lightIdx : visibility.lightIndices) {
-    if (auto const light{mLights[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->
-                                             IsCastingShadow()) {
-      float const camNear{cam.GetNearClipPlane()};
-      float const camFar{cam.GetFarClipPlane()};
-
-      enum FrustumVertex : int {
-        FrustumVertex_NearTopRight    = 0,
-        FrustumVertex_NearTopLeft     = 1,
-        FrustumVertex_NearBottomLeft  = 2,
-        FrustumVertex_NearBottomRight = 3,
-        FrustumVertex_FarTopRight     = 4,
-        FrustumVertex_FarTopLeft      = 5,
-        FrustumVertex_FarBottomLeft   = 6,
-        FrustumVertex_FarBottomRight  = 7,
-      };
-
-      // Order of vertices is CCW from top right, near first
-      auto const frustumVertsWS{
-        [&cam, rtAspect, camNear, camFar] {
-          std::array<Vector3, 8> ret;
-
-          Vector3 const nearWorldForward{cam.GetPosition() + cam.GetForwardAxis() * camNear};
-          Vector3 const farWorldForward{cam.GetPosition() + cam.GetForwardAxis() * camFar};
-
-          switch (cam.GetType()) {
-            case Camera::Type::Perspective: {
-              float const tanHalfFov{std::tan(ToRadians(cam.GetHorizontalPerspectiveFov() / 2.0f))};
-              float const nearExtentX{camNear * tanHalfFov};
-              float const nearExtentY{nearExtentX / rtAspect};
-              float const farExtentX{camFar * tanHalfFov};
-              float const farExtentY{farExtentX / rtAspect};
-
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
-                                                nearExtentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
-                                               nearExtentY;
-              ret[FrustumVertex_NearBottomLeft] =
-                nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_NearBottomRight] =
-                nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() *
-                                               farExtentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() *
-                                              farExtentY;
-              ret[FrustumVertex_FarBottomLeft] =
-                farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
-              ret[FrustumVertex_FarBottomRight] =
-                farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
-              break;
-            }
-            case Camera::Type::Orthographic: {
-              float const extentX{cam.GetHorizontalOrthographicSize() / 2.0f};
-              float const extentY{extentX / rtAspect};
-
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() *
-                                                extentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() *
-                                               extentY;
-              ret[FrustumVertex_NearBottomLeft] =
-                nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_NearBottomRight] =
-                nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() *
-                                               extentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() *
-                                              extentY;
-              ret[FrustumVertex_FarBottomLeft] =
-                farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarBottomRight] =
-                farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              break;
-            }
-          }
-
-          return ret;
-        }()
-      };
-
-      auto const frustumDepth{camFar - camNear};
-
-      for (auto cascadeIdx{0}; cascadeIdx < mCascadeCount; cascadeIdx++) {
-        // cascade vertices in world space
-        auto const cascadeVertsWS{
-          [&frustumVertsWS, &shadowCascadeBoundaries, cascadeIdx, camNear, frustumDepth] {
-            auto const [cascadeNear, cascadeFar]{shadowCascadeBoundaries[cascadeIdx]};
-
-            float const cascadeNearNorm{(cascadeNear - camNear) / frustumDepth};
-            float const cascadeFarNorm{(cascadeFar - camNear) / frustumDepth};
-
-            std::array<Vector3, 8> ret;
-
-            for (int j = 0; j < 4; j++) {
-              Vector3 const& from{frustumVertsWS[j]};
-              Vector3 const& to{frustumVertsWS[j + 4]};
-
-              ret[j] = Lerp(from, to, cascadeNearNorm);
-              ret[j + 4] = Lerp(from, to, cascadeFarNorm);
-            }
-
-            return ret;
-          }()
-        };
-
-        Vector3 cascadeCenterWS{Vector3::Zero()};
-
-        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
-          cascadeCenterWS += cascadeVertWS;
-        }
-
-        cascadeCenterWS /= 8.0f;
-
-        float sphereRadius{0.0f};
-
-        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
-          sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
-        }
-
-        auto const shadowMapSize{mDirShadowMapArr->GetSize()};
-        auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
-
-        Matrix4 const shadowViewMtx{Matrix4::LookToLH(Vector3::Zero(), light->GetDirection(), Vector3::Up())};
-        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
-        cascadeCenterWS /= worldUnitsPerTexel;
-        cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
-        cascadeCenterWS[1] = std::floor(cascadeCenterWS[1]);
-        cascadeCenterWS *= worldUnitsPerTexel;
-        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Inverse()};
-
-        auto shadowNearClipPlane{-sphereRadius - light->GetShadowExtension()};
-        auto shadowFarClipPlane{sphereRadius};
-        Graphics::AdjustClipPlanesForReversedDepth(shadowNearClipPlane, shadowFarClipPlane);
-        Matrix4 const shadowProjMtx{
-          Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius, sphereRadius, -sphereRadius, shadowNearClipPlane,
-            shadowFarClipPlane)
-        };
-
-        shadowViewProjMatrices[cascadeIdx] = Matrix4::LookToLH(cascadeCenterWS, light->GetDirection(), Vector3::Up()) *
-                                             shadowProjMtx;
-
-        ctx->OMSetRenderTargets(0, nullptr, mDirShadowMapArr->GetDsv(cascadeIdx));
-        ctx->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
-
-        ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-        ctx->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
-
-        ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
-
-        ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH,
-          Graphics::GetDepthClearValueForReversedDepth(), 0);
-
-        ctx->RSSetState(mShadowPassRs.Get());
-
-        ctx->IASetInputLayout(mAllAttribsIl.Get());
-
-        D3D11_VIEWPORT const shadowViewport{
-          .TopLeftX = 0,
-          .TopLeftY = 0,
-          .Width = static_cast<float>(shadowMapSize),
-          .Height = static_cast<float>(shadowMapSize),
-          .MinDepth = 0,
-          .MaxDepth = 1
-        };
-
-        ctx->RSSetViewports(1, &shadowViewport);
-
-        D3D11_MAPPED_SUBRESOURCE mapped;
-        ctx->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-        auto const depthOnlyCbData{static_cast<DepthOnlyCB*>(mapped.pData)};
-        depthOnlyCbData->gDepthOnlyViewProjMtx = shadowViewProjMatrices[cascadeIdx];
-        ctx->Unmap(mDepthOnlyCb.Get(), 0);
-
-        Frustum const shadowFrustumWS{shadowViewProjMatrices[cascadeIdx]};
-
-        Visibility perLightVisibility{
-          .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
-          .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}
-        };
-
-        CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
-        DrawMeshes(perLightVisibility.staticMeshIndices, ctx);
-      }
-
-      break;
-    }
-  }
+  auto const shadowCascadeBoundaries{CalculateCameraShadowCascadeBoundaries(cam)};
+  DrawDirectionalShadowMaps(visibility, cam, rtAspect, shadowCascadeBoundaries, shadowViewProjMatrices, ctx);
 
   //mDirectionalShadowAtlas->Update(mLights, visibility, cam, shadowCascadeBoundaries, rtAspect, mCascadeCount);
   //DrawShadowMaps(*mDirectionalShadowAtlas);
+  annot->EndEvent();
 
+  annot->BeginEvent(L"Punctual Light Shadows");
   mPunctualShadowAtlas->Update(mLights, visibility, cam, camViewProjMtx, mShadowDistance);
   DrawShadowMaps(*mPunctualShadowAtlas, ctx);
-
-  CullStaticMeshComponents(camFrustWS, visibility);
+  annot->EndEvent();
 
   // Depth pre-pass
 
+  CullStaticMeshComponents(camFrustWS, visibility);
+
+  annot->BeginEvent(L"Depth Pre-Pass");
+
   ctx->OMSetRenderTargets(0, nullptr, hdrRt.GetDsv());
-  ctx->OMSetDepthStencilState(mDepthTestLessWriteDss.Get(), 0);
+  ctx->OMSetDepthStencilState([this] {
+    if constexpr (Graphics::IsUsingReversedZ()) {
+      return mDepthTestGreaterWriteDss.Get();
+    } else {
+      return mDepthTestLessWriteDss.Get();
+    }
+  }(), 0);
 
   ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
   ctx->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
@@ -1401,7 +1420,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   ctx->IASetInputLayout(mAllAttribsIl.Get());
 
-  ctx->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+  ctx->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForRendering(), 0);
 
   D3D11_MAPPED_SUBRESOURCE mappedCb;
   if (FAILED(ctx->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb))) {
@@ -1412,7 +1431,11 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   DrawMeshes(visibility.staticMeshIndices, ctx);
 
+  annot->EndEvent();
+
   // Full forward lighting pass
+
+  annot->BeginEvent(L"Forward Lit Pass");
 
   D3D11_MAPPED_SUBRESOURCE mappedPerCamCB;
   if (FAILED(ctx->Map(mPerCamCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {
@@ -1420,6 +1443,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   }
 
   auto const perCamCbData{static_cast<PerCameraCB*>(mappedPerCamCB.pData)};
+  perCamCbData->gPerCamConstants.viewMtx = camViewMtx;
+  perCamCbData->gPerCamConstants.projMtx = camProjMtx;
   perCamCbData->gPerCamConstants.viewProjMtx = camViewProjMtx;
   perCamCbData->gPerCamConstants.camPos = camPos;
 
@@ -1476,7 +1501,13 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
 
   ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
-  ctx->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
+  ctx->OMSetDepthStencilState([this] {
+    if constexpr (Graphics::IsUsingReversedZ()) {
+      return mDepthTestGreaterEqualNoWriteDss.Get();
+    } else {
+      return mDepthTestLessEqualNoWriteDss.Get();
+    }
+  }(), 0);
 
   ctx->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
   ctx->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
@@ -1490,8 +1521,14 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->IASetInputLayout(mAllAttribsIl.Get());
 
   DrawMeshes(visibility.staticMeshIndices, ctx);
-  DrawSkybox(camViewMtx, camProjMtx, ctx);
 
+  annot->EndEvent();
+
+  annot->BeginEvent(L"Skybox Pass");
+  DrawSkybox(camViewMtx, camProjMtx, ctx);
+  annot->EndEvent();
+
+  annot->BeginEvent(L"Post-Process Pass");
   RenderTarget const* postProcessRt;
 
   if (GetMultisamplingMode() == MultisamplingMode::Off) {
@@ -1507,8 +1544,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->RSSetViewports(1, &viewport);
   PostProcess(postProcessRt->GetColorSrv(), rt ? rt->GetRtv() : mSwapChain->GetRtv(), ctx);
 
+  annot->EndEvent();
+
   ComPtr<ID3D11CommandList> cmdList;
-  [[maybe_unused]] auto const hr{ctx->FinishCommandList(FALSE, cmdList.GetAddressOf())};
+  hr = ctx->FinishCommandList(FALSE, cmdList.GetAddressOf());
   assert(SUCCEEDED(hr));
 
   ExecuteCommandList(cmdList.Get());

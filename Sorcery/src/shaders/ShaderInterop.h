@@ -16,7 +16,6 @@ using float2 = Vector2;
 using float3 = Vector3;
 using float4 = Vector4;
 
-using float3x3 = Matrix4;
 using float4x4 = Matrix4;
 using uint = unsigned;
 
@@ -139,6 +138,8 @@ struct ShaderPerFrameConstants {
 
 
 struct ShaderPerCamConstants {
+  row_major float4x4 viewMtx;
+  row_major float4x4 projMtx;
   row_major float4x4 viewProjMtx;
   float4 shadowCascadeSplitDistances;
   float3 camPos;
@@ -148,7 +149,7 @@ struct ShaderPerCamConstants {
 
 struct ShaderPerDrawConstants {
   row_major float4x4 modelMtx;
-  row_major float3x3 normalMtx;
+  row_major float4x4 invTranspModelMtx;
 };
 
 

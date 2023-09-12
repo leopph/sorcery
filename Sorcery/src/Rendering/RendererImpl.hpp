@@ -138,10 +138,17 @@ class Renderer::Impl {
   auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) const -> void;
   auto CullLights(Frustum const& frustumWS, Visibility& visibility) const -> void;
 
+  auto DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect,
+                                 ShadowCascadeBoundaries const& shadowCascadeBoundaries,
+                                 std::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices,
+                                 ObserverPtr<ID3D11DeviceContext> ctx) -> void;
   auto DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11DeviceContext> ctx) -> void;
-  auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> culledIndices, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
-  auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
-  auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> culledIndices,
+                  ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx,
+                  ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
+  auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst,
+                   ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
   auto ReleaseTempRenderTargets() noexcept -> void;
@@ -238,7 +245,7 @@ public:
 
 
 constexpr auto Renderer::Impl::GetSceneDrawDss() -> Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& {
-  if constexpr (Graphics::IsDepthBufferReversed()) {
+  if constexpr (Graphics::IsUsingReversedZ()) {
     return mDepthTestGreaterEqualNoWriteDss;
   } else {
     return mDepthTestLessEqualNoWriteDss;
@@ -247,7 +254,7 @@ constexpr auto Renderer::Impl::GetSceneDrawDss() -> Microsoft::WRL::ComPtr<ID3D1
 
 
 constexpr auto Renderer::Impl::GetShadowDrawDss() -> Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& {
-  if constexpr (Graphics::IsDepthBufferReversed()) {
+  if constexpr (Graphics::IsUsingReversedZ()) {
     return mDepthTestGreaterWriteDss;
   } else {
     return mDepthTestLessWriteDss;
@@ -261,7 +268,7 @@ constexpr auto Renderer::Impl::GetSkyboxDrawDss() -> Microsoft::WRL::ComPtr<ID3D
 
 
 constexpr auto Renderer::Impl::GetShadowPointSampler() -> Microsoft::WRL::ComPtr<ID3D11SamplerState>& {
-  if constexpr (Graphics::IsDepthBufferReversed()) {
+  if constexpr (Graphics::IsUsingReversedZ()) {
     return mCmpPointGreaterEqualSs;
   } else {
     return mCmpPointLessEqualSs;
@@ -270,7 +277,7 @@ constexpr auto Renderer::Impl::GetShadowPointSampler() -> Microsoft::WRL::ComPtr
 
 
 constexpr auto Renderer::Impl::GetShadowPcfSampler() -> Microsoft::WRL::ComPtr<ID3D11SamplerState>& {
-  if constexpr (Graphics::IsDepthBufferReversed()) {
+  if constexpr (Graphics::IsUsingReversedZ()) {
     return mCmpPcfGreaterEqualSs;
   } else {
     return mCmpPcfLessEqualSs;

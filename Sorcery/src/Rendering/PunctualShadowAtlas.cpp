@@ -176,10 +176,10 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
         };
 
         auto const shadowViewMtx{faceViewMatrices[shadowIdx]};
-        auto shadowNearPlane{light->GetShadowNearPlane()};
-        auto shadowFarPlane{light->GetRange()};
-        Graphics::AdjustClipPlanesForReversedDepth(shadowNearPlane, shadowFarPlane);
-        auto const shadowProjMtx{Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, shadowNearPlane, shadowFarPlane)};
+        auto const shadowProjMtx{
+          Graphics::GetProjectionMatrixForRendering(Matrix4::PerspectiveAsymZLH(ToRadians(90), 1,
+            light->GetShadowNearPlane(), light->GetRange()))
+        };
 
         subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
       }
