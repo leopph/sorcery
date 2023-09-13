@@ -2,7 +2,7 @@
 
 #include <ImGuizmo.h>
 
-#include "EditorCamera.hpp"
+#include "StandaloneCamera.hpp"
 #include "Platform.hpp"
 #include "Timing.hpp"
 
@@ -71,26 +71,26 @@ auto SceneViewWindow::Draw(Application& context) -> void {
         posDelta *= 2;
       }
 
-      mEditorCam.position += mEditorCam.orientation.Rotate(posDelta) * mEditorCam.speed * timing::GetFrameTime();
+      mCam.position += mCam.orientation.Rotate(posDelta) * mCam.speed * timing::GetFrameTime();
 
       auto const [mouseX, mouseY]{gWindow.GetMouseDelta()};
       auto constexpr sens{0.05f};
 
-      mEditorCam.orientation = Quaternion{Vector3::Up(), static_cast<f32>(mouseX) * sens} * mEditorCam.orientation;
-      mEditorCam.orientation *= Quaternion{Vector3::Right(), static_cast<f32>(mouseY) * sens};
+      mCam.orientation = Quaternion{Vector3::Up(), static_cast<f32>(mouseX) * sens} * mCam.orientation;
+      mCam.orientation *= Quaternion{Vector3::Right(), static_cast<f32>(mouseY) * sens};
     }
 
     if (auto const selectedObject{context.GetSelectedObject()}) {
       selectedObject->OnDrawGizmosSelected();
     }
 
-    gRenderer.DrawCamera(mEditorCam, mRenderTarget.get());
+    gRenderer.DrawCamera(mCam, mRenderTarget.get());
     gRenderer.DrawGizmos(mRenderTarget.get());
     ImGui::Image(mRenderTarget->GetColorSrv(), contentRegionSize);
 
     auto const windowAspectRatio{ImGui::GetWindowWidth() / ImGui::GetWindowHeight()};
-    auto const editorCamViewMat{mEditorCam.CalculateViewMatrix()};
-    auto const editorCamProjMat{mEditorCam.CalculateProjectionMatrix(windowAspectRatio)};
+    auto const editorCamViewMat{mCam.CalculateViewMatrix()};
+    auto const editorCamProjMat{mCam.CalculateProjectionMatrix(windowAspectRatio)};
 
     ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(),
       ImGui::GetWindowHeight());
@@ -105,7 +105,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
 
     if (showGrid) {
       ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), Matrix4::Identity().GetData(),
-        mEditorCam.GetFarClipPlane());
+        mCam.GetFarClipPlane());
     }
 
     if (auto const selectedEntity{dynamic_cast<Entity*>(context.GetSelectedObject())}; selectedEntity) {
@@ -122,8 +122,8 @@ auto SceneViewWindow::Draw(Application& context) -> void {
           op = ImGuizmo::SCALE;
         }
         if (GetKeyDown(Key::F)) {
-          mEditorCam.position = selectedEntity->GetTransform().GetWorldPosition() - Vector3::Forward() * 2;
-          mEditorCam.orientation = selectedEntity->GetTransform().GetLocalRotation();
+          mCam.position = selectedEntity->GetTransform().GetWorldPosition() - Vector3::Forward() * 2;
+          mCam.orientation = selectedEntity->GetTransform().GetLocalRotation();
         }
       }
 
@@ -143,7 +143,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
 }
 
 
-auto SceneViewWindow::GetCamera() noexcept -> EditorCamera& {
-  return mEditorCam;
+auto SceneViewWindow::GetCamera() noexcept -> StandaloneCamera& {
+  return mCam;
 }
 }

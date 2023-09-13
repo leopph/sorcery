@@ -10,7 +10,7 @@
 
 
 namespace sorcery::mage {
-SettingsWindow::SettingsWindow(Application& app, EditorCamera& sceneViewCam) :
+SettingsWindow::SettingsWindow(Application& app, StandaloneCamera& sceneViewCam) :
   mIsOpen{true},
   mApp{std::addressof(app)},
   mSceneViewCam{std::addressof(sceneViewCam)} {}

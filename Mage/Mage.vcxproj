@@ -96,7 +96,7 @@
     <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp" />
     <ClCompile Include="src\ResourceImporters\ResourceImporter.cpp" />
     <ClCompile Include="src\ResourceImporters\TextureImporter.cpp" />
-    <ClCompile Include="src\EditorCamera.cpp" />
+    <ClCompile Include="src\StandaloneCamera.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\SettingsWindow.cpp" />
     <ClCompile Include="src\EntityHierarchyWindow.cpp" />
@@ -121,7 +121,7 @@
     <ClInclude Include="src\ResourceImporters\NativeResourceImporter.hpp" />
     <ClInclude Include="src\ResourceImporters\ResourceImporter.hpp" />
     <ClInclude Include="src\ResourceImporters\TextureImporter.hpp" />
-    <ClInclude Include="src\EditorCamera.hpp" />
+    <ClInclude Include="src\StandaloneCamera.hpp" />
     <ClInclude Include="src\Application.hpp" />
     <ClInclude Include="src\SettingsWindow.hpp" />
     <ClInclude Include="src\EntityHierarchyWindow.hpp" />
