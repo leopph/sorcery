@@ -13,8 +13,7 @@ struct VsOut {
 
 VsOut main(const VsIn vsIn) {
   const float4 positionWS = mul(float4(vsIn.positionOS, 1), gPerDrawConstants.modelMtx);
-  const float4 positionVS = mul(positionWS, gPerViewConstants.viewMtx);
-  const float4 positionCS = mul(positionVS, gPerViewConstants.projMtx);
+  const float4 positionCS = mul(positionWS, gPerViewConstants.viewProjMtx);
 
   VsOut ret;
   ret.positionCS = positionCS;

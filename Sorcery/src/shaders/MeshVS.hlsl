@@ -11,10 +11,10 @@ struct MeshVSIn {
 MeshVsOut main(MeshVSIn vsIn) {
   const float4 positionWS = mul(float4(vsIn.positionOS, 1), gPerDrawConstants.modelMtx);
   const float4 positionVS = mul(positionWS, gPerViewConstants.viewMtx);
-  const float4 positionCS = mul(positionVS, gPerViewConstants.projMtx);
+  const float4 positionCS = mul(positionWS, gPerViewConstants.viewProjMtx);
 
   const float3 normalWS = normalize(mul(vsIn.normalOS, (float3x3)gPerDrawConstants.invTranspModelMtx));
-  float3 tangentWS = normalize(mul(vsIn.tangentOS, (float3x3)gPerDrawConstants.invTranspModelMtx));
+  float3 tangentWS = normalize(mul(vsIn.tangentOS, (float3x3)gPerDrawConstants.modelMtx));
   tangentWS = normalize(tangentWS - dot(tangentWS, normalWS) * normalWS);
   const float3 bitangentWS = cross(normalWS, tangentWS);
   const float3x3 tbnMtxWS = float3x3(tangentWS, bitangentWS, normalWS);
