@@ -119,7 +119,7 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
 
     ImGui::TableSetColumnIndex(1);
     ImGui::PushItemWidth(-FLT_MIN);
-    if (ImGui::InputText("##EntityName", &entityName)) {
+    if (ImGui::InputText("##EntityName", &entityName, ImGuiInputTextFlags_EnterReturnsTrue)) {
       SetName(entityName);
     }
 
