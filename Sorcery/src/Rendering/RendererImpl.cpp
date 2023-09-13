@@ -133,16 +133,18 @@ auto Renderer::Impl::CullStaticMeshComponents(Frustum const& frustumWS, Visibili
   visibility.staticMeshIndices.clear();
 
   for (int i = 0; i < static_cast<int>(mStaticMeshComponents.size()); i++) {
-    if (frustumWS.Intersects(mStaticMeshComponents[i]->CalculateBounds())) {
-      auto const submeshes{mStaticMeshComponents[i]->GetMesh()->GetSubMeshes()};
-      for (int j{0}; j < std::ssize(submeshes); j++) {
-        auto const& modelMtx{mStaticMeshComponents[i]->GetEntity().GetTransform().GetLocalToWorldMatrix()};
-        auto submeshBounds{submeshes[j].bounds};
-        submeshBounds.min = Vector3{Vector4{submeshBounds.min, 1} * modelMtx};
-        submeshBounds.max = Vector3{Vector4{submeshBounds.max, 1} * modelMtx};
+    if (auto const mesh{mStaticMeshComponents[i]->GetMesh()}) {
+      if (frustumWS.Intersects(mStaticMeshComponents[i]->CalculateBounds())) {
+        auto const submeshes{mesh->GetSubMeshes()};
+        for (int j{0}; j < std::ssize(submeshes); j++) {
+          auto const& modelMtx{mStaticMeshComponents[i]->GetEntity().GetTransform().GetLocalToWorldMatrix()};
+          auto submeshBounds{submeshes[j].bounds};
+          submeshBounds.min = Vector3{Vector4{submeshBounds.min, 1} * modelMtx};
+          submeshBounds.max = Vector3{Vector4{submeshBounds.max, 1} * modelMtx};
 
-        if (frustumWS.Intersects(submeshBounds)) {
-          visibility.staticMeshIndices.emplace_back(i, j);
+          if (frustumWS.Intersects(submeshBounds)) {
+            visibility.staticMeshIndices.emplace_back(i, j);
+          }
         }
       }
     }
