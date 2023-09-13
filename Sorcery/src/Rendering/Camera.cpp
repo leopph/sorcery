@@ -68,7 +68,17 @@ auto Camera::SetHorizontalOrthographicSize(float size) -> void {
 
 
 auto Camera::CalculateViewMatrix() const noexcept -> Matrix4 {
-  return Matrix4::LookTo(GetPosition(), GetForwardAxis(), Vector3::Up());
+  auto const rightAxis{GetRightAxis()};
+  auto const upAxis{GetUpAxis()};
+  auto const forwardAxis{GetForwardAxis()};
+  auto const position{GetPosition()};
+
+  return Matrix4{
+    rightAxis[0], upAxis[0], forwardAxis[0], 0,
+    rightAxis[1], upAxis[1], forwardAxis[1], 0,
+    rightAxis[2], upAxis[2], forwardAxis[2], 0,
+    -Dot(position, rightAxis), -Dot(position, upAxis), -Dot(position, forwardAxis), 1
+  };
 }
 
 
