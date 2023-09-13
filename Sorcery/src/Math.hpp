@@ -300,8 +300,8 @@ public:
   [[nodiscard]] static constexpr auto LookTo(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
   [[nodiscard]] static constexpr auto LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
 
-  [[nodiscard]] static constexpr auto OrthographicOffCenter(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4>;
-  [[nodiscard]] static constexpr auto Orthographic(T width, T height, T zNear, T zFar) noexcept -> Matrix<T, 4, 4>;
+  [[nodiscard]] static constexpr auto OrthographicOffCenter(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+  [[nodiscard]] static constexpr auto Orthographic(T width, T height, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
 
   [[nodiscard]] static constexpr auto PerspectiveOffCenter(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
   [[nodiscard]] static constexpr auto Perspective(T width, T height, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
@@ -1483,7 +1483,7 @@ constexpr auto Matrix<T, N, M>::LookAt(Vector<T, 3> const& position, Vector<T, 3
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::OrthographicOffCenter(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
+constexpr auto Matrix<T, N, M>::OrthographicOffCenter(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
   return Matrix<T, 4, 4>{
     2 / (right - left), 0, 0, 0,
     0, 2 / (top - bottom), 0, 0,
@@ -1494,7 +1494,7 @@ constexpr auto Matrix<T, N, M>::OrthographicOffCenter(T const left, T const righ
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::Orthographic(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
+constexpr auto Matrix<T, N, M>::Orthographic(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
   auto const halfWidth{width / 2};
   auto const halfHeight{height / 2};
   return OrthographicOffCenter(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
