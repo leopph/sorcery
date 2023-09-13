@@ -22,9 +22,10 @@ auto EditorCamera::GetForwardAxis() const noexcept -> Vector3 {
 }
 
 
-EditorCamera::EditorCamera(Vector3 const& position, Quaternion const& orientation, float const nearClip, float const farClip, float const fovHorizDeg) :
-  position{ position },
-  orientation{ orientation } {
+EditorCamera::EditorCamera(Vector3 const& position, Quaternion const& orientation, float const speed, float const nearClip, float const farClip, float const fovHorizDeg) :
+  position{position},
+  orientation{orientation},
+  speed{speed} {
   SetNearClipPlane(nearClip);
   SetFarClipPlane(farClip);
   SetHorizontalPerspectiveFov(fovHorizDeg);

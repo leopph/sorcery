@@ -71,9 +71,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
         posDelta *= 2;
       }
 
-      float constexpr editorCamSpeed{5.0f};
-
-      mEditorCam.position += mEditorCam.orientation.Rotate(posDelta) * editorCamSpeed * timing::GetFrameTime();
+      mEditorCam.position += mEditorCam.orientation.Rotate(posDelta) * mEditorCam.speed * timing::GetFrameTime();
 
       auto const [mouseX, mouseY]{gWindow.GetMouseDelta()};
       auto constexpr sens{0.05f};

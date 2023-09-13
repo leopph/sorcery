@@ -144,6 +144,8 @@ auto SettingsWindow::Draw() -> void {
     mSceneViewCam->SetNearClipPlane(std::min(farPlane, mSceneViewCam->GetNearClipPlane()));
   }
 
+  ImGui::DragFloat("Camera Speed", &mSceneViewCam->speed, 0.1f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+
   ImGui::End();
 }
 
