@@ -1,6 +1,9 @@
 #include "Object.hpp"
 
+#include <imgui.h>
+
 #include <cassert>
+#include <format>
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Object>{"Object"}
@@ -44,6 +47,11 @@ auto Object::OnDestroy() -> void {
       }
     }
   }
+}
+
+
+auto Object::OnDrawProperties([[maybe_unused]] bool& changed) -> void {
+  ImGui::SeparatorText(std::format("{} ({})", GetName(), rttr::type::get(*this).get_name().data()).c_str());
 }
 
 

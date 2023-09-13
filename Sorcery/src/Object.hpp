@@ -33,7 +33,7 @@ public:
 
   LEOPPHAPI virtual auto OnInit() -> void;
   LEOPPHAPI virtual auto OnDestroy() -> void;
-  virtual auto OnDrawProperties([[maybe_unused]] bool& changed) -> void {}
+  LEOPPHAPI virtual auto OnDrawProperties(bool& changed) -> void;
   virtual auto OnDrawGizmosSelected() -> void {}
 
   template<std::derived_from<Object> T>

@@ -16,6 +16,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetEntity() const -> Entity&;
   LEOPPHAPI auto SetEntity(Entity& entity) -> void;
 
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
   LEOPPHAPI auto OnDestroy() -> void override;
 };
 }
