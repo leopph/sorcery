@@ -68,17 +68,20 @@ auto Camera::SetHorizontalOrthographicSize(float size) -> void {
 
 
 auto Camera::CalculateViewMatrix() const noexcept -> Matrix4 {
-  return Matrix4::LookToLH(GetPosition(), GetForwardAxis(), Vector3::Up());
+  return Matrix4::LookTo(GetPosition(), GetForwardAxis(), Vector3::Up());
 }
 
 
 auto Camera::CalculateProjectionMatrix(float const aspectRatio) const noexcept -> Matrix4 {
   switch (GetType()) {
     case Type::Perspective:
-      return Matrix4::PerspectiveAsymZLH(ToRadians(Camera::HorizontalPerspectiveFovToVertical(GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, GetNearClipPlane(), GetFarClipPlane());
+      return Matrix4::PerspectiveFov(
+        ToRadians(Camera::HorizontalPerspectiveFovToVertical(GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio,
+        GetNearClipPlane(), GetFarClipPlane());
 
     case Type::Orthographic:
-      return Matrix4::OrthographicAsymZLH(GetHorizontalOrthographicSize(), GetHorizontalOrthographicSize() / aspectRatio, GetNearClipPlane(), GetFarClipPlane());
+      return Matrix4::Orthographic(GetHorizontalOrthographicSize(),
+        GetHorizontalOrthographicSize() / aspectRatio, GetNearClipPlane(), GetFarClipPlane());
   }
 
   return Matrix4{};

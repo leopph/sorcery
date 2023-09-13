@@ -154,11 +154,11 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
 
       if (light->GetType() == LightComponent::Type::Spot) {
         auto const shadowViewMtx{
-          Matrix4::LookToLH(light->GetEntity().GetTransform().GetWorldPosition(),
+          Matrix4::LookTo(light->GetEntity().GetTransform().GetWorldPosition(),
             light->GetEntity().GetTransform().GetForwardAxis(), Vector3::Up())
         };
         auto const shadowProjMtx{
-          Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle()), 1.f, light->GetRange(),
+          Matrix4::PerspectiveFov(ToRadians(light->GetOuterAngle()), 1.f, light->GetRange(),
             light->GetShadowNearPlane())
         };
 
@@ -167,17 +167,17 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
         auto const lightPos{light->GetEntity().GetTransform().GetWorldPosition()};
 
         std::array const faceViewMatrices{
-          Matrix4::LookToLH(lightPos, Vector3::Right(), Vector3::Up()), // +X
-          Matrix4::LookToLH(lightPos, Vector3::Left(), Vector3::Up()), // -X
-          Matrix4::LookToLH(lightPos, Vector3::Up(), Vector3::Backward()), // +Y
-          Matrix4::LookToLH(lightPos, Vector3::Down(), Vector3::Forward()), // -Y
-          Matrix4::LookToLH(lightPos, Vector3::Forward(), Vector3::Up()), // +Z
-          Matrix4::LookToLH(lightPos, Vector3::Backward(), Vector3::Up()), // -Z
+          Matrix4::LookTo(lightPos, Vector3::Right(), Vector3::Up()), // +X
+          Matrix4::LookTo(lightPos, Vector3::Left(), Vector3::Up()), // -X
+          Matrix4::LookTo(lightPos, Vector3::Up(), Vector3::Backward()), // +Y
+          Matrix4::LookTo(lightPos, Vector3::Down(), Vector3::Forward()), // -Y
+          Matrix4::LookTo(lightPos, Vector3::Forward(), Vector3::Up()), // +Z
+          Matrix4::LookTo(lightPos, Vector3::Backward(), Vector3::Up()), // -Z
         };
 
         auto const shadowViewMtx{faceViewMatrices[shadowIdx]};
         auto const shadowProjMtx{
-          Graphics::GetProjectionMatrixForRendering(Matrix4::PerspectiveAsymZLH(ToRadians(90), 1,
+          Graphics::GetProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1,
             light->GetShadowNearPlane(), light->GetRange()))
         };
 

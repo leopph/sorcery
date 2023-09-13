@@ -382,7 +382,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
         auto const shadowMapSize{mDirShadowMapArr->GetSize()};
         auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
 
-        Matrix4 shadowViewMtx{Matrix4::LookToLH(Vector3::Zero(), light->GetDirection(), Vector3::Up())};
+        Matrix4 shadowViewMtx{Matrix4::LookTo(Vector3::Zero(), light->GetDirection(), Vector3::Up())};
         cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
         cascadeCenterWS /= worldUnitsPerTexel;
         cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
@@ -390,9 +390,9 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
         cascadeCenterWS *= worldUnitsPerTexel;
         cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Inverse()};
 
-        shadowViewMtx = Matrix4::LookToLH(cascadeCenterWS, light->GetDirection(), Vector3::Up());
+        shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light->GetDirection(), Vector3::Up());
         auto const shadowProjMtx{
-          Graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius,
+          Graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
             sphereRadius, -sphereRadius, -sphereRadius - light->GetShadowExtension(), sphereRadius))
         };
 

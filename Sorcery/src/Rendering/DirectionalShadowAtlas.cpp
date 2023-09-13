@@ -158,7 +158,7 @@ auto DirectionalShadowAtlas::Update(std::span<LightComponent const* const> const
       auto const shadowMapSize{GetSize() / GetSubdivisionSize()};
       auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
 
-      Matrix4 const shadowViewMtx{Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up())};
+      Matrix4 const shadowViewMtx{Matrix4::LookTo(Vector3::Zero(), light.GetDirection(), Vector3::Up())};
       cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
       cascadeCenterWS /= worldUnitsPerTexel;
       cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
@@ -167,12 +167,12 @@ auto DirectionalShadowAtlas::Update(std::span<LightComponent const* const> const
       cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Inverse()};
 
       auto const shadowProjMtx{
-        Graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius,
+        Graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
           sphereRadius, -sphereRadius, -sphereRadius - light.GetShadowExtension(), sphereRadius))
       };
 
       auto const shadowViewProjMtx{
-        Matrix4::LookToLH(cascadeCenterWS, light.GetDirection(), Vector3::Up()) * shadowProjMtx
+        Matrix4::LookTo(cascadeCenterWS, light.GetDirection(), Vector3::Up()) * shadowProjMtx
       };
 
       mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewProjMtx, lightIdxIdx, cascadeIdx);
