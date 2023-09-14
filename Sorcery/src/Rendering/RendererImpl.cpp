@@ -661,7 +661,7 @@ auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11Rend
   ctx->IASetInputLayout(nullptr);
   ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-  ctx->Draw(6, 0);
+  ctx->Draw(3, 0);
 
   // Restore old view bindings to that we don't leave any input/output conflicts behind.
 

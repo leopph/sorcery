@@ -1,17 +1,9 @@
-float4 main(const uint vertexId : SV_VertexID ) : SV_POSITION
-{
-	switch(vertexId) {
-	case 5:
-	case 0:
-            return float4(-1, -1, 0, 1);
-	case 1:
-            return float4(-1, 1, 0, 1);
-	case 2:
-	case 3:
-            return float4(1, 1, 0, 1);
-	case 4:
-            return float4(1, -1, 0, 1);
-	default:
-            return float4(0, 0, 0, 0);
-    }
+#include "ScreenVsOut.hlsli"
+#include "Util.hlsli"
+
+ScreenVsOut main(const uint vertexId : SV_VertexID) {
+	ScreenVsOut ret;
+	ret.uv = float2((vertexId << 1) & 2, vertexId & 2);
+	ret.positionCS = float4(UvToNdc(ret.uv), 0, 1);
+	return ret;
 }
