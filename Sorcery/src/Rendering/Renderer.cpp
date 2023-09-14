@@ -82,6 +82,12 @@ auto Renderer::ExecuteCommandList(ObserverPtr<ID3D11CommandList> const cmdList) 
 }
 
 
+auto Renderer::ExecuteCommandList(ObserverPtr<ID3D11DeviceContext> const ctx) noexcept -> void {
+  assert(mImpl);
+  mImpl->ExecuteCommandList(ctx);
+}
+
+
 auto Renderer::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget& {
   assert(mImpl);
   return mImpl->GetTemporaryRenderTarget(desc);

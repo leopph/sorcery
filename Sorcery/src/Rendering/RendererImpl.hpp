@@ -181,6 +181,7 @@ public:
   [[nodiscard]] auto GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext>;
 
   auto ExecuteCommandList(ObserverPtr<ID3D11CommandList> cmdList) noexcept -> void;
+  auto ExecuteCommandList(ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
 
   auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget&;
 

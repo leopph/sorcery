@@ -1615,11 +1615,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   annot->EndEvent();
 
-  ComPtr<ID3D11CommandList> cmdList;
-  hr = ctx->FinishCommandList(FALSE, cmdList.GetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  ExecuteCommandList(cmdList.Get());
+  ExecuteCommandList(ctx);
 }
 
 
@@ -1722,6 +1718,14 @@ auto Renderer::Impl::GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceCont
 auto Renderer::Impl::ExecuteCommandList(ObserverPtr<ID3D11CommandList> const cmdList) noexcept -> void {
   std::unique_lock const lock{mImmediateCtxMutex};
   mImmediateContext->ExecuteCommandList(cmdList, FALSE);
+}
+
+
+auto Renderer::Impl::ExecuteCommandList(ObserverPtr<ID3D11DeviceContext> const ctx) noexcept -> void {
+  ComPtr<ID3D11CommandList> cmdList;
+  [[maybe_unused]] auto const hr{ctx->FinishCommandList(FALSE, cmdList.GetAddressOf())};
+  assert(SUCCEEDED(hr));
+  ExecuteCommandList(cmdList.Get());
 }
 
 

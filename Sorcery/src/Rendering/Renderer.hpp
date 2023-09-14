@@ -2,7 +2,6 @@
 
 #include "Camera.hpp"
 #include "RenderTarget.hpp"
-#include "Visibility.hpp"
 #include "../Core.hpp"
 #include "../Util.hpp"
 #include "../SceneObjects/StaticMeshComponent.hpp"
@@ -66,6 +65,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext>;
 
   LEOPPHAPI auto ExecuteCommandList(ObserverPtr<ID3D11CommandList> cmdList) noexcept -> void;
+  LEOPPHAPI auto ExecuteCommandList(ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
 
   LEOPPHAPI auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget&;
 
