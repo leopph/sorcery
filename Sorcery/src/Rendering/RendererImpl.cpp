@@ -1340,8 +1340,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   RenderTarget::Desc const hdrRtDesc{
     .width = rtWidth,
     .height = rtHeight,
-    .colorFormat = DXGI_FORMAT_R16G16B16A16_FLOAT,
-    .depthBufferBitCount = 32,
+    .colorFormat = DXGI_FORMAT_R11G11B10_FLOAT,
+    .depthBufferBitCount = 16,
     .stencilBufferBitCount = 0,
     .sampleCount = static_cast<int>(GetMultisamplingMode()),
     .debugName = "Camera HDR RenderTarget"
