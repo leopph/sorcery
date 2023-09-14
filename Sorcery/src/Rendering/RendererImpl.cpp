@@ -1035,32 +1035,6 @@ auto Renderer::Impl::StartUp() -> void {
     throw std::runtime_error{"Failed to create depth-test less write depth-stencil state."};
   }
 
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualNoWriteDesc{
-    .DepthEnable = TRUE,
-    .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO,
-    .DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
-    .StencilEnable = FALSE,
-    .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
-    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
-    .FrontFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
-      .StencilFunc = D3D11_COMPARISON_ALWAYS
-    },
-    .BackFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
-      .StencilFunc = D3D11_COMPARISON_ALWAYS
-    }
-  };
-
-  if (FAILED(
-    mDevice->CreateDepthStencilState(&depthTestLessEqualNoWriteDesc, mDepthTestLessEqualNoWriteDss.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create depth-test less-or-equal no-write DSS."};
-  }
-
   D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterEqualNoWriteDesc{
     .DepthEnable = TRUE,
     .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO,
@@ -1082,10 +1056,83 @@ auto Renderer::Impl::StartUp() -> void {
     }
   };
 
-  if (FAILED(
-    mDevice->CreateDepthStencilState(&depthTestGreaterEqualNoWriteDesc, mDepthTestGreaterEqualNoWriteDss.GetAddressOf()
-    ))) {
+  if (FAILED(mDevice->CreateDepthStencilState(&depthTestGreaterEqualNoWriteDesc, mDepthTestGreaterEqualNoWriteDss.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-test greater-or-equal no-write DSS."};
+  }
+
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterEqualWriteDesc{
+    .DepthEnable = TRUE,
+    .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL,
+    .DepthFunc = D3D11_COMPARISON_GREATER_EQUAL,
+    .StencilEnable = FALSE,
+    .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
+      .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
+      .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
+
+  if (FAILED(mDevice->CreateDepthStencilState(&depthTestGreaterEqualWriteDesc, mDepthTestGreaterEqualWriteDss.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create depth-test greater-or-equal write DSS."};
+  }
+
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualNoWriteDesc{
+    .DepthEnable = TRUE,
+    .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO,
+    .DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
+    .StencilEnable = FALSE,
+    .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
+      .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
+      .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
+
+  if (FAILED(mDevice->CreateDepthStencilState(&depthTestLessEqualNoWriteDesc, mDepthTestLessEqualNoWriteDss.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create depth-test less-or-equal no-write DSS."};
+  }
+
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualWriteDesc{
+    .DepthEnable = TRUE,
+    .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL,
+    .DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
+    .StencilEnable = FALSE,
+    .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
+      .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
+      .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
+
+  if (FAILED(mDevice->CreateDepthStencilState(&depthTestLessEqualWriteDesc, mDepthTestLessEqualWriteDss.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create depth-test less-or-equal write DSS."};
   }
 
   // CREATE SHADOW ATLASES
@@ -1409,39 +1456,40 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   DrawShadowMaps(*mPunctualShadowAtlas, ctx);
   annot->EndEvent();
 
-  // Depth pre-pass
-
   CullStaticMeshComponents(camFrustWS, visibility);
-
-  annot->BeginEvent(L"Depth Pre-Pass");
 
   SetPerViewConstants(ctx, camViewMtx, camProjMtx, shadowCascadeBoundaries, camPos);
   ctx->VSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, std::array{mPerViewCb.Get()}.data());
   ctx->PSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, std::array{mPerViewCb.Get()}.data());
 
-  ctx->OMSetRenderTargets(0, nullptr, hdrRt.GetDsv());
-  ctx->OMSetDepthStencilState([this] {
-    if constexpr (Graphics::IsUsingReversedZ()) {
-      return mDepthTestGreaterWriteDss.Get();
-    } else {
-      return mDepthTestLessWriteDss.Get();
-    }
-  }(), 0);
-
-  ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-
-  ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
-
-  ctx->RSSetViewports(1, &viewport);
-  ctx->RSSetState(nullptr);
-
-  ctx->IASetInputLayout(mAllAttribsIl.Get());
-
   ctx->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForRendering(), 0);
 
-  DrawMeshes(visibility.staticMeshIndices, ctx);
+  // Depth pre-pass
+  if (mDepthPrePassEnabled) {
+    annot->BeginEvent(L"Depth Pre-Pass");
 
-  annot->EndEvent();
+    ctx->IASetInputLayout(mAllAttribsIl.Get());
+
+    ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
+
+    ctx->RSSetViewports(1, &viewport);
+    ctx->RSSetState(nullptr);
+
+    ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
+
+    ctx->OMSetRenderTargets(0, nullptr, hdrRt.GetDsv());
+    ctx->OMSetDepthStencilState([this] {
+      if constexpr (Graphics::IsUsingReversedZ()) {
+        return mDepthTestGreaterWriteDss.Get();
+      } else {
+        return mDepthTestLessWriteDss.Get();
+      }
+    }(), 0);
+
+    DrawMeshes(visibility.staticMeshIndices, ctx);
+
+    annot->EndEvent();
+  }
 
   // Full forward lighting pass
 
@@ -1492,28 +1540,26 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   mLightBuffer->Unmap(ctx);
 
+  ctx->IASetInputLayout(mAllAttribsIl.Get());
+
   ctx->VSSetShader(mMeshVs.Get(), nullptr, 0);
-  ctx->VSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, mPerViewCb.GetAddressOf());
-
-  ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
-  ctx->OMSetDepthStencilState([this] {
-    if constexpr (Graphics::IsUsingReversedZ()) {
-      return mDepthTestGreaterEqualNoWriteDss.Get();
-    } else {
-      return mDepthTestLessEqualNoWriteDss.Get();
-    }
-  }(), 0);
-
-  ctx->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
-  ctx->PSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, mPerViewCb.GetAddressOf());
-  ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
-  ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{mDirShadowMapArr->GetSrv()}.data());
-  ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
 
   ctx->RSSetViewports(1, &viewport);
   ctx->RSSetState(nullptr);
 
-  ctx->IASetInputLayout(mAllAttribsIl.Get());
+  ctx->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
+  ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{mDirShadowMapArr->GetSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
+
+  ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
+  ctx->OMSetDepthStencilState([this] {
+    if constexpr (Graphics::IsUsingReversedZ()) {
+      return mDepthPrePassEnabled ? mDepthTestGreaterEqualNoWriteDss.Get() : mDepthTestGreaterEqualWriteDss.Get();
+    } else {
+      return mDepthPrePassEnabled ? mDepthTestLessEqualNoWriteDss.Get() : mDepthTestLessEqualWriteDss.Get();
+    }
+  }(), 0);
 
   DrawMeshes(visibility.staticMeshIndices, ctx);
 
@@ -1711,6 +1757,16 @@ auto Renderer::Impl::GetMultisamplingMode() const noexcept -> MultisamplingMode 
 
 auto Renderer::Impl::SetMultisamplingMode(MultisamplingMode const mode) noexcept -> void {
   mMsaaMode = mode;
+}
+
+
+auto Renderer::Impl::IsDepthPrePassEnabled() const noexcept -> bool {
+  return mDepthPrePassEnabled;
+}
+
+
+auto Renderer::Impl::SetDepthPrePassEnabled(bool const enabled) noexcept -> void {
+  mDepthPrePassEnabled = enabled;
 }
 
 

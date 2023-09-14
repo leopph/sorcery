@@ -142,6 +142,16 @@ auto Renderer::SetMultisamplingMode(MultisamplingMode const mode) noexcept -> vo
 }
 
 
+auto Renderer::IsDepthPrePassEnabled() const noexcept -> bool {
+  return mImpl->IsDepthPrePassEnabled();
+}
+
+
+auto Renderer::SetDepthPrePassEnabled(bool const enabled) noexcept -> void {
+  mImpl->SetDepthPrePassEnabled(enabled);
+}
+
+
 auto Renderer::GetShadowDistance() const noexcept -> float {
   assert(mImpl);
   return mImpl->GetShadowDistance();

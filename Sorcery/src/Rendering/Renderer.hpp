@@ -86,6 +86,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetMultisamplingMode() const noexcept -> MultisamplingMode;
   LEOPPHAPI auto SetMultisamplingMode(MultisamplingMode mode) noexcept -> void;
 
+  [[nodiscard]] LEOPPHAPI auto IsDepthPrePassEnabled() const noexcept -> bool;
+  LEOPPHAPI auto SetDepthPrePassEnabled(bool enabled) noexcept -> void;
+
   // SHADOWS
 
   [[nodiscard]] LEOPPHAPI auto GetShadowDistance() const noexcept -> float;

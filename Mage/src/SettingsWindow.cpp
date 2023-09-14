@@ -116,6 +116,10 @@ auto SettingsWindow::Draw() -> void {
     ImGui::EndCombo();
   }
 
+  if (auto depthPrePassEnabled{gRenderer.IsDepthPrePassEnabled()}; ImGui::Checkbox("Depth Pre-Pass", &depthPrePassEnabled)) {
+    gRenderer.SetDepthPrePassEnabled(depthPrePassEnabled);
+  }
+
   ImGui::SeparatorText("Lighting");
 
   if (auto color{gRenderer.GetAmbientLightColor()}; ImGui::ColorEdit3("Ambient Light Color", color.GetData())) {

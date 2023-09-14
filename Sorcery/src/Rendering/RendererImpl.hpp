@@ -76,8 +76,10 @@ class Renderer::Impl {
 
   Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestGreaterWriteDss;
   Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestLessWriteDss;
-  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestLessEqualNoWriteDss;
   Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestGreaterEqualNoWriteDss;
+  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestGreaterEqualWriteDss;
+  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestLessEqualNoWriteDss;
+  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestLessEqualWriteDss;
 
   ObserverPtr<Material> mDefaultMaterial{nullptr};
   ObserverPtr<Mesh> mCubeMesh{nullptr};
@@ -110,6 +112,7 @@ class Renderer::Impl {
   int mSyncInterval{0};
   float mInvGamma{1.f / 2.2f};
   int mInFlightFrameCount{2};
+  bool mDepthPrePassEnabled{true};
 
   std::unordered_map<std::thread::id, Microsoft::WRL::ComPtr<ID3D11DeviceContext>> mPerThreadCtx;
 
@@ -137,22 +140,14 @@ class Renderer::Impl {
   auto CullLights(Frustum const& frustumWS, Visibility& visibility) const -> void;
 
   auto SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
-  auto SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& viewMtx, Matrix4 const& projMtx,
-                           ShadowCascadeBoundaries const&
-                           shadowCascadeBoundaries, Vector3 const& viewPos) const noexcept -> void;
+  auto SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& viewMtx, Matrix4 const& projMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries, Vector3 const& viewPos) const noexcept -> void;
   auto SetPerDrawConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& modelMtx) const noexcept -> void;
 
-  auto DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect,
-                                 ShadowCascadeBoundaries const& shadowCascadeBoundaries,
-                                 std::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices,
-                                 ObserverPtr<ID3D11DeviceContext> ctx) -> void;
+  auto DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect, ShadowCascadeBoundaries const& shadowCascadeBoundaries, std::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices, ObserverPtr<ID3D11DeviceContext> ctx) -> void;
   auto DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11DeviceContext> ctx) -> void;
-  auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> culledIndices,
-                  ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
-  auto DrawSkybox(
-    ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
-  auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst,
-                   ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> culledIndices, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  auto DrawSkybox(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
+  auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
   auto ReleaseTempRenderTargets() noexcept -> void;
@@ -203,6 +198,9 @@ public:
 
   [[nodiscard]] auto GetMultisamplingMode() const noexcept -> MultisamplingMode;
   auto SetMultisamplingMode(MultisamplingMode mode) noexcept -> void;
+
+  [[nodiscard]] auto IsDepthPrePassEnabled() const noexcept -> bool;
+  auto SetDepthPrePassEnabled(bool enabled) noexcept -> void;
 
   // SHADOWS
 
