@@ -10,18 +10,22 @@
 
 
 #ifndef NDEBUG
-#include "../shaders/generated/DepthOnlyVSBinDebug.h"
+#include "../shaders/generated/DepthNormalPSBinDebug.h"
+#include "../shaders/generated/DepthNormalVSBinDebug.h"
 #include "../shaders/generated/DepthOnlyPSBinDebug.h"
+#include "../shaders/generated/DepthOnlyVSBinDebug.h"
 #include "../shaders/generated/GizmoPSBinDebug.h"
 #include "../shaders/generated/LineGizmoVSBinDebug.h"
-#include "../shaders/generated/MeshVSBinDebug.h"
 #include "../shaders/generated/MeshPbrPSBinDebug.h"
+#include "../shaders/generated/MeshVSBinDebug.h"
 #include "../shaders/generated/PostProcessPSBinDebug.h"
 #include "../shaders/generated/ScreenVSBinDebug.h"
-#include "../shaders/generated/SkyboxVSBinDebug.h"
 #include "../shaders/generated/SkyboxPSBinDebug.h"
+#include "../shaders/generated/SkyboxVSBinDebug.h"
 
 #else
+#include "../shaders/generated/DepthNormalPSBin.h"
+#include "../shaders/generated/DepthNormalVSBin.h"
 #include "../shaders/generated/DepthOnlyPSBin.h"
 #include "../shaders/generated/DepthOnlyVSBin.h"
 #include "../shaders/generated/GizmoPSBin.h"
@@ -702,9 +706,8 @@ auto Renderer::Impl::StartUp() -> void {
   creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-  if (FAILED(
-    D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1,
-      D3D11_SDK_VERSION, mDevice.GetAddressOf(), nullptr, mImmediateContext.GetAddressOf()))) {
+  if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1,
+    D3D11_SDK_VERSION, mDevice.GetAddressOf(), nullptr, mImmediateContext.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create D3D device."};
   }
 
@@ -796,9 +799,8 @@ auto Renderer::Impl::StartUp() -> void {
     }
   };
 
-  if (FAILED(
-    mDevice->CreateInputLayout(inputDescs, ARRAYSIZE(inputDescs), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mAllAttribsIl.
-      GetAddressOf()))) {
+  if (FAILED(mDevice->CreateInputLayout(inputDescs, ARRAYSIZE(inputDescs), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mAllAttribsIl.
+    GetAddressOf()))) {
     throw std::runtime_error{"Failed to create all-attributes input layout."};
   }
 
@@ -880,6 +882,19 @@ auto Renderer::Impl::StartUp() -> void {
 
   char constexpr gizmoPsName[]{"Gizmo Pixel Shader"};
   mGizmoPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(gizmoPsName), gizmoPsName);
+
+  [[maybe_unused]] auto hr{mDevice->CreatePixelShader(gDepthNormalPSBin, ARRAYSIZE(gDepthNormalPSBin), nullptr, mDepthNormalPs.GetAddressOf())};
+  assert(SUCCEEDED(hr));
+  char constexpr depthNormalPsName[]{"Depth-Normal Pixel Shader"};
+  hr = mDepthNormalPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthNormalPsName), depthNormalPsName);
+  assert(SUCCEEDED(hr));
+
+  hr = mDevice->CreateVertexShader(gDepthNormalVSBin, ARRAYSIZE(gDepthNormalVSBin), nullptr, mDepthNormalVs.GetAddressOf());
+  assert(SUCCEEDED(hr));
+  char constexpr depthNormalVsName[]{"Depth-Normal Vertex Shader"};
+  hr = mDepthNormalVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthNormalVsName), depthNormalVsName);
+  assert(SUCCEEDED(hr));
+
 
   // CREATE CONSTANT BUFFERS
 
@@ -1464,20 +1479,23 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   ctx->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForRendering(), 0);
 
-  // Depth pre-pass
-  if (mDepthPrePassEnabled) {
-    annot->BeginEvent(L"Depth Pre-Pass");
+  auto const& normalRt{
+    GetTemporaryRenderTarget(RenderTarget::Desc{
+      .width = rtWidth,
+      .height = rtHeight,
+      .colorFormat = DXGI_FORMAT_R8G8B8A8_SNORM,
+      .depthBufferBitCount = 0,
+      .stencilBufferBitCount = 0,
+      .sampleCount = static_cast<int>(GetMultisamplingMode()),
+      .debugName = "Camera Normal RenderTarget"
+    })
+  };
 
-    ctx->IASetInputLayout(mAllAttribsIl.Get());
+  // Depth-Normal pre-pass
+  if (mDepthNormalPrePassEnabled) {
+    annot->BeginEvent(L"Depth-Normal Pre-Pass");
 
-    ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-
-    ctx->RSSetViewports(1, &viewport);
-    ctx->RSSetState(nullptr);
-
-    ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
-
-    ctx->OMSetRenderTargets(0, nullptr, hdrRt.GetDsv());
+    ctx->OMSetRenderTargets(1, std::array{normalRt.GetRtv()}.data(), hdrRt.GetDsv());
     ctx->OMSetDepthStencilState([this] {
       if constexpr (Graphics::IsUsingReversedZ()) {
         return mDepthTestGreaterWriteDss.Get();
@@ -1485,6 +1503,16 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
         return mDepthTestLessWriteDss.Get();
       }
     }(), 0);
+
+
+    ctx->PSSetShader(mDepthNormalPs.Get(), nullptr, 0);
+
+    ctx->RSSetViewports(1, &viewport);
+    ctx->RSSetState(nullptr);
+
+    ctx->VSSetShader(mDepthNormalVs.Get(), nullptr, 0);
+
+    ctx->IASetInputLayout(mAllAttribsIl.Get());
 
     DrawMeshes(visibility.staticMeshIndices, ctx);
 
@@ -1540,26 +1568,26 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   mLightBuffer->Unmap(ctx);
 
-  ctx->IASetInputLayout(mAllAttribsIl.Get());
-
-  ctx->VSSetShader(mMeshVs.Get(), nullptr, 0);
-
-  ctx->RSSetViewports(1, &viewport);
-  ctx->RSSetState(nullptr);
+  ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
+  ctx->OMSetDepthStencilState([this] {
+    if constexpr (Graphics::IsUsingReversedZ()) {
+      return mDepthNormalPrePassEnabled ? mDepthTestGreaterEqualNoWriteDss.Get() : mDepthTestGreaterEqualWriteDss.Get();
+    } else {
+      return mDepthNormalPrePassEnabled ? mDepthTestLessEqualNoWriteDss.Get() : mDepthTestLessEqualWriteDss.Get();
+    }
+  }(), 0);
 
   ctx->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
   ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
   ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{mDirShadowMapArr->GetSrv()}.data());
   ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
 
-  ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
-  ctx->OMSetDepthStencilState([this] {
-    if constexpr (Graphics::IsUsingReversedZ()) {
-      return mDepthPrePassEnabled ? mDepthTestGreaterEqualNoWriteDss.Get() : mDepthTestGreaterEqualWriteDss.Get();
-    } else {
-      return mDepthPrePassEnabled ? mDepthTestLessEqualNoWriteDss.Get() : mDepthTestLessEqualWriteDss.Get();
-    }
-  }(), 0);
+  ctx->RSSetViewports(1, &viewport);
+  ctx->RSSetState(nullptr);
+
+  ctx->VSSetShader(mMeshVs.Get(), nullptr, 0);
+
+  ctx->IASetInputLayout(mAllAttribsIl.Get());
 
   DrawMeshes(visibility.staticMeshIndices, ctx);
 
@@ -1760,13 +1788,13 @@ auto Renderer::Impl::SetMultisamplingMode(MultisamplingMode const mode) noexcept
 }
 
 
-auto Renderer::Impl::IsDepthPrePassEnabled() const noexcept -> bool {
-  return mDepthPrePassEnabled;
+auto Renderer::Impl::IsDepthNormalPrePassEnabled() const noexcept -> bool {
+  return mDepthNormalPrePassEnabled;
 }
 
 
-auto Renderer::Impl::SetDepthPrePassEnabled(bool const enabled) noexcept -> void {
-  mDepthPrePassEnabled = enabled;
+auto Renderer::Impl::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -> void {
+  mDepthNormalPrePassEnabled = enabled;
 }
 
 

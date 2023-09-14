@@ -142,13 +142,13 @@ auto Renderer::SetMultisamplingMode(MultisamplingMode const mode) noexcept -> vo
 }
 
 
-auto Renderer::IsDepthPrePassEnabled() const noexcept -> bool {
-  return mImpl->IsDepthPrePassEnabled();
+auto Renderer::IsDepthNormalPrePassEnabled() const noexcept -> bool {
+  return mImpl->IsDepthNormalPrePassEnabled();
 }
 
 
-auto Renderer::SetDepthPrePassEnabled(bool const enabled) noexcept -> void {
-  mImpl->SetDepthPrePassEnabled(enabled);
+auto Renderer::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -> void {
+  mImpl->SetDepthNormalPrePassEnabled(enabled);
 }
 
 

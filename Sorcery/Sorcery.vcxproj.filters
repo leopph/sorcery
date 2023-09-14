@@ -312,6 +312,8 @@
     <None Include="src\shaders\GizmoVsOut.hlsli" />
     <None Include="src\shaders\Samplers.hlsli" />
     <None Include="src\shaders\ShadowSampling.hlsli" />
+    <None Include="src\shaders\DepthOnlyVsOut.hlsli" />
+    <None Include="src\shaders\DepthNormalVsOut.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />
@@ -324,5 +326,7 @@
     <FxCompile Include="src\shaders\LineGizmoVS.hlsl" />
     <FxCompile Include="src\shaders\GizmoPS.hlsl" />
     <FxCompile Include="src\shaders\DepthOnlyPS.hlsl" />
+    <FxCompile Include="src\shaders\DepthNormalVS.hlsl" />
+    <FxCompile Include="src\shaders\DepthNormalPS.hlsl" />
   </ItemGroup>
 </Project>

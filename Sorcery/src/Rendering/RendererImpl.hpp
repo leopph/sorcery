@@ -41,17 +41,19 @@ class Renderer::Impl {
 
   Microsoft::WRL::ComPtr<IDXGIDevice1> mDxgiDevice;
 
+  Microsoft::WRL::ComPtr<ID3D11PixelShader> mDepthNormalPs;
+  Microsoft::WRL::ComPtr<ID3D11PixelShader> mDepthOnlyPs;
+  Microsoft::WRL::ComPtr<ID3D11PixelShader> mGizmoPs;
   Microsoft::WRL::ComPtr<ID3D11PixelShader> mMeshPbrPs;
   Microsoft::WRL::ComPtr<ID3D11PixelShader> mPostProcessPs;
   Microsoft::WRL::ComPtr<ID3D11PixelShader> mSkyboxPs;
-  Microsoft::WRL::ComPtr<ID3D11PixelShader> mGizmoPs;
-  Microsoft::WRL::ComPtr<ID3D11PixelShader> mDepthOnlyPs;
 
-  Microsoft::WRL::ComPtr<ID3D11VertexShader> mMeshVs;
-  Microsoft::WRL::ComPtr<ID3D11VertexShader> mSkyboxVs;
+  Microsoft::WRL::ComPtr<ID3D11VertexShader> mDepthNormalVs;
   Microsoft::WRL::ComPtr<ID3D11VertexShader> mDepthOnlyVs;
-  Microsoft::WRL::ComPtr<ID3D11VertexShader> mScreenVs;
   Microsoft::WRL::ComPtr<ID3D11VertexShader> mLineGizmoVs;
+  Microsoft::WRL::ComPtr<ID3D11VertexShader> mMeshVs;
+  Microsoft::WRL::ComPtr<ID3D11VertexShader> mScreenVs;
+  Microsoft::WRL::ComPtr<ID3D11VertexShader> mSkyboxVs;
 
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPerFrameCb;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPerViewCb;
@@ -112,7 +114,7 @@ class Renderer::Impl {
   int mSyncInterval{0};
   float mInvGamma{1.f / 2.2f};
   int mInFlightFrameCount{2};
-  bool mDepthPrePassEnabled{true};
+  bool mDepthNormalPrePassEnabled{true};
 
   std::unordered_map<std::thread::id, Microsoft::WRL::ComPtr<ID3D11DeviceContext>> mPerThreadCtx;
 
@@ -199,8 +201,8 @@ public:
   [[nodiscard]] auto GetMultisamplingMode() const noexcept -> MultisamplingMode;
   auto SetMultisamplingMode(MultisamplingMode mode) noexcept -> void;
 
-  [[nodiscard]] auto IsDepthPrePassEnabled() const noexcept -> bool;
-  auto SetDepthPrePassEnabled(bool enabled) noexcept -> void;
+  [[nodiscard]] auto IsDepthNormalPrePassEnabled() const noexcept -> bool;
+  auto SetDepthNormalPrePassEnabled(bool enabled) noexcept -> void;
 
   // SHADOWS
 

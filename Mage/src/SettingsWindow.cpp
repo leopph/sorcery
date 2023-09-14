@@ -116,8 +116,8 @@ auto SettingsWindow::Draw() -> void {
     ImGui::EndCombo();
   }
 
-  if (auto depthPrePassEnabled{gRenderer.IsDepthPrePassEnabled()}; ImGui::Checkbox("Depth Pre-Pass", &depthPrePassEnabled)) {
-    gRenderer.SetDepthPrePassEnabled(depthPrePassEnabled);
+  if (auto depthPrePassEnabled{gRenderer.IsDepthNormalPrePassEnabled()}; ImGui::Checkbox("Depth-Normal Pre-Pass", &depthPrePassEnabled)) {
+    gRenderer.SetDepthNormalPrePassEnabled(depthPrePassEnabled);
   }
 
   ImGui::SeparatorText("Lighting");
