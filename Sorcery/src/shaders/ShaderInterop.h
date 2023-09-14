@@ -20,12 +20,14 @@ using float4x4 = Matrix4;
 using uint = unsigned;
 
 #define row_major
-#define CBUFFER(name, slot) struct name
+#define CBUFFER_BEGIN(name, slot) struct name {
+#define CBUFFER_END };
 
 #else
 
 typedef bool BOOL;
-#define CBUFFER(name, slot) cbuffer name : register(b##slot)
+#define CBUFFER_BEGIN(name, slot) cbuffer name : register(b##slot) {
+#define CBUFFER_END }
 #define TEXTURE2D(name, type, slot) Texture2D<type> name : register(t##slot)
 #define TEXTURE2DARRAY(name, type, slot) Texture2DArray<type> name : register(t##slot)
 #define TEXTURECUBE(name, type, slot) TextureCube<type> name : register(t##slot)
@@ -39,6 +41,7 @@ typedef bool BOOL;
 #define CB_SLOT_PER_DRAW 2
 #define CB_SLOT_PER_MATERIAL 3
 #define CB_SLOT_POST_PROCESS 4
+#define CB_SLOT_SSAO 4
 
 #define RES_SLOT_ALBEDO_MAP 0
 #define RES_SLOT_METALLIC_MAP 1
@@ -54,6 +57,10 @@ typedef bool BOOL;
 #define RES_SLOT_SKYBOX_CUBEMAP 0
 #define RES_SLOT_LINE_GIZMO_VERTEX 1
 #define RES_SLOT_GIZMO_COLOR 0
+#define RES_SLOT_SSAO_DEPTH 6
+#define RES_SLOT_SSAO_NORMAL 7
+#define RES_SLOT_SSAO_NOISE 8
+#define RES_SLOT_SSAO_SAMPLES 9
 
 #define SAMPLER_SLOT_CMP_PCF 0
 #define SAMPLER_SLOT_CMP_POINT 1
@@ -129,16 +136,18 @@ struct ShaderLineGizmoVertexData {
 struct ShaderPerFrameConstants {
   float3 ambientLightColor;
   int shadowCascadeCount;
+  float2 screenSize;
   BOOL visualizeShadowCascades;
   int shadowFilteringMode;
   BOOL isUsingReversedZ;
-  float pad;
+  float3 pad;
 };
 
 
 struct ShaderPerViewConstants {
   row_major float4x4 viewMtx;
   row_major float4x4 projMtx;
+  row_major float4x4 invProjMtx;
   row_major float4x4 viewProjMtx;
   float4 shadowCascadeSplitDistances;
   float3 viewPos;
@@ -152,30 +161,42 @@ struct ShaderPerDrawConstants {
 };
 
 
-CBUFFER(PerFrameCB, CB_SLOT_PER_FRAME) {
+struct ShaderSsaoConstants {
+  float radius;
+  float bias;
+  float2 pad;
+};
+
+
+CBUFFER_BEGIN(PerFrameCB, CB_SLOT_PER_FRAME)
   ShaderPerFrameConstants gPerFrameConstants;
-};
+CBUFFER_END
 
 
-CBUFFER(PerViewCB, CB_SLOT_PER_VIEW) {
+CBUFFER_BEGIN(PerViewCB, CB_SLOT_PER_VIEW)
   ShaderPerViewConstants gPerViewConstants;
-};
+CBUFFER_END
 
 
-CBUFFER(PerDrawCB, CB_SLOT_PER_DRAW) {
+CBUFFER_BEGIN(PerDrawCB, CB_SLOT_PER_DRAW)
   ShaderPerDrawConstants gPerDrawConstants;
-};
+CBUFFER_END
 
 
-CBUFFER(PerMaterialCB, CB_SLOT_PER_MATERIAL) {
+CBUFFER_BEGIN(PerMaterialCB, CB_SLOT_PER_MATERIAL)
   ShaderMaterial material;
-};
+CBUFFER_END
 
 
-CBUFFER(PostProcessCB, CB_SLOT_POST_PROCESS) {
+CBUFFER_BEGIN(PostProcessCB, CB_SLOT_POST_PROCESS)
   float invGamma;
   float3 pad;
-};
+CBUFFER_END
+
+
+CBUFFER_BEGIN(SsaoCB, CB_SLOT_SSAO)
+  ShaderSsaoConstants gSsaoConstants;
+CBUFFER_END
 
 
 #ifdef __cplusplus

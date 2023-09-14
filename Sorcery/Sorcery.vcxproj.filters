@@ -314,6 +314,8 @@
     <None Include="src\shaders\ShadowSampling.hlsli" />
     <None Include="src\shaders\DepthOnlyVsOut.hlsli" />
     <None Include="src\shaders\DepthNormalVsOut.hlsli" />
+    <None Include="src\shaders\ScreenVSOut.hlsli" />
+    <None Include="src\shaders\Util.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />
@@ -328,5 +330,6 @@
     <FxCompile Include="src\shaders\DepthOnlyPS.hlsl" />
     <FxCompile Include="src\shaders\DepthNormalVS.hlsl" />
     <FxCompile Include="src\shaders\DepthNormalPS.hlsl" />
+    <FxCompile Include="src\shaders\SsaoPS.hlsl" />
   </ItemGroup>
 </Project>

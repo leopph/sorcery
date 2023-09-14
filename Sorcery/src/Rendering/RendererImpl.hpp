@@ -47,6 +47,7 @@ class Renderer::Impl {
   Microsoft::WRL::ComPtr<ID3D11PixelShader> mMeshPbrPs;
   Microsoft::WRL::ComPtr<ID3D11PixelShader> mPostProcessPs;
   Microsoft::WRL::ComPtr<ID3D11PixelShader> mSkyboxPs;
+  Microsoft::WRL::ComPtr<ID3D11PixelShader> mSsaoPs;
 
   Microsoft::WRL::ComPtr<ID3D11VertexShader> mDepthNormalVs;
   Microsoft::WRL::ComPtr<ID3D11VertexShader> mDepthOnlyVs;
@@ -59,6 +60,7 @@ class Renderer::Impl {
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPerViewCb;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPerDrawCb;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPostProcessCb;
+  Microsoft::WRL::ComPtr<ID3D11Buffer> mSsaoCb;
 
   Microsoft::WRL::ComPtr<ID3D11InputLayout> mAllAttribsIl;
 
@@ -83,6 +85,10 @@ class Renderer::Impl {
   Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestLessEqualNoWriteDss;
   Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestLessEqualWriteDss;
 
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> mSsaoNoiseTex;
+
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSsaoNoiseSrv;
+
   ObserverPtr<Material> mDefaultMaterial{nullptr};
   ObserverPtr<Mesh> mCubeMesh{nullptr};
   ObserverPtr<Mesh> mPlaneMesh{nullptr};
@@ -95,6 +101,7 @@ class Renderer::Impl {
   std::unique_ptr<StructuredBuffer<Vector4>> mGizmoColorBuffer;
   std::unique_ptr<StructuredBuffer<ShaderLineGizmoVertexData>> mLineGizmoVertexDataBuffer;
   std::unique_ptr<RenderTarget> mMainRt;
+  std::unique_ptr<StructuredBuffer<Vector4>> mSsaoSamplesBuffer;
 
   std::vector<StaticMeshComponent const*> mStaticMeshComponents;
   std::vector<SkyboxComponent const*> mSkyboxes;
@@ -110,7 +117,7 @@ class Renderer::Impl {
   float mShadowDistance{100};
   bool mVisualizeShadowCascades{false};
   ShadowFilteringMode mShadowFilteringMode{ShadowFilteringMode::PCFTent5x5};
-  MultisamplingMode mMsaaMode{MultisamplingMode::X8};
+  MultisamplingMode mMsaaMode{MultisamplingMode::Off};
   int mSyncInterval{0};
   float mInvGamma{1.f / 2.2f};
   int mInFlightFrameCount{2};
@@ -141,7 +148,7 @@ class Renderer::Impl {
   auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) const -> void;
   auto CullLights(Frustum const& frustumWS, Visibility& visibility) const -> void;
 
-  auto SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
+  auto SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> ctx, int rtWidth, int rtHeight) const noexcept -> void;
   auto SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& viewMtx, Matrix4 const& projMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries, Vector3 const& viewPos) const noexcept -> void;
   auto SetPerDrawConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& modelMtx) const noexcept -> void;
 

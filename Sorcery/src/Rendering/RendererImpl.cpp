@@ -22,6 +22,7 @@
 #include "../shaders/generated/ScreenVSBinDebug.h"
 #include "../shaders/generated/SkyboxPSBinDebug.h"
 #include "../shaders/generated/SkyboxVSBinDebug.h"
+#include "../shaders/generated/SsaoPSBinDebug.h"
 
 #else
 #include "../shaders/generated/DepthNormalPSBin.h"
@@ -36,9 +37,12 @@
 #include "../shaders/generated/ScreenVSBin.h"
 #include "../shaders/generated/SkyboxPSBin.h"
 #include "../shaders/generated/SkyboxVSBin.h"
+#include "../shaders/generated/SsaoPSBin.h"
 #endif
 
 #include <d3d11_1.h>
+
+#include <random>
 
 using Microsoft::WRL::ComPtr;
 
@@ -205,7 +209,7 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
 }
 
 
-auto Renderer::Impl::SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
+auto Renderer::Impl::SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> const ctx, int const rtWidth, int const rtHeight) const noexcept -> void {
   D3D11_MAPPED_SUBRESOURCE mapped;
   [[maybe_unused]] auto const hr{ctx->Map(mPerFrameCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
   assert(SUCCEEDED(hr));
@@ -214,6 +218,7 @@ auto Renderer::Impl::SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> const
     .gPerFrameConstants = ShaderPerFrameConstants{
       .ambientLightColor = mAmbientLightColor,
       .shadowCascadeCount = mCascadeCount,
+      .screenSize = Vector2{rtWidth, rtHeight},
       .visualizeShadowCascades = mVisualizeShadowCascades,
       .shadowFilteringMode = static_cast<int>(mShadowFilteringMode),
       .isUsingReversedZ = Graphics::IsUsingReversedZ()
@@ -235,6 +240,7 @@ auto Renderer::Impl::SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> const 
 
   perViewCbData->gPerViewConstants.viewMtx = viewMtx;
   perViewCbData->gPerViewConstants.projMtx = projMtx;
+  perViewCbData->gPerViewConstants.invProjMtx = projMtx.Inverse();
   perViewCbData->gPerViewConstants.viewProjMtx = viewMtx * projMtx;
   perViewCbData->gPerViewConstants.viewPos = viewPos;
 
@@ -895,6 +901,12 @@ auto Renderer::Impl::StartUp() -> void {
   hr = mDepthNormalVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthNormalVsName), depthNormalVsName);
   assert(SUCCEEDED(hr));
 
+  hr = mDevice->CreatePixelShader(gSsaoPSBin, ARRAYSIZE(gSsaoPSBin), nullptr, mSsaoPs.GetAddressOf());
+  assert(SUCCEEDED(hr));
+  char constexpr ssaoPsName[]{"SSAO Pixel Shader"};
+  hr = mSsaoPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(ssaoPsName), ssaoPsName);
+  assert(SUCCEEDED(hr));
+
 
   // CREATE CONSTANT BUFFERS
 
@@ -950,6 +962,18 @@ auto Renderer::Impl::StartUp() -> void {
   if (FAILED(mDevice->CreateBuffer(&postProcessCbDesc, nullptr, mPostProcessCb.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create post-process CB."};
   }
+
+  D3D11_BUFFER_DESC constexpr ssaoCbDesc{
+    .ByteWidth = sizeof(SsaoCB),
+    .Usage = D3D11_USAGE_DYNAMIC,
+    .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+    .MiscFlags = 0,
+    .StructureByteStride = 0
+  };
+
+  hr = mDevice->CreateBuffer(&ssaoCbDesc, nullptr, mSsaoCb.GetAddressOf());
+  assert(SUCCEEDED(hr));
 
   // CREATE RASTERIZER STATES
 
@@ -1381,6 +1405,70 @@ auto Renderer::Impl::StartUp() -> void {
   gWindow.OnWindowSize.add_handler(this, &OnWindowSize);
 
   dxgiFactory2->MakeWindowAssociation(gWindow.GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
+
+  // CREATE SSAO SAMPLES
+
+  int constexpr ssaoSampleCount{64};
+  mSsaoSamplesBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice);
+  mSsaoSamplesBuffer->Resize(ssaoSampleCount);
+  auto const ssaoSamples{mSsaoSamplesBuffer->Map(GetThreadContext())};
+
+  std::uniform_real_distribution<float> randomFloats{0.0f, 1.0f};
+  std::default_random_engine generator;
+
+  for (auto i{0}; i < ssaoSampleCount; i++) {
+    Vector3 sample{randomFloats(generator) * 2 - 1, randomFloats(generator) * 2 - 1, randomFloats(generator)};
+    Normalize(sample);
+    sample *= randomFloats(generator);
+
+    auto scale{static_cast<float>(i) / static_cast<float>(ssaoSampleCount)};
+    scale = std::lerp(0.1f, 1.0f, scale * scale);
+    sample *= scale;
+
+    ssaoSamples[i] = Vector4{sample, 0};
+  }
+
+  mSsaoSamplesBuffer->Unmap(GetThreadContext());
+
+  // CREATE SSAO NOISE TEXTURE
+
+  int constexpr ssaoNoiseTexSize{4};
+
+  std::vector<Vector4> ssaoNoise;
+
+  for (auto i{0}; i < ssaoNoiseTexSize * ssaoNoiseTexSize; i++) {
+    ssaoNoise.emplace_back(randomFloats(generator) * 2 - 1, randomFloats(generator) * 2 - 1, 0, 0);
+  }
+
+  D3D11_TEXTURE2D_DESC constexpr ssaoNoiseTexDesc{
+    .Width = ssaoNoiseTexSize,
+    .Height = ssaoNoiseTexSize,
+    .MipLevels = 1,
+    .ArraySize = 1,
+    .Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
+    .SampleDesc = {.Count = 1, .Quality = 0},
+    .Usage = D3D11_USAGE_IMMUTABLE,
+    .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+    .CPUAccessFlags = 0,
+    .MiscFlags = 0
+  };
+
+  D3D11_SUBRESOURCE_DATA const ssaoNoiseTexData{
+    .pSysMem = ssaoNoise.data(),
+    .SysMemPitch = ssaoNoiseTexSize * 16
+  };
+
+  hr = mDevice->CreateTexture2D(&ssaoNoiseTexDesc, &ssaoNoiseTexData, mSsaoNoiseTex.GetAddressOf());
+  assert(SUCCEEDED(hr));
+
+  D3D11_SHADER_RESOURCE_VIEW_DESC constexpr ssaoNoiseSrvDesc{
+    .Format = ssaoNoiseTexDesc.Format,
+    .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+    .Texture2D = {.MostDetailedMip = 0, .MipLevels = 1}
+  };
+
+  hr = mDevice->CreateShaderResourceView(mSsaoNoiseTex.Get(), &ssaoNoiseSrvDesc, mSsaoNoiseSrv.GetAddressOf());
+  assert(SUCCEEDED(hr));
 }
 
 
@@ -1433,7 +1521,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->PSSetSamplers(SAMPLER_SLOT_BI, 1, mBilinearSs.GetAddressOf());
   ctx->PSSetSamplers(SAMPLER_SLOT_POINT, 1, mPointSs.GetAddressOf());
 
-  SetPerFrameConstants(ctx);
+  SetPerFrameConstants(ctx, rtWidth, rtHeight);
   ctx->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
   ctx->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
 
@@ -1514,10 +1602,59 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
     ctx->IASetInputLayout(mAllAttribsIl.Get());
 
+    ctx->ClearRenderTargetView(normalRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
     DrawMeshes(visibility.staticMeshIndices, ctx);
 
     annot->EndEvent();
   }
+
+  // SSAO pass
+  annot->BeginEvent(L"SSAO");
+
+  D3D11_MAPPED_SUBRESOURCE mapped;
+  hr = ctx->Map(mSsaoCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+  assert(SUCCEEDED(hr));
+
+  *static_cast<SsaoCB*>(mapped.pData) = SsaoCB{
+    .gSsaoConstants = ShaderSsaoConstants{
+      .radius = 0.5f,
+      .bias = 0.025f
+    }
+  };
+
+  ctx->Unmap(mSsaoCb.Get(), 0);
+
+  auto const& ssaoRt{
+    GetTemporaryRenderTarget(RenderTarget::Desc{
+      .width = rtWidth,
+      .height = rtHeight,
+      .colorFormat = DXGI_FORMAT_R8_UNORM,
+      .depthBufferBitCount = 0,
+      .stencilBufferBitCount = 0,
+      .sampleCount = 1,
+      .debugName = "SSAO RT"
+    })
+  };
+
+  ctx->OMSetRenderTargets(1, std::array{ssaoRt.GetRtv()}.data(), nullptr);
+
+  ctx->PSSetShader(mSsaoPs.Get(), nullptr, 0);
+  ctx->PSSetShaderResources(RES_SLOT_SSAO_DEPTH, 1, std::array{hdrRt.GetDepthSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_SSAO_NORMAL, 1, std::array{normalRt.GetColorSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_SSAO_NOISE, 1, mSsaoNoiseSrv.GetAddressOf());
+  ctx->PSSetShaderResources(RES_SLOT_SSAO_SAMPLES, 1, std::array{mSsaoSamplesBuffer->GetSrv()}.data());
+  ctx->PSSetConstantBuffers(CB_SLOT_SSAO, 1, mSsaoCb.GetAddressOf());
+
+  ctx->VSSetShader(mScreenVs.Get(), nullptr, 0);
+
+  ctx->IASetInputLayout(nullptr);
+
+  ctx->ClearRenderTargetView(ssaoRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
+  ctx->Draw(3, 0);
+
+  ctx->PSSetShaderResources(RES_SLOT_SSAO_DEPTH, 1, std::array{static_cast<ID3D11ShaderResourceView*>(nullptr)}.data());
+
+  annot->EndEvent();
 
   // Full forward lighting pass
 
