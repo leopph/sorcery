@@ -18,8 +18,8 @@ RTTR_REGISTRATION {
 
   rttr::registration::class_<sorcery::CameraComponent>{"Camera Component"}
     .REFLECT_REGISTER_SCENE_OBJECT_CTOR
-    .property("fov", &sorcery::CameraComponent::GetHorizontalPerspectiveFov, &sorcery::CameraComponent::SetHorizontalPerspectiveFov)
-    .property("size", &sorcery::CameraComponent::GetHorizontalOrthographicSize, &sorcery::CameraComponent::SetHorizontalOrthographicSize)
+    .property("fov", &sorcery::CameraComponent::GetVerticalPerspectiveFov, &sorcery::CameraComponent::SetVerticalPerspectiveFov)
+    .property("size", &sorcery::CameraComponent::GetVerticalOrthographicSize, &sorcery::CameraComponent::SetVerticalOrthographicSize)
     .property("near", &sorcery::CameraComponent::GetNearClipPlane, &sorcery::CameraComponent::SetNearClipPlane)
     .property("far", &sorcery::CameraComponent::GetFarClipPlane, &sorcery::CameraComponent::SetFarClipPlane)
     .property("background", &sorcery::CameraComponent::GetBackgroundColor, &sorcery::CameraComponent::SetBackgroundColor);
@@ -107,16 +107,16 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   if (GetType() == Camera::Type::Perspective) {
     ImGui::Text("Field Of View");
     ImGui::TableNextColumn();
-    float value{GetHorizontalPerspectiveFov()};
+    float value{GetVerticalPerspectiveFov()};
     if (ImGui::DragFloat("FOV", &value)) {
-      SetHorizontalPerspectiveFov(value);
+      SetVerticalPerspectiveFov(value);
     }
   } else {
     ImGui::Text("Size");
     ImGui::TableNextColumn();
-    float value{GetHorizontalOrthographicSize()};
+    float value{GetVerticalOrthographicSize()};
     if (ImGui::DragFloat("OrthoSize", &value)) {
-      SetHorizontalOrthographicSize(value);
+      SetVerticalOrthographicSize(value);
     }
   }
 

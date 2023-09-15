@@ -45,25 +45,25 @@ auto Camera::SetType(Type const type) noexcept -> void {
 }
 
 
-auto Camera::GetHorizontalPerspectiveFov() const -> float {
-  return mPerspFovHorizDeg;
+auto Camera::GetVerticalPerspectiveFov() const -> float {
+  return mVertPerspFovDeg;
 }
 
 
-auto Camera::SetHorizontalPerspectiveFov(float degrees) -> void {
-  degrees = std::max(degrees, MINIMUM_PERSPECTIVE_HORIZONTAL_FOV);
-  mPerspFovHorizDeg = degrees;
+auto Camera::SetVerticalPerspectiveFov(float degrees) -> void {
+  degrees = std::max(degrees, MINIMUM_PERSPECTIVE_VERTICAL_FOV);
+  mVertPerspFovDeg = degrees;
 }
 
 
-auto Camera::GetHorizontalOrthographicSize() const -> float {
-  return mOrthoSizeHoriz;
+auto Camera::GetVerticalOrthographicSize() const -> float {
+  return mVertOrhoSize;
 }
 
 
-auto Camera::SetHorizontalOrthographicSize(float size) -> void {
-  size = std::max(size, MINIMUM_ORTHOGRAPHIC_HORIZONTAL_SIZE);
-  mOrthoSizeHoriz = size;
+auto Camera::SetVerticalOrthographicSize(float size) -> void {
+  size = std::max(size, MINIMUM_ORTHOGRAPHIC_VERTICAL_SIZE);
+  mVertOrhoSize = size;
 }
 
 
@@ -85,13 +85,10 @@ auto Camera::CalculateViewMatrix() const noexcept -> Matrix4 {
 auto Camera::CalculateProjectionMatrix(float const aspectRatio) const noexcept -> Matrix4 {
   switch (GetType()) {
     case Type::Perspective:
-      return Matrix4::PerspectiveFov(
-        ToRadians(Camera::HorizontalPerspectiveFovToVertical(GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio,
-        GetNearClipPlane(), GetFarClipPlane());
+      return Matrix4::PerspectiveFov(ToRadians(GetVerticalPerspectiveFov()), aspectRatio, GetNearClipPlane(), GetFarClipPlane());
 
     case Type::Orthographic:
-      return Matrix4::Orthographic(GetHorizontalOrthographicSize(),
-        GetHorizontalOrthographicSize() / aspectRatio, GetNearClipPlane(), GetFarClipPlane());
+      return Matrix4::Orthographic(GetVerticalOrthographicSize() * aspectRatio, GetVerticalOrthographicSize(), GetNearClipPlane(), GetFarClipPlane());
   }
 
   return Matrix4{};

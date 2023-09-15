@@ -64,7 +64,7 @@ auto DirectionalShadowAtlas::Update(std::span<LightComponent const* const> const
 
       switch (cam.GetType()) {
         case Camera::Type::Perspective: {
-          float const tanHalfFov{std::tan(ToRadians(cam.GetHorizontalPerspectiveFov() / 2.0f))};
+          float const tanHalfFov{std::tan(ToRadians(cam.GetVerticalPerspectiveFov() / 2.0f))};
           float const nearExtentX{camNear * tanHalfFov};
           float const nearExtentY{nearExtentX / aspectRatio};
           float const farExtentX{camFar * tanHalfFov};
@@ -89,7 +89,7 @@ auto DirectionalShadowAtlas::Update(std::span<LightComponent const* const> const
           break;
         }
         case Camera::Type::Orthographic: {
-          float const extentX{cam.GetHorizontalOrthographicSize() / 2.0f};
+          float const extentX{cam.GetVerticalOrthographicSize() / 2.0f};
           float const extentY{extentX / aspectRatio};
 
           ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;

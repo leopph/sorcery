@@ -15,15 +15,15 @@ public:
   };
 
 private:
-  constexpr static float MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{0.03f};
+  constexpr static float MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{0.1f};
   constexpr static float MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET{0.1f};
-  constexpr static float MINIMUM_PERSPECTIVE_HORIZONTAL_FOV{5.0f};
-  constexpr static float MINIMUM_ORTHOGRAPHIC_HORIZONTAL_SIZE{0.1f};
+  constexpr static float MINIMUM_PERSPECTIVE_VERTICAL_FOV{5.0f};
+  constexpr static float MINIMUM_ORTHOGRAPHIC_VERTICAL_SIZE{0.1f};
 
   float mNear{MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE};
   float mFar{100.f};
-  float mOrthoSizeHoriz{10};
-  float mPerspFovHorizDeg{90};
+  float mVertOrhoSize{10};
+  float mVertPerspFovDeg{60};
   Type mType{Type::Perspective};
 
 public:
@@ -41,11 +41,11 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetType() const noexcept -> Type;
   LEOPPHAPI auto SetType(Type type) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetHorizontalPerspectiveFov() const -> float;
-  LEOPPHAPI auto SetHorizontalPerspectiveFov(float degrees) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetVerticalPerspectiveFov() const -> float;
+  LEOPPHAPI auto SetVerticalPerspectiveFov(float degrees) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetHorizontalOrthographicSize() const -> float;
-  LEOPPHAPI auto SetHorizontalOrthographicSize(float size) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetVerticalOrthographicSize() const -> float;
+  LEOPPHAPI auto SetVerticalOrthographicSize(float size) -> void;
 
   [[nodiscard]] LEOPPHAPI auto CalculateViewMatrix() const noexcept -> Matrix4;
   [[nodiscard]] LEOPPHAPI auto CalculateProjectionMatrix(float aspectRatio) const noexcept -> Matrix4;
