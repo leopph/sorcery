@@ -298,10 +298,10 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
           switch (cam.GetType()) {
             case Camera::Type::Perspective: {
               float const tanHalfFov{std::tan(ToRadians(cam.GetVerticalPerspectiveFov() / 2.0f))};
-              float const nearExtentX{camNear * tanHalfFov};
-              float const nearExtentY{nearExtentX / rtAspect};
-              float const farExtentX{camFar * tanHalfFov};
-              float const farExtentY{farExtentX / rtAspect};
+              float const nearExtentY{camNear * tanHalfFov};
+              float const nearExtentX{nearExtentY * rtAspect};
+              float const farExtentY{camFar * tanHalfFov};
+              float const farExtentX{farExtentY * rtAspect};
 
               ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
                                                 nearExtentY;
