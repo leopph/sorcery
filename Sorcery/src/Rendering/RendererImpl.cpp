@@ -1870,7 +1870,7 @@ auto Renderer::Impl::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) ->
   std::unique_lock const lock{mTmpRenderTargetsMutex};
 
   for (auto& [rt, lastUseInFrames] : mTmpRenderTargets) {
-    if (rt->GetDesc() == desc) {
+    if (rt->GetDesc() == desc && lastUseInFrames != 0 /*The RT wasn't already handed out this frame*/) {
       lastUseInFrames = 0;
       return *rt;
     }
