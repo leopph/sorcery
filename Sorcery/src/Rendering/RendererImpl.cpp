@@ -2001,6 +2001,11 @@ auto Renderer::Impl::GetMultisamplingMode() const noexcept -> MultisamplingMode 
 
 auto Renderer::Impl::SetMultisamplingMode(MultisamplingMode const mode) noexcept -> void {
   mMsaaMode = mode;
+
+  // TODO temporary solution until I figure out how to combine SSAO and MSAA
+  if (mode != MultisamplingMode::Off && IsSsaoEnabled()) {
+    SetSsaoEnabled(false);
+  }
 }
 
 
@@ -2102,6 +2107,11 @@ auto Renderer::Impl::SetSsaoEnabled(bool const enabled) noexcept -> void {
 
   if (enabled && !IsDepthNormalPrePassEnabled()) {
     SetDepthNormalPrePassEnabled(true);
+  }
+
+  // TODO temporary solution until I figure out how to combine SSAO and MSAA
+  if (enabled && GetMultisamplingMode() != MultisamplingMode::Off) {
+    SetMultisamplingMode(MultisamplingMode::Off);
   }
 }
 
