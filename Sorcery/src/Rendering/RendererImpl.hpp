@@ -170,6 +170,8 @@ class Renderer::Impl {
 
   auto RecreateSsaoSamples(int kernelSize) noexcept -> void;
 
+  static auto SetDebugName(ObserverPtr<ID3D11DeviceChild> deviceChild, std::string_view name) noexcept -> void;
+
   static auto OnWindowSize(Impl* self, Extent2D<std::uint32_t> size) -> void;
 
 public:

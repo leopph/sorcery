@@ -711,6 +711,12 @@ auto Renderer::Impl::RecreateSsaoSamples(int const kernelSize) noexcept -> void 
 }
 
 
+auto Renderer::Impl::SetDebugName(ObserverPtr<ID3D11DeviceChild> const deviceChild, std::string_view const name) noexcept -> void {
+  [[maybe_unused]] auto const hr{deviceChild->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(name)), name.data())};
+  assert(SUCCEEDED(hr));
+}
+
+
 auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<std::uint32_t> const size) -> void {
   self->mSwapChain->Resize(size.width, size.height);
 
