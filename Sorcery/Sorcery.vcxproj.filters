@@ -84,12 +84,6 @@
     <ClCompile Include="src\Serialization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\PhysicsManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\SceneObjects\RigidBodyComponent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Rendering\ShadowAtlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -141,10 +135,10 @@
     <ClCompile Include="src\Rendering\RendererImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\WindowImpl.cpp">
+    <ClCompile Include="src\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Window.cpp">
+    <ClCompile Include="src\WindowImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -228,12 +222,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\shaders\ShadowFilteringModes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\PhysicsManager.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\SceneObjects\RigidBodyComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\ShadowAtlas.hpp">
@@ -324,8 +312,8 @@
     <None Include="src\shaders\GizmoVsOut.hlsli" />
     <None Include="src\shaders\Samplers.hlsli" />
     <None Include="src\shaders\ShadowSampling.hlsli" />
-    <None Include="src\shaders\DepthOnlyVsOut.hlsli" />
     <None Include="src\shaders\DepthNormalVsOut.hlsli" />
+    <None Include="src\shaders\DepthOnlyVsOut.hlsli" />
     <None Include="src\shaders\ScreenVSOut.hlsli" />
     <None Include="src\shaders\Util.hlsli" />
   </ItemGroup>
@@ -340,9 +328,9 @@
     <FxCompile Include="src\shaders\LineGizmoVS.hlsl" />
     <FxCompile Include="src\shaders\GizmoPS.hlsl" />
     <FxCompile Include="src\shaders\DepthOnlyPS.hlsl" />
-    <FxCompile Include="src\shaders\DepthNormalVS.hlsl" />
     <FxCompile Include="src\shaders\DepthNormalPS.hlsl" />
-    <FxCompile Include="src\shaders\SsaoPS.hlsl" />
+    <FxCompile Include="src\shaders\DepthNormalVS.hlsl" />
     <FxCompile Include="src\shaders\SsaoBlurPS.hlsl" />
+    <FxCompile Include="src\shaders\SsaoPS.hlsl" />
   </ItemGroup>
 </Project>

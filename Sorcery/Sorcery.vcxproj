@@ -124,7 +124,6 @@
     <ClCompile Include="src\Rendering\DirectionalShadowAtlas.cpp" />
     <ClCompile Include="src\GridLike.cpp" />
     <ClCompile Include="src\Math.cpp" />
-    <ClCompile Include="src\PhysicsManager.cpp" />
     <ClCompile Include="src\Rendering\PunctualShadowAtlas.cpp" />
     <ClCompile Include="src\Rendering\RenderTarget.cpp" />
     <ClCompile Include="src\Resources\Resource.cpp" />
@@ -142,7 +141,6 @@
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Rendering\Renderer.cpp" />
     <ClCompile Include="src\Resources\Scene.cpp" />
-    <ClCompile Include="src\SceneObjects\RigidBodyComponent.cpp" />
     <ClCompile Include="src\Rendering\SwapChain.cpp" />
     <ClCompile Include="src\Util.cpp" />
     <ClCompile Include="src\Window.cpp" />
@@ -165,7 +163,6 @@
     <ClInclude Include="src\Resources\Cubemap.hpp" />
     <ClInclude Include="src\Rendering\DirectionalShadowAtlas.hpp" />
     <ClInclude Include="src\GridLike.hpp" />
-    <ClInclude Include="src\PhysicsManager.hpp" />
     <ClInclude Include="src\Rendering\PunctualShadowAtlas.hpp" />
     <ClInclude Include="src\Rendering\RenderTarget.hpp" />
     <ClInclude Include="src\SceneObjects\SceneObject.hpp" />
@@ -200,7 +197,6 @@
     <ClInclude Include="src\Rendering\Renderer.hpp" />
     <ClInclude Include="src\Resources\Scene.hpp" />
     <ClInclude Include="src\SceneObjects\SkyboxComponent.hpp" />
-    <ClInclude Include="src\SceneObjects\RigidBodyComponent.hpp" />
     <ClInclude Include="src\Rendering\StructuredBuffer.hpp" />
     <ClInclude Include="src\Rendering\SwapChain.hpp" />
     <ClInclude Include="src\Resources\Texture2D.hpp" />

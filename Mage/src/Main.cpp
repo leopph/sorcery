@@ -8,7 +8,6 @@
 #include "MainMenuBar.hpp"
 #include "PropertiesWindow.hpp"
 #include "PerformanceCounterWindow.hpp"
-#include "PhysicsManager.hpp"
 #include "ProjectWindow.hpp"
 #include "SceneViewWindow.hpp"
 #include "StartupScreen.hpp"
@@ -37,7 +36,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
   try {
     sorcery::gWindow.StartUp();
     sorcery::gRenderer.StartUp();
-    sorcery::gPhysicsManager.StartUp();
 
     sorcery::timing::SetTargetFrameRate(sorcery::mage::SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
 
@@ -120,8 +118,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
               app.GetScene().Load();
               app.SetSelectedObject(nullptr);
             }
-
-            sorcery::gPhysicsManager.Update();
           } else {
             if (GetKeyDown(sorcery::Key::F5)) {
               runGame = true;
@@ -180,7 +176,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
   }
 
   sorcery::Object::DestroyAll();
-  sorcery::gPhysicsManager.ShutDown();
   sorcery::gRenderer.ShutDown();
   sorcery::gWindow.ShutDown();
   return 0;
