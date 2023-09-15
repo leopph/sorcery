@@ -31,6 +31,7 @@ Some screenshots from Sorcery's editor, Mage!
   * HDR Skybox
   * Mipmapping
   * Frustum culling for cameras and shadows
+  * Screen Space Ambient Occlusion (SSAO)
 * Entity-Component model
   * Camera, Static Mesh, Light, Skybox, and Transform components
   * Transform hierarchy
@@ -59,7 +60,7 @@ Some screenshots from Sorcery's editor, Mage!
   * Image-Based Lighting (IBL)
   * Hybrid tiled or clustered forward/deferred renderer
   * Support for writing custom shaders for materials
-  * Screen Space Ambient Occlusion (SSAO)
+  * Ground Truth-based Ambient Occlusion (GTAO)
   * Screen Space Shadows
   * Screen Space Reflections (SSR)
   * Screen Space Subsurface Scattering
