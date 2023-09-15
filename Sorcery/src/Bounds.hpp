@@ -19,6 +19,7 @@ struct AABB {
 
   [[nodiscard]] static auto FromVertices(std::span<Vector3 const> vertices) noexcept -> AABB;
   [[nodiscard]] auto CalculateVertices() const noexcept -> std::array<Vector3, 8>;
+  [[nodiscard]] auto Transform(Matrix4 const& mtx) const noexcept -> AABB;
 };
 
 

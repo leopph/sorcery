@@ -8,8 +8,8 @@
 namespace sorcery {
 auto AABB::FromVertices(std::span<Vector3 const> const vertices) noexcept -> AABB {
   AABB bounds{
-    .min = Vector3{ std::numeric_limits<float>::max() },
-    .max = Vector3{ std::numeric_limits<float>::lowest() }
+    .min = Vector3{std::numeric_limits<float>::max()},
+    .max = Vector3{std::numeric_limits<float>::lowest()}
   };
 
   for (auto const& vertex : vertices) {
@@ -24,19 +24,33 @@ auto AABB::FromVertices(std::span<Vector3 const> const vertices) noexcept -> AAB
 auto AABB::CalculateVertices() const noexcept -> std::array<Vector3, 8> {
   return std::array{
     min,
-    Vector3{ max[0], min[1], min[2] },
-    Vector3{ min[0], max[1], min[2] },
-    Vector3{ max[0], max[1], min[2] },
-    Vector3{ min[0], min[1], max[2] },
-    Vector3{ max[0], min[1], max[2] },
-    Vector3{ min[0], max[1], max[2] },
+    Vector3{max[0], min[1], min[2]},
+    Vector3{min[0], max[1], min[2]},
+    Vector3{max[0], max[1], min[2]},
+    Vector3{min[0], min[1], max[2]},
+    Vector3{max[0], min[1], max[2]},
+    Vector3{min[0], max[1], max[2]},
     max,
   };
 }
 
 
+auto AABB::Transform(Matrix4 const& mtx) const noexcept -> AABB {
+  auto vertices{CalculateVertices()};
+
+  for (auto& vertex : vertices) {
+    Vector4 transformed{vertex, 1};
+    transformed *= mtx;
+    transformed /= transformed[3];
+    vertex = Vector3{transformed};
+  }
+
+  return FromVertices(vertices);
+}
+
+
 auto Plane::Normalize() noexcept -> void {
-  auto const normalLength{ std::sqrt(std::pow(a, 2.0f) + std::pow(b, 2.0f) + std::pow(c, 2.0f)) };
+  auto const normalLength{std::sqrt(std::pow(a, 2.0f) + std::pow(b, 2.0f) + std::pow(c, 2.0f))};
   a /= normalLength;
   b /= normalLength;
   c /= normalLength;
@@ -45,7 +59,7 @@ auto Plane::Normalize() noexcept -> void {
 
 
 auto Plane::Normalized() const noexcept -> Plane {
-  auto ret{ *this };
+  auto ret{*this};
   ret.Normalize();
   return ret;
 }
@@ -94,7 +108,7 @@ Frustum::Frustum(Matrix4 const& mtx) {
 
 
 auto Frustum::Intersects(BoundingSphere const& boundingSphere) const noexcept -> bool {
-  auto intersects{ true };
+  auto intersects{true};
 
   for (auto const& plane : mPlanes) {
     intersects = intersects && plane.DistanceToPoint(boundingSphere.center) >= -boundingSphere.radius;
@@ -105,12 +119,12 @@ auto Frustum::Intersects(BoundingSphere const& boundingSphere) const noexcept ->
 
 
 auto Frustum::Intersects(AABB const& aabb) const noexcept -> bool {
-  auto intersects{ true };
+  auto intersects{true};
 
-  auto const aabbVertices{ aabb.CalculateVertices() };
+  auto const aabbVertices{aabb.CalculateVertices()};
 
   for (auto const& plane : mPlanes) {
-    auto distance{ std::numeric_limits<float>::lowest() };
+    auto distance{std::numeric_limits<float>::lowest()};
 
     for (auto const& vertex : aabbVertices) {
       distance = std::max(distance, plane.DistanceToPoint(vertex));
