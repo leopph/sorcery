@@ -37,6 +37,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetClientAreaSize() const noexcept -> Extent2D<int>;
   LEOPPHAPI auto SetClientAreaSize(Extent2D<int> size) noexcept -> void;
 
+  // Screen space is [0, 1] from left to right, bottom to top.
+  LEOPPHAPI auto SetPosition(Point2D<int> position) noexcept -> void;
+
   [[nodiscard]] LEOPPHAPI auto IsBorderless() const noexcept -> bool;
   LEOPPHAPI auto SetBorderless(bool borderless) noexcept -> void;
 

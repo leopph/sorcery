@@ -176,6 +176,11 @@ auto WindowImpl::SetClientAreaSize(Extent2D<int> const size) noexcept -> void {
 }
 
 
+auto WindowImpl::SetPosition(Point2D<int> position) noexcept -> void {
+  SetWindowPos(mHwnd, nullptr, position.x, -position.y, 0, 0, SWP_NOSIZE);
+}
+
+
 auto WindowImpl::IsBorderless() const noexcept -> bool {
   return mIsBorderless;
 }

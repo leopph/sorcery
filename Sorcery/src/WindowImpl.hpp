@@ -44,6 +44,8 @@ public:
   [[nodiscard]] auto GetClientAreaSize() const noexcept -> Extent2D<int>;
   auto SetClientAreaSize(Extent2D<int> size) noexcept -> void;
 
+  auto SetPosition(Point2D<int> position) noexcept -> void;
+
   [[nodiscard]] auto IsBorderless() const noexcept -> bool;
   auto SetBorderless(bool borderless) noexcept -> void;
 

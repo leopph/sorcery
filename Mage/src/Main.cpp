@@ -39,10 +39,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     sorcery::gRenderer.StartUp();
     sorcery::gPhysicsManager.StartUp();
 
-    sorcery::gWindow.SetBorderless(false);
-
-    sorcery::gRenderer.SetSyncInterval(0);
-
     sorcery::timing::SetTargetFrameRate(sorcery::mage::SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
 
     ImGui::CreateContext();

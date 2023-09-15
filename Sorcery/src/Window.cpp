@@ -63,6 +63,12 @@ auto Window::SetClientAreaSize(Extent2D<int> const size) noexcept -> void {
 }
 
 
+auto Window::SetPosition(Point2D<int> const position) noexcept -> void {
+  assert(mImpl);
+  mImpl->SetPosition(position);
+}
+
+
 auto Window::IsBorderless() const noexcept -> bool {
   assert(mImpl);
   return mImpl->IsBorderless();
