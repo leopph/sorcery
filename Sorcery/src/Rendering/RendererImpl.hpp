@@ -47,6 +47,7 @@ class Renderer::Impl {
   Microsoft::WRL::ComPtr<ID3D11PixelShader> mMeshPbrPs;
   Microsoft::WRL::ComPtr<ID3D11PixelShader> mPostProcessPs;
   Microsoft::WRL::ComPtr<ID3D11PixelShader> mSkyboxPs;
+  Microsoft::WRL::ComPtr<ID3D11PixelShader> mSsaoBlurPs;
   Microsoft::WRL::ComPtr<ID3D11PixelShader> mSsaoPs;
 
   Microsoft::WRL::ComPtr<ID3D11VertexShader> mDepthNormalVs;

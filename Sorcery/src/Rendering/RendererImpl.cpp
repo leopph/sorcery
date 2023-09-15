@@ -22,6 +22,7 @@
 #include "../shaders/generated/ScreenVSBinDebug.h"
 #include "../shaders/generated/SkyboxPSBinDebug.h"
 #include "../shaders/generated/SkyboxVSBinDebug.h"
+#include "../shaders/generated/SsaoBlurPSBinDebug.h"
 #include "../shaders/generated/SsaoPSBinDebug.h"
 
 #else
@@ -37,6 +38,7 @@
 #include "../shaders/generated/ScreenVSBin.h"
 #include "../shaders/generated/SkyboxPSBin.h"
 #include "../shaders/generated/SkyboxVSBin.h"
+#include "../shaders/generated/SsaoBlurPSBin.h"
 #include "../shaders/generated/SsaoPSBin.h"
 #endif
 
@@ -907,6 +909,11 @@ auto Renderer::Impl::StartUp() -> void {
   hr = mSsaoPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(ssaoPsName), ssaoPsName);
   assert(SUCCEEDED(hr));
 
+  hr = mDevice->CreatePixelShader(gSsaoBlurPSBin, ARRAYSIZE(gSsaoBlurPSBin), nullptr, mSsaoBlurPs.GetAddressOf());
+  assert(SUCCEEDED(hr));
+  char constexpr ssaoBlurPsName[]{"SSAO Blur Pixel Shader"};
+  hr = mSsaoBlurPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(ssaoBlurPsName), ssaoBlurPsName);
+  assert(SUCCEEDED(hr));
 
   // CREATE CONSTANT BUFFERS
 
@@ -1652,7 +1659,21 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->ClearRenderTargetView(ssaoRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
   ctx->Draw(3, 0);
 
-  ctx->PSSetShaderResources(RES_SLOT_SSAO_DEPTH, 1, std::array{static_cast<ID3D11ShaderResourceView*>(nullptr)}.data());
+  auto const& ssaoBlurRt{
+    GetTemporaryRenderTarget([&ssaoRt] {
+      auto ret{ssaoRt.GetDesc()};
+      ret.debugName = "SSAO Blur RT";
+      return ret;
+    }())
+  };
+
+  ctx->OMSetRenderTargets(1, std::array{ssaoBlurRt.GetRtv()}.data(), nullptr);
+
+  ctx->PSSetShader(mSsaoBlurPs.Get(), nullptr, 0);
+  ctx->PSSetShaderResources(RES_SLOT_SSAO_BLUR_INPUT, 1, std::array{ssaoRt.GetColorSrv()}.data());
+
+  ctx->ClearRenderTargetView(ssaoBlurRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
+  ctx->Draw(3, 0);
 
   annot->EndEvent();
 
@@ -1718,6 +1739,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
   ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{mDirShadowMapArr->GetSrv()}.data());
   ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_SSAO_TEX, 1, std::array{ssaoBlurRt.GetColorSrv()}.data());
 
   ctx->RSSetViewports(1, &viewport);
   ctx->RSSetState(nullptr);

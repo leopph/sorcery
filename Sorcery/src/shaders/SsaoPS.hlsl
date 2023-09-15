@@ -42,7 +42,7 @@ float main(const ScreenVsOut vsOut) : SV_TARGET {
 		const float sampleDepth = UvToPositionVS(sampleOffset.xy).z;
 
 		const float rangeCheck = smoothstep(0.0, 1.0, gSsaoConstants.radius / abs(positionVS.z - sampleDepth));
-		occlusion += step(samplePos.z + gSsaoConstants.bias, sampleDepth) * rangeCheck;
+		occlusion += step(sampleDepth, samplePos.z + gSsaoConstants.bias) * rangeCheck;
 	}
 
   return 1 - occlusion / kernelSize;

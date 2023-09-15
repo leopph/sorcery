@@ -331,5 +331,6 @@
     <FxCompile Include="src\shaders\DepthNormalVS.hlsl" />
     <FxCompile Include="src\shaders\DepthNormalPS.hlsl" />
     <FxCompile Include="src\shaders\SsaoPS.hlsl" />
+    <FxCompile Include="src\shaders\SsaoBlurPS.hlsl" />
   </ItemGroup>
 </Project>
