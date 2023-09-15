@@ -155,27 +155,33 @@ auto SettingsWindow::Draw() -> void {
 
   ImGui::SeparatorText("Scene View");
 
+  ImGui::Text("%s", "Camera");
+
   auto constexpr clipPlaneMin{0.1f};
   auto constexpr clipPlaneMax{10'000.0f};
   auto constexpr clipPlaneSliderSpeed{0.1f};
   auto constexpr clipPlaneSliderFormat{"%.1f"};
   auto constexpr clipPlaneSliderFlags{ImGuiSliderFlags_AlwaysClamp};
 
-  if (auto nearPlane{mSceneViewCam->GetNearClipPlane()}; ImGui::DragFloat("Camera Near Clip Plane", &nearPlane,
+  if (auto nearPlane{mSceneViewCam->GetNearClipPlane()}; ImGui::DragFloat("Near Clip Plane", &nearPlane,
     clipPlaneSliderSpeed, clipPlaneMin, clipPlaneMax, clipPlaneSliderFormat,
     clipPlaneSliderFlags)) {
     mSceneViewCam->SetNearClipPlane(nearPlane);
     mSceneViewCam->SetFarClipPlane(std::max(nearPlane, mSceneViewCam->GetFarClipPlane()));
   }
 
-  if (auto farPlane{mSceneViewCam->GetFarClipPlane()}; ImGui::DragFloat("Camera Far Clip Plane", &farPlane,
+  if (auto farPlane{mSceneViewCam->GetFarClipPlane()}; ImGui::DragFloat("Far Clip Plane", &farPlane,
     clipPlaneSliderSpeed, clipPlaneMin, clipPlaneMax, clipPlaneSliderFormat,
     clipPlaneSliderFlags)) {
     mSceneViewCam->SetFarClipPlane(farPlane);
     mSceneViewCam->SetNearClipPlane(std::min(farPlane, mSceneViewCam->GetNearClipPlane()));
   }
 
-  ImGui::DragFloat("Camera Speed", &mSceneViewCam->speed, 0.1f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+  ImGui::DragFloat("Speed", &mSceneViewCam->speed, 0.1f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+
+  if (auto fov{mSceneViewCam->GetVerticalPerspectiveFov()}; ImGui::SliderFloat("FOV", &fov, 5, 120, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
+    mSceneViewCam->SetVerticalPerspectiveFov(fov);
+  }
 
   ImGui::End();
 }
