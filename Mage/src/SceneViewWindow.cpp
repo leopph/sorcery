@@ -123,13 +123,12 @@ auto SceneViewWindow::Draw(Application& context) -> void {
           op = ImGuizmo::SCALE;
         }
         if (GetKeyDown(Key::F)) {
-          mCam.position = selectedEntity->GetTransform().GetWorldPosition() - Vector3::Forward() * 2;
-          mCam.orientation = selectedEntity->GetTransform().GetLocalRotation();
+          mCam.position = selectedEntity->GetTransform().GetWorldPosition() - mCam.GetForwardAxis() * 2;
         }
       }
 
-      if (Matrix4 modelMat{selectedEntity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(
-        editorCamViewMat.GetData(), editorCamProjMat.GetData(), op, ImGuizmo::MODE::LOCAL, modelMat.GetData())) {
+      // TODO this breaks if the transform is a child of a rotated transform
+      if (Matrix4 modelMat{selectedEntity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(editorCamViewMat.GetData(), editorCamProjMat.GetData(), op, ImGuizmo::MODE::LOCAL, modelMat.GetData())) {
         Vector3 pos, euler, scale;
         ImGuizmo::DecomposeMatrixToComponents(modelMat.GetData(), pos.GetData(), euler.GetData(), scale.GetData());
         selectedEntity->GetTransform().SetWorldPosition(pos);
