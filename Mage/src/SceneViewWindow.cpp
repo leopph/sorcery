@@ -121,16 +121,20 @@ auto SceneViewWindow::Draw(Application& context) -> void {
 
     if (auto const selectedEntity{dynamic_cast<Entity*>(context.GetSelectedObject())}; selectedEntity) {
       static auto op{ImGuizmo::OPERATION::TRANSLATE};
+      static auto mode{ImGuizmo::MODE::LOCAL};
 
       if (!context.GetImGuiIo().WantTextInput && !isMovingSceneCamera) {
-        if (GetKeyDown(Key::T)) {
+        if (GetKeyDown(Key::Q)) {
           op = ImGuizmo::TRANSLATE;
         }
-        if (GetKeyDown(Key::R)) {
+        if (GetKeyDown(Key::W)) {
           op = ImGuizmo::ROTATE;
         }
-        if (GetKeyDown(Key::S)) {
+        if (GetKeyDown(Key::E)) {
           op = ImGuizmo::SCALE;
+        }
+        if (GetKeyDown(Key::R)) {
+          mode = mode == ImGuizmo::MODE::LOCAL ? ImGuizmo::MODE::WORLD : ImGuizmo::MODE::LOCAL;
         }
         if (GetKeyDown(Key::F)) {
           mFocusTarget.emplace(mCam.GetPosition(), selectedEntity->GetTransform().GetWorldPosition() - mCam.GetForwardAxis() * 2, 0.0f);
@@ -138,7 +142,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
       }
 
       // TODO this breaks if the transform is a child of a rotated transform
-      if (Matrix4 modelMat{selectedEntity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(editorCamViewMat.GetData(), editorCamProjMat.GetData(), op, ImGuizmo::MODE::LOCAL, modelMat.GetData())) {
+      if (Matrix4 modelMat{selectedEntity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(editorCamViewMat.GetData(), editorCamProjMat.GetData(), op, mode, modelMat.GetData())) {
         Vector3 pos, euler, scale;
         ImGuizmo::DecomposeMatrixToComponents(modelMat.GetData(), pos.GetData(), euler.GetData(), scale.GetData());
         selectedEntity->GetTransform().SetWorldPosition(pos);
