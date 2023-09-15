@@ -220,7 +220,7 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
       roughness *= gRoughnessMap.Sample(gSamplerAf16, vsOut.uv).r;
   }
 
-  float2 const screenUv = vsOut.positionCS.xy / gPerFrameConstants.screenSize;
+  const float2 screenUv = vsOut.positionCS.xy / gPerFrameConstants.screenSize;
   float ao = material.ao * gSsaoTex.Sample(gSamplerAf16, screenUv).r;
 
   if (material.sampleAo) {

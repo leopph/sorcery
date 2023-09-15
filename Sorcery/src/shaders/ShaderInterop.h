@@ -166,7 +166,8 @@ struct ShaderPerDrawConstants {
 struct ShaderSsaoConstants {
   float radius;
   float bias;
-  float2 pad;
+  float power;
+  float pad;
 };
 
 

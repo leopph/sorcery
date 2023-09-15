@@ -45,5 +45,5 @@ float main(const ScreenVsOut vsOut) : SV_TARGET {
 		occlusion += step(sampleDepth, samplePos.z + gSsaoConstants.bias) * rangeCheck;
 	}
 
-  return 1 - occlusion / kernelSize;
+  return pow(1 - occlusion / kernelSize, gSsaoConstants.power);
 }

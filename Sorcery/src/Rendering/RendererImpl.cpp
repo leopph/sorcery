@@ -1625,7 +1625,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   *static_cast<SsaoCB*>(mapped.pData) = SsaoCB{
     .gSsaoConstants = ShaderSsaoConstants{
       .radius = 0.5f,
-      .bias = 0.025f
+      .bias = 0.025f,
+      .power = 1.0f
     }
   };
 
