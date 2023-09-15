@@ -11,7 +11,6 @@
 #include <functional>
 #include <string>
 #include <string_view>
-#include <memory>
 #include <optional>
 
 
@@ -20,7 +19,7 @@ enum class Key : int;
 
 
 class Window {
-  static auto CALLBACK WindowProc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) noexcept -> LRESULT;
+  static auto CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) noexcept -> LRESULT;
   auto ApplyClientAreaSize() noexcept -> void;
 
   wchar_t const constexpr static* WND_CLASS_NAME{L"LeopphEngine"};
@@ -44,6 +43,7 @@ class Window {
   std::function<bool(HWND, UINT, WPARAM, LPARAM)> mEventHook{nullptr};
   bool mIgnoreManagedRequests{false};
   std::string mTitle{"LeopphEngine"};
+  bool mAllowWindowedResizing{true};
 
 public:
   Window() noexcept = default;
@@ -93,6 +93,9 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetTitle() const noexcept -> std::string_view;
   LEOPPHAPI auto SetTitle(std::string title) -> void;
+
+  [[nodiscard]] LEOPPHAPI auto IsWindowedResizingAllowed() const noexcept -> bool;
+  LEOPPHAPI auto SetWindowedResizingAllowed(bool allowed) noexcept -> void;
 };
 
 
@@ -103,10 +106,10 @@ LEOPPHAPI extern Window gWindow;
 [[nodiscard]] LEOPPHAPI auto GetKeyDown(Key key) noexcept -> bool;
 [[nodiscard]] LEOPPHAPI auto GetKeyUp(Key key) noexcept -> bool;
 
-[[nodiscard]] LEOPPHAPI std::string WideToUtf8(std::wstring_view wstr);
+[[nodiscard]] LEOPPHAPI auto WideToUtf8(std::wstring_view wstr) -> std::string;
 [[nodiscard]] LEOPPHAPI auto Utf8ToWide(std::string_view str) -> std::wstring;
 
-[[nodiscard]] LEOPPHAPI std::wstring_view GetExecutablePath() noexcept;
+[[nodiscard]] LEOPPHAPI auto GetExecutablePath() noexcept -> std::wstring_view;
 
 LEOPPHAPI auto DisplayError(std::string_view msg) noexcept -> void;
 LEOPPHAPI auto DisplayError(std::wstring_view msg) noexcept -> void;

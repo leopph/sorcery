@@ -240,7 +240,7 @@ auto Window::SetBorderless(bool const borderless) noexcept -> void {
     SetWindowLongPtrW(mHwnd, GWL_STYLE, WND_BORDLERLESS_STYLE | WS_VISIBLE);
     SetWindowPos(mHwnd, nullptr, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), SWP_FRAMECHANGED);
   } else {
-    SetWindowLongPtrW(mHwnd, GWL_STYLE, WND_WINDOWED_STYLE | WS_VISIBLE);
+    SetWindowLongPtrW(mHwnd, GWL_STYLE, WND_WINDOWED_STYLE | WS_VISIBLE | (mAllowWindowedResizing ? (WS_THICKFRAME) : (~WS_THICKFRAME)));
     ApplyClientAreaSize();
   }
 }
@@ -340,6 +340,20 @@ auto Window::GetTitle() const noexcept -> std::string_view {
 auto Window::SetTitle(std::string title) -> void {
   mTitle = std::move(title);
   SetWindowTextW(mHwnd, Utf8ToWide(mTitle).c_str());
+}
+
+
+auto Window::IsWindowedResizingAllowed() const noexcept -> bool {
+  return mAllowWindowedResizing;
+}
+
+
+auto Window::SetWindowedResizingAllowed(bool const allowed) noexcept -> void {
+  mAllowWindowedResizing = allowed;
+
+  if (!IsBorderless()) {
+    SetBorderless(false);
+  }
 }
 
 
