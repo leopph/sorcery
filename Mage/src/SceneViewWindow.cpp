@@ -109,6 +109,16 @@ auto SceneViewWindow::Draw(Application& context) -> void {
         mCam.GetFarClipPlane());
     }
 
+    if (mFocusTarget) {
+      mFocusTarget->t += timing::GetFrameTime() * 5.0f;
+      mFocusTarget->t = std::min(mFocusTarget->t, 1.0f);
+      mCam.position = Lerp(mFocusTarget->source, mFocusTarget->target, mFocusTarget->t);
+
+      if (mFocusTarget->t >= 1.0f) {
+        mFocusTarget.reset();
+      }
+    }
+
     if (auto const selectedEntity{dynamic_cast<Entity*>(context.GetSelectedObject())}; selectedEntity) {
       static auto op{ImGuizmo::OPERATION::TRANSLATE};
 
@@ -123,7 +133,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
           op = ImGuizmo::SCALE;
         }
         if (GetKeyDown(Key::F)) {
-          mCam.position = selectedEntity->GetTransform().GetWorldPosition() - mCam.GetForwardAxis() * 2;
+          mFocusTarget.emplace(mCam.GetPosition(), selectedEntity->GetTransform().GetWorldPosition() - mCam.GetForwardAxis() * 2, 0.0f);
         }
       }
 
