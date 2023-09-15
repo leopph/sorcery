@@ -1500,7 +1500,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MiscFlags = 0
   };
 
-  std::array constexpr static whiteColorData{1.0f, 1.0f, 1.0f, 1.0f};
+  std::array<std::uint8_t, 4> constexpr static whiteColorData{255, 255, 255, 255};
 
   D3D11_SUBRESOURCE_DATA constexpr whiteTexData{
     .pSysMem = whiteColorData.data(),
