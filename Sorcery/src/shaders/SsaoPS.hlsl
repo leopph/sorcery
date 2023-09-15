@@ -29,10 +29,10 @@ float main(const ScreenVsOut vsOut) : SV_TARGET {
 
 	float occlusion = 0.0;
 
-	uint kernelSize, stride;
-	gSamples.GetDimensions(kernelSize, stride);
+	uint sampleCount, stride;
+	gSamples.GetDimensions(sampleCount, stride);
 
-	for (uint i = 0; i < kernelSize; i++) {
+	for (uint i = 0; i < sampleCount; i++) {
 	  const float3 samplePos = mul(gSamples[i].xyz, tbnMtxVS) * gSsaoConstants.radius + hemisphereOriginVS;
 
 		float4 sampleOffset = mul(float4(samplePos, 1), gPerViewConstants.projMtx);
@@ -44,5 +44,5 @@ float main(const ScreenVsOut vsOut) : SV_TARGET {
 		occlusion += step(sampleDepth, samplePos.z + gSsaoConstants.bias) * rangeCheck;
 	}
 
-  return pow(1 - occlusion / kernelSize, gSsaoConstants.power);
+  return pow(1 - occlusion / sampleCount, gSsaoConstants.power);
 }

@@ -126,10 +126,10 @@ class Renderer::Impl {
   int mInFlightFrameCount{2};
   bool mDepthNormalPrePassEnabled{true};
   SsaoParams mSsaoParams{
-    .radius = 0.5f,
-    .bias = 0.025f,
+    .radius = 0.1f,
+    .bias = 0.0f,
     .power = 1.0f,
-    .kernelSize = 64
+    .sampleCount = 64
   };
   bool mSsaoEnabled{true};
 
@@ -171,7 +171,7 @@ class Renderer::Impl {
   auto ClearGizmoDrawQueue() noexcept -> void;
   auto ReleaseTempRenderTargets() noexcept -> void;
 
-  auto RecreateSsaoSamples(int kernelSize) noexcept -> void;
+  auto RecreateSsaoSamples(int sampleCount) noexcept -> void;
 
   static auto SetDebugName(ObserverPtr<ID3D11DeviceChild> deviceChild, std::string_view name) noexcept -> void;
 

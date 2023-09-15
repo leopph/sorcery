@@ -687,20 +687,20 @@ auto Renderer::Impl::ReleaseTempRenderTargets() noexcept -> void {
 }
 
 
-auto Renderer::Impl::RecreateSsaoSamples(int const kernelSize) noexcept -> void {
-  mSsaoSamplesBuffer->Resize(kernelSize);
+auto Renderer::Impl::RecreateSsaoSamples(int const sampleCount) noexcept -> void {
+  mSsaoSamplesBuffer->Resize(sampleCount);
   auto const ctx{GetThreadContext()};
   auto const ssaoSamples{mSsaoSamplesBuffer->Map(ctx)};
 
   std::uniform_real_distribution dist{0.0f, 1.0f};
   std::default_random_engine gen;
 
-  for (auto i{0}; i < kernelSize; i++) {
+  for (auto i{0}; i < sampleCount; i++) {
     Vector3 sample{dist(gen) * 2 - 1, dist(gen) * 2 - 1, dist(gen)};
     Normalize(sample);
     sample *= dist(gen);
 
-    auto scale{static_cast<float>(i) / static_cast<float>(kernelSize)};
+    auto scale{static_cast<float>(i) / static_cast<float>(sampleCount)};
     scale = std::lerp(0.1f, 1.0f, scale * scale);
     sample *= scale;
 
@@ -1441,7 +1441,7 @@ auto Renderer::Impl::StartUp() -> void {
   // CREATE SSAO SAMPLES
 
   mSsaoSamplesBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice);
-  RecreateSsaoSamples(mSsaoParams.kernelSize);
+  RecreateSsaoSamples(mSsaoParams.sampleCount);
 
   // CREATE SSAO NOISE TEXTURE
 
@@ -1675,7 +1675,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
         .radius = mSsaoParams.radius,
         .bias = mSsaoParams.bias,
         .power = mSsaoParams.power,
-        .kernelSize = mSsaoParams.kernelSize
+        .sampleCount = mSsaoParams.sampleCount
       }
     };
 
@@ -2112,8 +2112,8 @@ auto Renderer::Impl::GetSsaoParams() const noexcept -> SsaoParams const& {
 
 
 auto Renderer::Impl::SetSsaoParams(SsaoParams const& ssaoParams) noexcept -> void {
-  if (mSsaoParams.kernelSize != ssaoParams.kernelSize) {
-    RecreateSsaoSamples(ssaoParams.kernelSize);
+  if (mSsaoParams.sampleCount != ssaoParams.sampleCount) {
+    RecreateSsaoSamples(ssaoParams.sampleCount);
   }
 
   mSsaoParams = ssaoParams;

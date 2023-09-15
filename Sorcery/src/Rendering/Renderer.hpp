@@ -41,7 +41,7 @@ public:
     float radius;
     float bias;
     float power;
-    int kernelSize;
+    int sampleCount;
   };
 
 private:
