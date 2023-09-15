@@ -146,6 +146,9 @@ auto SettingsWindow::Draw() -> void {
   if (ImGui::DragFloat("Power", &ssaoParams.power, 0.01f)) {
     gRenderer.SetSsaoParams(ssaoParams);
   }
+  if (ImGui::DragInt("Sample Count", &ssaoParams.kernelSize, 1, 0, std::numeric_limits<int>::max())) {
+    gRenderer.SetSsaoParams(ssaoParams);
+  }
 
   ImGui::EndGroup();
   ImGui::EndDisabled();
