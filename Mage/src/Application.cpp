@@ -3,6 +3,7 @@
 #include "Platform.hpp"
 #include "GUI.hpp"
 #include "ResourceManager.hpp"
+#include "Window.hpp"
 
 #include <nfd.h>
 

@@ -145,6 +145,8 @@
     <ClCompile Include="src\SceneObjects\RigidBodyComponent.cpp" />
     <ClCompile Include="src\Rendering\SwapChain.cpp" />
     <ClCompile Include="src\Util.cpp" />
+    <ClCompile Include="src\Window.cpp" />
+    <ClCompile Include="src\WindowImpl.cpp" />
     <ClInclude Include="src\ExternalResource.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\MemoryAllocation.hpp" />
@@ -173,6 +175,8 @@
     <ClCompile Include="src\Timing.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\SceneObjects\TransformComponent.cpp" />
+    <ClInclude Include="src\Window.hpp" />
+    <ClInclude Include="src\WindowImpl.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Bounds.hpp" />

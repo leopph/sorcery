@@ -1,10 +1,11 @@
 #include "SceneViewWindow.hpp"
 
-#include <ImGuizmo.h>
-
 #include "StandaloneCamera.hpp"
 #include "Platform.hpp"
 #include "Timing.hpp"
+#include "Window.hpp"
+
+#include <ImGuizmo.h>
 
 
 namespace sorcery::mage {
@@ -41,10 +42,10 @@ auto SceneViewWindow::Draw(Application& context) -> void {
                             : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
     if (!wasMovingSceneCamera && isMovingSceneCamera) {
-      gWindow.LockCursor(gWindow.GetCursorPosition());
+      gWindow.SetCursorLock(GetCursorPosition());
       gWindow.SetCursorHiding(true);
     } else if (wasMovingSceneCamera && !isMovingSceneCamera) {
-      gWindow.UnlockCursor();
+      gWindow.SetCursorLock(std::nullopt);
       gWindow.SetCursorHiding(false);
     }
 
@@ -73,7 +74,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
 
       mCam.position += mCam.orientation.Rotate(posDelta) * mCam.speed * timing::GetFrameTime();
 
-      auto const [mouseX, mouseY]{gWindow.GetMouseDelta()};
+      auto const [mouseX, mouseY]{GetMouseDelta()};
       auto constexpr sens{0.05f};
 
       mCam.orientation = Quaternion{Vector3::Up(), static_cast<f32>(mouseX) * sens} * mCam.orientation;

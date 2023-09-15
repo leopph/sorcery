@@ -1,10 +1,10 @@
 #include "SwapChain.hpp"
 
-#include <stdexcept>
+#include "../Window.hpp"
 
 #include <dxgi1_5.h>
 
-#include "../Platform.hpp"
+#include <stdexcept>
 
 using Microsoft::WRL::ComPtr;
 
@@ -82,11 +82,11 @@ SwapChain::SwapChain(ComPtr<ID3D11Device> device, IDXGIFactory2* const factory):
     .Flags = mSwapChainFlags
   };
 
-  if (FAILED(factory->CreateSwapChainForHwnd(mDevice.Get(), gWindow.GetHandle(), &desc, nullptr, nullptr, mSwapChain.GetAddressOf()))) {
+  if (FAILED(factory->CreateSwapChainForHwnd(mDevice.Get(), static_cast<HWND>(gWindow.GetNativeHandle()), &desc, nullptr, nullptr, mSwapChain.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create swap chain."};
   }
 
-  RecreateDepthStencilTex(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
+  RecreateDepthStencilTex(gWindow.GetClientAreaSize().width, gWindow.GetClientAreaSize().height);
   RecreateViews();
 }
 

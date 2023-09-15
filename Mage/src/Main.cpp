@@ -15,6 +15,7 @@
 #include "MemoryAllocation.hpp"
 #include "Platform.hpp"
 #include "Renderer.hpp"
+#include "Window.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
@@ -39,8 +40,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     sorcery::gPhysicsManager.StartUp();
 
     sorcery::gWindow.SetBorderless(false);
-    sorcery::gWindow.SetWindowedClientAreaSize({1280, 720});
-    sorcery::gWindow.SetIgnoreManagedRequests(true);
 
     sorcery::gRenderer.SetSyncInterval(0);
 
@@ -57,7 +56,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     ImGui::StyleColorsDark();
 
-    if (!ImGui_ImplWin32_Init(sorcery::gWindow.GetHandle())) {
+    if (!ImGui_ImplWin32_Init(sorcery::gWindow.GetNativeHandle())) {
       throw std::runtime_error{"Failed to initialize Dear ImGui Win32 Implementation."};
     }
 
@@ -65,7 +64,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       throw std::runtime_error{"Failed to initialize Dear ImGui DX11 Implementation."};
     }
 
-    sorcery::gWindow.SetEventHook(sorcery::mage::EditorImGuiEventHook);
+    sorcery::gWindow.SetEventHandler(static_cast<void const*>(&sorcery::mage::EditorImGuiEventHook));
 
     bool runGame{false};
 
@@ -102,8 +101,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto const mainMenuBar{std::make_unique<sorcery::mage::MainMenuBar>(app, *editorSettingsWindow)};
     auto const entityHierarchyWindow{std::make_unique<sorcery::mage::EntityHierarchyWindow>(app)};
 
-    while (!sorcery::gWindow.IsQuitSignaled()) {
-      sorcery::gWindow.ProcessEvents();
+    while (!sorcery::IsQuitSignaled()) {
+      sorcery::ProcessEvents();
       sorcery::mage::ImGui_ImplDX11_NewFrame();
       ImGui_ImplWin32_NewFrame();
       ImGui::NewFrame();
@@ -118,8 +117,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
           if (runGame) {
             if (GetKeyDown(sorcery::Key::Escape)) {
               runGame = false;
-              sorcery::gWindow.SetEventHook(sorcery::mage::EditorImGuiEventHook);
-              sorcery::gWindow.UnlockCursor();
+              sorcery::gWindow.SetEventHandler(static_cast<void const*>(&sorcery::mage::EditorImGuiEventHook));
+              sorcery::gWindow.SetCursorLock(std::nullopt);
               sorcery::gWindow.SetCursorHiding(false);
               sorcery::timing::SetTargetFrameRate(targetFrameRate);
               app.GetScene().Load();
@@ -130,7 +129,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
           } else {
             if (GetKeyDown(sorcery::Key::F5)) {
               runGame = true;
-              sorcery::gWindow.SetEventHook({});
+              sorcery::gWindow.SetEventHandler(nullptr);
               sorcery::timing::SetTargetFrameRate(-1);
               app.GetScene().Save();
               targetFrameRate = sorcery::timing::GetTargetFrameRate();

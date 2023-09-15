@@ -3,7 +3,7 @@
 #include "Graphics.hpp"
 #include "ShadowCascadeBoundary.hpp"
 #include "../MemoryAllocation.hpp"
-#include "../Platform.hpp"
+#include "../Window.hpp"
 #include "../SceneObjects/Entity.hpp"
 #include "../SceneObjects/TransformComponent.hpp"
 #include "../shaders/ShaderInterop.h"
@@ -783,8 +783,8 @@ auto Renderer::Impl::StartUp() -> void {
   mGizmoColorBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice);
   mLineGizmoVertexDataBuffer = std::make_unique<StructuredBuffer<ShaderLineGizmoVertexData>>(mDevice);
   mMainRt = std::make_unique<RenderTarget>(RenderTarget::Desc{
-    .width = gWindow.GetCurrentClientAreaSize().width,
-    .height = gWindow.GetCurrentClientAreaSize().height,
+    .width = static_cast<UINT>(gWindow.GetClientAreaSize().width),
+    .height = static_cast<UINT>(gWindow.GetClientAreaSize().height),
     .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
     .depthBufferBitCount = 0,
     .stencilBufferBitCount = 0,
@@ -1436,7 +1436,7 @@ auto Renderer::Impl::StartUp() -> void {
 
   gWindow.OnWindowSize.add_handler(this, &OnWindowSize);
 
-  dxgiFactory2->MakeWindowAssociation(gWindow.GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
+  dxgiFactory2->MakeWindowAssociation(static_cast<HWND>(gWindow.GetNativeHandle()), DXGI_MWA_NO_WINDOW_CHANGES);
 
   // CREATE SSAO SAMPLES
 
@@ -1535,8 +1535,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   [[maybe_unused]] auto hr{ctx->QueryInterface(IID_PPV_ARGS(annot.GetAddressOf()))};
   assert(SUCCEEDED(hr));
 
-  auto const rtWidth{rt ? rt->GetDesc().width : gWindow.GetCurrentClientAreaSize().width};
-  auto const rtHeight{rt ? rt->GetDesc().height : gWindow.GetCurrentClientAreaSize().height};
+  auto const rtWidth{rt ? rt->GetDesc().width : gWindow.GetClientAreaSize().width};
+  auto const rtHeight{rt ? rt->GetDesc().height : gWindow.GetClientAreaSize().height};
   auto const rtAspect{static_cast<float>(rtWidth) / static_cast<float>(rtHeight)};
 
   RenderTarget::Desc const hdrRtDesc{
