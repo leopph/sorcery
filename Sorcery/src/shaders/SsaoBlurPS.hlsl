@@ -10,12 +10,15 @@ float main(const float4 pixelCoord : SV_POSITION, const float2 uv : TEXCOORD) : 
 
   float result = 0;
 
-  for (int x = -2; x < 2; x++) {
-    for (int y = -2; y < 2; y++) {
+  const int lo = -SSAO_NOISE_TEX_DIM / 2;
+  const int hi = SSAO_NOISE_TEX_DIM / 2;
+
+  for (int x = lo; x < hi; x++) {
+    for (int y = lo; y < hi; y++) {
       const float2 uvOffset = float2(x, y) * texelSize;
       result += gSsaoInput.Sample(gSamplerPoint, uv + uvOffset).r;
     }
   }
 
-  return result / (4 * 4);
+  return result / (SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM);
 }

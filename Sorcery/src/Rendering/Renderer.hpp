@@ -36,6 +36,14 @@ public:
     X8  = 8
   };
 
+
+  struct SsaoParams {
+    float radius;
+    float bias;
+    float power;
+    int kernelSize;
+  };
+
 private:
   class Impl;
   Impl* mImpl{nullptr};
@@ -111,6 +119,9 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetAmbientLightColor() const noexcept -> Vector3 const&;
   LEOPPHAPI auto SetAmbientLightColor(Vector3 const& color) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetSsaoParams() const noexcept -> SsaoParams const&;
+  LEOPPHAPI auto SetSsaoParams(SsaoParams const& ssaoParams) noexcept -> void;
 
   // POST-PROCESSING
 

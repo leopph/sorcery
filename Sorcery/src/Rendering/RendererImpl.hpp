@@ -123,6 +123,12 @@ class Renderer::Impl {
   float mInvGamma{1.f / 2.2f};
   int mInFlightFrameCount{2};
   bool mDepthNormalPrePassEnabled{true};
+  SsaoParams mSsaoParams{
+    .radius = 0.5f,
+    .bias = 0.025f,
+    .power = 1.0f,
+    .kernelSize = 64
+  };
 
   std::unordered_map<std::thread::id, Microsoft::WRL::ComPtr<ID3D11DeviceContext>> mPerThreadCtx;
 
@@ -161,6 +167,8 @@ class Renderer::Impl {
 
   auto ClearGizmoDrawQueue() noexcept -> void;
   auto ReleaseTempRenderTargets() noexcept -> void;
+
+  auto RecreateSsaoSamples(int kernelSize) noexcept -> void;
 
   static auto OnWindowSize(Impl* self, Extent2D<std::uint32_t> size) -> void;
 
@@ -235,6 +243,9 @@ public:
 
   [[nodiscard]] auto GetAmbientLightColor() const noexcept -> Vector3 const&;
   auto SetAmbientLightColor(Vector3 const& color) noexcept -> void;
+
+  [[nodiscard]] auto GetSsaoParams() const noexcept -> SsaoParams const&;
+  auto SetSsaoParams(SsaoParams const& ssaoParams) noexcept -> void;
 
   // POST-PROCESSING
 

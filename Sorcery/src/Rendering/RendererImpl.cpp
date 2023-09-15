@@ -692,6 +692,30 @@ auto Renderer::Impl::ReleaseTempRenderTargets() noexcept -> void {
 }
 
 
+auto Renderer::Impl::RecreateSsaoSamples(int const kernelSize) noexcept -> void {
+  mSsaoSamplesBuffer->Resize(kernelSize);
+  auto const ctx{GetThreadContext()};
+  auto const ssaoSamples{mSsaoSamplesBuffer->Map(ctx)};
+
+  std::uniform_real_distribution dist{0.0f, 1.0f};
+  std::default_random_engine gen;
+
+  for (auto i{0}; i < kernelSize; i++) {
+    Vector3 sample{dist(gen) * 2 - 1, dist(gen) * 2 - 1, dist(gen)};
+    Normalize(sample);
+    sample *= dist(gen);
+
+    auto scale{static_cast<float>(i) / static_cast<float>(kernelSize)};
+    scale = std::lerp(0.1f, 1.0f, scale * scale);
+    sample *= scale;
+
+    ssaoSamples[i] = Vector4{sample, 0};
+  }
+
+  mSsaoSamplesBuffer->Unmap(ctx);
+}
+
+
 auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<std::uint32_t> const size) -> void {
   self->mSwapChain->Resize(size.width, size.height);
 
@@ -1415,41 +1439,22 @@ auto Renderer::Impl::StartUp() -> void {
 
   // CREATE SSAO SAMPLES
 
-  int constexpr ssaoSampleCount{64};
   mSsaoSamplesBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice);
-  mSsaoSamplesBuffer->Resize(ssaoSampleCount);
-  auto const ssaoSamples{mSsaoSamplesBuffer->Map(GetThreadContext())};
-
-  std::uniform_real_distribution<float> randomFloats{0.0f, 1.0f};
-  std::default_random_engine generator;
-
-  for (auto i{0}; i < ssaoSampleCount; i++) {
-    Vector3 sample{randomFloats(generator) * 2 - 1, randomFloats(generator) * 2 - 1, randomFloats(generator)};
-    Normalize(sample);
-    sample *= randomFloats(generator);
-
-    auto scale{static_cast<float>(i) / static_cast<float>(ssaoSampleCount)};
-    scale = std::lerp(0.1f, 1.0f, scale * scale);
-    sample *= scale;
-
-    ssaoSamples[i] = Vector4{sample, 0};
-  }
-
-  mSsaoSamplesBuffer->Unmap(GetThreadContext());
+  RecreateSsaoSamples(mSsaoParams.kernelSize);
 
   // CREATE SSAO NOISE TEXTURE
 
-  int constexpr ssaoNoiseTexSize{4};
-
   std::vector<Vector4> ssaoNoise;
+  std::uniform_real_distribution dist{0.0f, 1.0f};
+  std::default_random_engine gen;
 
-  for (auto i{0}; i < ssaoNoiseTexSize * ssaoNoiseTexSize; i++) {
-    ssaoNoise.emplace_back(randomFloats(generator) * 2 - 1, randomFloats(generator) * 2 - 1, 0, 0);
+  for (auto i{0}; i < SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM; i++) {
+    ssaoNoise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
   }
 
   D3D11_TEXTURE2D_DESC constexpr ssaoNoiseTexDesc{
-    .Width = ssaoNoiseTexSize,
-    .Height = ssaoNoiseTexSize,
+    .Width = SSAO_NOISE_TEX_DIM,
+    .Height = SSAO_NOISE_TEX_DIM,
     .MipLevels = 1,
     .ArraySize = 1,
     .Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
@@ -1462,7 +1467,7 @@ auto Renderer::Impl::StartUp() -> void {
 
   D3D11_SUBRESOURCE_DATA const ssaoNoiseTexData{
     .pSysMem = ssaoNoise.data(),
-    .SysMemPitch = ssaoNoiseTexSize * 16
+    .SysMemPitch = SSAO_NOISE_TEX_DIM * sizeof(decltype(ssaoNoise)::value_type)
   };
 
   hr = mDevice->CreateTexture2D(&ssaoNoiseTexDesc, &ssaoNoiseTexData, mSsaoNoiseTex.GetAddressOf());
@@ -1624,9 +1629,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   *static_cast<SsaoCB*>(mapped.pData) = SsaoCB{
     .gSsaoConstants = ShaderSsaoConstants{
-      .radius = 0.5f,
-      .bias = 0.025f,
-      .power = 1.0f
+      .radius = mSsaoParams.radius,
+      .bias = mSsaoParams.bias,
+      .power = mSsaoParams.power,
+      .kernelSize = mSsaoParams.kernelSize
     }
   };
 
@@ -2033,6 +2039,20 @@ auto Renderer::Impl::GetAmbientLightColor() const noexcept -> Vector3 const& {
 
 auto Renderer::Impl::SetAmbientLightColor(Vector3 const& color) noexcept -> void {
   mAmbientLightColor = color;
+}
+
+
+auto Renderer::Impl::GetSsaoParams() const noexcept -> SsaoParams const& {
+  return mSsaoParams;
+}
+
+
+auto Renderer::Impl::SetSsaoParams(SsaoParams const& ssaoParams) noexcept -> void {
+  if (mSsaoParams.kernelSize != ssaoParams.kernelSize) {
+    RecreateSsaoSamples(ssaoParams.kernelSize);
+  }
+
+  mSsaoParams = ssaoParams;
 }
 
 

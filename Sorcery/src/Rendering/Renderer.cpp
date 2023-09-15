@@ -235,6 +235,18 @@ auto Renderer::SetAmbientLightColor(Vector3 const& color) noexcept -> void {
 }
 
 
+auto Renderer::GetSsaoParams() const noexcept -> SsaoParams const& {
+  assert(mImpl);
+  return mImpl->GetSsaoParams();
+}
+
+
+auto Renderer::SetSsaoParams(SsaoParams const& ssaoParams) noexcept -> void {
+  assert(mImpl);
+  mImpl->SetSsaoParams(ssaoParams);
+}
+
+
 auto Renderer::GetGamma() const noexcept -> float {
   assert(mImpl);
   return mImpl->GetGamma();

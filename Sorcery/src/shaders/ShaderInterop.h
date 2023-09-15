@@ -79,6 +79,8 @@ typedef bool BOOL;
 #define BLEND_MODE_OPAQUE 0
 #define BLEND_MODE_ALPHA_CLIP 1
 
+#define SSAO_NOISE_TEX_DIM 4
+
 
 struct ShaderLight {
   row_major float4x4 shadowViewProjMatrices[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
@@ -167,7 +169,7 @@ struct ShaderSsaoConstants {
   float radius;
   float bias;
   float power;
-  float pad;
+  int kernelSize;
 };
 
 
