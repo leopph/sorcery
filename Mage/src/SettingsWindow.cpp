@@ -126,24 +126,29 @@ auto SettingsWindow::Draw() -> void {
     gRenderer.SetAmbientLightColor(color);
   }
 
-  ImGui::Text("%s", "SSAO");
-  ImGui::SameLine();
-  ImGui::BeginGroup();
-  ImGui::NewLine();
-
-  auto ssaoParams{gRenderer.GetSsaoParams()};
-
-  if (ImGui::DragFloat("Radius", &ssaoParams.radius, 0.01f)) {
-    gRenderer.SetSsaoParams(ssaoParams);
-  }
-  if (ImGui::DragFloat("Bias", &ssaoParams.bias, 0.01f)) {
-    gRenderer.SetSsaoParams(ssaoParams);
-  }
-  if (ImGui::DragFloat("Power", &ssaoParams.power, 0.01f)) {
-    gRenderer.SetSsaoParams(ssaoParams);
+  if (auto ssaoEnabled{gRenderer.IsSsaoEnabled()}; ImGui::Checkbox("SSAO", &ssaoEnabled)) {
+    gRenderer.SetSsaoEnabled(ssaoEnabled);
   }
 
-  ImGui::EndGroup();
+  if (gRenderer.IsSsaoEnabled()) {
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    ImGui::NewLine();
+
+    auto ssaoParams{gRenderer.GetSsaoParams()};
+
+    if (ImGui::DragFloat("Radius", &ssaoParams.radius, 0.01f)) {
+      gRenderer.SetSsaoParams(ssaoParams);
+    }
+    if (ImGui::DragFloat("Bias", &ssaoParams.bias, 0.01f)) {
+      gRenderer.SetSsaoParams(ssaoParams);
+    }
+    if (ImGui::DragFloat("Power", &ssaoParams.power, 0.01f)) {
+      gRenderer.SetSsaoParams(ssaoParams);
+    }
+
+    ImGui::EndGroup();
+  }
 
   ImGui::SeparatorText("Scene View");
 

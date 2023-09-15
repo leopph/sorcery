@@ -235,6 +235,18 @@ auto Renderer::SetAmbientLightColor(Vector3 const& color) noexcept -> void {
 }
 
 
+auto Renderer::IsSsaoEnabled() const noexcept -> bool {
+  assert(mImpl);
+  return mImpl->IsSsaoEnabled();
+}
+
+
+auto Renderer::SetSsaoEnabled(bool const enabled) noexcept -> void {
+  assert(mImpl);
+  mImpl->SetSsaoEnabled(enabled);
+}
+
+
 auto Renderer::GetSsaoParams() const noexcept -> SsaoParams const& {
   assert(mImpl);
   return mImpl->GetSsaoParams();

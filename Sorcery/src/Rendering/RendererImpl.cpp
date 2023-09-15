@@ -1473,6 +1473,7 @@ auto Renderer::Impl::StartUp() -> void {
 
   hr = mDevice->CreateTexture2D(&ssaoNoiseTexDesc, &ssaoNoiseTexData, mSsaoNoiseTex.GetAddressOf());
   assert(SUCCEEDED(hr));
+  SetDebugName(mSsaoNoiseTex.Get(), "SSAO Noise");
 
   D3D11_SHADER_RESOURCE_VIEW_DESC constexpr ssaoNoiseSrvDesc{
     .Format = ssaoNoiseTexDesc.Format,
@@ -1482,6 +1483,44 @@ auto Renderer::Impl::StartUp() -> void {
 
   hr = mDevice->CreateShaderResourceView(mSsaoNoiseTex.Get(), &ssaoNoiseSrvDesc, mSsaoNoiseSrv.GetAddressOf());
   assert(SUCCEEDED(hr));
+  SetDebugName(mSsaoNoiseSrv.Get(), "SSAO Noise");
+
+  // CREATE WHITE TEXTURE
+
+  D3D11_TEXTURE2D_DESC constexpr whiteTexDesc{
+    .Width = 1,
+    .Height = 1,
+    .MipLevels = 1,
+    .ArraySize = 1,
+    .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+    .SampleDesc = {.Count = 1, .Quality = 0},
+    .Usage = D3D11_USAGE_IMMUTABLE,
+    .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+    .CPUAccessFlags = 0,
+    .MiscFlags = 0
+  };
+
+  std::array constexpr static whiteColorData{1.0f, 1.0f, 1.0f, 1.0f};
+
+  D3D11_SUBRESOURCE_DATA constexpr whiteTexData{
+    .pSysMem = whiteColorData.data(),
+    .SysMemPitch = sizeof(whiteColorData),
+    .SysMemSlicePitch = 0
+  };
+
+  hr = mDevice->CreateTexture2D(&whiteTexDesc, &whiteTexData, mWhiteTex.GetAddressOf());
+  assert(SUCCEEDED(hr));
+  SetDebugName(mWhiteTex.Get(), "White");
+
+  D3D11_SHADER_RESOURCE_VIEW_DESC constexpr whiteTexSrvDesc{
+    .Format = whiteTexDesc.Format,
+    .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+    .Texture2D = {.MostDetailedMip = 0, .MipLevels = 1}
+  };
+
+  hr = mDevice->CreateShaderResourceView(mWhiteTex.Get(), &whiteTexSrvDesc, mWhiteTexSrv.GetAddressOf());
+  assert(SUCCEEDED(hr));
+  SetDebugName(mWhiteTexSrv.Get(), "White");
 }
 
 
@@ -1621,69 +1660,75 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     annot->EndEvent();
   }
 
+  ObserverPtr<ID3D11ShaderResourceView> ssaoTexSrv{mWhiteTexSrv.Get()};
+
   // SSAO pass
-  annot->BeginEvent(L"SSAO");
+  if (mSsaoEnabled) {
+    annot->BeginEvent(L"SSAO");
 
-  D3D11_MAPPED_SUBRESOURCE mapped;
-  hr = ctx->Map(mSsaoCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-  assert(SUCCEEDED(hr));
+    D3D11_MAPPED_SUBRESOURCE mapped;
+    hr = ctx->Map(mSsaoCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    assert(SUCCEEDED(hr));
 
-  *static_cast<SsaoCB*>(mapped.pData) = SsaoCB{
-    .gSsaoConstants = ShaderSsaoConstants{
-      .radius = mSsaoParams.radius,
-      .bias = mSsaoParams.bias,
-      .power = mSsaoParams.power,
-      .kernelSize = mSsaoParams.kernelSize
-    }
-  };
+    *static_cast<SsaoCB*>(mapped.pData) = SsaoCB{
+      .gSsaoConstants = ShaderSsaoConstants{
+        .radius = mSsaoParams.radius,
+        .bias = mSsaoParams.bias,
+        .power = mSsaoParams.power,
+        .kernelSize = mSsaoParams.kernelSize
+      }
+    };
 
-  ctx->Unmap(mSsaoCb.Get(), 0);
+    ctx->Unmap(mSsaoCb.Get(), 0);
 
-  auto const& ssaoRt{
-    GetTemporaryRenderTarget(RenderTarget::Desc{
-      .width = rtWidth,
-      .height = rtHeight,
-      .colorFormat = DXGI_FORMAT_R8_UNORM,
-      .depthBufferBitCount = 0,
-      .stencilBufferBitCount = 0,
-      .sampleCount = 1,
-      .debugName = "SSAO RT"
-    })
-  };
+    auto const& ssaoRt{
+      GetTemporaryRenderTarget(RenderTarget::Desc{
+        .width = rtWidth,
+        .height = rtHeight,
+        .colorFormat = DXGI_FORMAT_R8_UNORM,
+        .depthBufferBitCount = 0,
+        .stencilBufferBitCount = 0,
+        .sampleCount = 1,
+        .debugName = "SSAO RT"
+      })
+    };
 
-  ctx->OMSetRenderTargets(1, std::array{ssaoRt.GetRtv()}.data(), nullptr);
+    ctx->OMSetRenderTargets(1, std::array{ssaoRt.GetRtv()}.data(), nullptr);
 
-  ctx->PSSetShader(mSsaoPs.Get(), nullptr, 0);
-  ctx->PSSetShaderResources(RES_SLOT_SSAO_DEPTH, 1, std::array{hdrRt.GetDepthSrv()}.data());
-  ctx->PSSetShaderResources(RES_SLOT_SSAO_NORMAL, 1, std::array{normalRt.GetColorSrv()}.data());
-  ctx->PSSetShaderResources(RES_SLOT_SSAO_NOISE, 1, mSsaoNoiseSrv.GetAddressOf());
-  ctx->PSSetShaderResources(RES_SLOT_SSAO_SAMPLES, 1, std::array{mSsaoSamplesBuffer->GetSrv()}.data());
-  ctx->PSSetConstantBuffers(CB_SLOT_SSAO, 1, mSsaoCb.GetAddressOf());
+    ctx->PSSetShader(mSsaoPs.Get(), nullptr, 0);
+    ctx->PSSetShaderResources(RES_SLOT_SSAO_DEPTH, 1, std::array{hdrRt.GetDepthSrv()}.data());
+    ctx->PSSetShaderResources(RES_SLOT_SSAO_NORMAL, 1, std::array{normalRt.GetColorSrv()}.data());
+    ctx->PSSetShaderResources(RES_SLOT_SSAO_NOISE, 1, mSsaoNoiseSrv.GetAddressOf());
+    ctx->PSSetShaderResources(RES_SLOT_SSAO_SAMPLES, 1, std::array{mSsaoSamplesBuffer->GetSrv()}.data());
+    ctx->PSSetConstantBuffers(CB_SLOT_SSAO, 1, mSsaoCb.GetAddressOf());
 
-  ctx->VSSetShader(mScreenVs.Get(), nullptr, 0);
+    ctx->VSSetShader(mScreenVs.Get(), nullptr, 0);
 
-  ctx->IASetInputLayout(nullptr);
+    ctx->IASetInputLayout(nullptr);
 
-  ctx->ClearRenderTargetView(ssaoRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
-  ctx->Draw(3, 0);
+    ctx->ClearRenderTargetView(ssaoRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
+    ctx->Draw(3, 0);
 
-  auto const& ssaoBlurRt{
-    GetTemporaryRenderTarget([&ssaoRt] {
-      auto ret{ssaoRt.GetDesc()};
-      ret.debugName = "SSAO Blur RT";
-      return ret;
-    }())
-  };
+    auto const& ssaoBlurRt{
+      GetTemporaryRenderTarget([&ssaoRt] {
+        auto ret{ssaoRt.GetDesc()};
+        ret.debugName = "SSAO Blur RT";
+        return ret;
+      }())
+    };
 
-  ctx->OMSetRenderTargets(1, std::array{ssaoBlurRt.GetRtv()}.data(), nullptr);
+    ctx->OMSetRenderTargets(1, std::array{ssaoBlurRt.GetRtv()}.data(), nullptr);
 
-  ctx->PSSetShader(mSsaoBlurPs.Get(), nullptr, 0);
-  ctx->PSSetShaderResources(RES_SLOT_SSAO_BLUR_INPUT, 1, std::array{ssaoRt.GetColorSrv()}.data());
+    ctx->PSSetShader(mSsaoBlurPs.Get(), nullptr, 0);
+    ctx->PSSetShaderResources(RES_SLOT_SSAO_BLUR_INPUT, 1, std::array{ssaoRt.GetColorSrv()}.data());
 
-  ctx->ClearRenderTargetView(ssaoBlurRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
-  ctx->Draw(3, 0);
+    ctx->ClearRenderTargetView(ssaoBlurRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
+    ctx->Draw(3, 0);
 
-  annot->EndEvent();
+    annot->EndEvent();
+
+    ssaoTexSrv = ssaoBlurRt.GetColorSrv();
+  }
 
   // Full forward lighting pass
 
@@ -1747,7 +1792,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
   ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{mDirShadowMapArr->GetSrv()}.data());
   ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
-  ctx->PSSetShaderResources(RES_SLOT_SSAO_TEX, 1, std::array{ssaoBlurRt.GetColorSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_SSAO_TEX, 1, std::array{ssaoTexSrv}.data());
 
   ctx->RSSetViewports(1, &viewport);
   ctx->RSSetState(nullptr);
@@ -1966,6 +2011,10 @@ auto Renderer::Impl::IsDepthNormalPrePassEnabled() const noexcept -> bool {
 
 auto Renderer::Impl::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -> void {
   mDepthNormalPrePassEnabled = enabled;
+
+  if (!enabled && IsSsaoEnabled()) {
+    SetSsaoEnabled(false);
+  }
 }
 
 
@@ -2040,6 +2089,20 @@ auto Renderer::Impl::GetAmbientLightColor() const noexcept -> Vector3 const& {
 
 auto Renderer::Impl::SetAmbientLightColor(Vector3 const& color) noexcept -> void {
   mAmbientLightColor = color;
+}
+
+
+auto Renderer::Impl::IsSsaoEnabled() const noexcept -> bool {
+  return mSsaoEnabled;
+}
+
+
+auto Renderer::Impl::SetSsaoEnabled(bool const enabled) noexcept -> void {
+  mSsaoEnabled = enabled;
+
+  if (enabled && !IsDepthNormalPrePassEnabled()) {
+    SetDepthNormalPrePassEnabled(true);
+  }
 }
 
 

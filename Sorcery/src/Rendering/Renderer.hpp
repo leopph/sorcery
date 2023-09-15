@@ -120,6 +120,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetAmbientLightColor() const noexcept -> Vector3 const&;
   LEOPPHAPI auto SetAmbientLightColor(Vector3 const& color) noexcept -> void;
 
+  [[nodiscard]] LEOPPHAPI auto IsSsaoEnabled() const noexcept -> bool;
+  LEOPPHAPI auto SetSsaoEnabled(bool enabled) noexcept -> void;
+
   [[nodiscard]] LEOPPHAPI auto GetSsaoParams() const noexcept -> SsaoParams const&;
   LEOPPHAPI auto SetSsaoParams(SsaoParams const& ssaoParams) noexcept -> void;
 

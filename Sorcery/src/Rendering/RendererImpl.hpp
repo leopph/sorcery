@@ -87,8 +87,10 @@ class Renderer::Impl {
   Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestLessEqualWriteDss;
 
   Microsoft::WRL::ComPtr<ID3D11Texture2D> mSsaoNoiseTex;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> mWhiteTex;
 
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSsaoNoiseSrv;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mWhiteTexSrv;
 
   ObserverPtr<Material> mDefaultMaterial{nullptr};
   ObserverPtr<Mesh> mCubeMesh{nullptr};
@@ -129,6 +131,7 @@ class Renderer::Impl {
     .power = 1.0f,
     .kernelSize = 64
   };
+  bool mSsaoEnabled{true};
 
   std::unordered_map<std::thread::id, Microsoft::WRL::ComPtr<ID3D11DeviceContext>> mPerThreadCtx;
 
@@ -245,6 +248,9 @@ public:
 
   [[nodiscard]] auto GetAmbientLightColor() const noexcept -> Vector3 const&;
   auto SetAmbientLightColor(Vector3 const& color) noexcept -> void;
+
+  [[nodiscard]] auto IsSsaoEnabled() const noexcept -> bool;
+  auto SetSsaoEnabled(bool enabled) noexcept -> void;
 
   [[nodiscard]] auto GetSsaoParams() const noexcept -> SsaoParams const&;
   auto SetSsaoParams(SsaoParams const& ssaoParams) noexcept -> void;
