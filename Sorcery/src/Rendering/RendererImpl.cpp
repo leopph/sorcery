@@ -144,15 +144,10 @@ auto Renderer::Impl::CullStaticMeshComponents(Frustum const& frustumWS, Visibili
 
   for (int i = 0; i < static_cast<int>(mStaticMeshComponents.size()); i++) {
     if (auto const mesh{mStaticMeshComponents[i]->GetMesh()}) {
-      if (frustumWS.Intersects(mStaticMeshComponents[i]->CalculateBounds())) {
+      if (auto const& modelMtx{mStaticMeshComponents[i]->GetEntity().GetTransform().GetLocalToWorldMatrix()}; frustumWS.Intersects(mesh->GetBounds().Transform(modelMtx))) {
         auto const submeshes{mesh->GetSubMeshes()};
         for (int j{0}; j < std::ssize(submeshes); j++) {
-          auto const& modelMtx{mStaticMeshComponents[i]->GetEntity().GetTransform().GetLocalToWorldMatrix()};
-          auto submeshBounds{submeshes[j].bounds};
-          submeshBounds.min = Vector3{Vector4{submeshBounds.min, 1} * modelMtx};
-          submeshBounds.max = Vector3{Vector4{submeshBounds.max, 1} * modelMtx};
-
-          if (frustumWS.Intersects(submeshBounds)) {
+          if (frustumWS.Intersects(submeshes[j].bounds.Transform(modelMtx))) {
             visibility.staticMeshIndices.emplace_back(i, j);
           }
         }

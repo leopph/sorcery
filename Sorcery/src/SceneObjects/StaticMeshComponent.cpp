@@ -3,7 +3,6 @@
 #include "Entity.hpp"
 #include "../Gui.hpp"
 #include "../Rendering/Renderer.hpp"
-#include "TransformComponent.hpp"
 
 #include <imgui.h>
 
@@ -72,23 +71,6 @@ auto StaticMeshComponent::SetMaterial(int const idx, ObserverPtr<Material> const
   }
 
   mMaterials[idx] = mtl;
-}
-
-
-auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
-  if (!mMesh) {
-    return AABB{};
-  }
-
-  auto const& localBounds{mMesh->GetBounds()};
-  auto const modelMtx{GetEntity().GetTransform().GetLocalToWorldMatrix()};
-  auto boundsVertices{localBounds.CalculateVertices()};
-
-  for (auto& vertex : boundsVertices) {
-    vertex = Vector3{Vector4{vertex, 1} * modelMtx};
-  }
-
-  return AABB::FromVertices(boundsVertices);
 }
 
 

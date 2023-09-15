@@ -27,8 +27,6 @@ public:
   LEOPPHAPI auto SetMaterials(std::vector<ObserverPtr<Material>> const& materials) -> void;
   LEOPPHAPI auto SetMaterial(int idx, ObserverPtr<Material> mtl) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto CalculateBounds() const noexcept -> AABB;
-
   LEOPPHAPI auto OnInit() -> void override;
   LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
