@@ -24,7 +24,7 @@
     <ClCompile Include="src\Color.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Renderer.cpp">
+    <ClCompile Include="src\rendering\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform.cpp">
@@ -84,25 +84,25 @@
     <ClCompile Include="src\Serialization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\ShadowAtlas.cpp">
+    <ClCompile Include="src\rendering\ShadowAtlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\GridLike.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\DirectionalShadowAtlas.cpp">
+    <ClCompile Include="src\rendering\DirectionalShadowAtlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Camera.cpp">
+    <ClCompile Include="src\rendering\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\PunctualShadowAtlas.cpp">
+    <ClCompile Include="src\rendering\PunctualShadowAtlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\RenderTarget.cpp">
+    <ClCompile Include="src\rendering\RenderTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\SwapChain.cpp">
+    <ClCompile Include="src\rendering\SwapChain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ResourceManager.cpp">
@@ -120,7 +120,7 @@
     <ClCompile Include="src\GUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\DirectionalShadowMapArray.cpp">
+    <ClCompile Include="src\rendering\DirectionalShadowMapArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ExternalResource.cpp">
@@ -132,7 +132,7 @@
     <ClCompile Include="src\MemoryAllocation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\RendererImpl.cpp">
+    <ClCompile Include="src\rendering\RendererImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Window.cpp">
@@ -164,7 +164,7 @@
     <ClInclude Include="src\Event.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Renderer.hpp">
+    <ClInclude Include="src\rendering\Renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Util.hpp">
@@ -221,40 +221,40 @@
     <ClInclude Include="src\SceneObjects\SkyboxComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\shaders\ShadowFilteringModes.h">
+    <ClInclude Include="src\rendering\shaders\ShadowFilteringModes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\ShadowAtlas.hpp">
+    <ClInclude Include="src\rendering\ShadowAtlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\GridLike.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\DirectionalShadowAtlas.hpp">
+    <ClInclude Include="src\rendering\DirectionalShadowAtlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Camera.hpp">
+    <ClInclude Include="src\rendering\Camera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\PunctualShadowAtlas.hpp">
+    <ClInclude Include="src\rendering\PunctualShadowAtlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\RenderTarget.hpp">
+    <ClInclude Include="src\rendering\RenderTarget.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\StructuredBuffer.hpp">
+    <ClInclude Include="src\rendering\StructuredBuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\SwapChain.hpp">
+    <ClInclude Include="src\rendering\SwapChain.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\ShadowCascadeBoundary.hpp">
+    <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Graphics.hpp">
+    <ClInclude Include="src\rendering\Graphics.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Visibility.hpp">
+    <ClInclude Include="src\rendering\Visibility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ResourceManager.hpp">
@@ -275,7 +275,7 @@
     <ClInclude Include="src\Serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\DirectionalShadowMapArray.hpp">
+    <ClInclude Include="src\rendering\DirectionalShadowMapArray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ExternalResource.hpp">
@@ -293,7 +293,7 @@
     <ClInclude Include="src\PoolAllocator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\RendererImpl.hpp">
+    <ClInclude Include="src\rendering\RendererImpl.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Window.hpp">
@@ -305,32 +305,32 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
-    <None Include="src\shaders\ShaderInterop.h" />
-    <None Include="src\shaders\MeshVSOut.hlsli" />
-    <None Include="src\shaders\SkyboxVSOut.hlsli" />
-    <None Include="src\shaders\BRDF.hlsli" />
-    <None Include="src\shaders\GizmoVsOut.hlsli" />
-    <None Include="src\shaders\Samplers.hlsli" />
-    <None Include="src\shaders\ShadowSampling.hlsli" />
-    <None Include="src\shaders\DepthNormalVsOut.hlsli" />
-    <None Include="src\shaders\DepthOnlyVsOut.hlsli" />
-    <None Include="src\shaders\ScreenVSOut.hlsli" />
-    <None Include="src\shaders\Util.hlsli" />
+    <None Include="src\rendering\shaders\ShaderInterop.h" />
+    <None Include="src\rendering\shaders\MeshVSOut.hlsli" />
+    <None Include="src\rendering\shaders\SkyboxVSOut.hlsli" />
+    <None Include="src\rendering\shaders\BRDF.hlsli" />
+    <None Include="src\rendering\shaders\GizmoVsOut.hlsli" />
+    <None Include="src\rendering\shaders\Samplers.hlsli" />
+    <None Include="src\rendering\shaders\ShadowSampling.hlsli" />
+    <None Include="src\rendering\shaders\DepthNormalVsOut.hlsli" />
+    <None Include="src\rendering\shaders\DepthOnlyVsOut.hlsli" />
+    <None Include="src\rendering\shaders\ScreenVSOut.hlsli" />
+    <None Include="src\rendering\shaders\Util.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />
-    <FxCompile Include="src\shaders\MeshVS.hlsl" />
-    <FxCompile Include="src\shaders\PostProcessPS.hlsl" />
-    <FxCompile Include="src\shaders\SkyboxVS.hlsl" />
-    <FxCompile Include="src\shaders\SkyboxPS.hlsl" />
-    <FxCompile Include="src\shaders\DepthOnlyVS.hlsl" />
-    <FxCompile Include="src\shaders\ScreenVS.hlsl" />
-    <FxCompile Include="src\shaders\LineGizmoVS.hlsl" />
-    <FxCompile Include="src\shaders\GizmoPS.hlsl" />
-    <FxCompile Include="src\shaders\DepthOnlyPS.hlsl" />
-    <FxCompile Include="src\shaders\DepthNormalPS.hlsl" />
-    <FxCompile Include="src\shaders\DepthNormalVS.hlsl" />
-    <FxCompile Include="src\shaders\SsaoBlurPS.hlsl" />
-    <FxCompile Include="src\shaders\SsaoPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\MeshPbrPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\MeshVS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\PostProcessPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\SkyboxVS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\SkyboxPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\DepthOnlyVS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ScreenVS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\LineGizmoVS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\GizmoPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\DepthOnlyPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\DepthNormalPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\DepthNormalVS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\SsaoBlurPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\SsaoPS.hlsl" />
   </ItemGroup>
 </Project>

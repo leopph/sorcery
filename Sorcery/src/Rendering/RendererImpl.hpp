@@ -9,7 +9,7 @@
 #include "../Core.hpp"
 #include "../Color.hpp"
 #include "../Math.hpp"
-#include "../shaders/ShaderInterop.h"
+#include "shaders/ShaderInterop.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX

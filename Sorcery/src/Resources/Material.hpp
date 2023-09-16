@@ -7,7 +7,7 @@
 #include "Texture2D.hpp"
 #include "../ResourceManager.hpp"
 
-#include "../shaders/ShaderInterop.h"
+#include "../rendering/shaders/ShaderInterop.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX

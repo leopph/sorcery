@@ -7,7 +7,7 @@
 #include "../SceneObjects/StaticMeshComponent.hpp"
 #include "../SceneObjects/LightComponents.hpp"
 #include "../SceneObjects/SkyboxComponent.hpp"
-#include "../shaders/ShadowFilteringModes.h"
+#include "shaders/ShadowFilteringModes.h"
 
 
 namespace sorcery {

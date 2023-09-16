@@ -1,6 +1,6 @@
 #include "ShadowAtlas.hpp"
 
-#include "../shaders/ShaderInterop.h"
+#include "shaders/ShaderInterop.h"
 
 
 namespace sorcery {

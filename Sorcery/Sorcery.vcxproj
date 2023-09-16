@@ -39,9 +39,11 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="PropertySheet.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -112,25 +114,25 @@
     <ClCompile Include="src\ExternalResource.cpp" />
     <ClCompile Include="src\FileIo.cpp" />
     <ClCompile Include="src\MemoryAllocation.cpp" />
-    <ClCompile Include="src\Rendering\Camera.cpp" />
-    <ClCompile Include="src\Rendering\DirectionalShadowMapArray.cpp" />
-    <ClCompile Include="src\Rendering\RendererImpl.cpp" />
+    <ClCompile Include="src\rendering\Camera.cpp" />
+    <ClCompile Include="src\rendering\DirectionalShadowMapArray.cpp" />
+    <ClCompile Include="src\rendering\RendererImpl.cpp" />
     <ClCompile Include="src\SceneObjects\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\SceneObjects\Component.cpp" />
     <ClCompile Include="src\Compress.cpp" />
     <ClCompile Include="src\GUI.cpp" />
     <ClCompile Include="src\Resources\Cubemap.cpp" />
-    <ClCompile Include="src\Rendering\DirectionalShadowAtlas.cpp" />
+    <ClCompile Include="src\rendering\DirectionalShadowAtlas.cpp" />
     <ClCompile Include="src\GridLike.cpp" />
     <ClCompile Include="src\Math.cpp" />
-    <ClCompile Include="src\Rendering\PunctualShadowAtlas.cpp" />
-    <ClCompile Include="src\Rendering\RenderTarget.cpp" />
+    <ClCompile Include="src\rendering\PunctualShadowAtlas.cpp" />
+    <ClCompile Include="src\rendering\RenderTarget.cpp" />
     <ClCompile Include="src\Resources\Resource.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\SceneObjects\SceneObject.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
-    <ClCompile Include="src\Rendering\ShadowAtlas.cpp" />
+    <ClCompile Include="src\rendering\ShadowAtlas.cpp" />
     <ClCompile Include="src\SceneObjects\StaticMeshComponent.cpp" />
     <ClCompile Include="src\Guid.cpp" />
     <ClCompile Include="src\Image.cpp" />
@@ -139,9 +141,9 @@
     <ClCompile Include="src\Resources\Material.cpp" />
     <ClCompile Include="src\Resources\Mesh.cpp" />
     <ClCompile Include="src\Object.cpp" />
-    <ClCompile Include="src\Rendering\Renderer.cpp" />
+    <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\Resources\Scene.cpp" />
-    <ClCompile Include="src\Rendering\SwapChain.cpp" />
+    <ClCompile Include="src\rendering\SwapChain.cpp" />
     <ClCompile Include="src\Util.cpp" />
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
@@ -150,21 +152,21 @@
     <ClInclude Include="src\MemoryAllocation.hpp" />
     <ClInclude Include="src\Pool.hpp" />
     <ClInclude Include="src\PoolAllocator.hpp" />
-    <ClInclude Include="src\Rendering\DirectionalShadowMapArray.hpp" />
-    <ClInclude Include="src\Rendering\Graphics.hpp" />
+    <ClInclude Include="src\rendering\DirectionalShadowMapArray.hpp" />
+    <ClInclude Include="src\rendering\Graphics.hpp" />
     <ClInclude Include="src\GUI.hpp" />
-    <ClInclude Include="src\Rendering\RendererImpl.hpp" />
+    <ClInclude Include="src\rendering\RendererImpl.hpp" />
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\Reflection.hpp" />
     <ClInclude Include="src\Resources\Resource.hpp" />
     <ClInclude Include="src\ResourceManager.hpp" />
-    <ClInclude Include="src\Rendering\ShadowCascadeBoundary.hpp" />
-    <ClInclude Include="src\Rendering\Camera.hpp" />
+    <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp" />
+    <ClInclude Include="src\rendering\Camera.hpp" />
     <ClInclude Include="src\Resources\Cubemap.hpp" />
-    <ClInclude Include="src\Rendering\DirectionalShadowAtlas.hpp" />
+    <ClInclude Include="src\rendering\DirectionalShadowAtlas.hpp" />
     <ClInclude Include="src\GridLike.hpp" />
-    <ClInclude Include="src\Rendering\PunctualShadowAtlas.hpp" />
-    <ClInclude Include="src\Rendering\RenderTarget.hpp" />
+    <ClInclude Include="src\rendering\PunctualShadowAtlas.hpp" />
+    <ClInclude Include="src\rendering\RenderTarget.hpp" />
     <ClInclude Include="src\SceneObjects\SceneObject.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
     <ClCompile Include="src\SceneObjects\SkyboxComponent.cpp" />
@@ -180,8 +182,8 @@
     <ClInclude Include="src\SceneObjects\CameraComponent.hpp" />
     <ClInclude Include="src\SceneObjects\Component.hpp" />
     <ClInclude Include="src\Compress.hpp" />
-    <ClInclude Include="src\shaders\ShadowFilteringModes.h" />
-    <ClInclude Include="src\Rendering\ShadowAtlas.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShadowFilteringModes.h" />
+    <ClInclude Include="src\rendering\ShadowAtlas.hpp" />
     <ClInclude Include="src\SceneObjects\StaticMeshComponent.hpp" />
     <ClInclude Include="src\Guid.hpp" />
     <ClInclude Include="src\Image.hpp" />
@@ -194,34 +196,34 @@
     <ClInclude Include="src\Math.hpp" />
     <ClInclude Include="src\SceneObjects\Entity.hpp" />
     <ClInclude Include="src\Object.hpp" />
-    <ClInclude Include="src\Rendering\Renderer.hpp" />
+    <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\Resources\Scene.hpp" />
     <ClInclude Include="src\SceneObjects\SkyboxComponent.hpp" />
-    <ClInclude Include="src\Rendering\StructuredBuffer.hpp" />
-    <ClInclude Include="src\Rendering\SwapChain.hpp" />
+    <ClInclude Include="src\rendering\StructuredBuffer.hpp" />
+    <ClInclude Include="src\rendering\SwapChain.hpp" />
     <ClInclude Include="src\Resources\Texture2D.hpp" />
     <ClInclude Include="src\Timing.hpp" />
     <ClInclude Include="src\SceneObjects\TransformComponent.hpp" />
     <ClInclude Include="src\Util.hpp" />
     <ClInclude Include="src\Platform.hpp" />
-    <ClInclude Include="src\Rendering\Visibility.hpp" />
+    <ClInclude Include="src\rendering\Visibility.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\BRDF.hlsli" />
-    <None Include="src\shaders\DepthNormalVsOut.hlsli" />
-    <None Include="src\shaders\DepthOnlyVsOut.hlsli" />
-    <None Include="src\shaders\GizmoVsOut.hlsli" />
-    <None Include="src\shaders\Samplers.hlsli" />
-    <None Include="src\shaders\ScreenVSOut.hlsli" />
-    <None Include="src\shaders\ShaderInterop.h" />
-    <None Include="src\shaders\MeshVSOut.hlsli" />
-    <None Include="src\shaders\ShadowSampling.hlsli" />
-    <None Include="src\shaders\SkyboxVSOut.hlsli" />
-    <None Include="src\shaders\Util.hlsli" />
+    <None Include="src\rendering\shaders\BRDF.hlsli" />
+    <None Include="src\rendering\shaders\DepthNormalVsOut.hlsli" />
+    <None Include="src\rendering\shaders\DepthOnlyVsOut.hlsli" />
+    <None Include="src\rendering\shaders\GizmoVsOut.hlsli" />
+    <None Include="src\rendering\shaders\Samplers.hlsli" />
+    <None Include="src\rendering\shaders\ScreenVSOut.hlsli" />
+    <None Include="src\rendering\shaders\ShaderInterop.h" />
+    <None Include="src\rendering\shaders\MeshVSOut.hlsli" />
+    <None Include="src\rendering\shaders\ShadowSampling.hlsli" />
+    <None Include="src\rendering\shaders\SkyboxVSOut.hlsli" />
+    <None Include="src\rendering\shaders\Util.hlsli" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\shaders\DepthNormalPS.hlsl">
+    <FxCompile Include="src\rendering\shaders\DepthNormalPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -232,10 +234,10 @@
       </ObjectFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gDepthNormalPSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gDepthNormalPSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/DepthNormalPSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/DepthNormalPSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\DepthNormalPSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\DepthNormalPSBin.h</HeaderFileOutput>
     </FxCompile>
-    <FxCompile Include="src\shaders\DepthNormalVS.hlsl">
+    <FxCompile Include="src\rendering\shaders\DepthNormalVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -246,10 +248,10 @@
       </ObjectFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gDepthNormalVSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gDepthNormalVSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/DepthNormalVSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/DepthNormalVSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\DepthNormalVSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\DepthNormalVSBin.h</HeaderFileOutput>
     </FxCompile>
-    <FxCompile Include="src\shaders\DepthOnlyPS.hlsl">
+    <FxCompile Include="src\rendering\shaders\DepthOnlyPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -260,24 +262,24 @@
       </ObjectFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gDepthOnlyPSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gDepthOnlyPSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/DepthOnlyPSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/DepthOnlyPSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\DepthOnlyPSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\DepthOnlyPSBin.h</HeaderFileOutput>
     </FxCompile>
-    <FxCompile Include="src\shaders\GizmoPS.hlsl">
+    <FxCompile Include="src\rendering\shaders\GizmoPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </ObjectFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/GizmoPSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/GizmoPSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\GizmoPSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\GizmoPSBin.h</HeaderFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gGizmoPSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gGizmoPSBin</VariableName>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="src\shaders\LineGizmoVS.hlsl">
+    <FxCompile Include="src\rendering\shaders\LineGizmoVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -286,26 +288,26 @@
       </ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/LineGizmoVSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/LineGizmoVSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\LineGizmoVSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\LineGizmoVSBin.h</HeaderFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gLineGizmoVSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gLineGizmoVSBin</VariableName>
     </FxCompile>
-    <FxCompile Include="src\shaders\MeshVS.hlsl">
+    <FxCompile Include="src\rendering\shaders\MeshVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gMeshVSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/MeshVSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\MeshVSBinDebug.h</HeaderFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </ObjectFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gMeshVSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/MeshVSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\MeshVSBin.h</HeaderFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="src\shaders\MeshPbrPS.hlsl">
+    <FxCompile Include="src\rendering\shaders\MeshPbrPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -316,11 +318,11 @@
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gMeshPbrPSBin</VariableName>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/MeshPbrPSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/MeshPbrPSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\MeshPbrPSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\MeshPbrPSBin.h</HeaderFileOutput>
       <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EnableDebuggingInformation>
     </FxCompile>
-    <FxCompile Include="src\shaders\ScreenVS.hlsl">
+    <FxCompile Include="src\rendering\shaders\ScreenVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -331,10 +333,10 @@
       </ObjectFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gScreenVSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gScreenVSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/ScreenVSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/ScreenVSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\ScreenVSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\ScreenVSBin.h</HeaderFileOutput>
     </FxCompile>
-    <FxCompile Include="src\shaders\DepthOnlyVS.hlsl">
+    <FxCompile Include="src\rendering\shaders\DepthOnlyVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
@@ -345,10 +347,10 @@
       </ObjectFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gDepthOnlyVSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gDepthOnlyVSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/DepthOnlyVSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/DepthOnlyVSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\DepthOnlyVSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\DepthOnlyVSBin.h</HeaderFileOutput>
     </FxCompile>
-    <FxCompile Include="src\shaders\SkyboxPS.hlsl">
+    <FxCompile Include="src\rendering\shaders\SkyboxPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -357,12 +359,12 @@
       </ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/SkyboxPSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/SkyboxPSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\SkyboxPSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\SkyboxPSBin.h</HeaderFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gSkyboxPSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gSkyboxPSBin</VariableName>
     </FxCompile>
-    <FxCompile Include="src\shaders\SkyboxVS.hlsl">
+    <FxCompile Include="src\rendering\shaders\SkyboxVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -373,24 +375,24 @@
       </ObjectFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gSkyboxVSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gSkyboxVSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/SkyboxVSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/SkyboxVSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\SkyboxVSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\SkyboxVSBin.h</HeaderFileOutput>
     </FxCompile>
-    <FxCompile Include="src\shaders\PostProcessPS.hlsl">
+    <FxCompile Include="src\rendering\shaders\PostProcessPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gPostProcessPSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/PostProcessPSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\PostProcessPSBinDebug.h</HeaderFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </ObjectFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gPostProcessPSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/PostProcessPSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\PostProcessPSBin.h</HeaderFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="src\shaders\SsaoBlurPS.hlsl">
+    <FxCompile Include="src\rendering\shaders\SsaoBlurPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -405,10 +407,10 @@
       </ObjectFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gSsaoBlurPSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gSsaoBlurPSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/SsaoBlurPSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/SsaoBlurPSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\SsaoBlurPSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\SsaoBlurPSBin.h</HeaderFileOutput>
     </FxCompile>
-    <FxCompile Include="src\shaders\SsaoPS.hlsl">
+    <FxCompile Include="src\rendering\shaders\SsaoPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -419,8 +421,8 @@
       </ObjectFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gSsaoPSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gSsaoPSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/SsaoPSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/SsaoPSBin.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)\SsaoPSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)\SsaoPSBin.h</HeaderFileOutput>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
