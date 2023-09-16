@@ -14,6 +14,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
   if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
     ImGui::PopStyleVar();
 
+    auto openCamSettings{false};
 
     if (ImGui::BeginMenuBar()) {
       ImGui::SetNextItemWidth(100);
@@ -38,7 +39,47 @@ auto SceneViewWindow::Draw(Application& context) -> void {
         ImGui::EndCombo();
       }
 
+      if (ImGui::Button("Camera")) {
+        openCamSettings = true;
+      }
+
       ImGui::EndMenuBar();
+    }
+
+    auto constexpr camSettingsPopupid{"camSettings"};
+
+    if (openCamSettings) {
+      ImGui::OpenPopup(camSettingsPopupid);
+    }
+
+    if (ImGui::BeginPopup(camSettingsPopupid)) {
+      auto constexpr clipPlaneMin{0.1f};
+      auto constexpr clipPlaneMax{10'000.0f};
+      auto constexpr clipPlaneSliderSpeed{0.1f};
+      auto constexpr clipPlaneSliderFormat{"%.1f"};
+      auto constexpr clipPlaneSliderFlags{ImGuiSliderFlags_AlwaysClamp};
+
+      if (auto nearPlane{mCam.GetNearClipPlane()}; ImGui::DragFloat("Near Clip Plane", &nearPlane,
+        clipPlaneSliderSpeed, clipPlaneMin, clipPlaneMax, clipPlaneSliderFormat,
+        clipPlaneSliderFlags)) {
+        mCam.SetNearClipPlane(nearPlane);
+        mCam.SetFarClipPlane(std::max(nearPlane, mCam.GetFarClipPlane()));
+      }
+
+      if (auto farPlane{mCam.GetFarClipPlane()}; ImGui::DragFloat("Far Clip Plane", &farPlane,
+        clipPlaneSliderSpeed, clipPlaneMin, clipPlaneMax, clipPlaneSliderFormat,
+        clipPlaneSliderFlags)) {
+        mCam.SetFarClipPlane(farPlane);
+        mCam.SetNearClipPlane(std::min(farPlane, mCam.GetNearClipPlane()));
+      }
+
+      ImGui::DragFloat("Speed", &mCam.speed, 0.1f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+
+      if (auto fov{mCam.GetVerticalPerspectiveFov()}; ImGui::SliderFloat("FOV", &fov, 5, 120, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
+        mCam.SetVerticalPerspectiveFov(fov);
+      }
+
+      ImGui::EndPopup();
     }
 
     auto const contentRegionSize{ImGui::GetContentRegionAvail()};

@@ -41,12 +41,12 @@ auto SettingsWindow::Draw() -> void {
       timing::SetTargetFrameRate(isFrameRateLimited ? DEFAULT_TARGET_FRAME_RATE : -1);
     }
 
-    if (isFrameRateLimited) {
-      if (int targetFrameRate{timing::GetTargetFrameRate()}; ImGui::DragInt("Target Frame Rate", &targetFrameRate, 1, 30,
-        std::numeric_limits<int>::max(), "%d", ImGuiSliderFlags_AlwaysClamp)) {
-        timing::SetTargetFrameRate(targetFrameRate);
-      }
+    ImGui::BeginDisabled(!isFrameRateLimited);
+    if (int targetFrameRate{timing::GetTargetFrameRate()}; ImGui::DragInt("Target Frame Rate", &targetFrameRate, 1, 30,
+      std::numeric_limits<int>::max(), "%d", ImGuiSliderFlags_AlwaysClamp)) {
+      timing::SetTargetFrameRate(targetFrameRate);
     }
+    ImGui::EndDisabled();
 
     if (int inFlightFrameCount{gRenderer.GetInFlightFrameCount()}; ImGui::SliderInt("In-Flight Frame Count",
       &inFlightFrameCount, Renderer::MIN_IN_FLIGHT_FRAME_COUNT, Renderer::MAX_IN_FLIGHT_FRAME_COUNT, "%d",
@@ -83,18 +83,16 @@ auto SettingsWindow::Draw() -> void {
   }
 
   if (ImGui::TreeNode("Lighting")) {
-    if (auto color{gRenderer.GetAmbientLightColor()}; ImGui::ColorEdit3("Ambient Light Color", color.GetData())) {
+    if (auto color{gRenderer.GetAmbientLightColor()}; ImGui::ColorEdit3("Ambient Light", color.GetData())) {
       gRenderer.SetAmbientLightColor(color);
     }
 
-    if (auto ssaoEnabled{gRenderer.IsSsaoEnabled()}; ImGui::Checkbox("SSAO", &ssaoEnabled)) {
+    if (auto ssaoEnabled{gRenderer.IsSsaoEnabled()}; ImGui::Checkbox("Screen Space Ambient Occlusion", &ssaoEnabled)) {
       gRenderer.SetSsaoEnabled(ssaoEnabled);
     }
 
     ImGui::BeginDisabled(!gRenderer.IsSsaoEnabled());
-    ImGui::SameLine();
-    ImGui::BeginGroup();
-    ImGui::NewLine();
+    ImGui::Indent();
 
     auto ssaoParams{gRenderer.GetSsaoParams()};
 
@@ -111,7 +109,7 @@ auto SettingsWindow::Draw() -> void {
       gRenderer.SetSsaoParams(ssaoParams);
     }
 
-    ImGui::EndGroup();
+    ImGui::Unindent();
     ImGui::EndDisabled();
     ImGui::TreePop();
   }
@@ -160,38 +158,6 @@ auto SettingsWindow::Draw() -> void {
       "Visualize Shadow Cascades", &visualizeShadowCascades)) {
       gRenderer.VisualizeShadowCascades(visualizeShadowCascades);
     }
-    ImGui::TreePop();
-  }
-
-  if (ImGui::TreeNode("Scene View")) {
-    ImGui::Text("%s", "Camera");
-
-    auto constexpr clipPlaneMin{0.1f};
-    auto constexpr clipPlaneMax{10'000.0f};
-    auto constexpr clipPlaneSliderSpeed{0.1f};
-    auto constexpr clipPlaneSliderFormat{"%.1f"};
-    auto constexpr clipPlaneSliderFlags{ImGuiSliderFlags_AlwaysClamp};
-
-    if (auto nearPlane{mSceneViewCam->GetNearClipPlane()}; ImGui::DragFloat("Near Clip Plane", &nearPlane,
-      clipPlaneSliderSpeed, clipPlaneMin, clipPlaneMax, clipPlaneSliderFormat,
-      clipPlaneSliderFlags)) {
-      mSceneViewCam->SetNearClipPlane(nearPlane);
-      mSceneViewCam->SetFarClipPlane(std::max(nearPlane, mSceneViewCam->GetFarClipPlane()));
-    }
-
-    if (auto farPlane{mSceneViewCam->GetFarClipPlane()}; ImGui::DragFloat("Far Clip Plane", &farPlane,
-      clipPlaneSliderSpeed, clipPlaneMin, clipPlaneMax, clipPlaneSliderFormat,
-      clipPlaneSliderFlags)) {
-      mSceneViewCam->SetFarClipPlane(farPlane);
-      mSceneViewCam->SetNearClipPlane(std::min(farPlane, mSceneViewCam->GetNearClipPlane()));
-    }
-
-    ImGui::DragFloat("Speed", &mSceneViewCam->speed, 0.1f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
-
-    if (auto fov{mSceneViewCam->GetVerticalPerspectiveFov()}; ImGui::SliderFloat("FOV", &fov, 5, 120, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
-      mSceneViewCam->SetVerticalPerspectiveFov(fov);
-    }
-
     ImGui::TreePop();
   }
 
