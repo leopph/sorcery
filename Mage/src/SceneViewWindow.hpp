@@ -2,7 +2,6 @@
 
 #include "Application.hpp"
 #include "StandaloneCamera.hpp"
-#include "RenderTarget.hpp"
 
 #include <ImGuizmo.h>
 
@@ -42,11 +41,8 @@ class SceneViewWindow {
     GizmoModeOption{ImGuizmo::MODE::WORLD, "World"}
   };
 
-
-  std::unique_ptr<RenderTarget> mRenderTarget;
   StandaloneCamera mCam{Vector3{}, Quaternion{}, 5.0f, 0.1f, 1000.0f, 60};
   std::optional<FocusMoveInfo> mFocusTarget;
-
   int mGizmoOpIdx{0};
   int mGizmoModeIdx{0};
   bool mCamMoving{false};

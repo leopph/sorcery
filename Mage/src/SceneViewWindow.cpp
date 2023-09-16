@@ -42,18 +42,18 @@ auto SceneViewWindow::Draw(Application& context) -> void {
     }
 
     auto const contentRegionSize{ImGui::GetContentRegionAvail()};
-    Extent2D const desiredRes{static_cast<std::uint32_t>(contentRegionSize.x), static_cast<std::uint32_t>(contentRegionSize.y)};
 
-    if (!mRenderTarget || mRenderTarget->GetDesc().width != desiredRes.width || mRenderTarget->GetDesc().height != desiredRes.height) {
-      mRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
-        .width = desiredRes.width,
-        .height = desiredRes.height,
+    auto const& rt{
+      gRenderer.GetTemporaryRenderTarget(RenderTarget::Desc{
+        .width = static_cast<UINT>(contentRegionSize.x),
+        .height = static_cast<UINT>(contentRegionSize.y),
         .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
         .depthBufferBitCount = 0,
         .stencilBufferBitCount = 0,
-        .debugName = "Game View RenderTarget"
-      });
-    }
+        .sampleCount = 1,
+        .debugName = "Scene View RT"
+      })
+    };
 
     auto const wasCamMoving{mCamMoving};
     mCamMoving = wasCamMoving ? ImGui::IsMouseDown(ImGuiMouseButton_Right) : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
@@ -102,9 +102,9 @@ auto SceneViewWindow::Draw(Application& context) -> void {
       selectedObject->OnDrawGizmosSelected();
     }
 
-    gRenderer.DrawCamera(mCam, mRenderTarget.get());
-    gRenderer.DrawGizmos(mRenderTarget.get());
-    ImGui::Image(mRenderTarget->GetColorSrv(), contentRegionSize);
+    gRenderer.DrawCamera(mCam, std::addressof(rt));
+    gRenderer.DrawGizmos(std::addressof(rt));
+    ImGui::Image(rt.GetColorSrv(), contentRegionSize);
 
     auto const aspect{ImGui::GetWindowWidth() / ImGui::GetWindowHeight()};
     auto const camViewMtx{mCam.CalculateViewMatrix()};
