@@ -55,7 +55,7 @@ auto GameViewWindow::Draw(bool const gameRunning) -> void {
       gRenderer.GetTemporaryRenderTarget(RenderTarget::Desc{
         .width = resolutionValues[mResIdx].width,
         .height = resolutionValues[mResIdx].height,
-        .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+        .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
         .depthBufferBitCount = 0,
         .stencilBufferBitCount = 0,
         .sampleCount = 1,

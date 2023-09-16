@@ -51,9 +51,6 @@
     <ClCompile Include="src\PerformanceCounterWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ImGuiIntegration.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\LoadingScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -111,9 +108,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\PerformanceCounterWindow.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ImGuiIntegration.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\LoadingScreen.hpp">

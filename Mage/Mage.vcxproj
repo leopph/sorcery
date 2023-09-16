@@ -101,7 +101,6 @@
     <ClCompile Include="src\SettingsWindow.cpp" />
     <ClCompile Include="src\EntityHierarchyWindow.cpp" />
     <ClCompile Include="src\GameViewWindow.cpp" />
-    <ClCompile Include="src\ImGuiIntegration.cpp" />
     <ClCompile Include="src\LoadingScreen.cpp" />
     <ClCompile Include="src\MainMenuBar.cpp" />
     <ClCompile Include="src\PropertiesWindow.cpp" />
@@ -126,7 +125,6 @@
     <ClInclude Include="src\SettingsWindow.hpp" />
     <ClInclude Include="src\EntityHierarchyWindow.hpp" />
     <ClInclude Include="src\GameViewWindow.hpp" />
-    <ClInclude Include="src\ImGuiIntegration.hpp" />
     <ClInclude Include="src\LoadingScreen.hpp" />
     <ClInclude Include="src\MainMenuBar.hpp" />
     <ClInclude Include="src\PropertiesWindow.hpp" />
