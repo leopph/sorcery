@@ -400,4 +400,4 @@ FodyWeavers.xsd
 # Sorcery
 Mage/vcpkg_installed
 Sorcery/vcpkg_installed
-Sorcery/src/shaders/generated
+Sorcery/src/rendering/shaders/generated

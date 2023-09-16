@@ -5,25 +5,46 @@
 #include "Timing.hpp"
 #include "Window.hpp"
 
-#include <ImGuizmo.h>
-
 
 namespace sorcery::mage {
 auto SceneViewWindow::Draw(Application& context) -> void {
-  ImGui::SetNextWindowSizeConstraints(ImVec2{480, 270}, ImVec2{
-    std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
-  });
+  ImGui::SetNextWindowSizeConstraints(ImVec2{480, 270}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
-  if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse)) {
+  if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
     ImGui::PopStyleVar();
-    auto const contentRegionSize{ImGui::GetContentRegionAvail()};
-    Extent2D const desiredRes{
-      static_cast<std::uint32_t>(contentRegionSize.x), static_cast<std::uint32_t>(contentRegionSize.y)
-    };
 
-    if (!mRenderTarget || mRenderTarget->GetDesc().width != desiredRes.width || mRenderTarget->GetDesc().height !=
-        desiredRes.height) {
+
+    if (ImGui::BeginMenuBar()) {
+      ImGui::SetNextItemWidth(100);
+
+      if (ImGui::BeginCombo("##GizmoOpCombo", GIZMO_OP_OPTIONS[mGizmoOpIdx].label)) {
+        for (auto i{0}; i < std::ssize(GIZMO_OP_OPTIONS); i++) {
+          if (ImGui::Selectable(GIZMO_OP_OPTIONS[i].label, mGizmoOpIdx == i)) {
+            mGizmoOpIdx = i;
+          }
+        }
+        ImGui::EndCombo();
+      }
+
+      ImGui::SetNextItemWidth(100);
+
+      if (ImGui::BeginCombo("##GizmoModeCombo", GIZMO_MODE_OPTIONS[mGizmoModeIdx].label)) {
+        for (auto i{0}; i < std::ssize(GIZMO_MODE_OPTIONS); i++) {
+          if (ImGui::Selectable(GIZMO_MODE_OPTIONS[i].label, mGizmoModeIdx == i)) {
+            mGizmoModeIdx = i;
+          }
+        }
+        ImGui::EndCombo();
+      }
+
+      ImGui::EndMenuBar();
+    }
+
+    auto const contentRegionSize{ImGui::GetContentRegionAvail()};
+    Extent2D const desiredRes{static_cast<std::uint32_t>(contentRegionSize.x), static_cast<std::uint32_t>(contentRegionSize.y)};
+
+    if (!mRenderTarget || mRenderTarget->GetDesc().width != desiredRes.width || mRenderTarget->GetDesc().height != desiredRes.height) {
       mRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
         .width = desiredRes.width,
         .height = desiredRes.height,
@@ -34,22 +55,18 @@ auto SceneViewWindow::Draw(Application& context) -> void {
       });
     }
 
-    static bool isMovingSceneCamera{false};
+    auto const wasCamMoving{mCamMoving};
+    mCamMoving = wasCamMoving ? ImGui::IsMouseDown(ImGuiMouseButton_Right) : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
-    auto const wasMovingSceneCamera{isMovingSceneCamera};
-    isMovingSceneCamera = wasMovingSceneCamera
-                            ? ImGui::IsMouseDown(ImGuiMouseButton_Right)
-                            : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
-
-    if (!wasMovingSceneCamera && isMovingSceneCamera) {
+    if (!wasCamMoving && mCamMoving) {
       gWindow.SetCursorLock(GetCursorPosition());
       gWindow.SetCursorHiding(true);
-    } else if (wasMovingSceneCamera && !isMovingSceneCamera) {
+    } else if (wasCamMoving && !mCamMoving) {
       gWindow.SetCursorLock(std::nullopt);
       gWindow.SetCursorHiding(false);
     }
 
-    if (isMovingSceneCamera) {
+    if (mCamMoving) {
       ImGui::SetWindowFocus();
 
       Vector3 posDelta{0, 0, 0};
@@ -89,23 +106,20 @@ auto SceneViewWindow::Draw(Application& context) -> void {
     gRenderer.DrawGizmos(mRenderTarget.get());
     ImGui::Image(mRenderTarget->GetColorSrv(), contentRegionSize);
 
-    auto const windowAspectRatio{ImGui::GetWindowWidth() / ImGui::GetWindowHeight()};
-    auto const editorCamViewMat{mCam.CalculateViewMatrix()};
-    auto const editorCamProjMat{mCam.CalculateProjectionMatrix(windowAspectRatio)};
+    auto const aspect{ImGui::GetWindowWidth() / ImGui::GetWindowHeight()};
+    auto const camViewMtx{mCam.CalculateViewMatrix()};
+    auto const camProjMtx{mCam.CalculateProjectionMatrix(aspect)};
 
-    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(),
-      ImGui::GetWindowHeight());
+    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
     ImGuizmo::AllowAxisFlip(false);
     ImGuizmo::SetDrawlist();
 
-    static bool showGrid{false};
-
     if (ImGui::IsWindowFocused() && GetKeyDown(Key::G)) {
-      showGrid = !showGrid;
+      mShowGrid = !mShowGrid;
     }
 
-    if (showGrid) {
-      ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), Matrix4::Identity().GetData(),
+    if (mShowGrid) {
+      ImGuizmo::DrawGrid(camViewMtx.GetData(), camProjMtx.GetData(), Matrix4::Identity().GetData(),
         mCam.GetFarClipPlane());
     }
 
@@ -119,30 +133,28 @@ auto SceneViewWindow::Draw(Application& context) -> void {
       }
     }
 
-    if (auto const selectedEntity{dynamic_cast<Entity*>(context.GetSelectedObject())}; selectedEntity) {
-      static auto op{ImGuizmo::OPERATION::TRANSLATE};
-      static auto mode{ImGuizmo::MODE::LOCAL};
+    if (!context.GetImGuiIo().WantTextInput && !mCamMoving) {
+      if (GetKeyDown(Key::Q)) {
+        mGizmoOpIdx = 0;
+      }
+      if (GetKeyDown(Key::W)) {
+        mGizmoOpIdx = 1;
+      }
+      if (GetKeyDown(Key::E)) {
+        mGizmoOpIdx = 2;
+      }
+      if (GetKeyDown(Key::R)) {
+        mGizmoModeIdx = 1 - mGizmoModeIdx;
+      }
+    }
 
-      if (!context.GetImGuiIo().WantTextInput && !isMovingSceneCamera) {
-        if (GetKeyDown(Key::Q)) {
-          op = ImGuizmo::TRANSLATE;
-        }
-        if (GetKeyDown(Key::W)) {
-          op = ImGuizmo::ROTATE;
-        }
-        if (GetKeyDown(Key::E)) {
-          op = ImGuizmo::SCALE;
-        }
-        if (GetKeyDown(Key::R)) {
-          mode = mode == ImGuizmo::MODE::LOCAL ? ImGuizmo::MODE::WORLD : ImGuizmo::MODE::LOCAL;
-        }
-        if (GetKeyDown(Key::F)) {
-          mFocusTarget.emplace(mCam.GetPosition(), selectedEntity->GetTransform().GetWorldPosition() - mCam.GetForwardAxis() * 2, 0.0f);
-        }
+    if (auto const selectedEntity{dynamic_cast<Entity*>(context.GetSelectedObject())}; selectedEntity) {
+      if (!context.GetImGuiIo().WantTextInput && !mCamMoving && GetKeyDown(Key::F)) {
+        mFocusTarget.emplace(mCam.GetPosition(), selectedEntity->GetTransform().GetWorldPosition() - mCam.GetForwardAxis() * 2, 0.0f);
       }
 
       // TODO this breaks if the transform is a child of a rotated transform
-      if (Matrix4 modelMat{selectedEntity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(editorCamViewMat.GetData(), editorCamProjMat.GetData(), op, mode, modelMat.GetData())) {
+      if (Matrix4 modelMat{selectedEntity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(camViewMtx.GetData(), camProjMtx.GetData(), GIZMO_OP_OPTIONS[mGizmoOpIdx].op, GIZMO_MODE_OPTIONS[mGizmoModeIdx].mode, modelMat.GetData())) {
         Vector3 pos, euler, scale;
         ImGuizmo::DecomposeMatrixToComponents(modelMat.GetData(), pos.GetData(), euler.GetData(), scale.GetData());
         selectedEntity->GetTransform().SetWorldPosition(pos);
