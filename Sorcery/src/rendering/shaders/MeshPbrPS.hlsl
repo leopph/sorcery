@@ -198,7 +198,7 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
 
 
 float4 main(const MeshVsOut vsOut) : SV_TARGET {
-  if (material.blendMode == BLEND_MODE_ALPHA_CLIP && material.sampleOpacityMap && gOpacityMask.Sample(gSamplerAf16Clamp, vsOut.uv) < material.alphaThreshold) {
+  if (material.blendMode == BLEND_MODE_ALPHA_CLIP && material.sampleOpacityMap && gOpacityMask.Sample(gSamplerAf16Wrap, vsOut.uv) < material.alphaThreshold) {
     discard;
   }
 
