@@ -26,14 +26,21 @@ using uint = unsigned;
 #else
 
 typedef bool BOOL;
-#define CBUFFER_BEGIN(name, slot) cbuffer name : register(b##slot) {
+#define MAKE_CB_SLOT(slot) b##slot
+#define MAKE_RES_SLOT(slot) t##slot
+#define MAKE_SAMPLER_SLOT(slot) s##slot
+#define MAKE_UAV_SLOT(slot) u##slot
+
+#define CBUFFER_BEGIN(name, slot) cbuffer name : register(MAKE_CB_SLOT(slot)) {
 #define CBUFFER_END }
-#define TEXTURE2D(name, type, slot) Texture2D<type> name : register(t##slot)
-#define TEXTURE2DARRAY(name, type, slot) Texture2DArray<type> name : register(t##slot)
-#define TEXTURECUBE(name, type, slot) TextureCube<type> name : register(t##slot)
-#define SAMPLERCOMPARISONSTATE(name, slot) SamplerComparisonState name : register(s##slot)
-#define SAMPLERSTATE(name, slot) SamplerState name : register(s##slot)
-#define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(t##slot)
+#define TEXTURE2D(name, type, slot) Texture2D<type> name : register(MAKE_RES_SLOT(slot))
+#define TEXTURE2DMS(name, type, slot) Texture2DMS<type> name : register(MAKE_RES_SLOT(slot))
+#define TEXTURE2DARRAY(name, type, slot) Texture2DArray<type> name : register(MAKE_RES_SLOT(slot))
+#define TEXTURECUBE(name, type, slot) TextureCube<type> name : register(MAKE_RES_SLOT(slot))
+#define SAMPLERCOMPARISONSTATE(name, slot) SamplerComparisonState name : register(MAKE_SAMPLER_SLOT(slot))
+#define SAMPLERSTATE(name, slot) SamplerState name : register(MAKE_SAMPLER_SLOT(slot))
+#define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(MAKE_RES_SLOT(slot))
+#define RWTEXTURE2D(name, type, slot) RWTexture2D<type> name : register(MAKE_UAV_SLOT(slot))
 #endif
 
 #define CB_SLOT_PER_FRAME 0
@@ -63,6 +70,9 @@ typedef bool BOOL;
 #define RES_SLOT_SSAO_NOISE 8
 #define RES_SLOT_SSAO_SAMPLES 9
 #define RES_SLOT_SSAO_BLUR_INPUT 6
+#define RES_SLOT_DEPTH_RESOLVE_INPUT 0
+
+#define UAV_SLOT_DEPTH_RESOLVE_OUTPUT 0
 
 #define SAMPLER_SLOT_CMP_PCF 0
 #define SAMPLER_SLOT_CMP_POINT 1
@@ -80,6 +90,10 @@ typedef bool BOOL;
 #define BLEND_MODE_ALPHA_CLIP 1
 
 #define SSAO_NOISE_TEX_DIM 4
+
+#define DEPTH_RESOLVE_CS_THREADS_X 16
+#define DEPTH_RESOLVE_CS_THREADS_Y 16
+#define DEPTH_RESOLVE_CS_THREADS_Z 1
 
 
 struct ShaderLight {
