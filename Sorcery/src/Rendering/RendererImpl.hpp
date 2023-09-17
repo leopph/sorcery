@@ -34,7 +34,7 @@ class Renderer::Impl {
   inline static Guid const DEFAULT_MATERIAL_GUID{1, 0};
   inline static Guid const CUBE_MESH_GUID{2, 0};
   inline static Guid const PLANE_MESH_GUID{3, 0};
-  constexpr static Vector3 DEFAULT_AMBIENT_LIGHT_COLOR{0.03};
+  constexpr static Vector3 DEFAULT_AMBIENT_LIGHT_COLOR{20.0f / 255.0f};
 
   Microsoft::WRL::ComPtr<ID3D11Device> mDevice;
   Microsoft::WRL::ComPtr<ID3D11DeviceContext> mImmediateContext;
