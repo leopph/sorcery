@@ -41,8 +41,8 @@ float main(const ScreenVsOut vsOut) : SV_TARGET {
 		const float sampleDepth = CalculatePositionVsAtUv(NdcToUv(sampleOffset.xy)).z;
 
 		const float rangeCheck = smoothstep(0.0, 1.0, gSsaoConstants.radius / abs(hemisphereOriginVS.z - sampleDepth));
-		occlusion += step(sampleDepth, samplePos.z + gSsaoConstants.bias) * rangeCheck;
-	}
+    occlusion += step(sampleDepth, samplePos.z - gSsaoConstants.bias) * rangeCheck;
+  }
 
   return pow(1 - occlusion / sampleCount, gSsaoConstants.power);
 }
