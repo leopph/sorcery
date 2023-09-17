@@ -129,7 +129,7 @@ class Renderer::Impl {
   bool mDepthNormalPrePassEnabled{true};
   SsaoParams mSsaoParams{
     .radius = 0.1f,
-    .bias = 0.0f,
+    .bias = 0.01f,
     .power = 6.0f,
     .sampleCount = 12
   };
