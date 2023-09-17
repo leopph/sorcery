@@ -71,12 +71,20 @@ class Renderer::Impl {
   Microsoft::WRL::ComPtr<ID3D11SamplerState> mCmpPcfLessEqualSs;
   Microsoft::WRL::ComPtr<ID3D11SamplerState> mCmpPointGreaterEqualSs;
   Microsoft::WRL::ComPtr<ID3D11SamplerState> mCmpPointLessEqualSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf16Ss;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf8Ss;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf4Ss;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mTrilinearSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mBilinearSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mPointSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf16ClampSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf8ClampSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf4ClampSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf2ClampSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mTrilinearClampSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mBilinearClampSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mPointClampSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf16WrapSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf8WrapSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf4WrapSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf2WrapSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mTrilinearWrapSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mBilinearWrapSs;
+  Microsoft::WRL::ComPtr<ID3D11SamplerState> mPointWrapSs;
 
   Microsoft::WRL::ComPtr<ID3D11RasterizerState> mSkyboxPassRs;
   Microsoft::WRL::ComPtr<ID3D11RasterizerState> mShadowPassRs;

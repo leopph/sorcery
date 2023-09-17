@@ -16,7 +16,7 @@ float main(const float4 pixelCoord : SV_POSITION, const float2 uv : TEXCOORD) : 
   for (int x = lo; x < hi; x++) {
     for (int y = lo; y < hi; y++) {
       const float2 uvOffset = float2(x, y) * texelSize;
-      result += gSsaoInput.Sample(gSamplerPoint, uv + uvOffset).r;
+      result += gSsaoInput.Sample(gSamplerPointClamp, uv + uvOffset).r;
     }
   }
 

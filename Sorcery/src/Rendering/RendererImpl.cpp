@@ -1289,7 +1289,125 @@ auto Renderer::Impl::StartUp() -> void {
     throw std::runtime_error{"Failed to create point-filter less-equal comparison sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr af16Desc{
+  D3D11_SAMPLER_DESC constexpr af16ClampDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC,
+    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .MipLODBias = 0,
+    .MaxAnisotropy = 16,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER,
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
+
+  if (FAILED(mDevice->CreateSamplerState(&af16ClampDesc, mAf16ClampSs.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create AF16 clamp sampler state."};
+  }
+
+  D3D11_SAMPLER_DESC constexpr af8ClampDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC,
+    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .MipLODBias = 0,
+    .MaxAnisotropy = 8,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER,
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
+
+  if (FAILED(mDevice->CreateSamplerState(&af8ClampDesc, mAf8ClampSs.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create AF8 clamp sampler state."};
+  }
+
+  D3D11_SAMPLER_DESC constexpr af4ClampDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC,
+    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .MipLODBias = 0,
+    .MaxAnisotropy = 4,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER,
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
+
+  if (FAILED(mDevice->CreateSamplerState(&af4ClampDesc, mAf4ClampSs.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create AF4 clamp sampler state."};
+  }
+
+  D3D11_SAMPLER_DESC constexpr af2ClampDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC,
+    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .MipLODBias = 0,
+    .MaxAnisotropy = 2,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER,
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
+
+  hr = mDevice->CreateSamplerState(&af2ClampDesc, mAf2ClampSs.GetAddressOf());
+  assert(SUCCEEDED(hr));
+
+  D3D11_SAMPLER_DESC constexpr trilinearClampDesc{
+    .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .MipLODBias = 0,
+    .MaxAnisotropy = 1,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER,
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
+
+  if (FAILED(mDevice->CreateSamplerState(&trilinearClampDesc, mTrilinearClampSs.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create trilinear clamp sampler state."};
+  }
+
+  D3D11_SAMPLER_DESC constexpr bilinearClampDesc{
+    .Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .MipLODBias = 0,
+    .MaxAnisotropy = 1,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER,
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
+
+  if (FAILED(mDevice->CreateSamplerState(&bilinearClampDesc, mBilinearClampSs.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create bilinear clamp sampler state."};
+  }
+
+  D3D11_SAMPLER_DESC constexpr pointClampDesc{
+    .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
+    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .MipLODBias = 0,
+    .MaxAnisotropy = 1,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER,
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
+
+  if (FAILED(mDevice->CreateSamplerState(&pointClampDesc, mPointClampSs.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create point-filter clamp sampler state."};
+  }
+
+  D3D11_SAMPLER_DESC constexpr af16WrapDesc{
     .Filter = D3D11_FILTER_ANISOTROPIC,
     .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
     .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
@@ -1302,11 +1420,10 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&af16Desc, mAf16Ss.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create AF16 sampler state."};
-  }
+  hr = mDevice->CreateSamplerState(&af16WrapDesc, mAf16WrapSs.GetAddressOf());
+  assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr af8Desc{
+  D3D11_SAMPLER_DESC constexpr af8WrapDesc{
     .Filter = D3D11_FILTER_ANISOTROPIC,
     .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
     .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
@@ -1319,11 +1436,10 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&af8Desc, mAf8Ss.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create AF8 sampler state."};
-  }
+  hr = mDevice->CreateSamplerState(&af8WrapDesc, mAf8WrapSs.GetAddressOf());
+  assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr af4Desc{
+  D3D11_SAMPLER_DESC constexpr af4WrapDesc{
     .Filter = D3D11_FILTER_ANISOTROPIC,
     .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
     .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
@@ -1336,12 +1452,27 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&af4Desc, mAf4Ss.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create AF4 sampler state."};
-  }
+  hr = mDevice->CreateSamplerState(&af4WrapDesc, mAf4WrapSs.GetAddressOf());
+  assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr trilinearDesc{
-    .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+  D3D11_SAMPLER_DESC constexpr af2WrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC,
+    .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
+    .MipLODBias = 0,
+    .MaxAnisotropy = 2,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER,
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
+
+  hr = mDevice->CreateSamplerState(&af2WrapDesc, mAf2WrapSs.GetAddressOf());
+  assert(SUCCEEDED(hr));
+
+  D3D11_SAMPLER_DESC constexpr trilinearWrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC,
     .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
     .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
     .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
@@ -1353,12 +1484,11 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&trilinearDesc, mTrilinearSs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create trilinear sampler state."};
-  }
+  hr = mDevice->CreateSamplerState(&trilinearWrapDesc, mTrilinearWrapSs.GetAddressOf());
+  assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr bilinearDesc{
-    .Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+  D3D11_SAMPLER_DESC constexpr bilinearWrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC,
     .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
     .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
     .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
@@ -1370,12 +1500,11 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&bilinearDesc, mBilinearSs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create bilinear sampler state."};
-  }
+  hr = mDevice->CreateSamplerState(&bilinearWrapDesc, mBilinearWrapSs.GetAddressOf());
+  assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr pointDesc{
-    .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
+  D3D11_SAMPLER_DESC constexpr pointWrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC,
     .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
     .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
     .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
@@ -1387,9 +1516,8 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&pointDesc, mPointSs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create point-filter sampler state."};
-  }
+  hr = mDevice->CreateSamplerState(&pointWrapDesc, mPointWrapSs.GetAddressOf());
+  assert(SUCCEEDED(hr));
 
   // CREATE DEFAULT ASSETS
 
@@ -1572,12 +1700,20 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   ctx->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, GetShadowPcfSampler().GetAddressOf());
   ctx->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, GetShadowPointSampler().GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF16, 1, mAf16Ss.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF8, 1, mAf8Ss.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF4, 1, mAf4Ss.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_TRI, 1, mTrilinearSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_BI, 1, mBilinearSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_POINT, 1, mPointSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF16_CLAMP, 1, mAf16ClampSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF8_CLAMP, 1, mAf8ClampSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF4_CLAMP, 1, mAf4ClampSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF2_CLAMP, 1, mAf2ClampSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_TRI_CLAMP, 1, mTrilinearClampSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_BI_CLAMP, 1, mBilinearClampSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_POINT_CLAMP, 1, mPointClampSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF16_WRAP, 1, mAf16WrapSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF8_WRAP, 1, mAf8WrapSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF4_WRAP, 1, mAf4WrapSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF2_WRAP, 1, mAf2WrapSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_TRI_WRAP, 1, mTrilinearWrapSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_BI_WRAP, 1, mBilinearWrapSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_POINT_WRAP, 1, mPointWrapSs.GetAddressOf());
 
   SetPerFrameConstants(ctx, static_cast<int>(rtWidth), static_cast<int>(rtHeight));
   ctx->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());

@@ -198,39 +198,39 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
 
 
 float4 main(const MeshVsOut vsOut) : SV_TARGET {
-  if (material.blendMode == BLEND_MODE_ALPHA_CLIP && material.sampleOpacityMap && gOpacityMask.Sample(gSamplerAf16, vsOut.uv) < material.alphaThreshold) {
+  if (material.blendMode == BLEND_MODE_ALPHA_CLIP && material.sampleOpacityMap && gOpacityMask.Sample(gSamplerAf16Clamp, vsOut.uv) < material.alphaThreshold) {
     discard;
   }
 
   float3 albedo = material.albedo;
 
   if (material.sampleAlbedo) {
-      albedo *= gAlbedoMap.Sample(gSamplerAf16, vsOut.uv).rgb;
+      albedo *= gAlbedoMap.Sample(gSamplerAf16Clamp, vsOut.uv).rgb;
   }
 
   float metallic = material.metallic;
 
   if (material.sampleMetallic) {
-      metallic *= gMetallicMap.Sample(gSamplerAf16, vsOut.uv).r;
+      metallic *= gMetallicMap.Sample(gSamplerAf16Clamp, vsOut.uv).r;
   }
 
   float roughness = material.roughness;
 
   if (material.sampleRoughness) {
-      roughness *= gRoughnessMap.Sample(gSamplerAf16, vsOut.uv).r;
+      roughness *= gRoughnessMap.Sample(gSamplerAf16Clamp, vsOut.uv).r;
   }
 
   const float2 screenUv = vsOut.positionCS.xy / gPerFrameConstants.screenSize;
-  float ao = material.ao * gSsaoTex.Sample(gSamplerAf16, screenUv).r;
+  float ao = material.ao * gSsaoTex.Sample(gSamplerPointClamp, screenUv).r;
 
   if (material.sampleAo) {
-      ao *= gAoMap.Sample(gSamplerAf16, vsOut.uv).r;
+      ao *= gAoMap.Sample(gSamplerAf16Clamp, vsOut.uv).r;
   }
 
   float3 N = normalize(vsOut.normalWS);
 
   if (material.sampleNormal) {
-      N = gNormalMap.Sample(gSamplerAf16, vsOut.uv).rgb;
+      N = gNormalMap.Sample(gSamplerAf16Clamp, vsOut.uv).rgb;
       N *= 2.0;
       N -= 1.0;
       N = normalize(mul(normalize(N), vsOut.tbnMtxWS));

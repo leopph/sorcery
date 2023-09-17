@@ -10,7 +10,7 @@ TEXTURE2D(gNoiseTexture, float4, RES_SLOT_SSAO_NOISE);
 STRUCTUREDBUFFER(gSamples, float4, RES_SLOT_SSAO_SAMPLES);
 
 float3 CalculatePositionVsAtUv(const float2 uv) {
-  const float depth = gDepthTexture.Sample(gSamplerPoint, uv).r;
+  const float depth = gDepthTexture.Sample(gSamplerPointClamp, uv).r;
 	const float4 positionVS = mul(float4(UvToNdc(uv), depth, 1), gPerViewConstants.invProjMtx);
 	return positionVS.xyz / positionVS.w;
 }
@@ -20,9 +20,9 @@ float main(const ScreenVsOut vsOut) : SV_TARGET {
 	gNoiseTexture.GetDimensions(noiseTexSize.x, noiseTexSize.y);
 	const float2 noiseScale = gPerFrameConstants.screenSize / noiseTexSize;
 
-	const float3 noise = normalize(gNoiseTexture.Sample(gSamplerPoint, vsOut.uv * noiseScale).xyz);
+	const float3 noise = normalize(gNoiseTexture.Sample(gSamplerPointWrap, vsOut.uv * noiseScale).xyz);
 	const float3 hemisphereOriginVS = CalculatePositionVsAtUv(vsOut.uv);
-	const float3 normalVS = normalize(mul(float4(gNormalTexture.Sample(gSamplerPoint, vsOut.uv).xyz, 0), gPerViewConstants.viewMtx).xyz);
+	const float3 normalVS = normalize(mul(float4(gNormalTexture.Sample(gSamplerPointClamp, vsOut.uv).xyz, 0), gPerViewConstants.viewMtx).xyz);
 	const float3 tangentVS = normalize(noise - normalVS * dot(noise, normalVS));
 	const float3 bitangentVS = cross(normalVS, tangentVS);
 	const float3x3 tbnMtxVS = float3x3(tangentVS, bitangentVS, normalVS);
