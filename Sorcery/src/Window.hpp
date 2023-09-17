@@ -59,6 +59,8 @@ public:
   [[nodiscard]] LEOPPHAPI auto ClientCoordinateToScreen(Point2D<int> clientCoord) const noexcept -> Point2D<int>;
 
   LEOPPHAPI auto SetEventHandler(void const* handler) noexcept -> void;
+
+  LEOPPHAPI auto UseImmersiveDarkMode(bool value) noexcept -> void;
 };
 
 

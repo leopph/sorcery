@@ -142,6 +142,13 @@ auto Window::ClientCoordinateToScreen(Point2D<int> const clientCoord) const noex
 
 
 auto Window::SetEventHandler(void const* handler) noexcept -> void {
+  assert(mImpl);
   mImpl->SetEventHandler(handler);
+}
+
+
+auto Window::UseImmersiveDarkMode(const bool value) noexcept -> void {
+  assert(mImpl);
+  mImpl->UseImmersiveDarkMode(value);
 }
 }

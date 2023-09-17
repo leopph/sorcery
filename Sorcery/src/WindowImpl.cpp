@@ -2,7 +2,10 @@
 
 #include "Platform.hpp"
 
+#include <dwmapi.h>
 #include <hidusage.h>
+
+#include <cassert>
 
 
 namespace sorcery {
@@ -255,5 +258,12 @@ auto WindowImpl::ClientCoordinateToScreen(Point2D<int> const clientCoord) const 
 
 auto WindowImpl::SetEventHandler(void const* handler) noexcept -> void {
   mEventHandler = reinterpret_cast<WindowProcType>(handler);
+}
+
+
+auto WindowImpl::UseImmersiveDarkMode(bool const value) noexcept -> void {
+  BOOL const useImmersiveDarkMode{value ? TRUE : FALSE};
+  [[maybe_unused]] auto const hr{DwmSetWindowAttribute(mHwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useImmersiveDarkMode, sizeof(useImmersiveDarkMode))};
+  assert(SUCCEEDED(hr));
 }
 }
