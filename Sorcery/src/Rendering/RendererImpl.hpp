@@ -131,7 +131,7 @@ class Renderer::Impl {
     .radius = 0.1f,
     .bias = 0.0f,
     .power = 6.0f,
-    .sampleCount = 64
+    .sampleCount = 12
   };
   bool mSsaoEnabled{true};
 
