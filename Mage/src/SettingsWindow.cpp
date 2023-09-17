@@ -96,16 +96,16 @@ auto SettingsWindow::Draw() -> void {
 
     auto ssaoParams{gRenderer.GetSsaoParams()};
 
-    if (ImGui::DragFloat("Radius", &ssaoParams.radius, 0.01f)) {
+    if (ImGui::DragFloat("Radius", &ssaoParams.radius, 0.01f, std::numeric_limits<float>::min(), std::numeric_limits<float>::max() / 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
       gRenderer.SetSsaoParams(ssaoParams);
     }
-    if (ImGui::DragFloat("Bias", &ssaoParams.bias, 0.01f)) {
+    if (ImGui::DragFloat("Bias", &ssaoParams.bias, 0.001f, 0, std::numeric_limits<float>::max() / 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       gRenderer.SetSsaoParams(ssaoParams);
     }
-    if (ImGui::DragFloat("Power", &ssaoParams.power, 0.01f)) {
+    if (ImGui::DragFloat("Power", &ssaoParams.power, 0.01f, std::numeric_limits<float>::min(), std::numeric_limits<float>::max() / 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
       gRenderer.SetSsaoParams(ssaoParams);
     }
-    if (ImGui::DragInt("Sample Count", &ssaoParams.sampleCount, 1, 0, std::numeric_limits<int>::max())) {
+    if (ImGui::DragInt("Sample Count", &ssaoParams.sampleCount, 1, 0, std::numeric_limits<int>::max(), "%d", ImGuiSliderFlags_AlwaysClamp)) {
       gRenderer.SetSsaoParams(ssaoParams);
     }
 
