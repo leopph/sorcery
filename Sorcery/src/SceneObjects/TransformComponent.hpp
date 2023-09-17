@@ -20,6 +20,7 @@ private:
 
   Vector3 mLocalPosition{0, 0, 0};
   Quaternion mLocalRotation{1, 0, 0, 0};
+  Vector3 mLocalEulerAnglesHelp{0, 0, 0};
   Vector3 mLocalScale{1, 1, 1};
 
   Vector3 mWorldPosition{mLocalPosition};
@@ -49,6 +50,9 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetLocalRotation() const -> Quaternion const&;
   LEOPPHAPI auto SetLocalRotation(Quaternion const& newRot) -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetLocalEulerAngles() const noexcept -> Vector3 const&;
+  LEOPPHAPI auto SetLocalEulerAngles(Vector3 const& eulerAngles) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetWorldScale() const -> Vector3 const&;
   LEOPPHAPI auto SetWorldScale(Vector3 const& newScale) -> void;

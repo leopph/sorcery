@@ -96,6 +96,19 @@ auto TransformComponent::GetLocalRotation() const -> Quaternion const& {
 
 auto TransformComponent::SetLocalRotation(Quaternion const& newRot) -> void {
   mLocalRotation = newRot;
+  mLocalEulerAnglesHelp = newRot.ToEulerAngles();
+  UpdateWorldDataRecursive();
+}
+
+
+auto TransformComponent::GetLocalEulerAngles() const noexcept -> Vector3 const& {
+  return mLocalEulerAnglesHelp;
+}
+
+
+auto TransformComponent::SetLocalEulerAngles(Vector3 const& eulerAngles) noexcept -> void {
+  mLocalRotation = Quaternion::FromEulerAngles(eulerAngles);
+  mLocalEulerAnglesHelp = eulerAngles;
   UpdateWorldDataRecursive();
 }
 
@@ -261,9 +274,8 @@ auto TransformComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Local Rotation");
   ImGui::TableNextColumn();
 
-  auto euler{GetLocalRotation().ToEulerAngles()};
-  if (ImGui::DragFloat3("###transformRot", euler.GetData(), 1.0f)) {
-    SetLocalRotation(Quaternion::FromEulerAngles(euler));
+  if (auto euler{GetLocalEulerAngles()}; ImGui::DragFloat3("###transformRot", euler.GetData(), 1.0f)) {
+    SetLocalEulerAngles(euler);
   }
 
   ImGui::TableNextColumn();
