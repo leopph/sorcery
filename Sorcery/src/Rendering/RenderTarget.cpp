@@ -7,7 +7,7 @@
 
 namespace sorcery {
 auto RenderTarget::Desc::operator==(Desc const& other) const -> bool {
-  return width == other.width && height == other.height && colorFormat == other.colorFormat && depthBufferBitCount == other.depthBufferBitCount && stencilBufferBitCount == other.stencilBufferBitCount && sampleCount == other.sampleCount;
+  return width == other.width && height == other.height && colorFormat == other.colorFormat && depthBufferBitCount == other.depthBufferBitCount && stencilBufferBitCount == other.stencilBufferBitCount && sampleCount == other.sampleCount && enableUnorderedAccess == other.enableUnorderedAccess;
 }
 
 
@@ -28,7 +28,7 @@ RenderTarget::RenderTarget(Desc const& desc) :
       .Format = *desc.colorFormat,
       .SampleDesc = {.Count = static_cast<UINT>(desc.sampleCount), .Quality = 0},
       .Usage = D3D11_USAGE_DEFAULT,
-      .BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+      .BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | (desc.enableUnorderedAccess ? D3D11_BIND_UNORDERED_ACCESS : 0u),
       .CPUAccessFlags = 0,
       .MiscFlags = 0
     };
@@ -95,7 +95,25 @@ RenderTarget::RenderTarget(Desc const& desc) :
     if (FAILED(mColorSrv->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(colorSrvName)), colorSrvName.data()))) {
       throw std::runtime_error{"Failed to set RenderTarget color SRV debug name."};
     }
+
+    if (desc.enableUnorderedAccess && colorDesc.SampleDesc.Count == 1) {
+      D3D11_UNORDERED_ACCESS_VIEW_DESC const colorUavDesc{
+        .Format = colorDesc.Format,
+        .ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D,
+        .Texture2D = {.MipSlice = 0}
+      };
+
+      if (FAILED(device->CreateUnorderedAccessView(mColorTex.Get(), &colorUavDesc, mColorUav.GetAddressOf()))) {
+        throw std::runtime_error{"Failed to create RenderTarget color UAV."};
+      }
+
+      std::string colorUavName{desc.debugName + " - Color UAV"};
+      if (FAILED(mColorUav->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(colorUavName)), colorUavName.data()))) {
+        throw std::runtime_error{"Failed to set RenderTarget color UAV debug name."};
+      }
+    }
   }
+
 
   if (desc.depthBufferBitCount > 0 || desc.stencilBufferBitCount > 0) {
     auto const textureFormat{
@@ -124,7 +142,7 @@ RenderTarget::RenderTarget(Desc const& desc) :
       .Format = textureFormat,
       .SampleDesc = {.Count = static_cast<UINT>(desc.sampleCount), .Quality = 0},
       .Usage = D3D11_USAGE_DEFAULT,
-      .BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE,
+      .BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE | (desc.enableUnorderedAccess ? D3D11_BIND_UNORDERED_ACCESS : 0u),
       .CPUAccessFlags = 0,
       .MiscFlags = 0
     };
@@ -223,6 +241,23 @@ RenderTarget::RenderTarget(Desc const& desc) :
       if (FAILED(mDepthSrv->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(depthSrvName)), depthSrvName.data()))) {
         throw std::runtime_error{"Failed to set RenderTarget depth SRV debug name."};
       }
+
+      if (desc.enableUnorderedAccess && depthStencilDesc.SampleDesc.Count == 1) {
+        D3D11_UNORDERED_ACCESS_VIEW_DESC const depthUavDesc{
+          .Format = depthSrvDesc.Format,
+          .ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D,
+          .Texture2D = {.MipSlice = 0}
+        };
+
+        if (FAILED(device->CreateUnorderedAccessView(mDepthStencilTex.Get(), &depthUavDesc, mDepthUav.GetAddressOf()))) {
+          throw std::runtime_error{"Failed to create RenderTarget depth UAV."};
+        }
+
+        std::string depthUavName{desc.debugName + " - Depth UAV"};
+        if (FAILED(mDepthUav->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(depthUavName)), depthUavName.data()))) {
+          throw std::runtime_error{"Failed to set RenderTarget depth UAV debug name."};
+        }
+      }
     }
 
     if (desc.stencilBufferBitCount > 0) {
@@ -260,6 +295,23 @@ RenderTarget::RenderTarget(Desc const& desc) :
       if (FAILED(mStencilSrv->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(stencilSrvName)), stencilSrvName.data()))) {
         throw std::runtime_error{"Failed to set RenderTarget stencil SRV debug name."};
       }
+
+      if (desc.enableUnorderedAccess && depthStencilDesc.SampleDesc.Count == 1) {
+        D3D11_UNORDERED_ACCESS_VIEW_DESC const stencilUavDesc{
+          .Format = stencilSrvDesc.Format,
+          .ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D,
+          .Texture2D = {.MipSlice = 0}
+        };
+
+        if (FAILED(device->CreateUnorderedAccessView(mDepthStencilTex.Get(), &stencilUavDesc, mStencilUav.GetAddressOf()))) {
+          throw std::runtime_error{"Failed to create RenderTarget stencil UAV."};
+        }
+
+        std::string stencilUavName{desc.debugName + " - Stencil UAV"};
+        if (FAILED(mStencilUav->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(stencilUavName)), stencilUavName.data()))) {
+          throw std::runtime_error{"Failed to set RenderTarget stencil UAV debug name."};
+        }
+      }
     }
   }
 }
@@ -267,6 +319,16 @@ RenderTarget::RenderTarget(Desc const& desc) :
 
 auto RenderTarget::GetDesc() const noexcept -> Desc const& {
   return mDesc;
+}
+
+
+auto RenderTarget::GetColorTexture() const noexcept -> ObserverPtr<ID3D11Texture2D> {
+  return mColorTex.Get();
+}
+
+
+auto RenderTarget::GetDepthStencilTexture() const noexcept -> ObserverPtr<ID3D11Texture2D> {
+  return mDepthStencilTex.Get();
 }
 
 
@@ -295,12 +357,17 @@ auto RenderTarget::GetStencilSrv() const noexcept -> ID3D11ShaderResourceView* {
 }
 
 
-auto RenderTarget::GetColorTexture() const noexcept -> ObserverPtr<ID3D11Texture2D> {
-  return mColorTex.Get();
+auto RenderTarget::GetColorUav() const noexcept -> ObserverPtr<ID3D11UnorderedAccessView> {
+  return mColorUav.Get();
 }
 
 
-auto RenderTarget::GetDepthStencilTexture() const noexcept -> ObserverPtr<ID3D11Texture2D> {
-  return mDepthStencilTex.Get();
+auto RenderTarget::GetDepthUav() const noexcept -> ObserverPtr<ID3D11UnorderedAccessView> {
+  return mDepthUav.Get();
+}
+
+
+auto RenderTarget::GetStencilUav() const noexcept -> ObserverPtr<ID3D11UnorderedAccessView> {
+  return mStencilUav.Get();
 }
 }
