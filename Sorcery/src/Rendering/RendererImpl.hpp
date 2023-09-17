@@ -57,6 +57,8 @@ class Renderer::Impl {
   Microsoft::WRL::ComPtr<ID3D11VertexShader> mScreenVs;
   Microsoft::WRL::ComPtr<ID3D11VertexShader> mSkyboxVs;
 
+  Microsoft::WRL::ComPtr<ID3D11ComputeShader> mDepthResolveCs;
+
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPerFrameCb;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPerViewCb;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPerDrawCb;
@@ -120,7 +122,7 @@ class Renderer::Impl {
   float mShadowDistance{100};
   bool mVisualizeShadowCascades{false};
   ShadowFilteringMode mShadowFilteringMode{ShadowFilteringMode::PCFTent5x5};
-  MultisamplingMode mMsaaMode{MultisamplingMode::Off};
+  MultisamplingMode mMsaaMode{MultisamplingMode::X8};
   int mSyncInterval{0};
   float mInvGamma{1.f / 2.2f};
   int mInFlightFrameCount{2};

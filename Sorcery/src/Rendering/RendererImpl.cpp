@@ -14,6 +14,7 @@
 #include "shaders/generated/DepthNormalVSBinDebug.h"
 #include "shaders/generated/DepthOnlyPSBinDebug.h"
 #include "shaders/generated/DepthOnlyVSBinDebug.h"
+#include "shaders/generated/gDepthResolveCSBinDebug.h"
 #include "shaders/generated/GizmoPSBinDebug.h"
 #include "shaders/generated/LineGizmoVSBinDebug.h"
 #include "shaders/generated/MeshPbrPSBinDebug.h"
@@ -30,6 +31,7 @@
 #include "shaders/generated/DepthNormalVSBin.h"
 #include "shaders/generated/DepthOnlyPSBin.h"
 #include "shaders/generated/DepthOnlyVSBin.h"
+#include "shaders/generated/gDepthResolveCSBin.h"
 #include "shaders/generated/GizmoPSBin.h"
 #include "shaders/generated/LineGizmoVSBin.h"
 #include "shaders/generated/MeshPbrPSBin.h"
@@ -693,7 +695,7 @@ auto Renderer::Impl::RecreateSsaoSamples(int const sampleCount) noexcept -> void
   auto const ssaoSamples{mSsaoSamplesBuffer->Map(ctx)};
 
   std::uniform_real_distribution dist{0.0f, 1.0f};
-  std::default_random_engine gen;
+  std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
 
   for (auto i{0}; i < sampleCount; i++) {
     Vector3 sample{dist(gen) * 2 - 1, dist(gen) * 2 - 1, dist(gen)};
@@ -939,6 +941,10 @@ auto Renderer::Impl::StartUp() -> void {
   char constexpr ssaoBlurPsName[]{"SSAO Blur Pixel Shader"};
   hr = mSsaoBlurPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(ssaoBlurPsName), ssaoBlurPsName);
   assert(SUCCEEDED(hr));
+
+  hr = mDevice->CreateComputeShader(gDepthResolveCSBin, ARRAYSIZE(gDepthResolveCSBin), nullptr, mDepthResolveCs.GetAddressOf());
+  assert(SUCCEEDED(hr));
+  SetDebugName(mDepthResolveCs.Get(), "Depth Resolve Compute Shader");
 
   // CREATE CONSTANT BUFFERS
 
@@ -1447,7 +1453,7 @@ auto Renderer::Impl::StartUp() -> void {
 
   std::vector<Vector4> ssaoNoise;
   std::uniform_real_distribution dist{0.0f, 1.0f};
-  std::default_random_engine gen;
+  std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
 
   for (auto i{0}; i < SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM; i++) {
     ssaoNoise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
@@ -1573,7 +1579,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->PSSetSamplers(SAMPLER_SLOT_BI, 1, mBilinearSs.GetAddressOf());
   ctx->PSSetSamplers(SAMPLER_SLOT_POINT, 1, mPointSs.GetAddressOf());
 
-  SetPerFrameConstants(ctx, rtWidth, rtHeight);
+  SetPerFrameConstants(ctx, static_cast<int>(rtWidth), static_cast<int>(rtHeight));
   ctx->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
   ctx->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
 
@@ -1626,8 +1632,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
       .colorFormat = DXGI_FORMAT_R8G8B8A8_SNORM,
       .depthBufferBitCount = 0,
       .stencilBufferBitCount = 0,
-      .sampleCount = static_cast<int>(GetMultisamplingMode()),
-      .debugName = "Camera Normal RenderTarget"
+      .sampleCount = 1,
+      .debugName = "Camera Normal RT"
     })
   };
 
@@ -1635,7 +1641,20 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   if (mDepthNormalPrePassEnabled) {
     annot->BeginEvent(L"Depth-Normal Pre-Pass");
 
-    ctx->OMSetRenderTargets(1, std::array{normalRt.GetRtv()}.data(), hdrRt.GetDsv());
+    // If MSAA is enabled we render into an MSAA RT and then resolve into normalRt
+    auto const& actualNormalRt{
+      [this, &normalRt]() -> auto const& {
+        if (GetMultisamplingMode() == MultisamplingMode::Off) {
+          return normalRt;
+        }
+
+        auto actualNormalRtDesc{normalRt.GetDesc()};
+        actualNormalRtDesc.sampleCount = static_cast<int>(GetMultisamplingMode());
+        return GetTemporaryRenderTarget(actualNormalRtDesc);
+      }()
+    };
+
+    ctx->OMSetRenderTargets(1, std::array{actualNormalRt.GetRtv()}.data(), hdrRt.GetDsv());
     ctx->OMSetDepthStencilState([this] {
       if constexpr (Graphics::IsUsingReversedZ()) {
         return mDepthTestGreaterWriteDss.Get();
@@ -1654,8 +1673,13 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
     ctx->IASetInputLayout(mAllAttribsIl.Get());
 
-    ctx->ClearRenderTargetView(normalRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
+    ctx->ClearRenderTargetView(actualNormalRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
     DrawMeshes(visibility.staticMeshIndices, ctx);
+
+    // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
+    if (GetMultisamplingMode() != MultisamplingMode::Off) {
+      ctx->ResolveSubresource(normalRt.GetColorTexture(), 0, actualNormalRt.GetColorTexture(), 0, *normalRt.GetDesc().colorFormat);
+    }
 
     annot->EndEvent();
   }
@@ -1693,10 +1717,54 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
       })
     };
 
+    // If MSAA is enabled we have to resolve the depth texture before running SSAO
+    auto const ssaoDepthSrv{
+      [this, &hdrRt, ctx] {
+        if (GetMultisamplingMode() == MultisamplingMode::Off) {
+          return hdrRt.GetDepthSrv();
+        }
+
+        auto ssaoDepthRtDesc{hdrRt.GetDesc()};
+        ssaoDepthRtDesc.colorFormat = [&ssaoDepthRtDesc] {
+          // NOTE: 24 bit formats are not supported for UAVs!
+          assert(ssaoDepthRtDesc.depthBufferBitCount == 32 || ssaoDepthRtDesc.depthBufferBitCount == 16);
+
+          if (ssaoDepthRtDesc.depthBufferBitCount == 32) {
+            return DXGI_FORMAT_R32_FLOAT;
+          }
+
+          if (ssaoDepthRtDesc.depthBufferBitCount == 16) {
+            return DXGI_FORMAT_R16_FLOAT;
+          }
+
+          return DXGI_FORMAT_UNKNOWN; // This should never be reached.
+        }();
+        ssaoDepthRtDesc.sampleCount = 1;
+        ssaoDepthRtDesc.depthBufferBitCount = 0;
+        ssaoDepthRtDesc.stencilBufferBitCount = 0;
+        ssaoDepthRtDesc.enableUnorderedAccess = true;
+        auto const& ssaoDepthRt{GetTemporaryRenderTarget(ssaoDepthRtDesc)};
+
+        ctx->OMSetRenderTargets(1, std::array{static_cast<ID3D11RenderTargetView*>(nullptr)}.data(), nullptr);
+
+        ctx->CSSetUnorderedAccessViews(UAV_SLOT_DEPTH_RESOLVE_OUTPUT, 1, std::array{ssaoDepthRt.GetColorUav()}.data(), nullptr);
+        ctx->CSSetShaderResources(RES_SLOT_DEPTH_RESOLVE_INPUT, 1, std::array{hdrRt.GetDepthSrv()}.data());
+        ctx->CSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
+        ctx->CSSetShader(mDepthResolveCs.Get(), nullptr, 0);
+
+        ctx->Dispatch(static_cast<UINT>(std::ceil(static_cast<float>(ssaoDepthRtDesc.width) / DEPTH_RESOLVE_CS_THREADS_X)), static_cast<UINT>(std::ceil(static_cast<float>(ssaoDepthRtDesc.height) / DEPTH_RESOLVE_CS_THREADS_Y)), static_cast<UINT>(std::ceil(1.0f / DEPTH_RESOLVE_CS_THREADS_Z)));
+
+        ctx->CSSetUnorderedAccessViews(UAV_SLOT_DEPTH_RESOLVE_OUTPUT, 1, std::array{static_cast<ID3D11UnorderedAccessView*>(nullptr)}.data(), nullptr);
+        ctx->CSSetShaderResources(RES_SLOT_DEPTH_RESOLVE_INPUT, 1, std::array{static_cast<ID3D11ShaderResourceView*>(nullptr)}.data());
+
+        return ssaoDepthRt.GetColorSrv();
+      }()
+    };
+
     ctx->OMSetRenderTargets(1, std::array{ssaoRt.GetRtv()}.data(), nullptr);
 
     ctx->PSSetShader(mSsaoPs.Get(), nullptr, 0);
-    ctx->PSSetShaderResources(RES_SLOT_SSAO_DEPTH, 1, std::array{hdrRt.GetDepthSrv()}.data());
+    ctx->PSSetShaderResources(RES_SLOT_SSAO_DEPTH, 1, std::addressof(ssaoDepthSrv));
     ctx->PSSetShaderResources(RES_SLOT_SSAO_NORMAL, 1, std::array{normalRt.GetColorSrv()}.data());
     ctx->PSSetShaderResources(RES_SLOT_SSAO_NOISE, 1, mSsaoNoiseSrv.GetAddressOf());
     ctx->PSSetShaderResources(RES_SLOT_SSAO_SAMPLES, 1, std::array{mSsaoSamplesBuffer->GetSrv()}.data());
@@ -2001,11 +2069,6 @@ auto Renderer::Impl::GetMultisamplingMode() const noexcept -> MultisamplingMode 
 
 auto Renderer::Impl::SetMultisamplingMode(MultisamplingMode const mode) noexcept -> void {
   mMsaaMode = mode;
-
-  // TODO temporary solution until I figure out how to combine SSAO and MSAA
-  if (mode != MultisamplingMode::Off && IsSsaoEnabled()) {
-    SetSsaoEnabled(false);
-  }
 }
 
 
@@ -2107,11 +2170,6 @@ auto Renderer::Impl::SetSsaoEnabled(bool const enabled) noexcept -> void {
 
   if (enabled && !IsDepthNormalPrePassEnabled()) {
     SetDepthNormalPrePassEnabled(true);
-  }
-
-  // TODO temporary solution until I figure out how to combine SSAO and MSAA
-  if (enabled && GetMultisamplingMode() != MultisamplingMode::Off) {
-    SetMultisamplingMode(MultisamplingMode::Off);
   }
 }
 
