@@ -210,6 +210,8 @@ auto Application::SetGuiDarkMode(bool const darkMode) noexcept -> void {
   style.ScrollbarRounding = 4;
   style.TabRounding = 4;
   style.WindowRounding = 4;
+
+  gWindow.UseImmersiveDarkMode(darkMode);
   mIsInDarkMode = darkMode;
 }
 
