@@ -205,32 +205,32 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
   float3 albedo = material.albedo;
 
   if (material.sampleAlbedo) {
-      albedo *= gAlbedoMap.Sample(gSamplerAf16Clamp, vsOut.uv).rgb;
+      albedo *= gAlbedoMap.Sample(gSamplerAf16Wrap, vsOut.uv).rgb;
   }
 
   float metallic = material.metallic;
 
   if (material.sampleMetallic) {
-      metallic *= gMetallicMap.Sample(gSamplerAf16Clamp, vsOut.uv).r;
+      metallic *= gMetallicMap.Sample(gSamplerAf16Wrap, vsOut.uv).r;
   }
 
   float roughness = material.roughness;
 
   if (material.sampleRoughness) {
-      roughness *= gRoughnessMap.Sample(gSamplerAf16Clamp, vsOut.uv).r;
+      roughness *= gRoughnessMap.Sample(gSamplerAf16Wrap, vsOut.uv).r;
   }
 
   const float2 screenUv = vsOut.positionCS.xy / gPerFrameConstants.screenSize;
   float ao = material.ao * gSsaoTex.Sample(gSamplerPointClamp, screenUv).r;
 
   if (material.sampleAo) {
-      ao *= gAoMap.Sample(gSamplerAf16Clamp, vsOut.uv).r;
+      ao *= gAoMap.Sample(gSamplerAf16Wrap, vsOut.uv).r;
   }
 
   float3 N = normalize(vsOut.normalWS);
 
   if (material.sampleNormal) {
-      N = gNormalMap.Sample(gSamplerAf16Clamp, vsOut.uv).rgb;
+      N = gNormalMap.Sample(gSamplerAf16Wrap, vsOut.uv).rgb;
       N *= 2.0;
       N -= 1.0;
       N = normalize(mul(normalize(N), vsOut.tbnMtxWS));
