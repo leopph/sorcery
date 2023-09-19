@@ -88,8 +88,9 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     unsigned mtlIdx{};
   };
 
-  std::vector<MeshProcessingData> meshes;
-  meshes.reserve(scene->mNumMeshes);
+  // Collected mesh data not yet transformed by node matrices
+  std::vector<MeshProcessingData> meshesUntransformed;
+  meshesUntransformed.reserve(scene->mNumMeshes);
 
   for (unsigned i = 0; i < scene->mNumMeshes; i++) {
     // These meshes are always triangle-only, because
@@ -99,7 +100,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     // TODO Implement non-triangle rendering support
 
     aiMesh const* const mesh{scene->mMeshes[i]};
-    auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshes.emplace_back()};
+    auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshesUntransformed.emplace_back()};
 
     vertices.reserve(mesh->mNumVertices);
     normals.reserve(mesh->mNumVertices);
@@ -153,8 +154,11 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Transform mesh geometry using trafos
 
+  // Collected mesh data transformed by node matrices
+  std::vector<MeshProcessingData> meshesTransformed;
+
   for (auto const& [trafo, meshIdx] : meshIndicesWithTrafos) {
-    auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshes[meshIdx]};
+    auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshesTransformed.emplace_back(meshesUntransformed[meshIdx])};
 
     Matrix4 const trafoInvTransp{trafo.Inverse().Transpose()};
 
@@ -167,10 +171,10 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Store geometry data and create submeshes
 
-  meshData.subMeshes.reserve(std::size(meshes));
+  meshData.subMeshes.reserve(std::size(meshesTransformed));
   meshData.indices.emplace<std::vector<std::uint32_t>>();
 
-  for (auto const& [vertices, normals, uvs, tangents, indices, mtlIdx] : meshes) {
+  for (auto const& [vertices, normals, uvs, tangents, indices, mtlIdx] : meshesTransformed) {
     meshData.subMeshes.emplace_back(static_cast<int>(std::ssize(meshData.positions)), std::visit([]<typename T>(std::vector<T> const& indices) { return static_cast<int>(std::ssize(indices)); }, meshData.indices), static_cast<int>(std::ssize(indices)), static_cast<int>(mtlIdx), AABB{});
 
     std::ranges::copy(vertices, std::back_inserter(meshData.positions));
