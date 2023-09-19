@@ -71,9 +71,6 @@ Some screenshots from Sorcery's editor, Mage!
 * Audio playback
 * Possibly more things
 
-## History and Direction
-Sorcery has gone through many iterations over the years. Originally it was called LeopphEngine (pronounced "lœff", from my last name) and was only a simple C++ library running on top of OpenGL that you could link against and use kinda like you would a three.js, just in C++. The current direction is to make it a minimum viable but complete game engine.
-
 ## Used technologies and third-party libraries
 Non-exhaustive list of core components:
 - Win32 for window and event handling
@@ -81,16 +78,17 @@ Non-exhaustive list of core components:
 - RTTR for runtime reflection
 - Dear ImGui for tool interfaces
 - Assimp for model asset importing
-- DirectX Tool Kit and DirectXTex for texture preprocessing
+- DirectXTex for texture preprocessing
 
 ## Building and Usage
 ### Build requirements
-- Windows SDK 10.0.14393.795 or newer
+- Windows SDK 10.0.22000 or newer
 - MSBuild
 - MSVC v143 toolset
 ### Runtime requirements
-- Windows 10, version 1607 or newer, 64-bit
+- Windows 11
 - Feature level 11_0 capable GPU
+- AVX2 capable CPU
 ### Building
 - Run **setup.bat** from the root directory
 - Build the solution in the root directory
