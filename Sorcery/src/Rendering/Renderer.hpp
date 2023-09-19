@@ -97,6 +97,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto IsDepthNormalPrePassEnabled() const noexcept -> bool;
   LEOPPHAPI auto SetDepthNormalPrePassEnabled(bool enabled) noexcept -> void;
 
+  LEOPPHAPI [[nodiscard]] auto IsUsingPreciseColorFormat() const noexcept -> bool;
+  LEOPPHAPI auto SetUsePreciseColorFormat(bool value) noexcept -> void;
+
   // SHADOWS
 
   [[nodiscard]] LEOPPHAPI auto GetShadowDistance() const noexcept -> float;

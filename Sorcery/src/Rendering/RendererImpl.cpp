@@ -1676,7 +1676,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   RenderTarget::Desc const hdrRtDesc{
     .width = rtWidth,
     .height = rtHeight,
-    .colorFormat = DXGI_FORMAT_R11G11B10_FLOAT,
+    .colorFormat = mUsePreciseColorBuffer ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R11G11B10_FLOAT,
     .depthBufferBitCount = 32,
     .stencilBufferBitCount = 0,
     .sampleCount = static_cast<int>(GetMultisamplingMode()),
@@ -2219,6 +2219,16 @@ auto Renderer::Impl::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -
   if (!enabled && IsSsaoEnabled()) {
     SetSsaoEnabled(false);
   }
+}
+
+
+auto Renderer::Impl::IsUsingPreciseColorFormat() const noexcept -> bool {
+  return mUsePreciseColorBuffer;
+}
+
+
+auto Renderer::Impl::SetUsePreciseColorFormat(bool const value) noexcept -> void {
+  mUsePreciseColorBuffer = value;
 }
 
 

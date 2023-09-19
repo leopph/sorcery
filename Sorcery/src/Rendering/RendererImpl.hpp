@@ -142,6 +142,7 @@ class Renderer::Impl {
     .sampleCount = 12
   };
   bool mSsaoEnabled{true};
+  bool mUsePreciseColorBuffer{true};
 
   std::unordered_map<std::thread::id, Microsoft::WRL::ComPtr<ID3D11DeviceContext>> mPerThreadCtx;
 
@@ -235,6 +236,9 @@ public:
 
   [[nodiscard]] auto IsDepthNormalPrePassEnabled() const noexcept -> bool;
   auto SetDepthNormalPrePassEnabled(bool enabled) noexcept -> void;
+
+  [[nodiscard]] auto IsUsingPreciseColorFormat() const noexcept -> bool;
+  auto SetUsePreciseColorFormat(bool value) noexcept -> void;
 
   // SHADOWS
 

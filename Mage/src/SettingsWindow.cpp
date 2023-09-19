@@ -58,8 +58,8 @@ auto SettingsWindow::Draw() -> void {
   }
 
   if (ImGui::TreeNode("Rendering")) {
-    if (auto gamma{gRenderer.GetGamma()}; ImGui::DragFloat("Gamma", &gamma, 0.01f, 0.01f, 5.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
-      gRenderer.SetGamma(gamma);
+    if (auto preciseColor{gRenderer.IsUsingPreciseColorFormat()}; ImGui::Checkbox("Use Precise Color Buffer Format", &preciseColor)) {
+      gRenderer.SetUsePreciseColorFormat(preciseColor);
     }
 
     constexpr char const* msaaComboLabels[]{"Off", "2x", "4x", "8x"};
@@ -73,6 +73,10 @@ auto SettingsWindow::Draw() -> void {
       }
 
       ImGui::EndCombo();
+    }
+
+    if (auto gamma{gRenderer.GetGamma()}; ImGui::DragFloat("Gamma", &gamma, 0.01f, 0.01f, 5.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+      gRenderer.SetGamma(gamma);
     }
 
     if (auto depthPrePassEnabled{gRenderer.IsDepthNormalPrePassEnabled()}; ImGui::Checkbox("Depth-Normal Pre-Pass", &depthPrePassEnabled)) {

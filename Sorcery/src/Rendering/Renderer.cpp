@@ -158,6 +158,18 @@ auto Renderer::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -> void
 }
 
 
+auto Renderer::IsUsingPreciseColorFormat() const noexcept -> bool {
+  assert(mImpl);
+  return mImpl->IsUsingPreciseColorFormat();
+}
+
+
+auto Renderer::SetUsePreciseColorFormat(bool const value) noexcept -> void {
+  assert(mImpl);
+  mImpl->SetUsePreciseColorFormat(value);
+}
+
+
 auto Renderer::GetShadowDistance() const noexcept -> float {
   assert(mImpl);
   return mImpl->GetShadowDistance();
