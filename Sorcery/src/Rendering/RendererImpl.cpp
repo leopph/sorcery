@@ -1677,7 +1677,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     .width = rtWidth,
     .height = rtHeight,
     .colorFormat = DXGI_FORMAT_R11G11B10_FLOAT,
-    .depthBufferBitCount = 16,
+    .depthBufferBitCount = 32,
     .stencilBufferBitCount = 0,
     .sampleCount = static_cast<int>(GetMultisamplingMode()),
     .debugName = "Camera HDR RenderTarget"
