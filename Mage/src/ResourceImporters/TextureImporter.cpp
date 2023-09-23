@@ -25,6 +25,40 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
+namespace {
+[[nodiscard]] auto CompressTexture(DirectX::ScratchImage const& src, bool const isSrgb, DirectX::ScratchImage& out) noexcept -> bool {
+  DXGI_FORMAT compressionFormat;
+
+  auto const getFormatChannelCount{
+    [](DXGI_FORMAT const format) {
+      return DirectX::BitsPerPixel(format) / DirectX::BitsPerColor(format);
+    }
+  };
+
+  if (DirectX::FormatDataType(src.GetMetadata().format) == DirectX::FORMAT_TYPE_FLOAT) {
+    compressionFormat = DXGI_FORMAT_BC6H_UF16;
+  } else if (auto const channelCount{getFormatChannelCount(src.GetMetadata().format)}; channelCount == 1) {
+    compressionFormat = DXGI_FORMAT_BC4_UNORM;
+  } else if (channelCount == 2) {
+    compressionFormat = DXGI_FORMAT_BC5_UNORM;
+  } else if (channelCount == 4) {
+    compressionFormat = src.IsAlphaAllOpaque() ? DXGI_FORMAT_BC1_UNORM : DXGI_FORMAT_BC3_UNORM;
+  } else {
+    return false;
+  }
+
+  DirectX::ScratchImage compressed;
+
+  if (FAILED(Compress(src.GetImages(), src.GetImageCount(), src.GetMetadata(), compressionFormat, DirectX::TEX_COMPRESS_PARALLEL | (isSrgb ? DirectX::TEX_COMPRESS_SRGB : DirectX::TEX_COMPRESS_DEFAULT), DirectX::TEX_THRESHOLD_DEFAULT, compressed))) {
+    return false;
+  }
+
+  out = std::move(compressed);
+  return true;
+}
+}
+
+
 auto TextureImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
   out.emplace_back(DDS_FILE_EXT);
   out.emplace_back(HDR_FILE_EXT);
@@ -48,6 +82,8 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
 
   DirectX::ScratchImage img;
 
+  // Parse image file bytes
+
   HRESULT hr;
 
   if (src.extension() == ".dds") {
@@ -57,9 +93,9 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
   } else if (src.extension() == ".tga") {
     hr = LoadFromTGAMemory(fileBytes.data(), fileBytes.size(), nullptr, img);
   } else if (std::ranges::any_of(std::array{".bmp", ".png", ".gif", ".tiff", ".jpeg", ".jpg"},
-                                 [&src](char const* const ext) {
-                                   return src.extension() == ext;
-                                 })) {
+    [&src](char const* const ext) {
+      return src.extension() == ext;
+    })) {
     hr = LoadFromWICMemory(fileBytes.data(), fileBytes.size(), DirectX::WIC_FLAGS_NONE, nullptr, img);
   } else {
     return false;
@@ -69,148 +105,90 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
     return false;
   }
 
-  DirectX::ScratchImage finalImg;
+  // Extract first 2D image if necessary
+  if (mTexType == TextureType::Texture2D && (img.GetMetadata().IsCubemap() || img.GetMetadata().arraySize != 1)) {
+    DirectX::ScratchImage extracted;
 
-  if (mTexType == TextureType::Texture2D) {
-    if (mGenerateMips) {
-      DirectX::ScratchImage mipChain;
-      if (FAILED(GenerateMipMaps(*img.GetImage(0, 0, 0), DirectX::TEX_FILTER_DEFAULT, 0, mipChain))) {
-        return false;
-      }
-      img = std::move(mipChain);
-    }
-
-    if (mAllowBlockCompression && !DirectX::IsCompressed(img.GetMetadata().format)) {
-      DXGI_FORMAT compressionFormat;
-
-      if (auto const typelessFormat{DirectX::MakeTypeless(img.GetMetadata().format)}; typelessFormat ==
-                                                                                      DXGI_FORMAT_R8_TYPELESS) {
-        compressionFormat = DXGI_FORMAT_BC4_UNORM;
-      } else if (typelessFormat == DXGI_FORMAT_R8G8_TYPELESS) {
-        compressionFormat = DXGI_FORMAT_BC5_UNORM;
-      } else if (typelessFormat == DXGI_FORMAT_R8G8B8A8_TYPELESS || typelessFormat == DXGI_FORMAT_B8G8R8A8_TYPELESS) {
-        compressionFormat = img.IsAlphaAllOpaque() ? DXGI_FORMAT_BC1_UNORM : DXGI_FORMAT_BC3_UNORM;
-        if (DirectX::IsSRGB(img.GetMetadata().format)) {
-          compressionFormat = DirectX::MakeSRGB(compressionFormat);
-        }
-      } else if (DirectX::FormatDataType(img.GetMetadata().format) == DirectX::FORMAT_TYPE_FLOAT) {
-        compressionFormat = DXGI_FORMAT_BC6H_UF16;
-      } else {
-        return false;
-      }
-
-      DirectX::ScratchImage compressed;
-      if (FAILED(
-        Compress(img.GetImages(), img.GetImageCount(), img.GetMetadata(), compressionFormat, DirectX::
-          TEX_COMPRESS_PARALLEL, DirectX::TEX_THRESHOLD_DEFAULT, compressed))) {
-        return false;
-      }
-      img = std::move(compressed);
-    }
-
-    img.OverrideFormat(mIsSrgb
-                         ? DirectX::MakeSRGB(img.GetMetadata().format)
-                         : DirectX::MakeLinear(img.GetMetadata().format));
-
-    DirectX::Blob blob;
-
-    if (FAILED(SaveToDDSMemory(img.GetImages(), img.GetImageCount(), img.GetMetadata(), DirectX::DDS_FLAGS_NONE, blob))) {
+    if (FAILED(extracted.InitializeFromImage(*img.GetImage(0, 0, 0)))) {
       return false;
     }
 
-    bytes.reserve(std::size(bytes) + blob.GetBufferSize());
-    std::ranges::copy(std::span{static_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()}, std::back_inserter(bytes));
-    categ = ExternalResourceCategory::Texture;
-    return true;
+    img = std::move(extracted);
   }
 
-  if (mTexType == TextureType::Cubemap) {
-    auto const meta{img.GetMetadata()};
+  // Assemble cubemap is necessary
+  if (mTexType == TextureType::Cubemap && !img.GetMetadata().IsCubemap()) {
+    if (auto const meta{img.GetMetadata()}; !meta.IsCubemap()) {
+      if (img.GetImageCount() == 1 && meta.mipLevels == 1 && meta.arraySize == 1 && meta.depth == 1) {
+        if (meta.width == 6 * meta.height) {
+          // TODO
+          return false;
+        }
 
-    if (meta.IsCubemap()) {
-      // TODO
-      return false;
-    }
+        if (6 * meta.width == meta.height) {
+          std::array<DirectX::Image, 6> faceImgs;
 
-    if (img.GetImageCount() == 1 && meta.mipLevels == 1 && meta.arraySize == 1 && meta.depth == 1) {
-      if (meta.width == 6 * meta.height) {
+          for (auto i{0}; i < 6; i++) {
+            faceImgs[i].width = meta.width;
+            faceImgs[i].height = meta.height / 6;
+            faceImgs[i].format = meta.format;
+            faceImgs[i].rowPitch = img.GetImage(0, 0, 0)->rowPitch;
+            faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
+            faceImgs[i].pixels = &img.GetPixels()[i * faceImgs[i].height * faceImgs[i].rowPitch];
+          }
+
+          DirectX::ScratchImage cube;
+
+          if (FAILED(cube.InitializeCubeFromImages(faceImgs.data(), 6))) {
+            return false;
+          }
+
+          img = std::move(cube);
+        }
+      } else {
         // TODO
         return false;
       }
-
-      if (6 * meta.width == meta.height) {
-        std::array<DirectX::Image, 6> faceImgs;
-
-        for (auto i{0}; i < 6; i++) {
-          faceImgs[i].width = meta.width;
-          faceImgs[i].height = meta.height / 6;
-          faceImgs[i].format = meta.format;
-          faceImgs[i].rowPitch = img.GetImage(0, 0, 0)->rowPitch;
-          faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
-          faceImgs[i].pixels = &img.GetPixels()[i * faceImgs[i].height * faceImgs[i].rowPitch];
-        }
-
-        DirectX::ScratchImage cube;
-
-        if (FAILED(cube.InitializeCubeFromImages(faceImgs.data(), 6))) {
-          return false;
-        }
-
-        cube.OverrideFormat(mIsSrgb
-                              ? DirectX::MakeSRGB(cube.GetMetadata().format)
-                              : DirectX::MakeLinear(cube.GetMetadata().format));
-
-        if (mGenerateMips) {
-          DirectX::ScratchImage mipChain;
-          if (FAILED(DirectX::GenerateMipMaps(cube.GetImages(), cube.GetImageCount(), cube.GetMetadata(), DirectX::TEX_FILTER_DEFAULT, 0, mipChain))) {
-            return false;
-          }
-          cube = std::move(mipChain);
-        }
-
-        if (mAllowBlockCompression && !DirectX::IsCompressed(cube.GetMetadata().format)) {
-          DXGI_FORMAT compressionFormat;
-
-          if (auto const typelessFormat{DirectX::MakeTypeless(cube.GetMetadata().format)}; typelessFormat ==
-                                                                                           DXGI_FORMAT_R8_TYPELESS) {
-            compressionFormat = DXGI_FORMAT_BC4_UNORM;
-          } else if (typelessFormat == DXGI_FORMAT_R8G8_TYPELESS) {
-            compressionFormat = DXGI_FORMAT_BC5_UNORM;
-          } else if (typelessFormat == DXGI_FORMAT_R8G8B8A8_TYPELESS || typelessFormat == DXGI_FORMAT_B8G8R8A8_TYPELESS) {
-            compressionFormat = cube.IsAlphaAllOpaque() ? DXGI_FORMAT_BC1_UNORM : DXGI_FORMAT_BC3_UNORM;
-            if (DirectX::IsSRGB(cube.GetMetadata().format)) {
-              compressionFormat = DirectX::MakeSRGB(compressionFormat);
-            }
-          } else if (DirectX::FormatDataType(cube.GetMetadata().format) == DirectX::FORMAT_TYPE_FLOAT) {
-            compressionFormat = DXGI_FORMAT_BC6H_UF16;
-          } else {
-            return false;
-          }
-
-          DirectX::ScratchImage compressed;
-          if (FAILED(
-            Compress(cube.GetImages(), cube.GetImageCount(), cube.GetMetadata(), compressionFormat, DirectX::
-              TEX_COMPRESS_PARALLEL, DirectX::TEX_THRESHOLD_DEFAULT, compressed))) {
-            return false;
-          }
-          cube = std::move(compressed);
-        }
-
-        DirectX::Blob blob;
-
-        if (FAILED(SaveToDDSMemory(cube.GetImages(), cube.GetImageCount(), cube.GetMetadata(), DirectX::DDS_FLAGS_NONE, blob))) {
-          return false;
-        }
-
-        bytes.reserve(std::size(bytes) + blob.GetBufferSize());
-        std::ranges::copy(std::span{static_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()}, std::back_inserter(bytes));
-        categ = ExternalResourceCategory::Texture;
-        return true;
-      }
     }
   }
 
-  return false;
+  // Generate cubemaps if necessary
+  if (mGenerateMips && img.GetMetadata().mipLevels == 1) {
+    DirectX::ScratchImage mipChain;
+
+    if (FAILED(GenerateMipMaps(img.GetImages(), img.GetImageCount(), img.GetMetadata(), DirectX::TEX_FILTER_DEFAULT, 0, mipChain))) {
+      return false;
+    }
+
+    img = std::move(mipChain);
+  }
+
+  // Compress if allowed
+  if (mAllowBlockCompression && !DirectX::IsCompressed(img.GetMetadata().format)) {
+    DirectX::ScratchImage compressed;
+
+    if (!CompressTexture(img, mIsSrgb, compressed)) {
+      return false;
+    }
+
+    img = std::move(compressed);
+  }
+
+  // Mark image as linear or sRGB based on user setting
+  img.OverrideFormat(mIsSrgb ? DirectX::MakeSRGB(img.GetMetadata().format) : DirectX::MakeLinear(img.GetMetadata().format));
+
+  // Save processed image
+
+  DirectX::Blob blob;
+
+  if (FAILED(SaveToDDSMemory(img.GetImages(), img.GetImageCount(), img.GetMetadata(), DirectX::DDS_FLAGS_NONE, blob))) {
+    return false;
+  }
+
+  bytes.reserve(std::size(bytes) + blob.GetBufferSize());
+  std::ranges::copy(std::span{static_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()}, std::back_inserter(bytes));
+  categ = ExternalResourceCategory::Texture;
+  return true;
 }
 
 
