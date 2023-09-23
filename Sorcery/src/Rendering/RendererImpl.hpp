@@ -190,7 +190,7 @@ class Renderer::Impl {
 
   static auto OnWindowSize(Impl* self, Extent2D<std::uint32_t> size) -> void;
 
-  static auto GenerateSphere(int radius, int latitudes, int longitudes, std::vector<Vector3>& vertices, std::vector<Vector3>& normals, std::vector<Vector2>& uvs, std::vector<std::uint32_t>& indices) -> void;
+  static auto GenerateSphere(float radius, int latitudes, int longitudes, std::vector<Vector3>& vertices, std::vector<Vector3>& normals, std::vector<Vector2>& uvs, std::vector<std::uint32_t>& indices) -> void;
 
 public:
   // LIFETIME FUNCTIONS

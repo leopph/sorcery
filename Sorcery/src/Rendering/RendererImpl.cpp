@@ -731,82 +731,57 @@ auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<std::uint32_t> cons
 }
 
 
-auto Renderer::Impl::GenerateSphere(int const radius, int latitudes, int longitudes, std::vector<Vector3>& vertices, std::vector<Vector3>& normals, std::vector<Vector2>& uvs, std::vector<std::uint32_t>& indices) -> void {
-  // Source: https://gist.github.com/Pikachuxxxx/5c4c490a7d7679824e0e18af42918efc
+auto Renderer::Impl::GenerateSphere(float const radius, int const latitudes, int const longitudes, std::vector<Vector3>& vertices, std::vector<Vector3>& normals, std::vector<Vector2>& uvs, std::vector<std::uint32_t>& indices) -> void {
+  // Based on: https://gist.github.com/Pikachuxxxx/5c4c490a7d7679824e0e18af42918efc
 
-  longitudes = std::max(longitudes, 3);
-  latitudes = std::max(latitudes, 3);
-  if (longitudes < 3)
-    longitudes = 3;
-  if (latitudes < 2)
-    latitudes = 2;
+  auto const deltaLatitude{PI / static_cast<float>(latitudes)};
+  auto const deltaLongitude{2 * PI / static_cast<float>(longitudes)};
 
-  float nx, ny, nz, lengthInv = 1.0f / radius; // normal
-  // Temporary vertex
-  struct Vertex {
-    float x, y, z, s, t; // Postion and Texcoords
-  };
+  for (int i = 0; i <= latitudes; i++) {
+    auto const latitudeAngle{PI / 2 - static_cast<float>(i) * deltaLatitude};
 
-  float deltaLatitude = PI / latitudes;
-  float deltaLongitude = 2 * PI / longitudes;
-  float latitudeAngle;
-  float longitudeAngle;
+    float const xz{radius * std::cos(latitudeAngle)};
+    float const y{radius * std::sin(latitudeAngle)};
 
-  // Compute all vertices first except normals
-  for (int i = 0; i <= latitudes; ++i) {
-    latitudeAngle = PI / 2 - i * deltaLatitude; /* Starting -pi/2 to pi/2 */
-    float xy = radius * cosf(latitudeAngle); /* r * cos(phi) */
-    float z = radius * sinf(latitudeAngle); /* r * sin(phi )*/
-
-    /*
-     * We add (latitudes + 1) vertices per longitude because of equator,
+    /* We add (latitudes + 1) vertices per longitude because of equator,
      * the North pole and South pole are not counted here, as they overlap.
      * The first and last vertices have same position and normal, but
-     * different tex coords.
-     */
-    for (int j = 0; j <= longitudes; ++j) {
-      longitudeAngle = j * deltaLongitude;
+     * different tex coords. */
+    for (int j = 0; j <= longitudes; j++) {
+      auto const longitudeAngle{static_cast<float>(j) * deltaLongitude};
 
-      Vertex vertex;
-      vertex.x = xy * cosf(longitudeAngle); /* x = r * cos(phi) * cos(theta)  */
-      vertex.y = xy * sinf(longitudeAngle); /* y = r * cos(phi) * sin(theta) */
-      vertex.z = z; /* z = r * sin(phi) */
-      vertex.s = (float)j / longitudes; /* s */
-      vertex.t = (float)i / latitudes; /* t */
-      vertices.emplace_back(vertex.x, vertex.y, vertex.z);
-      uvs.emplace_back(vertex.s, vertex.t);
-
-      // normalized vertex normal
-      nx = vertex.x * lengthInv;
-      ny = vertex.y * lengthInv;
-      nz = vertex.z * lengthInv;
-      normals.emplace_back(nx, ny, nz);
+      auto const x{xz * std::cos(longitudeAngle)};
+      auto const z{xz * std::sin(longitudeAngle)};
+      auto const u{static_cast<float>(j) / static_cast<float>(longitudes)};
+      auto const v{static_cast<float>(i) / static_cast<float>(latitudes)};
+      vertices.emplace_back(x, y, z);
+      uvs.emplace_back(u, v);
+      normals.emplace_back(x / radius, y / radius, z / radius);
     }
   }
 
-  /*
-   *  Indices
+
+  /*  Indices
    *  k1--k1+1
    *  |  / |
    *  | /  |
-   *  k2--k2+1
-   */
-  unsigned int k1, k2;
+   *  k2--k2+1 */
   for (int i = 0; i < latitudes; ++i) {
-    k1 = i * (longitudes + 1);
-    k2 = k1 + longitudes + 1;
+    unsigned int v1 = i * (longitudes + 1);
+    unsigned int v2 = v1 + longitudes + 1;
+
     // 2 Triangles per latitude block excluding the first and last longitudes blocks
-    for (int j = 0; j < longitudes; ++j, ++k1, ++k2) {
+    for (int j = 0; j < longitudes; j++, v1++, v2++) {
       if (i != 0) {
-        indices.push_back(k1);
-        indices.push_back(k2);
-        indices.push_back(k1 + 1);
+        indices.push_back(v1);
+        indices.push_back(v1 + 1);
+        indices.push_back(v2);
       }
 
-      if (i != (latitudes - 1)) {
-        indices.push_back(k1 + 1);
-        indices.push_back(k2);
-        indices.push_back(k2 + 1);
+      if (i != latitudes - 1) {
+        indices.push_back(v1 + 1);
+        indices.push_back(v2 + 1);
+        indices.push_back(v2);
       }
     }
   }
