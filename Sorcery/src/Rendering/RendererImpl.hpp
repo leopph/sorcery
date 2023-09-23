@@ -34,6 +34,7 @@ class Renderer::Impl {
   inline static Guid const DEFAULT_MATERIAL_GUID{1, 0};
   inline static Guid const CUBE_MESH_GUID{2, 0};
   inline static Guid const PLANE_MESH_GUID{3, 0};
+  inline static Guid const SPHERE_MESH_GUID{4, 0};
   constexpr static Vector3 DEFAULT_AMBIENT_LIGHT_COLOR{20.0f / 255.0f};
 
   Microsoft::WRL::ComPtr<ID3D11Device> mDevice;
@@ -105,6 +106,7 @@ class Renderer::Impl {
   ObserverPtr<Material> mDefaultMaterial{nullptr};
   ObserverPtr<Mesh> mCubeMesh{nullptr};
   ObserverPtr<Mesh> mPlaneMesh{nullptr};
+  ObserverPtr<Mesh> mSphereMesh{nullptr};
 
   //std::unique_ptr<DirectionalShadowAtlas> mDirectionalShadowAtlas;
   std::unique_ptr<DirectionalShadowMapArray> mDirShadowMapArr;
@@ -188,6 +190,8 @@ class Renderer::Impl {
 
   static auto OnWindowSize(Impl* self, Extent2D<std::uint32_t> size) -> void;
 
+  static auto GenerateSphere(int radius, int latitudes, int longitudes, std::vector<Vector3>& vertices, std::vector<Vector3>& normals, std::vector<Vector2>& uvs, std::vector<std::uint32_t>& indices) -> void;
+
 public:
   // LIFETIME FUNCTIONS
 
@@ -222,6 +226,7 @@ public:
   [[nodiscard]] auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
   [[nodiscard]] auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
   [[nodiscard]] auto GetPlaneMesh() const noexcept -> ObserverPtr<Mesh>;
+  [[nodiscard]] auto GetSphereMesh() const noexcept -> ObserverPtr<Mesh>;
 
   // RENDER STATE CONFIGURATION
 

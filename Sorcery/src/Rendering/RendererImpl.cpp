@@ -731,6 +731,88 @@ auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<std::uint32_t> cons
 }
 
 
+auto Renderer::Impl::GenerateSphere(int const radius, int latitudes, int longitudes, std::vector<Vector3>& vertices, std::vector<Vector3>& normals, std::vector<Vector2>& uvs, std::vector<std::uint32_t>& indices) -> void {
+  // Source: https://gist.github.com/Pikachuxxxx/5c4c490a7d7679824e0e18af42918efc
+
+  longitudes = std::max(longitudes, 3);
+  latitudes = std::max(latitudes, 3);
+  if (longitudes < 3)
+    longitudes = 3;
+  if (latitudes < 2)
+    latitudes = 2;
+
+  float nx, ny, nz, lengthInv = 1.0f / radius; // normal
+  // Temporary vertex
+  struct Vertex {
+    float x, y, z, s, t; // Postion and Texcoords
+  };
+
+  float deltaLatitude = PI / latitudes;
+  float deltaLongitude = 2 * PI / longitudes;
+  float latitudeAngle;
+  float longitudeAngle;
+
+  // Compute all vertices first except normals
+  for (int i = 0; i <= latitudes; ++i) {
+    latitudeAngle = PI / 2 - i * deltaLatitude; /* Starting -pi/2 to pi/2 */
+    float xy = radius * cosf(latitudeAngle); /* r * cos(phi) */
+    float z = radius * sinf(latitudeAngle); /* r * sin(phi )*/
+
+    /*
+     * We add (latitudes + 1) vertices per longitude because of equator,
+     * the North pole and South pole are not counted here, as they overlap.
+     * The first and last vertices have same position and normal, but
+     * different tex coords.
+     */
+    for (int j = 0; j <= longitudes; ++j) {
+      longitudeAngle = j * deltaLongitude;
+
+      Vertex vertex;
+      vertex.x = xy * cosf(longitudeAngle); /* x = r * cos(phi) * cos(theta)  */
+      vertex.y = xy * sinf(longitudeAngle); /* y = r * cos(phi) * sin(theta) */
+      vertex.z = z; /* z = r * sin(phi) */
+      vertex.s = (float)j / longitudes; /* s */
+      vertex.t = (float)i / latitudes; /* t */
+      vertices.emplace_back(vertex.x, vertex.y, vertex.z);
+      uvs.emplace_back(vertex.s, vertex.t);
+
+      // normalized vertex normal
+      nx = vertex.x * lengthInv;
+      ny = vertex.y * lengthInv;
+      nz = vertex.z * lengthInv;
+      normals.emplace_back(nx, ny, nz);
+    }
+  }
+
+  /*
+   *  Indices
+   *  k1--k1+1
+   *  |  / |
+   *  | /  |
+   *  k2--k2+1
+   */
+  unsigned int k1, k2;
+  for (int i = 0; i < latitudes; ++i) {
+    k1 = i * (longitudes + 1);
+    k2 = k1 + longitudes + 1;
+    // 2 Triangles per latitude block excluding the first and last longitudes blocks
+    for (int j = 0; j < longitudes; ++j, ++k1, ++k2) {
+      if (i != 0) {
+        indices.push_back(k1);
+        indices.push_back(k2);
+        indices.push_back(k1 + 1);
+      }
+
+      if (i != (latitudes - 1)) {
+        indices.push_back(k1 + 1);
+        indices.push_back(k2);
+        indices.push_back(k2 + 1);
+      }
+    }
+  }
+}
+
+
 auto Renderer::Impl::StartUp() -> void {
   // CREATE DEVICE AND IMMEDIATE CONTEXT
 
@@ -1568,6 +1650,29 @@ auto Renderer::Impl::StartUp() -> void {
   }
   gResourceManager.Add(mPlaneMesh);
 
+  mSphereMesh = CreateAndInitialize<Mesh>();
+  mSphereMesh->SetGuid(SPHERE_MESH_GUID);
+  mSphereMesh->SetName("Sphere");
+  std::vector<Vector3> spherePositions;
+  std::vector<Vector3> sphereNormals;
+  std::vector<Vector3> sphereTangents;
+  std::vector<Vector2> sphereUvs;
+  std::vector<std::uint32_t> sphereIndices;
+  GenerateSphere(1, 50, 50, spherePositions, sphereNormals, sphereUvs, sphereIndices);
+  auto const sphereIdxCount{std::size(sphereIndices)};
+  CalculateTangents(spherePositions, sphereUvs, sphereIndices, sphereTangents);
+  mSphereMesh->SetPositions(std::move(spherePositions));
+  mSphereMesh->SetNormals(std::move(sphereNormals));
+  mSphereMesh->SetUVs(std::move(sphereUvs));
+  mSphereMesh->SetTangents(std::move(sphereTangents));
+  mSphereMesh->SetIndices(std::move(sphereIndices));
+  mSphereMesh->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  mSphereMesh->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
+  if (!mSphereMesh->ValidateAndUpdate(false)) {
+    throw std::runtime_error{"Failed to validate and update default sphere mesh."};
+  }
+  gResourceManager.Add(mSphereMesh);
+
   gWindow.OnWindowSize.add_handler(this, &OnWindowSize);
 
   dxgiFactory2->MakeWindowAssociation(static_cast<HWND>(gWindow.GetNativeHandle()), DXGI_MWA_NO_WINDOW_CHANGES);
@@ -2171,6 +2276,11 @@ auto Renderer::Impl::GetCubeMesh() const noexcept -> ObserverPtr<Mesh> {
 
 auto Renderer::Impl::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
   return mPlaneMesh;
+}
+
+
+auto Renderer::Impl::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
+  return mSphereMesh;
 }
 
 

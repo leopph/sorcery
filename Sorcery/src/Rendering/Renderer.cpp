@@ -112,6 +112,12 @@ auto Renderer::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
 }
 
 
+auto Renderer::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
+  assert(mImpl);
+  return mImpl->GetSphereMesh();
+}
+
+
 auto Renderer::GetSyncInterval() const noexcept -> int {
   assert(mImpl);
   return mImpl->GetSyncInterval();
