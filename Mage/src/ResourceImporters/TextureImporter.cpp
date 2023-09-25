@@ -116,18 +116,22 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
     img = std::move(extracted);
   }
 
-  // Assemble cubemap is necessary
+  // Assemble cubemap if necessary
   if (mTexType == TextureType::Cubemap && !img.GetMetadata().IsCubemap()) {
     if (auto const meta{img.GetMetadata()}; !meta.IsCubemap()) {
       if (img.GetImageCount() == 1 && meta.mipLevels == 1 && meta.arraySize == 1 && meta.depth == 1) {
+        std::array<DirectX::Image, 6> faceImgs;
+
         if (meta.width == 6 * meta.height) {
-          // TODO
-          return false;
-        }
-
-        if (6 * meta.width == meta.height) {
-          std::array<DirectX::Image, 6> faceImgs;
-
+          for (auto i{0}; i < 6; i++) {
+            faceImgs[i].width = meta.width / 6;
+            faceImgs[i].height = meta.height;
+            faceImgs[i].format = meta.format;
+            faceImgs[i].rowPitch = img.GetImage(0, 0, 0)->rowPitch;
+            faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
+            faceImgs[i].pixels = &img.GetPixels()[i * faceImgs[i].width * DirectX::BitsPerPixel(faceImgs[i].format) / 8];
+          }
+        } else if (6 * meta.width == meta.height) {
           for (auto i{0}; i < 6; i++) {
             faceImgs[i].width = meta.width;
             faceImgs[i].height = meta.height / 6;
@@ -136,15 +140,17 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
             faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
             faceImgs[i].pixels = &img.GetPixels()[i * faceImgs[i].height * faceImgs[i].rowPitch];
           }
-
-          DirectX::ScratchImage cube;
-
-          if (FAILED(cube.InitializeCubeFromImages(faceImgs.data(), 6))) {
-            return false;
-          }
-
-          img = std::move(cube);
+        } else {
+          return false;
         }
+
+        DirectX::ScratchImage cube;
+
+        if (FAILED(cube.InitializeCubeFromImages(faceImgs.data(), 6))) {
+          return false;
+        }
+
+        img = std::move(cube);
       } else {
         // TODO
         return false;
