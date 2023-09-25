@@ -121,7 +121,9 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
     if (auto const meta{img.GetMetadata()}; !meta.IsCubemap()) {
       if (img.GetImageCount() == 1 && meta.mipLevels == 1 && meta.arraySize == 1 && meta.depth == 1) {
         std::array<DirectX::Image, 6> faceImgs;
+        auto const bytesPerPixel{DirectX::BitsPerPixel(meta.format) / 8};
 
+        // [+X, -X, +Y, -Y, +Z, -Z]
         if (meta.width == 6 * meta.height) {
           for (auto i{0}; i < 6; i++) {
             faceImgs[i].width = meta.width / 6;
@@ -129,8 +131,9 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
             faceImgs[i].format = meta.format;
             faceImgs[i].rowPitch = img.GetImage(0, 0, 0)->rowPitch;
             faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
-            faceImgs[i].pixels = &img.GetPixels()[i * faceImgs[i].width * DirectX::BitsPerPixel(faceImgs[i].format) / 8];
+            faceImgs[i].pixels = &img.GetPixels()[i * faceImgs[i].width * bytesPerPixel];
           }
+          // [+X, -X, +Y, -Y, +Z, -Z] ^ T
         } else if (6 * meta.width == meta.height) {
           for (auto i{0}; i < 6; i++) {
             faceImgs[i].width = meta.width;
@@ -140,6 +143,47 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
             faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
             faceImgs[i].pixels = &img.GetPixels()[i * faceImgs[i].height * faceImgs[i].rowPitch];
           }
+          //     [+Y]
+          // [-X, +Z, +X, -Z]
+          //     [-Y]
+        } else if (meta.width * 3 == meta.height * 4) {
+          auto const faceSize{meta.width / 4};
+
+          for (auto i{0}; i < 6; i++) {
+            faceImgs[i].width = faceSize;
+            faceImgs[i].height = faceSize;
+            faceImgs[i].format = meta.format;
+            faceImgs[i].rowPitch = img.GetImage(0, 0, 0)->rowPitch;
+            faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
+          }
+
+          faceImgs[0].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch + 2 * faceSize * bytesPerPixel];
+          faceImgs[1].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch];
+          faceImgs[2].pixels = &img.GetPixels()[faceSize * bytesPerPixel];
+          faceImgs[3].pixels = &img.GetPixels()[2 * faceSize * faceImgs[0].rowPitch + faceSize * bytesPerPixel];
+          faceImgs[4].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch + faceSize * bytesPerPixel];
+          faceImgs[5].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch + 3 * faceSize * bytesPerPixel];
+          //     [+Y]
+          // [-X, +Z, +X]
+          //     [-Y]
+          //     [-Z]
+        } else if (meta.width * 4 == meta.height * 3) {
+          auto const faceSize{meta.width / 3};
+
+          for (auto i{0}; i < 6; i++) {
+            faceImgs[i].width = faceSize;
+            faceImgs[i].height = faceSize;
+            faceImgs[i].format = meta.format;
+            faceImgs[i].rowPitch = img.GetImage(0, 0, 0)->rowPitch;
+            faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
+          }
+
+          faceImgs[0].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch + 2 * faceSize * bytesPerPixel];
+          faceImgs[1].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch];
+          faceImgs[2].pixels = &img.GetPixels()[faceSize * bytesPerPixel];
+          faceImgs[3].pixels = &img.GetPixels()[2 * faceSize * faceImgs[0].rowPitch + faceSize * bytesPerPixel];
+          faceImgs[4].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch + faceSize * bytesPerPixel];
+          faceImgs[5].pixels = &img.GetPixels()[3 * faceSize * faceImgs[0].rowPitch + faceSize * bytesPerPixel];
         } else {
           return false;
         }
