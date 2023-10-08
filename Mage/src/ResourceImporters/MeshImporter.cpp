@@ -102,6 +102,11 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     aiMesh const* const mesh{scene->mMeshes[i]};
     auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshesUntransformed.emplace_back()};
 
+    if (!mesh->HasPositions() || !mesh->HasNormals() || !mesh->HasTextureCoords(0) || !mesh->HasTangentsAndBitangents()) {
+      // TODO log or something
+      continue;
+    }
+
     vertices.reserve(mesh->mNumVertices);
     normals.reserve(mesh->mNumVertices);
     uvs.reserve(mesh->mNumVertices);
