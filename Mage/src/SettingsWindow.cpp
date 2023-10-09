@@ -165,6 +165,41 @@ auto SettingsWindow::Draw() -> void {
     ImGui::TreePop();
   }
 
+  if (ImGui::TreeNode("Sky")) {
+    auto& activeScene{*Scene::GetActiveScene()};
+    std::array constexpr static skyModeLabels{
+      [] {
+        std::array<char const*, 2> ret;
+        ret[static_cast<int>(SkyMode::Color)] = "Color";
+        ret[static_cast<int>(SkyMode::Skybox)] = "Skybox";
+        return ret;
+      }()
+    };
+
+    if (auto skyMode{activeScene.GetSkyMode()}; ImGui::BeginCombo("Sky Mode", skyModeLabels[static_cast<int>(skyMode)])) {
+      for (auto i{0}; i < std::ssize(skyModeLabels); i++) {
+        if (ImGui::Selectable(skyModeLabels[i], i == static_cast<int>(skyMode))) {
+          activeScene.SetSkyMode(static_cast<SkyMode>(i));
+        }
+      }
+      ImGui::EndCombo();
+    }
+
+    if (activeScene.GetSkyMode() == SkyMode::Color) {
+      if (auto skyColor{activeScene.GetSkyColor()}; ImGui::ColorEdit3("Sky Color", skyColor.GetData())) {
+        activeScene.SetSkyColor(skyColor);
+      }
+    } else if (activeScene.GetSkyMode() == SkyMode::Skybox) {
+      if (auto skybox{activeScene.GetSkybox()}; mSkyboxPicker.Draw(skybox)) {
+        activeScene.SetSkybox(skybox);
+      }
+    } else {
+      ImGui::TextColored(ImVec4{1, 1, 0, 1}, "%s", "Unknown sky mode.");
+    }
+
+    ImGui::TreePop();
+  }
+
   ImGui::End();
 }
 
