@@ -604,10 +604,6 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
 
 
 auto Renderer::Impl::DrawSkybox(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
-  if (mSkyboxes.empty()) {
-    return;
-  }
-
   ID3D11Buffer* const vertexBuffer{mCubeMesh->GetPositionBuffer().Get()};
   UINT constexpr stride{sizeof(Vector3)};
   UINT constexpr offset{0};
@@ -619,7 +615,9 @@ auto Renderer::Impl::DrawSkybox(ObserverPtr<ID3D11DeviceContext> const ctx) cons
   ctx->VSSetShader(mSkyboxVs.Get(), nullptr, 0);
   ctx->PSSetShader(mSkyboxPs.Get(), nullptr, 0);
 
-  auto const cubemapSrv{mSkyboxes[0]->GetCubemap()->GetSrv()};
+  auto const cubemap{Scene::GetActiveScene()->GetSkybox()};
+  assert(cubemap);
+  auto const cubemapSrv{cubemap->GetSrv()};
   ctx->PSSetShaderResources(RES_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
 
   ctx->OMSetDepthStencilState([this] {
@@ -1767,8 +1765,9 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   auto const& hdrRt{GetTemporaryRenderTarget(hdrRtDesc)};
 
-  FLOAT constexpr clearColor[]{0, 0, 0, 1};
-  ctx->ClearRenderTargetView(hdrRt.GetRtv(), clearColor);
+
+  auto const clearColor{Scene::GetActiveScene()->GetSkyMode() == SkyMode::Color ? Vector4{Scene::GetActiveScene()->GetSkyColor(), 1} : Vector4{0, 0, 0, 1}};
+  ctx->ClearRenderTargetView(hdrRt.GetRtv(), clearColor.GetData());
 
 
   D3D11_VIEWPORT const viewport{
@@ -2091,9 +2090,11 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   annot->EndEvent();
 
-  annot->BeginEvent(L"Skybox Pass");
-  DrawSkybox(ctx);
-  annot->EndEvent();
+  if (auto const& activeScene{Scene::GetActiveScene()}; activeScene->GetSkyMode() == SkyMode::Skybox && activeScene->GetSkybox()) {
+    annot->BeginEvent(L"Skybox Pass");
+    DrawSkybox(ctx);
+    annot->EndEvent();
+  }
 
   annot->BeginEvent(L"Post-Process Pass");
   RenderTarget const* postProcessRt;

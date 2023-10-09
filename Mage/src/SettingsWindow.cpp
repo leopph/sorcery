@@ -186,7 +186,7 @@ auto SettingsWindow::Draw() -> void {
     }
 
     if (activeScene.GetSkyMode() == SkyMode::Color) {
-      if (auto skyColor{activeScene.GetSkyColor()}; ImGui::ColorEdit3("Sky Color", skyColor.GetData())) {
+      if (auto skyColor{activeScene.GetSkyColor()}; ImGui::ColorEdit3("##skyColor", skyColor.GetData())) {
         activeScene.SetSkyColor(skyColor);
       }
     } else if (activeScene.GetSkyMode() == SkyMode::Skybox) {
