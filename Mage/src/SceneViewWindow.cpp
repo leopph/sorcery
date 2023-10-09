@@ -53,10 +53,10 @@ auto SceneViewWindow::Draw(Application& context) -> void {
     }
 
     if (ImGui::BeginPopup(camSettingsPopupid)) {
-      auto constexpr clipPlaneMin{0.1f};
+      auto constexpr clipPlaneMin{0.01f};
       auto constexpr clipPlaneMax{10'000.0f};
-      auto constexpr clipPlaneSliderSpeed{0.1f};
-      auto constexpr clipPlaneSliderFormat{"%.1f"};
+      auto constexpr clipPlaneSliderSpeed{0.01f};
+      auto constexpr clipPlaneSliderFormat{"%.2f"};
       auto constexpr clipPlaneSliderFlags{ImGuiSliderFlags_AlwaysClamp};
 
       if (auto nearPlane{mCam.GetNearClipPlane()}; ImGui::DragFloat("Near Clip Plane", &nearPlane,
