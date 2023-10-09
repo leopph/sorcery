@@ -15,7 +15,7 @@ public:
   };
 
 private:
-  constexpr static float MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{0.1f};
+  constexpr static float MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{0.01f};
   constexpr static float MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET{0.1f};
   constexpr static float MINIMUM_PERSPECTIVE_VERTICAL_FOV{5.0f};
   constexpr static float MINIMUM_ORTHOGRAPHIC_VERTICAL_SIZE{0.1f};
