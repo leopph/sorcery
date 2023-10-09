@@ -87,8 +87,8 @@ auto SettingsWindow::Draw() -> void {
   }
 
   if (ImGui::TreeNode("Lighting")) {
-    if (auto color{gRenderer.GetAmbientLightColor()}; ImGui::ColorEdit3("Ambient Light", color.GetData())) {
-      gRenderer.SetAmbientLightColor(color);
+    if (auto color{Scene::GetActiveScene()->GetAmbientLightVector()}; ImGui::ColorEdit3("Ambient Light", color.GetData())) {
+      Scene::GetActiveScene()->SetAmbientLightVector(color);
     }
 
     if (auto ssaoEnabled{gRenderer.IsSsaoEnabled()}; ImGui::Checkbox("Screen Space Ambient Occlusion", &ssaoEnabled)) {
