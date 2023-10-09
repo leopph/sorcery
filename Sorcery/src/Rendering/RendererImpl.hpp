@@ -118,7 +118,6 @@ class Renderer::Impl {
   std::unique_ptr<StructuredBuffer<Vector4>> mSsaoSamplesBuffer;
 
   std::vector<StaticMeshComponent const*> mStaticMeshComponents;
-  std::vector<SkyboxComponent const*> mSkyboxes;
   std::vector<LightComponent const*> mLights;
   std::vector<Camera const*> mGameRenderCameras;
 
@@ -151,7 +150,6 @@ class Renderer::Impl {
   std::mutex mImmediateCtxMutex;
   std::mutex mStaticMeshMutex;
   std::mutex mLightMutex;
-  std::mutex mSkyboxMutex;
   std::mutex mGameCameraMutex;
   std::mutex mTmpRenderTargetsMutex;
 
@@ -280,9 +278,6 @@ public:
 
   auto Register(LightComponent const& lightComponent) noexcept -> void;
   auto Unregister(LightComponent const& lightComponent) noexcept -> void;
-
-  auto Register(SkyboxComponent const& skyboxComponent) noexcept -> void;
-  auto Unregister(SkyboxComponent const& skyboxComponent) noexcept -> void;
 
   auto Register(Camera const& cam) noexcept -> void;
   auto Unregister(Camera const& cam) noexcept -> void;

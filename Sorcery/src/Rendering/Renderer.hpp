@@ -6,7 +6,6 @@
 #include "../Util.hpp"
 #include "../SceneObjects/StaticMeshComponent.hpp"
 #include "../SceneObjects/LightComponents.hpp"
-#include "../SceneObjects/SkyboxComponent.hpp"
 #include "shaders/ShadowFilteringModes.h"
 
 
@@ -139,9 +138,6 @@ public:
 
   LEOPPHAPI auto Register(LightComponent const& lightComponent) noexcept -> void;
   LEOPPHAPI auto Unregister(LightComponent const& lightComponent) noexcept -> void;
-
-  LEOPPHAPI auto Register(SkyboxComponent const& skyboxComponent) noexcept -> void;
-  LEOPPHAPI auto Unregister(SkyboxComponent const& skyboxComponent) noexcept -> void;
 
   LEOPPHAPI auto Register(Camera const& cam) noexcept -> void;
   LEOPPHAPI auto Unregister(Camera const& cam) noexcept -> void;

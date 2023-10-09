@@ -301,18 +301,6 @@ auto Renderer::Unregister(LightComponent const& lightComponent) noexcept -> void
 }
 
 
-auto Renderer::Register(SkyboxComponent const& skyboxComponent) noexcept -> void {
-  assert(mImpl);
-  mImpl->Register(skyboxComponent);
-}
-
-
-auto Renderer::Unregister(SkyboxComponent const& skyboxComponent) noexcept -> void {
-  assert(mImpl);
-  mImpl->Unregister(skyboxComponent);
-}
-
-
 auto Renderer::Register(Camera const& cam) noexcept -> void {
   assert(mImpl);
   mImpl->Register(cam);

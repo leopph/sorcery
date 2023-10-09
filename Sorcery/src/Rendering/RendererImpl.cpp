@@ -2446,18 +2446,6 @@ auto Renderer::Impl::Unregister(LightComponent const& lightComponent) noexcept -
 }
 
 
-auto Renderer::Impl::Register(SkyboxComponent const& skyboxComponent) noexcept -> void {
-  std::unique_lock const lock{mSkyboxMutex};
-  mSkyboxes.emplace_back(std::addressof(skyboxComponent));
-}
-
-
-auto Renderer::Impl::Unregister(SkyboxComponent const& skyboxComponent) noexcept -> void {
-  std::unique_lock const lock{mSkyboxMutex};
-  std::erase(mSkyboxes, std::addressof(skyboxComponent));
-}
-
-
 auto Renderer::Impl::Register(Camera const& cam) noexcept -> void {
   std::unique_lock const lock{mGameCameraMutex};
   mGameRenderCameras.emplace_back(&cam);
