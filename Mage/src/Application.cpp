@@ -79,6 +79,7 @@ auto Application::OpenScene(Scene& scene) -> void {
     assert(mScene);
     mScene->Clear();
     mScene = std::addressof(scene);
+    mScene->SetActive();
   }
 }
 
