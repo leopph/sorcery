@@ -35,7 +35,6 @@ class Renderer::Impl {
   inline static Guid const CUBE_MESH_GUID{2, 0};
   inline static Guid const PLANE_MESH_GUID{3, 0};
   inline static Guid const SPHERE_MESH_GUID{4, 0};
-  constexpr static Vector3 DEFAULT_AMBIENT_LIGHT_COLOR{20.0f / 255.0f};
 
   Microsoft::WRL::ComPtr<ID3D11Device> mDevice;
   Microsoft::WRL::ComPtr<ID3D11DeviceContext> mImmediateContext;
@@ -156,8 +155,6 @@ class Renderer::Impl {
   std::mutex mGameCameraMutex;
   std::mutex mTmpRenderTargetsMutex;
 
-  Vector3 mAmbientLightColor{DEFAULT_AMBIENT_LIGHT_COLOR};
-
   std::vector<TempRenderTargetRecord> mTmpRenderTargets;
 
   [[nodiscard]] constexpr auto GetSceneDrawDss() -> Microsoft::WRL::ComPtr<ID3D11DepthStencilState>&;
@@ -264,9 +261,6 @@ public:
   auto SetShadowFilteringMode(ShadowFilteringMode filteringMode) noexcept -> void;
 
   // LIGHTING
-
-  [[nodiscard]] auto GetAmbientLightColor() const noexcept -> Vector3 const&;
-  auto SetAmbientLightColor(Vector3 const& color) noexcept -> void;
 
   [[nodiscard]] auto IsSsaoEnabled() const noexcept -> bool;
   auto SetSsaoEnabled(bool enabled) noexcept -> void;

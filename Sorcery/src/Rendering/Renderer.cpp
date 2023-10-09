@@ -241,18 +241,6 @@ auto Renderer::SetShadowFilteringMode(ShadowFilteringMode filteringMode) noexcep
 }
 
 
-auto Renderer::GetAmbientLightColor() const noexcept -> Vector3 const& {
-  assert(mImpl);
-  return mImpl->GetAmbientLightColor();
-}
-
-
-auto Renderer::SetAmbientLightColor(Vector3 const& color) noexcept -> void {
-  assert(mImpl);
-  mImpl->SetAmbientLightColor(color);
-}
-
-
 auto Renderer::IsSsaoEnabled() const noexcept -> bool {
   assert(mImpl);
   return mImpl->IsSsaoEnabled();

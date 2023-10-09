@@ -44,6 +44,8 @@
 #include "shaders/generated/SsaoPSBin.h"
 #endif
 
+#include "../Resources/Scene.hpp"
+
 #include <d3d11_1.h>
 
 #include <random>
@@ -215,7 +217,7 @@ auto Renderer::Impl::SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> const
 
   *static_cast<PerFrameCB*>(mapped.pData) = PerFrameCB{
     .gPerFrameConstants = ShaderPerFrameConstants{
-      .ambientLightColor = mAmbientLightColor,
+      .ambientLightColor = Scene::GetActiveScene()->GetAmbientLightVector(),
       .shadowCascadeCount = mCascadeCount,
       .screenSize = Vector2{rtWidth, rtHeight},
       .visualizeShadowCascades = mVisualizeShadowCascades,
@@ -2378,16 +2380,6 @@ auto Renderer::Impl::GetShadowFilteringMode() const noexcept -> ShadowFilteringM
 
 auto Renderer::Impl::SetShadowFilteringMode(ShadowFilteringMode const filteringMode) noexcept -> void {
   mShadowFilteringMode = filteringMode;
-}
-
-
-auto Renderer::Impl::GetAmbientLightColor() const noexcept -> Vector3 const& {
-  return mAmbientLightColor;
-}
-
-
-auto Renderer::Impl::SetAmbientLightColor(Vector3 const& color) noexcept -> void {
-  mAmbientLightColor = color;
 }
 
 
