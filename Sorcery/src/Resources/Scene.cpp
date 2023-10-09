@@ -88,6 +88,7 @@ auto Scene::Save() -> void {
 
   mYamlData.reset();
   mYamlData["version"] = 1;
+  mYamlData["ambientLight"] = mAmbientLight;
 
   for (auto const entity : mEntities) {
     tmpThisSceneObjects.emplace_back(entity);
@@ -136,6 +137,10 @@ auto Scene::Load() -> void {
     throw std::runtime_error{std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName())};
   }
 
+  if (auto const node{mYamlData["ambientLight"]}) {
+    mAmbientLight = node.as<Vector3>(mAmbientLight);
+  }
+
   for (auto const& sceneObjectNode : mYamlData["sceneObjects"]) {
     auto const typeNode{sceneObjectNode["type"]};
     auto const type{rttr::type::get_by_name(typeNode.as<std::string>())};
@@ -176,5 +181,25 @@ auto Scene::Clear() -> void {
   while (!mEntities.empty()) {
     Destroy(*mEntities.back());
   }
+}
+
+
+auto Scene::GetAmbientLightVector() const noexcept -> Vector3 const& {
+  return mAmbientLight;
+}
+
+
+auto Scene::SetAmbientLightVector(Vector3 const& vector) noexcept -> void {
+  mAmbientLight = vector;
+}
+
+
+auto Scene::GetAmbientLight() const noexcept -> Color {
+  return Color{Vector4{mAmbientLight, 1}};
+}
+
+
+auto Scene::SetAmbientLight(Color const& color) noexcept -> void {
+  mAmbientLight = Vector3{static_cast<Vector4>(color)};
 }
 }

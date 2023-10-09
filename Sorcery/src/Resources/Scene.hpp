@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NativeResource.hpp"
+#include "../Color.hpp"
 #include "../SceneObjects/Entity.hpp"
 #include "../SceneObjects/Component.hpp"
 
@@ -17,6 +18,8 @@ class Scene final : public NativeResource {
   std::vector<ObserverPtr<Entity>> mEntities;
 
   YAML::Node mYamlData;
+
+  Vector3 mAmbientLight{20.0f / 255.0f};
 
 public:
   [[nodiscard]] LEOPPHAPI static auto GetActiveScene() noexcept -> Scene*;
@@ -41,5 +44,11 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
   LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;
+
+  [[nodiscard]] LEOPPHAPI auto GetAmbientLightVector() const noexcept -> Vector3 const&;
+  LEOPPHAPI auto SetAmbientLightVector(Vector3 const& vector) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetAmbientLight() const noexcept -> Color;
+  LEOPPHAPI auto SetAmbientLight(Color const& color) noexcept -> void;
 };
 }
