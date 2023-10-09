@@ -1,12 +1,12 @@
 #pragma once
 
+#include "Cubemap.hpp"
 #include "NativeResource.hpp"
 #include "../Color.hpp"
+#include "../SkyMode.hpp"
 #include "../SceneObjects/Entity.hpp"
-#include "../SceneObjects/Component.hpp"
 
 #include <vector>
-#include <span>
 
 
 namespace sorcery {
@@ -20,6 +20,10 @@ class Scene final : public NativeResource {
   YAML::Node mYamlData;
 
   Vector3 mAmbientLight{20.0f / 255.0f};
+
+  ObserverPtr<Cubemap> mSkybox{nullptr};
+  SkyMode mSkyMode{SkyMode::Color};
+  Vector3 mSkyColor{mAmbientLight};
 
 public:
   [[nodiscard]] LEOPPHAPI static auto GetActiveScene() noexcept -> Scene*;
@@ -50,5 +54,14 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetAmbientLight() const noexcept -> Color;
   LEOPPHAPI auto SetAmbientLight(Color const& color) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetSkyMode() const noexcept -> SkyMode;
+  LEOPPHAPI auto SetSkyMode(SkyMode skyMode) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetSkyColor() const noexcept -> Vector3 const&;
+  LEOPPHAPI auto SetSkyColor(Vector3 const& skyColor) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetSkybox() const noexcept -> ObserverPtr<Cubemap>;
+  LEOPPHAPI auto SetSkybox(ObserverPtr<Cubemap> skybox) noexcept -> void;
 };
 }

@@ -8,7 +8,8 @@
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Scene>{"Scene"};
+  rttr::registration::class_<sorcery::Scene>{"Scene"}
+    .property("skybox", &sorcery::Scene::GetSkybox, &sorcery::Scene::SetSkybox);
 }
 
 
@@ -89,6 +90,9 @@ auto Scene::Save() -> void {
   mYamlData.reset();
   mYamlData["version"] = 1;
   mYamlData["ambientLight"] = mAmbientLight;
+  mYamlData["skyMode"] = static_cast<int>(mSkyMode);
+  mYamlData["skyColor"] = mSkyColor;
+  mYamlData["skybox"] = mSkybox ? mSkybox->GetGuid() : Guid::Invalid();
 
   for (auto const entity : mEntities) {
     tmpThisSceneObjects.emplace_back(entity);
@@ -139,6 +143,20 @@ auto Scene::Load() -> void {
 
   if (auto const node{mYamlData["ambientLight"]}) {
     mAmbientLight = node.as<Vector3>(mAmbientLight);
+  }
+
+  if (auto const node{mYamlData["skyMode"]}) {
+    mSkyMode = static_cast<SkyMode>(node.as<int>(static_cast<int>(mSkyMode)));
+  }
+
+  if (auto const node{mYamlData["skyColor"]}) {
+    mSkyColor = node.as<Vector3>(mSkyColor);
+  }
+
+  if (auto const node{mYamlData["skybox"]}) {
+    if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
+      mSkybox = gResourceManager.GetOrLoad<Cubemap>(guid);
+    }
   }
 
   for (auto const& sceneObjectNode : mYamlData["sceneObjects"]) {
@@ -201,5 +219,35 @@ auto Scene::GetAmbientLight() const noexcept -> Color {
 
 auto Scene::SetAmbientLight(Color const& color) noexcept -> void {
   mAmbientLight = Vector3{static_cast<Vector4>(color)};
+}
+
+
+auto Scene::GetSkyMode() const noexcept -> SkyMode {
+  return mSkyMode;
+}
+
+
+auto Scene::SetSkyMode(SkyMode const skyMode) noexcept -> void {
+  mSkyMode = skyMode;
+}
+
+
+auto Scene::GetSkyColor() const noexcept -> Vector3 const& {
+  return mSkyColor;
+}
+
+
+auto Scene::SetSkyColor(Vector3 const& skyColor) noexcept -> void {
+  mSkyColor = skyColor;
+}
+
+
+auto Scene::GetSkybox() const noexcept -> ObserverPtr<Cubemap> {
+  return mSkybox;
+}
+
+
+auto Scene::SetSkybox(ObserverPtr<Cubemap> const skybox) noexcept -> void {
+  mSkybox = skybox;
 }
 }

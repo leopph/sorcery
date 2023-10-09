@@ -174,6 +174,7 @@
     <ClCompile Include="src\Timing.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\SceneObjects\TransformComponent.cpp" />
+    <ClInclude Include="src\SkyMode.hpp" />
     <ClInclude Include="src\Window.hpp" />
     <ClInclude Include="src\WindowImpl.hpp" />
   </ItemGroup>
