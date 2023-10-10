@@ -16,7 +16,8 @@ Some screenshots from Sorcery's editor, Mage!
 ## Features
 ### Implemented
 * DX11 renderer
-  * Forward rendering
+  * Hybrid Forward rendering
+    * Forward rendering with thin G-buffers for some effects
   * PBR material system using Cook-Torrance BRDF
     * Albedo, metallic, roughness, ao, and normal values/maps, alpha clipping support
   * Directional, spot, and pointlights
@@ -58,7 +59,7 @@ Some screenshots from Sorcery's editor, Mage!
   * Better support for transparency effects
   * Percentage-Closer Soft Shadows (PCSS)
   * Image-Based Lighting (IBL)
-  * Hybrid tiled or clustered forward/deferred renderer
+  * Hybrid Tiled (Forward+) rendering
   * Support for writing custom shaders for materials
   * Ground Truth-based Ambient Occlusion (GTAO)
   * Screen Space Shadows
