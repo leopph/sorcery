@@ -23,7 +23,7 @@ class Scene final : public NativeResource {
 
   ObserverPtr<Cubemap> mSkybox{nullptr};
   SkyMode mSkyMode{SkyMode::Color};
-  Vector3 mSkyColor{mAmbientLight};
+  Vector3 mSkyColor{10.0f / 255.0f};
 
 public:
   [[nodiscard]] LEOPPHAPI static auto GetActiveScene() noexcept -> Scene*;
