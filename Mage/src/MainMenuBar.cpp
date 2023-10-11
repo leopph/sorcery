@@ -54,14 +54,6 @@ auto MainMenuBar::Draw() -> void {
       ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu("Options")) {
-      if (ImGui::MenuItem(SettingsWindow::TITLE.data())) {
-        mEditorSettingsWindow->SetOpen(true);
-      }
-
-      ImGui::EndMenu();
-    }
-
     if (ImGui::BeginMenu("Debug")) {
       if (ImGui::MenuItem("ImGui Demo Window")) {
         showDemoWindow = true;

@@ -11,7 +11,6 @@
 
 namespace sorcery::mage {
 SettingsWindow::SettingsWindow(Application& app, StandaloneCamera& sceneViewCam) :
-  mIsOpen{true},
   mApp{std::addressof(app)},
   mSceneViewCam{std::addressof(sceneViewCam)} {}
 
@@ -21,8 +20,7 @@ auto SettingsWindow::Draw() -> void {
     std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
   });
 
-  if (std::pmr::string windowName{&GetTmpMemRes()}; !ImGui::Begin(windowName.append(TITLE).append("##Window").c_str(),
-    &mIsOpen)) {
+  if (std::pmr::string windowName{&GetTmpMemRes()}; !ImGui::Begin(windowName.append(TITLE).append("##Window").c_str())) {
     ImGui::End();
     return;
   }
@@ -201,10 +199,5 @@ auto SettingsWindow::Draw() -> void {
   }
 
   ImGui::End();
-}
-
-
-auto SettingsWindow::SetOpen(bool const isOpen) noexcept -> void {
-  mIsOpen = isOpen;
 }
 }

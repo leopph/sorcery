@@ -9,7 +9,7 @@ PropertiesWindow::PropertiesWindow(Application& app) :
 auto PropertiesWindow::Draw() -> void {
   ImGui::SetNextWindowSizeConstraints(ImVec2{300, 200}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
 
-  if (ImGui::Begin("Object Properties", &mIsOpen)) {
+  if (ImGui::Begin("Object Properties")) {
     if (auto const selectedObj{mApp->GetSelectedObject()}) {
       bool changed{false};
       selectedObj->OnDrawProperties(changed);

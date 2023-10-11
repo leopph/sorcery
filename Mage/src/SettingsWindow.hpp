@@ -9,7 +9,6 @@
 
 namespace sorcery::mage {
 class SettingsWindow {
-  bool mIsOpen;
   Application* mApp;
   StandaloneCamera* mSceneViewCam;
   ObjectPicker<Cubemap> mSkyboxPicker;
@@ -20,6 +19,5 @@ public:
 
   explicit SettingsWindow(Application& app, StandaloneCamera& sceneViewCam);
   auto Draw() -> void;
-  auto SetOpen(bool isOpen) noexcept -> void;
 };
 }

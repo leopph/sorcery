@@ -25,7 +25,6 @@ class ProjectWindow {
 
 
   Application* mApp;
-  bool mIsOpen{true};
   std::filesystem::path mSelectedPathResDirRel; // empty if not selected
   std::optional<RenameInfo> mRenameInfo; // nullopt if not renaming
   std::vector<FileImportInfo> mFilesToImport;
