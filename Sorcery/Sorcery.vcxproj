@@ -120,7 +120,6 @@
     <ClCompile Include="src\SceneObjects\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\SceneObjects\Component.cpp" />
-    <ClCompile Include="src\Compress.cpp" />
     <ClCompile Include="src\GUI.cpp" />
     <ClCompile Include="src\Resources\Cubemap.cpp" />
     <ClCompile Include="src\rendering\DirectionalShadowAtlas.cpp" />
@@ -181,7 +180,6 @@
     <ClInclude Include="src\Bounds.hpp" />
     <ClInclude Include="src\SceneObjects\CameraComponent.hpp" />
     <ClInclude Include="src\SceneObjects\Component.hpp" />
-    <ClInclude Include="src\Compress.hpp" />
     <ClInclude Include="src\rendering\shaders\ShadowFilteringModes.h" />
     <ClInclude Include="src\rendering\ShadowAtlas.hpp" />
     <ClInclude Include="src\SceneObjects\StaticMeshComponent.hpp" />
