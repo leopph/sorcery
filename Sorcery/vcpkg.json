@@ -13,7 +13,7 @@
 		{
 			"name": "imgui",
 			"features": [ "docking-experimental" ],
-			"version>=": "1.89.7"
+			"version>=": "1.89.9"
 		},
 		{
 			"name": "directxtk",
