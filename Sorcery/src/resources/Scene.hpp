@@ -4,7 +4,7 @@
 #include "NativeResource.hpp"
 #include "../Color.hpp"
 #include "../SkyMode.hpp"
-#include "../SceneObjects/Entity.hpp"
+#include "../scene_objects/Entity.hpp"
 
 #include <vector>
 

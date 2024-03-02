@@ -1,6 +1,6 @@
 #include "Scene.hpp"
 
-#include "../SceneObjects/SceneObject.hpp"
+#include "../scene_objects/SceneObject.hpp"
 #include "../Platform.hpp"
 #include "../Serialization.hpp"
 #undef FindResource
@@ -8,8 +8,7 @@
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Scene>{"Scene"}
-    .property("skybox", &sorcery::Scene::GetSkybox, &sorcery::Scene::SetSkybox);
+  rttr::registration::class_<sorcery::Scene>{"Scene"}.property("skybox", &sorcery::Scene::GetSkybox, &sorcery::Scene::SetSkybox);
 }
 
 

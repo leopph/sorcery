@@ -2,7 +2,7 @@
 
 #include "ShadowAtlas.hpp"
 #include "Visibility.hpp"
-#include "../SceneObjects/LightComponents.hpp"
+#include "../scene_objects/LightComponents.hpp"
 
 #include <array>
 

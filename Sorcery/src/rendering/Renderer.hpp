@@ -4,8 +4,8 @@
 #include "RenderTarget.hpp"
 #include "../Core.hpp"
 #include "../Util.hpp"
-#include "../SceneObjects/StaticMeshComponent.hpp"
-#include "../SceneObjects/LightComponents.hpp"
+#include "../scene_objects/StaticMeshComponent.hpp"
+#include "../scene_objects/LightComponents.hpp"
 #include "shaders/ShadowFilteringModes.h"
 
 

@@ -18,7 +18,7 @@
     <ClCompile Include="src\Timing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\Entity.cpp">
+    <ClCompile Include="src\scene_objects\Entity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Color.cpp">
@@ -51,19 +51,19 @@
     <ClCompile Include="src\Resources\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\Component.cpp">
+    <ClCompile Include="src\scene_objects\Component.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\TransformComponent.cpp">
+    <ClCompile Include="src\scene_objects\TransformComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\CameraComponent.cpp">
+    <ClCompile Include="src\scene_objects\CameraComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\StaticMeshComponent.cpp">
+    <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\LightComponents.cpp">
+    <ClCompile Include="src\scene_objects\LightComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Resources\Texture2D.cpp">
@@ -105,7 +105,7 @@
     <ClCompile Include="src\Resources\Resource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\SceneObject.cpp">
+    <ClCompile Include="src\scene_objects\SceneObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Math.cpp">
@@ -137,7 +137,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\SceneObjects\Entity.hpp">
+    <ClInclude Include="src\scene_objects\Entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Core.hpp">
@@ -185,25 +185,25 @@
     <ClInclude Include="src\Resources\Mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\Component.hpp">
+    <ClInclude Include="src\scene_objects\Component.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\TransformComponent.hpp">
+    <ClInclude Include="src\scene_objects\TransformComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\CameraComponent.hpp">
+    <ClInclude Include="src\scene_objects\CameraComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\StaticMeshComponent.hpp">
+    <ClInclude Include="src\scene_objects\StaticMeshComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\LightComponents.hpp">
+    <ClInclude Include="src\scene_objects\LightComponents.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Resources\Texture2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\SceneObject.hpp">
+    <ClInclude Include="src\scene_objects\SceneObject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Resources\Cubemap.hpp">
