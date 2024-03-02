@@ -17,9 +17,29 @@ __declspec(dllexport) extern char const* D3D12SDKPath;
 
 
 namespace graphics {
+struct BufferDesc {
+  UINT size;
+  UINT stride;
+  bool cbv;
+  bool srv;
+  bool uav;
+};
+
+
+struct Buffer {
+  Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation;
+  Microsoft::WRL::ComPtr<ID3D12Resource2> resource;
+  UINT cbv;
+  UINT srv;
+  UINT uav;
+};
+
+
 class GraphicsDevice {
 public:
   [[nodiscard]] static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
+
+  [[nodiscard]] auto CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE heap_type) -> std::unique_ptr<Buffer>;
 
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
@@ -53,5 +73,13 @@ private:
   std::mutex res_desc_free_indices_mutex_;
 
   Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue_;
+
+  D3D12_CPU_DESCRIPTOR_HANDLE rtv_heap_start_;
+  D3D12_CPU_DESCRIPTOR_HANDLE dsv_heap_start_;
+  D3D12_CPU_DESCRIPTOR_HANDLE res_desc_heap_start_;
+
+  UINT rtv_heap_increment_;
+  UINT dsv_heap_increment_;
+  UINT res_desc_heap_increment_;
 };
 }

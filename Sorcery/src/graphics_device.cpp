@@ -114,7 +114,7 @@ auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDev
   }
 
   D3D12_DESCRIPTOR_HEAP_DESC constexpr res_desc_heap_desc{
-    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, res_desc_heap_size_, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0
+    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, res_desc_heap_size_, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0
   };
   ComPtr<ID3D12DescriptorHeap> res_desc_heap;
   if (FAILED(device->CreateDescriptorHeap(&res_desc_heap_desc, IID_PPV_ARGS(&res_desc_heap)))) {
@@ -138,6 +138,72 @@ auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDev
 }
 
 
+auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const heap_type) -> std::unique_ptr<Buffer> {
+  ComPtr<D3D12MA::Allocation> allocation;
+  ComPtr<ID3D12Resource2> resource;
+
+  D3D12MA::ALLOCATION_DESC const alloc_desc{
+    D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_NONE, nullptr, nullptr
+  };
+
+  auto const res_desc{CD3DX12_RESOURCE_DESC1::Buffer(desc.size)};
+
+  if (FAILED(
+    allocator_->CreateResource3(&alloc_desc, &res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr, &allocation
+      , IID_PPV_ARGS(&resource)))) {
+    return nullptr;
+  }
+
+  UINT cbv;
+
+  if (desc.cbv) {
+    cbv = AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    D3D12_CONSTANT_BUFFER_VIEW_DESC const cbv_desc{resource->GetGPUVirtualAddress(), desc.size};
+    device_->CreateConstantBufferView(&cbv_desc, CD3DX12_CPU_DESCRIPTOR_HANDLE{
+      res_desc_heap_start_, static_cast<INT>(cbv), res_desc_heap_increment_
+    });
+  } else {
+    cbv = 0;
+  }
+
+  UINT srv;
+
+  if (desc.srv) {
+    srv = AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    D3D12_SHADER_RESOURCE_VIEW_DESC const srv_desc{
+      .Format = DXGI_FORMAT_UNKNOWN, .ViewDimension = D3D12_SRV_DIMENSION_BUFFER,
+      .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+      .Buffer = {0, desc.size / desc.stride, desc.stride, D3D12_BUFFER_SRV_FLAG_NONE}
+    };
+    device_->CreateShaderResourceView(resource.Get(), &srv_desc, CD3DX12_CPU_DESCRIPTOR_HANDLE{
+      res_desc_heap_start_, static_cast<INT>(srv), res_desc_heap_increment_
+    });
+  } else {
+    srv = 0;
+  }
+
+  UINT uav;
+
+  if (desc.uav) {
+    uav = AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    D3D12_UNORDERED_ACCESS_VIEW_DESC const uav_desc{
+      .Format = DXGI_FORMAT_UNKNOWN, .ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
+      .Buffer = {
+        .FirstElement = 0, .NumElements = desc.size / desc.stride, .StructureByteStride = desc.stride,
+        .CounterOffsetInBytes = 0, .Flags = D3D12_BUFFER_UAV_FLAG_NONE
+      }
+    };
+    device_->CreateUnorderedAccessView(resource.Get(), nullptr, &uav_desc, CD3DX12_CPU_DESCRIPTOR_HANDLE{
+      res_desc_heap_start_, static_cast<INT>(uav), res_desc_heap_increment_
+    });
+  } else {
+    uav = 0;
+  }
+
+  return std::make_unique<Buffer>(std::move(allocation), std::move(resource), cbv, srv, uav);
+}
+
+
 GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
                                ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
                                ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,
@@ -148,7 +214,13 @@ GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Devic
   rtv_heap_{std::move(rtv_heap)},
   dsv_heap_{std::move(dsv_heap)},
   res_desc_heap_{std::move(res_desc_heap)},
-  queue_{std::move(queue)} {
+  queue_{std::move(queue)},
+  rtv_heap_start_{rtv_heap_->GetCPUDescriptorHandleForHeapStart()},
+  dsv_heap_start_{dsv_heap_->GetCPUDescriptorHandleForHeapStart()},
+  res_desc_heap_start_{res_desc_heap_->GetCPUDescriptorHandleForHeapStart()},
+  rtv_heap_increment_{device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)},
+  dsv_heap_increment_{device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)},
+  res_desc_heap_increment_{device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)} {
   rtv_free_indices_.reserve(rtv_heap_size_);
   for (UINT i{0}; i < rtv_heap_size_; i++) {
     rtv_free_indices_.emplace_back(i);
