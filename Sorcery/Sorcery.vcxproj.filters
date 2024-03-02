@@ -313,6 +313,7 @@
     <None Include="src\rendering\shaders\DepthOnlyVsOut.hlsli" />
     <None Include="src\rendering\shaders\ScreenVSOut.hlsli" />
     <None Include="src\rendering\shaders\Util.hlsli" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\MeshPbrPS.hlsl" />
