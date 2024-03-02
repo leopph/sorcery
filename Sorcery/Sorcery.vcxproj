@@ -116,6 +116,7 @@
     <ClCompile Include="src\Bounds.cpp" />
     <ClCompile Include="src\ExternalResource.cpp" />
     <ClCompile Include="src\FileIo.cpp" />
+    <ClCompile Include="src\graphics_device.cpp" />
     <ClCompile Include="src\MemoryAllocation.cpp" />
     <ClCompile Include="src\rendering\Camera.cpp" />
     <ClCompile Include="src\rendering\DirectionalShadowMapArray.cpp" />
@@ -151,6 +152,7 @@
     <ClCompile Include="src\WindowImpl.cpp" />
     <ClInclude Include="src\ExternalResource.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
+    <ClInclude Include="src\graphics_device.hpp" />
     <ClInclude Include="src\MemoryAllocation.hpp" />
     <ClInclude Include="src\Pool.hpp" />
     <ClInclude Include="src\PoolAllocator.hpp" />
