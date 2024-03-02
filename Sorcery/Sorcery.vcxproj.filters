@@ -135,6 +135,9 @@
     <ClCompile Include="src\WindowImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\vendor\d3d12_memory_allocator\D3D12MemAlloc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\scene_objects\Entity.hpp">
