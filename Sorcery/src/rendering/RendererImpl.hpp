@@ -10,11 +10,7 @@
 #include "../Color.hpp"
 #include "../Math.hpp"
 #include "shaders/ShaderInterop.h"
-
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <d3d11.h>
-#include <wrl/client.h>
+#include "../graphics_platform.hpp"
 
 #include <array>
 #include <memory>
@@ -135,12 +131,7 @@ class Renderer::Impl {
   float mInvGamma{1.f / 2.2f};
   int mInFlightFrameCount{2};
   bool mDepthNormalPrePassEnabled{true};
-  SsaoParams mSsaoParams{
-    .radius = 0.1f,
-    .bias = 0.025f,
-    .power = 6.0f,
-    .sampleCount = 12
-  };
+  SsaoParams mSsaoParams{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sampleCount = 12};
   bool mSsaoEnabled{true};
   bool mUsePreciseColorBuffer{true};
 

@@ -1,12 +1,9 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <d3d11.h>
-#include <span>
-#include <wrl/client.h>
+#include "../graphics_platform.hpp"
 
 #include <cassert>
+#include <span>
 #include <stdexcept>
 
 
@@ -40,14 +37,7 @@ public:
 
 template<typename T>
 auto StructuredBuffer<T>::RecreateBuffer() -> void {
-  D3D11_BUFFER_DESC const bufDesc{
-    .ByteWidth = mCapacity * sizeof(T),
-    .Usage = D3D11_USAGE_DYNAMIC,
-    .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
-    .MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED,
-    .StructureByteStride = sizeof(T)
-  };
+  D3D11_BUFFER_DESC const bufDesc{.ByteWidth = mCapacity * sizeof(T), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_SHADER_RESOURCE, .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED, .StructureByteStride = sizeof(T)};
 
   if (FAILED(mDevice->CreateBuffer(&bufDesc, nullptr, mBuffer.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{"Failed to recreate StructuredBuffer buffer."};
@@ -60,11 +50,7 @@ auto StructuredBuffer<T>::RecreateSrv() -> void {
   if (mSize == 0) {
     mSrv.Reset();
   } else {
-    D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
-      .Format = DXGI_FORMAT_UNKNOWN,
-      .ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
-      .Buffer = {.FirstElement = 0, .NumElements = static_cast<UINT>(mSize)}
-    };
+    D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{.Format = DXGI_FORMAT_UNKNOWN, .ViewDimension = D3D11_SRV_DIMENSION_BUFFER, .Buffer = {.FirstElement = 0, .NumElements = static_cast<UINT>(mSize)}};
 
     if (FAILED(mDevice->CreateShaderResourceView(mBuffer.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
       throw std::runtime_error{"Failed to recreate StructuredBuffer SRV."};

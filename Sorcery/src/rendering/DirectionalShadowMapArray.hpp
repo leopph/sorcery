@@ -2,11 +2,7 @@
 
 #include "../Core.hpp"
 #include "shaders/ShaderInterop.h"
-
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <d3d11.h>
-#include <wrl/client.h>
+#include "../graphics_platform.hpp"
 
 #include <array>
 

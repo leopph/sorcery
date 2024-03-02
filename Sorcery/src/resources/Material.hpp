@@ -9,10 +9,7 @@
 
 #include "../rendering/shaders/ShaderInterop.h"
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <d3d11.h>
-#include <wrl/client.h>
+#include "../graphics_platform.hpp"
 
 
 namespace sorcery {
@@ -26,20 +23,7 @@ public:
   };
 
 private:
-  ShaderMaterial mShaderMtl{
-    .albedo = Vector3{1, 1, 1},
-    .metallic = 0.0f,
-    .roughness = 0.5f,
-    .ao = 1.0f,
-    .alphaThreshold = 1.0f,
-    .sampleAlbedo = FALSE,
-    .sampleMetallic = FALSE,
-    .sampleRoughness = FALSE,
-    .sampleAo = FALSE,
-    .sampleNormal = FALSE,
-    .sampleOpacityMap = FALSE,
-    .blendMode = BLEND_MODE_OPAQUE
-  };
+  ShaderMaterial mShaderMtl{.albedo = Vector3{1, 1, 1}, .metallic = 0.0f, .roughness = 0.5f, .ao = 1.0f, .alphaThreshold = 1.0f, .sampleAlbedo = FALSE, .sampleMetallic = FALSE, .sampleRoughness = FALSE, .sampleAo = FALSE, .sampleNormal = FALSE, .sampleOpacityMap = FALSE, .blendMode = BLEND_MODE_OPAQUE};
 
   Microsoft::WRL::ComPtr<ID3D11Buffer> mCB;
 
