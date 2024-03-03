@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <optional>
+#include <variant>
 #include <vector>
 
 
@@ -35,11 +37,49 @@ struct Buffer {
 };
 
 
+enum class TextureDimension {
+  k1D,
+  k2D,
+  k3D,
+  kCube
+};
+
+
+struct TextureDesc {
+  TextureDimension dimension;
+  UINT width;
+  UINT height;
+  UINT16 depth_or_array_size;
+  UINT16 mip_levels;
+  DXGI_FORMAT format;
+  DXGI_SAMPLE_DESC sample_desc;
+  D3D12_RESOURCE_FLAGS flags;
+
+  bool dsv;
+  bool rtv;
+  bool srv;
+  bool uav;
+};
+
+
+struct Texture {
+  Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation;
+  Microsoft::WRL::ComPtr<ID3D12Resource2> resource;
+  UINT dsv;
+  UINT rtv;
+  UINT srv;
+  UINT uav;
+};
+
+
 class GraphicsDevice {
 public:
   [[nodiscard]] static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
 
   [[nodiscard]] auto CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE heap_type) -> std::unique_ptr<Buffer>;
+  [[nodiscard]] auto CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE heap_type,
+                                   D3D12_BARRIER_LAYOUT initial_layout,
+                                   D3D12_CLEAR_VALUE const* clear_value) -> std::unique_ptr<Texture>;
 
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
