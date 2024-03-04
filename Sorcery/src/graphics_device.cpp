@@ -673,6 +673,30 @@ auto GraphicsDevice::CreateFence(UINT64 const initial_value) const -> ComPtr<ID3
 }
 
 
+auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc, HWND const window_handle) -> UniqueSwapChainHandle {
+  DXGI_SWAP_CHAIN_DESC1 const dxgi_desc{
+    desc.width, desc.height, DXGI_FORMAT_R8G8B8A8_UNORM, FALSE, {1, 0}, desc.usage, desc.buffer_count, desc.scaling,
+    DXGI_SWAP_EFFECT_FLIP_DISCARD, DXGI_ALPHA_MODE_UNSPECIFIED, swap_chain_flags_
+  };
+
+  ComPtr<IDXGISwapChain1> swap_chain1;
+  if (FAILED(
+    factory_->CreateSwapChainForHwnd(queue_.Get(), window_handle, &dxgi_desc, nullptr, nullptr, &swap_chain1))) {
+    return nullptr;
+  }
+
+  ComPtr<IDXGISwapChain4> swap_chain4;
+  if (FAILED(swap_chain1.As(&swap_chain4))) {
+    return nullptr;
+  }
+
+  auto const swap_chain{new SwapChain{std::move(swap_chain4), {}}};
+  SwapChainCreateTextures(*swap_chain);
+
+  return UniqueSwapChainHandle{swap_chain};
+}
+
+
 auto GraphicsDevice::WaitFence(ID3D12Fence& fence, UINT64 const wait_value) const -> bool {
   return SUCCEEDED(queue_->Wait(&fence, wait_value));
 }
@@ -936,6 +960,32 @@ auto GraphicsDevice::CmdSetStreamOutputTargets(CommandList const& cmd_list, UINT
 }
 
 
+auto GraphicsDevice::SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<Texture const> {
+  return swap_chain.textures;
+}
+
+
+auto GraphicsDevice::SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT {
+  return swap_chain.swap_chain->GetCurrentBackBufferIndex();
+}
+
+
+auto GraphicsDevice::SwapChainPresent(SwapChain const& swap_chain, UINT const sync_interval) const -> bool {
+  return SUCCEEDED(swap_chain.swap_chain->Present(sync_interval, present_flags_));
+}
+
+
+auto GraphicsDevice::SwapChainResize(SwapChain& swap_chain, UINT const width, UINT const height) -> bool {
+  swap_chain.textures.clear();
+
+  if (FAILED(swap_chain.swap_chain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, swap_chain_flags_))) {
+    return false;
+  }
+
+  return SwapChainCreateTextures(swap_chain);
+}
+
+
 GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
                                ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
                                ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,
@@ -966,6 +1016,13 @@ GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Devic
   res_desc_free_indices_.reserve(res_desc_heap_size_);
   for (UINT i{0}; i < res_desc_heap_size_; i++) {
     res_desc_free_indices_.emplace_back(i);
+  }
+
+  if (BOOL allow_tearing; SUCCEEDED(
+    factory_->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allow_tearing, sizeof(allow_tearing)
+    )) && allow_tearing) {
+    swap_chain_flags_ |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+    present_flags_ |= DXGI_PRESENT_ALLOW_TEARING;
   }
 }
 
@@ -1031,5 +1088,36 @@ auto GraphicsDevice::SetRootSignature(CommandList const& cmd_list, std::uint8_t 
   } else {
     cmd_list.cmd_list->SetGraphicsRootSignature(root_signatures_.at(num_params).Get());
   }
+}
+
+
+auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> bool {
+  DXGI_SWAP_CHAIN_DESC1 desc;
+  if (FAILED(swap_chain.swap_chain->GetDesc1(&desc))) {
+    return false;
+  }
+
+  for (UINT i{0}; i < desc.BufferCount; i++) {
+    ComPtr<ID3D12Resource2> buf;
+    if (FAILED(swap_chain.swap_chain->GetBuffer(i, IID_PPV_ARGS(&buf)))) {
+      return false;
+    }
+
+    UINT const rtv{
+      desc.BufferUsage & DXGI_USAGE_RENDER_TARGET_OUTPUT
+        ? AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
+        : invalid_resource_index_
+    };
+    UINT const srv{
+      desc.BufferUsage & DXGI_USAGE_SHADER_INPUT
+        ? AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+        : invalid_resource_index_
+    };
+
+    swap_chain.textures.emplace_back(this, nullptr, std::move(buf), invalid_resource_index_, rtv, srv,
+      invalid_resource_index_);
+  }
+
+  return true;
 }
 }

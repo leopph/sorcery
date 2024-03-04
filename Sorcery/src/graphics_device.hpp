@@ -25,6 +25,12 @@ struct PipelineState;
 struct CommandList;
 
 
+struct SwapChain {
+  Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain;
+  std::vector<Texture> textures;
+};
+
+
 struct BufferDeleter {
   auto operator()(Buffer const* buffer) const -> void;
 };
@@ -45,10 +51,16 @@ struct CommandListDeleter {
 };
 
 
+struct SwapChainDeleter {
+  auto operator()(SwapChain const* swap_chain) const -> void;
+};
+
+
 using UniqueBufferHandle = std::unique_ptr<Buffer, BufferDeleter>;
 using UniqueTextureHandle = std::unique_ptr<Texture, TextureDeleter>;
 using UniquePipelineStateHandle = std::unique_ptr<PipelineState, PipelineStateDeleter>;
 using UniqueCommandListHandle = std::unique_ptr<CommandList, CommandListDeleter>;
+using UniqueSwapChainHandle = std::unique_ptr<SwapChain, SwapChainDeleter>;
 
 
 struct BufferDesc {
@@ -106,6 +118,15 @@ struct PipelineStateDesc {
 };
 
 
+struct SwapChainDesc {
+  UINT width;
+  UINT height;
+  UINT buffer_count;
+  DXGI_USAGE usage;
+  DXGI_SCALING scaling;
+};
+
+
 struct GlobalBarrier {
   D3D12_BARRIER_SYNC sync_before;
   D3D12_BARRIER_SYNC sync_after;
@@ -150,6 +171,7 @@ public:
                                          std::uint8_t num_32_bit_params) -> UniquePipelineStateHandle;
   [[nodiscard]] auto CreateCommandList() const -> UniqueCommandListHandle;
   [[nodiscard]] auto CreateFence(UINT64 initial_value) const -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
+  [[nodiscard]] auto CreateSwapChain(SwapChainDesc const& desc, HWND window_handle) -> UniqueSwapChainHandle;
 
   [[nodiscard]] auto WaitFence(ID3D12Fence& fence, UINT64 wait_value) const -> bool;
   [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;
@@ -195,6 +217,11 @@ public:
   auto CmdSetStreamOutputTargets(CommandList const& cmd_list, UINT start_slot,
                                  std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
 
+  [[nodiscard]] auto SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<Texture const>;
+  [[nodiscard]] auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
+  [[nodiscard]] auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> bool;
+  [[nodiscard]] auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> bool;
+
 private:
   friend class Buffer;
   friend class Texture;
@@ -210,6 +237,8 @@ private:
   auto ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT idx) -> void;
 
   auto SetRootSignature(CommandList const& cmd_list, std::uint8_t num_params) const -> void;
+
+  auto SwapChainCreateTextures(SwapChain& swap_chain) -> bool;
 
   static UINT const rtv_heap_size_;
   static UINT const dsv_heap_size_;
@@ -248,5 +277,8 @@ private:
 
   std::mutex cmd_list_submission_mutex_;
   std::vector<ID3D12CommandList*> cmd_list_submission_buffer_;
+
+  UINT swap_chain_flags_{0};
+  UINT present_flags_{0};
 };
 }
