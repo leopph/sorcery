@@ -485,6 +485,8 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
           IID_PPV_ARGS(&root_signature)))) {
         return nullptr;
       }
+
+      root_signatures_.emplace(num_32_bit_params, root_signature);
     }
   }
 
