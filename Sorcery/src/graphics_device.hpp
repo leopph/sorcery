@@ -124,6 +124,8 @@ public:
   [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;
   auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) -> void;
 
+  [[nodiscard]] auto CmdBegin(CommandList const& cmd_list, PipelineState const& pipeline_state) const -> bool;
+  [[nodiscard]] auto CmdEnd(CommandList const& cmd_list) const -> bool;
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
                  Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator,

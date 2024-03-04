@@ -553,6 +553,29 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
 }
 
 
+auto GraphicsDevice::CmdBegin(CommandList const& cmd_list, PipelineState const& pipeline_state) const -> bool {
+  if (FAILED(cmd_list.allocator->Reset()) || FAILED(
+        cmd_list.cmd_list->Reset(cmd_list.allocator.Get(), pipeline_state.pipeline_state.Get()))) {
+    return false;
+  }
+
+  cmd_list.cmd_list->SetDescriptorHeaps(1, res_desc_heap_.GetAddressOf());
+
+  if (pipeline_state.is_compute) {
+    cmd_list.cmd_list->SetComputeRootSignature(root_signatures_.at(pipeline_state.num_params).Get());
+  } else {
+    cmd_list.cmd_list->SetGraphicsRootSignature(root_signatures_.at(pipeline_state.num_params).Get());
+  }
+
+  return true;
+}
+
+
+auto GraphicsDevice::CmdEnd(CommandList const& cmd_list) const -> bool {
+  return SUCCEEDED(cmd_list.cmd_list->Close());
+}
+
+
 GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
                                ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
                                ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,
