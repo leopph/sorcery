@@ -109,6 +109,8 @@ public:
   [[nodiscard]] auto CreatePipelineState(PipelineStateDesc const& desc,
                                          std::uint8_t num_32_bit_params) -> std::unique_ptr<PipelineState>;
 
+  [[nodiscard]] auto CreateFence(UINT64 initial_value) const -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
+
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
                  Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator,

@@ -497,6 +497,17 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
 }
 
 
+auto GraphicsDevice::CreateFence(UINT64 const initial_value) const -> ComPtr<ID3D12Fence1> {
+  ComPtr<ID3D12Fence1> fence;
+
+  if (FAILED(device_->CreateFence(initial_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))) {
+    return nullptr;
+  }
+
+  return fence;
+}
+
+
 GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
                                ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
                                ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,
