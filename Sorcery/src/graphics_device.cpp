@@ -4,6 +4,7 @@
 #include <d3dx12.h>
 
 #include <utility>
+#include <vector>
 
 using Microsoft::WRL::ComPtr;
 
@@ -448,6 +449,51 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
   }
 
   return std::make_unique<Texture>(std::move(allocation), std::move(resource), dsv, rtv, srv, uav);
+}
+
+
+auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
+                                         std::uint8_t const num_32_bit_params) -> std::unique_ptr<PipelineState> {
+  ComPtr<ID3D12RootSignature> root_signature;
+
+  {
+    std::scoped_lock const lock{root_signature_mutex_};
+
+    if (auto const it{root_signatures_.find(num_32_bit_params)}; it != std::end(root_signatures_)) {
+      root_signature = it->second;
+    } else {
+      CD3DX12_ROOT_PARAMETER1 root_param;
+      root_param.InitAsConstants(num_32_bit_params, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
+
+      D3D12_VERSIONED_ROOT_SIGNATURE_DESC const root_signature_desc{
+        .Version = D3D_ROOT_SIGNATURE_VERSION_1_1,
+        .Desc_1_1 = {1, &root_param, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED}
+      };
+
+      ComPtr<ID3DBlob> root_signature_blob;
+      ComPtr<ID3DBlob> error_blob;
+
+      if (FAILED(D3D12SerializeVersionedRootSignature(&root_signature_desc, &root_signature_blob, &error_blob))) {
+        return nullptr;
+      }
+
+      if (FAILED(
+        device_->CreateRootSignature(0, root_signature_blob->GetBufferPointer(), root_signature_blob->GetBufferSize(),
+          IID_PPV_ARGS(&root_signature)))) {
+        return nullptr;
+      }
+    }
+  }
+
+  D3D12_PIPELINE_STATE_STREAM_DESC const stream_desc{sizeof(desc), &const_cast<PipelineStateDesc&>(desc)};
+
+  ComPtr<ID3D12PipelineState> pipeline_state;
+
+  if (FAILED(device_->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&pipeline_state)))) {
+    return nullptr;
+  }
+
+  return std::make_unique<PipelineState>(std::move(root_signature), std::move(pipeline_state));
 }
 
 
