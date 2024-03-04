@@ -96,6 +96,8 @@ struct PipelineStateDesc {
 struct PipelineState {
   Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature;
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state;
+  std::uint8_t num_params;
+  bool is_compute;
 };
 
 

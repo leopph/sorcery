@@ -498,7 +498,8 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
     return nullptr;
   }
 
-  return std::make_unique<PipelineState>(std::move(root_signature), std::move(pipeline_state));
+  return std::make_unique<PipelineState>(std::move(root_signature), std::move(pipeline_state), num_32_bit_params,
+    static_cast<D3D12_SHADER_BYTECODE>(desc.vs).BytecodeLength != 0);
 }
 
 
