@@ -1078,21 +1078,29 @@ auto GraphicsDevice::ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE const typ
     case D3D12_DESCRIPTOR_HEAP_TYPE_RTV: {
       std::scoped_lock const lock{rtv_indices_mutex_};
       rtv_free_indices_.emplace_back(idx);
+      std::ranges::sort(rtv_free_indices_);
+      rtv_free_indices_.erase(std::ranges::unique(rtv_free_indices_).begin(), rtv_free_indices_.end());
       return;
     }
     case D3D12_DESCRIPTOR_HEAP_TYPE_DSV: {
       std::scoped_lock const lock{dsv_indices_mutex_};
       dsv_free_indices_.emplace_back(idx);
+      std::ranges::sort(dsv_free_indices_);
+      dsv_free_indices_.erase(std::ranges::unique(dsv_free_indices_).begin(), dsv_free_indices_.end());
       return;
     }
     case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV: {
       std::scoped_lock const lock{res_desc_free_indices_mutex_};
       res_desc_free_indices_.emplace_back(idx);
+      std::ranges::sort(res_desc_free_indices_);
+      res_desc_free_indices_.erase(std::ranges::unique(res_desc_free_indices_).begin(), res_desc_free_indices_.end());
       return;
     }
     case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER: {
       std::scoped_lock const lock{sampler_free_indices_mutex_};
       sampler_free_indices_.emplace_back(idx);
+      std::ranges::sort(sampler_free_indices_);
+      sampler_free_indices_.erase(std::ranges::unique(sampler_free_indices_).begin(), sampler_free_indices_.end());
       return;
     }
     case D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES: ;
