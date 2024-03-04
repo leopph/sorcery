@@ -19,25 +19,32 @@ __declspec(dllexport) extern char const* D3D12SDKPath;
 
 
 namespace sorcery::graphics {
-class Buffer;
-class Texture;
+class GraphicsDevice;
+
+struct Buffer;
+struct Texture;
 struct PipelineState;
 struct CommandList;
+struct SwapChain;
 
 
-struct SwapChain {
-  Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain;
-  std::vector<Texture> textures;
-};
-
-
-struct BufferDeleter {
+class BufferDeleter {
+public:
+  explicit BufferDeleter(GraphicsDevice& device);
   auto operator()(Buffer const* buffer) const -> void;
+
+private:
+  GraphicsDevice* device_;
 };
 
 
-struct TextureDeleter {
+class TextureDeleter {
+public:
+  explicit TextureDeleter(GraphicsDevice& device);
   auto operator()(Texture const* texture) const -> void;
+
+private:
+  GraphicsDevice* device_;
 };
 
 
@@ -66,9 +73,9 @@ using UniqueSwapChainHandle = std::unique_ptr<SwapChain, SwapChainDeleter>;
 struct BufferDesc {
   UINT size;
   UINT stride;
-  bool cbv;
-  bool srv;
-  bool uav;
+  bool constant_buffer;
+  bool shader_resource;
+  bool unordered_access;
 };
 
 
@@ -90,10 +97,10 @@ struct TextureDesc {
   DXGI_SAMPLE_DESC sample_desc;
   D3D12_RESOURCE_FLAGS flags;
 
-  bool dsv;
-  bool rtv;
-  bool srv;
-  bool uav;
+  bool depth_stencil;
+  bool render_target;
+  bool shader_resource;
+  bool unordered_access;
 };
 
 
@@ -173,6 +180,9 @@ public:
   [[nodiscard]] auto CreateFence(UINT64 initial_value) const -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
   [[nodiscard]] auto CreateSwapChain(SwapChainDesc const& desc, HWND window_handle) -> UniqueSwapChainHandle;
 
+  auto DestroyBuffer(Buffer const* buffer) -> void;
+  auto DestroyTexture(Texture const* texture) -> void;
+
   [[nodiscard]] auto WaitFence(ID3D12Fence& fence, UINT64 wait_value) const -> bool;
   [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;
   auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) -> void;
@@ -217,15 +227,12 @@ public:
   auto CmdSetStreamOutputTargets(CommandList const& cmd_list, UINT start_slot,
                                  std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
 
-  [[nodiscard]] auto SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<Texture const>;
+  [[nodiscard]] auto SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<UniqueTextureHandle const>;
   [[nodiscard]] auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
   [[nodiscard]] auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> bool;
   [[nodiscard]] auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> bool;
 
 private:
-  friend class Buffer;
-  friend class Texture;
-
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
                  Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator,
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtv_heap,
