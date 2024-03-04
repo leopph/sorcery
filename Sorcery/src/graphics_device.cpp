@@ -20,22 +20,104 @@ char const* D3D12SDKPath{".\\D3D12\\"};
 
 
 namespace sorcery::graphics {
-struct Buffer {
-  ComPtr<D3D12MA::Allocation> allocation;
-  ComPtr<ID3D12Resource2> resource;
-  UINT cbv;
-  UINT srv;
-  UINT uav;
+class Buffer {
+public:
+  GraphicsDevice* device_;
+  ComPtr<D3D12MA::Allocation> allocation_;
+  ComPtr<ID3D12Resource2> resource_;
+  UINT cbv_;
+  UINT srv_;
+  UINT uav_;
+
+
+  Buffer(GraphicsDevice* const device, ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource,
+         UINT const cbv, UINT const srv, UINT const uav) :
+    device_{device},
+    allocation_{std::move(allocation)},
+    resource_{std::move(resource)},
+    cbv_{cbv},
+    srv_{srv},
+    uav_{uav} {}
+
+
+  Buffer(Buffer const&) = delete;
+
+
+  Buffer(Buffer&& other) noexcept :
+    device_{other.device_},
+    allocation_{std::move(other.allocation_)},
+    resource_{std::move(other.resource_)},
+    cbv_{other.cbv_},
+    srv_{other.srv_},
+    uav_{other.uav_} {
+    other.cbv_ = GraphicsDevice::invalid_resource_index_;
+    other.srv_ = GraphicsDevice::invalid_resource_index_;
+    other.uav_ = GraphicsDevice::invalid_resource_index_;
+  }
+
+
+  ~Buffer() {
+    device_->ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, cbv_);
+    device_->ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, srv_);
+    device_->ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, uav_);
+  }
+
+
+  auto operator=(Buffer const&) -> void = delete;
+  auto operator=(Buffer&&) -> void = delete;
 };
 
 
-struct Texture {
-  ComPtr<D3D12MA::Allocation> allocation;
-  ComPtr<ID3D12Resource2> resource;
-  UINT dsv;
-  UINT rtv;
-  UINT srv;
-  UINT uav;
+class Texture {
+public:
+  GraphicsDevice* device_;
+  ComPtr<D3D12MA::Allocation> allocation_;
+  ComPtr<ID3D12Resource2> resource_;
+  UINT dsv_;
+  UINT rtv_;
+  UINT srv_;
+  UINT uav_;
+
+
+  Texture(GraphicsDevice* const device, ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource,
+          UINT const dsv, UINT const rtv, UINT const srv, UINT const uav) :
+    device_{device},
+    allocation_{std::move(allocation)},
+    resource_{std::move(resource)},
+    dsv_{dsv},
+    rtv_{rtv},
+    srv_{srv},
+    uav_{uav} {}
+
+
+  Texture(Texture const&) = delete;
+
+
+  Texture(Texture&& other) noexcept :
+    device_{other.device_},
+    allocation_{std::move(other.allocation_)},
+    resource_{std::move(other.resource_)},
+    dsv_{other.dsv_},
+    rtv_{other.rtv_},
+    srv_{other.srv_},
+    uav_{other.uav_} {
+    other.dsv_ = GraphicsDevice::invalid_resource_index_;
+    other.rtv_ = GraphicsDevice::invalid_resource_index_;
+    other.srv_ = GraphicsDevice::invalid_resource_index_;
+    other.uav_ = GraphicsDevice::invalid_resource_index_;
+  }
+
+
+  ~Texture() {
+    device_->ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, dsv_);
+    device_->ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, rtv_);
+    device_->ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, srv_);
+    device_->ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, uav_);
+  }
+
+
+  auto operator=(Texture const&) -> void = delete;
+  auto operator=(Texture&&) -> void = delete;
 };
 
 
@@ -260,7 +342,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
     uav = invalid_resource_index_;
   }
 
-  return UniqueBufferHandle{new Buffer{std::move(allocation), std::move(resource), cbv, srv, uav}};
+  return UniqueBufferHandle{new Buffer{this, std::move(allocation), std::move(resource), cbv, srv, uav}};
 }
 
 
@@ -507,7 +589,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
     uav = invalid_resource_index_;
   }
 
-  return UniqueTextureHandle{new Texture{std::move(allocation), std::move(resource), dsv, rtv, srv, uav}};
+  return UniqueTextureHandle{new Texture{this, std::move(allocation), std::move(resource), dsv, rtv, srv, uav}};
 }
 
 
@@ -656,7 +738,7 @@ auto GraphicsDevice::CmdBarrier(CommandList const& cmd_list, std::span<GlobalBar
     std::ranges::transform(buffer_barriers, std::back_inserter(buffers), [](BufferBarrier const& barrier) {
       return D3D12_BUFFER_BARRIER{
         barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after,
-        barrier.buffer->resource.Get(), barrier.offset, barrier.size
+        barrier.buffer->resource_.Get(), barrier.offset, barrier.size
       };
     });
     groups.emplace_back(D3D12_BARRIER_GROUP{
@@ -669,7 +751,7 @@ auto GraphicsDevice::CmdBarrier(CommandList const& cmd_list, std::span<GlobalBar
     std::ranges::transform(texture_barriers, std::back_inserter(textures), [](TextureBarrier const& barrier) {
       return D3D12_TEXTURE_BARRIER{
         barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after, barrier.layout_before,
-        barrier.layout_after, barrier.texture->resource.Get(), barrier.subresources, barrier.flags
+        barrier.layout_after, barrier.texture->resource_.Get(), barrier.subresources, barrier.flags
       };
     });
     groups.emplace_back(D3D12_BARRIER_GROUP{
@@ -685,9 +767,9 @@ auto GraphicsDevice::CmdBarrier(CommandList const& cmd_list, std::span<GlobalBar
 auto GraphicsDevice::CmdClearDepthStencil(CommandList const& cmd_list, Texture const& tex,
                                           D3D12_CLEAR_FLAGS const clear_flags, FLOAT const depth, UINT8 const stencil,
                                           std::span<D3D12_RECT const> const rects) const -> void {
-  if (tex.dsv != invalid_resource_index_) {
+  if (tex.dsv_ != invalid_resource_index_) {
     cmd_list.cmd_list->ClearDepthStencilView(
-      CD3DX12_CPU_DESCRIPTOR_HANDLE{dsv_heap_start_, static_cast<INT>(tex.dsv), dsv_heap_increment_}, clear_flags,
+      CD3DX12_CPU_DESCRIPTOR_HANDLE{dsv_heap_start_, static_cast<INT>(tex.dsv_), dsv_heap_increment_}, clear_flags,
       depth, stencil, static_cast<UINT>(rects.size()), rects.data());
   }
 }
@@ -696,28 +778,28 @@ auto GraphicsDevice::CmdClearDepthStencil(CommandList const& cmd_list, Texture c
 auto GraphicsDevice::CmdClearRenderTarget(CommandList const& cmd_list, Texture const& tex,
                                           std::span<FLOAT const, 4> const color_rgba,
                                           std::span<D3D12_RECT const> const rects) const -> void {
-  if (tex.rtv != invalid_resource_index_) {
+  if (tex.rtv_ != invalid_resource_index_) {
     cmd_list.cmd_list->ClearRenderTargetView(
-      CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv), rtv_heap_increment_}, color_rgba.data(),
-      static_cast<UINT>(rects.size()), rects.data());
+      CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv_), rtv_heap_increment_},
+      color_rgba.data(), static_cast<UINT>(rects.size()), rects.data());
   }
 }
 
 
 auto GraphicsDevice::CmdCopyBuffer(CommandList const& cmd_list, Buffer const& dst, Buffer const& src) const -> void {
-  cmd_list.cmd_list->CopyResource(dst.resource.Get(), src.resource.Get());
+  cmd_list.cmd_list->CopyResource(dst.resource_.Get(), src.resource_.Get());
 }
 
 
 auto GraphicsDevice::CmdCopyBufferRegion(CommandList const& cmd_list, Buffer const& dst, UINT64 const dst_offset,
                                          Buffer const& src, UINT64 const src_offset,
                                          UINT64 const num_bytes) const -> void {
-  cmd_list.cmd_list->CopyBufferRegion(dst.resource.Get(), dst_offset, src.resource.Get(), src_offset, num_bytes);
+  cmd_list.cmd_list->CopyBufferRegion(dst.resource_.Get(), dst_offset, src.resource_.Get(), src_offset, num_bytes);
 }
 
 
 auto GraphicsDevice::CmdCopyTexture(CommandList const& cmd_list, Texture const& dst, Texture const& src) -> void {
-  cmd_list.cmd_list->CopyResource(dst.resource.Get(), src.resource.Get());
+  cmd_list.cmd_list->CopyResource(dst.resource_.Get(), src.resource_.Get());
 }
 
 
@@ -726,11 +808,11 @@ auto GraphicsDevice::CmdCopyTextureRegion(CommandList const& cmd_list, Texture c
                                           UINT const dst_z, Texture const& src, UINT const src_subresource_index,
                                           D3D12_BOX const* src_box) const -> void {
   D3D12_TEXTURE_COPY_LOCATION const dst_loc{
-    .pResource = dst.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .pResource = dst.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
     .SubresourceIndex = dst_subresource_index
   };
   D3D12_TEXTURE_COPY_LOCATION const src_loc{
-    .pResource = src.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .pResource = src.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
     .SubresourceIndex = src_subresource_index
   };
   cmd_list.cmd_list->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, src_box);
@@ -742,11 +824,11 @@ auto GraphicsDevice::CmdCopyTextureRegion(CommandList const& cmd_list, Texture c
                                           UINT const dst_z, Buffer const& src,
                                           D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void {
   D3D12_TEXTURE_COPY_LOCATION const dst_loc{
-    .pResource = dst.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .pResource = dst.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
     .SubresourceIndex = dst_subresource_index
   };
   D3D12_TEXTURE_COPY_LOCATION const src_loc{
-    .pResource = src.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, .PlacedFootprint = src_footprint
+    .pResource = src.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, .PlacedFootprint = src_footprint
   };
   cmd_list.cmd_list->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, nullptr);
 }
@@ -792,11 +874,11 @@ auto GraphicsDevice::CmdSetRenderTargets(CommandList const& cmd_list, std::span<
   std::pmr::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt{&GetTmpMemRes()};
   rt.reserve(render_targets.size());
   std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const& tex) {
-    return CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv), rtv_heap_increment_};
+    return CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv_), rtv_heap_increment_};
   });
 
   CD3DX12_CPU_DESCRIPTOR_HANDLE const ds{
-    dsv_heap_start_, static_cast<INT>(depth_stencil ? depth_stencil->dsv : 0), dsv_heap_increment_
+    dsv_heap_start_, static_cast<INT>(depth_stencil ? depth_stencil->dsv_ : 0), dsv_heap_increment_
   };
 
   cmd_list.cmd_list->OMSetRenderTargets(static_cast<UINT>(rt.size()), rt.data(), FALSE, depth_stencil ? &ds : nullptr);
@@ -917,6 +999,10 @@ auto GraphicsDevice::AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE const ty
 
 
 auto GraphicsDevice::ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT const idx) -> void {
+  if (idx == invalid_resource_index_) {
+    return;
+  }
+
   switch (type) {
     case D3D12_DESCRIPTOR_HEAP_TYPE_RTV: {
       std::scoped_lock const lock{rtv_indices_mutex_};

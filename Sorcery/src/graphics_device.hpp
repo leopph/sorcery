@@ -19,8 +19,8 @@ __declspec(dllexport) extern char const* D3D12SDKPath;
 
 
 namespace sorcery::graphics {
-struct Buffer;
-struct Texture;
+class Buffer;
+class Texture;
 struct PipelineState;
 struct CommandList;
 
@@ -196,6 +196,9 @@ public:
                                  std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
 
 private:
+  friend class Buffer;
+  friend class Texture;
+
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
                  Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator,
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtv_heap,
