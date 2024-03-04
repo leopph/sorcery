@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <span>
 #include <unordered_map>
 #include <vector>
 
@@ -98,6 +99,12 @@ struct PipelineState {
 };
 
 
+struct CommandList {
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list;
+};
+
+
 class GraphicsDevice {
 public:
   [[nodiscard]] static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
@@ -108,8 +115,12 @@ public:
                                    D3D12_CLEAR_VALUE const* clear_value) -> std::unique_ptr<Texture>;
   [[nodiscard]] auto CreatePipelineState(PipelineStateDesc const& desc,
                                          std::uint8_t num_32_bit_params) -> std::unique_ptr<PipelineState>;
-
+  [[nodiscard]] auto CreateCommandList() const -> std::unique_ptr<CommandList>;
   [[nodiscard]] auto CreateFence(UINT64 initial_value) const -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
+
+  [[nodiscard]] auto WaitFence(ID3D12Fence& fence, UINT64 wait_value) const -> bool;
+  [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;
+  auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) -> void;
 
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
@@ -155,5 +166,8 @@ private:
   std::mutex root_signature_mutex_;
 
   std::unordered_map<std::uint8_t, Microsoft::WRL::ComPtr<ID3D12RootSignature>> root_signatures_;
+
+  std::mutex cmd_list_submission_mutex_;
+  std::vector<ID3D12CommandList*> cmd_list_submission_buffer_;
 };
 }

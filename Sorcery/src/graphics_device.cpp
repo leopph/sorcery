@@ -3,6 +3,8 @@
 #include <dxgidebug.h>
 #include <d3dx12.h>
 
+#include <algorithm>
+#include <iterator>
 #include <utility>
 #include <vector>
 
@@ -497,6 +499,23 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
 }
 
 
+auto GraphicsDevice::CreateCommandList() const -> std::unique_ptr<CommandList> {
+  ComPtr<ID3D12CommandAllocator> allocator;
+  if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)))) {
+    return nullptr;
+  }
+
+  ComPtr<ID3D12GraphicsCommandList7> cmd_list;
+  if (FAILED(
+    device_->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmd_list)
+    ))) {
+    return nullptr;
+  }
+
+  return std::make_unique<CommandList>(std::move(allocator), std::move(cmd_list));
+}
+
+
 auto GraphicsDevice::CreateFence(UINT64 const initial_value) const -> ComPtr<ID3D12Fence1> {
   ComPtr<ID3D12Fence1> fence;
 
@@ -505,6 +524,28 @@ auto GraphicsDevice::CreateFence(UINT64 const initial_value) const -> ComPtr<ID3
   }
 
   return fence;
+}
+
+
+auto GraphicsDevice::WaitFence(ID3D12Fence& fence, UINT64 const wait_value) const -> bool {
+  return SUCCEEDED(queue_->Wait(&fence, wait_value));
+}
+
+
+auto GraphicsDevice::SignalFence(ID3D12Fence& fence, UINT64 const signal_value) const -> bool {
+  return SUCCEEDED(queue_->Signal(&fence, signal_value));
+}
+
+
+auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) -> void {
+  std::scoped_lock const lock{cmd_list_submission_mutex_};
+  cmd_list_submission_buffer_.reserve(cmd_lists.size());
+  cmd_list_submission_buffer_.clear();
+  std::ranges::transform(cmd_lists, std::back_inserter(cmd_list_submission_buffer_), [](CommandList const& cmd_list) {
+    return cmd_list.cmd_list.Get();
+  });
+  queue_->ExecuteCommandLists(static_cast<UINT>(cmd_list_submission_buffer_.size()),
+    cmd_list_submission_buffer_.data());
 }
 
 
