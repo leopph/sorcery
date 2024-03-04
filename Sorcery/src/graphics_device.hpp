@@ -139,6 +139,15 @@ public:
   auto CmdCopyTextureRegion(CommandList const& cmd_list, Texture const& dst, UINT dst_subresource_index, UINT dst_x,
                             UINT dst_y, UINT dst_z, Buffer const& src,
                             D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void;
+  auto CmdDispatch(CommandList const& cmd_list, UINT thread_group_count_x, UINT thread_group_count_y,
+                   UINT thread_group_count_z) const -> void;
+  auto CmdDispatchMesh(CommandList const& cmd_list, UINT thread_group_count_x, UINT thread_group_count_y,
+                       UINT thread_group_count_z) const -> void;
+  auto CmdDrawIndexedInstanced(CommandList const& cmd_list, UINT index_count_per_instance, UINT instance_count,
+                               UINT start_index_location, INT base_vertex_location,
+                               UINT start_instance_location) const -> void;
+  auto CmdDrawInstanced(CommandList const& cmd_list, UINT vertex_count_per_instance, UINT instance_count,
+                        UINT start_vertex_location, UINT start_instance_location) const -> void;
   auto CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void;
 
 private:

@@ -699,6 +699,35 @@ auto GraphicsDevice::CmdCopyTextureRegion(CommandList const& cmd_list, Texture c
 }
 
 
+auto GraphicsDevice::CmdDispatch(CommandList const& cmd_list, UINT const thread_group_count_x,
+                                 UINT const thread_group_count_y, UINT const thread_group_count_z) const -> void {
+  cmd_list.cmd_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+}
+
+
+auto GraphicsDevice::CmdDispatchMesh(CommandList const& cmd_list, UINT const thread_group_count_x,
+                                     UINT const thread_group_count_y, UINT const thread_group_count_z) const -> void {
+  cmd_list.cmd_list->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+}
+
+
+auto GraphicsDevice::CmdDrawIndexedInstanced(CommandList const& cmd_list, UINT const index_count_per_instance,
+                                             UINT const instance_count, UINT const start_index_location,
+                                             INT const base_vertex_location,
+                                             UINT const start_instance_location) const -> void {
+  cmd_list.cmd_list->DrawIndexedInstanced(index_count_per_instance, instance_count, start_index_location,
+    base_vertex_location, start_instance_location);
+}
+
+
+auto GraphicsDevice::CmdDrawInstanced(CommandList const& cmd_list, UINT const vertex_count_per_instance,
+                                      UINT const instance_count, UINT const start_vertex_location,
+                                      UINT const start_instance_location) const -> void {
+  cmd_list.cmd_list->DrawInstanced(vertex_count_per_instance, instance_count, start_vertex_location,
+    start_instance_location);
+}
+
+
 auto GraphicsDevice::CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void {
   cmd_list.cmd_list->SetPipelineState(pipeline_state.pipeline_state.Get());
   cmd_list.compute_pipeline_set = pipeline_state.is_compute;
