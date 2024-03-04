@@ -66,51 +66,6 @@ UINT const GraphicsDevice::res_desc_heap_size_{1'000'000};
 UINT const GraphicsDevice::invalid_resource_index_{static_cast<UINT>(-1)};
 
 
-BufferDeleter::BufferDeleter(GraphicsDevice& device) :
-  device_{&device} {}
-
-
-auto BufferDeleter::operator()(Buffer const* const buffer) const -> void {
-  device_->DestroyBuffer(buffer);
-}
-
-
-TextureDeleter::TextureDeleter(GraphicsDevice& device) :
-  device_{&device} {}
-
-
-auto TextureDeleter::operator()(Texture const* const texture) const -> void {
-  device_->DestroyTexture(texture);
-}
-
-
-PipelineStateDeleter::PipelineStateDeleter(GraphicsDevice& device) :
-  device_{&device} {}
-
-
-auto PipelineStateDeleter::operator()(PipelineState const* const pipeline_state) const -> void {
-  device_->DestroyPipelineState(pipeline_state);
-}
-
-
-CommandListDeleter::CommandListDeleter(GraphicsDevice& device) :
-  device_{&device} {}
-
-
-auto CommandListDeleter::operator()(CommandList const* const cmd_list) const -> void {
-  device_->DestroyCommandList(cmd_list);
-}
-
-
-SwapChainDeleter::SwapChainDeleter(GraphicsDevice& device) :
-  device_{&device} {}
-
-
-auto SwapChainDeleter::operator()(SwapChain const* const swap_chain) const -> void {
-  device_->DestroySwapChain(swap_chain);
-}
-
-
 auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDevice> {
   if (enable_debug) {
     ComPtr<ID3D12Debug6> debug;
@@ -242,7 +197,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
   if (FAILED(
     allocator_->CreateResource3(&alloc_desc, &res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr, &allocation
       , IID_PPV_ARGS(&resource)))) {
-    return UniqueBufferHandle{nullptr, BufferDeleter{*this}};
+    return UniqueBufferHandle{nullptr, DeviceChildDeleter<Buffer>{*this}};
   }
 
   UINT cbv;
@@ -292,7 +247,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
   }
 
   return UniqueBufferHandle{
-    new Buffer{std::move(allocation), std::move(resource), cbv, srv, uav}, BufferDeleter{*this}
+    new Buffer{std::move(allocation), std::move(resource), cbv, srv, uav}, DeviceChildDeleter<Buffer>{*this}
   };
 }
 
@@ -331,7 +286,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
   if (FAILED(
     allocator_->CreateResource3(&alloc_desc, &res_desc, initial_layout, clear_value, 0, nullptr, &allocation,
       IID_PPV_ARGS(&resource)))) {
-    return UniqueTextureHandle{nullptr, TextureDeleter{*this}};
+    return UniqueTextureHandle{nullptr, DeviceChildDeleter<Texture>{*this}};
   }
 
   UINT dsv;
@@ -541,7 +496,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
   }
 
   return UniqueTextureHandle{
-    new Texture{std::move(allocation), std::move(resource), dsv, rtv, srv, uav}, TextureDeleter{*this}
+    new Texture{std::move(allocation), std::move(resource), dsv, rtv, srv, uav}, DeviceChildDeleter<Texture>{*this}
   };
 }
 
@@ -568,13 +523,13 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
       ComPtr<ID3DBlob> error_blob;
 
       if (FAILED(D3D12SerializeVersionedRootSignature(&root_signature_desc, &root_signature_blob, &error_blob))) {
-        return UniquePipelineStateHandle{nullptr, PipelineStateDeleter{*this}};
+        return UniquePipelineStateHandle{nullptr, DeviceChildDeleter<PipelineState>{*this}};
       }
 
       if (FAILED(
         device_->CreateRootSignature(0, root_signature_blob->GetBufferPointer(), root_signature_blob->GetBufferSize(),
           IID_PPV_ARGS(&root_signature)))) {
-        return UniquePipelineStateHandle{nullptr, PipelineStateDeleter{*this}};
+        return UniquePipelineStateHandle{nullptr, DeviceChildDeleter<PipelineState>{*this}};
       }
 
       root_signatures_.emplace(num_32_bit_params, root_signature);
@@ -586,7 +541,7 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
   ComPtr<ID3D12PipelineState> pipeline_state;
 
   if (FAILED(device_->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&pipeline_state)))) {
-    return UniquePipelineStateHandle{nullptr, PipelineStateDeleter{*this}};
+    return UniquePipelineStateHandle{nullptr, DeviceChildDeleter<PipelineState>{*this}};
   }
 
   return UniquePipelineStateHandle{
@@ -594,7 +549,7 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
       std::move(root_signature), std::move(pipeline_state), num_32_bit_params,
       static_cast<D3D12_SHADER_BYTECODE>(desc.vs).BytecodeLength != 0
     },
-    PipelineStateDeleter{*this}
+    DeviceChildDeleter<PipelineState>{*this}
   };
 }
 
@@ -602,18 +557,18 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
 auto GraphicsDevice::CreateCommandList() -> UniqueCommandListHandle {
   ComPtr<ID3D12CommandAllocator> allocator;
   if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)))) {
-    return UniqueCommandListHandle{nullptr, CommandListDeleter{*this}};
+    return UniqueCommandListHandle{nullptr, DeviceChildDeleter<CommandList>{*this}};
   }
 
   ComPtr<ID3D12GraphicsCommandList7> cmd_list;
   if (FAILED(
     device_->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmd_list)
     ))) {
-    return UniqueCommandListHandle{nullptr, CommandListDeleter{*this}};
+    return UniqueCommandListHandle{nullptr, DeviceChildDeleter<CommandList>{*this}};
   }
 
   return UniqueCommandListHandle{
-    new CommandList{std::move(allocator), std::move(cmd_list), false}, CommandListDeleter{*this}
+    new CommandList{std::move(allocator), std::move(cmd_list), false}, DeviceChildDeleter<CommandList>{*this}
   };
 }
 
@@ -638,18 +593,18 @@ auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc, HWND const windo
   ComPtr<IDXGISwapChain1> swap_chain1;
   if (FAILED(
     factory_->CreateSwapChainForHwnd(queue_.Get(), window_handle, &dxgi_desc, nullptr, nullptr, &swap_chain1))) {
-    return UniqueSwapChainHandle{nullptr, SwapChainDeleter{*this}};
+    return UniqueSwapChainHandle{nullptr, DeviceChildDeleter<SwapChain>{*this}};
   }
 
   ComPtr<IDXGISwapChain4> swap_chain4;
   if (FAILED(swap_chain1.As(&swap_chain4))) {
-    return UniqueSwapChainHandle{nullptr, SwapChainDeleter{*this}};
+    return UniqueSwapChainHandle{nullptr, DeviceChildDeleter<SwapChain>{*this}};
   }
 
   auto const swap_chain{new SwapChain{std::move(swap_chain4), {}}};
   SwapChainCreateTextures(*swap_chain);
 
-  return UniqueSwapChainHandle{swap_chain, SwapChainDeleter{*this}};
+  return UniqueSwapChainHandle{swap_chain, DeviceChildDeleter<SwapChain>{*this}};
 }
 
 
@@ -1135,9 +1090,34 @@ auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> bool {
 
     swap_chain.textures.emplace_back(new Texture{
       nullptr, std::move(buf), invalid_resource_index_, rtv, srv, invalid_resource_index_
-    }, TextureDeleter{*this});
+    }, DeviceChildDeleter<Texture>{*this});
   }
 
   return true;
+}
+
+
+auto DeviceChildDeleter<Buffer>::operator()(Buffer const* const device_child) const -> void {
+  device_->DestroyBuffer(device_child);
+}
+
+
+auto DeviceChildDeleter<Texture>::operator()(Texture const* const device_child) const -> void {
+  device_->DestroyTexture(device_child);
+}
+
+
+auto DeviceChildDeleter<PipelineState>::operator()(PipelineState const* const device_child) const -> void {
+  device_->DestroyPipelineState(device_child);
+}
+
+
+auto DeviceChildDeleter<CommandList>::operator()(CommandList const* const device_child) const -> void {
+  device_->DestroyCommandList(device_child);
+}
+
+
+auto DeviceChildDeleter<SwapChain>::operator()(SwapChain const* const device_child) const -> void {
+  device_->DestroySwapChain(device_child);
 }
 }

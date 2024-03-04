@@ -27,63 +27,14 @@ struct PipelineState;
 struct CommandList;
 struct SwapChain;
 
+template<typename T>
+class DeviceChildDeleter;
 
-class BufferDeleter {
-public:
-  explicit BufferDeleter(GraphicsDevice& device);
-  auto operator()(Buffer const* buffer) const -> void;
-
-private:
-  GraphicsDevice* device_;
-};
-
-
-class TextureDeleter {
-public:
-  explicit TextureDeleter(GraphicsDevice& device);
-  auto operator()(Texture const* texture) const -> void;
-
-private:
-  GraphicsDevice* device_;
-};
-
-
-class PipelineStateDeleter {
-public:
-  explicit PipelineStateDeleter(GraphicsDevice& device);
-  auto operator()(PipelineState const* pipeline_state) const -> void;
-#
-
-private:
-  GraphicsDevice* device_;
-};
-
-
-class CommandListDeleter {
-public:
-  explicit CommandListDeleter(GraphicsDevice& device);
-  auto operator()(CommandList const* cmd_list) const -> void;
-
-private:
-  GraphicsDevice* device_;
-};
-
-
-class SwapChainDeleter {
-public:
-  explicit SwapChainDeleter(GraphicsDevice& device);
-  auto operator()(SwapChain const* swap_chain) const -> void;
-
-private:
-  GraphicsDevice* device_;
-};
-
-
-using UniqueBufferHandle = std::unique_ptr<Buffer, BufferDeleter>;
-using UniqueTextureHandle = std::unique_ptr<Texture, TextureDeleter>;
-using UniquePipelineStateHandle = std::unique_ptr<PipelineState, PipelineStateDeleter>;
-using UniqueCommandListHandle = std::unique_ptr<CommandList, CommandListDeleter>;
-using UniqueSwapChainHandle = std::unique_ptr<SwapChain, SwapChainDeleter>;
+using UniqueBufferHandle = std::unique_ptr<Buffer, DeviceChildDeleter<Buffer>>;
+using UniqueTextureHandle = std::unique_ptr<Texture, DeviceChildDeleter<Texture>>;
+using UniquePipelineStateHandle = std::unique_ptr<PipelineState, DeviceChildDeleter<PipelineState>>;
+using UniqueCommandListHandle = std::unique_ptr<CommandList, DeviceChildDeleter<CommandList>>;
+using UniqueSwapChainHandle = std::unique_ptr<SwapChain, DeviceChildDeleter<SwapChain>>;
 
 
 struct BufferDesc {
@@ -314,4 +265,25 @@ private:
   UINT swap_chain_flags_{0};
   UINT present_flags_{0};
 };
+
+
+template<typename T>
+class DeviceChildDeleter {
+public:
+  explicit DeviceChildDeleter(GraphicsDevice& device) :
+    device_{&device} {}
+
+
+  auto operator()(T const* device_child) const -> void;
+
+private:
+  GraphicsDevice* device_;
+};
+
+
+auto DeviceChildDeleter<Buffer>::operator()(Buffer const* device_child) const -> void;
+auto DeviceChildDeleter<Texture>::operator()(Texture const* device_child) const -> void;
+auto DeviceChildDeleter<PipelineState>::operator()(PipelineState const* device_child) const -> void;
+auto DeviceChildDeleter<CommandList>::operator()(CommandList const* device_child) const -> void;
+auto DeviceChildDeleter<SwapChain>::operator()(SwapChain const* device_child) const -> void;
 }
