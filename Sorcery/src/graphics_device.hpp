@@ -18,7 +18,7 @@ __declspec(dllexport) extern char const* D3D12SDKPath;
 }
 
 
-namespace graphics {
+namespace sorcery::graphics {
 struct Buffer;
 struct Texture;
 struct PipelineState;

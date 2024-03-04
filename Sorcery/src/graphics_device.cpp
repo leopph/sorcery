@@ -17,7 +17,7 @@ char const* D3D12SDKPath{".\\D3D12\\"};
 }
 
 
-namespace graphics {
+namespace sorcery::graphics {
 struct Buffer {
   ComPtr<D3D12MA::Allocation> allocation;
   ComPtr<ID3D12Resource2> resource;
