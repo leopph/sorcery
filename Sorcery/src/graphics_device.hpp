@@ -35,6 +35,7 @@ using UniqueTextureHandle = std::unique_ptr<Texture, DeviceChildDeleter<Texture>
 using UniquePipelineStateHandle = std::unique_ptr<PipelineState, DeviceChildDeleter<PipelineState>>;
 using UniqueCommandListHandle = std::unique_ptr<CommandList, DeviceChildDeleter<CommandList>>;
 using UniqueSwapChainHandle = std::unique_ptr<SwapChain, DeviceChildDeleter<SwapChain>>;
+class UniqueSamplerHandle;
 
 
 struct BufferDesc {
@@ -146,12 +147,14 @@ public:
   [[nodiscard]] auto CreateCommandList() -> UniqueCommandListHandle;
   [[nodiscard]] auto CreateFence(UINT64 initial_value) -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
   [[nodiscard]] auto CreateSwapChain(SwapChainDesc const& desc, HWND window_handle) -> UniqueSwapChainHandle;
+  [[nodiscard]] auto CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle;
 
   auto DestroyBuffer(Buffer const* buffer) -> void;
   auto DestroyTexture(Texture const* texture) -> void;
   auto DestroyPipelineState(PipelineState const* pipeline_state) -> void;
   auto DestroyCommandList(CommandList const* command_list) -> void;
   auto DestroySwapChain(SwapChain const* swap_chain) -> void;
+  auto DestroySampler(UINT sampler) -> void;
 
   [[nodiscard]] auto WaitFence(ID3D12Fence& fence, UINT64 wait_value) const -> bool;
   [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;
@@ -215,6 +218,7 @@ private:
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtv_heap,
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsv_heap,
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> res_desc_heap,
+                 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> sampler_heap,
                  Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue);
 
   [[nodiscard]] auto AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE type) -> UINT;
@@ -227,7 +231,7 @@ private:
   static UINT const rtv_heap_size_;
   static UINT const dsv_heap_size_;
   static UINT const res_desc_heap_size_;
-  static UINT const invalid_resource_index_;
+  static UINT const sampler_heap_size_;
 
   Microsoft::WRL::ComPtr<IDXGIFactory7> factory_;
   Microsoft::WRL::ComPtr<ID3D12Device10> device_;
@@ -236,24 +240,29 @@ private:
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtv_heap_;
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsv_heap_;
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> res_desc_heap_;
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> sampler_heap_;
 
   std::vector<std::uint32_t> rtv_free_indices_;
   std::vector<std::uint32_t> dsv_free_indices_;
   std::vector<std::uint32_t> res_desc_free_indices_;
+  std::vector<std::uint32_t> sampler_free_indices_;
 
   std::mutex rtv_indices_mutex_;
   std::mutex dsv_indices_mutex_;
   std::mutex res_desc_free_indices_mutex_;
+  std::mutex sampler_free_indices_mutex_;
 
   Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue_;
 
   D3D12_CPU_DESCRIPTOR_HANDLE rtv_heap_start_;
   D3D12_CPU_DESCRIPTOR_HANDLE dsv_heap_start_;
   D3D12_CPU_DESCRIPTOR_HANDLE res_desc_heap_start_;
+  D3D12_CPU_DESCRIPTOR_HANDLE sampler_heap_start_;
 
   UINT rtv_heap_increment_;
   UINT dsv_heap_increment_;
   UINT res_desc_heap_increment_;
+  UINT sampler_heap_increment_;
 
   std::mutex root_signature_mutex_;
 
@@ -286,4 +295,23 @@ auto DeviceChildDeleter<Texture>::operator()(Texture const* device_child) const 
 auto DeviceChildDeleter<PipelineState>::operator()(PipelineState const* device_child) const -> void;
 auto DeviceChildDeleter<CommandList>::operator()(CommandList const* device_child) const -> void;
 auto DeviceChildDeleter<SwapChain>::operator()(SwapChain const* device_child) const -> void;
+
+
+class UniqueSamplerHandle {
+public:
+  [[nodiscard]] auto Get() const -> UINT;
+
+  UniqueSamplerHandle(UINT sampler, GraphicsDevice& device);
+  UniqueSamplerHandle(UniqueSamplerHandle const&) = delete;
+  UniqueSamplerHandle(UniqueSamplerHandle&& other) noexcept;
+
+  ~UniqueSamplerHandle();
+
+  auto operator=(UniqueSamplerHandle const&) -> void = delete;
+  auto operator=(UniqueSamplerHandle&& other) noexcept -> UniqueSamplerHandle&;
+
+private:
+  GraphicsDevice* device_;
+  UINT sampler_;
+};
 }

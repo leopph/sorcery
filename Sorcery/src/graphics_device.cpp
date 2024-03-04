@@ -20,6 +20,11 @@ char const* D3D12SDKPath{".\\D3D12\\"};
 
 
 namespace sorcery::graphics {
+namespace {
+UINT constexpr kInvalidResourceIndex{static_cast<UINT>(-1)};
+}
+
+
 struct Buffer {
   ComPtr<D3D12MA::Allocation> allocation;
   ComPtr<ID3D12Resource2> resource;
@@ -63,7 +68,7 @@ struct SwapChain {
 UINT const GraphicsDevice::rtv_heap_size_{1'000'000};
 UINT const GraphicsDevice::dsv_heap_size_{1'000'000};
 UINT const GraphicsDevice::res_desc_heap_size_{1'000'000};
-UINT const GraphicsDevice::invalid_resource_index_{static_cast<UINT>(-1)};
+UINT const GraphicsDevice::sampler_heap_size_{2048};
 
 
 auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDevice> {
@@ -167,6 +172,14 @@ auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDev
     return nullptr;
   }
 
+  D3D12_DESCRIPTOR_HEAP_DESC constexpr sampler_heap_desc{
+    D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, sampler_heap_size_, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0
+  };
+  ComPtr<ID3D12DescriptorHeap> sampler_heap;
+  if (FAILED(device->CreateDescriptorHeap(&sampler_heap_desc, IID_PPV_ARGS(&sampler_heap)))) {
+    return nullptr;
+  }
+
   D3D12_COMMAND_QUEUE_DESC constexpr queue_desc{
     D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, D3D12_COMMAND_QUEUE_FLAG_NONE, 0
   };
@@ -178,7 +191,7 @@ auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDev
   return std::unique_ptr<GraphicsDevice>{
     new GraphicsDevice{
       std::move(factory), std::move(device), std::move(allocator), std::move(rtv_heap), std::move(dsv_heap),
-      std::move(res_desc_heap), std::move(queue)
+      std::move(res_desc_heap), std::move(sampler_heap), std::move(queue)
     }
   };
 }
@@ -209,7 +222,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
       res_desc_heap_start_, static_cast<INT>(cbv), res_desc_heap_increment_
     });
   } else {
-    cbv = invalid_resource_index_;
+    cbv = kInvalidResourceIndex;
   }
 
   UINT srv;
@@ -225,7 +238,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
       res_desc_heap_start_, static_cast<INT>(srv), res_desc_heap_increment_
     });
   } else {
-    srv = invalid_resource_index_;
+    srv = kInvalidResourceIndex;
   }
 
   UINT uav;
@@ -243,7 +256,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
       res_desc_heap_start_, static_cast<INT>(uav), res_desc_heap_increment_
     });
   } else {
-    uav = invalid_resource_index_;
+    uav = kInvalidResourceIndex;
   }
 
   return UniqueBufferHandle{
@@ -328,7 +341,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
     device_->CreateDepthStencilView(resource.Get(), &dsv_desc,
       CD3DX12_CPU_DESCRIPTOR_HANDLE{dsv_heap_start_, static_cast<INT>(dsv), dsv_heap_increment_});
   } else {
-    dsv = invalid_resource_index_;
+    dsv = kInvalidResourceIndex;
   }
 
   UINT rtv;
@@ -377,7 +390,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
     device_->CreateRenderTargetView(resource.Get(), &rtv_desc,
       CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(rtv), rtv_heap_increment_});
   } else {
-    rtv = invalid_resource_index_;
+    rtv = kInvalidResourceIndex;
   }
 
   UINT srv;
@@ -442,7 +455,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
       res_desc_heap_start_, static_cast<INT>(srv), res_desc_heap_increment_
     });
   } else {
-    srv = invalid_resource_index_;
+    srv = kInvalidResourceIndex;
   }
 
   UINT uav;
@@ -492,7 +505,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
       res_desc_heap_start_, static_cast<INT>(uav), res_desc_heap_increment_
     });
   } else {
-    uav = invalid_resource_index_;
+    uav = kInvalidResourceIndex;
   }
 
   return UniqueTextureHandle{
@@ -608,6 +621,15 @@ auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc, HWND const windo
 }
 
 
+auto GraphicsDevice::CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle {
+  auto const sampler{AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)};
+  device_->CreateSampler(&desc, CD3DX12_CPU_DESCRIPTOR_HANDLE{
+    sampler_heap_start_, static_cast<INT>(sampler), sampler_heap_increment_
+  });
+  return UniqueSamplerHandle{sampler, *this};
+}
+
+
 auto GraphicsDevice::DestroyBuffer(Buffer const* const buffer) -> void {
   if (buffer) {
     ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, buffer->cbv);
@@ -643,6 +665,11 @@ auto GraphicsDevice::DestroyCommandList(CommandList const* const command_list) -
 
 auto GraphicsDevice::DestroySwapChain(SwapChain const* const swap_chain) -> void {
   delete swap_chain;
+}
+
+
+auto GraphicsDevice::DestroySampler(UINT const sampler) -> void {
+  ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, sampler);
 }
 
 
@@ -740,7 +767,7 @@ auto GraphicsDevice::CmdBarrier(CommandList const& cmd_list, std::span<GlobalBar
 auto GraphicsDevice::CmdClearDepthStencil(CommandList const& cmd_list, Texture const& tex,
                                           D3D12_CLEAR_FLAGS const clear_flags, FLOAT const depth, UINT8 const stencil,
                                           std::span<D3D12_RECT const> const rects) const -> void {
-  if (tex.dsv != invalid_resource_index_) {
+  if (tex.dsv != kInvalidResourceIndex) {
     cmd_list.cmd_list->ClearDepthStencilView(
       CD3DX12_CPU_DESCRIPTOR_HANDLE{dsv_heap_start_, static_cast<INT>(tex.dsv), dsv_heap_increment_}, clear_flags,
       depth, stencil, static_cast<UINT>(rects.size()), rects.data());
@@ -751,7 +778,7 @@ auto GraphicsDevice::CmdClearDepthStencil(CommandList const& cmd_list, Texture c
 auto GraphicsDevice::CmdClearRenderTarget(CommandList const& cmd_list, Texture const& tex,
                                           std::span<FLOAT const, 4> const color_rgba,
                                           std::span<D3D12_RECT const> const rects) const -> void {
-  if (tex.rtv != invalid_resource_index_) {
+  if (tex.rtv != kInvalidResourceIndex) {
     cmd_list.cmd_list->ClearRenderTargetView(
       CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv), rtv_heap_increment_}, color_rgba.data(),
       static_cast<UINT>(rects.size()), rects.data());
@@ -963,20 +990,23 @@ auto GraphicsDevice::TextureGetUnorderedAccess(Texture const& texture) const -> 
 GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
                                ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
                                ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,
-                               ComPtr<ID3D12CommandQueue> queue) :
+                               ComPtr<ID3D12DescriptorHeap> sampler_heap, ComPtr<ID3D12CommandQueue> queue) :
   factory_{std::move(factory)},
   device_{std::move(device)},
   allocator_{std::move(allocator)},
   rtv_heap_{std::move(rtv_heap)},
   dsv_heap_{std::move(dsv_heap)},
   res_desc_heap_{std::move(res_desc_heap)},
+  sampler_heap_{std::move(sampler_heap)},
   queue_{std::move(queue)},
   rtv_heap_start_{rtv_heap_->GetCPUDescriptorHandleForHeapStart()},
   dsv_heap_start_{dsv_heap_->GetCPUDescriptorHandleForHeapStart()},
   res_desc_heap_start_{res_desc_heap_->GetCPUDescriptorHandleForHeapStart()},
+  sampler_heap_start_{sampler_heap_->GetCPUDescriptorHandleForHeapStart()},
   rtv_heap_increment_{device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)},
   dsv_heap_increment_{device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)},
-  res_desc_heap_increment_{device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)} {
+  res_desc_heap_increment_{device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)},
+  sampler_heap_increment_{device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)} {
   rtv_free_indices_.reserve(rtv_heap_size_);
   for (UINT i{0}; i < rtv_heap_size_; i++) {
     rtv_free_indices_.emplace_back(i);
@@ -990,6 +1020,11 @@ GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Devic
   res_desc_free_indices_.reserve(res_desc_heap_size_);
   for (UINT i{0}; i < res_desc_heap_size_; i++) {
     res_desc_free_indices_.emplace_back(i);
+  }
+
+  sampler_free_indices_.reserve(sampler_heap_size_);
+  for (UINT i{0}; i < sampler_heap_size_; i++) {
+    sampler_free_indices_.emplace_back(i);
   }
 
   if (BOOL allow_tearing; SUCCEEDED(
@@ -1021,7 +1056,12 @@ auto GraphicsDevice::AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE const ty
       res_desc_free_indices_.pop_back();
       return idx;
     }
-    case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER: [[fallthrough]];
+    case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER: {
+      std::scoped_lock const lock{sampler_free_indices_mutex_};
+      auto const idx{sampler_free_indices_.back()};
+      sampler_free_indices_.pop_back();
+      return idx;
+    }
     case D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES: ;
   }
 
@@ -1030,7 +1070,7 @@ auto GraphicsDevice::AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE const ty
 
 
 auto GraphicsDevice::ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE const type, UINT const idx) -> void {
-  if (idx == invalid_resource_index_) {
+  if (idx == kInvalidResourceIndex) {
     return;
   }
 
@@ -1050,7 +1090,11 @@ auto GraphicsDevice::ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE const typ
       res_desc_free_indices_.emplace_back(idx);
       return;
     }
-    case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER: [[fallthrough]];
+    case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER: {
+      std::scoped_lock const lock{sampler_free_indices_mutex_};
+      sampler_free_indices_.emplace_back(idx);
+      return;
+    }
     case D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES: ;
   }
 }
@@ -1080,16 +1124,16 @@ auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> bool {
     UINT const rtv{
       desc.BufferUsage & DXGI_USAGE_RENDER_TARGET_OUTPUT
         ? AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
-        : invalid_resource_index_
+        : kInvalidResourceIndex
     };
     UINT const srv{
       desc.BufferUsage & DXGI_USAGE_SHADER_INPUT
         ? AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
-        : invalid_resource_index_
+        : kInvalidResourceIndex
     };
 
     swap_chain.textures.emplace_back(new Texture{
-      nullptr, std::move(buf), invalid_resource_index_, rtv, srv, invalid_resource_index_
+      nullptr, std::move(buf), kInvalidResourceIndex, rtv, srv, kInvalidResourceIndex
     }, DeviceChildDeleter<Texture>{*this});
   }
 
@@ -1119,5 +1163,38 @@ auto DeviceChildDeleter<CommandList>::operator()(CommandList const* const device
 
 auto DeviceChildDeleter<SwapChain>::operator()(SwapChain const* const device_child) const -> void {
   device_->DestroySwapChain(device_child);
+}
+
+
+auto UniqueSamplerHandle::Get() const -> UINT {
+  return sampler_;
+}
+
+
+UniqueSamplerHandle::UniqueSamplerHandle(UINT const sampler, GraphicsDevice& device) :
+  device_{&device},
+  sampler_{sampler} {}
+
+
+UniqueSamplerHandle::UniqueSamplerHandle(UniqueSamplerHandle&& other) noexcept :
+  device_{other.device_},
+  sampler_{other.sampler_} {
+  other.sampler_ = kInvalidResourceIndex;
+}
+
+
+UniqueSamplerHandle::~UniqueSamplerHandle() {
+  device_->DestroySampler(sampler_);
+}
+
+
+auto UniqueSamplerHandle::operator=(UniqueSamplerHandle&& other) noexcept -> UniqueSamplerHandle& {
+  if (this != &other) {
+    device_->DestroySampler(sampler_);
+    device_ = other.device_;
+    sampler_ = other.sampler_;
+    other.sampler_ = kInvalidResourceIndex;
+  }
+  return *this;
 }
 }
