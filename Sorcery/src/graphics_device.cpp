@@ -576,6 +576,28 @@ auto GraphicsDevice::CmdEnd(CommandList const& cmd_list) const -> bool {
 }
 
 
+auto GraphicsDevice::CmdClearDepthStencil(CommandList const& cmd_list, Texture const& tex,
+                                          D3D12_CLEAR_FLAGS const clear_flags, FLOAT const depth, UINT8 const stencil,
+                                          std::span<D3D12_RECT const> const rects) const -> void {
+  if (tex.dsv != invalid_resource_index_) {
+    cmd_list.cmd_list->ClearDepthStencilView(
+      CD3DX12_CPU_DESCRIPTOR_HANDLE{dsv_heap_start_, static_cast<INT>(tex.dsv), dsv_heap_increment_}, clear_flags,
+      depth, stencil, static_cast<UINT>(rects.size()), rects.data());
+  }
+}
+
+
+auto GraphicsDevice::CmdClearRenderTarget(CommandList const& cmd_list, Texture const& tex,
+                                          std::span<FLOAT const, 4> const color_rgba,
+                                          std::span<D3D12_RECT const> const rects) const -> void {
+  if (tex.rtv != invalid_resource_index_) {
+    cmd_list.cmd_list->ClearRenderTargetView(
+      CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv), rtv_heap_increment_}, color_rgba.data(),
+      static_cast<UINT>(rects.size()), rects.data());
+  }
+}
+
+
 GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
                                ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
                                ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,

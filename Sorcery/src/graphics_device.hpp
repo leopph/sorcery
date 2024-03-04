@@ -126,6 +126,11 @@ public:
 
   [[nodiscard]] auto CmdBegin(CommandList const& cmd_list, PipelineState const& pipeline_state) const -> bool;
   [[nodiscard]] auto CmdEnd(CommandList const& cmd_list) const -> bool;
+  auto CmdClearDepthStencil(CommandList const& cmd_list, Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth,
+                            UINT8 stencil, std::span<D3D12_RECT const> rects) const -> void;
+  auto CmdClearRenderTarget(CommandList const& cmd_list, Texture const& tex, std::span<FLOAT const, 4> color_rgba,
+                            std::span<D3D12_RECT const> rects) const -> void;
+
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
                  Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator,
