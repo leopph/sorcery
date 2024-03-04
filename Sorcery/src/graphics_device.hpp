@@ -232,6 +232,13 @@ public:
   [[nodiscard]] auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> bool;
   [[nodiscard]] auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> bool;
 
+  [[nodiscard]] auto BufferGetConstantBuffer(Buffer const& buffer) const -> UINT;
+  [[nodiscard]] auto BufferGetShaderResource(Buffer const& buffer) const -> UINT;
+  [[nodiscard]] auto BufferGetUnorderedAccess(Buffer const& buffer) const -> UINT;
+
+  [[nodiscard]] auto TextureGetShaderResource(Texture const& texture) const -> UINT;
+  [[nodiscard]] auto TextureGetUnorderedAccess(Texture const& texture) const -> UINT;
+
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
                  Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator,

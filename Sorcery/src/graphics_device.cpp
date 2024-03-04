@@ -945,6 +945,31 @@ auto GraphicsDevice::SwapChainResize(SwapChain& swap_chain, UINT const width, UI
 }
 
 
+auto GraphicsDevice::BufferGetConstantBuffer(Buffer const& buffer) const -> UINT {
+  return buffer.cbv;
+}
+
+
+auto GraphicsDevice::BufferGetShaderResource(Buffer const& buffer) const -> UINT {
+  return buffer.srv;
+}
+
+
+auto GraphicsDevice::BufferGetUnorderedAccess(Buffer const& buffer) const -> UINT {
+  return buffer.uav;
+}
+
+
+auto GraphicsDevice::TextureGetShaderResource(Texture const& texture) const -> UINT {
+  return texture.srv;
+}
+
+
+auto GraphicsDevice::TextureGetUnorderedAccess(Texture const& texture) const -> UINT {
+  return texture.uav;
+}
+
+
 GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
                                ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
                                ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,
