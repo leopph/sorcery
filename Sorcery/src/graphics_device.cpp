@@ -574,7 +574,7 @@ auto GraphicsDevice::CreateCommandList() const -> UniqueCommandListHandle {
     return nullptr;
   }
 
-  return UniqueCommandListHandle{new CommandList{std::move(allocator), std::move(cmd_list)}};
+  return UniqueCommandListHandle{new CommandList{std::move(allocator), std::move(cmd_list), false}};
 }
 
 
