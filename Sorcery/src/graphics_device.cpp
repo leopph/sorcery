@@ -21,6 +21,7 @@ namespace graphics {
 UINT const GraphicsDevice::rtv_heap_size_{1'000'000};
 UINT const GraphicsDevice::dsv_heap_size_{1'000'000};
 UINT const GraphicsDevice::res_desc_heap_size_{1'000'000};
+UINT const GraphicsDevice::invalid_resource_index_{static_cast<UINT>(-1)};
 
 
 auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDevice> {
@@ -166,7 +167,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
       res_desc_heap_start_, static_cast<INT>(cbv), res_desc_heap_increment_
     });
   } else {
-    cbv = 0;
+    cbv = invalid_resource_index_;
   }
 
   UINT srv;
@@ -182,7 +183,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
       res_desc_heap_start_, static_cast<INT>(srv), res_desc_heap_increment_
     });
   } else {
-    srv = 0;
+    srv = invalid_resource_index_;
   }
 
   UINT uav;
@@ -200,7 +201,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
       res_desc_heap_start_, static_cast<INT>(uav), res_desc_heap_increment_
     });
   } else {
-    uav = 0;
+    uav = invalid_resource_index_;
   }
 
   return std::make_unique<Buffer>(std::move(allocation), std::move(resource), cbv, srv, uav);
@@ -283,7 +284,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
     device_->CreateDepthStencilView(resource.Get(), &dsv_desc,
       CD3DX12_CPU_DESCRIPTOR_HANDLE{dsv_heap_start_, static_cast<INT>(dsv), dsv_heap_increment_});
   } else {
-    dsv = 0;
+    dsv = invalid_resource_index_;
   }
 
   UINT rtv;
@@ -332,7 +333,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
     device_->CreateRenderTargetView(resource.Get(), &rtv_desc,
       CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(rtv), rtv_heap_increment_});
   } else {
-    rtv = 0;
+    rtv = invalid_resource_index_;
   }
 
   UINT srv;
@@ -397,7 +398,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
       res_desc_heap_start_, static_cast<INT>(srv), res_desc_heap_increment_
     });
   } else {
-    srv = 0;
+    srv = invalid_resource_index_;
   }
 
   UINT uav;
@@ -447,7 +448,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
       res_desc_heap_start_, static_cast<INT>(uav), res_desc_heap_increment_
     });
   } else {
-    uav = 0;
+    uav = invalid_resource_index_;
   }
 
   return std::make_unique<Texture>(std::move(allocation), std::move(resource), dsv, rtv, srv, uav);

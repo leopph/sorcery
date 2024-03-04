@@ -136,6 +136,7 @@ private:
   static UINT const rtv_heap_size_;
   static UINT const dsv_heap_size_;
   static UINT const res_desc_heap_size_;
+  static UINT const invalid_resource_index_;
 
   Microsoft::WRL::ComPtr<IDXGIFactory7> factory_;
   Microsoft::WRL::ComPtr<ID3D12Device10> device_;
