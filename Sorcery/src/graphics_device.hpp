@@ -190,6 +190,8 @@ public:
   auto CmdSetScissorRects(CommandList const& cmd_list, std::span<D3D12_RECT const> rects) const -> void;
   auto CmdSetViewports(CommandList const& cmd_list, std::span<D3D12_VIEWPORT const> viewports) const -> void;
   auto CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void;
+  auto CmdSetStreamOutputTargets(CommandList const& cmd_list, UINT start_slot,
+                                 std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
 
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,

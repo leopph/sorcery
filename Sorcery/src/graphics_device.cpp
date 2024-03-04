@@ -827,6 +827,13 @@ auto GraphicsDevice::CmdSetPipelineState(CommandList& cmd_list, PipelineState co
 }
 
 
+auto GraphicsDevice::CmdSetStreamOutputTargets(CommandList const& cmd_list, UINT const start_slot,
+                                               std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> const views) const ->
+  void {
+  cmd_list.cmd_list->SOSetTargets(start_slot, static_cast<UINT>(views.size()), views.data());
+}
+
+
 GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
                                ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
                                ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,
