@@ -106,6 +106,38 @@ struct PipelineStateDesc {
 };
 
 
+struct GlobalBarrier {
+  D3D12_BARRIER_SYNC sync_before;
+  D3D12_BARRIER_SYNC sync_after;
+  D3D12_BARRIER_ACCESS access_before;
+  D3D12_BARRIER_ACCESS access_after;
+};
+
+
+struct TextureBarrier {
+  D3D12_BARRIER_SYNC sync_before;
+  D3D12_BARRIER_SYNC sync_after;
+  D3D12_BARRIER_ACCESS access_before;
+  D3D12_BARRIER_ACCESS access_after;
+  D3D12_BARRIER_LAYOUT layout_before;
+  D3D12_BARRIER_LAYOUT layout_after;
+  Texture const* texture;
+  D3D12_BARRIER_SUBRESOURCE_RANGE subresources;
+  D3D12_TEXTURE_BARRIER_FLAGS flags;
+};
+
+
+struct BufferBarrier {
+  D3D12_BARRIER_SYNC sync_before;
+  D3D12_BARRIER_SYNC sync_after;
+  D3D12_BARRIER_ACCESS access_before;
+  D3D12_BARRIER_ACCESS access_after;
+  Buffer const* buffer;
+  UINT64 offset;
+  UINT64 size;
+};
+
+
 class GraphicsDevice {
 public:
   [[nodiscard]] static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
@@ -125,6 +157,9 @@ public:
 
   [[nodiscard]] auto CmdBegin(CommandList& cmd_list, PipelineState const& pipeline_state) const -> bool;
   [[nodiscard]] auto CmdEnd(CommandList const& cmd_list) const -> bool;
+  auto CmdBarrier(CommandList const& cmd_list, std::span<GlobalBarrier const> global_barriers,
+                  std::span<BufferBarrier const> buffer_barriers,
+                  std::span<TextureBarrier const> texture_barriers) const -> void;
   auto CmdClearDepthStencil(CommandList const& cmd_list, Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth,
                             UINT8 stencil, std::span<D3D12_RECT const> rects) const -> void;
   auto CmdClearRenderTarget(CommandList const& cmd_list, Texture const& tex, std::span<FLOAT const, 4> color_rgba,

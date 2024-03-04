@@ -1,5 +1,7 @@
 #include "graphics_device.hpp"
 
+#include "MemoryAllocation.hpp"
+
 #include <dxgidebug.h>
 #include <d3dx12.h>
 
@@ -626,6 +628,57 @@ auto GraphicsDevice::CmdBegin(CommandList& cmd_list, PipelineState const& pipeli
 
 auto GraphicsDevice::CmdEnd(CommandList const& cmd_list) const -> bool {
   return SUCCEEDED(cmd_list.cmd_list->Close());
+}
+
+
+auto GraphicsDevice::CmdBarrier(CommandList const& cmd_list, std::span<GlobalBarrier const> const global_barriers,
+                                std::span<BufferBarrier const> const buffer_barriers,
+                                std::span<TextureBarrier const> const texture_barriers) const -> void {
+  std::pmr::vector<D3D12_GLOBAL_BARRIER> globals{&GetTmpMemRes()};
+  globals.reserve(global_barriers.size());
+  std::pmr::vector<D3D12_BUFFER_BARRIER> buffers{&GetTmpMemRes()};
+  buffers.reserve(buffer_barriers.size());
+  std::pmr::vector<D3D12_TEXTURE_BARRIER> textures{&GetTmpMemRes()};
+  textures.reserve(texture_barriers.size());
+  std::pmr::vector<D3D12_BARRIER_GROUP> groups{&GetTmpMemRes()};
+
+  if (!global_barriers.empty()) {
+    std::ranges::transform(global_barriers, std::back_inserter(globals), [](GlobalBarrier const& barrier) {
+      return D3D12_GLOBAL_BARRIER{barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after};
+    });
+    groups.emplace_back(D3D12_BARRIER_GROUP{
+      .Type = D3D12_BARRIER_TYPE_GLOBAL, .NumBarriers = static_cast<UINT32>(globals.size()),
+      .pGlobalBarriers = globals.data()
+    });
+  }
+
+  if (!buffers.empty()) {
+    std::ranges::transform(buffer_barriers, std::back_inserter(buffers), [](BufferBarrier const& barrier) {
+      return D3D12_BUFFER_BARRIER{
+        barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after,
+        barrier.buffer->resource.Get(), barrier.offset, barrier.size
+      };
+    });
+    groups.emplace_back(D3D12_BARRIER_GROUP{
+      .Type = D3D12_BARRIER_TYPE_BUFFER, .NumBarriers = static_cast<UINT32>(buffers.size()),
+      .pBufferBarriers = buffers.data()
+    });
+  }
+
+  if (!textures.empty()) {
+    std::ranges::transform(texture_barriers, std::back_inserter(textures), [](TextureBarrier const& barrier) {
+      return D3D12_TEXTURE_BARRIER{
+        barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after, barrier.layout_before,
+        barrier.layout_after, barrier.texture->resource.Get(), barrier.subresources, barrier.flags
+      };
+    });
+    groups.emplace_back(D3D12_BARRIER_GROUP{
+      .Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = static_cast<UINT32>(textures.size()),
+      .pTextureBarriers = textures.data()
+    });
+  }
+
+  cmd_list.cmd_list->Barrier(static_cast<UINT32>(groups.size()), groups.data());
 }
 
 
