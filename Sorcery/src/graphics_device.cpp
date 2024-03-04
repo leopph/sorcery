@@ -820,6 +820,26 @@ auto GraphicsDevice::CmdSetViewports(CommandList const& cmd_list,
 }
 
 
+auto GraphicsDevice::CmdSetPipelineParameter(CommandList const& cmd_list, UINT const index,
+                                             UINT const value) const -> void {
+  if (cmd_list.compute_pipeline_set) {
+    cmd_list.cmd_list->SetComputeRoot32BitConstant(0, value, index);
+  } else {
+    cmd_list.cmd_list->SetGraphicsRoot32BitConstant(0, value, index);
+  }
+}
+
+
+auto GraphicsDevice::CmdSetPipelineParameters(CommandList const& cmd_list, UINT const index,
+                                              std::span<UINT const> const values) const -> void {
+  if (cmd_list.compute_pipeline_set) {
+    cmd_list.cmd_list->SetComputeRoot32BitConstants(0, static_cast<UINT>(values.size()), values.data(), index);
+  } else {
+    cmd_list.cmd_list->SetGraphicsRoot32BitConstants(0, static_cast<UINT>(values.size()), values.data(), index);
+  }
+}
+
+
 auto GraphicsDevice::CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void {
   cmd_list.cmd_list->SetPipelineState(pipeline_state.pipeline_state.Get());
   cmd_list.compute_pipeline_set = pipeline_state.is_compute;

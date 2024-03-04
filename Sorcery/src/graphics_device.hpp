@@ -189,6 +189,8 @@ public:
   auto CmdSetStencilRef(CommandList const& cmd_list, UINT stencil_ref) const -> void;
   auto CmdSetScissorRects(CommandList const& cmd_list, std::span<D3D12_RECT const> rects) const -> void;
   auto CmdSetViewports(CommandList const& cmd_list, std::span<D3D12_VIEWPORT const> viewports) const -> void;
+  auto CmdSetPipelineParameter(CommandList const& cmd_list, UINT index, UINT value) const -> void;
+  auto CmdSetPipelineParameters(CommandList const& cmd_list, UINT index, std::span<UINT const> values) const -> void;
   auto CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void;
   auto CmdSetStreamOutputTargets(CommandList const& cmd_list, UINT start_slot,
                                  std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
