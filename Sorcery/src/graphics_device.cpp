@@ -781,6 +781,45 @@ auto GraphicsDevice::CmdDrawInstanced(CommandList const& cmd_list, UINT const ve
 }
 
 
+auto GraphicsDevice::CmdSetBlendFactor(CommandList const& cmd_list,
+                                       std::span<FLOAT const, 4> const blend_factor) const -> void {
+  cmd_list.cmd_list->OMSetBlendFactor(blend_factor.data());
+}
+
+
+auto GraphicsDevice::CmdSetRenderTargets(CommandList const& cmd_list, std::span<Texture const> render_targets,
+                                         Texture const* depth_stencil) const -> void {
+  std::pmr::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt{&GetTmpMemRes()};
+  rt.reserve(render_targets.size());
+  std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const& tex) {
+    return CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv), rtv_heap_increment_};
+  });
+
+  CD3DX12_CPU_DESCRIPTOR_HANDLE const ds{
+    dsv_heap_start_, static_cast<INT>(depth_stencil ? depth_stencil->dsv : 0), dsv_heap_increment_
+  };
+
+  cmd_list.cmd_list->OMSetRenderTargets(static_cast<UINT>(rt.size()), rt.data(), FALSE, depth_stencil ? &ds : nullptr);
+}
+
+
+auto GraphicsDevice::CmdSetStencilRef(CommandList const& cmd_list, UINT const stencil_ref) const -> void {
+  cmd_list.cmd_list->OMSetStencilRef(stencil_ref);
+}
+
+
+auto GraphicsDevice::CmdSetScissorRects(CommandList const& cmd_list,
+                                        std::span<D3D12_RECT const> const rects) const -> void {
+  cmd_list.cmd_list->RSSetScissorRects(static_cast<UINT>(rects.size()), rects.data());
+}
+
+
+auto GraphicsDevice::CmdSetViewports(CommandList const& cmd_list,
+                                     std::span<D3D12_VIEWPORT const> const viewports) const -> void {
+  cmd_list.cmd_list->RSSetViewports(static_cast<UINT>(viewports.size()), viewports.data());
+}
+
+
 auto GraphicsDevice::CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void {
   cmd_list.cmd_list->SetPipelineState(pipeline_state.pipeline_state.Get());
   cmd_list.compute_pipeline_set = pipeline_state.is_compute;

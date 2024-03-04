@@ -183,6 +183,12 @@ public:
                                UINT start_instance_location) const -> void;
   auto CmdDrawInstanced(CommandList const& cmd_list, UINT vertex_count_per_instance, UINT instance_count,
                         UINT start_vertex_location, UINT start_instance_location) const -> void;
+  auto CmdSetBlendFactor(CommandList const& cmd_list, std::span<FLOAT const, 4> blend_factor) const -> void;
+  auto CmdSetRenderTargets(CommandList const& cmd_list, std::span<Texture const> render_targets,
+                           Texture const* depth_stencil) const -> void;
+  auto CmdSetStencilRef(CommandList const& cmd_list, UINT stencil_ref) const -> void;
+  auto CmdSetScissorRects(CommandList const& cmd_list, std::span<D3D12_RECT const> rects) const -> void;
+  auto CmdSetViewports(CommandList const& cmd_list, std::span<D3D12_VIEWPORT const> viewports) const -> void;
   auto CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void;
 
 private:
