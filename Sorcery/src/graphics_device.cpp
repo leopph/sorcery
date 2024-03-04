@@ -655,6 +655,54 @@ auto GraphicsDevice::CmdClearRenderTarget(CommandList const& cmd_list, Texture c
 }
 
 
+auto GraphicsDevice::CmdCopyBuffer(CommandList const& cmd_list, Buffer const& dst, Buffer const& src) const -> void {
+  cmd_list.cmd_list->CopyResource(dst.resource.Get(), src.resource.Get());
+}
+
+
+auto GraphicsDevice::CmdCopyBufferRegion(CommandList const& cmd_list, Buffer const& dst, UINT64 const dst_offset,
+                                         Buffer const& src, UINT64 const src_offset,
+                                         UINT64 const num_bytes) const -> void {
+  cmd_list.cmd_list->CopyBufferRegion(dst.resource.Get(), dst_offset, src.resource.Get(), src_offset, num_bytes);
+}
+
+
+auto GraphicsDevice::CmdCopyTexture(CommandList const& cmd_list, Texture const& dst, Texture const& src) -> void {
+  cmd_list.cmd_list->CopyResource(dst.resource.Get(), src.resource.Get());
+}
+
+
+auto GraphicsDevice::CmdCopyTextureRegion(CommandList const& cmd_list, Texture const& dst,
+                                          UINT const dst_subresource_index, UINT const dst_x, UINT const dst_y,
+                                          UINT const dst_z, Texture const& src, UINT const src_subresource_index,
+                                          D3D12_BOX const* src_box) const -> void {
+  D3D12_TEXTURE_COPY_LOCATION const dst_loc{
+    .pResource = dst.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .SubresourceIndex = dst_subresource_index
+  };
+  D3D12_TEXTURE_COPY_LOCATION const src_loc{
+    .pResource = src.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .SubresourceIndex = src_subresource_index
+  };
+  cmd_list.cmd_list->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, src_box);
+}
+
+
+auto GraphicsDevice::CmdCopyTextureRegion(CommandList const& cmd_list, Texture const& dst,
+                                          UINT const dst_subresource_index, UINT const dst_x, UINT const dst_y,
+                                          UINT const dst_z, Buffer const& src,
+                                          D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void {
+  D3D12_TEXTURE_COPY_LOCATION const dst_loc{
+    .pResource = dst.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .SubresourceIndex = dst_subresource_index
+  };
+  D3D12_TEXTURE_COPY_LOCATION const src_loc{
+    .pResource = src.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, .PlacedFootprint = src_footprint
+  };
+  cmd_list.cmd_list->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, nullptr);
+}
+
+
 GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
                                ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
                                ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,

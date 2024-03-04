@@ -129,6 +129,16 @@ public:
                             UINT8 stencil, std::span<D3D12_RECT const> rects) const -> void;
   auto CmdClearRenderTarget(CommandList const& cmd_list, Texture const& tex, std::span<FLOAT const, 4> color_rgba,
                             std::span<D3D12_RECT const> rects) const -> void;
+  auto CmdCopyBuffer(CommandList const& cmd_list, Buffer const& dst, Buffer const& src) const -> void;
+  auto CmdCopyBufferRegion(CommandList const& cmd_list, Buffer const& dst, UINT64 dst_offset, Buffer const& src,
+                           UINT64 src_offset, UINT64 num_bytes) const -> void;
+  auto CmdCopyTexture(CommandList const& cmd_list, Texture const& dst, Texture const& src) -> void;
+  auto CmdCopyTextureRegion(CommandList const& cmd_list, Texture const& dst, UINT dst_subresource_index, UINT dst_x,
+                            UINT dst_y, UINT dst_z, Texture const& src, UINT src_subresource_index,
+                            D3D12_BOX const* src_box) const -> void;
+  auto CmdCopyTextureRegion(CommandList const& cmd_list, Texture const& dst, UINT dst_subresource_index, UINT dst_x,
+                            UINT dst_y, UINT dst_z, Buffer const& src,
+                            D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void;
 
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
