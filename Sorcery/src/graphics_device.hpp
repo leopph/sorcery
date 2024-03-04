@@ -48,18 +48,34 @@ private:
 };
 
 
-struct PipelineStateDeleter {
+class PipelineStateDeleter {
+public:
+  explicit PipelineStateDeleter(GraphicsDevice& device);
   auto operator()(PipelineState const* pipeline_state) const -> void;
+#
+
+private:
+  GraphicsDevice* device_;
 };
 
 
-struct CommandListDeleter {
+class CommandListDeleter {
+public:
+  explicit CommandListDeleter(GraphicsDevice& device);
   auto operator()(CommandList const* cmd_list) const -> void;
+
+private:
+  GraphicsDevice* device_;
 };
 
 
-struct SwapChainDeleter {
+class SwapChainDeleter {
+public:
+  explicit SwapChainDeleter(GraphicsDevice& device);
   auto operator()(SwapChain const* swap_chain) const -> void;
+
+private:
+  GraphicsDevice* device_;
 };
 
 
@@ -176,12 +192,15 @@ public:
                                    D3D12_CLEAR_VALUE const* clear_value) -> UniqueTextureHandle;
   [[nodiscard]] auto CreatePipelineState(PipelineStateDesc const& desc,
                                          std::uint8_t num_32_bit_params) -> UniquePipelineStateHandle;
-  [[nodiscard]] auto CreateCommandList() const -> UniqueCommandListHandle;
-  [[nodiscard]] auto CreateFence(UINT64 initial_value) const -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
+  [[nodiscard]] auto CreateCommandList() -> UniqueCommandListHandle;
+  [[nodiscard]] auto CreateFence(UINT64 initial_value) -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
   [[nodiscard]] auto CreateSwapChain(SwapChainDesc const& desc, HWND window_handle) -> UniqueSwapChainHandle;
 
   auto DestroyBuffer(Buffer const* buffer) -> void;
   auto DestroyTexture(Texture const* texture) -> void;
+  auto DestroyPipelineState(PipelineState const* pipeline_state) -> void;
+  auto DestroyCommandList(CommandList const* command_list) -> void;
+  auto DestroySwapChain(SwapChain const* swap_chain) -> void;
 
   [[nodiscard]] auto WaitFence(ID3D12Fence& fence, UINT64 wait_value) const -> bool;
   [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;

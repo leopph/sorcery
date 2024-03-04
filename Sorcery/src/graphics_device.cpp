@@ -84,13 +84,30 @@ auto TextureDeleter::operator()(Texture const* const texture) const -> void {
 }
 
 
+PipelineStateDeleter::PipelineStateDeleter(GraphicsDevice& device) :
+  device_{&device} {}
+
+
 auto PipelineStateDeleter::operator()(PipelineState const* const pipeline_state) const -> void {
-  delete pipeline_state;
+  device_->DestroyPipelineState(pipeline_state);
 }
 
 
+CommandListDeleter::CommandListDeleter(GraphicsDevice& device) :
+  device_{&device} {}
+
+
 auto CommandListDeleter::operator()(CommandList const* const cmd_list) const -> void {
-  delete cmd_list;
+  device_->DestroyCommandList(cmd_list);
+}
+
+
+SwapChainDeleter::SwapChainDeleter(GraphicsDevice& device) :
+  device_{&device} {}
+
+
+auto SwapChainDeleter::operator()(SwapChain const* const swap_chain) const -> void {
+  device_->DestroySwapChain(swap_chain);
 }
 
 
@@ -551,13 +568,13 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
       ComPtr<ID3DBlob> error_blob;
 
       if (FAILED(D3D12SerializeVersionedRootSignature(&root_signature_desc, &root_signature_blob, &error_blob))) {
-        return nullptr;
+        return UniquePipelineStateHandle{nullptr, PipelineStateDeleter{*this}};
       }
 
       if (FAILED(
         device_->CreateRootSignature(0, root_signature_blob->GetBufferPointer(), root_signature_blob->GetBufferSize(),
           IID_PPV_ARGS(&root_signature)))) {
-        return nullptr;
+        return UniquePipelineStateHandle{nullptr, PipelineStateDeleter{*this}};
       }
 
       root_signatures_.emplace(num_32_bit_params, root_signature);
@@ -569,36 +586,39 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
   ComPtr<ID3D12PipelineState> pipeline_state;
 
   if (FAILED(device_->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&pipeline_state)))) {
-    return nullptr;
+    return UniquePipelineStateHandle{nullptr, PipelineStateDeleter{*this}};
   }
 
   return UniquePipelineStateHandle{
     new PipelineState{
       std::move(root_signature), std::move(pipeline_state), num_32_bit_params,
       static_cast<D3D12_SHADER_BYTECODE>(desc.vs).BytecodeLength != 0
-    }
+    },
+    PipelineStateDeleter{*this}
   };
 }
 
 
-auto GraphicsDevice::CreateCommandList() const -> UniqueCommandListHandle {
+auto GraphicsDevice::CreateCommandList() -> UniqueCommandListHandle {
   ComPtr<ID3D12CommandAllocator> allocator;
   if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)))) {
-    return nullptr;
+    return UniqueCommandListHandle{nullptr, CommandListDeleter{*this}};
   }
 
   ComPtr<ID3D12GraphicsCommandList7> cmd_list;
   if (FAILED(
     device_->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmd_list)
     ))) {
-    return nullptr;
+    return UniqueCommandListHandle{nullptr, CommandListDeleter{*this}};
   }
 
-  return UniqueCommandListHandle{new CommandList{std::move(allocator), std::move(cmd_list), false}};
+  return UniqueCommandListHandle{
+    new CommandList{std::move(allocator), std::move(cmd_list), false}, CommandListDeleter{*this}
+  };
 }
 
 
-auto GraphicsDevice::CreateFence(UINT64 const initial_value) const -> ComPtr<ID3D12Fence1> {
+auto GraphicsDevice::CreateFence(UINT64 const initial_value) -> ComPtr<ID3D12Fence1> {
   ComPtr<ID3D12Fence1> fence;
 
   if (FAILED(device_->CreateFence(initial_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))) {
@@ -618,18 +638,18 @@ auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc, HWND const windo
   ComPtr<IDXGISwapChain1> swap_chain1;
   if (FAILED(
     factory_->CreateSwapChainForHwnd(queue_.Get(), window_handle, &dxgi_desc, nullptr, nullptr, &swap_chain1))) {
-    return nullptr;
+    return UniqueSwapChainHandle{nullptr, SwapChainDeleter{*this}};
   }
 
   ComPtr<IDXGISwapChain4> swap_chain4;
   if (FAILED(swap_chain1.As(&swap_chain4))) {
-    return nullptr;
+    return UniqueSwapChainHandle{nullptr, SwapChainDeleter{*this}};
   }
 
   auto const swap_chain{new SwapChain{std::move(swap_chain4), {}}};
   SwapChainCreateTextures(*swap_chain);
 
-  return UniqueSwapChainHandle{swap_chain};
+  return UniqueSwapChainHandle{swap_chain, SwapChainDeleter{*this}};
 }
 
 
@@ -653,6 +673,21 @@ auto GraphicsDevice::DestroyTexture(Texture const* const texture) -> void {
 
     delete texture;
   }
+}
+
+
+auto GraphicsDevice::DestroyPipelineState(PipelineState const* const pipeline_state) -> void {
+  delete pipeline_state;
+}
+
+
+auto GraphicsDevice::DestroyCommandList(CommandList const* const command_list) -> void {
+  delete command_list;
+}
+
+
+auto GraphicsDevice::DestroySwapChain(SwapChain const* const swap_chain) -> void {
+  delete swap_chain;
 }
 
 
