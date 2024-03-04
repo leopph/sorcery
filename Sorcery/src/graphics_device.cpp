@@ -48,6 +48,7 @@ struct PipelineState {
 struct CommandList {
   ComPtr<ID3D12CommandAllocator> allocator;
   ComPtr<ID3D12GraphicsCommandList7> cmd_list;
+  bool compute_pipeline_set;
 };
 
 
@@ -610,20 +611,15 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
 }
 
 
-auto GraphicsDevice::CmdBegin(CommandList const& cmd_list, PipelineState const& pipeline_state) const -> bool {
+auto GraphicsDevice::CmdBegin(CommandList& cmd_list, PipelineState const& pipeline_state) const -> bool {
   if (FAILED(cmd_list.allocator->Reset()) || FAILED(
         cmd_list.cmd_list->Reset(cmd_list.allocator.Get(), pipeline_state.pipeline_state.Get()))) {
     return false;
   }
 
   cmd_list.cmd_list->SetDescriptorHeaps(1, res_desc_heap_.GetAddressOf());
-
-  if (pipeline_state.is_compute) {
-    cmd_list.cmd_list->SetComputeRootSignature(root_signatures_.at(pipeline_state.num_params).Get());
-  } else {
-    cmd_list.cmd_list->SetGraphicsRootSignature(root_signatures_.at(pipeline_state.num_params).Get());
-  }
-
+  cmd_list.compute_pipeline_set = pipeline_state.is_compute;
+  SetRootSignature(cmd_list, pipeline_state.num_params);
   return true;
 }
 
@@ -700,6 +696,13 @@ auto GraphicsDevice::CmdCopyTextureRegion(CommandList const& cmd_list, Texture c
     .pResource = src.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, .PlacedFootprint = src_footprint
   };
   cmd_list.cmd_list->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, nullptr);
+}
+
+
+auto GraphicsDevice::CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void {
+  cmd_list.cmd_list->SetPipelineState(pipeline_state.pipeline_state.Get());
+  cmd_list.compute_pipeline_set = pipeline_state.is_compute;
+  SetRootSignature(cmd_list, pipeline_state.num_params);
 }
 
 
@@ -784,6 +787,15 @@ auto GraphicsDevice::ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE const typ
     }
     case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER: [[fallthrough]];
     case D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES: ;
+  }
+}
+
+
+auto GraphicsDevice::SetRootSignature(CommandList const& cmd_list, std::uint8_t const num_params) const -> void {
+  if (cmd_list.compute_pipeline_set) {
+    cmd_list.cmd_list->SetComputeRootSignature(root_signatures_.at(num_params).Get());
+  } else {
+    cmd_list.cmd_list->SetGraphicsRootSignature(root_signatures_.at(num_params).Get());
   }
 }
 }

@@ -123,7 +123,7 @@ public:
   [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;
   auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) -> void;
 
-  [[nodiscard]] auto CmdBegin(CommandList const& cmd_list, PipelineState const& pipeline_state) const -> bool;
+  [[nodiscard]] auto CmdBegin(CommandList& cmd_list, PipelineState const& pipeline_state) const -> bool;
   [[nodiscard]] auto CmdEnd(CommandList const& cmd_list) const -> bool;
   auto CmdClearDepthStencil(CommandList const& cmd_list, Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth,
                             UINT8 stencil, std::span<D3D12_RECT const> rects) const -> void;
@@ -139,6 +139,7 @@ public:
   auto CmdCopyTextureRegion(CommandList const& cmd_list, Texture const& dst, UINT dst_subresource_index, UINT dst_x,
                             UINT dst_y, UINT dst_z, Buffer const& src,
                             D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void;
+  auto CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void;
 
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
@@ -150,6 +151,8 @@ private:
 
   [[nodiscard]] auto AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE type) -> UINT;
   auto ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT idx) -> void;
+
+  auto SetRootSignature(CommandList const& cmd_list, std::uint8_t num_params) const -> void;
 
   static UINT const rtv_heap_size_;
   static UINT const dsv_heap_size_;
