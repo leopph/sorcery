@@ -19,21 +19,44 @@ __declspec(dllexport) extern char const* D3D12SDKPath;
 
 
 namespace graphics {
+struct Buffer;
+struct Texture;
+struct PipelineState;
+struct CommandList;
+
+
+struct BufferDeleter {
+  auto operator()(Buffer const* buffer) const -> void;
+};
+
+
+struct TextureDeleter {
+  auto operator()(Texture const* texture) const -> void;
+};
+
+
+struct PipelineStateDeleter {
+  auto operator()(PipelineState const* pipeline_state) const -> void;
+};
+
+
+struct CommandListDeleter {
+  auto operator()(CommandList const* cmd_list) const -> void;
+};
+
+
+using UniqueBufferHandle = std::unique_ptr<Buffer, BufferDeleter>;
+using UniqueTextureHandle = std::unique_ptr<Texture, TextureDeleter>;
+using UniquePipelineStateHandle = std::unique_ptr<PipelineState, PipelineStateDeleter>;
+using UniqueCommandListHandle = std::unique_ptr<CommandList, CommandListDeleter>;
+
+
 struct BufferDesc {
   UINT size;
   UINT stride;
   bool cbv;
   bool srv;
   bool uav;
-};
-
-
-struct Buffer {
-  Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation;
-  Microsoft::WRL::ComPtr<ID3D12Resource2> resource;
-  UINT cbv;
-  UINT srv;
-  UINT uav;
 };
 
 
@@ -62,16 +85,6 @@ struct TextureDesc {
 };
 
 
-struct Texture {
-  Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation;
-  Microsoft::WRL::ComPtr<ID3D12Resource2> resource;
-  UINT dsv;
-  UINT rtv;
-  UINT srv;
-  UINT uav;
-};
-
-
 struct PipelineStateDesc {
   CD3DX12_PIPELINE_STATE_STREAM_VS vs;
   CD3DX12_PIPELINE_STATE_STREAM_GS gs;
@@ -93,31 +106,17 @@ struct PipelineStateDesc {
 };
 
 
-struct PipelineState {
-  Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature;
-  Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state;
-  std::uint8_t num_params;
-  bool is_compute;
-};
-
-
-struct CommandList {
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list;
-};
-
-
 class GraphicsDevice {
 public:
   [[nodiscard]] static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
 
-  [[nodiscard]] auto CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE heap_type) -> std::unique_ptr<Buffer>;
+  [[nodiscard]] auto CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE heap_type) -> UniqueBufferHandle;
   [[nodiscard]] auto CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE heap_type,
                                    D3D12_BARRIER_LAYOUT initial_layout,
-                                   D3D12_CLEAR_VALUE const* clear_value) -> std::unique_ptr<Texture>;
+                                   D3D12_CLEAR_VALUE const* clear_value) -> UniqueTextureHandle;
   [[nodiscard]] auto CreatePipelineState(PipelineStateDesc const& desc,
-                                         std::uint8_t num_32_bit_params) -> std::unique_ptr<PipelineState>;
-  [[nodiscard]] auto CreateCommandList() const -> std::unique_ptr<CommandList>;
+                                         std::uint8_t num_32_bit_params) -> UniquePipelineStateHandle;
+  [[nodiscard]] auto CreateCommandList() const -> UniqueCommandListHandle;
   [[nodiscard]] auto CreateFence(UINT64 initial_value) const -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
 
   [[nodiscard]] auto WaitFence(ID3D12Fence& fence, UINT64 wait_value) const -> bool;

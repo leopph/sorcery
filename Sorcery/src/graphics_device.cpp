@@ -18,10 +18,63 @@ char const* D3D12SDKPath{".\\D3D12\\"};
 
 
 namespace graphics {
+struct Buffer {
+  ComPtr<D3D12MA::Allocation> allocation;
+  ComPtr<ID3D12Resource2> resource;
+  UINT cbv;
+  UINT srv;
+  UINT uav;
+};
+
+
+struct Texture {
+  ComPtr<D3D12MA::Allocation> allocation;
+  ComPtr<ID3D12Resource2> resource;
+  UINT dsv;
+  UINT rtv;
+  UINT srv;
+  UINT uav;
+};
+
+
+struct PipelineState {
+  ComPtr<ID3D12RootSignature> root_signature;
+  ComPtr<ID3D12PipelineState> pipeline_state;
+  std::uint8_t num_params;
+  bool is_compute;
+};
+
+
+struct CommandList {
+  ComPtr<ID3D12CommandAllocator> allocator;
+  ComPtr<ID3D12GraphicsCommandList7> cmd_list;
+};
+
+
 UINT const GraphicsDevice::rtv_heap_size_{1'000'000};
 UINT const GraphicsDevice::dsv_heap_size_{1'000'000};
 UINT const GraphicsDevice::res_desc_heap_size_{1'000'000};
 UINT const GraphicsDevice::invalid_resource_index_{static_cast<UINT>(-1)};
+
+
+auto BufferDeleter::operator()(Buffer const* const buffer) const -> void {
+  delete buffer;
+}
+
+
+auto TextureDeleter::operator()(Texture const* const texture) const -> void {
+  delete texture;
+}
+
+
+auto PipelineStateDeleter::operator()(PipelineState const* const pipeline_state) const -> void {
+  delete pipeline_state;
+}
+
+
+auto CommandListDeleter::operator()(CommandList const* const cmd_list) const -> void {
+  delete cmd_list;
+}
 
 
 auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDevice> {
@@ -142,7 +195,7 @@ auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDev
 }
 
 
-auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const heap_type) -> std::unique_ptr<Buffer> {
+auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const heap_type) -> UniqueBufferHandle {
   ComPtr<D3D12MA::Allocation> allocation;
   ComPtr<ID3D12Resource2> resource;
 
@@ -204,13 +257,13 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
     uav = invalid_resource_index_;
   }
 
-  return std::make_unique<Buffer>(std::move(allocation), std::move(resource), cbv, srv, uav);
+  return UniqueBufferHandle{new Buffer{std::move(allocation), std::move(resource), cbv, srv, uav}};
 }
 
 
 auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE const heap_type,
                                    D3D12_BARRIER_LAYOUT const initial_layout,
-                                   D3D12_CLEAR_VALUE const* clear_value) -> std::unique_ptr<Texture> {
+                                   D3D12_CLEAR_VALUE const* clear_value) -> UniqueTextureHandle {
   ComPtr<D3D12MA::Allocation> allocation;
   ComPtr<ID3D12Resource2> resource;
 
@@ -451,12 +504,12 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
     uav = invalid_resource_index_;
   }
 
-  return std::make_unique<Texture>(std::move(allocation), std::move(resource), dsv, rtv, srv, uav);
+  return UniqueTextureHandle{new Texture{std::move(allocation), std::move(resource), dsv, rtv, srv, uav}};
 }
 
 
 auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
-                                         std::uint8_t const num_32_bit_params) -> std::unique_ptr<PipelineState> {
+                                         std::uint8_t const num_32_bit_params) -> UniquePipelineStateHandle {
   ComPtr<ID3D12RootSignature> root_signature;
 
   {
@@ -498,12 +551,16 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
     return nullptr;
   }
 
-  return std::make_unique<PipelineState>(std::move(root_signature), std::move(pipeline_state), num_32_bit_params,
-    static_cast<D3D12_SHADER_BYTECODE>(desc.vs).BytecodeLength != 0);
+  return UniquePipelineStateHandle{
+    new PipelineState{
+      std::move(root_signature), std::move(pipeline_state), num_32_bit_params,
+      static_cast<D3D12_SHADER_BYTECODE>(desc.vs).BytecodeLength != 0
+    }
+  };
 }
 
 
-auto GraphicsDevice::CreateCommandList() const -> std::unique_ptr<CommandList> {
+auto GraphicsDevice::CreateCommandList() const -> UniqueCommandListHandle {
   ComPtr<ID3D12CommandAllocator> allocator;
   if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)))) {
     return nullptr;
@@ -516,7 +573,7 @@ auto GraphicsDevice::CreateCommandList() const -> std::unique_ptr<CommandList> {
     return nullptr;
   }
 
-  return std::make_unique<CommandList>(std::move(allocator), std::move(cmd_list));
+  return UniqueCommandListHandle{new CommandList{std::move(allocator), std::move(cmd_list)}};
 }
 
 
