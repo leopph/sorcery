@@ -27,14 +27,18 @@ class PipelineState;
 class CommandList;
 class SwapChain;
 
+
+namespace details {
 template<typename T>
 class DeviceChildDeleter;
+}
 
-using UniqueBufferHandle = std::unique_ptr<Buffer, DeviceChildDeleter<Buffer>>;
-using UniqueTextureHandle = std::unique_ptr<Texture, DeviceChildDeleter<Texture>>;
-using UniquePipelineStateHandle = std::unique_ptr<PipelineState, DeviceChildDeleter<PipelineState>>;
-using UniqueCommandListHandle = std::unique_ptr<CommandList, DeviceChildDeleter<CommandList>>;
-using UniqueSwapChainHandle = std::unique_ptr<SwapChain, DeviceChildDeleter<SwapChain>>;
+
+using UniqueBufferHandle = std::unique_ptr<Buffer, details::DeviceChildDeleter<Buffer>>;
+using UniqueTextureHandle = std::unique_ptr<Texture, details::DeviceChildDeleter<Texture>>;
+using UniquePipelineStateHandle = std::unique_ptr<PipelineState, details::DeviceChildDeleter<PipelineState>>;
+using UniqueCommandListHandle = std::unique_ptr<CommandList, details::DeviceChildDeleter<CommandList>>;
+using UniqueSwapChainHandle = std::unique_ptr<SwapChain, details::DeviceChildDeleter<SwapChain>>;
 class UniqueSamplerHandle;
 
 
@@ -134,6 +138,7 @@ struct BufferBarrier {
 };
 
 
+namespace details {
 class DescriptorHeap {
 public:
   [[nodiscard]] auto Allocate() -> UINT;
@@ -170,6 +175,7 @@ private:
   std::unordered_map<std::uint8_t, Microsoft::WRL::ComPtr<ID3D12RootSignature>> root_signatures_;
   std::mutex mutex_;
 };
+}
 
 
 class GraphicsDevice {
@@ -223,14 +229,14 @@ private:
   Microsoft::WRL::ComPtr<ID3D12Device10> device_;
   Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator_;
 
-  DescriptorHeap rtv_heap_;
-  DescriptorHeap dsv_heap_;
-  DescriptorHeap res_desc_heap_;
-  DescriptorHeap sampler_heap_;
+  details::DescriptorHeap rtv_heap_;
+  details::DescriptorHeap dsv_heap_;
+  details::DescriptorHeap res_desc_heap_;
+  details::DescriptorHeap sampler_heap_;
 
   Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue_;
 
-  RootSignatureCache root_signatures_;
+  details::RootSignatureCache root_signatures_;
 
   UINT swap_chain_flags_{0};
   UINT present_flags_{0};
@@ -331,17 +337,17 @@ private:
   auto SetRootSignature(std::uint8_t num_params) const -> void;
 
   CommandList(Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator,
-              Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list, DescriptorHeap const* dsv_heap,
-              DescriptorHeap const* rtv_heap, DescriptorHeap const* res_desc_heap, DescriptorHeap const* sampler_heap,
-              RootSignatureCache* root_signatures);
+              Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list, details::DescriptorHeap const* dsv_heap,
+              details::DescriptorHeap const* rtv_heap, details::DescriptorHeap const* res_desc_heap,
+              details::DescriptorHeap const* sampler_heap, details::RootSignatureCache* root_signatures);
 
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list_;
-  DescriptorHeap const* dsv_heap_;
-  DescriptorHeap const* rtv_heap_;
-  DescriptorHeap const* res_desc_heap_;
-  DescriptorHeap const* sampler_heap_;
-  RootSignatureCache* root_signatures_;
+  details::DescriptorHeap const* dsv_heap_;
+  details::DescriptorHeap const* rtv_heap_;
+  details::DescriptorHeap const* res_desc_heap_;
+  details::DescriptorHeap const* sampler_heap_;
+  details::RootSignatureCache* root_signatures_;
   bool compute_pipeline_set_{false};
 
   friend GraphicsDevice;
@@ -358,6 +364,7 @@ class SwapChain {
 };
 
 
+namespace details {
 template<typename T>
 class DeviceChildDeleter {
 public:
@@ -377,6 +384,7 @@ auto DeviceChildDeleter<Texture>::operator()(Texture const* device_child) const 
 auto DeviceChildDeleter<PipelineState>::operator()(PipelineState const* device_child) const -> void;
 auto DeviceChildDeleter<CommandList>::operator()(CommandList const* device_child) const -> void;
 auto DeviceChildDeleter<SwapChain>::operator()(SwapChain const* device_child) const -> void;
+}
 
 
 class UniqueSamplerHandle {
