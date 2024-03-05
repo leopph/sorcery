@@ -310,7 +310,6 @@
     <None Include="vcpkg.json" />
     <None Include="src\rendering\shaders\ShaderInterop.h" />
     <None Include="src\rendering\shaders\BRDF.hlsli" />
-    <None Include="src\rendering\shaders\GizmoVsOut.hlsli" />
     <None Include="src\rendering\shaders\ShadowSampling.hlsli" />
     <None Include="src\rendering\shaders\DepthNormalVsOut.hlsli" />
     <None Include="src\rendering\shaders\DepthOnlyVsOut.hlsli" />
@@ -319,6 +318,7 @@
     <None Include="packages.config" />
     <None Include="src\rendering\shaders\skybox.hlsli" />
     <None Include="src\rendering\shaders\object_pbr.hlsli" />
+    <None Include="src\rendering\shaders\gizmos.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\PostProcessPS.hlsl" />
@@ -326,8 +326,8 @@
     <FxCompile Include="src\rendering\shaders\skybox_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\DepthOnlyVS.hlsl" />
     <FxCompile Include="src\rendering\shaders\ScreenVS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\LineGizmoVS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\GizmoPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\gizmos_line_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\gizmos_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\DepthOnlyPS.hlsl" />
     <FxCompile Include="src\rendering\shaders\DepthNormalPS.hlsl" />
     <FxCompile Include="src\rendering\shaders\DepthNormalVS.hlsl" />
