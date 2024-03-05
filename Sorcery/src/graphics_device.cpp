@@ -700,15 +700,13 @@ auto GraphicsDevice::SignalFence(ID3D12Fence& fence, UINT64 const signal_value) 
 }
 
 
-auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) -> void {
-  std::scoped_lock const lock{cmd_list_submission_mutex_};
-  cmd_list_submission_buffer_.reserve(cmd_lists.size());
-  cmd_list_submission_buffer_.clear();
-  std::ranges::transform(cmd_lists, std::back_inserter(cmd_list_submission_buffer_), [](CommandList const& cmd_list) {
+auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) const -> void {
+  std::pmr::vector<ID3D12CommandList*> submit_list{&GetTmpMemRes()};
+  submit_list.reserve(cmd_lists.size());
+  std::ranges::transform(cmd_lists, std::back_inserter(submit_list), [](CommandList const& cmd_list) {
     return cmd_list.cmd_list_.Get();
   });
-  queue_->ExecuteCommandLists(static_cast<UINT>(cmd_list_submission_buffer_.size()),
-    cmd_list_submission_buffer_.data());
+  queue_->ExecuteCommandLists(static_cast<UINT>(submit_list.size()), submit_list.data());
 }
 
 

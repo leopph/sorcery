@@ -196,7 +196,7 @@ public:
 
   [[nodiscard]] auto WaitFence(ID3D12Fence& fence, UINT64 wait_value) const -> bool;
   [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;
-  auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) -> void;
+  auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) const -> void;
 
   [[nodiscard]] auto SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<UniqueTextureHandle const>;
   [[nodiscard]] auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
@@ -211,7 +211,6 @@ private:
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> res_desc_heap,
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> sampler_heap,
                  Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue);
-
 
   auto SwapChainCreateTextures(SwapChain& swap_chain) -> bool;
 
@@ -232,9 +231,6 @@ private:
   Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue_;
 
   RootSignatureCache root_signatures_;
-
-  std::mutex cmd_list_submission_mutex_;
-  std::vector<ID3D12CommandList*> cmd_list_submission_buffer_;
 
   UINT swap_chain_flags_{0};
   UINT present_flags_{0};
