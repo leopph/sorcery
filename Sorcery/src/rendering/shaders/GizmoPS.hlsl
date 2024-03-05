@@ -1,9 +1,12 @@
 #include "GizmoVsOut.hlsli"
-#include "ShaderInterop.h"
 
-STRUCTUREDBUFFER(GizmoColorSB, float4, RES_SLOT_GIZMO_COLOR);
+struct DrawParams {
+  uint color_buf_idx;
+};
 
-float4 main(const GizmoVsOut input) : SV_TARGET
-{
-	return float4(GizmoColorSB[input.colorIdx]);
+ConstantBuffer<DrawParams> g_draw_params : register(b0, space0);
+
+float4 main(const GizmoVsOut input) : SV_Target {
+  const StructuredBuffer<float4> colors = ResourceDescriptorHeap[g_draw_params.color_buf_idx];
+	return float4(colors[input.colorIdx]);
 }
