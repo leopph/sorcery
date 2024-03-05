@@ -6,7 +6,7 @@
 #include "../Util.hpp"
 #include "../scene_objects/StaticMeshComponent.hpp"
 #include "../scene_objects/LightComponents.hpp"
-#include "shaders/ShadowFilteringModes.h"
+#include "shaders\shadow_filtering_modes.h"
 
 
 namespace sorcery {

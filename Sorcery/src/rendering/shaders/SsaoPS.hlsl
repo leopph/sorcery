@@ -1,6 +1,6 @@
 #include "ShaderInterop.h"
 #include "ScreenVsOut.hlsli"
-#include "Util.hlsli"
+#include "utility.hlsli"
 
 struct DrawParams {
   uint noise_tex_idx;

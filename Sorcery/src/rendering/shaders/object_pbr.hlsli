@@ -2,9 +2,9 @@
 #define OBJECT_PBR_HLSLI
 
 #include "ShaderInterop.h"
-#include "BRDF.hlsli"
-#include "ShadowFilteringModes.h"
-#include "ShadowSampling.hlsli"
+#include "brdf.hlsli"
+#include "shadow_filtering_modes.h"
+#include "shadow_sampling.hlsli"
 
 
 struct DrawParams {

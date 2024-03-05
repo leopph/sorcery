@@ -186,7 +186,7 @@
     <ClInclude Include="src\Bounds.hpp" />
     <ClInclude Include="src\scene_objects\CameraComponent.hpp" />
     <ClInclude Include="src\scene_objects\Component.hpp" />
-    <ClInclude Include="src\rendering\shaders\ShadowFilteringModes.h" />
+    <ClInclude Include="src\rendering\shaders\shadow_filtering_modes.h" />
     <ClInclude Include="src\rendering\ShadowAtlas.hpp" />
     <ClInclude Include="src\scene_objects\StaticMeshComponent.hpp" />
     <ClInclude Include="src\Guid.hpp" />
@@ -213,16 +213,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="src\rendering\shaders\BRDF.hlsli" />
+    <None Include="src\rendering\shaders\brdf.hlsli" />
     <None Include="src\rendering\shaders\DepthNormalVsOut.hlsli" />
     <None Include="src\rendering\shaders\DepthOnlyVsOut.hlsli" />
     <None Include="src\rendering\shaders\gizmos.hlsli" />
     <None Include="src\rendering\shaders\object_pbr.hlsli" />
     <None Include="src\rendering\shaders\ScreenVSOut.hlsli" />
     <None Include="src\rendering\shaders\ShaderInterop.h" />
-    <None Include="src\rendering\shaders\ShadowSampling.hlsli" />
+    <None Include="src\rendering\shaders\shadow_sampling.hlsli" />
     <None Include="src\rendering\shaders\skybox.hlsli" />
-    <None Include="src\rendering\shaders\Util.hlsli" />
+    <None Include="src\rendering\shaders\utility.hlsli" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
@@ -268,7 +268,7 @@
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/DepthOnlyPSBin.h</HeaderFileOutput>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/DepthOnlyPSBin.h</HeaderFileOutput>
     </FxCompile>
-    <FxCompile Include="src\rendering\shaders\DepthResolveCS.hlsl">
+    <FxCompile Include="src\rendering\shaders\depth_resolve_cs.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.6</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
@@ -277,10 +277,10 @@
       </ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gDepthResolveCSBin</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gDepthResolveCSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/DepthResolveCSBin.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/DepthResolveCSBin.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">g_%(Filename)_bytes</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">g_%(Filename)_bytes</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
     </FxCompile>
     <FxCompile Include="src\rendering\shaders\gizmos_ps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

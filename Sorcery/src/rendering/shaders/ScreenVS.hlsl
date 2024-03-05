@@ -1,5 +1,5 @@
 #include "ScreenVsOut.hlsli"
-#include "Util.hlsli"
+#include "utility.hlsli"
 
 ScreenVsOut main(const uint vertex_id : SV_VertexID) {
 	ScreenVsOut ret;
