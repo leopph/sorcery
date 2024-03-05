@@ -309,8 +309,6 @@
   <ItemGroup>
     <None Include="vcpkg.json" />
     <None Include="src\rendering\shaders\ShaderInterop.h" />
-    <None Include="src\rendering\shaders\MeshVSOut.hlsli" />
-    <None Include="src\rendering\shaders\SkyboxVSOut.hlsli" />
     <None Include="src\rendering\shaders\BRDF.hlsli" />
     <None Include="src\rendering\shaders\GizmoVsOut.hlsli" />
     <None Include="src\rendering\shaders\ShadowSampling.hlsli" />
@@ -319,13 +317,13 @@
     <None Include="src\rendering\shaders\ScreenVSOut.hlsli" />
     <None Include="src\rendering\shaders\Util.hlsli" />
     <None Include="packages.config" />
+    <None Include="src\rendering\shaders\skybox.hlsli" />
+    <None Include="src\rendering\shaders\object_pbr.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\rendering\shaders\MeshPbrPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\MeshVS.hlsl" />
     <FxCompile Include="src\rendering\shaders\PostProcessPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\SkyboxVS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\SkyboxPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\skybox_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\skybox_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\DepthOnlyVS.hlsl" />
     <FxCompile Include="src\rendering\shaders\ScreenVS.hlsl" />
     <FxCompile Include="src\rendering\shaders\LineGizmoVS.hlsl" />
@@ -336,5 +334,7 @@
     <FxCompile Include="src\rendering\shaders\SsaoBlurPS.hlsl" />
     <FxCompile Include="src\rendering\shaders\SsaoPS.hlsl" />
     <FxCompile Include="src\rendering\shaders\DepthResolveCS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\object_pbr_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\object_pbr_ps.hlsl" />
   </ItemGroup>
 </Project>

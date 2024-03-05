@@ -217,11 +217,11 @@
     <None Include="src\rendering\shaders\DepthNormalVsOut.hlsli" />
     <None Include="src\rendering\shaders\DepthOnlyVsOut.hlsli" />
     <None Include="src\rendering\shaders\GizmoVsOut.hlsli" />
+    <None Include="src\rendering\shaders\object_pbr.hlsli" />
     <None Include="src\rendering\shaders\ScreenVSOut.hlsli" />
     <None Include="src\rendering\shaders\ShaderInterop.h" />
-    <None Include="src\rendering\shaders\MeshVSOut.hlsli" />
     <None Include="src\rendering\shaders\ShadowSampling.hlsli" />
-    <None Include="src\rendering\shaders\SkyboxVSOut.hlsli" />
+    <None Include="src\rendering\shaders\skybox.hlsli" />
     <None Include="src\rendering\shaders\Util.hlsli" />
     <None Include="vcpkg.json" />
   </ItemGroup>
@@ -310,34 +310,37 @@
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gLineGizmoVSBin</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gLineGizmoVSBin</VariableName>
     </FxCompile>
-    <FxCompile Include="src\rendering\shaders\MeshVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gMeshVSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/MeshVSBin.h</HeaderFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </ObjectFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gMeshVSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/MeshVSBin.h</HeaderFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </ObjectFileOutput>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.6</ShaderModel>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.6</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="src\rendering\shaders\MeshPbrPS.hlsl">
+    <FxCompile Include="src\rendering\shaders\object_pbr_ps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.6</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.6</ShaderModel>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gMeshPbrPSBin</VariableName>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </ObjectFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gMeshPbrPSBin</VariableName>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/MeshPbrPSBin.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/MeshPbrPSBin.h</HeaderFileOutput>
-      <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EnableDebuggingInformation>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">g_%(Filename)_bytes</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">g_%(Filename)_bytes</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PsMain</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PsMain</EntryPointName>
+    </FxCompile>
+    <FxCompile Include="src\rendering\shaders\object_pbr_vs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.6</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.6</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ObjectFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">g_%(Filename)_bytes</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">g_%(Filename)_bytes</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VsMain</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VsMain</EntryPointName>
     </FxCompile>
     <FxCompile Include="src\rendering\shaders\ScreenVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -367,7 +370,7 @@
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/DepthOnlyVSBin.h</HeaderFileOutput>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/DepthOnlyVSBin.h</HeaderFileOutput>
     </FxCompile>
-    <FxCompile Include="src\rendering\shaders\SkyboxPS.hlsl">
+    <FxCompile Include="src\rendering\shaders\skybox_ps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.6</ShaderModel>
@@ -376,12 +379,14 @@
       </ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/SkyboxPSBin.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/SkyboxPSBin.h</HeaderFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gSkyboxPSBin</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gSkyboxPSBin</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">g_%(Filename)_bytes</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">g_%(Filename)_bytes</VariableName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PsMain</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PsMain</EntryPointName>
     </FxCompile>
-    <FxCompile Include="src\rendering\shaders\SkyboxVS.hlsl">
+    <FxCompile Include="src\rendering\shaders\skybox_vs.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.6</ShaderModel>
@@ -390,10 +395,12 @@
       </ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gSkyboxVSBin</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gSkyboxVSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/SkyboxVSBin.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/SkyboxVSBin.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">g_%(Filename)_bytes</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">g_%(Filename)_bytes</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VsMain</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VsMain</EntryPointName>
     </FxCompile>
     <FxCompile Include="src\rendering\shaders\PostProcessPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
