@@ -161,6 +161,17 @@ private:
 };
 
 
+class RootSignatureCache {
+public:
+  auto Add(std::uint8_t num_params, Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature) -> void;
+  [[nodiscard]] auto Get(std::uint8_t num_params) -> Microsoft::WRL::ComPtr<ID3D12RootSignature>;
+
+private:
+  std::unordered_map<std::uint8_t, Microsoft::WRL::ComPtr<ID3D12RootSignature>> root_signatures_;
+  std::mutex mutex_;
+};
+
+
 class GraphicsDevice {
 public:
   [[nodiscard]] static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
@@ -187,46 +198,6 @@ public:
   [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;
   auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) -> void;
 
-  [[nodiscard]] auto CmdBegin(CommandList& cmd_list, PipelineState const& pipeline_state) const -> bool;
-  [[nodiscard]] auto CmdEnd(CommandList const& cmd_list) const -> bool;
-  auto CmdBarrier(CommandList const& cmd_list, std::span<GlobalBarrier const> global_barriers,
-                  std::span<BufferBarrier const> buffer_barriers,
-                  std::span<TextureBarrier const> texture_barriers) const -> void;
-  auto CmdClearDepthStencil(CommandList const& cmd_list, Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth,
-                            UINT8 stencil, std::span<D3D12_RECT const> rects) const -> void;
-  auto CmdClearRenderTarget(CommandList const& cmd_list, Texture const& tex, std::span<FLOAT const, 4> color_rgba,
-                            std::span<D3D12_RECT const> rects) const -> void;
-  auto CmdCopyBuffer(CommandList const& cmd_list, Buffer const& dst, Buffer const& src) const -> void;
-  auto CmdCopyBufferRegion(CommandList const& cmd_list, Buffer const& dst, UINT64 dst_offset, Buffer const& src,
-                           UINT64 src_offset, UINT64 num_bytes) const -> void;
-  auto CmdCopyTexture(CommandList const& cmd_list, Texture const& dst, Texture const& src) -> void;
-  auto CmdCopyTextureRegion(CommandList const& cmd_list, Texture const& dst, UINT dst_subresource_index, UINT dst_x,
-                            UINT dst_y, UINT dst_z, Texture const& src, UINT src_subresource_index,
-                            D3D12_BOX const* src_box) const -> void;
-  auto CmdCopyTextureRegion(CommandList const& cmd_list, Texture const& dst, UINT dst_subresource_index, UINT dst_x,
-                            UINT dst_y, UINT dst_z, Buffer const& src,
-                            D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void;
-  auto CmdDispatch(CommandList const& cmd_list, UINT thread_group_count_x, UINT thread_group_count_y,
-                   UINT thread_group_count_z) const -> void;
-  auto CmdDispatchMesh(CommandList const& cmd_list, UINT thread_group_count_x, UINT thread_group_count_y,
-                       UINT thread_group_count_z) const -> void;
-  auto CmdDrawIndexedInstanced(CommandList const& cmd_list, UINT index_count_per_instance, UINT instance_count,
-                               UINT start_index_location, INT base_vertex_location,
-                               UINT start_instance_location) const -> void;
-  auto CmdDrawInstanced(CommandList const& cmd_list, UINT vertex_count_per_instance, UINT instance_count,
-                        UINT start_vertex_location, UINT start_instance_location) const -> void;
-  auto CmdSetBlendFactor(CommandList const& cmd_list, std::span<FLOAT const, 4> blend_factor) const -> void;
-  auto CmdSetRenderTargets(CommandList const& cmd_list, std::span<Texture const> render_targets,
-                           Texture const* depth_stencil) const -> void;
-  auto CmdSetStencilRef(CommandList const& cmd_list, UINT stencil_ref) const -> void;
-  auto CmdSetScissorRects(CommandList const& cmd_list, std::span<D3D12_RECT const> rects) const -> void;
-  auto CmdSetViewports(CommandList const& cmd_list, std::span<D3D12_VIEWPORT const> viewports) const -> void;
-  auto CmdSetPipelineParameter(CommandList const& cmd_list, UINT index, UINT value) const -> void;
-  auto CmdSetPipelineParameters(CommandList const& cmd_list, UINT index, std::span<UINT const> values) const -> void;
-  auto CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void;
-  auto CmdSetStreamOutputTargets(CommandList const& cmd_list, UINT start_slot,
-                                 std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
-
   [[nodiscard]] auto SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<UniqueTextureHandle const>;
   [[nodiscard]] auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
   [[nodiscard]] auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> bool;
@@ -241,7 +212,6 @@ private:
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> sampler_heap,
                  Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue);
 
-  auto SetRootSignature(CommandList const& cmd_list, std::uint8_t num_params) const -> void;
 
   auto SwapChainCreateTextures(SwapChain& swap_chain) -> bool;
 
@@ -261,29 +231,13 @@ private:
 
   Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue_;
 
-  std::mutex root_signature_mutex_;
-
-  std::unordered_map<std::uint8_t, Microsoft::WRL::ComPtr<ID3D12RootSignature>> root_signatures_;
+  RootSignatureCache root_signatures_;
 
   std::mutex cmd_list_submission_mutex_;
   std::vector<ID3D12CommandList*> cmd_list_submission_buffer_;
 
   UINT swap_chain_flags_{0};
   UINT present_flags_{0};
-};
-
-
-template<typename T>
-class DeviceChildDeleter {
-public:
-  explicit DeviceChildDeleter(GraphicsDevice& device) :
-    device_{&device} {}
-
-
-  auto operator()(T const* device_child) const -> void;
-
-private:
-  GraphicsDevice* device_;
 };
 
 
@@ -304,6 +258,7 @@ private:
   UINT uav_;
 
   friend GraphicsDevice;
+  friend CommandList;
 };
 
 
@@ -324,6 +279,7 @@ private:
   UINT uav_;
 
   friend GraphicsDevice;
+  friend CommandList;
 };
 
 
@@ -337,15 +293,59 @@ class PipelineState {
   bool is_compute_;
 
   friend GraphicsDevice;
+  friend CommandList;
 };
 
 
 class CommandList {
+public:
+  [[nodiscard]] auto Begin(PipelineState const& pipeline_state) -> bool;
+  [[nodiscard]] auto End() const -> bool;
+  auto Barrier(std::span<GlobalBarrier const> global_barriers, std::span<BufferBarrier const> buffer_barriers,
+               std::span<TextureBarrier const> texture_barriers) const -> void;
+  auto ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth, UINT8 stencil,
+                         std::span<D3D12_RECT const> rects) const -> void;
+  auto ClearRenderTarget(Texture const& tex, std::span<FLOAT const, 4> color_rgba,
+                         std::span<D3D12_RECT const> rects) const -> void;
+  auto CopyBuffer(Buffer const& dst, Buffer const& src) const -> void;
+  auto CopyBufferRegion(Buffer const& dst, UINT64 dst_offset, Buffer const& src, UINT64 src_offset,
+                        UINT64 num_bytes) const -> void;
+  auto CopyTexture(Texture const& dst, Texture const& src) const -> void;
+  auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
+                         Texture const& src, UINT src_subresource_index, D3D12_BOX const* src_box) const -> void;
+  auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
+                         Buffer const& src, D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void;
+  auto Dispatch(UINT thread_group_count_x, UINT thread_group_count_y, UINT thread_group_count_z) const -> void;
+  auto DispatchMesh(UINT thread_group_count_x, UINT thread_group_count_y, UINT thread_group_count_z) const -> void;
+  auto DrawIndexedInstanced(UINT index_count_per_instance, UINT instance_count, UINT start_index_location,
+                            INT base_vertex_location, UINT start_instance_location) const -> void;
+  auto DrawInstanced(UINT vertex_count_per_instance, UINT instance_count, UINT start_vertex_location,
+                     UINT start_instance_location) const -> void;
+  auto SetBlendFactor(std::span<FLOAT const, 4> blend_factor) const -> void;
+  auto SetRenderTargets(std::span<Texture const> render_targets, Texture const* depth_stencil) const -> void;
+  auto SetStencilRef(UINT stencil_ref) const -> void;
+  auto SetScissorRects(std::span<D3D12_RECT const> rects) const -> void;
+  auto SetViewports(std::span<D3D12_VIEWPORT const> viewports) const -> void;
+  auto SetPipelineParameter(UINT index, UINT value) const -> void;
+  auto SetPipelineParameters(UINT index, std::span<UINT const> values) const -> void;
+  auto SetPipelineState(PipelineState const& pipeline_state) -> void;
+  auto SetStreamOutputTargets(UINT start_slot, std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
+
+private:
+  auto SetRootSignature(std::uint8_t num_params) const -> void;
+
   CommandList(Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator,
-              Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list);
+              Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list, DescriptorHeap const* dsv_heap,
+              DescriptorHeap const* rtv_heap, DescriptorHeap const* res_desc_heap, DescriptorHeap const* sampler_heap,
+              RootSignatureCache* root_signatures);
 
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list_;
+  DescriptorHeap const* dsv_heap_;
+  DescriptorHeap const* rtv_heap_;
+  DescriptorHeap const* res_desc_heap_;
+  DescriptorHeap const* sampler_heap_;
+  RootSignatureCache* root_signatures_;
   bool compute_pipeline_set_{false};
 
   friend GraphicsDevice;
@@ -359,6 +359,20 @@ class SwapChain {
   std::vector<UniqueTextureHandle> textures_;
 
   friend GraphicsDevice;
+};
+
+
+template<typename T>
+class DeviceChildDeleter {
+public:
+  explicit DeviceChildDeleter(GraphicsDevice& device) :
+    device_{&device} {}
+
+
+  auto operator()(T const* device_child) const -> void;
+
+private:
+  GraphicsDevice* device_;
 };
 
 

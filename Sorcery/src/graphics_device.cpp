@@ -81,6 +81,23 @@ DescriptorHeap::DescriptorHeap(ComPtr<ID3D12DescriptorHeap> heap, ID3D12Device& 
 }
 
 
+auto RootSignatureCache::Add(std::uint8_t const num_params, ComPtr<ID3D12RootSignature> root_signature) -> void {
+  std::scoped_lock const lock{mutex_};
+  root_signatures_.try_emplace(num_params, std::move(root_signature));
+}
+
+
+auto RootSignatureCache::Get(std::uint8_t const num_params) -> ComPtr<ID3D12RootSignature> {
+  std::scoped_lock const lock{mutex_};
+
+  if (auto const it{root_signatures_.find(num_params)}; it != std::end(root_signatures_)) {
+    return it->second;
+  }
+
+  return nullptr;
+}
+
+
 auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDevice> {
   if (enable_debug) {
     ComPtr<ID3D12Debug6> debug;
@@ -516,39 +533,35 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
                                          std::uint8_t const num_32_bit_params) -> UniquePipelineStateHandle {
   ComPtr<ID3D12RootSignature> root_signature;
 
-  {
-    std::scoped_lock const lock{root_signature_mutex_};
+  if (auto rs{root_signatures_.Get(num_32_bit_params)}) {
+    root_signature = std::move(rs);
+  } else {
+    CD3DX12_ROOT_PARAMETER1 root_param;
+    root_param.InitAsConstants(num_32_bit_params, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
 
-    if (auto const it{root_signatures_.find(num_32_bit_params)}; it != std::end(root_signatures_)) {
-      root_signature = it->second;
-    } else {
-      CD3DX12_ROOT_PARAMETER1 root_param;
-      root_param.InitAsConstants(num_32_bit_params, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
-
-      D3D12_VERSIONED_ROOT_SIGNATURE_DESC const root_signature_desc{
-        .Version = D3D_ROOT_SIGNATURE_VERSION_1_1,
-        .Desc_1_1 = {
-          1, &root_param, 0, nullptr,
-          D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED |
-          D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED
-        }
-      };
-
-      ComPtr<ID3DBlob> root_signature_blob;
-      ComPtr<ID3DBlob> error_blob;
-
-      if (FAILED(D3D12SerializeVersionedRootSignature(&root_signature_desc, &root_signature_blob, &error_blob))) {
-        return UniquePipelineStateHandle{nullptr, DeviceChildDeleter<PipelineState>{*this}};
+    D3D12_VERSIONED_ROOT_SIGNATURE_DESC const root_signature_desc{
+      .Version = D3D_ROOT_SIGNATURE_VERSION_1_1,
+      .Desc_1_1 = {
+        1, &root_param, 0, nullptr,
+        D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED |
+        D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED
       }
+    };
 
-      if (FAILED(
-        device_->CreateRootSignature(0, root_signature_blob->GetBufferPointer(), root_signature_blob->GetBufferSize(),
-          IID_PPV_ARGS(&root_signature)))) {
-        return UniquePipelineStateHandle{nullptr, DeviceChildDeleter<PipelineState>{*this}};
-      }
+    ComPtr<ID3DBlob> root_signature_blob;
+    ComPtr<ID3DBlob> error_blob;
 
-      root_signatures_.emplace(num_32_bit_params, root_signature);
+    if (FAILED(D3D12SerializeVersionedRootSignature(&root_signature_desc, &root_signature_blob, &error_blob))) {
+      return UniquePipelineStateHandle{nullptr, DeviceChildDeleter<PipelineState>{*this}};
     }
+
+    if (FAILED(
+      device_->CreateRootSignature(0, root_signature_blob->GetBufferPointer(), root_signature_blob->GetBufferSize(),
+        IID_PPV_ARGS(&root_signature)))) {
+      return UniquePipelineStateHandle{nullptr, DeviceChildDeleter<PipelineState>{*this}};
+    }
+
+    root_signatures_.Add(num_32_bit_params, root_signature);
   }
 
   D3D12_PIPELINE_STATE_STREAM_DESC const stream_desc{sizeof(desc), &const_cast<PipelineStateDesc&>(desc)};
@@ -583,7 +596,11 @@ auto GraphicsDevice::CreateCommandList() -> UniqueCommandListHandle {
   }
 
   return UniqueCommandListHandle{
-    new CommandList{std::move(allocator), std::move(cmd_list)}, DeviceChildDeleter<CommandList>{*this}
+    new CommandList{
+      std::move(allocator), std::move(cmd_list), &dsv_heap_, &rtv_heap_, &res_desc_heap_, &sampler_heap_,
+      &root_signatures_
+    },
+    DeviceChildDeleter<CommandList>{*this}
   };
 }
 
@@ -695,244 +712,6 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
 }
 
 
-auto GraphicsDevice::CmdBegin(CommandList& cmd_list, PipelineState const& pipeline_state) const -> bool {
-  if (FAILED(cmd_list.allocator_->Reset()) || FAILED(
-        cmd_list.cmd_list_->Reset(cmd_list.allocator_.Get(), pipeline_state.pipeline_state_.Get()))) {
-    return false;
-  }
-
-  cmd_list.cmd_list_->SetDescriptorHeaps(2,
-    std::array{res_desc_heap_.GetInternalPtr(), sampler_heap_.GetInternalPtr()}.data());
-  cmd_list.compute_pipeline_set_ = pipeline_state.is_compute_;
-  SetRootSignature(cmd_list, pipeline_state.num_params_);
-  return true;
-}
-
-
-auto GraphicsDevice::CmdEnd(CommandList const& cmd_list) const -> bool {
-  return SUCCEEDED(cmd_list.cmd_list_->Close());
-}
-
-
-auto GraphicsDevice::CmdBarrier(CommandList const& cmd_list, std::span<GlobalBarrier const> const global_barriers,
-                                std::span<BufferBarrier const> const buffer_barriers,
-                                std::span<TextureBarrier const> const texture_barriers) const -> void {
-  std::pmr::vector<D3D12_GLOBAL_BARRIER> globals{&GetTmpMemRes()};
-  globals.reserve(global_barriers.size());
-  std::pmr::vector<D3D12_BUFFER_BARRIER> buffers{&GetTmpMemRes()};
-  buffers.reserve(buffer_barriers.size());
-  std::pmr::vector<D3D12_TEXTURE_BARRIER> textures{&GetTmpMemRes()};
-  textures.reserve(texture_barriers.size());
-  std::pmr::vector<D3D12_BARRIER_GROUP> groups{&GetTmpMemRes()};
-
-  if (!global_barriers.empty()) {
-    std::ranges::transform(global_barriers, std::back_inserter(globals), [](GlobalBarrier const& barrier) {
-      return D3D12_GLOBAL_BARRIER{barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after};
-    });
-    groups.emplace_back(D3D12_BARRIER_GROUP{
-      .Type = D3D12_BARRIER_TYPE_GLOBAL, .NumBarriers = static_cast<UINT32>(globals.size()),
-      .pGlobalBarriers = globals.data()
-    });
-  }
-
-  if (!buffers.empty()) {
-    std::ranges::transform(buffer_barriers, std::back_inserter(buffers), [](BufferBarrier const& barrier) {
-      return D3D12_BUFFER_BARRIER{
-        barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after,
-        barrier.buffer->resource_.Get(), barrier.offset, barrier.size
-      };
-    });
-    groups.emplace_back(D3D12_BARRIER_GROUP{
-      .Type = D3D12_BARRIER_TYPE_BUFFER, .NumBarriers = static_cast<UINT32>(buffers.size()),
-      .pBufferBarriers = buffers.data()
-    });
-  }
-
-  if (!textures.empty()) {
-    std::ranges::transform(texture_barriers, std::back_inserter(textures), [](TextureBarrier const& barrier) {
-      return D3D12_TEXTURE_BARRIER{
-        barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after, barrier.layout_before,
-        barrier.layout_after, barrier.texture->resource_.Get(), barrier.subresources, barrier.flags
-      };
-    });
-    groups.emplace_back(D3D12_BARRIER_GROUP{
-      .Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = static_cast<UINT32>(textures.size()),
-      .pTextureBarriers = textures.data()
-    });
-  }
-
-  cmd_list.cmd_list_->Barrier(static_cast<UINT32>(groups.size()), groups.data());
-}
-
-
-auto GraphicsDevice::CmdClearDepthStencil(CommandList const& cmd_list, Texture const& tex,
-                                          D3D12_CLEAR_FLAGS const clear_flags, FLOAT const depth, UINT8 const stencil,
-                                          std::span<D3D12_RECT const> const rects) const -> void {
-  if (tex.dsv_ != kInvalidResourceIndex) {
-    cmd_list.cmd_list_->ClearDepthStencilView(dsv_heap_.GetDescriptorCpuHandle(tex.dsv_), clear_flags, depth, stencil,
-      static_cast<UINT>(rects.size()), rects.data());
-  }
-}
-
-
-auto GraphicsDevice::CmdClearRenderTarget(CommandList const& cmd_list, Texture const& tex,
-                                          std::span<FLOAT const, 4> const color_rgba,
-                                          std::span<D3D12_RECT const> const rects) const -> void {
-  if (tex.rtv_ != kInvalidResourceIndex) {
-    cmd_list.cmd_list_->ClearRenderTargetView(rtv_heap_.GetDescriptorCpuHandle(tex.rtv_), color_rgba.data(),
-      static_cast<UINT>(rects.size()), rects.data());
-  }
-}
-
-
-auto GraphicsDevice::CmdCopyBuffer(CommandList const& cmd_list, Buffer const& dst, Buffer const& src) const -> void {
-  cmd_list.cmd_list_->CopyResource(dst.resource_.Get(), src.resource_.Get());
-}
-
-
-auto GraphicsDevice::CmdCopyBufferRegion(CommandList const& cmd_list, Buffer const& dst, UINT64 const dst_offset,
-                                         Buffer const& src, UINT64 const src_offset,
-                                         UINT64 const num_bytes) const -> void {
-  cmd_list.cmd_list_->CopyBufferRegion(dst.resource_.Get(), dst_offset, src.resource_.Get(), src_offset, num_bytes);
-}
-
-
-auto GraphicsDevice::CmdCopyTexture(CommandList const& cmd_list, Texture const& dst, Texture const& src) -> void {
-  cmd_list.cmd_list_->CopyResource(dst.resource_.Get(), src.resource_.Get());
-}
-
-
-auto GraphicsDevice::CmdCopyTextureRegion(CommandList const& cmd_list, Texture const& dst,
-                                          UINT const dst_subresource_index, UINT const dst_x, UINT const dst_y,
-                                          UINT const dst_z, Texture const& src, UINT const src_subresource_index,
-                                          D3D12_BOX const* src_box) const -> void {
-  D3D12_TEXTURE_COPY_LOCATION const dst_loc{
-    .pResource = dst.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
-    .SubresourceIndex = dst_subresource_index
-  };
-  D3D12_TEXTURE_COPY_LOCATION const src_loc{
-    .pResource = src.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
-    .SubresourceIndex = src_subresource_index
-  };
-  cmd_list.cmd_list_->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, src_box);
-}
-
-
-auto GraphicsDevice::CmdCopyTextureRegion(CommandList const& cmd_list, Texture const& dst,
-                                          UINT const dst_subresource_index, UINT const dst_x, UINT const dst_y,
-                                          UINT const dst_z, Buffer const& src,
-                                          D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void {
-  D3D12_TEXTURE_COPY_LOCATION const dst_loc{
-    .pResource = dst.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
-    .SubresourceIndex = dst_subresource_index
-  };
-  D3D12_TEXTURE_COPY_LOCATION const src_loc{
-    .pResource = src.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, .PlacedFootprint = src_footprint
-  };
-  cmd_list.cmd_list_->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, nullptr);
-}
-
-
-auto GraphicsDevice::CmdDispatch(CommandList const& cmd_list, UINT const thread_group_count_x,
-                                 UINT const thread_group_count_y, UINT const thread_group_count_z) const -> void {
-  cmd_list.cmd_list_->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
-}
-
-
-auto GraphicsDevice::CmdDispatchMesh(CommandList const& cmd_list, UINT const thread_group_count_x,
-                                     UINT const thread_group_count_y, UINT const thread_group_count_z) const -> void {
-  cmd_list.cmd_list_->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
-}
-
-
-auto GraphicsDevice::CmdDrawIndexedInstanced(CommandList const& cmd_list, UINT const index_count_per_instance,
-                                             UINT const instance_count, UINT const start_index_location,
-                                             INT const base_vertex_location,
-                                             UINT const start_instance_location) const -> void {
-  cmd_list.cmd_list_->DrawIndexedInstanced(index_count_per_instance, instance_count, start_index_location,
-    base_vertex_location, start_instance_location);
-}
-
-
-auto GraphicsDevice::CmdDrawInstanced(CommandList const& cmd_list, UINT const vertex_count_per_instance,
-                                      UINT const instance_count, UINT const start_vertex_location,
-                                      UINT const start_instance_location) const -> void {
-  cmd_list.cmd_list_->DrawInstanced(vertex_count_per_instance, instance_count, start_vertex_location,
-    start_instance_location);
-}
-
-
-auto GraphicsDevice::CmdSetBlendFactor(CommandList const& cmd_list,
-                                       std::span<FLOAT const, 4> const blend_factor) const -> void {
-  cmd_list.cmd_list_->OMSetBlendFactor(blend_factor.data());
-}
-
-
-auto GraphicsDevice::CmdSetRenderTargets(CommandList const& cmd_list, std::span<Texture const> render_targets,
-                                         Texture const* depth_stencil) const -> void {
-  std::pmr::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt{&GetTmpMemRes()};
-  rt.reserve(render_targets.size());
-  std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const& tex) {
-    return rtv_heap_.GetDescriptorCpuHandle(tex.rtv_);
-  });
-
-  auto const ds{dsv_heap_.GetDescriptorCpuHandle(depth_stencil ? depth_stencil->dsv_ : 0)};
-
-  cmd_list.cmd_list_->OMSetRenderTargets(static_cast<UINT>(rt.size()), rt.data(), FALSE, depth_stencil ? &ds : nullptr);
-}
-
-
-auto GraphicsDevice::CmdSetStencilRef(CommandList const& cmd_list, UINT const stencil_ref) const -> void {
-  cmd_list.cmd_list_->OMSetStencilRef(stencil_ref);
-}
-
-
-auto GraphicsDevice::CmdSetScissorRects(CommandList const& cmd_list,
-                                        std::span<D3D12_RECT const> const rects) const -> void {
-  cmd_list.cmd_list_->RSSetScissorRects(static_cast<UINT>(rects.size()), rects.data());
-}
-
-
-auto GraphicsDevice::CmdSetViewports(CommandList const& cmd_list,
-                                     std::span<D3D12_VIEWPORT const> const viewports) const -> void {
-  cmd_list.cmd_list_->RSSetViewports(static_cast<UINT>(viewports.size()), viewports.data());
-}
-
-
-auto GraphicsDevice::CmdSetPipelineParameter(CommandList const& cmd_list, UINT const index,
-                                             UINT const value) const -> void {
-  if (cmd_list.compute_pipeline_set_) {
-    cmd_list.cmd_list_->SetComputeRoot32BitConstant(0, value, index);
-  } else {
-    cmd_list.cmd_list_->SetGraphicsRoot32BitConstant(0, value, index);
-  }
-}
-
-
-auto GraphicsDevice::CmdSetPipelineParameters(CommandList const& cmd_list, UINT const index,
-                                              std::span<UINT const> const values) const -> void {
-  if (cmd_list.compute_pipeline_set_) {
-    cmd_list.cmd_list_->SetComputeRoot32BitConstants(0, static_cast<UINT>(values.size()), values.data(), index);
-  } else {
-    cmd_list.cmd_list_->SetGraphicsRoot32BitConstants(0, static_cast<UINT>(values.size()), values.data(), index);
-  }
-}
-
-
-auto GraphicsDevice::CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void {
-  cmd_list.cmd_list_->SetPipelineState(pipeline_state.pipeline_state_.Get());
-  cmd_list.compute_pipeline_set_ = pipeline_state.is_compute_;
-  SetRootSignature(cmd_list, pipeline_state.num_params_);
-}
-
-
-auto GraphicsDevice::CmdSetStreamOutputTargets(CommandList const& cmd_list, UINT const start_slot,
-                                               std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> const views) const ->
-  void {
-  cmd_list.cmd_list_->SOSetTargets(start_slot, static_cast<UINT>(views.size()), views.data());
-}
-
-
 auto GraphicsDevice::SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<UniqueTextureHandle const> {
   return swap_chain.textures_;
 }
@@ -976,15 +755,6 @@ GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Devic
     )) && allow_tearing) {
     swap_chain_flags_ |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
     present_flags_ |= DXGI_PRESENT_ALLOW_TEARING;
-  }
-}
-
-
-auto GraphicsDevice::SetRootSignature(CommandList const& cmd_list, std::uint8_t const num_params) const -> void {
-  if (cmd_list.compute_pipeline_set_) {
-    cmd_list.cmd_list_->SetComputeRootSignature(root_signatures_.at(num_params).Get());
-  } else {
-    cmd_list.cmd_list_->SetGraphicsRootSignature(root_signatures_.at(num_params).Get());
   }
 }
 
@@ -1075,9 +845,249 @@ PipelineState::PipelineState(ComPtr<ID3D12RootSignature> root_signature, ComPtr<
   is_compute_{is_compute} {}
 
 
-CommandList::CommandList(ComPtr<ID3D12CommandAllocator> allocator, ComPtr<ID3D12GraphicsCommandList7> cmd_list) :
+auto CommandList::Begin(PipelineState const& pipeline_state) -> bool {
+  if (FAILED(allocator_->Reset()) || FAILED(cmd_list_->Reset(allocator_.Get(), pipeline_state.pipeline_state_.Get()))) {
+    return false;
+  }
+
+  cmd_list_->SetDescriptorHeaps(2,
+    std::array{res_desc_heap_->GetInternalPtr(), sampler_heap_->GetInternalPtr()}.data());
+  compute_pipeline_set_ = pipeline_state.is_compute_;
+  SetRootSignature(pipeline_state.num_params_);
+  return true;
+}
+
+
+auto CommandList::End() const -> bool {
+  return SUCCEEDED(cmd_list_->Close());
+}
+
+
+auto CommandList::Barrier(std::span<GlobalBarrier const> const global_barriers,
+                          std::span<BufferBarrier const> const buffer_barriers,
+                          std::span<TextureBarrier const> const texture_barriers) const -> void {
+  std::pmr::vector<D3D12_GLOBAL_BARRIER> globals{&GetTmpMemRes()};
+  globals.reserve(global_barriers.size());
+  std::pmr::vector<D3D12_BUFFER_BARRIER> buffers{&GetTmpMemRes()};
+  buffers.reserve(buffer_barriers.size());
+  std::pmr::vector<D3D12_TEXTURE_BARRIER> textures{&GetTmpMemRes()};
+  textures.reserve(texture_barriers.size());
+  std::pmr::vector<D3D12_BARRIER_GROUP> groups{&GetTmpMemRes()};
+
+  if (!global_barriers.empty()) {
+    std::ranges::transform(global_barriers, std::back_inserter(globals), [](GlobalBarrier const& barrier) {
+      return D3D12_GLOBAL_BARRIER{barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after};
+    });
+    groups.emplace_back(D3D12_BARRIER_GROUP{
+      .Type = D3D12_BARRIER_TYPE_GLOBAL, .NumBarriers = static_cast<UINT32>(globals.size()),
+      .pGlobalBarriers = globals.data()
+    });
+  }
+
+  if (!buffers.empty()) {
+    std::ranges::transform(buffer_barriers, std::back_inserter(buffers), [](BufferBarrier const& barrier) {
+      return D3D12_BUFFER_BARRIER{
+        barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after,
+        barrier.buffer->resource_.Get(), barrier.offset, barrier.size
+      };
+    });
+    groups.emplace_back(D3D12_BARRIER_GROUP{
+      .Type = D3D12_BARRIER_TYPE_BUFFER, .NumBarriers = static_cast<UINT32>(buffers.size()),
+      .pBufferBarriers = buffers.data()
+    });
+  }
+
+  if (!textures.empty()) {
+    std::ranges::transform(texture_barriers, std::back_inserter(textures), [](TextureBarrier const& barrier) {
+      return D3D12_TEXTURE_BARRIER{
+        barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after, barrier.layout_before,
+        barrier.layout_after, barrier.texture->resource_.Get(), barrier.subresources, barrier.flags
+      };
+    });
+    groups.emplace_back(D3D12_BARRIER_GROUP{
+      .Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = static_cast<UINT32>(textures.size()),
+      .pTextureBarriers = textures.data()
+    });
+  }
+
+  cmd_list_->Barrier(static_cast<UINT32>(groups.size()), groups.data());
+}
+
+
+auto CommandList::ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS const clear_flags, FLOAT const depth,
+                                    UINT8 const stencil, std::span<D3D12_RECT const> const rects) const -> void {
+  if (tex.dsv_ != kInvalidResourceIndex) {
+    cmd_list_->ClearDepthStencilView(dsv_heap_->GetDescriptorCpuHandle(tex.dsv_), clear_flags, depth, stencil,
+      static_cast<UINT>(rects.size()), rects.data());
+  }
+}
+
+
+auto CommandList::ClearRenderTarget(Texture const& tex, std::span<FLOAT const, 4> const color_rgba,
+                                    std::span<D3D12_RECT const> const rects) const -> void {
+  if (tex.rtv_ != kInvalidResourceIndex) {
+    cmd_list_->ClearRenderTargetView(rtv_heap_->GetDescriptorCpuHandle(tex.rtv_), color_rgba.data(),
+      static_cast<UINT>(rects.size()), rects.data());
+  }
+}
+
+
+auto CommandList::CopyBuffer(Buffer const& dst, Buffer const& src) const -> void {
+  cmd_list_->CopyResource(dst.resource_.Get(), src.resource_.Get());
+}
+
+
+auto CommandList::CopyBufferRegion(Buffer const& dst, UINT64 const dst_offset, Buffer const& src,
+                                   UINT64 const src_offset, UINT64 const num_bytes) const -> void {
+  cmd_list_->CopyBufferRegion(dst.resource_.Get(), dst_offset, src.resource_.Get(), src_offset, num_bytes);
+}
+
+
+auto CommandList::CopyTexture(Texture const& dst, Texture const& src) const -> void {
+  cmd_list_->CopyResource(dst.resource_.Get(), src.resource_.Get());
+}
+
+
+auto CommandList::CopyTextureRegion(Texture const& dst, UINT const dst_subresource_index, UINT const dst_x,
+                                    UINT const dst_y, UINT const dst_z, Texture const& src,
+                                    UINT const src_subresource_index, D3D12_BOX const* src_box) const -> void {
+  D3D12_TEXTURE_COPY_LOCATION const dst_loc{
+    .pResource = dst.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .SubresourceIndex = dst_subresource_index
+  };
+  D3D12_TEXTURE_COPY_LOCATION const src_loc{
+    .pResource = src.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .SubresourceIndex = src_subresource_index
+  };
+  cmd_list_->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, src_box);
+}
+
+
+auto CommandList::CopyTextureRegion(Texture const& dst, UINT const dst_subresource_index, UINT const dst_x,
+                                    UINT const dst_y, UINT const dst_z, Buffer const& src,
+                                    D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void {
+  D3D12_TEXTURE_COPY_LOCATION const dst_loc{
+    .pResource = dst.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .SubresourceIndex = dst_subresource_index
+  };
+  D3D12_TEXTURE_COPY_LOCATION const src_loc{
+    .pResource = src.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, .PlacedFootprint = src_footprint
+  };
+  cmd_list_->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, nullptr);
+}
+
+
+auto CommandList::Dispatch(UINT const thread_group_count_x, UINT const thread_group_count_y,
+                           UINT const thread_group_count_z) const -> void {
+  cmd_list_->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+}
+
+
+auto CommandList::DispatchMesh(UINT const thread_group_count_x, UINT const thread_group_count_y,
+                               UINT const thread_group_count_z) const -> void {
+  cmd_list_->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+}
+
+
+auto CommandList::DrawIndexedInstanced(UINT const index_count_per_instance, UINT const instance_count,
+                                       UINT const start_index_location, INT const base_vertex_location,
+                                       UINT const start_instance_location) const -> void {
+  cmd_list_->DrawIndexedInstanced(index_count_per_instance, instance_count, start_index_location, base_vertex_location,
+    start_instance_location);
+}
+
+
+auto CommandList::DrawInstanced(UINT const vertex_count_per_instance, UINT const instance_count,
+                                UINT const start_vertex_location, UINT const start_instance_location) const -> void {
+  cmd_list_->DrawInstanced(vertex_count_per_instance, instance_count, start_vertex_location, start_instance_location);
+}
+
+
+auto CommandList::SetBlendFactor(std::span<FLOAT const, 4> const blend_factor) const -> void {
+  cmd_list_->OMSetBlendFactor(blend_factor.data());
+}
+
+
+auto CommandList::SetRenderTargets(std::span<Texture const> render_targets,
+                                   Texture const* depth_stencil) const -> void {
+  std::pmr::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt{&GetTmpMemRes()};
+  rt.reserve(render_targets.size());
+  std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const& tex) {
+    return rtv_heap_->GetDescriptorCpuHandle(tex.rtv_);
+  });
+
+  auto const ds{dsv_heap_->GetDescriptorCpuHandle(depth_stencil ? depth_stencil->dsv_ : 0)};
+
+  cmd_list_->OMSetRenderTargets(static_cast<UINT>(rt.size()), rt.data(), FALSE, depth_stencil ? &ds : nullptr);
+}
+
+
+auto CommandList::SetStencilRef(UINT const stencil_ref) const -> void {
+  cmd_list_->OMSetStencilRef(stencil_ref);
+}
+
+
+auto CommandList::SetScissorRects(std::span<D3D12_RECT const> const rects) const -> void {
+  cmd_list_->RSSetScissorRects(static_cast<UINT>(rects.size()), rects.data());
+}
+
+
+auto CommandList::SetViewports(std::span<D3D12_VIEWPORT const> const viewports) const -> void {
+  cmd_list_->RSSetViewports(static_cast<UINT>(viewports.size()), viewports.data());
+}
+
+
+auto CommandList::SetPipelineParameter(UINT const index, UINT const value) const -> void {
+  if (compute_pipeline_set_) {
+    cmd_list_->SetComputeRoot32BitConstant(0, value, index);
+  } else {
+    cmd_list_->SetGraphicsRoot32BitConstant(0, value, index);
+  }
+}
+
+
+auto CommandList::SetPipelineParameters(UINT const index, std::span<UINT const> const values) const -> void {
+  if (compute_pipeline_set_) {
+    cmd_list_->SetComputeRoot32BitConstants(0, static_cast<UINT>(values.size()), values.data(), index);
+  } else {
+    cmd_list_->SetGraphicsRoot32BitConstants(0, static_cast<UINT>(values.size()), values.data(), index);
+  }
+}
+
+
+auto CommandList::SetPipelineState(PipelineState const& pipeline_state) -> void {
+  cmd_list_->SetPipelineState(pipeline_state.pipeline_state_.Get());
+  compute_pipeline_set_ = pipeline_state.is_compute_;
+  SetRootSignature(pipeline_state.num_params_);
+}
+
+
+auto CommandList::SetStreamOutputTargets(UINT const start_slot,
+                                         std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> const views) const -> void {
+  cmd_list_->SOSetTargets(start_slot, static_cast<UINT>(views.size()), views.data());
+}
+
+
+auto CommandList::SetRootSignature(std::uint8_t const num_params) const -> void {
+  if (compute_pipeline_set_) {
+    cmd_list_->SetComputeRootSignature(root_signatures_->Get(num_params).Get());
+  } else {
+    cmd_list_->SetGraphicsRootSignature(root_signatures_->Get(num_params).Get());
+  }
+}
+
+
+CommandList::CommandList(ComPtr<ID3D12CommandAllocator> allocator, ComPtr<ID3D12GraphicsCommandList7> cmd_list,
+                         DescriptorHeap const* dsv_heap, DescriptorHeap const* rtv_heap,
+                         DescriptorHeap const* res_desc_heap, DescriptorHeap const* sampler_heap,
+                         RootSignatureCache* root_signatures) :
   allocator_{std::move(allocator)},
-  cmd_list_{std::move(cmd_list)} {}
+  cmd_list_{std::move(cmd_list)},
+  dsv_heap_{dsv_heap},
+  rtv_heap_{rtv_heap},
+  res_desc_heap_{res_desc_heap},
+  sampler_heap_{sampler_heap},
+  root_signatures_{root_signatures} {}
 
 
 auto DeviceChildDeleter<PipelineState>::operator()(PipelineState const* const device_child) const -> void {
