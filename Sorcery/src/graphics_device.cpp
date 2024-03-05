@@ -25,46 +25,6 @@ UINT constexpr kInvalidResourceIndex{static_cast<UINT>(-1)};
 }
 
 
-struct Buffer {
-  ComPtr<D3D12MA::Allocation> allocation;
-  ComPtr<ID3D12Resource2> resource;
-  UINT cbv;
-  UINT srv;
-  UINT uav;
-};
-
-
-struct Texture {
-  ComPtr<D3D12MA::Allocation> allocation;
-  ComPtr<ID3D12Resource2> resource;
-  UINT dsv;
-  UINT rtv;
-  UINT srv;
-  UINT uav;
-};
-
-
-struct PipelineState {
-  ComPtr<ID3D12RootSignature> root_signature;
-  ComPtr<ID3D12PipelineState> pipeline_state;
-  std::uint8_t num_params;
-  bool is_compute;
-};
-
-
-struct CommandList {
-  ComPtr<ID3D12CommandAllocator> allocator;
-  ComPtr<ID3D12GraphicsCommandList7> cmd_list;
-  bool compute_pipeline_set;
-};
-
-
-struct SwapChain {
-  ComPtr<IDXGISwapChain4> swap_chain;
-  std::vector<UniqueTextureHandle> textures;
-};
-
-
 UINT const GraphicsDevice::rtv_heap_size_{1'000'000};
 UINT const GraphicsDevice::dsv_heap_size_{1'000'000};
 UINT const GraphicsDevice::res_desc_heap_size_{1'000'000};
@@ -581,7 +541,7 @@ auto GraphicsDevice::CreateCommandList() -> UniqueCommandListHandle {
   }
 
   return UniqueCommandListHandle{
-    new CommandList{std::move(allocator), std::move(cmd_list), false}, DeviceChildDeleter<CommandList>{*this}
+    new CommandList{std::move(allocator), std::move(cmd_list)}, DeviceChildDeleter<CommandList>{*this}
   };
 }
 
@@ -614,7 +574,7 @@ auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc, HWND const windo
     return UniqueSwapChainHandle{nullptr, DeviceChildDeleter<SwapChain>{*this}};
   }
 
-  auto const swap_chain{new SwapChain{std::move(swap_chain4), {}}};
+  auto const swap_chain{new SwapChain{std::move(swap_chain4)}};
   SwapChainCreateTextures(*swap_chain);
 
   return UniqueSwapChainHandle{swap_chain, DeviceChildDeleter<SwapChain>{*this}};
@@ -632,9 +592,9 @@ auto GraphicsDevice::CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamp
 
 auto GraphicsDevice::DestroyBuffer(Buffer const* const buffer) -> void {
   if (buffer) {
-    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, buffer->cbv);
-    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, buffer->srv);
-    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, buffer->uav);
+    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, buffer->cbv_);
+    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, buffer->srv_);
+    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, buffer->uav_);
 
     delete buffer;
   }
@@ -643,10 +603,10 @@ auto GraphicsDevice::DestroyBuffer(Buffer const* const buffer) -> void {
 
 auto GraphicsDevice::DestroyTexture(Texture const* const texture) -> void {
   if (texture) {
-    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, texture->dsv);
-    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, texture->rtv);
-    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, texture->srv);
-    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, texture->uav);
+    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, texture->dsv_);
+    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, texture->rtv_);
+    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, texture->srv_);
+    ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, texture->uav_);
 
     delete texture;
   }
@@ -688,7 +648,7 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
   cmd_list_submission_buffer_.reserve(cmd_lists.size());
   cmd_list_submission_buffer_.clear();
   std::ranges::transform(cmd_lists, std::back_inserter(cmd_list_submission_buffer_), [](CommandList const& cmd_list) {
-    return cmd_list.cmd_list.Get();
+    return cmd_list.cmd_list_.Get();
   });
   queue_->ExecuteCommandLists(static_cast<UINT>(cmd_list_submission_buffer_.size()),
     cmd_list_submission_buffer_.data());
@@ -696,20 +656,20 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
 
 
 auto GraphicsDevice::CmdBegin(CommandList& cmd_list, PipelineState const& pipeline_state) const -> bool {
-  if (FAILED(cmd_list.allocator->Reset()) || FAILED(
-        cmd_list.cmd_list->Reset(cmd_list.allocator.Get(), pipeline_state.pipeline_state.Get()))) {
+  if (FAILED(cmd_list.allocator_->Reset()) || FAILED(
+        cmd_list.cmd_list_->Reset(cmd_list.allocator_.Get(), pipeline_state.pipeline_state_.Get()))) {
     return false;
   }
 
-  cmd_list.cmd_list->SetDescriptorHeaps(1, res_desc_heap_.GetAddressOf());
-  cmd_list.compute_pipeline_set = pipeline_state.is_compute;
-  SetRootSignature(cmd_list, pipeline_state.num_params);
+  cmd_list.cmd_list_->SetDescriptorHeaps(1, res_desc_heap_.GetAddressOf());
+  cmd_list.compute_pipeline_set_ = pipeline_state.is_compute_;
+  SetRootSignature(cmd_list, pipeline_state.num_params_);
   return true;
 }
 
 
 auto GraphicsDevice::CmdEnd(CommandList const& cmd_list) const -> bool {
-  return SUCCEEDED(cmd_list.cmd_list->Close());
+  return SUCCEEDED(cmd_list.cmd_list_->Close());
 }
 
 
@@ -738,7 +698,7 @@ auto GraphicsDevice::CmdBarrier(CommandList const& cmd_list, std::span<GlobalBar
     std::ranges::transform(buffer_barriers, std::back_inserter(buffers), [](BufferBarrier const& barrier) {
       return D3D12_BUFFER_BARRIER{
         barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after,
-        barrier.buffer->resource.Get(), barrier.offset, barrier.size
+        barrier.buffer->resource_.Get(), barrier.offset, barrier.size
       };
     });
     groups.emplace_back(D3D12_BARRIER_GROUP{
@@ -751,7 +711,7 @@ auto GraphicsDevice::CmdBarrier(CommandList const& cmd_list, std::span<GlobalBar
     std::ranges::transform(texture_barriers, std::back_inserter(textures), [](TextureBarrier const& barrier) {
       return D3D12_TEXTURE_BARRIER{
         barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after, barrier.layout_before,
-        barrier.layout_after, barrier.texture->resource.Get(), barrier.subresources, barrier.flags
+        barrier.layout_after, barrier.texture->resource_.Get(), barrier.subresources, barrier.flags
       };
     });
     groups.emplace_back(D3D12_BARRIER_GROUP{
@@ -760,16 +720,16 @@ auto GraphicsDevice::CmdBarrier(CommandList const& cmd_list, std::span<GlobalBar
     });
   }
 
-  cmd_list.cmd_list->Barrier(static_cast<UINT32>(groups.size()), groups.data());
+  cmd_list.cmd_list_->Barrier(static_cast<UINT32>(groups.size()), groups.data());
 }
 
 
 auto GraphicsDevice::CmdClearDepthStencil(CommandList const& cmd_list, Texture const& tex,
                                           D3D12_CLEAR_FLAGS const clear_flags, FLOAT const depth, UINT8 const stencil,
                                           std::span<D3D12_RECT const> const rects) const -> void {
-  if (tex.dsv != kInvalidResourceIndex) {
-    cmd_list.cmd_list->ClearDepthStencilView(
-      CD3DX12_CPU_DESCRIPTOR_HANDLE{dsv_heap_start_, static_cast<INT>(tex.dsv), dsv_heap_increment_}, clear_flags,
+  if (tex.dsv_ != kInvalidResourceIndex) {
+    cmd_list.cmd_list_->ClearDepthStencilView(
+      CD3DX12_CPU_DESCRIPTOR_HANDLE{dsv_heap_start_, static_cast<INT>(tex.dsv_), dsv_heap_increment_}, clear_flags,
       depth, stencil, static_cast<UINT>(rects.size()), rects.data());
   }
 }
@@ -778,28 +738,28 @@ auto GraphicsDevice::CmdClearDepthStencil(CommandList const& cmd_list, Texture c
 auto GraphicsDevice::CmdClearRenderTarget(CommandList const& cmd_list, Texture const& tex,
                                           std::span<FLOAT const, 4> const color_rgba,
                                           std::span<D3D12_RECT const> const rects) const -> void {
-  if (tex.rtv != kInvalidResourceIndex) {
-    cmd_list.cmd_list->ClearRenderTargetView(
-      CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv), rtv_heap_increment_}, color_rgba.data(),
-      static_cast<UINT>(rects.size()), rects.data());
+  if (tex.rtv_ != kInvalidResourceIndex) {
+    cmd_list.cmd_list_->ClearRenderTargetView(
+      CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv_), rtv_heap_increment_},
+      color_rgba.data(), static_cast<UINT>(rects.size()), rects.data());
   }
 }
 
 
 auto GraphicsDevice::CmdCopyBuffer(CommandList const& cmd_list, Buffer const& dst, Buffer const& src) const -> void {
-  cmd_list.cmd_list->CopyResource(dst.resource.Get(), src.resource.Get());
+  cmd_list.cmd_list_->CopyResource(dst.resource_.Get(), src.resource_.Get());
 }
 
 
 auto GraphicsDevice::CmdCopyBufferRegion(CommandList const& cmd_list, Buffer const& dst, UINT64 const dst_offset,
                                          Buffer const& src, UINT64 const src_offset,
                                          UINT64 const num_bytes) const -> void {
-  cmd_list.cmd_list->CopyBufferRegion(dst.resource.Get(), dst_offset, src.resource.Get(), src_offset, num_bytes);
+  cmd_list.cmd_list_->CopyBufferRegion(dst.resource_.Get(), dst_offset, src.resource_.Get(), src_offset, num_bytes);
 }
 
 
 auto GraphicsDevice::CmdCopyTexture(CommandList const& cmd_list, Texture const& dst, Texture const& src) -> void {
-  cmd_list.cmd_list->CopyResource(dst.resource.Get(), src.resource.Get());
+  cmd_list.cmd_list_->CopyResource(dst.resource_.Get(), src.resource_.Get());
 }
 
 
@@ -808,14 +768,14 @@ auto GraphicsDevice::CmdCopyTextureRegion(CommandList const& cmd_list, Texture c
                                           UINT const dst_z, Texture const& src, UINT const src_subresource_index,
                                           D3D12_BOX const* src_box) const -> void {
   D3D12_TEXTURE_COPY_LOCATION const dst_loc{
-    .pResource = dst.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .pResource = dst.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
     .SubresourceIndex = dst_subresource_index
   };
   D3D12_TEXTURE_COPY_LOCATION const src_loc{
-    .pResource = src.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .pResource = src.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
     .SubresourceIndex = src_subresource_index
   };
-  cmd_list.cmd_list->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, src_box);
+  cmd_list.cmd_list_->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, src_box);
 }
 
 
@@ -824,25 +784,25 @@ auto GraphicsDevice::CmdCopyTextureRegion(CommandList const& cmd_list, Texture c
                                           UINT const dst_z, Buffer const& src,
                                           D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void {
   D3D12_TEXTURE_COPY_LOCATION const dst_loc{
-    .pResource = dst.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+    .pResource = dst.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
     .SubresourceIndex = dst_subresource_index
   };
   D3D12_TEXTURE_COPY_LOCATION const src_loc{
-    .pResource = src.resource.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, .PlacedFootprint = src_footprint
+    .pResource = src.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, .PlacedFootprint = src_footprint
   };
-  cmd_list.cmd_list->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, nullptr);
+  cmd_list.cmd_list_->CopyTextureRegion(&dst_loc, dst_x, dst_y, dst_z, &src_loc, nullptr);
 }
 
 
 auto GraphicsDevice::CmdDispatch(CommandList const& cmd_list, UINT const thread_group_count_x,
                                  UINT const thread_group_count_y, UINT const thread_group_count_z) const -> void {
-  cmd_list.cmd_list->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+  cmd_list.cmd_list_->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
 
 auto GraphicsDevice::CmdDispatchMesh(CommandList const& cmd_list, UINT const thread_group_count_x,
                                      UINT const thread_group_count_y, UINT const thread_group_count_z) const -> void {
-  cmd_list.cmd_list->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
+  cmd_list.cmd_list_->DispatchMesh(thread_group_count_x, thread_group_count_y, thread_group_count_z);
 }
 
 
@@ -850,7 +810,7 @@ auto GraphicsDevice::CmdDrawIndexedInstanced(CommandList const& cmd_list, UINT c
                                              UINT const instance_count, UINT const start_index_location,
                                              INT const base_vertex_location,
                                              UINT const start_instance_location) const -> void {
-  cmd_list.cmd_list->DrawIndexedInstanced(index_count_per_instance, instance_count, start_index_location,
+  cmd_list.cmd_list_->DrawIndexedInstanced(index_count_per_instance, instance_count, start_index_location,
     base_vertex_location, start_instance_location);
 }
 
@@ -858,14 +818,14 @@ auto GraphicsDevice::CmdDrawIndexedInstanced(CommandList const& cmd_list, UINT c
 auto GraphicsDevice::CmdDrawInstanced(CommandList const& cmd_list, UINT const vertex_count_per_instance,
                                       UINT const instance_count, UINT const start_vertex_location,
                                       UINT const start_instance_location) const -> void {
-  cmd_list.cmd_list->DrawInstanced(vertex_count_per_instance, instance_count, start_vertex_location,
+  cmd_list.cmd_list_->DrawInstanced(vertex_count_per_instance, instance_count, start_vertex_location,
     start_instance_location);
 }
 
 
 auto GraphicsDevice::CmdSetBlendFactor(CommandList const& cmd_list,
                                        std::span<FLOAT const, 4> const blend_factor) const -> void {
-  cmd_list.cmd_list->OMSetBlendFactor(blend_factor.data());
+  cmd_list.cmd_list_->OMSetBlendFactor(blend_factor.data());
 }
 
 
@@ -874,116 +834,91 @@ auto GraphicsDevice::CmdSetRenderTargets(CommandList const& cmd_list, std::span<
   std::pmr::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt{&GetTmpMemRes()};
   rt.reserve(render_targets.size());
   std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const& tex) {
-    return CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv), rtv_heap_increment_};
+    return CD3DX12_CPU_DESCRIPTOR_HANDLE{rtv_heap_start_, static_cast<INT>(tex.rtv_), rtv_heap_increment_};
   });
 
   CD3DX12_CPU_DESCRIPTOR_HANDLE const ds{
-    dsv_heap_start_, static_cast<INT>(depth_stencil ? depth_stencil->dsv : 0), dsv_heap_increment_
+    dsv_heap_start_, static_cast<INT>(depth_stencil ? depth_stencil->dsv_ : 0), dsv_heap_increment_
   };
 
-  cmd_list.cmd_list->OMSetRenderTargets(static_cast<UINT>(rt.size()), rt.data(), FALSE, depth_stencil ? &ds : nullptr);
+  cmd_list.cmd_list_->OMSetRenderTargets(static_cast<UINT>(rt.size()), rt.data(), FALSE, depth_stencil ? &ds : nullptr);
 }
 
 
 auto GraphicsDevice::CmdSetStencilRef(CommandList const& cmd_list, UINT const stencil_ref) const -> void {
-  cmd_list.cmd_list->OMSetStencilRef(stencil_ref);
+  cmd_list.cmd_list_->OMSetStencilRef(stencil_ref);
 }
 
 
 auto GraphicsDevice::CmdSetScissorRects(CommandList const& cmd_list,
                                         std::span<D3D12_RECT const> const rects) const -> void {
-  cmd_list.cmd_list->RSSetScissorRects(static_cast<UINT>(rects.size()), rects.data());
+  cmd_list.cmd_list_->RSSetScissorRects(static_cast<UINT>(rects.size()), rects.data());
 }
 
 
 auto GraphicsDevice::CmdSetViewports(CommandList const& cmd_list,
                                      std::span<D3D12_VIEWPORT const> const viewports) const -> void {
-  cmd_list.cmd_list->RSSetViewports(static_cast<UINT>(viewports.size()), viewports.data());
+  cmd_list.cmd_list_->RSSetViewports(static_cast<UINT>(viewports.size()), viewports.data());
 }
 
 
 auto GraphicsDevice::CmdSetPipelineParameter(CommandList const& cmd_list, UINT const index,
                                              UINT const value) const -> void {
-  if (cmd_list.compute_pipeline_set) {
-    cmd_list.cmd_list->SetComputeRoot32BitConstant(0, value, index);
+  if (cmd_list.compute_pipeline_set_) {
+    cmd_list.cmd_list_->SetComputeRoot32BitConstant(0, value, index);
   } else {
-    cmd_list.cmd_list->SetGraphicsRoot32BitConstant(0, value, index);
+    cmd_list.cmd_list_->SetGraphicsRoot32BitConstant(0, value, index);
   }
 }
 
 
 auto GraphicsDevice::CmdSetPipelineParameters(CommandList const& cmd_list, UINT const index,
                                               std::span<UINT const> const values) const -> void {
-  if (cmd_list.compute_pipeline_set) {
-    cmd_list.cmd_list->SetComputeRoot32BitConstants(0, static_cast<UINT>(values.size()), values.data(), index);
+  if (cmd_list.compute_pipeline_set_) {
+    cmd_list.cmd_list_->SetComputeRoot32BitConstants(0, static_cast<UINT>(values.size()), values.data(), index);
   } else {
-    cmd_list.cmd_list->SetGraphicsRoot32BitConstants(0, static_cast<UINT>(values.size()), values.data(), index);
+    cmd_list.cmd_list_->SetGraphicsRoot32BitConstants(0, static_cast<UINT>(values.size()), values.data(), index);
   }
 }
 
 
 auto GraphicsDevice::CmdSetPipelineState(CommandList& cmd_list, PipelineState const& pipeline_state) const -> void {
-  cmd_list.cmd_list->SetPipelineState(pipeline_state.pipeline_state.Get());
-  cmd_list.compute_pipeline_set = pipeline_state.is_compute;
-  SetRootSignature(cmd_list, pipeline_state.num_params);
+  cmd_list.cmd_list_->SetPipelineState(pipeline_state.pipeline_state_.Get());
+  cmd_list.compute_pipeline_set_ = pipeline_state.is_compute_;
+  SetRootSignature(cmd_list, pipeline_state.num_params_);
 }
 
 
 auto GraphicsDevice::CmdSetStreamOutputTargets(CommandList const& cmd_list, UINT const start_slot,
                                                std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> const views) const ->
   void {
-  cmd_list.cmd_list->SOSetTargets(start_slot, static_cast<UINT>(views.size()), views.data());
+  cmd_list.cmd_list_->SOSetTargets(start_slot, static_cast<UINT>(views.size()), views.data());
 }
 
 
 auto GraphicsDevice::SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<UniqueTextureHandle const> {
-  return swap_chain.textures;
+  return swap_chain.textures_;
 }
 
 
 auto GraphicsDevice::SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT {
-  return swap_chain.swap_chain->GetCurrentBackBufferIndex();
+  return swap_chain.swap_chain_->GetCurrentBackBufferIndex();
 }
 
 
 auto GraphicsDevice::SwapChainPresent(SwapChain const& swap_chain, UINT const sync_interval) const -> bool {
-  return SUCCEEDED(swap_chain.swap_chain->Present(sync_interval, present_flags_));
+  return SUCCEEDED(swap_chain.swap_chain_->Present(sync_interval, present_flags_));
 }
 
 
 auto GraphicsDevice::SwapChainResize(SwapChain& swap_chain, UINT const width, UINT const height) -> bool {
-  swap_chain.textures.clear();
+  swap_chain.textures_.clear();
 
-  if (FAILED(swap_chain.swap_chain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, swap_chain_flags_))) {
+  if (FAILED(swap_chain.swap_chain_->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, swap_chain_flags_))) {
     return false;
   }
 
   return SwapChainCreateTextures(swap_chain);
-}
-
-
-auto GraphicsDevice::BufferGetConstantBuffer(Buffer const& buffer) const -> UINT {
-  return buffer.cbv;
-}
-
-
-auto GraphicsDevice::BufferGetShaderResource(Buffer const& buffer) const -> UINT {
-  return buffer.srv;
-}
-
-
-auto GraphicsDevice::BufferGetUnorderedAccess(Buffer const& buffer) const -> UINT {
-  return buffer.uav;
-}
-
-
-auto GraphicsDevice::TextureGetShaderResource(Texture const& texture) const -> UINT {
-  return texture.srv;
-}
-
-
-auto GraphicsDevice::TextureGetUnorderedAccess(Texture const& texture) const -> UINT {
-  return texture.uav;
 }
 
 
@@ -1109,23 +1044,23 @@ auto GraphicsDevice::ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE const typ
 
 
 auto GraphicsDevice::SetRootSignature(CommandList const& cmd_list, std::uint8_t const num_params) const -> void {
-  if (cmd_list.compute_pipeline_set) {
-    cmd_list.cmd_list->SetComputeRootSignature(root_signatures_.at(num_params).Get());
+  if (cmd_list.compute_pipeline_set_) {
+    cmd_list.cmd_list_->SetComputeRootSignature(root_signatures_.at(num_params).Get());
   } else {
-    cmd_list.cmd_list->SetGraphicsRootSignature(root_signatures_.at(num_params).Get());
+    cmd_list.cmd_list_->SetGraphicsRootSignature(root_signatures_.at(num_params).Get());
   }
 }
 
 
 auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> bool {
   DXGI_SWAP_CHAIN_DESC1 desc;
-  if (FAILED(swap_chain.swap_chain->GetDesc1(&desc))) {
+  if (FAILED(swap_chain.swap_chain_->GetDesc1(&desc))) {
     return false;
   }
 
   for (UINT i{0}; i < desc.BufferCount; i++) {
     ComPtr<ID3D12Resource2> buf;
-    if (FAILED(swap_chain.swap_chain->GetBuffer(i, IID_PPV_ARGS(&buf)))) {
+    if (FAILED(swap_chain.swap_chain_->GetBuffer(i, IID_PPV_ARGS(&buf)))) {
       return false;
     }
 
@@ -1140,7 +1075,7 @@ auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> bool {
         : kInvalidResourceIndex
     };
 
-    swap_chain.textures.emplace_back(new Texture{
+    swap_chain.textures_.emplace_back(new Texture{
       nullptr, std::move(buf), kInvalidResourceIndex, rtv, srv, kInvalidResourceIndex
     }, DeviceChildDeleter<Texture>{*this});
   }
@@ -1159,6 +1094,63 @@ auto DeviceChildDeleter<Texture>::operator()(Texture const* const device_child) 
 }
 
 
+auto Buffer::GetConstantBuffer() const -> UINT {
+  return cbv_;
+}
+
+
+auto Buffer::GetShaderResource() const -> UINT {
+  return srv_;
+}
+
+
+auto Buffer::GetUnorderedAccess() const -> UINT {
+  return uav_;
+}
+
+
+Buffer::Buffer(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, UINT const cbv, UINT const srv,
+               UINT const uav) :
+  allocation_{std::move(allocation)},
+  resource_{std::move(resource)},
+  cbv_{cbv},
+  srv_{srv},
+  uav_{uav} {}
+
+
+auto Texture::GetShaderResource() const -> UINT {
+  return srv_;
+}
+
+
+auto Texture::GetUnorderedAccess() const -> UINT {
+  return uav_;
+}
+
+
+Texture::Texture(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, UINT const dsv,
+                 UINT const rtv, UINT const srv, UINT const uav) :
+  allocation_{std::move(allocation)},
+  resource_{std::move(resource)},
+  dsv_{dsv},
+  rtv_{rtv},
+  srv_{srv},
+  uav_{uav} {}
+
+
+PipelineState::PipelineState(ComPtr<ID3D12RootSignature> root_signature, ComPtr<ID3D12PipelineState> pipeline_state,
+                             std::uint8_t const num_params, bool const is_compute) :
+  root_signature_{std::move(root_signature)},
+  pipeline_state_{std::move(pipeline_state)},
+  num_params_{num_params},
+  is_compute_{is_compute} {}
+
+
+CommandList::CommandList(ComPtr<ID3D12CommandAllocator> allocator, ComPtr<ID3D12GraphicsCommandList7> cmd_list) :
+  allocator_{std::move(allocator)},
+  cmd_list_{std::move(cmd_list)} {}
+
+
 auto DeviceChildDeleter<PipelineState>::operator()(PipelineState const* const device_child) const -> void {
   device_->DestroyPipelineState(device_child);
 }
@@ -1167,6 +1159,10 @@ auto DeviceChildDeleter<PipelineState>::operator()(PipelineState const* const de
 auto DeviceChildDeleter<CommandList>::operator()(CommandList const* const device_child) const -> void {
   device_->DestroyCommandList(device_child);
 }
+
+
+SwapChain::SwapChain(Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain) :
+  swap_chain_{std::move(swap_chain)} {}
 
 
 auto DeviceChildDeleter<SwapChain>::operator()(SwapChain const* const device_child) const -> void {

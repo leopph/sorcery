@@ -21,11 +21,11 @@ __declspec(dllexport) extern char const* D3D12SDKPath;
 namespace sorcery::graphics {
 class GraphicsDevice;
 
-struct Buffer;
-struct Texture;
-struct PipelineState;
-struct CommandList;
-struct SwapChain;
+class Buffer;
+class Texture;
+class PipelineState;
+class CommandList;
+class SwapChain;
 
 template<typename T>
 class DeviceChildDeleter;
@@ -205,13 +205,6 @@ public:
   [[nodiscard]] auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> bool;
   [[nodiscard]] auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> bool;
 
-  [[nodiscard]] auto BufferGetConstantBuffer(Buffer const& buffer) const -> UINT;
-  [[nodiscard]] auto BufferGetShaderResource(Buffer const& buffer) const -> UINT;
-  [[nodiscard]] auto BufferGetUnorderedAccess(Buffer const& buffer) const -> UINT;
-
-  [[nodiscard]] auto TextureGetShaderResource(Texture const& texture) const -> UINT;
-  [[nodiscard]] auto TextureGetUnorderedAccess(Texture const& texture) const -> UINT;
-
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
                  Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator,
@@ -287,6 +280,81 @@ public:
 
 private:
   GraphicsDevice* device_;
+};
+
+
+class Buffer {
+public:
+  [[nodiscard]] auto GetConstantBuffer() const -> UINT;
+  [[nodiscard]] auto GetShaderResource() const -> UINT;
+  [[nodiscard]] auto GetUnorderedAccess() const -> UINT;
+
+private:
+  Buffer(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
+         UINT cbv, UINT srv, UINT uav);
+
+  Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation_;
+  Microsoft::WRL::ComPtr<ID3D12Resource2> resource_;
+  UINT cbv_;
+  UINT srv_;
+  UINT uav_;
+
+  friend GraphicsDevice;
+};
+
+
+class Texture {
+public:
+  [[nodiscard]] auto GetShaderResource() const -> UINT;
+  [[nodiscard]] auto GetUnorderedAccess() const -> UINT;
+
+private:
+  Texture(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
+          UINT dsv, UINT rtv, UINT srv, UINT uav);
+
+  Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation_;
+  Microsoft::WRL::ComPtr<ID3D12Resource2> resource_;
+  UINT dsv_;
+  UINT rtv_;
+  UINT srv_;
+  UINT uav_;
+
+  friend GraphicsDevice;
+};
+
+
+class PipelineState {
+  PipelineState(Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature,
+                Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state, std::uint8_t num_params, bool is_compute);
+
+  Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature_;
+  Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state_;
+  std::uint8_t num_params_;
+  bool is_compute_;
+
+  friend GraphicsDevice;
+};
+
+
+class CommandList {
+  CommandList(Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator,
+              Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list);
+
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_;
+  Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list_;
+  bool compute_pipeline_set_{false};
+
+  friend GraphicsDevice;
+};
+
+
+class SwapChain {
+  explicit SwapChain(Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain);
+
+  Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain_;
+  std::vector<UniqueTextureHandle> textures_;
+
+  friend GraphicsDevice;
 };
 
 
