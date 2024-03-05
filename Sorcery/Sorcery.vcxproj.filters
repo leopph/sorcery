@@ -313,7 +313,6 @@
     <None Include="src\rendering\shaders\SkyboxVSOut.hlsli" />
     <None Include="src\rendering\shaders\BRDF.hlsli" />
     <None Include="src\rendering\shaders\GizmoVsOut.hlsli" />
-    <None Include="src\rendering\shaders\Samplers.hlsli" />
     <None Include="src\rendering\shaders\ShadowSampling.hlsli" />
     <None Include="src\rendering\shaders\DepthNormalVsOut.hlsli" />
     <None Include="src\rendering\shaders\DepthOnlyVsOut.hlsli" />
