@@ -6,7 +6,7 @@
 #include "../Window.hpp"
 #include "../scene_objects/Entity.hpp"
 #include "../scene_objects/TransformComponent.hpp"
-#include "shaders/ShaderInterop.h"
+#include "shaders\shader_interop.h"
 
 
 #ifndef NDEBUG
@@ -63,10 +63,22 @@ std::vector const QUAD_UVS{Vector2{0, 0}, Vector2{0, 1}, Vector2{1, 1}, Vector2{
 std::vector<std::uint32_t> const QUAD_INDICES{2, 1, 0, 0, 3, 2};
 
 
-std::vector const CUBE_POSITIONS{Vector3{0.5f, 0.5f, 0.5f}, Vector3{0.5f, 0.5f, 0.5f}, Vector3{0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, -0.5f}, Vector3{-0.5f, 0.5f, -0.5f}, Vector3{-0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, -0.5f, 0.5f}, Vector3{0.5f, -0.5f, 0.5f}, Vector3{0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, -0.5f}, Vector3{-0.5f, -0.5f, -0.5f}, Vector3{-0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f},};
+std::vector const CUBE_POSITIONS{
+  Vector3{0.5f, 0.5f, 0.5f}, Vector3{0.5f, 0.5f, 0.5f}, Vector3{0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f},
+  Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, -0.5f}, Vector3{-0.5f, 0.5f, -0.5f},
+  Vector3{-0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f},
+  Vector3{0.5f, -0.5f, 0.5f}, Vector3{0.5f, -0.5f, 0.5f}, Vector3{0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, 0.5f},
+  Vector3{-0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, -0.5f}, Vector3{-0.5f, -0.5f, -0.5f},
+  Vector3{-0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f},
+};
 
 
-std::vector const CUBE_UVS{Vector2{1, 0}, Vector2{1, 0}, Vector2{0, 0}, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 0}, Vector2{1, 0}, Vector2{0, 1}, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 1}, Vector2{1, 0}, Vector2{1, 1}, Vector2{1, 1}, Vector2{0, 1}, Vector2{0, 1}, Vector2{0, 1}, Vector2{1, 1}, Vector2{1, 1}, Vector2{0, 0}, Vector2{0, 1}, Vector2{0, 1}, Vector2{1, 0}, Vector2{1, 1}};
+std::vector const CUBE_UVS{
+  Vector2{1, 0}, Vector2{1, 0}, Vector2{0, 0}, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 0}, Vector2{1, 0},
+  Vector2{0, 1}, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 1}, Vector2{1, 0}, Vector2{1, 1}, Vector2{1, 1},
+  Vector2{0, 1}, Vector2{0, 1}, Vector2{0, 1}, Vector2{1, 1}, Vector2{1, 1}, Vector2{0, 0}, Vector2{0, 1},
+  Vector2{0, 1}, Vector2{1, 0}, Vector2{1, 1}
+};
 
 
 std::vector<std::uint32_t> const CUBE_INDICES{
@@ -116,7 +128,8 @@ auto Renderer::Impl::CullStaticMeshComponents(Frustum const& frustumWS, Visibili
 
   for (int i = 0; i < static_cast<int>(mStaticMeshComponents.size()); i++) {
     if (auto const mesh{mStaticMeshComponents[i]->GetMesh()}) {
-      if (auto const& modelMtx{mStaticMeshComponents[i]->GetEntity().GetTransform().GetLocalToWorldMatrix()}; frustumWS.Intersects(mesh->GetBounds().Transform(modelMtx))) {
+      if (auto const& modelMtx{mStaticMeshComponents[i]->GetEntity().GetTransform().GetLocalToWorldMatrix()}; frustumWS.
+        Intersects(mesh->GetBounds().Transform(modelMtx))) {
         auto const submeshes{mesh->GetSubMeshes()};
         for (int j{0}; j < std::ssize(submeshes); j++) {
           if (frustumWS.Intersects(submeshes[j].bounds.Transform(modelMtx))) {
@@ -144,7 +157,9 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
           [light] {
             auto vertices{CalculateSpotLightLocalVertices(*light)};
 
-            for (auto const modelMtxNoScale{light->GetEntity().GetTransform().CalculateLocalToWorldMatrixWithoutScale()}; auto& vertex : vertices) {
+            for (auto const modelMtxNoScale{
+                   light->GetEntity().GetTransform().CalculateLocalToWorldMatrixWithoutScale()
+                 }; auto& vertex : vertices) {
               vertex = Vector3{Vector4{vertex, 1} * modelMtxNoScale};
             }
 
@@ -160,7 +175,9 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
       }
 
       case LightComponent::Type::Point: {
-        BoundingSphere const boundsWS{.center = Vector3{light->GetEntity().GetTransform().GetWorldPosition()}, .radius = light->GetRange()};
+        BoundingSphere const boundsWS{
+          .center = Vector3{light->GetEntity().GetTransform().GetWorldPosition()}, .radius = light->GetRange()
+        };
 
         if (frustumWS.Intersects(boundsWS)) {
           visibility.lightIndices.emplace_back(lightIdx);
@@ -172,18 +189,27 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
 }
 
 
-auto Renderer::Impl::SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> const ctx, int const rtWidth, int const rtHeight) const noexcept -> void {
+auto Renderer::Impl::SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> const ctx, int const rtWidth,
+                                          int const rtHeight) const noexcept -> void {
   D3D11_MAPPED_SUBRESOURCE mapped;
   [[maybe_unused]] auto const hr{ctx->Map(mPerFrameCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
   assert(SUCCEEDED(hr));
 
-  *static_cast<PerFrameCB*>(mapped.pData) = PerFrameCB{.gPerFrameConstants = ShaderPerFrameConstants{.ambientLightColor = Scene::GetActiveScene()->GetAmbientLightVector(), .shadowCascadeCount = mCascadeCount, .screenSize = Vector2{rtWidth, rtHeight}, .visualizeShadowCascades = mVisualizeShadowCascades, .shadowFilteringMode = static_cast<int>(mShadowFilteringMode), .isUsingReversedZ = Graphics::IsUsingReversedZ()}};
+  *static_cast<PerFrameCB*>(mapped.pData) = PerFrameCB{
+    .gPerFrameConstants = ShaderPerFrameConstants{
+      .ambientLightColor = Scene::GetActiveScene()->GetAmbientLightVector(), .shadowCascadeCount = mCascadeCount,
+      .screenSize = Vector2{rtWidth, rtHeight}, .visualizeShadowCascades = mVisualizeShadowCascades,
+      .shadowFilteringMode = static_cast<int>(mShadowFilteringMode), .isUsingReversedZ = Graphics::IsUsingReversedZ()
+    }
+  };
 
   ctx->Unmap(mPerFrameCb.Get(), 0);
 }
 
 
-auto Renderer::Impl::SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> const ctx, Matrix4 const& viewMtx, Matrix4 const& projMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries, Vector3 const& viewPos) const noexcept -> void {
+auto Renderer::Impl::SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> const ctx, Matrix4 const& viewMtx,
+                                         Matrix4 const& projMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries,
+                                         Vector3 const& viewPos) const noexcept -> void {
   D3D11_MAPPED_SUBRESOURCE mapped;
   [[maybe_unused]] auto const hr{ctx->Map(mPerViewCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
   assert(SUCCEEDED(hr));
@@ -204,20 +230,29 @@ auto Renderer::Impl::SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> const 
 }
 
 
-auto Renderer::Impl::SetPerDrawConstants(ObserverPtr<ID3D11DeviceContext> const ctx, Matrix4 const& modelMtx) const noexcept -> void {
+auto Renderer::Impl::SetPerDrawConstants(ObserverPtr<ID3D11DeviceContext> const ctx,
+                                         Matrix4 const& modelMtx) const noexcept -> void {
   D3D11_MAPPED_SUBRESOURCE mapped;
   [[maybe_unused]] auto const hr{ctx->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
   assert(SUCCEEDED(hr));
 
-  *static_cast<PerDrawCB*>(mapped.pData) = PerDrawCB{.gPerDrawConstants = ShaderPerDrawConstants{.modelMtx = modelMtx, .invTranspModelMtx = modelMtx.Inverse().Transpose()}};
+  *static_cast<PerDrawCB*>(mapped.pData) = PerDrawCB{
+    .gPerDrawConstants = ShaderPerDrawConstants{
+      .modelMtx = modelMtx, .invTranspModelMtx = modelMtx.Inverse().Transpose()
+    }
+  };
 
   ctx->Unmap(mPerDrawCb.Get(), 0);
 }
 
 
-auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect, ShadowCascadeBoundaries const& shadowCascadeBoundaries, std::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices, ObserverPtr<ID3D11DeviceContext> const ctx) -> void {
+auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect,
+                                               ShadowCascadeBoundaries const& shadowCascadeBoundaries,
+                                               std::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices,
+                                               ObserverPtr<ID3D11DeviceContext> const ctx) -> void {
   for (auto const lightIdx : visibility.lightIndices) {
-    if (auto const light{mLights[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
+    if (auto const light{mLights[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->
+                                             IsCastingShadow()) {
       float const camNear{cam.GetNearClipPlane()};
       float const camFar{cam.GetFarClipPlane()};
 
@@ -248,28 +283,44 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
               float const farExtentY{camFar * tanHalfFov};
               float const farExtentX{farExtentY * rtAspect};
 
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
-              ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
-              ret[FrustumVertex_FarBottomRight] = farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
+                                                nearExtentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
+                                               nearExtentY;
+              ret[FrustumVertex_NearBottomLeft] =
+                nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+              ret[FrustumVertex_NearBottomRight] =
+                nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() *
+                                               farExtentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() *
+                                              farExtentY;
+              ret[FrustumVertex_FarBottomLeft] =
+                farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+              ret[FrustumVertex_FarBottomRight] =
+                farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
               break;
             }
             case Camera::Type::Orthographic: {
               float const extentX{cam.GetVerticalOrthographicSize() / 2.0f};
               float const extentY{extentX / rtAspect};
 
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarBottomRight] = farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                                extentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                               extentY;
+              ret[FrustumVertex_NearBottomLeft] =
+                nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_NearBottomRight] =
+                nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                               extentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() *
+                                              extentY;
+              ret[FrustumVertex_FarBottomLeft] =
+                farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_FarBottomRight] =
+                farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
               break;
             }
           }
@@ -329,7 +380,10 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
         cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Inverse()};
 
         shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light->GetDirection(), Vector3::Up());
-        auto const shadowProjMtx{Graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius, sphereRadius, -sphereRadius, -sphereRadius - light->GetShadowExtension(), sphereRadius))};
+        auto const shadowProjMtx{
+          Graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
+            sphereRadius, -sphereRadius, -sphereRadius - light->GetShadowExtension(), sphereRadius))
+        };
 
         shadowViewProjMatrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
 
@@ -340,13 +394,17 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
 
         ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
-        ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForRendering(), 0);
+        ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH,
+          Graphics::GetDepthClearValueForRendering(), 0);
 
         ctx->RSSetState(mShadowPassRs.Get());
 
         ctx->IASetInputLayout(mAllAttribsIl.Get());
 
-        D3D11_VIEWPORT const shadowViewport{.TopLeftX = 0, .TopLeftY = 0, .Width = static_cast<float>(shadowMapSize), .Height = static_cast<float>(shadowMapSize), .MinDepth = 0, .MaxDepth = 1};
+        D3D11_VIEWPORT const shadowViewport{
+          .TopLeftX = 0, .TopLeftY = 0, .Width = static_cast<float>(shadowMapSize),
+          .Height = static_cast<float>(shadowMapSize), .MinDepth = 0, .MaxDepth = 1
+        };
 
         ctx->RSSetViewports(1, &shadowViewport);
 
@@ -355,7 +413,10 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
 
         Frustum const shadowFrustumWS{shadowViewProjMatrices[cascadeIdx]};
 
-        Visibility perLightVisibility{.lightIndices = std::pmr::vector<int>{&GetTmpMemRes()}, .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}};
+        Visibility perLightVisibility{
+          .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
+          .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}
+        };
 
         CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
         DrawMeshes(perLightVisibility.staticMeshIndices, ctx);
@@ -390,9 +451,14 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11
 
     for (auto j = 0; j < cell.GetElementCount(); j++) {
       if (auto const& subcell{cell.GetSubcell(j)}) {
-        auto const subcellOffset{(cellOffsetNorm + cell.GetNormalizedElementOffset(j) * cellSizeNorm) * static_cast<float>(atlas.GetSize())};
+        auto const subcellOffset{
+          (cellOffsetNorm + cell.GetNormalizedElementOffset(j) * cellSizeNorm) * static_cast<float>(atlas.GetSize())
+        };
 
-        D3D11_VIEWPORT const viewport{.TopLeftX = subcellOffset[0], .TopLeftY = subcellOffset[1], .Width = subcellSize, .Height = subcellSize, .MinDepth = 0, .MaxDepth = 1};
+        D3D11_VIEWPORT const viewport{
+          .TopLeftX = subcellOffset[0], .TopLeftY = subcellOffset[1], .Width = subcellSize, .Height = subcellSize,
+          .MinDepth = 0, .MaxDepth = 1
+        };
 
         ctx->RSSetViewports(1, &viewport);
 
@@ -401,7 +467,10 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11
 
         Frustum const shadowFrustumWS{subcell->shadowViewProjMtx};
 
-        Visibility perLightVisibility{.lightIndices = std::pmr::vector<int>{&GetTmpMemRes()}, .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}};
+        Visibility perLightVisibility{
+          .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
+          .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}
+        };
 
         CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
         DrawMeshes(perLightVisibility.staticMeshIndices, ctx);
@@ -411,7 +480,8 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11
 }
 
 
-auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const culledIndices, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
+auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const culledIndices,
+                                ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
   ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   ctx->VSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
@@ -425,7 +495,10 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
       continue;
     }
 
-    std::array const vertexBuffers{mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get(), mesh->GetTangentBuffer().Get()};
+    std::array const vertexBuffers{
+      mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get(),
+      mesh->GetTangentBuffer().Get()
+    };
     UINT constexpr strides[]{sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3)};
     UINT constexpr offsets[]{0, 0, 0, 0};
     ctx->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
@@ -532,7 +605,8 @@ auto Renderer::Impl::DrawSkybox(ObserverPtr<ID3D11DeviceContext> const ctx) cons
 }
 
 
-auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
+auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst,
+                                 ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
   // Back up old views to restore later.
 
   ComPtr<ID3D11RenderTargetView> rtvBackup;
@@ -607,8 +681,11 @@ auto Renderer::Impl::RecreateSsaoSamples(int const sampleCount) noexcept -> void
 }
 
 
-auto Renderer::Impl::SetDebugName(ObserverPtr<ID3D11DeviceChild> const deviceChild, std::string_view const name) noexcept -> void {
-  [[maybe_unused]] auto const hr{deviceChild->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(name)), name.data())};
+auto Renderer::Impl::SetDebugName(ObserverPtr<ID3D11DeviceChild> const deviceChild,
+                                  std::string_view const name) noexcept -> void {
+  [[maybe_unused]] auto const hr{
+    deviceChild->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(name)), name.data())
+  };
   assert(SUCCEEDED(hr));
 }
 
@@ -625,7 +702,9 @@ auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<std::uint32_t> cons
 }
 
 
-auto Renderer::Impl::GenerateSphere(float const radius, int const latitudes, int const longitudes, std::vector<Vector3>& vertices, std::vector<Vector3>& normals, std::vector<Vector2>& uvs, std::vector<std::uint32_t>& indices) -> void {
+auto Renderer::Impl::GenerateSphere(float const radius, int const latitudes, int const longitudes,
+                                    std::vector<Vector3>& vertices, std::vector<Vector3>& normals,
+                                    std::vector<Vector2>& uvs, std::vector<std::uint32_t>& indices) -> void {
   // Based on: https://gist.github.com/Pikachuxxxx/5c4c490a7d7679824e0e18af42918efc
 
   auto const deltaLatitude{PI / static_cast<float>(latitudes)};
@@ -692,7 +771,9 @@ auto Renderer::Impl::StartUp() -> void {
   creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-  if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, mDevice.GetAddressOf(), nullptr, mImmediateContext.GetAddressOf()))) {
+  if (FAILED(
+    D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1,
+      D3D11_SDK_VERSION, mDevice.GetAddressOf(), nullptr, mImmediateContext.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create D3D device."};
   }
 
@@ -734,13 +815,36 @@ auto Renderer::Impl::StartUp() -> void {
   mLightBuffer = std::make_unique<StructuredBuffer<ShaderLight>>(mDevice);
   mGizmoColorBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice);
   mLineGizmoVertexDataBuffer = std::make_unique<StructuredBuffer<ShaderLineGizmoVertexData>>(mDevice);
-  mMainRt = std::make_unique<RenderTarget>(RenderTarget::Desc{.width = static_cast<UINT>(gWindow.GetClientAreaSize().width), .height = static_cast<UINT>(gWindow.GetClientAreaSize().height), .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM, .depthBufferBitCount = 0, .stencilBufferBitCount = 0, .debugName = "Main RT"});
+  mMainRt = std::make_unique<RenderTarget>(RenderTarget::Desc{
+    .width = static_cast<UINT>(gWindow.GetClientAreaSize().width),
+    .height = static_cast<UINT>(gWindow.GetClientAreaSize().height), .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
+    .depthBufferBitCount = 0, .stencilBufferBitCount = 0, .debugName = "Main RT"
+  });
 
   // CREATE INPUT LAYOUTS
 
-  D3D11_INPUT_ELEMENT_DESC constexpr inputDescs[]{{.SemanticName = "POSITION", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32B32_FLOAT, .InputSlot = 0, .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0}, {.SemanticName = "NORMAL", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32B32_FLOAT, .InputSlot = 1, .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0}, {.SemanticName = "TEXCOORD", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32_FLOAT, .InputSlot = 2, .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0}, {.SemanticName = "TANGENT", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32B32_FLOAT, .InputSlot = 3, .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0}};
+  D3D11_INPUT_ELEMENT_DESC constexpr inputDescs[]{
+    {
+      .SemanticName = "POSITION", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32B32_FLOAT, .InputSlot = 0,
+      .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0
+    },
+    {
+      .SemanticName = "NORMAL", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32B32_FLOAT, .InputSlot = 1,
+      .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0
+    },
+    {
+      .SemanticName = "TEXCOORD", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32_FLOAT, .InputSlot = 2,
+      .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0
+    },
+    {
+      .SemanticName = "TANGENT", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32B32_FLOAT, .InputSlot = 3,
+      .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0
+    }
+  };
 
-  if (FAILED(mDevice->CreateInputLayout(inputDescs, ARRAYSIZE(inputDescs), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mAllAttribsIl. GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateInputLayout(inputDescs, ARRAYSIZE(inputDescs), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mAllAttribsIl.
+      GetAddressOf()))) {
     throw std::runtime_error{"Failed to create all-attributes input layout."};
   }
 
@@ -760,35 +864,41 @@ auto Renderer::Impl::StartUp() -> void {
   char constexpr meshPbrPsName[]{"Mesh PBR Pixel Shader"};
   mMeshPbrPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(meshPbrPsName), meshPbrPsName);
 
-  if (FAILED(mDevice->CreatePixelShader(gPostProcessPSBin, ARRAYSIZE(gPostProcessPSBin), nullptr, mPostProcessPs.GetAddressOf() ))) {
+  if (FAILED(
+    mDevice->CreatePixelShader(gPostProcessPSBin, ARRAYSIZE(gPostProcessPSBin), nullptr, mPostProcessPs.GetAddressOf()
+    ))) {
     throw std::runtime_error{"Failed to create textured post process pixel shader."};
   }
 
   char constexpr postProcessPsName[]{"Postprocess Pixel Shader"};
   mPostProcessPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(postProcessPsName), postProcessPsName);
 
-  if (FAILED(mDevice->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, mSkyboxVs.ReleaseAndGetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, mSkyboxVs.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{"Failed to create skybox vertex shader."};
   }
 
   char constexpr skyboxVsName[]{"Skybox Vertex Shader"};
   mSkyboxVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(skyboxVsName), skyboxVsName);
 
-  if (FAILED(mDevice->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, mSkyboxPs.ReleaseAndGetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, mSkyboxPs.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{"Failed to create skybox pixel shader."};
   }
 
   char constexpr skyboxPsName[]{"Skybox Pixel Shader"};
   mSkyboxPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(skyboxPsName), skyboxPsName);
 
-  if (FAILED(mDevice->CreateVertexShader(gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), nullptr, mDepthOnlyVs.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateVertexShader(gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), nullptr, mDepthOnlyVs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-only vertex shader."};
   }
 
   char constexpr depthOnlyVsName[]{"Depth-Only Vertex Shader"};
   mDepthOnlyVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthOnlyVsName), depthOnlyVsName);
 
-  if (FAILED(mDevice->CreatePixelShader(gDepthOnlyPSBin, ARRAYSIZE(gDepthOnlyPSBin), nullptr, mDepthOnlyPs.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreatePixelShader(gDepthOnlyPSBin, ARRAYSIZE(gDepthOnlyPSBin), nullptr, mDepthOnlyPs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-only pixel shader."};
   }
 
@@ -802,7 +912,8 @@ auto Renderer::Impl::StartUp() -> void {
   char constexpr screenVsName[]{"Screen Vertex Shader"};
   mScreenVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(screenVsName), screenVsName);
 
-  if (FAILED(mDevice->CreateVertexShader(gLineGizmoVSBin, ARRAYSIZE(gLineGizmoVSBin), nullptr, mLineGizmoVs.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateVertexShader(gLineGizmoVSBin, ARRAYSIZE(gLineGizmoVSBin), nullptr, mLineGizmoVs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create line gizmo vertex shader."};
   }
 
@@ -816,13 +927,16 @@ auto Renderer::Impl::StartUp() -> void {
   char constexpr gizmoPsName[]{"Gizmo Pixel Shader"};
   mGizmoPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(gizmoPsName), gizmoPsName);
 
-  [[maybe_unused]] auto hr{mDevice->CreatePixelShader(gDepthNormalPSBin, ARRAYSIZE(gDepthNormalPSBin), nullptr, mDepthNormalPs.GetAddressOf())};
+  [[maybe_unused]] auto hr{
+    mDevice->CreatePixelShader(gDepthNormalPSBin, ARRAYSIZE(gDepthNormalPSBin), nullptr, mDepthNormalPs.GetAddressOf())
+  };
   assert(SUCCEEDED(hr));
   char constexpr depthNormalPsName[]{"Depth-Normal Pixel Shader"};
   hr = mDepthNormalPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthNormalPsName), depthNormalPsName);
   assert(SUCCEEDED(hr));
 
-  hr = mDevice->CreateVertexShader(gDepthNormalVSBin, ARRAYSIZE(gDepthNormalVSBin), nullptr, mDepthNormalVs.GetAddressOf());
+  hr = mDevice->CreateVertexShader(gDepthNormalVSBin, ARRAYSIZE(gDepthNormalVSBin), nullptr,
+    mDepthNormalVs.GetAddressOf());
   assert(SUCCEEDED(hr));
   char constexpr depthNormalVsName[]{"Depth-Normal Vertex Shader"};
   hr = mDepthNormalVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthNormalVsName), depthNormalVsName);
@@ -840,45 +954,65 @@ auto Renderer::Impl::StartUp() -> void {
   hr = mSsaoBlurPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(ssaoBlurPsName), ssaoBlurPsName);
   assert(SUCCEEDED(hr));
 
-  hr = mDevice->CreateComputeShader(gDepthResolveCSBin, ARRAYSIZE(gDepthResolveCSBin), nullptr, mDepthResolveCs.GetAddressOf());
+  hr = mDevice->CreateComputeShader(gDepthResolveCSBin, ARRAYSIZE(gDepthResolveCSBin), nullptr,
+    mDepthResolveCs.GetAddressOf());
   assert(SUCCEEDED(hr));
   SetDebugName(mDepthResolveCs.Get(), "Depth Resolve Compute Shader");
 
   // CREATE CONSTANT BUFFERS
 
 
-  D3D11_BUFFER_DESC constexpr perFrameCbDesc{.ByteWidth = sizeof(PerFrameCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER, .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0};
+  D3D11_BUFFER_DESC constexpr perFrameCbDesc{
+    .ByteWidth = sizeof(PerFrameCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0
+  };
 
   if (FAILED(mDevice->CreateBuffer(&perFrameCbDesc, nullptr, mPerFrameCb.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create per frame CB."};
   }
 
-  D3D11_BUFFER_DESC constexpr perViewCbDesc{.ByteWidth = sizeof(PerViewCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER, .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0};
+  D3D11_BUFFER_DESC constexpr perViewCbDesc{
+    .ByteWidth = sizeof(PerViewCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0
+  };
 
   if (FAILED(mDevice->CreateBuffer(&perViewCbDesc, nullptr, mPerViewCb.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create per view CB."};
   }
 
-  D3D11_BUFFER_DESC constexpr perDrawCbDesc{.ByteWidth = sizeof(PerDrawCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER, .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0};
+  D3D11_BUFFER_DESC constexpr perDrawCbDesc{
+    .ByteWidth = sizeof(PerDrawCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0
+  };
 
   if (FAILED(mDevice->CreateBuffer(&perDrawCbDesc, nullptr, mPerDrawCb.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create per draw CB."};
   }
 
-  D3D11_BUFFER_DESC constexpr postProcessCbDesc{.ByteWidth = sizeof(PostProcessCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER, .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0};
+  D3D11_BUFFER_DESC constexpr postProcessCbDesc{
+    .ByteWidth = sizeof(PostProcessCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0
+  };
 
   if (FAILED(mDevice->CreateBuffer(&postProcessCbDesc, nullptr, mPostProcessCb.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create post-process CB."};
   }
 
-  D3D11_BUFFER_DESC constexpr ssaoCbDesc{.ByteWidth = sizeof(SsaoCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER, .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0};
+  D3D11_BUFFER_DESC constexpr ssaoCbDesc{
+    .ByteWidth = sizeof(SsaoCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0
+  };
 
   hr = mDevice->CreateBuffer(&ssaoCbDesc, nullptr, mSsaoCb.GetAddressOf());
   assert(SUCCEEDED(hr));
 
   // CREATE RASTERIZER STATES
 
-  D3D11_RASTERIZER_DESC constexpr skyboxPassRasterizerDesc{.FillMode = D3D11_FILL_SOLID, .CullMode = D3D11_CULL_NONE, .FrontCounterClockwise = FALSE, .DepthBias = 0, .DepthBiasClamp = 0.0f, .SlopeScaledDepthBias = 0.0f, .DepthClipEnable = TRUE, .ScissorEnable = FALSE, .MultisampleEnable = FALSE, .AntialiasedLineEnable = FALSE};
+  D3D11_RASTERIZER_DESC constexpr skyboxPassRasterizerDesc{
+    .FillMode = D3D11_FILL_SOLID, .CullMode = D3D11_CULL_NONE, .FrontCounterClockwise = FALSE, .DepthBias = 0,
+    .DepthBiasClamp = 0.0f, .SlopeScaledDepthBias = 0.0f, .DepthClipEnable = TRUE, .ScissorEnable = FALSE,
+    .MultisampleEnable = FALSE, .AntialiasedLineEnable = FALSE
+  };
 
   if (FAILED(mDevice->CreateRasterizerState(&skyboxPassRasterizerDesc, mSkyboxPassRs.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{"Failed to create skybox pass rasterizer state."};
@@ -894,7 +1028,11 @@ auto Renderer::Impl::StartUp() -> void {
     }()
   };
 
-  D3D11_RASTERIZER_DESC constexpr shadowPassRasterizerDesc{.FillMode = D3D11_FILL_SOLID, .CullMode = D3D11_CULL_BACK, .FrontCounterClockwise = FALSE, .DepthBias = 1 * reversedZMultiplier, .DepthBiasClamp = 0, .SlopeScaledDepthBias = 2.5 * reversedZMultiplier, .DepthClipEnable = TRUE, .ScissorEnable = FALSE, .MultisampleEnable = FALSE, .AntialiasedLineEnable = FALSE};
+  D3D11_RASTERIZER_DESC constexpr shadowPassRasterizerDesc{
+    .FillMode = D3D11_FILL_SOLID, .CullMode = D3D11_CULL_BACK, .FrontCounterClockwise = FALSE,
+    .DepthBias = 1 * reversedZMultiplier, .DepthBiasClamp = 0, .SlopeScaledDepthBias = 2.5 * reversedZMultiplier,
+    .DepthClipEnable = TRUE, .ScissorEnable = FALSE, .MultisampleEnable = FALSE, .AntialiasedLineEnable = FALSE
+  };
 
   if (FAILED(mDevice->CreateRasterizerState(&shadowPassRasterizerDesc, mShadowPassRs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create shadow pass rasterizer state."};
@@ -903,39 +1041,116 @@ auto Renderer::Impl::StartUp() -> void {
   // CREATE DEPTH STENCIL STATES
 
 
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterWrite{.DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_GREATER, .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK, .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK, .FrontFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}, .BackFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}};
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterWrite{
+    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_GREATER,
+    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
 
   if (FAILED(mDevice->CreateDepthStencilState(&depthTestGreaterWrite, mDepthTestGreaterWriteDss.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-test greater write depth-stencil state."};
   }
 
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessrWrite{.DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_LESS, .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK, .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK, .FrontFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}, .BackFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}};
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessrWrite{
+    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_LESS,
+    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
 
   if (FAILED(mDevice->CreateDepthStencilState(&depthTestLessrWrite, mDepthTestLessWriteDss.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-test less write depth-stencil state."};
   }
 
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterEqualNoWriteDesc{.DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO, .DepthFunc = D3D11_COMPARISON_GREATER_EQUAL, .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK, .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK, .FrontFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}, .BackFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}};
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterEqualNoWriteDesc{
+    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO, .DepthFunc = D3D11_COMPARISON_GREATER_EQUAL,
+    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
 
-  if (FAILED(mDevice->CreateDepthStencilState(&depthTestGreaterEqualNoWriteDesc, mDepthTestGreaterEqualNoWriteDss.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateDepthStencilState(&depthTestGreaterEqualNoWriteDesc, mDepthTestGreaterEqualNoWriteDss.GetAddressOf()
+    ))) {
     throw std::runtime_error{"Failed to create depth-test greater-or-equal no-write DSS."};
   }
 
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterEqualWriteDesc{.DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_GREATER_EQUAL, .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK, .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK, .FrontFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}, .BackFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}};
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterEqualWriteDesc{
+    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_GREATER_EQUAL,
+    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
 
-  if (FAILED(mDevice->CreateDepthStencilState(&depthTestGreaterEqualWriteDesc, mDepthTestGreaterEqualWriteDss.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateDepthStencilState(&depthTestGreaterEqualWriteDesc, mDepthTestGreaterEqualWriteDss.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-test greater-or-equal write DSS."};
   }
 
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualNoWriteDesc{.DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO, .DepthFunc = D3D11_COMPARISON_LESS_EQUAL, .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK, .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK, .FrontFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}, .BackFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}};
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualNoWriteDesc{
+    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO, .DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
+    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
 
-  if (FAILED(mDevice->CreateDepthStencilState(&depthTestLessEqualNoWriteDesc, mDepthTestLessEqualNoWriteDss.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateDepthStencilState(&depthTestLessEqualNoWriteDesc, mDepthTestLessEqualNoWriteDss.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-test less-or-equal no-write DSS."};
   }
 
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualWriteDesc{.DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_LESS_EQUAL, .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK, .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK, .FrontFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}, .BackFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP, .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS}};
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualWriteDesc{
+    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
+    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
 
-  if (FAILED(mDevice->CreateDepthStencilState(&depthTestLessEqualWriteDesc, mDepthTestLessEqualWriteDss.GetAddressOf()))) {
+  if (FAILED(
+    mDevice->CreateDepthStencilState(&depthTestLessEqualWriteDesc, mDepthTestLessEqualWriteDss.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-test less-or-equal write DSS."};
   }
 
@@ -948,102 +1163,192 @@ auto Renderer::Impl::StartUp() -> void {
   // CREATE SAMPLER STATES
 
 
-  D3D11_SAMPLER_DESC constexpr cmpPcfGreaterEqual{.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER, .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0, .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0, .MaxLOD = 0};
+  D3D11_SAMPLER_DESC constexpr cmpPcfGreaterEqual{
+    .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0,
+    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0,
+    .MaxLOD = 0
+  };
 
   if (FAILED(mDevice->CreateSamplerState(&cmpPcfGreaterEqual, mCmpPcfGreaterEqualSs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create PCF greater-equal comparison sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr cmpPcfLessEqual{.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER, .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0, .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0, .MaxLOD = 0};
+  D3D11_SAMPLER_DESC constexpr cmpPcfLessEqual{
+    .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0,
+    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0,
+    .MaxLOD = 0
+  };
 
   if (FAILED(mDevice->CreateSamplerState(&cmpPcfLessEqual, mCmpPcfLessEqualSs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create PCF less-equal comparison sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr cmpPointGreaterEqualDesc{.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER, .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0, .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0, .MaxLOD = 0};
+  D3D11_SAMPLER_DESC constexpr cmpPointGreaterEqualDesc{
+    .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0,
+    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0,
+    .MaxLOD = 0
+  };
 
   if (FAILED(mDevice->CreateSamplerState(&cmpPointGreaterEqualDesc, mCmpPointGreaterEqualSs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create point-filter greater-equal comparison sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr cmpPointLessEqualDesc{.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER, .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0, .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0, .MaxLOD = 0};
+  D3D11_SAMPLER_DESC constexpr cmpPointLessEqualDesc{
+    .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0,
+    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0,
+    .MaxLOD = 0
+  };
 
   if (FAILED(mDevice->CreateSamplerState(&cmpPointLessEqualDesc, mCmpPointLessEqualSs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create point-filter less-equal comparison sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr af16ClampDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0, .MaxAnisotropy = 16, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr af16ClampDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
+    .MaxAnisotropy = 16, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
+  };
 
   if (FAILED(mDevice->CreateSamplerState(&af16ClampDesc, mAf16ClampSs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create AF16 clamp sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr af8ClampDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0, .MaxAnisotropy = 8, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr af8ClampDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
+    .MaxAnisotropy = 8, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
+  };
 
   if (FAILED(mDevice->CreateSamplerState(&af8ClampDesc, mAf8ClampSs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create AF8 clamp sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr af4ClampDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0, .MaxAnisotropy = 4, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr af4ClampDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
+    .MaxAnisotropy = 4, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
+  };
 
   if (FAILED(mDevice->CreateSamplerState(&af4ClampDesc, mAf4ClampSs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create AF4 clamp sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr af2ClampDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0, .MaxAnisotropy = 2, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr af2ClampDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
+    .MaxAnisotropy = 2, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
+  };
 
   hr = mDevice->CreateSamplerState(&af2ClampDesc, mAf2ClampSs.GetAddressOf());
   assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr trilinearClampDesc{.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0, .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr trilinearClampDesc{
+    .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
+    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
+  };
 
   if (FAILED(mDevice->CreateSamplerState(&trilinearClampDesc, mTrilinearClampSs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create trilinear clamp sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr bilinearClampDesc{.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0, .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr bilinearClampDesc{
+    .Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
+    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
+  };
 
   if (FAILED(mDevice->CreateSamplerState(&bilinearClampDesc, mBilinearClampSs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create bilinear clamp sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr pointClampDesc{.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0, .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr pointClampDesc{
+    .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
+    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
+  };
 
   if (FAILED(mDevice->CreateSamplerState(&pointClampDesc, mPointClampSs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create point-filter clamp sampler state."};
   }
 
-  D3D11_SAMPLER_DESC constexpr af16WrapDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP, .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 16, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr af16WrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 16,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
 
   hr = mDevice->CreateSamplerState(&af16WrapDesc, mAf16WrapSs.GetAddressOf());
   assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr af8WrapDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP, .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 8, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr af8WrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 8,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
 
   hr = mDevice->CreateSamplerState(&af8WrapDesc, mAf8WrapSs.GetAddressOf());
   assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr af4WrapDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP, .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 4, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr af4WrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 4,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
 
   hr = mDevice->CreateSamplerState(&af4WrapDesc, mAf4WrapSs.GetAddressOf());
   assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr af2WrapDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP, .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 2, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr af2WrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 2,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
 
   hr = mDevice->CreateSamplerState(&af2WrapDesc, mAf2WrapSs.GetAddressOf());
   assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr trilinearWrapDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP, .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr trilinearWrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 1,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
 
   hr = mDevice->CreateSamplerState(&trilinearWrapDesc, mTrilinearWrapSs.GetAddressOf());
   assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr bilinearWrapDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP, .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr bilinearWrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 1,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
 
   hr = mDevice->CreateSamplerState(&bilinearWrapDesc, mBilinearWrapSs.GetAddressOf());
   assert(SUCCEEDED(hr));
 
-  D3D11_SAMPLER_DESC constexpr pointWrapDesc{.Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP, .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX};
+  D3D11_SAMPLER_DESC constexpr pointWrapDesc{
+    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 1,
+    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
+    .MaxLOD = FLT_MAX
+  };
 
   hr = mDevice->CreateSamplerState(&pointWrapDesc, mPointWrapSs.GetAddressOf());
   assert(SUCCEEDED(hr));
@@ -1139,15 +1444,24 @@ auto Renderer::Impl::StartUp() -> void {
     ssaoNoise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
   }
 
-  D3D11_TEXTURE2D_DESC constexpr ssaoNoiseTexDesc{.Width = SSAO_NOISE_TEX_DIM, .Height = SSAO_NOISE_TEX_DIM, .MipLevels = 1, .ArraySize = 1, .Format = DXGI_FORMAT_R32G32B32A32_FLOAT, .SampleDesc = {.Count = 1, .Quality = 0}, .Usage = D3D11_USAGE_IMMUTABLE, .BindFlags = D3D11_BIND_SHADER_RESOURCE, .CPUAccessFlags = 0, .MiscFlags = 0};
+  D3D11_TEXTURE2D_DESC constexpr ssaoNoiseTexDesc{
+    .Width = SSAO_NOISE_TEX_DIM, .Height = SSAO_NOISE_TEX_DIM, .MipLevels = 1, .ArraySize = 1,
+    .Format = DXGI_FORMAT_R32G32B32A32_FLOAT, .SampleDesc = {.Count = 1, .Quality = 0}, .Usage = D3D11_USAGE_IMMUTABLE,
+    .BindFlags = D3D11_BIND_SHADER_RESOURCE, .CPUAccessFlags = 0, .MiscFlags = 0
+  };
 
-  D3D11_SUBRESOURCE_DATA const ssaoNoiseTexData{.pSysMem = ssaoNoise.data(), .SysMemPitch = SSAO_NOISE_TEX_DIM * sizeof(decltype(ssaoNoise)::value_type)};
+  D3D11_SUBRESOURCE_DATA const ssaoNoiseTexData{
+    .pSysMem = ssaoNoise.data(), .SysMemPitch = SSAO_NOISE_TEX_DIM * sizeof(decltype(ssaoNoise)::value_type)
+  };
 
   hr = mDevice->CreateTexture2D(&ssaoNoiseTexDesc, &ssaoNoiseTexData, mSsaoNoiseTex.GetAddressOf());
   assert(SUCCEEDED(hr));
   SetDebugName(mSsaoNoiseTex.Get(), "SSAO Noise");
 
-  D3D11_SHADER_RESOURCE_VIEW_DESC constexpr ssaoNoiseSrvDesc{.Format = ssaoNoiseTexDesc.Format, .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D, .Texture2D = {.MostDetailedMip = 0, .MipLevels = 1}};
+  D3D11_SHADER_RESOURCE_VIEW_DESC constexpr ssaoNoiseSrvDesc{
+    .Format = ssaoNoiseTexDesc.Format, .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+    .Texture2D = {.MostDetailedMip = 0, .MipLevels = 1}
+  };
 
   hr = mDevice->CreateShaderResourceView(mSsaoNoiseTex.Get(), &ssaoNoiseSrvDesc, mSsaoNoiseSrv.GetAddressOf());
   assert(SUCCEEDED(hr));
@@ -1155,17 +1469,26 @@ auto Renderer::Impl::StartUp() -> void {
 
   // CREATE WHITE TEXTURE
 
-  D3D11_TEXTURE2D_DESC constexpr whiteTexDesc{.Width = 1, .Height = 1, .MipLevels = 1, .ArraySize = 1, .Format = DXGI_FORMAT_R8G8B8A8_UNORM, .SampleDesc = {.Count = 1, .Quality = 0}, .Usage = D3D11_USAGE_IMMUTABLE, .BindFlags = D3D11_BIND_SHADER_RESOURCE, .CPUAccessFlags = 0, .MiscFlags = 0};
+  D3D11_TEXTURE2D_DESC constexpr whiteTexDesc{
+    .Width = 1, .Height = 1, .MipLevels = 1, .ArraySize = 1, .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+    .SampleDesc = {.Count = 1, .Quality = 0}, .Usage = D3D11_USAGE_IMMUTABLE, .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+    .CPUAccessFlags = 0, .MiscFlags = 0
+  };
 
   std::array<std::uint8_t, 4> constexpr static whiteColorData{255, 255, 255, 255};
 
-  D3D11_SUBRESOURCE_DATA constexpr whiteTexData{.pSysMem = whiteColorData.data(), .SysMemPitch = sizeof(whiteColorData), .SysMemSlicePitch = 0};
+  D3D11_SUBRESOURCE_DATA constexpr whiteTexData{
+    .pSysMem = whiteColorData.data(), .SysMemPitch = sizeof(whiteColorData), .SysMemSlicePitch = 0
+  };
 
   hr = mDevice->CreateTexture2D(&whiteTexDesc, &whiteTexData, mWhiteTex.GetAddressOf());
   assert(SUCCEEDED(hr));
   SetDebugName(mWhiteTex.Get(), "White");
 
-  D3D11_SHADER_RESOURCE_VIEW_DESC constexpr whiteTexSrvDesc{.Format = whiteTexDesc.Format, .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D, .Texture2D = {.MostDetailedMip = 0, .MipLevels = 1}};
+  D3D11_SHADER_RESOURCE_VIEW_DESC constexpr whiteTexSrvDesc{
+    .Format = whiteTexDesc.Format, .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+    .Texture2D = {.MostDetailedMip = 0, .MipLevels = 1}
+  };
 
   hr = mDevice->CreateShaderResourceView(mWhiteTex.Get(), &whiteTexSrvDesc, mWhiteTexSrv.GetAddressOf());
   assert(SUCCEEDED(hr));
@@ -1188,16 +1511,28 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   auto const rtHeight{rt ? rt->GetDesc().height : gWindow.GetClientAreaSize().height};
   auto const rtAspect{static_cast<float>(rtWidth) / static_cast<float>(rtHeight)};
 
-  RenderTarget::Desc const hdrRtDesc{.width = rtWidth, .height = rtHeight, .colorFormat = mUsePreciseColorBuffer ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R11G11B10_FLOAT, .depthBufferBitCount = 32, .stencilBufferBitCount = 0, .sampleCount = static_cast<int>(GetMultisamplingMode()), .debugName = "Camera HDR RenderTarget"};
+  RenderTarget::Desc const hdrRtDesc{
+    .width = rtWidth, .height = rtHeight,
+    .colorFormat = mUsePreciseColorBuffer ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R11G11B10_FLOAT,
+    .depthBufferBitCount = 32, .stencilBufferBitCount = 0, .sampleCount = static_cast<int>(GetMultisamplingMode()),
+    .debugName = "Camera HDR RenderTarget"
+  };
 
   auto const& hdrRt{GetTemporaryRenderTarget(hdrRtDesc)};
 
 
-  auto const clearColor{Scene::GetActiveScene()->GetSkyMode() == SkyMode::Color ? Vector4{Scene::GetActiveScene()->GetSkyColor(), 1} : Vector4{0, 0, 0, 1}};
+  auto const clearColor{
+    Scene::GetActiveScene()->GetSkyMode() == SkyMode::Color
+      ? Vector4{Scene::GetActiveScene()->GetSkyColor(), 1}
+      : Vector4{0, 0, 0, 1}
+  };
   ctx->ClearRenderTargetView(hdrRt.GetRtv(), clearColor.GetData());
 
 
-  D3D11_VIEWPORT const viewport{.TopLeftX = 0, .TopLeftY = 0, .Width = static_cast<FLOAT>(rtWidth), .Height = static_cast<FLOAT>(rtHeight), .MinDepth = 0, .MaxDepth = 1};
+  D3D11_VIEWPORT const viewport{
+    .TopLeftX = 0, .TopLeftY = 0, .Width = static_cast<FLOAT>(rtWidth), .Height = static_cast<FLOAT>(rtHeight),
+    .MinDepth = 0, .MaxDepth = 1
+  };
 
   ctx->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, GetShadowPcfSampler().GetAddressOf());
   ctx->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, GetShadowPointSampler().GetAddressOf());
@@ -1226,7 +1561,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   auto const camViewProjMtx{camViewMtx * camProjMtx};
 
   Frustum const camFrustWS{camViewProjMtx};
-  Visibility visibility{.lightIndices = std::pmr::vector<int>{&GetTmpMemRes()}, .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}};
+  Visibility visibility{
+    .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
+    .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}
+  };
   CullLights(camFrustWS, visibility);
 
   // Shadow pass
@@ -1259,7 +1597,12 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   ctx->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForRendering(), 0);
 
-  auto const& normalRt{GetTemporaryRenderTarget(RenderTarget::Desc{.width = rtWidth, .height = rtHeight, .colorFormat = DXGI_FORMAT_R8G8B8A8_SNORM, .depthBufferBitCount = 0, .stencilBufferBitCount = 0, .sampleCount = 1, .debugName = "Camera Normal RT"})};
+  auto const& normalRt{
+    GetTemporaryRenderTarget(RenderTarget::Desc{
+      .width = rtWidth, .height = rtHeight, .colorFormat = DXGI_FORMAT_R8G8B8A8_SNORM, .depthBufferBitCount = 0,
+      .stencilBufferBitCount = 0, .sampleCount = 1, .debugName = "Camera Normal RT"
+    })
+  };
 
   // Depth-Normal pre-pass
   if (mDepthNormalPrePassEnabled) {
@@ -1302,7 +1645,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
     // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
     if (GetMultisamplingMode() != MultisamplingMode::Off) {
-      ctx->ResolveSubresource(normalRt.GetColorTexture(), 0, actualNormalRt.GetColorTexture(), 0, *normalRt.GetDesc().colorFormat);
+      ctx->ResolveSubresource(normalRt.GetColorTexture(), 0, actualNormalRt.GetColorTexture(), 0,
+        *normalRt.GetDesc().colorFormat);
     }
 
     annot->EndEvent();
@@ -1318,11 +1662,21 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     hr = ctx->Map(mSsaoCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     assert(SUCCEEDED(hr));
 
-    *static_cast<SsaoCB*>(mapped.pData) = SsaoCB{.gSsaoConstants = ShaderSsaoConstants{.radius = mSsaoParams.radius, .bias = mSsaoParams.bias, .power = mSsaoParams.power, .sampleCount = mSsaoParams.sampleCount}};
+    *static_cast<SsaoCB*>(mapped.pData) = SsaoCB{
+      .gSsaoConstants = ShaderSsaoConstants{
+        .radius = mSsaoParams.radius, .bias = mSsaoParams.bias, .power = mSsaoParams.power,
+        .sampleCount = mSsaoParams.sampleCount
+      }
+    };
 
     ctx->Unmap(mSsaoCb.Get(), 0);
 
-    auto const& ssaoRt{GetTemporaryRenderTarget(RenderTarget::Desc{.width = rtWidth, .height = rtHeight, .colorFormat = DXGI_FORMAT_R8_UNORM, .depthBufferBitCount = 0, .stencilBufferBitCount = 0, .sampleCount = 1, .debugName = "SSAO RT"})};
+    auto const& ssaoRt{
+      GetTemporaryRenderTarget(RenderTarget::Desc{
+        .width = rtWidth, .height = rtHeight, .colorFormat = DXGI_FORMAT_R8_UNORM, .depthBufferBitCount = 0,
+        .stencilBufferBitCount = 0, .sampleCount = 1, .debugName = "SSAO RT"
+      })
+    };
 
     // If MSAA is enabled we have to resolve the depth texture before running SSAO
     auto const ssaoDepthSrv{
@@ -1354,15 +1708,21 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
         ctx->OMSetRenderTargets(1, std::array{static_cast<ID3D11RenderTargetView*>(nullptr)}.data(), nullptr);
 
-        ctx->CSSetUnorderedAccessViews(UAV_SLOT_DEPTH_RESOLVE_OUTPUT, 1, std::array{ssaoDepthRt.GetColorUav()}.data(), nullptr);
+        ctx->CSSetUnorderedAccessViews(UAV_SLOT_DEPTH_RESOLVE_OUTPUT, 1, std::array{ssaoDepthRt.GetColorUav()}.data(),
+          nullptr);
         ctx->CSSetShaderResources(RES_SLOT_DEPTH_RESOLVE_INPUT, 1, std::array{hdrRt.GetDepthSrv()}.data());
         ctx->CSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
         ctx->CSSetShader(mDepthResolveCs.Get(), nullptr, 0);
 
-        ctx->Dispatch(static_cast<UINT>(std::ceil(static_cast<float>(ssaoDepthRtDesc.width) / DEPTH_RESOLVE_CS_THREADS_X)), static_cast<UINT>(std::ceil(static_cast<float>(ssaoDepthRtDesc.height) / DEPTH_RESOLVE_CS_THREADS_Y)), static_cast<UINT>(std::ceil(1.0f / DEPTH_RESOLVE_CS_THREADS_Z)));
+        ctx->Dispatch(
+          static_cast<UINT>(std::ceil(static_cast<float>(ssaoDepthRtDesc.width) / DEPTH_RESOLVE_CS_THREADS_X)),
+          static_cast<UINT>(std::ceil(static_cast<float>(ssaoDepthRtDesc.height) / DEPTH_RESOLVE_CS_THREADS_Y)),
+          static_cast<UINT>(std::ceil(1.0f / DEPTH_RESOLVE_CS_THREADS_Z)));
 
-        ctx->CSSetUnorderedAccessViews(UAV_SLOT_DEPTH_RESOLVE_OUTPUT, 1, std::array{static_cast<ID3D11UnorderedAccessView*>(nullptr)}.data(), nullptr);
-        ctx->CSSetShaderResources(RES_SLOT_DEPTH_RESOLVE_INPUT, 1, std::array{static_cast<ID3D11ShaderResourceView*>(nullptr)}.data());
+        ctx->CSSetUnorderedAccessViews(UAV_SLOT_DEPTH_RESOLVE_OUTPUT, 1,
+          std::array{static_cast<ID3D11UnorderedAccessView*>(nullptr)}.data(), nullptr);
+        ctx->CSSetShaderResources(RES_SLOT_DEPTH_RESOLVE_INPUT, 1,
+          std::array{static_cast<ID3D11ShaderResourceView*>(nullptr)}.data());
 
         return ssaoDepthRt.GetColorSrv();
       }()
@@ -1420,8 +1780,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     lightBufferData[i].direction = mLights[visibility.lightIndices[i]]->GetDirection();
     lightBufferData[i].isCastingShadow = FALSE;
     lightBufferData[i].range = mLights[visibility.lightIndices[i]]->GetRange();
-    lightBufferData[i].halfInnerAngleCos = std::cos(ToRadians(mLights[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
-    lightBufferData[i].halfOuterAngleCos = std::cos(ToRadians(mLights[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
+    lightBufferData[i].halfInnerAngleCos = std::cos(
+      ToRadians(mLights[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
+    lightBufferData[i].halfOuterAngleCos = std::cos(
+      ToRadians(mLights[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
     lightBufferData[i].position = mLights[visibility.lightIndices[i]]->GetEntity().GetTransform().GetWorldPosition();
     lightBufferData[i].depthBias = mLights[visibility.lightIndices[i]]->GetShadowDepthBias();
     lightBufferData[i].normalBias = mLights[visibility.lightIndices[i]]->GetShadowNormalBias();
@@ -1434,7 +1796,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   // Set directional light shadow constant data
 
   for (auto i{0}; i < lightCount; i++) {
-    if (auto const light{mLights[visibility.lightIndices[i]]}; light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
+    if (auto const light{mLights[visibility.lightIndices[i]]};
+      light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
       lightBufferData[i].isCastingShadow = TRUE;
 
       for (auto cascadeIdx{0}; cascadeIdx < mCascadeCount; cascadeIdx++) {
@@ -1477,7 +1840,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   annot->EndEvent();
 
-  if (auto const& activeScene{Scene::GetActiveScene()}; activeScene->GetSkyMode() == SkyMode::Skybox && activeScene->GetSkybox()) {
+  if (auto const& activeScene{Scene::GetActiveScene()};
+    activeScene->GetSkyMode() == SkyMode::Skybox && activeScene->GetSkybox()) {
     annot->BeginEvent(L"Skybox Pass");
     DrawSkybox(ctx);
     annot->EndEvent();

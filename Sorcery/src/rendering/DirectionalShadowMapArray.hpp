@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Core.hpp"
-#include "shaders/ShaderInterop.h"
+#include "shaders\shader_interop.h"
 #include "../graphics_platform.hpp"
 
 #include <array>

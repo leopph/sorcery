@@ -1,4 +1,4 @@
-#include "ShaderInterop.h"
+#include "shader_interop.h"
 #include "DepthNormalVsOut.hlsli"
 
 struct DrawParams {

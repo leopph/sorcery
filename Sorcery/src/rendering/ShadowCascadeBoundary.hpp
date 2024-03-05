@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "shaders/ShaderInterop.h"
+#include "shaders\shader_interop.h"
 
 
 namespace sorcery {

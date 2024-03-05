@@ -1,7 +1,7 @@
 #ifndef SKYBOX_HLSLI
 #define SKYBOX_HLSLI
 
-#include "ShaderInterop.h"
+#include "shader_interop.h"
 
 
 struct DrawParams {

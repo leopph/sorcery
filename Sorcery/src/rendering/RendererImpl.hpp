@@ -9,7 +9,7 @@
 #include "../Core.hpp"
 #include "../Color.hpp"
 #include "../Math.hpp"
-#include "shaders/ShaderInterop.h"
+#include "shaders\shader_interop.h"
 #include "../graphics_platform.hpp"
 
 #include <array>
@@ -158,14 +158,21 @@ class Renderer::Impl {
   auto CullLights(Frustum const& frustumWS, Visibility& visibility) const -> void;
 
   auto SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> ctx, int rtWidth, int rtHeight) const noexcept -> void;
-  auto SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& viewMtx, Matrix4 const& projMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries, Vector3 const& viewPos) const noexcept -> void;
+  auto SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& viewMtx, Matrix4 const& projMtx,
+                           ShadowCascadeBoundaries const& shadowCascadeBoundaries,
+                           Vector3 const& viewPos) const noexcept -> void;
   auto SetPerDrawConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& modelMtx) const noexcept -> void;
 
-  auto DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect, ShadowCascadeBoundaries const& shadowCascadeBoundaries, std::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices, ObserverPtr<ID3D11DeviceContext> ctx) -> void;
+  auto DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect,
+                                 ShadowCascadeBoundaries const& shadowCascadeBoundaries,
+                                 std::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices,
+                                 ObserverPtr<ID3D11DeviceContext> ctx) -> void;
   auto DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11DeviceContext> ctx) -> void;
-  auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> culledIndices, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> culledIndices,
+                  ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
   auto DrawSkybox(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
-  auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst, ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst,
+                   ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
   auto ReleaseTempRenderTargets() noexcept -> void;
@@ -176,7 +183,9 @@ class Renderer::Impl {
 
   static auto OnWindowSize(Impl* self, Extent2D<std::uint32_t> size) -> void;
 
-  static auto GenerateSphere(float radius, int latitudes, int longitudes, std::vector<Vector3>& vertices, std::vector<Vector3>& normals, std::vector<Vector2>& uvs, std::vector<std::uint32_t>& indices) -> void;
+  static auto GenerateSphere(float radius, int latitudes, int longitudes, std::vector<Vector3>& vertices,
+                             std::vector<Vector3>& normals, std::vector<Vector2>& uvs,
+                             std::vector<std::uint32_t>& indices) -> void;
 
 public:
   // LIFETIME FUNCTIONS

@@ -1,7 +1,7 @@
 #ifndef OBJECT_PBR_HLSLI
 #define OBJECT_PBR_HLSLI
 
-#include "ShaderInterop.h"
+#include "shader_interop.h"
 #include "brdf.hlsli"
 #include "shadow_filtering_modes.h"
 #include "shadow_sampling.hlsli"

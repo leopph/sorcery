@@ -1,7 +1,7 @@
 #ifndef GIZMOS_HLSLI
 #define GIZMOS_HLSLI
 
-#include "ShaderInterop.h"
+#include "shader_interop.h"
 
 
 struct VertexOut {

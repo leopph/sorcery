@@ -308,7 +308,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
-    <None Include="src\rendering\shaders\ShaderInterop.h" />
+    <None Include="src\rendering\shaders\shader_interop.h" />
     <None Include="src\rendering\shaders\brdf.hlsli" />
     <None Include="src\rendering\shaders\shadow_sampling.hlsli" />
     <None Include="src\rendering\shaders\DepthNormalVsOut.hlsli" />
@@ -319,6 +319,7 @@
     <None Include="src\rendering\shaders\object_pbr.hlsli" />
     <None Include="src\rendering\shaders\gizmos.hlsli" />
     <None Include="src\rendering\shaders\post_process.hlsli" />
+    <None Include="src\rendering\shaders\ssao.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />
@@ -331,10 +332,11 @@
     <FxCompile Include="src\rendering\shaders\DepthOnlyPS.hlsl" />
     <FxCompile Include="src\rendering\shaders\DepthNormalPS.hlsl" />
     <FxCompile Include="src\rendering\shaders\DepthNormalVS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\SsaoBlurPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\SsaoPS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ssao_blur_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ssao_main_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\depth_resolve_cs.hlsl" />
     <FxCompile Include="src\rendering\shaders\object_pbr_vs.hlsl" />
     <FxCompile Include="src\rendering\shaders\object_pbr_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ssao_vs_hlsl.hlsl" />
   </ItemGroup>
 </Project>

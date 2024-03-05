@@ -1,4 +1,4 @@
-#include "ShaderInterop.h"
+#include "shader_interop.h"
 
 struct DispatchParams {
   uint in_tex_idx;
