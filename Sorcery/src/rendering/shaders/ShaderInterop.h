@@ -18,19 +18,12 @@ using float4x4 = Matrix4;
 using uint = unsigned;
 
 #define row_major
-#define CBUFFER_BEGIN(name, slot) struct name {
-#define CBUFFER_END };
-
 #else
-
 typedef bool BOOL;
-#define MAKE_CB_SLOT(slot) b##slot
 #define MAKE_RES_SLOT(slot) t##slot
 #define MAKE_SAMPLER_SLOT(slot) s##slot
 #define MAKE_UAV_SLOT(slot) u##slot
 
-#define CBUFFER_BEGIN(name, slot) cbuffer name : register(MAKE_CB_SLOT(slot)) {
-#define CBUFFER_END }
 #define TEXTURE2D(name, type, slot) Texture2D<type> name : register(MAKE_RES_SLOT(slot))
 #define TEXTURE2DMS(name, type, slot) Texture2DMS<type> name : register(MAKE_RES_SLOT(slot))
 #define TEXTURE2DARRAY(name, type, slot) Texture2DArray<type> name : register(MAKE_RES_SLOT(slot))
@@ -40,13 +33,6 @@ typedef bool BOOL;
 #define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(MAKE_RES_SLOT(slot))
 #define RWTEXTURE2D(name, type, slot) RWTexture2D<type> name : register(MAKE_UAV_SLOT(slot))
 #endif
-
-#define CB_SLOT_PER_FRAME 0
-#define CB_SLOT_PER_VIEW 1
-#define CB_SLOT_PER_DRAW 2
-#define CB_SLOT_PER_MATERIAL 3
-#define CB_SLOT_POST_PROCESS 4
-#define CB_SLOT_SSAO 4
 
 #define RES_SLOT_ALBEDO_MAP 0
 #define RES_SLOT_METALLIC_MAP 1
@@ -191,37 +177,6 @@ struct ShaderSsaoConstants {
   float power;
   int sampleCount;
 };
-
-
-CBUFFER_BEGIN(PerFrameCB, CB_SLOT_PER_FRAME)
-  ShaderPerFrameConstants gPerFrameConstants;
-CBUFFER_END
-
-
-CBUFFER_BEGIN(PerViewCB, CB_SLOT_PER_VIEW)
-  ShaderPerViewConstants gPerViewConstants;
-CBUFFER_END
-
-
-CBUFFER_BEGIN(PerDrawCB, CB_SLOT_PER_DRAW)
-  ShaderPerDrawConstants gPerDrawConstants;
-CBUFFER_END
-
-
-CBUFFER_BEGIN(PerMaterialCB, CB_SLOT_PER_MATERIAL)
-  ShaderMaterial material;
-CBUFFER_END
-
-
-CBUFFER_BEGIN(PostProcessCB, CB_SLOT_POST_PROCESS)
-  float invGamma;
-  float3 pad;
-CBUFFER_END
-
-
-CBUFFER_BEGIN(SsaoCB, CB_SLOT_SSAO)
-  ShaderSsaoConstants gSsaoConstants;
-CBUFFER_END
 
 
 #ifdef __cplusplus
