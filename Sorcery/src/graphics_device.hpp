@@ -134,6 +134,33 @@ struct BufferBarrier {
 };
 
 
+class DescriptorHeap {
+public:
+  [[nodiscard]] auto Allocate() -> UINT;
+  auto Release(UINT index) -> void;
+
+  [[nodiscard]] auto GetDescriptorCpuHandle(UINT descriptor_index) const -> D3D12_CPU_DESCRIPTOR_HANDLE;
+  [[nodiscard]] auto GetDescriptorGpuHandle(UINT descriptor_index) const -> D3D12_GPU_DESCRIPTOR_HANDLE;
+
+  [[nodiscard]] auto GetInternalPtr() const -> ID3D12DescriptorHeap*;
+
+  DescriptorHeap(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> heap, ID3D12Device& device);
+  DescriptorHeap(DescriptorHeap const&) = delete;
+  DescriptorHeap(DescriptorHeap&&) = delete;
+
+  ~DescriptorHeap() = default;
+
+  auto operator=(DescriptorHeap const&) -> void = delete;
+  auto operator=(DescriptorHeap&&) -> void = delete;
+
+private:
+  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> heap_;
+  std::vector<UINT> free_indices_;
+  std::mutex mutex_;
+  UINT increment_size_;
+};
+
+
 class GraphicsDevice {
 public:
   [[nodiscard]] static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
@@ -214,9 +241,6 @@ private:
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> sampler_heap,
                  Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue);
 
-  [[nodiscard]] auto AllocateDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE type) -> UINT;
-  auto ReleaseDescriptorIndex(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT idx) -> void;
-
   auto SetRootSignature(CommandList const& cmd_list, std::uint8_t num_params) const -> void;
 
   auto SwapChainCreateTextures(SwapChain& swap_chain) -> bool;
@@ -230,32 +254,12 @@ private:
   Microsoft::WRL::ComPtr<ID3D12Device10> device_;
   Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator_;
 
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtv_heap_;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsv_heap_;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> res_desc_heap_;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> sampler_heap_;
-
-  std::vector<std::uint32_t> rtv_free_indices_;
-  std::vector<std::uint32_t> dsv_free_indices_;
-  std::vector<std::uint32_t> res_desc_free_indices_;
-  std::vector<std::uint32_t> sampler_free_indices_;
-
-  std::mutex rtv_indices_mutex_;
-  std::mutex dsv_indices_mutex_;
-  std::mutex res_desc_free_indices_mutex_;
-  std::mutex sampler_free_indices_mutex_;
+  DescriptorHeap rtv_heap_;
+  DescriptorHeap dsv_heap_;
+  DescriptorHeap res_desc_heap_;
+  DescriptorHeap sampler_heap_;
 
   Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue_;
-
-  D3D12_CPU_DESCRIPTOR_HANDLE rtv_heap_start_;
-  D3D12_CPU_DESCRIPTOR_HANDLE dsv_heap_start_;
-  D3D12_CPU_DESCRIPTOR_HANDLE res_desc_heap_start_;
-  D3D12_CPU_DESCRIPTOR_HANDLE sampler_heap_start_;
-
-  UINT rtv_heap_increment_;
-  UINT dsv_heap_increment_;
-  UINT res_desc_heap_increment_;
-  UINT sampler_heap_increment_;
 
   std::mutex root_signature_mutex_;
 
