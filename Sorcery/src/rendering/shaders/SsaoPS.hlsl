@@ -3,46 +3,69 @@
 #include "ScreenVsOut.hlsli"
 #include "Util.hlsli"
 
-TEXTURE2D(gDepthTexture, float, RES_SLOT_SSAO_DEPTH);
-TEXTURE2D(gNormalTexture, float3, RES_SLOT_SSAO_NORMAL);
-TEXTURE2D(gNoiseTexture, float4, RES_SLOT_SSAO_NOISE);
+struct DrawParams {
+  uint noise_tex_idx;
+  uint depth_tex_idx;
+  uint normal_tex_idx;
+  uint samp_buf_idx;
+  uint point_clamp_samp_idx;
+  uint point_wrap_samp_idx;
+  uint ssao_cb_idx;
+  uint per_view_cb_idx;
+  uint per_frame_cb_idx;
+};
 
-STRUCTUREDBUFFER(gSamples, float4, RES_SLOT_SSAO_SAMPLES);
+ConstantBuffer<DrawParams> g_draw_params : register(b0, space0);
 
-float3 CalculatePositionVsAtUv(const float2 uv) {
-  const float depth = gDepthTexture.Sample(gSamplerPointClamp, uv).r;
-	const float4 positionVS = mul(float4(UvToNdc(uv), depth, 1), gPerViewConstants.invProjMtx);
-	return positionVS.xyz / positionVS.w;
+float3 CalculatePositionVsAtUv(const Texture2D<float> depth_tex, const SamplerState point_clamp_samp,
+                               const ConstantBuffer<ShaderPerViewConstants> per_view_cb, const float2 uv) {
+  const float depth = depth_tex.Sample(point_clamp_samp, uv).r;
+  const float4 pos_vs = mul(float4(UvToNdc(uv), depth, 1), per_view_cb.invProjMtx);
+	return pos_vs.xyz / pos_vs.w;
 }
 
-float main(const ScreenVsOut vsOut) : SV_TARGET {
-	float2 noiseTexSize;
-	gNoiseTexture.GetDimensions(noiseTexSize.x, noiseTexSize.y);
-	const float2 noiseScale = gPerFrameConstants.screenSize / noiseTexSize;
+float main(const ScreenVsOut vs_out) : SV_Target {
+	float2 noise_tex_size;
 
-	const float3 noise = normalize(gNoiseTexture.Sample(gSamplerPointWrap, vsOut.uv * noiseScale).xyz);
-	const float3 hemisphereOriginVS = CalculatePositionVsAtUv(vsOut.uv);
-	const float3 normalVS = normalize(mul(float4(gNormalTexture.Sample(gSamplerPointClamp, vsOut.uv).xyz, 0), gPerViewConstants.viewMtx).xyz);
-	const float3 tangentVS = normalize(noise - normalVS * dot(noise, normalVS));
-	const float3 bitangentVS = cross(normalVS, tangentVS);
-	const float3x3 tbnMtxVS = float3x3(tangentVS, bitangentVS, normalVS);
+  const Texture2D<float3> noise_tex = ResourceDescriptorHeap[g_draw_params.noise_tex_idx];
+  noise_tex.GetDimensions(noise_tex_size.x, noise_tex_size.y);
+
+  const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_draw_params.per_frame_cb_idx];
+  const float2 noise_scale = per_frame_cb.screenSize / noise_tex_size;
+
+  const SamplerState point_wrap_samp = SamplerDescriptorHeap[g_draw_params.point_wrap_samp_idx];
+  const float3 noise = normalize(noise_tex.Sample(point_wrap_samp, vs_out.uv * noise_scale).xyz);
+
+  const Texture2D<float> depth_tex = ResourceDescriptorHeap[g_draw_params.depth_tex_idx];
+  const SamplerState point_clamp_samp = SamplerDescriptorHeap[g_draw_params.point_clamp_samp_idx];
+  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_draw_params.per_view_cb_idx];
+	const float3 hemisphere_origin_vs = CalculatePositionVsAtUv(depth_tex, point_clamp_samp, per_view_cb, vs_out.uv);
+
+  const Texture2D<float3> normal_tex = ResourceDescriptorHeap[g_draw_params.normal_tex_idx];
+  const float3 normal_vs = normalize(mul(float4(normal_tex.Sample(point_clamp_samp, vs_out.uv).xyz, 0), per_view_cb.viewMtx).xyz);
+	const float3 tangent_vs = normalize(noise - normal_vs * dot(noise, normal_vs));
+	const float3 bitangent_vs = cross(normal_vs, tangent_vs);
+	const float3x3 tbn_mtx_vs = float3x3(tangent_vs, bitangent_vs, normal_vs);
 
 	float occlusion = 0.0;
+	uint sample_count, stride;
 
-	uint sampleCount, stride;
-	gSamples.GetDimensions(sampleCount, stride);
+  const StructuredBuffer<float4> samples = ResourceDescriptorHeap[g_draw_params.samp_buf_idx];
+  samples.GetDimensions(sample_count, stride);
 
-	for (uint i = 0; i < sampleCount; i++) {
-	  const float3 samplePos = mul(gSamples[i].xyz, tbnMtxVS) * gSsaoConstants.radius + hemisphereOriginVS;
+  const ConstantBuffer<ShaderSsaoConstants> ssao_cb = ResourceDescriptorHeap[g_draw_params.ssao_cb_idx];
 
-		float4 sampleOffset = mul(float4(samplePos, 1), gPerViewConstants.projMtx);
+	for (uint i = 0; i < sample_count; i++) {
+    const float3 samplePos = mul(samples[i].xyz, tbn_mtx_vs) * ssao_cb.radius + hemisphere_origin_vs;
+
+		float4 sampleOffset = mul(float4(samplePos, 1), per_view_cb.projMtx);
 		sampleOffset /= sampleOffset.w;
 
-		const float sampleDepth = CalculatePositionVsAtUv(NdcToUv(sampleOffset.xy)).z;
+		const float sampleDepth = CalculatePositionVsAtUv(depth_tex, point_clamp_samp, per_view_cb, NdcToUv(sampleOffset.xy)).z;
 
-		const float rangeCheck = smoothstep(0.0, 1.0, gSsaoConstants.radius / abs(hemisphereOriginVS.z - sampleDepth));
-    occlusion += step(sampleDepth, samplePos.z - gSsaoConstants.bias) * rangeCheck;
+    const float rangeCheck = smoothstep(0.0, 1.0, ssao_cb.radius / abs(hemisphere_origin_vs.z - sampleDepth));
+    occlusion += step(sampleDepth, samplePos.z - ssao_cb.bias) * rangeCheck;
   }
 
-  return pow(1 - occlusion / sampleCount, gSsaoConstants.power);
+  return pow(1 - occlusion / sample_count, ssao_cb.power);
 }
