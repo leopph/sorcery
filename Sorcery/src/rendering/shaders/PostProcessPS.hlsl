@@ -1,16 +1,20 @@
-#include "ShaderInterop.h"
+struct DrawParams {
+  uint in_tex_idx;
+  float inv_gamma;
+};
 
-TEXTURE2D(gSrcTex, float4, RES_SLOT_POST_PROCESS_SRC);
+ConstantBuffer<DrawParams> g_draw_params : register(b0, space0);
 
 
-float4 main(const float4 pixelCoord : SV_POSITION) : SV_TARGET {
-    float3 pixelColor = gSrcTex.Load(int3(pixelCoord.xy, 0)).rgb;
+float4 main(const float4 pixel_coord : SV_POSITION) : SV_TARGET {
+  const Texture2D in_tex = ResourceDescriptorHeap[g_draw_params.in_tex_idx];
+  float3 pixel_color = in_tex.Load(int3(pixel_coord.xy, 0)).rgb;
 
-    // Tone mapping
-    pixelColor = pixelColor / (pixelColor + 1.0);
+  // Tone mapping
+  pixel_color = pixel_color / (pixel_color + 1.0);
 
-    // Gamma correction
-    pixelColor = pow(pixelColor, invGamma);
+  // Gamma correction
+  pixel_color = pow(pixel_color, g_draw_params.inv_gamma);
 
-    return float4(pixelColor, 1);
+  return float4(pixel_color, 1);
 }
