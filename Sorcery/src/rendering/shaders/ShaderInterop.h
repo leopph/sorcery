@@ -34,6 +34,8 @@ typedef bool BOOL;
 #define RWTEXTURE2D(name, type, slot) RWTexture2D<type> name : register(MAKE_UAV_SLOT(slot))
 #endif
 
+#define INVALID_RES_IDX -1
+
 #define RES_SLOT_ALBEDO_MAP 0
 #define RES_SLOT_METALLIC_MAP 1
 #define RES_SLOT_ROUGHNESS_MAP 2
@@ -122,14 +124,14 @@ struct ShaderMaterial {
   float roughness;
   float ao;
   float alphaThreshold;
-  BOOL sampleAlbedo;
+  uint albedo_map_idx;
 
-  BOOL sampleMetallic;
-  BOOL sampleRoughness;
-  BOOL sampleAo;
-  BOOL sampleNormal;
+  uint metallic_map_idx;
+  uint roughness_map_idx;
+  uint ao_map_idx;
+  uint normal_map_idx;
 
-  BOOL sampleOpacityMap;
+  uint opacity_map_idx;
   int blendMode;
   float2 pad;
 };
