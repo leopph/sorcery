@@ -428,54 +428,100 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
                                              D3D12_HEAP_TYPE heap_type,
                                              std::pmr::vector<UniqueBufferHandle>* const buffers,
                                              std::pmr::vector<UniqueTextureHandle>* const textures) -> void {
-  D3D12_RESOURCE_ALLOCATION_INFO alloc_info{0, 0};
-  D3D12MA::ALLOCATION_DESC alloc_desc{D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_NONE};
+  D3D12_RESOURCE_ALLOCATION_INFO buf_alloc_info{0, 0};
+  D3D12_RESOURCE_ALLOCATION_INFO rt_ds_alloc_info{0, 0};
+  D3D12_RESOURCE_ALLOCATION_INFO non_rt_ds_alloc_info{0, 0};
 
-  if (buffer_descs.empty() || !buffers) {
-    alloc_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_DENY_BUFFERS;
-  }
-
-  alloc_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES;
-  alloc_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
-
-
-  for (auto const& desc : buffer_descs) {
-    auto const res_desc{CD3DX12_RESOURCE_DESC::Buffer(desc.size)};
-    auto const res_alloc_info{device_->GetResourceAllocationInfo(0, 1, &res_desc)};
-    alloc_info.Alignment = std::max(alloc_info.Alignment, res_alloc_info.Alignment);
-    alloc_info.SizeInBytes = std::max(alloc_info.SizeInBytes, res_alloc_info.SizeInBytes);
+  for (auto const& buffer_desc : buffer_descs) {
+    auto const desc{CD3DX12_RESOURCE_DESC::Buffer(buffer_desc.size)};
+    auto const alloc_info{device_->GetResourceAllocationInfo(0, 1, &desc)};
+    buf_alloc_info.Alignment = std::max(buf_alloc_info.Alignment, alloc_info.Alignment);
+    buf_alloc_info.SizeInBytes = std::max(buf_alloc_info.SizeInBytes, alloc_info.SizeInBytes);
   }
 
   for (auto const& info : texture_infos) {
-    D3D12_RESOURCE_DESC res_desc;
+    D3D12_RESOURCE_DESC desc;
     if (info.desc.dimension == TextureDimension::k1D) {
-      res_desc = CD3DX12_RESOURCE_DESC::Tex1D(info.desc.format, info.desc.width, info.desc.depth_or_array_size,
+      desc = CD3DX12_RESOURCE_DESC::Tex1D(info.desc.format, info.desc.width, info.desc.depth_or_array_size,
         info.desc.mip_levels, info.desc.flags);
     } else if (info.desc.dimension == TextureDimension::k2D) {
-      res_desc = CD3DX12_RESOURCE_DESC::Tex2D(info.desc.format, info.desc.width, info.desc.height,
+      desc = CD3DX12_RESOURCE_DESC::Tex2D(info.desc.format, info.desc.width, info.desc.height,
         info.desc.depth_or_array_size, info.desc.mip_levels, info.desc.sample_desc.Count, info.desc.sample_desc.Quality,
         info.desc.flags);
     } else if (info.desc.dimension == TextureDimension::k3D || info.desc.dimension == TextureDimension::kCube) {
-      res_desc = CD3DX12_RESOURCE_DESC::Tex3D(info.desc.format, info.desc.width, info.desc.height,
-        info.desc.depth_stencil, info.desc.mip_levels, info.desc.flags);
+      desc = CD3DX12_RESOURCE_DESC::Tex3D(info.desc.format, info.desc.width, info.desc.height, info.desc.depth_stencil,
+        info.desc.mip_levels, info.desc.flags);
     }
-    auto const res_alloc_info{device_->GetResourceAllocationInfo(0, 1, &res_desc)};
-    alloc_info.Alignment = std::max(alloc_info.Alignment, res_alloc_info.Alignment);
-    alloc_info.SizeInBytes = std::max(alloc_info.SizeInBytes, res_alloc_info.SizeInBytes);
+    auto const alloc_info{device_->GetResourceAllocationInfo(0, 1, &desc)};
 
-    if (info.desc.depth_stencil || info.desc.render_target) {
-      alloc_desc.ExtraHeapFlags &= ~D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
-    }
+    auto& tex_alloc_info{info.desc.render_target || info.desc.depth_stencil ? rt_ds_alloc_info : non_rt_ds_alloc_info};
 
-    if (info.desc.shader_resource || info.desc.unordered_access) {
-      alloc_desc.ExtraHeapFlags &= ~D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES;
-    }
+    tex_alloc_info.Alignment = std::max(tex_alloc_info.Alignment, alloc_info.Alignment);
+    tex_alloc_info.SizeInBytes = std::max(tex_alloc_info.SizeInBytes, alloc_info.SizeInBytes);
   }
 
-  ComPtr<D3D12MA::Allocation> allocation;
+  ComPtr<D3D12MA::Allocation> buf_alloc;
+  ComPtr<D3D12MA::Allocation> rt_ds_alloc;
+  ComPtr<D3D12MA::Allocation> non_rt_ds_alloc;
 
-  if (FAILED(allocator_->AllocateMemory(&alloc_desc, &alloc_info, &allocation))) {
-    return;
+  if (allocator_->GetD3D12Options().ResourceHeapTier > D3D12_RESOURCE_HEAP_TIER_1) {
+    D3D12MA::ALLOCATION_DESC alloc_desc{
+      D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_NONE, nullptr, nullptr
+    };
+
+    if (buf_alloc_info.SizeInBytes == 0) {
+      alloc_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_DENY_BUFFERS;
+    }
+
+    if (rt_ds_alloc_info.SizeInBytes == 0) {
+      alloc_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES;
+    }
+
+    if (non_rt_ds_alloc_info.SizeInBytes == 0) {
+      alloc_desc.ExtraHeapFlags |= D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES;
+    }
+
+    D3D12_RESOURCE_ALLOCATION_INFO const alloc_info{
+      std::max(std::max(buf_alloc_info.SizeInBytes, rt_ds_alloc_info.SizeInBytes), non_rt_ds_alloc_info.SizeInBytes),
+      std::max(std::max(buf_alloc_info.Alignment, rt_ds_alloc_info.Alignment), non_rt_ds_alloc_info.Alignment)
+    };
+
+    if (FAILED(allocator_->AllocateMemory(&alloc_desc, &alloc_info, &buf_alloc))) {
+      return;
+    }
+
+    rt_ds_alloc = buf_alloc;
+    non_rt_ds_alloc = buf_alloc;
+  } else {
+    if (buf_alloc_info.SizeInBytes > 0) {
+      D3D12MA::ALLOCATION_DESC const buf_alloc_desc{
+        D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS, nullptr, nullptr
+      };
+
+      if (FAILED(allocator_->AllocateMemory(&buf_alloc_desc, &buf_alloc_info, &buf_alloc))) {
+        return;
+      }
+    }
+
+    if (rt_ds_alloc_info.SizeInBytes > 0) {
+      D3D12MA::ALLOCATION_DESC const rt_ds_alloc_desc{
+        D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES, nullptr, nullptr
+      };
+
+      if (FAILED(allocator_->AllocateMemory(&rt_ds_alloc_desc, &rt_ds_alloc_info, &rt_ds_alloc))) {
+        return;
+      }
+    }
+
+    if (non_rt_ds_alloc_info.SizeInBytes > 0) {
+      D3D12MA::ALLOCATION_DESC const non_rt_ds_alloc_desc{
+        D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES, nullptr, nullptr
+      };
+
+      if (FAILED(allocator_->AllocateMemory(&non_rt_ds_alloc_desc, &non_rt_ds_alloc_info, &non_rt_ds_alloc))) {
+        return;
+      }
+    }
   }
 
   if (buffers) {
@@ -484,7 +530,7 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       ComPtr<ID3D12Resource2> resource;
 
       if (FAILED(
-        allocator_->CreateAliasingResource2(allocation.Get(), 0, &desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0,
+        allocator_->CreateAliasingResource2(buf_alloc.Get(), 0, &desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0,
           nullptr, IID_PPV_ARGS(&resource)))) {
         buffers->emplace_back(nullptr, details::DeviceChildDeleter<Buffer>{*this});
         continue;
@@ -494,7 +540,7 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       UINT srv;
       UINT uav;
       CreateBufferViews(*resource.Get(), buf_desc, cbv, srv, uav);
-      buffers->emplace_back(new Buffer{allocation, std::move(resource), cbv, srv, uav},
+      buffers->emplace_back(new Buffer{buf_alloc, std::move(resource), cbv, srv, uav},
         details::DeviceChildDeleter<Buffer>{*this});
     }
   }
@@ -514,10 +560,12 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
           info.desc.depth_stencil, info.desc.mip_levels, info.desc.flags);
       }
 
+      auto& alloc{info.desc.render_target || info.desc.depth_stencil ? rt_ds_alloc : non_rt_ds_alloc};
+
       ComPtr<ID3D12Resource2> resource;
       if (FAILED(
-        allocator_->CreateAliasingResource2(allocation.Get(), 0, &desc, info.initial_layout, info.clear_value, 0,
-          nullptr, IID_PPV_ARGS(&resource)))) {
+        allocator_->CreateAliasingResource2(alloc.Get(), 0, &desc, info.initial_layout, info.clear_value, 0, nullptr,
+          IID_PPV_ARGS(&resource)))) {
         textures->emplace_back(nullptr, details::DeviceChildDeleter<Texture>{*this});
         continue;
       }
@@ -527,7 +575,7 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       UINT srv;
       UINT uav;
       CreateTextureViews(*resource.Get(), info.desc, dsv, rtv, srv, uav);
-      textures->emplace_back(new Texture{allocation, std::move(resource), dsv, rtv, srv, uav},
+      textures->emplace_back(new Texture{alloc, std::move(resource), dsv, rtv, srv, uav},
         details::DeviceChildDeleter<Texture>{*this});
     }
   }
