@@ -143,6 +143,13 @@ struct BufferBarrier {
 };
 
 
+struct AliasedTextureCreateInfo {
+  TextureDesc desc;
+  D3D12_BARRIER_LAYOUT initial_layout;
+  D3D12_CLEAR_VALUE* clear_value;
+};
+
+
 namespace details {
 class DescriptorHeap {
 public:
@@ -197,6 +204,10 @@ public:
   [[nodiscard]] auto CreateFence(UINT64 initial_value) -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
   [[nodiscard]] auto CreateSwapChain(SwapChainDesc const& desc, HWND window_handle) -> UniqueSwapChainHandle;
   [[nodiscard]] auto CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle;
+  auto CreateAliasingResources(std::span<BufferDesc const> buffer_descs,
+                               std::span<AliasedTextureCreateInfo const> texture_infos, D3D12_HEAP_TYPE heap_type,
+                               std::pmr::vector<UniqueBufferHandle>* buffers,
+                               std::pmr::vector<UniqueTextureHandle>* textures) -> void;
 
   auto DestroyBuffer(Buffer const* buffer) -> void;
   auto DestroyTexture(Texture const* texture) -> void;
@@ -224,6 +235,10 @@ private:
                  Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue);
 
   auto SwapChainCreateTextures(SwapChain& swap_chain) -> bool;
+
+  auto CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const& desc, UINT& cbv, UINT& srv, UINT& uav) -> void;
+  auto CreateTextureViews(ID3D12Resource2& texture, TextureDesc const& desc, UINT& dsv, UINT& rtv, UINT& srv,
+                          UINT& uav) -> void;
 
   static UINT const rtv_heap_size_;
   static UINT const dsv_heap_size_;
