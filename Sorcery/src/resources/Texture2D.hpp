@@ -4,8 +4,6 @@
 #include "../Image.hpp"
 #include "../Util.hpp"
 
-#include "../graphics_platform.hpp"
-
 
 namespace sorcery {
 class Texture2D final : public Resource {

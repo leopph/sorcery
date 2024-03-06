@@ -6,8 +6,6 @@
 
 #include "../Math.hpp"
 
-#include "../graphics_platform.hpp"
-
 
 namespace sorcery {
 using float2 = Vector2;

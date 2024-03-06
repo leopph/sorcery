@@ -299,9 +299,6 @@
     <ClInclude Include="src\SkyMode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics_platform.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\graphics_device.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

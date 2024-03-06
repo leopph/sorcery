@@ -4,8 +4,6 @@
 #include "../Math.hpp"
 #include "../Bounds.hpp"
 
-#include "../graphics_platform.hpp"
-
 #include <cstdint>
 #include <memory>
 #include <span>

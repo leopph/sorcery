@@ -9,8 +9,6 @@
 
 #include "..\rendering\shaders\shader_interop.h"
 
-#include "../graphics_platform.hpp"
-
 
 namespace sorcery {
 class Material final : public NativeResource {

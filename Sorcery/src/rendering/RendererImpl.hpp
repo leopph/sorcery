@@ -10,7 +10,6 @@
 #include "../Color.hpp"
 #include "../Math.hpp"
 #include "shaders\shader_interop.h"
-#include "../graphics_platform.hpp"
 
 #include <array>
 #include <memory>

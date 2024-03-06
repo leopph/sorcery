@@ -4,8 +4,6 @@
 #include "ShadowCascadeBoundary.hpp"
 #include "../GridLike.hpp"
 
-#include "../graphics_platform.hpp"
-
 #include <optional>
 #include <span>
 #include <vector>

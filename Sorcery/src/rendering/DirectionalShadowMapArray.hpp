@@ -2,7 +2,6 @@
 
 #include "../Core.hpp"
 #include "shaders\shader_interop.h"
-#include "../graphics_platform.hpp"
 
 #include <array>
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../graphics_platform.hpp"
-
 
 namespace sorcery {
 class SwapChain {

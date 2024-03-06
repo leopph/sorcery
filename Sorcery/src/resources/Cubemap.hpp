@@ -3,8 +3,6 @@
 #include "Resource.hpp"
 #include "../Image.hpp"
 
-#include "../graphics_platform.hpp"
-
 
 namespace sorcery {
 class Cubemap final : public Resource {

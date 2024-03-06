@@ -159,7 +159,6 @@
     <ClInclude Include="src\rendering\DirectionalShadowMapArray.hpp" />
     <ClInclude Include="src\rendering\Graphics.hpp" />
     <ClInclude Include="src\GUI.hpp" />
-    <ClInclude Include="src\graphics_platform.hpp" />
     <ClInclude Include="src\rendering\RendererImpl.hpp" />
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\Reflection.hpp" />
