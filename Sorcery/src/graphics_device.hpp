@@ -268,6 +268,7 @@ public:
   [[nodiscard]] auto GetConstantBuffer() const -> UINT;
   [[nodiscard]] auto GetShaderResource() const -> UINT;
   [[nodiscard]] auto GetUnorderedAccess() const -> UINT;
+  [[nodiscard]] auto Map() const -> void*;
 
 private:
   Buffer(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
@@ -288,6 +289,7 @@ class Texture {
 public:
   [[nodiscard]] auto GetShaderResource() const -> UINT;
   [[nodiscard]] auto GetUnorderedAccess() const -> UINT;
+  [[nodiscard]] auto Map(UINT subresource) const -> void*;
 
 private:
   Texture(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,

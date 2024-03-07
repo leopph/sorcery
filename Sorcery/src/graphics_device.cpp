@@ -965,6 +965,14 @@ auto Buffer::GetUnorderedAccess() const -> UINT {
 }
 
 
+auto Buffer::Map() const -> void* {
+  if (void* mapped; SUCCEEDED(resource_->Map(0, nullptr, &mapped))) {
+    return mapped;
+  }
+  return nullptr;
+}
+
+
 Buffer::Buffer(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, UINT const cbv, UINT const srv,
                UINT const uav) :
   allocation_{std::move(allocation)},
@@ -981,6 +989,14 @@ auto Texture::GetShaderResource() const -> UINT {
 
 auto Texture::GetUnorderedAccess() const -> UINT {
   return uav_;
+}
+
+
+auto Texture::Map(UINT const subresource) const -> void* {
+  if (void* mapped; SUCCEEDED(resource_->Map(subresource, nullptr, &mapped))) {
+    return mapped;
+  }
+  return nullptr;
 }
 
 
