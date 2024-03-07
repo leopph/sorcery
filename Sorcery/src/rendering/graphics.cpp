@@ -21,11 +21,6 @@ char const* D3D12SDKPath{".\\D3D12\\"};
 
 
 namespace sorcery::graphics {
-namespace {
-UINT constexpr kInvalidResourceIndex{static_cast<UINT>(-1)};
-}
-
-
 UINT const GraphicsDevice::rtv_heap_size_{1'000'000};
 UINT const GraphicsDevice::dsv_heap_size_{1'000'000};
 UINT const GraphicsDevice::res_desc_heap_size_{1'000'000};
@@ -226,7 +221,7 @@ auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDev
 }
 
 
-auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const heap_type) -> UniqueBufferHandle {
+auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const heap_type) -> UniqueHandle<Buffer> {
   ComPtr<D3D12MA::Allocation> allocation;
   ComPtr<ID3D12Resource2> resource;
 
@@ -239,7 +234,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
   if (FAILED(
     allocator_->CreateResource3(&alloc_desc, &res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr, &allocation
       , IID_PPV_ARGS(&resource)))) {
-    return UniqueBufferHandle{nullptr, details::DeviceChildDeleter<Buffer>{*this}};
+    return UniqueHandle<Buffer>{nullptr, *this};
   }
 
   UINT cbv;
@@ -248,15 +243,13 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE const 
 
   CreateBufferViews(*resource.Get(), desc, cbv, srv, uav);
 
-  return UniqueBufferHandle{
-    new Buffer{std::move(allocation), std::move(resource), cbv, srv, uav}, details::DeviceChildDeleter<Buffer>{*this}
-  };
+  return UniqueHandle{new Buffer{std::move(allocation), std::move(resource), cbv, srv, uav}, *this};
 }
 
 
 auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE const heap_type,
                                    D3D12_BARRIER_LAYOUT const initial_layout,
-                                   D3D12_CLEAR_VALUE const* clear_value) -> UniqueTextureHandle {
+                                   D3D12_CLEAR_VALUE const* clear_value) -> UniqueHandle<Texture> {
   ComPtr<D3D12MA::Allocation> allocation;
   ComPtr<ID3D12Resource2> resource;
 
@@ -288,7 +281,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
   if (FAILED(
     allocator_->CreateResource3(&alloc_desc, &res_desc, initial_layout, clear_value, 0, nullptr, &allocation,
       IID_PPV_ARGS(&resource)))) {
-    return UniqueTextureHandle{nullptr, details::DeviceChildDeleter<Texture>{*this}};
+    return UniqueHandle<Texture>{nullptr, *this};
   }
 
   UINT dsv;
@@ -298,15 +291,12 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
 
   CreateTextureViews(*resource.Get(), desc, dsv, rtv, srv, uav);
 
-  return UniqueTextureHandle{
-    new Texture{std::move(allocation), std::move(resource), dsv, rtv, srv, uav},
-    details::DeviceChildDeleter<Texture>{*this}
-  };
+  return UniqueHandle{new Texture{std::move(allocation), std::move(resource), dsv, rtv, srv, uav}, *this};
 }
 
 
 auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
-                                         std::uint8_t const num_32_bit_params) -> UniquePipelineStateHandle {
+                                         std::uint8_t const num_32_bit_params) -> UniqueHandle<PipelineState> {
   ComPtr<ID3D12RootSignature> root_signature;
 
   if (auto rs{root_signatures_.Get(num_32_bit_params)}) {
@@ -328,13 +318,13 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
     ComPtr<ID3DBlob> error_blob;
 
     if (FAILED(D3D12SerializeVersionedRootSignature(&root_signature_desc, &root_signature_blob, &error_blob))) {
-      return UniquePipelineStateHandle{nullptr, details::DeviceChildDeleter<PipelineState>{*this}};
+      return UniqueHandle<PipelineState>{nullptr, *this};
     }
 
     if (FAILED(
       device_->CreateRootSignature(0, root_signature_blob->GetBufferPointer(), root_signature_blob->GetBufferSize(),
         IID_PPV_ARGS(&root_signature)))) {
-      return UniquePipelineStateHandle{nullptr, details::DeviceChildDeleter<PipelineState>{*this}};
+      return UniqueHandle<PipelineState>{nullptr, *this};
     }
 
     root_signatures_.Add(num_32_bit_params, root_signature);
@@ -345,38 +335,38 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
   ComPtr<ID3D12PipelineState> pipeline_state;
 
   if (FAILED(device_->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&pipeline_state)))) {
-    return UniquePipelineStateHandle{nullptr, details::DeviceChildDeleter<PipelineState>{*this}};
+    return UniqueHandle<PipelineState>{nullptr, *this};
   }
 
-  return UniquePipelineStateHandle{
+  return UniqueHandle{
     new PipelineState{
       std::move(root_signature), std::move(pipeline_state), num_32_bit_params,
       static_cast<D3D12_SHADER_BYTECODE>(desc.vs).BytecodeLength != 0
     },
-    details::DeviceChildDeleter<PipelineState>{*this}
+    *this
   };
 }
 
 
-auto GraphicsDevice::CreateCommandList() -> UniqueCommandListHandle {
+auto GraphicsDevice::CreateCommandList() -> UniqueHandle<CommandList> {
   ComPtr<ID3D12CommandAllocator> allocator;
   if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)))) {
-    return UniqueCommandListHandle{nullptr, details::DeviceChildDeleter<CommandList>{*this}};
+    return UniqueHandle<CommandList>{nullptr, *this};
   }
 
   ComPtr<ID3D12GraphicsCommandList7> cmd_list;
   if (FAILED(
     device_->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmd_list)
     ))) {
-    return UniqueCommandListHandle{nullptr, details::DeviceChildDeleter<CommandList>{*this}};
+    return UniqueHandle<CommandList>{nullptr, *this};
   }
 
-  return UniqueCommandListHandle{
+  return UniqueHandle{
     new CommandList{
       std::move(allocator), std::move(cmd_list), &dsv_heap_, &rtv_heap_, &res_desc_heap_, &sampler_heap_,
       &root_signatures_
     },
-    details::DeviceChildDeleter<CommandList>{*this}
+    *this
   };
 }
 
@@ -392,7 +382,7 @@ auto GraphicsDevice::CreateFence(UINT64 const initial_value) -> ComPtr<ID3D12Fen
 }
 
 
-auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc, HWND const window_handle) -> UniqueSwapChainHandle {
+auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc, HWND const window_handle) -> UniqueHandle<SwapChain> {
   DXGI_SWAP_CHAIN_DESC1 const dxgi_desc{
     desc.width, desc.height, DXGI_FORMAT_R8G8B8A8_UNORM, FALSE, {1, 0}, desc.usage, desc.buffer_count, desc.scaling,
     DXGI_SWAP_EFFECT_FLIP_DISCARD, DXGI_ALPHA_MODE_UNSPECIFIED, swap_chain_flags_
@@ -401,33 +391,32 @@ auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc, HWND const windo
   ComPtr<IDXGISwapChain1> swap_chain1;
   if (FAILED(
     factory_->CreateSwapChainForHwnd(queue_.Get(), window_handle, &dxgi_desc, nullptr, nullptr, &swap_chain1))) {
-    return UniqueSwapChainHandle{nullptr, details::DeviceChildDeleter<SwapChain>{*this}};
+    return UniqueHandle<SwapChain>{nullptr, *this};
   }
 
   ComPtr<IDXGISwapChain4> swap_chain4;
   if (FAILED(swap_chain1.As(&swap_chain4))) {
-    return UniqueSwapChainHandle{nullptr, details::DeviceChildDeleter<SwapChain>{*this}};
+    return UniqueHandle<SwapChain>{nullptr, *this};
   }
 
   auto const swap_chain{new SwapChain{std::move(swap_chain4)}};
   SwapChainCreateTextures(*swap_chain);
 
-  return UniqueSwapChainHandle{swap_chain, details::DeviceChildDeleter<SwapChain>{*this}};
+  return UniqueHandle{swap_chain, *this};
 }
 
 
-auto GraphicsDevice::CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle {
+auto GraphicsDevice::CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueHandle<Sampler> {
   auto const sampler{sampler_heap_.Allocate()};
   device_->CreateSampler(&desc, sampler_heap_.GetDescriptorCpuHandle(sampler));
-  return UniqueSamplerHandle{sampler, *this};
+  return UniqueHandle<Sampler>{sampler, *this};
 }
 
 
 auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const buffer_descs,
                                              std::span<AliasedTextureCreateInfo const> const texture_infos,
-                                             D3D12_HEAP_TYPE heap_type,
-                                             std::pmr::vector<UniqueBufferHandle>* const buffers,
-                                             std::pmr::vector<UniqueTextureHandle>* const textures) -> void {
+                                             D3D12_HEAP_TYPE heap_type, std::pmr::vector<UniqueHandle<Buffer>>* buffers,
+                                             std::pmr::vector<UniqueHandle<Texture>>* textures) -> void {
   D3D12_RESOURCE_ALLOCATION_INFO buf_alloc_info{0, 0};
   D3D12_RESOURCE_ALLOCATION_INFO rt_ds_alloc_info{0, 0};
   D3D12_RESOURCE_ALLOCATION_INFO non_rt_ds_alloc_info{0, 0};
@@ -532,7 +521,7 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       if (FAILED(
         allocator_->CreateAliasingResource2(buf_alloc.Get(), 0, &desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0,
           nullptr, IID_PPV_ARGS(&resource)))) {
-        buffers->emplace_back(nullptr, details::DeviceChildDeleter<Buffer>{*this});
+        buffers->emplace_back(nullptr, *this);
         continue;
       }
 
@@ -540,8 +529,7 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       UINT srv;
       UINT uav;
       CreateBufferViews(*resource.Get(), buf_desc, cbv, srv, uav);
-      buffers->emplace_back(new Buffer{buf_alloc, std::move(resource), cbv, srv, uav},
-        details::DeviceChildDeleter<Buffer>{*this});
+      buffers->emplace_back(new Buffer{buf_alloc, std::move(resource), cbv, srv, uav}, *this);
     }
   }
 
@@ -566,7 +554,7 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       if (FAILED(
         allocator_->CreateAliasingResource2(alloc.Get(), 0, &desc, info.initial_layout, info.clear_value, 0, nullptr,
           IID_PPV_ARGS(&resource)))) {
-        textures->emplace_back(nullptr, details::DeviceChildDeleter<Texture>{*this});
+        textures->emplace_back(nullptr, *this);
         continue;
       }
 
@@ -575,8 +563,7 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       UINT srv;
       UINT uav;
       CreateTextureViews(*resource.Get(), info.desc, dsv, rtv, srv, uav);
-      textures->emplace_back(new Texture{alloc, std::move(resource), dsv, rtv, srv, uav},
-        details::DeviceChildDeleter<Texture>{*this});
+      textures->emplace_back(new Texture{alloc, std::move(resource), dsv, rtv, srv, uav}, *this);
     }
   }
 }
@@ -645,7 +632,7 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
 }
 
 
-auto GraphicsDevice::SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<UniqueTextureHandle const> {
+auto GraphicsDevice::SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<UniqueHandle<Texture> const> {
   return swap_chain.textures_;
 }
 
@@ -704,12 +691,16 @@ auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> bool {
       return false;
     }
 
-    UINT const rtv{desc.BufferUsage & DXGI_USAGE_RENDER_TARGET_OUTPUT ? rtv_heap_.Allocate() : kInvalidResourceIndex};
-    UINT const srv{desc.BufferUsage & DXGI_USAGE_SHADER_INPUT ? res_desc_heap_.Allocate() : kInvalidResourceIndex};
+    UINT const rtv{
+      desc.BufferUsage & DXGI_USAGE_RENDER_TARGET_OUTPUT ? rtv_heap_.Allocate() : details::kInvalidResourceIndex
+    };
+    UINT const srv{
+      desc.BufferUsage & DXGI_USAGE_SHADER_INPUT ? res_desc_heap_.Allocate() : details::kInvalidResourceIndex
+    };
 
     swap_chain.textures_.emplace_back(new Texture{
-      nullptr, std::move(buf), kInvalidResourceIndex, rtv, srv, kInvalidResourceIndex
-    }, details::DeviceChildDeleter<Texture>{*this});
+      nullptr, std::move(buf), details::kInvalidResourceIndex, rtv, srv, details::kInvalidResourceIndex
+    }, *this);
   }
 
   return true;
@@ -723,7 +714,7 @@ auto GraphicsDevice::CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const
     D3D12_CONSTANT_BUFFER_VIEW_DESC const cbv_desc{buffer.GetGPUVirtualAddress(), desc.size};
     device_->CreateConstantBufferView(&cbv_desc, res_desc_heap_.GetDescriptorCpuHandle(cbv));
   } else {
-    cbv = kInvalidResourceIndex;
+    cbv = details::kInvalidResourceIndex;
   }
 
   if (desc.shader_resource) {
@@ -735,7 +726,7 @@ auto GraphicsDevice::CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const
     };
     device_->CreateShaderResourceView(&buffer, &srv_desc, res_desc_heap_.GetDescriptorCpuHandle(srv));
   } else {
-    srv = kInvalidResourceIndex;
+    srv = details::kInvalidResourceIndex;
   }
 
   if (desc.unordered_access) {
@@ -749,7 +740,7 @@ auto GraphicsDevice::CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const
     };
     device_->CreateUnorderedAccessView(&buffer, nullptr, &uav_desc, res_desc_heap_.GetDescriptorCpuHandle(uav));
   } else {
-    uav = kInvalidResourceIndex;
+    uav = details::kInvalidResourceIndex;
   }
 }
 
@@ -792,7 +783,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
     dsv = dsv_heap_.Allocate();
     device_->CreateDepthStencilView(&texture, &dsv_desc, dsv_heap_.GetDescriptorCpuHandle(dsv));
   } else {
-    dsv = kInvalidResourceIndex;
+    dsv = details::kInvalidResourceIndex;
   }
 
   if (desc.render_target) {
@@ -838,7 +829,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
     rtv = rtv_heap_.Allocate();
     device_->CreateRenderTargetView(&texture, &rtv_desc, rtv_heap_.GetDescriptorCpuHandle(rtv));
   } else {
-    rtv = kInvalidResourceIndex;
+    rtv = details::kInvalidResourceIndex;
   }
 
   if (desc.shader_resource) {
@@ -899,7 +890,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
     srv = res_desc_heap_.Allocate();
     device_->CreateShaderResourceView(&texture, &srv_desc, res_desc_heap_.GetDescriptorCpuHandle(srv));
   } else {
-    srv = kInvalidResourceIndex;
+    srv = details::kInvalidResourceIndex;
   }
 
   if (desc.unordered_access) {
@@ -945,7 +936,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
     uav = res_desc_heap_.Allocate();
     device_->CreateUnorderedAccessView(&texture, nullptr, &uav_desc, res_desc_heap_.GetDescriptorCpuHandle(uav));
   } else {
-    uav = kInvalidResourceIndex;
+    uav = details::kInvalidResourceIndex;
   }
 }
 
@@ -1089,7 +1080,7 @@ auto CommandList::Barrier(std::span<GlobalBarrier const> const global_barriers,
 
 auto CommandList::ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS const clear_flags, FLOAT const depth,
                                     UINT8 const stencil, std::span<D3D12_RECT const> const rects) const -> void {
-  if (tex.dsv_ != kInvalidResourceIndex) {
+  if (tex.dsv_ != details::kInvalidResourceIndex) {
     cmd_list_->ClearDepthStencilView(dsv_heap_->GetDescriptorCpuHandle(tex.dsv_), clear_flags, depth, stencil,
       static_cast<UINT>(rects.size()), rects.data());
   }
@@ -1098,7 +1089,7 @@ auto CommandList::ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS const 
 
 auto CommandList::ClearRenderTarget(Texture const& tex, std::span<FLOAT const, 4> const color_rgba,
                                     std::span<D3D12_RECT const> const rects) const -> void {
-  if (tex.rtv_ != kInvalidResourceIndex) {
+  if (tex.rtv_ != details::kInvalidResourceIndex) {
     cmd_list_->ClearRenderTargetView(rtv_heap_->GetDescriptorCpuHandle(tex.rtv_), color_rgba.data(),
       static_cast<UINT>(rects.size()), rects.data());
   }
@@ -1267,62 +1258,49 @@ SwapChain::SwapChain(ComPtr<IDXGISwapChain4> swap_chain) :
   swap_chain_{std::move(swap_chain)} {}
 
 
-namespace details {
-auto DeviceChildDeleter<Buffer>::operator()(Buffer const* const device_child) const -> void {
-  device_->DestroyBuffer(device_child);
+UniqueHandle<unsigned>::UniqueHandle(UINT const resource, GraphicsDevice& device) :
+  resource_{resource},
+  device_{&device} {}
+
+
+UniqueHandle<unsigned>::UniqueHandle(UniqueHandle&& other) noexcept :
+  resource_{other.resource_},
+  device_{other.device_} {
+  other.resource_ = details::kInvalidResourceIndex;
+  other.device_ = nullptr;
 }
 
 
-auto DeviceChildDeleter<Texture>::operator()(Texture const* const device_child) const -> void {
-  device_->DestroyTexture(device_child);
+UniqueHandle<unsigned>::~UniqueHandle() {
+  InternalDestruct();
 }
 
 
-auto DeviceChildDeleter<PipelineState>::operator()(PipelineState const* const device_child) const -> void {
-  device_->DestroyPipelineState(device_child);
-}
-
-
-auto DeviceChildDeleter<CommandList>::operator()(CommandList const* const device_child) const -> void {
-  device_->DestroyCommandList(device_child);
-}
-
-
-auto DeviceChildDeleter<SwapChain>::operator()(SwapChain const* const device_child) const -> void {
-  device_->DestroySwapChain(device_child);
-}
-}
-
-
-auto UniqueSamplerHandle::Get() const -> UINT {
-  return sampler_;
-}
-
-
-UniqueSamplerHandle::UniqueSamplerHandle(UINT const sampler, GraphicsDevice& device) :
-  device_{&device},
-  sampler_{sampler} {}
-
-
-UniqueSamplerHandle::UniqueSamplerHandle(UniqueSamplerHandle&& other) noexcept :
-  device_{other.device_},
-  sampler_{other.sampler_} {
-  other.sampler_ = kInvalidResourceIndex;
-}
-
-
-UniqueSamplerHandle::~UniqueSamplerHandle() {
-  device_->DestroySampler(sampler_);
-}
-
-
-auto UniqueSamplerHandle::operator=(UniqueSamplerHandle&& other) noexcept -> UniqueSamplerHandle& {
+auto UniqueHandle<unsigned>::operator=(UniqueHandle&& other) noexcept -> UniqueHandle& {
   if (this != &other) {
-    device_->DestroySampler(sampler_);
+    InternalDestruct();
+    resource_ = other.resource_;
     device_ = other.device_;
-    sampler_ = other.sampler_;
-    other.sampler_ = kInvalidResourceIndex;
+    other.resource_ = details::kInvalidResourceIndex;
+    other.device_ = nullptr;
   }
   return *this;
+}
+
+
+auto UniqueHandle<unsigned>::Get() const -> UINT {
+  return resource_;
+}
+
+
+auto UniqueHandle<unsigned>::IsValid() const -> bool {
+  return resource_ != details::kInvalidResourceIndex;
+}
+
+
+auto UniqueHandle<unsigned>::InternalDestruct() const -> void {
+  if (device_) {
+    device_->DestroySampler(resource_);
+  }
 }
 }

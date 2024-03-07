@@ -12,7 +12,7 @@
 namespace sorcery {
 class ShadowAtlas : public GridLike {
 protected:
-  graphics::UniqueTextureHandle tex_;
+  graphics::UniqueHandle<graphics::Texture> tex_;
   UINT size_;
 
 

@@ -49,7 +49,7 @@ ShadowAtlas::~ShadowAtlas() = default;
 
 
 auto ShadowAtlas::GetTex() const noexcept -> graphics::Texture* {
-  return tex_.get();
+  return tex_.Get();
 }
 
 

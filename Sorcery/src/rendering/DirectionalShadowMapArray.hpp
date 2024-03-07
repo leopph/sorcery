@@ -5,7 +5,7 @@
 
 namespace sorcery {
 class DirectionalShadowMapArray {
-  graphics::UniqueTextureHandle tex_;
+  graphics::UniqueHandle<graphics::Texture> tex_;
   UINT size_;
 
 public:

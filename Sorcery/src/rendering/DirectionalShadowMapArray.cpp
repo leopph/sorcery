@@ -18,7 +18,7 @@ DirectionalShadowMapArray::DirectionalShadowMapArray(graphics::GraphicsDevice* c
 
 
 auto DirectionalShadowMapArray::GetTex() const noexcept -> graphics::Texture* {
-  return tex_.get();
+  return tex_.Get();
 }
 
 
