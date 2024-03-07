@@ -4,7 +4,7 @@
 
 #ifdef __cplusplus
 
-#include "../Math.hpp"
+#include "../../Math.hpp"
 
 
 namespace sorcery {
@@ -14,6 +14,7 @@ using float4 = Vector4;
 
 using float4x4 = Matrix4;
 using uint = unsigned;
+using BOOL = int;
 
 #define row_major
 #else
@@ -174,6 +175,97 @@ struct ShaderSsaoConstants {
   float bias;
   float power;
   int sampleCount;
+};
+
+
+struct DepthNormalDrawParams {
+  uint pos_buf_idx;
+  uint norm_buf_idx;
+  uint tan_buf_idx;
+  uint uv_buf_idx;
+  uint mtl_idx;
+  uint samp_idx;
+  uint per_draw_cb_idx;
+  uint per_view_cb_idx;
+  uint per_frame_cb_idx;
+};
+
+
+struct DepthOnlyDrawParams {
+  uint pos_buf_idx;
+  uint uv_buf_idx;
+  uint mtl_idx;
+  uint samp_idx;
+  uint per_draw_cb_idx;
+  uint per_view_cb_idx;
+};
+
+
+struct DepthResolveDrawParams {
+  uint in_tex_idx;
+  uint out_tex_idx;
+};
+
+
+struct GizmoDrawParams {
+  uint vertex_buf_idx;
+  uint color_buf_idx;
+  uint per_view_cb_idx;
+};
+
+
+struct ObjectDrawParams {
+  uint pos_buf_idx;
+  uint norm_buf_idx;
+  uint tan_buf_idx;
+  uint uv_buf_idx;
+
+  uint mtl_idx;
+  uint mtl_samp_idx;
+  uint point_clamp_samp_idx;
+  uint shadow_samp_idx;
+
+  uint ssao_tex_idx;
+  uint light_buf_idx;
+  uint dir_shadow_arr_idx;
+  uint punc_shadow_atlas_idx;
+
+  uint per_draw_cb_idx;
+  uint per_view_cb_idx;
+  uint per_frame_cb_idx;
+};
+
+
+struct PostProcessDrawParams {
+  uint in_tex_idx;
+  float inv_gamma;
+};
+
+
+struct SkyboxDrawParams {
+  uint pos_buf_idx;
+  uint per_view_cb_idx;
+  uint cubemap_idx;
+  uint samp_idx;
+};
+
+
+struct SsaoDrawParams {
+  uint noise_tex_idx;
+  uint depth_tex_idx;
+  uint normal_tex_idx;
+  uint samp_buf_idx;
+  uint point_clamp_samp_idx;
+  uint point_wrap_samp_idx;
+  uint ssao_cb_idx;
+  uint per_view_cb_idx;
+  uint per_frame_cb_idx;
+};
+
+
+struct SsaoBlurDrawParams {
+  uint in_tex_idx;
+  uint point_clamp_samp_idx;
 };
 
 

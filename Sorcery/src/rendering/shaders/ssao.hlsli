@@ -1,31 +1,13 @@
 #ifndef SSAO_HLSLI
 #define SSAO_HLSLI
 
+#include "common.hlsli"
 #include "shader_interop.h"
 #include "utility.hlsli"
 
 
-struct DrawParams {
-  uint noise_tex_idx;
-  uint depth_tex_idx;
-  uint normal_tex_idx;
-  uint samp_buf_idx;
-  uint point_clamp_samp_idx;
-  uint point_wrap_samp_idx;
-  uint ssao_cb_idx;
-  uint per_view_cb_idx;
-  uint per_frame_cb_idx;
-};
-
-
-struct DrawParamsBlur {
-  uint in_tex_idx;
-  uint point_clamp_samp_idx;
-};
-
-
-ConstantBuffer<DrawParams> g_draw_params : register(b0, space0);
-ConstantBuffer<DrawParamsBlur> g_draw_params_blur : register(b0, space0);
+DECLARE_PARAMS1(SsaoDrawParams, g_params);
+DECLARE_PARAMS1(SsaoBlurDrawParams, g_blur_params);
 
 
 struct VertexOut {
@@ -56,21 +38,21 @@ float3 CalculatePositionVsAtUv(const Texture2D<float> depth_tex, const SamplerSt
 float PsMain(const VertexOut vs_out) : SV_Target {
   float2 noise_tex_size;
 
-  const Texture2D<float3> noise_tex = ResourceDescriptorHeap[g_draw_params.noise_tex_idx];
+  const Texture2D<float3> noise_tex = ResourceDescriptorHeap[g_params.noise_tex_idx];
   noise_tex.GetDimensions(noise_tex_size.x, noise_tex_size.y);
 
-  const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_draw_params.per_frame_cb_idx];
+  const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_params.per_frame_cb_idx];
   const float2 noise_scale = per_frame_cb.screenSize / noise_tex_size;
 
-  const SamplerState point_wrap_samp = SamplerDescriptorHeap[g_draw_params.point_wrap_samp_idx];
+  const SamplerState point_wrap_samp = SamplerDescriptorHeap[g_params.point_wrap_samp_idx];
   const float3 noise = normalize(noise_tex.Sample(point_wrap_samp, vs_out.uv * noise_scale).xyz);
 
-  const Texture2D<float> depth_tex = ResourceDescriptorHeap[g_draw_params.depth_tex_idx];
-  const SamplerState point_clamp_samp = SamplerDescriptorHeap[g_draw_params.point_clamp_samp_idx];
-  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_draw_params.per_view_cb_idx];
+  const Texture2D<float> depth_tex = ResourceDescriptorHeap[g_params.depth_tex_idx];
+  const SamplerState point_clamp_samp = SamplerDescriptorHeap[g_params.point_clamp_samp_idx];
+  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
   const float3 hemisphere_origin_vs = CalculatePositionVsAtUv(depth_tex, point_clamp_samp, per_view_cb, vs_out.uv);
 
-  const Texture2D<float3> normal_tex = ResourceDescriptorHeap[g_draw_params.normal_tex_idx];
+  const Texture2D<float3> normal_tex = ResourceDescriptorHeap[g_params.normal_tex_idx];
   const float3 normal_vs = normalize(mul(float4(normal_tex.Sample(point_clamp_samp, vs_out.uv).xyz, 0),
     per_view_cb.viewMtx).xyz);
   const float3 tangent_vs = normalize(noise - normal_vs * dot(noise, normal_vs));
@@ -80,10 +62,10 @@ float PsMain(const VertexOut vs_out) : SV_Target {
   float occlusion = 0.0;
   uint sample_count, stride;
 
-  const StructuredBuffer<float4> samples = ResourceDescriptorHeap[g_draw_params.samp_buf_idx];
+  const StructuredBuffer<float4> samples = ResourceDescriptorHeap[g_params.samp_buf_idx];
   samples.GetDimensions(sample_count, stride);
 
-  const ConstantBuffer<ShaderSsaoConstants> ssao_cb = ResourceDescriptorHeap[g_draw_params.ssao_cb_idx];
+  const ConstantBuffer<ShaderSsaoConstants> ssao_cb = ResourceDescriptorHeap[g_params.ssao_cb_idx];
 
   for (uint i = 0; i < sample_count; i++) {
     const float3 samplePos = mul(samples[i].xyz, tbn_mtx_vs) * ssao_cb.radius + hemisphere_origin_vs;
@@ -108,7 +90,7 @@ float PsMain(const VertexOut vs_out) : SV_Target {
 float PsMainBlur(const float4 pixel_coord : SV_POSITION, const float2 uv : TEXCOORD) : SV_TARGET {
   uint2 texture_size;
 
-  const Texture2D<float> in_tex = ResourceDescriptorHeap[g_draw_params_blur.in_tex_idx];
+  const Texture2D<float> in_tex = ResourceDescriptorHeap[g_blur_params.in_tex_idx];
   in_tex.GetDimensions(texture_size.x, texture_size.y);
   const float2 texel_size = 1.0 / float2(texture_size);
 
@@ -117,7 +99,7 @@ float PsMainBlur(const float4 pixel_coord : SV_POSITION, const float2 uv : TEXCO
   const int lo = -SSAO_NOISE_TEX_DIM / 2;
   const int hi = SSAO_NOISE_TEX_DIM / 2;
 
-  const SamplerState point_clamp_samp = SamplerDescriptorHeap[g_draw_params_blur.point_clamp_samp_idx];
+  const SamplerState point_clamp_samp = SamplerDescriptorHeap[g_blur_params.point_clamp_samp_idx];
 
   for (int x = lo; x < hi; x++) {
     for (int y = lo; y < hi; y++) {

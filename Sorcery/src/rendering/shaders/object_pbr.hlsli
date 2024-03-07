@@ -1,35 +1,14 @@
 #ifndef OBJECT_PBR_HLSLI
 #define OBJECT_PBR_HLSLI
 
-#include "shader_interop.h"
 #include "brdf.hlsli"
+#include "common.hlsli"
+#include "shader_interop.h"
 #include "shadow_filtering_modes.h"
 #include "shadow_sampling.hlsli"
 
 
-struct DrawParams {
-  uint pos_buf_idx;
-  uint norm_buf_idx;
-  uint tan_buf_idx;
-  uint uv_buf_idx;
-
-  uint mtl_idx;
-  uint mtl_samp_idx;
-  uint point_clamp_samp_idx;
-  uint shadow_samp_idx;
-
-  uint ssao_tex_idx;
-  uint light_buf_idx;
-  uint dir_shadow_arr_idx;
-  uint punc_shadow_atlas_idx;
-
-  uint per_draw_cb_idx;
-  uint per_view_cb_idx;
-  uint per_frame_cb_idx;
-};
-
-
-ConstantBuffer<DrawParams> g_draw_params : register(b0, space0);
+DECLARE_PARAMS(ObjectDrawParams);
 
 
 struct VertexOut {
@@ -228,28 +207,28 @@ float3 CalculatePointLight(const ShaderLight light, const float3 pos_ws, const f
 
 
 VertexOut VsMain(const uint vertex_id : SV_VertexID) {
-  const StructuredBuffer<float4> positions = ResourceDescriptorHeap[g_draw_params.pos_buf_idx];
+  const StructuredBuffer<float4> positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
   const float4 pos_os = positions[vertex_id];
 
-  const ConstantBuffer<ShaderPerDrawConstants> per_draw_cb = ResourceDescriptorHeap[g_draw_params.per_draw_cb_idx];
+  const ConstantBuffer<ShaderPerDrawConstants> per_draw_cb = ResourceDescriptorHeap[g_params.per_draw_cb_idx];
   const float4 pos_ws = mul(pos_os, per_draw_cb.modelMtx);
 
-  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_draw_params.per_view_cb_idx];
+  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
   const float4 pos_vs = mul(pos_ws, per_view_cb.viewMtx);
   const float4 pos_cs = mul(pos_ws, per_view_cb.viewProjMtx);
 
-  const StructuredBuffer<float4> normals = ResourceDescriptorHeap[g_draw_params.norm_buf_idx];
+  const StructuredBuffer<float4> normals = ResourceDescriptorHeap[g_params.norm_buf_idx];
   const float4 norm_os = normals[vertex_id];
   const float3 norm_ws = normalize(mul(norm_os.xyz, (float3x3)per_draw_cb.invTranspModelMtx));
 
-  const StructuredBuffer<float4> tangents = ResourceDescriptorHeap[g_draw_params.tan_buf_idx];
+  const StructuredBuffer<float4> tangents = ResourceDescriptorHeap[g_params.tan_buf_idx];
   const float4 tan_os = tangents[vertex_id];
   float3 tan_ws = normalize(mul(tan_os.xyz, (float3x3)per_draw_cb.modelMtx));
   tan_ws = normalize(tan_ws - dot(tan_ws, norm_ws) * norm_ws);
   const float3 bitan_ws = cross(norm_ws, tan_ws);
   const float3x3 tbn_mtx_ws = float3x3(tan_ws, bitan_ws, norm_ws);
 
-  const StructuredBuffer<float2> uvs = ResourceDescriptorHeap[g_draw_params.uv_buf_idx];
+  const StructuredBuffer<float2> uvs = ResourceDescriptorHeap[g_params.uv_buf_idx];
   const float2 uv = uvs[vertex_id];
 
   VertexOut ret;
@@ -265,8 +244,8 @@ VertexOut VsMain(const uint vertex_id : SV_VertexID) {
 
 
 float4 PsMain(const VertexOut vs_out) : SV_Target {
-  const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_draw_params.mtl_idx];
-  const SamplerState mtl_samp = SamplerDescriptorHeap[g_draw_params.mtl_samp_idx];
+  const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
+  const SamplerState mtl_samp = SamplerDescriptorHeap[g_params.mtl_samp_idx];
 
   if (mtl.blendMode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {
     const Texture2D<float> opacity_map = ResourceDescriptorHeap[mtl.opacity_map_idx];
@@ -297,11 +276,11 @@ float4 PsMain(const VertexOut vs_out) : SV_Target {
     roughness *= roughness_map.Sample(mtl_samp, vs_out.uv).r;
   }
 
-  const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_draw_params.per_frame_cb_idx];
+  const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_params.per_frame_cb_idx];
   const float2 screen_uv = vs_out.pos_cs.xy / per_frame_cb.screenSize;
 
-  const SamplerState point_clamp_samp = SamplerDescriptorHeap[g_draw_params.point_clamp_samp_idx];
-  const Texture2D<float> ssao_tex = ResourceDescriptorHeap[g_draw_params.ssao_tex_idx];
+  const SamplerState point_clamp_samp = SamplerDescriptorHeap[g_params.point_clamp_samp_idx];
+  const Texture2D<float> ssao_tex = ResourceDescriptorHeap[g_params.ssao_tex_idx];
   float ao = mtl.ao * ssao_tex.Sample(point_clamp_samp, screen_uv).r;
 
   if (mtl.ao_map_idx != INVALID_RES_IDX) {
@@ -319,19 +298,19 @@ float4 PsMain(const VertexOut vs_out) : SV_Target {
     normal = normalize(mul(normalize(normal), vs_out.tbn_mtx_ws));
   }
 
-  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_draw_params.per_view_cb_idx];
+  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
   const float3 dir_to_cam_ws = normalize(per_view_cb.viewPos - vs_out.pos_ws);
 
   float3 out_color = per_frame_cb.ambientLightColor * albedo * ao;
 
   uint light_count;
   uint _;
-  const StructuredBuffer<ShaderLight> lights = ResourceDescriptorHeap[g_draw_params.light_buf_idx];
+  const StructuredBuffer<ShaderLight> lights = ResourceDescriptorHeap[g_params.light_buf_idx];
   lights.GetDimensions(light_count, _);
 
-  const Texture2DArray<float> dir_light_shadow_map_arr = ResourceDescriptorHeap[g_draw_params.dir_shadow_arr_idx];
-  const Texture2D<float> punc_light_shadow_atlas = ResourceDescriptorHeap[g_draw_params.punc_shadow_atlas_idx];
-  const SamplerComparisonState shadow_samp = SamplerDescriptorHeap[g_draw_params.shadow_samp_idx];
+  const Texture2DArray<float> dir_light_shadow_map_arr = ResourceDescriptorHeap[g_params.dir_shadow_arr_idx];
+  const Texture2D<float> punc_light_shadow_atlas = ResourceDescriptorHeap[g_params.punc_shadow_atlas_idx];
+  const SamplerComparisonState shadow_samp = SamplerDescriptorHeap[g_params.shadow_samp_idx];
 
   for (uint i = 0; i < light_count; i++) {
     if (lights[i].type == 0) {
