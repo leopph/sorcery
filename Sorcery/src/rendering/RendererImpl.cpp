@@ -1,6 +1,5 @@
 #include "RendererImpl.hpp"
 
-#include "Graphics.hpp"
 #include "ShadowCascadeBoundary.hpp"
 #include "../MemoryAllocation.hpp"
 #include "../Window.hpp"
@@ -381,7 +380,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
 
         shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light->GetDirection(), Vector3::Up());
         auto const shadowProjMtx{
-          graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
+          GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
             sphereRadius, -sphereRadius, -sphereRadius - light->GetShadowExtension(), sphereRadius))
         };
 
@@ -394,8 +393,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
 
         ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
-        ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH,
-          0, 0);
+        ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH, 0, 0);
 
         ctx->RSSetState(mShadowPassRs.Get());
 
@@ -755,6 +753,11 @@ auto Renderer::Impl::GenerateSphere(float const radius, int const latitudes, int
 }
 
 
+auto Renderer::Impl::GetProjectionMatrixForRendering(Matrix4 const& proj_mtx) noexcept -> Matrix4 {
+  return proj_mtx * Matrix4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1};
+}
+
+
 auto Renderer::Impl::StartUp() -> void {
   // CREATE DEVICE AND IMMEDIATE CONTEXT
 
@@ -1013,9 +1016,9 @@ auto Renderer::Impl::StartUp() -> void {
   }
 
   D3D11_RASTERIZER_DESC constexpr shadowPassRasterizerDesc{
-    .FillMode = D3D11_FILL_SOLID, .CullMode = D3D11_CULL_BACK, .FrontCounterClockwise = FALSE,
-    .DepthBias = -1, .DepthBiasClamp = 0, .SlopeScaledDepthBias = -2.5,
-    .DepthClipEnable = TRUE, .ScissorEnable = FALSE, .MultisampleEnable = FALSE, .AntialiasedLineEnable = FALSE
+    .FillMode = D3D11_FILL_SOLID, .CullMode = D3D11_CULL_BACK, .FrontCounterClockwise = FALSE, .DepthBias = -1,
+    .DepthBiasClamp = 0, .SlopeScaledDepthBias = -2.5, .DepthClipEnable = TRUE, .ScissorEnable = FALSE,
+    .MultisampleEnable = FALSE, .AntialiasedLineEnable = FALSE
   };
 
   if (FAILED(mDevice->CreateRasterizerState(&shadowPassRasterizerDesc, mShadowPassRs.GetAddressOf()))) {
@@ -1541,7 +1544,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   auto const camPos{cam.GetPosition()};
   auto const camViewMtx{cam.CalculateViewMatrix()};
-  auto const camProjMtx{graphics::GetProjectionMatrixForRendering(cam.CalculateProjectionMatrix(rtAspect))};
+  auto const camProjMtx{GetProjectionMatrixForRendering(cam.CalculateProjectionMatrix(rtAspect))};
   auto const camViewProjMtx{camViewMtx * camProjMtx};
 
   Frustum const camFrustWS{camViewProjMtx};
@@ -1792,7 +1795,9 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   mLightBuffer->Unmap(ctx);
 
   ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
-  ctx->OMSetDepthStencilState(mDepthNormalPrePassEnabled ? mDepthTestGreaterEqualNoWriteDss.Get() : mDepthTestGreaterEqualWriteDss.Get(), 0);
+  ctx->OMSetDepthStencilState(mDepthNormalPrePassEnabled
+                                ? mDepthTestGreaterEqualNoWriteDss.Get()
+                                : mDepthTestGreaterEqualWriteDss.Get(), 0);
 
   ctx->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
   ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());

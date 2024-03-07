@@ -1,7 +1,6 @@
 #pragma once
 
 #include "DirectionalShadowMapArray.hpp"
-#include "Graphics.hpp"
 #include "PunctualShadowAtlas.hpp"
 #include "Renderer.hpp"
 #include "SwapChain.hpp"
@@ -181,6 +180,8 @@ class Renderer::Impl {
                              std::vector<std::uint32_t>& indices) -> void;
 
 public:
+  static auto GetProjectionMatrixForRendering(Matrix4 const& proj_mtx) noexcept -> Matrix4;
+
   // LIFETIME FUNCTIONS
 
   auto StartUp() -> void;
