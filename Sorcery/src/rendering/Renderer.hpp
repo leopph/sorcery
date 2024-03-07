@@ -47,6 +47,8 @@ private:
   Impl* mImpl{nullptr};
 
 public:
+  static auto GetProjectionMatrixForRendering(Matrix4 const& proj_mtx) noexcept -> Matrix4;
+
   // LIFETIME FUNCTIONS
 
   LEOPPHAPI auto StartUp() -> void;

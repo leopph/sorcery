@@ -1,5 +1,7 @@
 #pragma once
 
+#include "graphics.hpp"
+#include "Camera.hpp"
 #include "ShadowAtlas.hpp"
 #include "Visibility.hpp"
 #include "../scene_objects/LightComponents.hpp"
@@ -9,12 +11,13 @@
 
 namespace sorcery {
 class PunctualShadowAtlas final : public ShadowAtlas {
-  std::array<Cell, 4> mCells;
+  std::array<Cell, 4> cells_;
 
 public:
-  PunctualShadowAtlas(ID3D11Device* device, int size);
+  PunctualShadowAtlas(graphics::GraphicsDevice* device, UINT size);
 
-  auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewProjMtx, float shadowDistance) -> void;
+  auto Update(std::span<LightComponent const* const> all_lights, Visibility const& visibility, Camera const& cam,
+              Matrix4 const& cam_view_proj_mtx, float shadow_distance) -> void;
 
   [[nodiscard]] auto GetCell(int idx) const -> Cell const& override;
 };

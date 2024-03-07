@@ -9,6 +9,11 @@ namespace sorcery {
 Renderer gRenderer;
 
 
+auto Renderer::GetProjectionMatrixForRendering(Matrix4 const& proj_mtx) noexcept -> Matrix4 {
+  return Impl::GetProjectionMatrixForRendering(proj_mtx);
+}
+
+
 auto Renderer::StartUp() -> void {
   mImpl = new Impl{};
   mImpl->StartUp();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Camera.hpp"
+#include "graphics.hpp"
 #include "ShadowCascadeBoundary.hpp"
 #include "../GridLike.hpp"
 
@@ -12,13 +12,11 @@
 namespace sorcery {
 class ShadowAtlas : public GridLike {
 protected:
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
-  Microsoft::WRL::ComPtr<ID3D11DepthStencilView> mDsv;
-  int mSize;
+  graphics::UniqueTextureHandle tex_;
+  UINT size_;
 
 
-  ShadowAtlas(ID3D11Device* device, int size, int subdivSize);
+  ShadowAtlas(graphics::GraphicsDevice* device, UINT size, int subdiv_size);
 
 public:
   class Cell : public GridLike {
@@ -32,14 +30,14 @@ public:
     };
 
   private:
-    std::vector<std::optional<Subcell>> mSubcells;
+    std::vector<std::optional<Subcell>> subcells_;
 
   public:
-    explicit Cell(int subdivSize);
+    explicit Cell(int subdiv_size);
 
     [[nodiscard]] auto GetSubcell(int idx) const -> std::optional<Subcell> const&;
     [[nodiscard]] auto GetSubcell(int idx) -> std::optional<Subcell>&;
-    auto Resize(int subdivSize) -> void;
+    auto Resize(int subdiv_size) -> void;
   };
 
 
@@ -51,9 +49,8 @@ public:
   auto operator=(ShadowAtlas const&) -> void = delete;
   auto operator=(ShadowAtlas&&) -> void = delete;
 
-  [[nodiscard]] auto GetDsv() const noexcept -> ID3D11DepthStencilView*;
-  [[nodiscard]] auto GetSrv() const noexcept -> ID3D11ShaderResourceView*;
-  [[nodiscard]] auto GetSize() const noexcept -> int;
+  [[nodiscard]] auto GetTex() const noexcept -> graphics::Texture*;
+  [[nodiscard]] auto GetSize() const noexcept -> UINT;
 
   auto SetLookUpInfo(std::span<ShaderLight> lights) const -> void;
 
