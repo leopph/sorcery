@@ -1,23 +1,17 @@
 #pragma once
 
-#include "../Core.hpp"
-#include "shaders\shader_interop.h"
-
-#include <array>
+#include "graphics.hpp"
 
 
 namespace sorcery {
 class DirectionalShadowMapArray {
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
-  std::array<Microsoft::WRL::ComPtr<ID3D11DepthStencilView>, MAX_CASCADE_COUNT> mDsv;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
-  int mSize;
+  graphics::UniqueTextureHandle tex_;
+  UINT size_;
 
 public:
-  explicit DirectionalShadowMapArray(ID3D11Device* device, int size);
+  explicit DirectionalShadowMapArray(graphics::GraphicsDevice* device, UINT size);
 
-  [[nodiscard]] auto GetDsv(int idx) const noexcept -> ObserverPtr<ID3D11DepthStencilView>;
-  [[nodiscard]] auto GetSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>;
-  [[nodiscard]] auto GetSize() const noexcept -> int;
+  [[nodiscard]] auto GetTex() const noexcept -> graphics::Texture*;
+  [[nodiscard]] auto GetSize() const noexcept -> UINT;
 };
 }
