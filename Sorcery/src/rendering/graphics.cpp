@@ -1,6 +1,6 @@
 #include "graphics.hpp"
 
-#include "MemoryAllocation.hpp"
+#include "../MemoryAllocation.hpp"
 
 #include <dxgidebug.h>
 #include <d3dx12.h>
