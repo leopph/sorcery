@@ -58,6 +58,9 @@ public:
   [[nodiscard]] auto Get() const -> T*;
   [[nodiscard]] auto IsValid() const -> bool;
 
+  [[nodiscard]] auto operator*() const -> T&;
+  [[nodiscard]] auto operator->() const -> T*;
+
 private:
   auto InternalDestruct() const -> void;
 
@@ -472,6 +475,18 @@ auto UniqueHandle<T>::Get() const -> T* {
 template<typename T>
 auto UniqueHandle<T>::IsValid() const -> bool {
   return resource_ != nullptr;
+}
+
+
+template<typename T>
+auto UniqueHandle<T>::operator*() const -> T& {
+  return *resource_;
+}
+
+
+template<typename T>
+auto UniqueHandle<T>::operator->() const -> T* {
+  return resource_;
 }
 
 
