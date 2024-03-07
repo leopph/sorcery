@@ -149,8 +149,6 @@ struct ShaderPerFrameConstants {
   float2 screenSize;
   BOOL visualizeShadowCascades;
   int shadowFilteringMode;
-  BOOL isUsingReversedZ;
-  float3 pad;
 };
 
 

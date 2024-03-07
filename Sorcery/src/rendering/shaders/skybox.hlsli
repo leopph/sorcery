@@ -7,7 +7,6 @@
 struct DrawParams {
   uint pos_buf_idx;
   uint per_view_cb_idx;
-  uint per_frame_cb_idx;
   uint cubemap_idx;
   uint samp_idx;
 };
@@ -31,15 +30,7 @@ VertexOut VsMain(const uint vertex_id : SV_VertexID) {
   VertexOut ret;
   ret.pos_cs = mul(float4(mul(pos_os.xyz, (float3x3)per_view_cb.viewMtx), 1), per_view_cb.projMtx);
   ret.uv = pos_os.xyz;
-
-  const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_draw_params.per_frame_cb_idx];
-
-  if (per_frame_cb.isUsingReversedZ) {
-    ret.pos_cs.z = 0;
-  } else {
-    ret.pos_cs = ret.pos_cs.xyww;
-  }
-
+  ret.pos_cs.z = 0;
   return ret;
 }
 

@@ -145,12 +145,6 @@ class Renderer::Impl {
 
   std::vector<TempRenderTargetRecord> mTmpRenderTargets;
 
-  [[nodiscard]] constexpr auto GetSceneDrawDss() -> Microsoft::WRL::ComPtr<ID3D11DepthStencilState>&;
-  [[nodiscard]] constexpr auto GetShadowDrawDss() -> Microsoft::WRL::ComPtr<ID3D11DepthStencilState>&;
-  [[nodiscard]] constexpr auto GetSkyboxDrawDss() -> Microsoft::WRL::ComPtr<ID3D11DepthStencilState>&;
-  [[nodiscard]] constexpr auto GetShadowPointSampler() -> Microsoft::WRL::ComPtr<ID3D11SamplerState>&;
-  [[nodiscard]] constexpr auto GetShadowPcfSampler() -> Microsoft::WRL::ComPtr<ID3D11SamplerState>&;
-
   [[nodiscard]] auto CalculateCameraShadowCascadeBoundaries(Camera const& cam) const -> ShadowCascadeBoundaries;
 
   auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) const -> void;
@@ -281,47 +275,6 @@ public:
   auto Register(Camera const& cam) noexcept -> void;
   auto Unregister(Camera const& cam) noexcept -> void;
 };
-
-
-constexpr auto Renderer::Impl::GetSceneDrawDss() -> Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& {
-  if constexpr (Graphics::IsUsingReversedZ()) {
-    return mDepthTestGreaterEqualNoWriteDss;
-  } else {
-    return mDepthTestLessEqualNoWriteDss;
-  }
-}
-
-
-constexpr auto Renderer::Impl::GetShadowDrawDss() -> Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& {
-  if constexpr (Graphics::IsUsingReversedZ()) {
-    return mDepthTestGreaterWriteDss;
-  } else {
-    return mDepthTestLessWriteDss;
-  }
-}
-
-
-constexpr auto Renderer::Impl::GetSkyboxDrawDss() -> Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& {
-  return GetShadowDrawDss();
-}
-
-
-constexpr auto Renderer::Impl::GetShadowPointSampler() -> Microsoft::WRL::ComPtr<ID3D11SamplerState>& {
-  if constexpr (Graphics::IsUsingReversedZ()) {
-    return mCmpPointGreaterEqualSs;
-  } else {
-    return mCmpPointLessEqualSs;
-  }
-}
-
-
-constexpr auto Renderer::Impl::GetShadowPcfSampler() -> Microsoft::WRL::ComPtr<ID3D11SamplerState>& {
-  if constexpr (Graphics::IsUsingReversedZ()) {
-    return mCmpPcfGreaterEqualSs;
-  } else {
-    return mCmpPcfLessEqualSs;
-  }
-}
 
 
 constexpr auto Renderer::Impl::GetMaxShadowCascadeCount() noexcept -> int {

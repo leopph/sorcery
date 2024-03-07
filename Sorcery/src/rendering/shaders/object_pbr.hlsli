@@ -76,8 +76,7 @@ float3 VisualizeShadowCascades(const float pos_vs_z, uniform const float4 cascad
 
 float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, uniform const SamplerComparisonState shadow_samp,
                                    const ShaderLight light, const uint shadow_map_idx, const float3 pos_ws,
-                                   const float3 normal_ws, uniform const int shadow_filtering_mode,
-                                   uniform const bool use_reversed_z) {
+                                   const float3 normal_ws, uniform const int shadow_filtering_mode) {
   uint atlas_size;
   atlas.GetDimensions(atlas_size, atlas_size);
   const float atlas_texel_size = 1.0 / atlas_size;
@@ -90,7 +89,7 @@ float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, uniform const S
 
   const float2 uv = pos_light_ndc.xy * light.shadowAtlasCellSizes[shadow_map_idx] + light.shadowAtlasCellOffsets[
                       shadow_map_idx];
-  const float depth = pos_light_ndc.z - shadow_map_texel_size * light.depthBias * (use_reversed_z ? -1 : 1);
+  const float depth = pos_light_ndc.z - shadow_map_texel_size * -light.depthBias;
 
   switch (shadow_filtering_mode) {
     case SHADOW_FILTERING_NONE: return SampleShadowMapNoFilter(atlas, shadow_samp, uv, depth);
@@ -106,14 +105,14 @@ float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, uniform const S
 float SampleShadowCascadeFromArray(const Texture2DArray<float> shadow_map_array,
                                    uniform const SamplerComparisonState shadow_samp, const ShaderLight light,
                                    const uint cascade_idx, const float3 pos_ws, const float3 normal_ws,
-                                   uniform const int shadow_filtering_mode, uniform const bool use_reversed_z) {
+                                   uniform const int shadow_filtering_mode) {
   const float shadow_map_texel_size = GetShadowMapArrayTexelSize(shadow_map_array).x;
 
   const float4 pos_light_cs = mul(float4(pos_ws + normal_ws * shadow_map_texel_size * light.normalBias, 1),
     light.shadowViewProjMatrices[cascade_idx]);
   const float3 pos_light_ndc = pos_light_cs.xyz / pos_light_cs.w;
   const float2 uv = pos_light_ndc.xy * float2(0.5, -0.5) + 0.5;
-  const float depth = pos_light_ndc.z - shadow_map_texel_size * light.depthBias * (use_reversed_z ? -1 : 1);
+  const float depth = pos_light_ndc.z - shadow_map_texel_size * -light.depthBias;
 
   switch (shadow_filtering_mode) {
     case SHADOW_FILTERING_NONE: return SampleShadowMapArrayNoFilter(shadow_map_array, shadow_samp, uv, cascade_idx,
@@ -141,7 +140,7 @@ float3 CalculateDirLight(const ShaderLight light, const float3 pos_ws, const flo
                          const float roughness, const Texture2DArray<float> shadow_map_arr,
                          uniform const SamplerComparisonState shadow_samp, uniform const int shadow_filtering_mode,
                          uniform const float4 cascade_splits, uniform const uint cascade_count,
-                         uniform const bool visualize_cascades, uniform const int use_reversed_z) {
+                         uniform const bool visualize_cascades) {
   const float3 dir_to_light_ws = -light.direction;
 
   float3 lighting;
@@ -158,7 +157,7 @@ float3 CalculateDirLight(const ShaderLight light, const float3 pos_ws, const flo
 
     [branch] if (cascade_idx < cascade_count) {
       lighting *= SampleShadowCascadeFromArray(shadow_map_arr, shadow_samp, light, cascade_idx, pos_ws, normal_ws,
-        shadow_filtering_mode, use_reversed_z);
+        shadow_filtering_mode);
     }
   }
 
@@ -169,7 +168,7 @@ float3 CalculateDirLight(const ShaderLight light, const float3 pos_ws, const flo
 float3 CalculateSpotLight(const ShaderLight light, const float3 pos_ws, const float3 normal_ws,
                           const float3 dir_to_cam_ws, const float3 albedo, const float metallic, const float roughness,
                           const Texture2D<float> shadow_atlas, uniform const SamplerComparisonState shadow_samp,
-                          uniform const int shadow_filtering_mode, uniform const bool use_reversed_z) {
+                          uniform const int shadow_filtering_mode) {
   float3 dir_to_light_ws = light.position - pos_ws;
   const float dist = length(dir_to_light_ws);
   dir_to_light_ws = normalize(dir_to_light_ws);
@@ -186,7 +185,7 @@ float3 CalculateSpotLight(const ShaderLight light, const float3 pos_ws, const fl
 
   [branch] if (light.isCastingShadow) {
     lighting *= SampleShadowCascadeFromAtlas(shadow_atlas, shadow_samp, light, 0, pos_ws, normal_ws,
-      shadow_filtering_mode, use_reversed_z);
+      shadow_filtering_mode);
   }
 
   return lighting;
@@ -196,7 +195,7 @@ float3 CalculateSpotLight(const ShaderLight light, const float3 pos_ws, const fl
 float3 CalculatePointLight(const ShaderLight light, const float3 pos_ws, const float3 normal_ws,
                            const float3 dir_to_cam_ws, const float3 albedo, const float metallic, const float roughness,
                            const Texture2D<float> shadow_atlas, uniform const SamplerComparisonState shadow_samp,
-                           uniform const int shadow_filtering_mode, uniform const bool use_reversed_z) {
+                           uniform const int shadow_filtering_mode) {
   float3 dir_to_light_ws = light.position - pos_ws;
   const float dist = length(dir_to_light_ws);
   dir_to_light_ws = normalize(dir_to_light_ws);
@@ -220,7 +219,7 @@ float3 CalculatePointLight(const ShaderLight light, const float3 pos_ws, const f
 
     [branch] if (light.sampleShadowMap[shadow_map_idx]) {
       lighting *= SampleShadowCascadeFromAtlas(shadow_atlas, shadow_samp, light, shadow_map_idx, pos_ws, normal_ws,
-        shadow_filtering_mode, use_reversed_z);
+        shadow_filtering_mode);
     }
   }
 
@@ -338,16 +337,13 @@ float4 PsMain(const VertexOut vs_out) : SV_Target {
     if (lights[i].type == 0) {
       out_color += CalculateDirLight(lights[i], vs_out.pos_ws, vs_out.norm_ws, dir_to_cam_ws, vs_out.pos_vs.z, albedo,
         metallic, roughness, dir_light_shadow_map_arr, shadow_samp, per_frame_cb.shadowFilteringMode,
-        per_view_cb.shadowCascadeSplitDistances, per_frame_cb.shadowCascadeCount, per_frame_cb.visualizeShadowCascades,
-        per_frame_cb.isUsingReversedZ);
+        per_view_cb.shadowCascadeSplitDistances, per_frame_cb.shadowCascadeCount, per_frame_cb.visualizeShadowCascades);
     } else if (lights[i].type == 1) {
       out_color += CalculateSpotLight(lights[i], vs_out.pos_ws, vs_out.norm_ws, dir_to_cam_ws, albedo, metallic,
-        roughness, punc_light_shadow_atlas, shadow_samp, per_frame_cb.shadowFilteringMode,
-        per_frame_cb.isUsingReversedZ);
+        roughness, punc_light_shadow_atlas, shadow_samp, per_frame_cb.shadowFilteringMode);
     } else if (lights[i].type == 2) {
       out_color += CalculatePointLight(lights[i], vs_out.pos_ws, vs_out.norm_ws, dir_to_cam_ws, albedo, metallic,
-        roughness, punc_light_shadow_atlas, shadow_samp, per_frame_cb.shadowFilteringMode,
-        per_frame_cb.isUsingReversedZ);
+        roughness, punc_light_shadow_atlas, shadow_samp, per_frame_cb.shadowFilteringMode);
     }
   }
 

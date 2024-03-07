@@ -199,7 +199,7 @@ auto Renderer::Impl::SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> const
     .gPerFrameConstants = ShaderPerFrameConstants{
       .ambientLightColor = Scene::GetActiveScene()->GetAmbientLightVector(), .shadowCascadeCount = mCascadeCount,
       .screenSize = Vector2{rtWidth, rtHeight}, .visualizeShadowCascades = mVisualizeShadowCascades,
-      .shadowFilteringMode = static_cast<int>(mShadowFilteringMode), .isUsingReversedZ = Graphics::IsUsingReversedZ()
+      .shadowFilteringMode = static_cast<int>(mShadowFilteringMode)
     }
   };
 
@@ -388,7 +388,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
         shadowViewProjMatrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
 
         ctx->OMSetRenderTargets(0, nullptr, mDirShadowMapArr->GetDsv(cascadeIdx));
-        ctx->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
+        ctx->OMSetDepthStencilState(mDepthTestGreaterWriteDss.Get(), 0);
 
         ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
 
@@ -430,7 +430,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
 
 auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11DeviceContext> const ctx) -> void {
   ctx->OMSetRenderTargets(0, nullptr, atlas.GetDsv());
-  ctx->OMSetDepthStencilState(GetShadowDrawDss().Get(), 0);
+  ctx->OMSetDepthStencilState(mDepthTestGreaterWriteDss.Get(), 0);
 
   ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
 
@@ -588,13 +588,7 @@ auto Renderer::Impl::DrawSkybox(ObserverPtr<ID3D11DeviceContext> const ctx) cons
   auto const cubemapSrv{cubemap->GetSrv()};
   ctx->PSSetShaderResources(RES_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
 
-  ctx->OMSetDepthStencilState([this] {
-    if constexpr (Graphics::IsUsingReversedZ()) {
-      return mDepthTestGreaterEqualNoWriteDss.Get();
-    } else {
-      return mDepthTestLessEqualNoWriteDss.Get();
-    }
-  }(), 0);
+  ctx->OMSetDepthStencilState(mDepthTestGreaterEqualNoWriteDss.Get(), 0);
   ctx->RSSetState(mSkyboxPassRs.Get());
 
   ctx->DrawIndexed(clamp_cast<UINT>(CUBE_INDICES.size()), 0, 0);
@@ -1018,19 +1012,9 @@ auto Renderer::Impl::StartUp() -> void {
     throw std::runtime_error{"Failed to create skybox pass rasterizer state."};
   }
 
-  auto constexpr reversedZMultiplier{
-    [] {
-      if constexpr (Graphics::IsUsingReversedZ()) {
-        return -1;
-      } else {
-        return 1;
-      }
-    }()
-  };
-
   D3D11_RASTERIZER_DESC constexpr shadowPassRasterizerDesc{
     .FillMode = D3D11_FILL_SOLID, .CullMode = D3D11_CULL_BACK, .FrontCounterClockwise = FALSE,
-    .DepthBias = 1 * reversedZMultiplier, .DepthBiasClamp = 0, .SlopeScaledDepthBias = 2.5 * reversedZMultiplier,
+    .DepthBias = -1, .DepthBiasClamp = 0, .SlopeScaledDepthBias = -2.5,
     .DepthClipEnable = TRUE, .ScissorEnable = FALSE, .MultisampleEnable = FALSE, .AntialiasedLineEnable = FALSE
   };
 
@@ -1534,8 +1518,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     .MinDepth = 0, .MaxDepth = 1
   };
 
-  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, GetShadowPcfSampler().GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, GetShadowPointSampler().GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, mCmpPcfGreaterEqualSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, mCmpPointGreaterEqualSs.GetAddressOf());
   ctx->PSSetSamplers(SAMPLER_SLOT_AF16_CLAMP, 1, mAf16ClampSs.GetAddressOf());
   ctx->PSSetSamplers(SAMPLER_SLOT_AF8_CLAMP, 1, mAf8ClampSs.GetAddressOf());
   ctx->PSSetSamplers(SAMPLER_SLOT_AF4_CLAMP, 1, mAf4ClampSs.GetAddressOf());
@@ -1622,14 +1606,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     };
 
     ctx->OMSetRenderTargets(1, std::array{actualNormalRt.GetRtv()}.data(), hdrRt.GetDsv());
-    ctx->OMSetDepthStencilState([this] {
-      if constexpr (Graphics::IsUsingReversedZ()) {
-        return mDepthTestGreaterWriteDss.Get();
-      } else {
-        return mDepthTestLessWriteDss.Get();
-      }
-    }(), 0);
-
+    ctx->OMSetDepthStencilState(mDepthTestGreaterWriteDss.Get(), 0);
 
     ctx->PSSetShader(mDepthNormalPs.Get(), nullptr, 0);
 
@@ -1815,13 +1792,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   mLightBuffer->Unmap(ctx);
 
   ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
-  ctx->OMSetDepthStencilState([this] {
-    if constexpr (Graphics::IsUsingReversedZ()) {
-      return mDepthNormalPrePassEnabled ? mDepthTestGreaterEqualNoWriteDss.Get() : mDepthTestGreaterEqualWriteDss.Get();
-    } else {
-      return mDepthNormalPrePassEnabled ? mDepthTestLessEqualNoWriteDss.Get() : mDepthTestLessEqualWriteDss.Get();
-    }
-  }(), 0);
+  ctx->OMSetDepthStencilState(mDepthNormalPrePassEnabled ? mDepthTestGreaterEqualNoWriteDss.Get() : mDepthTestGreaterEqualWriteDss.Get(), 0);
 
   ctx->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
   ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
