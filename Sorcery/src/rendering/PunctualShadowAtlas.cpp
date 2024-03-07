@@ -151,7 +151,7 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
         };
 
         auto const shadowViewMtx{faceViewMatrices[shadowIdx]};
-        auto const shadowProjMtx{Graphics::GetProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, light->GetShadowNearPlane(), light->GetRange()))};
+        auto const shadowProjMtx{graphics::GetProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, light->GetShadowNearPlane(), light->GetRange()))};
 
         subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
       }

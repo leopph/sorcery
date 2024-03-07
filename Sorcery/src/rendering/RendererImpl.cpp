@@ -381,7 +381,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
 
         shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light->GetDirection(), Vector3::Up());
         auto const shadowProjMtx{
-          Graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
+          graphics::GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
             sphereRadius, -sphereRadius, -sphereRadius - light->GetShadowExtension(), sphereRadius))
         };
 
@@ -395,7 +395,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
         ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
         ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH,
-          Graphics::GetDepthClearValueForRendering(), 0);
+          0, 0);
 
         ctx->RSSetState(mShadowPassRs.Get());
 
@@ -436,7 +436,7 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11
 
   ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
-  ctx->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForRendering(), 0);
+  ctx->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, 0, 0);
 
   ctx->RSSetState(mShadowPassRs.Get());
 
@@ -1541,7 +1541,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   auto const camPos{cam.GetPosition()};
   auto const camViewMtx{cam.CalculateViewMatrix()};
-  auto const camProjMtx{Graphics::GetProjectionMatrixForRendering(cam.CalculateProjectionMatrix(rtAspect))};
+  auto const camProjMtx{graphics::GetProjectionMatrixForRendering(cam.CalculateProjectionMatrix(rtAspect))};
   auto const camViewProjMtx{camViewMtx * camProjMtx};
 
   Frustum const camFrustWS{camViewProjMtx};
@@ -1579,7 +1579,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ctx->VSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, std::array{mPerViewCb.Get()}.data());
   ctx->PSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, std::array{mPerViewCb.Get()}.data());
 
-  ctx->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForRendering(), 0);
+  ctx->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, 0, 0);
 
   auto const& normalRt{
     GetTemporaryRenderTarget(RenderTarget::Desc{
