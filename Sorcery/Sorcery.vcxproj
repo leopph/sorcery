@@ -126,7 +126,6 @@
     <ClCompile Include="src\scene_objects\Component.cpp" />
     <ClCompile Include="src\GUI.cpp" />
     <ClCompile Include="src\Resources\Cubemap.cpp" />
-    <ClCompile Include="src\rendering\DirectionalShadowAtlas.cpp" />
     <ClCompile Include="src\GridLike.cpp" />
     <ClCompile Include="src\Math.cpp" />
     <ClCompile Include="src\rendering\PunctualShadowAtlas.cpp" />
@@ -167,7 +166,6 @@
     <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp" />
     <ClInclude Include="src\rendering\Camera.hpp" />
     <ClInclude Include="src\Resources\Cubemap.hpp" />
-    <ClInclude Include="src\rendering\DirectionalShadowAtlas.hpp" />
     <ClInclude Include="src\GridLike.hpp" />
     <ClInclude Include="src\rendering\PunctualShadowAtlas.hpp" />
     <ClInclude Include="src\rendering\RenderTarget.hpp" />
