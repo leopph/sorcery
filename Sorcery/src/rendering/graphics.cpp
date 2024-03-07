@@ -1,4 +1,4 @@
-#include "graphics_device.hpp"
+#include "graphics.hpp"
 
 #include "MemoryAllocation.hpp"
 

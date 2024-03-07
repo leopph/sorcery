@@ -135,7 +135,7 @@
     <ClCompile Include="..\vendor\d3d12_memory_allocator\D3D12MemAlloc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics_device.cpp">
+    <ClCompile Include="src\rendering\graphics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -290,7 +290,7 @@
     <ClInclude Include="src\SkyMode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics_device.hpp">
+    <ClInclude Include="src\rendering\graphics.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
