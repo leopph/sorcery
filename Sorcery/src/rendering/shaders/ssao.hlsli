@@ -65,10 +65,8 @@ float PsMain(const VertexOut vs_out) : SV_Target {
   const StructuredBuffer<float4> samples = ResourceDescriptorHeap[g_params.samp_buf_idx];
   samples.GetDimensions(sample_count, stride);
 
-  const ConstantBuffer<ShaderSsaoConstants> ssao_cb = ResourceDescriptorHeap[g_params.ssao_cb_idx];
-
   for (uint i = 0; i < sample_count; i++) {
-    const float3 samplePos = mul(samples[i].xyz, tbn_mtx_vs) * ssao_cb.radius + hemisphere_origin_vs;
+    const float3 samplePos = mul(samples[i].xyz, tbn_mtx_vs) * g_params.radius + hemisphere_origin_vs;
 
     float4 sampleOffset = mul(float4(samplePos, 1), per_view_cb.projMtx);
     sampleOffset /= sampleOffset.w;
@@ -76,11 +74,11 @@ float PsMain(const VertexOut vs_out) : SV_Target {
     const float sampleDepth = CalculatePositionVsAtUv(depth_tex, point_clamp_samp, per_view_cb,
       NdcToUv(sampleOffset.xy)).z;
 
-    const float rangeCheck = smoothstep(0.0, 1.0, ssao_cb.radius / abs(hemisphere_origin_vs.z - sampleDepth));
-    occlusion += step(sampleDepth, samplePos.z - ssao_cb.bias) * rangeCheck;
+    const float rangeCheck = smoothstep(0.0, 1.0, g_params.radius / abs(hemisphere_origin_vs.z - sampleDepth));
+    occlusion += step(sampleDepth, samplePos.z - g_params.bias) * rangeCheck;
   }
 
-  return pow(1 - occlusion / sample_count, ssao_cb.power);
+  return pow(1 - occlusion / sample_count, g_params.power);
 }
 
 

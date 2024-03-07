@@ -170,14 +170,6 @@ struct ShaderPerDrawConstants {
 };
 
 
-struct ShaderSsaoConstants {
-  float radius;
-  float bias;
-  float power;
-  int sampleCount;
-};
-
-
 struct DepthNormalDrawParams {
   uint pos_buf_idx;
   uint norm_buf_idx;
@@ -257,7 +249,10 @@ struct SsaoDrawParams {
   uint samp_buf_idx;
   uint point_clamp_samp_idx;
   uint point_wrap_samp_idx;
-  uint ssao_cb_idx;
+  float radius;
+  float bias;
+  float power;
+  int sample_count;
   uint per_view_cb_idx;
   uint per_frame_cb_idx;
 };
