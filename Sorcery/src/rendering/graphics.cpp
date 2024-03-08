@@ -162,7 +162,8 @@ auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDev
 
   if (features.ResourceBindingTier() < D3D12_RESOURCE_BINDING_TIER_3 || features.HighestShaderModel() <
       D3D_SHADER_MODEL_6_6 || !features.EnhancedBarriersSupported() || features.HighestRootSignatureVersion() <
-      D3D_ROOT_SIGNATURE_VERSION_1_1) {
+      D3D_ROOT_SIGNATURE_VERSION_1_1 || !features.
+      VPAndRTArrayIndexFromAnyShaderFeedingRasterizerSupportedWithoutGSEmulation()) {
     return nullptr;
   }
 
