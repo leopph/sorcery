@@ -145,7 +145,6 @@
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\Resources\Scene.cpp" />
-    <ClCompile Include="src\rendering\SwapChain.cpp" />
     <ClCompile Include="src\Util.cpp" />
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
@@ -199,7 +198,6 @@
     <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\Resources\Scene.hpp" />
     <ClInclude Include="src\rendering\StructuredBuffer.hpp" />
-    <ClInclude Include="src\rendering\SwapChain.hpp" />
     <ClInclude Include="src\Resources\Texture2D.hpp" />
     <ClInclude Include="src\Timing.hpp" />
     <ClInclude Include="src\scene_objects\TransformComponent.hpp" />
