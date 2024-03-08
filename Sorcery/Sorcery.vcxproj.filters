@@ -326,6 +326,6 @@
     <FxCompile Include="src\rendering\shaders\depth_resolve_cs.hlsl" />
     <FxCompile Include="src\rendering\shaders\object_pbr_vs.hlsl" />
     <FxCompile Include="src\rendering\shaders\object_pbr_ps.hlsl" />
-    <FxCompile Include="src\rendering\shaders\ssao_vs_hlsl.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ssao_vs.hlsl" />
   </ItemGroup>
 </Project>
