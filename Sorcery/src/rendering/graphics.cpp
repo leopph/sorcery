@@ -255,20 +255,35 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
 
   D3D12_RESOURCE_DESC1 res_desc;
 
+  DXGI_FORMAT tex_format;
+
+  // If a depth format is specified, we have to determine the typeless resource format.
+  if (desc.format == DXGI_FORMAT_D32_FLOAT_S8X24_UINT) {
+    tex_format = DXGI_FORMAT_R32G8X24_TYPELESS;
+  } else if (desc.format == DXGI_FORMAT_D32_FLOAT) {
+    tex_format = DXGI_FORMAT_R32_TYPELESS;
+  } else if (desc.format == DXGI_FORMAT_D24_UNORM_S8_UINT) {
+    tex_format = DXGI_FORMAT_R24G8_TYPELESS;
+  } else if (desc.format == DXGI_FORMAT_D16_UNORM) {
+    tex_format = DXGI_FORMAT_R16_TYPELESS;
+  } else {
+    tex_format = desc.format;
+  }
+
   switch (desc.dimension) {
     case TextureDimension::k1D: {
-      res_desc = CD3DX12_RESOURCE_DESC1::Tex1D(desc.format, desc.width, desc.depth_or_array_size, desc.mip_levels,
+      res_desc = CD3DX12_RESOURCE_DESC1::Tex1D(tex_format, desc.width, desc.depth_or_array_size, desc.mip_levels,
         desc.flags);
       break;
     }
     case TextureDimension::k2D: {
-      res_desc = CD3DX12_RESOURCE_DESC1::Tex2D(desc.format, desc.width, desc.height, desc.depth_or_array_size,
+      res_desc = CD3DX12_RESOURCE_DESC1::Tex2D(tex_format, desc.width, desc.height, desc.depth_or_array_size,
         desc.mip_levels, desc.sample_desc.Count, desc.sample_desc.Quality, desc.flags);
       break;
     }
     case TextureDimension::k3D: [[fallthrough]];
     case TextureDimension::kCube: {
-      res_desc = CD3DX12_RESOURCE_DESC1::Tex3D(desc.format, desc.width, desc.height, desc.depth_or_array_size,
+      res_desc = CD3DX12_RESOURCE_DESC1::Tex3D(tex_format, desc.width, desc.height, desc.depth_or_array_size,
         desc.mip_levels, desc.flags);
       break;
     }
@@ -747,8 +762,29 @@ auto GraphicsDevice::CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const
 
 auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc const& desc, UINT& dsv, UINT& rtv,
                                         UINT& srv, UINT& uav) -> void {
+  DXGI_FORMAT dsv_format;
+  DXGI_FORMAT rtv_srv_uav_format;
+
+  // If a depth format is specified, we have to determine the rtv/srv/uav format.
+  if (desc.format == DXGI_FORMAT_D32_FLOAT_S8X24_UINT) {
+    dsv_format = desc.format;
+    rtv_srv_uav_format = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+  } else if (desc.format == DXGI_FORMAT_D32_FLOAT) {
+    dsv_format = desc.format;
+    rtv_srv_uav_format = DXGI_FORMAT_R32_FLOAT;
+  } else if (desc.format == DXGI_FORMAT_D24_UNORM_S8_UINT) {
+    dsv_format = desc.format;
+    rtv_srv_uav_format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+  } else if (desc.format == DXGI_FORMAT_D16_UNORM) {
+    dsv_format = desc.format;
+    rtv_srv_uav_format = DXGI_FORMAT_R16_UNORM;
+  } else {
+    dsv_format = desc.format;
+    rtv_srv_uav_format = desc.format;
+  }
+
   if (desc.depth_stencil) {
-    D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc{.Format = desc.format, .Flags = D3D12_DSV_FLAG_NONE};
+    D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc{.Format = dsv_format, .Flags = D3D12_DSV_FLAG_NONE};
     if (desc.dimension == TextureDimension::k1D) {
       if (desc.depth_or_array_size == 1) {
         dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
@@ -787,7 +823,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
   }
 
   if (desc.render_target) {
-    D3D12_RENDER_TARGET_VIEW_DESC rtv_desc{.Format = desc.format};
+    D3D12_RENDER_TARGET_VIEW_DESC rtv_desc{.Format = rtv_srv_uav_format};
     if (desc.dimension == TextureDimension::k1D) {
       if (desc.depth_or_array_size == 1) {
         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
@@ -834,7 +870,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
 
   if (desc.shader_resource) {
     D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc{
-      .Format = desc.format, .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING
+      .Format = rtv_srv_uav_format, .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING
     };
     if (desc.dimension == TextureDimension::k1D) {
       if (desc.depth_or_array_size == 1) {
@@ -894,7 +930,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
   }
 
   if (desc.unordered_access) {
-    D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc{.Format = desc.format};
+    D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc{.Format = rtv_srv_uav_format};
     if (desc.dimension == TextureDimension::k1D) {
       if (desc.depth_or_array_size == 1) {
         uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
