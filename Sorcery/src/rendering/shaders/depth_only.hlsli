@@ -11,6 +11,7 @@ DECLARE_PARAMS(DepthOnlyDrawParams);
 struct VertexOut {
   float4 pos_cs : SV_POSITION;
   float2 uv : TEXCOORD;
+  uint rt_idx : SV_RenderTargetArrayIndex;
 };
 
 
@@ -30,6 +31,7 @@ VertexOut VsMain(const uint vertex_id : SV_VertexID) {
   VertexOut ret;
   ret.pos_cs = pos_cs;
   ret.uv = uv;
+  ret.rt_idx = g_params.rt_idx;
   return ret;
 }
 

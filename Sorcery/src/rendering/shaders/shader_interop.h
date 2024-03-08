@@ -33,7 +33,7 @@ typedef bool BOOL;
 #define RWTEXTURE2D(name, type, slot) RWTexture2D<type> name : register(MAKE_UAV_SLOT(slot))
 #endif
 
-#define INVALID_RES_IDX -1
+#define INVALID_RES_IDX (-1)
 
 #define RES_SLOT_ALBEDO_MAP 0
 #define RES_SLOT_METALLIC_MAP 1
@@ -177,6 +177,7 @@ struct DepthNormalDrawParams {
   uint uv_buf_idx;
   uint mtl_idx;
   uint samp_idx;
+  uint rt_idx;
   uint per_draw_cb_idx;
   uint per_view_cb_idx;
   uint per_frame_cb_idx;
@@ -188,6 +189,7 @@ struct DepthOnlyDrawParams {
   uint uv_buf_idx;
   uint mtl_idx;
   uint samp_idx;
+  uint rt_idx;
   uint per_draw_cb_idx;
   uint per_view_cb_idx;
 };

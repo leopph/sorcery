@@ -13,6 +13,7 @@ struct VertexOut {
   float3 norm_ws : NORMAL;
   float2 uv : TEXCOORD;
   float3x3 tbn_mtx_ws : TBNMTXWS;
+  uint rt_idx : SV_RenderTargetArrayIndex;
 };
 
 
@@ -46,6 +47,7 @@ VertexOut VsMain(const uint vertex_id : SV_VertexID) {
   ret.norm_ws = norm_ws;
   ret.uv = uv;
   ret.tbn_mtx_ws = tbn_mtx_ws;
+  ret.rt_idx = g_params.rt_idx;
   return ret;
 }
 
