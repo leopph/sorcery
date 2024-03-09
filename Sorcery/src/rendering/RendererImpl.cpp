@@ -946,197 +946,87 @@ auto Renderer::Impl::StartUp() -> void {
   CreatePerViewConstantBuffers(1);
   CreatePerDrawConstantBuffers(100);
 
-  // CREATE SAMPLER STATES
+  samp_cmp_pcf_ge_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 1, D3D12_COMPARISON_FUNC_GREATER_EQUAL, {},
+    0, 0
+  });
 
-  D3D11_SAMPLER_DESC constexpr cmpPcfGreaterEqual{
-    .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
-    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0,
-    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0,
-    .MaxLOD = 0
-  };
+  samp_cmp_pcf_le_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 1, D3D12_COMPARISON_FUNC_LESS_EQUAL, {}, 0, 0
+  });
 
-  if (FAILED(mDevice->CreateSamplerState(&cmpPcfGreaterEqual, samp_cmp_pcf_ge_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create PCF greater-equal comparison sampler state."};
-  }
+  samp_cmp_point_ge_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 1, D3D12_COMPARISON_FUNC_GREATER_EQUAL, {}, 0, 0
+  });
 
-  D3D11_SAMPLER_DESC constexpr cmpPcfLessEqual{
-    .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
-    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0,
-    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0,
-    .MaxLOD = 0
-  };
+  samp_cmp_point_le_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 1, D3D12_COMPARISON_FUNC_LESS_EQUAL, {}, 0, 0
+  });
 
-  if (FAILED(mDevice->CreateSamplerState(&cmpPcfLessEqual, samp_cmp_pcf_le_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create PCF less-equal comparison sampler state."};
-  }
+  samp_af16_clamp_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 16, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
-  D3D11_SAMPLER_DESC constexpr cmpPointGreaterEqualDesc{
-    .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
-    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0,
-    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0,
-    .MaxLOD = 0
-  };
+  samp_af8_clamp_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 8, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
-  if (FAILED(mDevice->CreateSamplerState(&cmpPointGreaterEqualDesc, samp_cmp_point_ge_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create point-filter greater-equal comparison sampler state."};
-  }
+  samp_af4_clamp_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 4, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
-  D3D11_SAMPLER_DESC constexpr cmpPointLessEqualDesc{
-    .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
-    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER, .AddressW = D3D11_TEXTURE_ADDRESS_BORDER, .MipLODBias = 0,
-    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL, .BorderColor = {0, 0, 0, 0}, .MinLOD = 0,
-    .MaxLOD = 0
-  };
+  samp_af2_clamp_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 2, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
-  if (FAILED(mDevice->CreateSamplerState(&cmpPointLessEqualDesc, samp_cmp_point_le_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create point-filter less-equal comparison sampler state."};
-  }
+  samp_tri_clamp_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
-  D3D11_SAMPLER_DESC constexpr af16ClampDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
-    .MaxAnisotropy = 16, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
-    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
-  };
+  samp_bi_clamp_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0,
+    std::numeric_limits<float>::max()
+  });
 
-  if (FAILED(mDevice->CreateSamplerState(&af16ClampDesc, samp_af16_clamp_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create AF16 clamp sampler state."};
-  }
+  samp_af16_wrap_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+    D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 16, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
-  D3D11_SAMPLER_DESC constexpr af8ClampDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
-    .MaxAnisotropy = 8, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
-    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
-  };
+  samp_af8_wrap_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+    D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 8, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
-  if (FAILED(mDevice->CreateSamplerState(&af8ClampDesc, samp_af8_clamp_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create AF8 clamp sampler state."};
-  }
+  samp_af4_wrap_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+    D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 4, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
-  D3D11_SAMPLER_DESC constexpr af4ClampDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
-    .MaxAnisotropy = 4, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
-    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
-  };
+  samp_af2_wrap_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+    D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 2, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
-  if (FAILED(mDevice->CreateSamplerState(&af4ClampDesc, samp_af4_clamp_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create AF4 clamp sampler state."};
-  }
+  samp_tri_wrap_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+    D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
-  D3D11_SAMPLER_DESC constexpr af2ClampDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
-    .MaxAnisotropy = 2, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
-    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
-  };
-
-  hr = mDevice->CreateSamplerState(&af2ClampDesc, samp_af2_clamp_.GetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  D3D11_SAMPLER_DESC constexpr trilinearClampDesc{
-    .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
-    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
-    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
-  };
-
-  if (FAILED(mDevice->CreateSamplerState(&trilinearClampDesc, samp_tri_clamp_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create trilinear clamp sampler state."};
-  }
-
-  D3D11_SAMPLER_DESC constexpr bilinearClampDesc{
-    .Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
-    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
-    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
-  };
-
-  if (FAILED(mDevice->CreateSamplerState(&bilinearClampDesc, samp_bi_clamp_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create bilinear clamp sampler state."};
-  }
-
-  D3D11_SAMPLER_DESC constexpr pointClampDesc{
-    .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP, .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP, .MipLODBias = 0,
-    .MaxAnisotropy = 1, .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
-    .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
-  };
-
-  if (FAILED(mDevice->CreateSamplerState(&pointClampDesc, samp_point_clamp_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create point-filter clamp sampler state."};
-  }
-
-  D3D11_SAMPLER_DESC constexpr af16WrapDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 16,
-    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
-    .MaxLOD = FLT_MAX
-  };
-
-  hr = mDevice->CreateSamplerState(&af16WrapDesc, samp_af16_wrap_.GetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  D3D11_SAMPLER_DESC constexpr af8WrapDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 8,
-    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
-    .MaxLOD = FLT_MAX
-  };
-
-  hr = mDevice->CreateSamplerState(&af8WrapDesc, samp_af8_wrap_.GetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  D3D11_SAMPLER_DESC constexpr af4WrapDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 4,
-    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
-    .MaxLOD = FLT_MAX
-  };
-
-  hr = mDevice->CreateSamplerState(&af4WrapDesc, samp_af4_wrap_.GetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  D3D11_SAMPLER_DESC constexpr af2WrapDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 2,
-    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
-    .MaxLOD = FLT_MAX
-  };
-
-  hr = mDevice->CreateSamplerState(&af2WrapDesc, samp_af2_wrap_.GetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  D3D11_SAMPLER_DESC constexpr trilinearWrapDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 1,
-    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
-    .MaxLOD = FLT_MAX
-  };
-
-  hr = mDevice->CreateSamplerState(&trilinearWrapDesc, samp_tri_wrap_.GetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  D3D11_SAMPLER_DESC constexpr bilinearWrapDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 1,
-    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
-    .MaxLOD = FLT_MAX
-  };
-
-  hr = mDevice->CreateSamplerState(&bilinearWrapDesc, samp_bi_wrap_.GetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  D3D11_SAMPLER_DESC constexpr pointWrapDesc{
-    .Filter = D3D11_FILTER_ANISOTROPIC, .AddressU = D3D11_TEXTURE_ADDRESS_WRAP, .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP, .MipLODBias = 0, .MaxAnisotropy = 1,
-    .ComparisonFunc = D3D11_COMPARISON_NEVER, .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f}, .MinLOD = -FLT_MAX,
-    .MaxLOD = FLT_MAX
-  };
-
-  hr = mDevice->CreateSamplerState(&pointWrapDesc, samp_point_wrap_.GetAddressOf());
-  assert(SUCCEEDED(hr));
+  samp_bi_wrap_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+    D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
 
   // CREATE DEFAULT ASSETS
 
