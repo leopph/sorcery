@@ -132,6 +132,7 @@ struct SwapChainDesc {
   UINT width;
   UINT height;
   UINT buffer_count;
+  DXGI_FORMAT format;
   DXGI_USAGE usage;
   DXGI_SCALING scaling;
 };

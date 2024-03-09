@@ -395,7 +395,7 @@ auto GraphicsDevice::CreateFence(UINT64 const initial_value) -> ComPtr<ID3D12Fen
 
 auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc, HWND const window_handle) -> UniqueHandle<SwapChain> {
   DXGI_SWAP_CHAIN_DESC1 const dxgi_desc{
-    desc.width, desc.height, DXGI_FORMAT_R8G8B8A8_UNORM, FALSE, {1, 0}, desc.usage, desc.buffer_count, desc.scaling,
+    desc.width, desc.height, desc.format, FALSE, {1, 0}, desc.usage, desc.buffer_count, desc.scaling,
     DXGI_SWAP_EFFECT_FLIP_DISCARD, DXGI_ALPHA_MODE_UNSPECIFIED, swap_chain_flags_
   };
 
