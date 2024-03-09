@@ -311,8 +311,9 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
 }
 
 
-auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
-                                         std::uint8_t const num_32_bit_params) -> UniqueHandle<PipelineState> {
+auto GraphicsDevice::CreatePipelineState(D3D12_PIPELINE_STATE_STREAM_DESC const& desc,
+                                         std::uint8_t const num_32_bit_params,
+                                         bool const is_compute) -> UniqueHandle<PipelineState> {
   ComPtr<ID3D12RootSignature> root_signature;
 
   if (auto rs{root_signatures_.Get(num_32_bit_params)}) {
@@ -346,20 +347,14 @@ auto GraphicsDevice::CreatePipelineState(PipelineStateDesc const& desc,
     root_signatures_.Add(num_32_bit_params, root_signature);
   }
 
-  D3D12_PIPELINE_STATE_STREAM_DESC const stream_desc{sizeof(desc), &const_cast<PipelineStateDesc&>(desc)};
-
   ComPtr<ID3D12PipelineState> pipeline_state;
 
-  if (FAILED(device_->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&pipeline_state)))) {
+  if (FAILED(device_->CreatePipelineState(&desc, IID_PPV_ARGS(&pipeline_state)))) {
     return UniqueHandle<PipelineState>{nullptr, *this};
   }
 
   return UniqueHandle{
-    new PipelineState{
-      std::move(root_signature), std::move(pipeline_state), num_32_bit_params,
-      static_cast<D3D12_SHADER_BYTECODE>(desc.cs).BytecodeLength != 0
-    },
-    *this
+    new PipelineState{std::move(root_signature), std::move(pipeline_state), num_32_bit_params, is_compute}, *this
   };
 }
 
@@ -978,64 +973,63 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
 }
 
 
+auto Resource::SetDebugName(std::wstring_view const name) const -> bool {
+  return SUCCEEDED(resource_->SetName(name.data()));
+}
+
+
+auto Resource::Map() const -> void* {
+  return InternalMap(0, nullptr);
+}
+
+
+auto Resource::GetShaderResource() const -> UINT {
+  return srv_;
+}
+
+
+auto Resource::GetUnorderedAccess() const -> UINT {
+  return uav_;
+}
+
+
+Resource::Resource(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, UINT const srv,
+                         UINT const uav) :
+  allocation_{std::move(allocation)},
+  resource_{std::move(resource)},
+  srv_{srv},
+  uav_{uav} {}
+
+
+auto Resource::InternalMap(UINT const subresource, D3D12_RANGE const* read_range) const -> void* {
+  if (void* mapped; SUCCEEDED(resource_->Map(subresource, read_range, &mapped))) {
+    return mapped;
+  }
+  return nullptr;
+}
+
+
 auto Buffer::GetConstantBuffer() const -> UINT {
   return cbv_;
 }
 
 
-auto Buffer::GetShaderResource() const -> UINT {
-  return srv_;
-}
-
-
-auto Buffer::GetUnorderedAccess() const -> UINT {
-  return uav_;
-}
-
-
-auto Buffer::Map() const -> void* {
-  if (void* mapped; SUCCEEDED(resource_->Map(0, nullptr, &mapped))) {
-    return mapped;
-  }
-  return nullptr;
-}
-
-
 Buffer::Buffer(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, UINT const cbv, UINT const srv,
                UINT const uav) :
-  allocation_{std::move(allocation)},
-  resource_{std::move(resource)},
-  cbv_{cbv},
-  srv_{srv},
-  uav_{uav} {}
-
-
-auto Texture::GetShaderResource() const -> UINT {
-  return srv_;
-}
-
-
-auto Texture::GetUnorderedAccess() const -> UINT {
-  return uav_;
-}
+  Resource{std::move(allocation), std::move(resource), srv, uav},
+  cbv_{cbv} {}
 
 
 auto Texture::Map(UINT const subresource) const -> void* {
-  if (void* mapped; SUCCEEDED(resource_->Map(subresource, nullptr, &mapped))) {
-    return mapped;
-  }
-  return nullptr;
+  return InternalMap(subresource, nullptr);
 }
 
 
 Texture::Texture(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, UINT const dsv,
                  UINT const rtv, UINT const srv, UINT const uav) :
-  allocation_{std::move(allocation)},
-  resource_{std::move(resource)},
+  Resource{std::move(allocation), std::move(resource), srv, uav},
   dsv_{dsv},
-  rtv_{rtv},
-  srv_{srv},
-  uav_{uav} {}
+  rtv_{rtv} {}
 
 
 PipelineState::PipelineState(ComPtr<ID3D12RootSignature> root_signature, ComPtr<ID3D12PipelineState> pipeline_state,

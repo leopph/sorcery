@@ -16,6 +16,7 @@
 #include <mutex>
 #include <span>
 #include <type_traits>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -127,27 +128,6 @@ struct TextureDesc {
 };
 
 
-struct PipelineStateDesc {
-  CD3DX12_PIPELINE_STATE_STREAM_VS vs;
-  CD3DX12_PIPELINE_STATE_STREAM_GS gs;
-  CD3DX12_PIPELINE_STATE_STREAM_STREAM_OUTPUT stream_output;
-  CD3DX12_PIPELINE_STATE_STREAM_HS hs;
-  CD3DX12_PIPELINE_STATE_STREAM_DS ds;
-  CD3DX12_PIPELINE_STATE_STREAM_PS ps;
-  CD3DX12_PIPELINE_STATE_STREAM_AS as;
-  CD3DX12_PIPELINE_STATE_STREAM_MS ms;
-  CD3DX12_PIPELINE_STATE_STREAM_CS cs;
-  CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC blend_state;
-  CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL1 depth_stencil_state;
-  CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT dsv_format;
-  CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER rasterizer_state;
-  CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rtv_formats;
-  CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC sample_desc;
-  CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_MASK sample_mask;
-  CD3DX12_PIPELINE_STATE_STREAM_VIEW_INSTANCING view_instancing;
-};
-
-
 struct SwapChainDesc {
   UINT width;
   UINT height;
@@ -244,8 +224,8 @@ public:
   [[nodiscard]] auto CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE heap_type,
                                    D3D12_BARRIER_LAYOUT initial_layout,
                                    D3D12_CLEAR_VALUE const* clear_value) -> UniqueHandle<Texture>;
-  [[nodiscard]] auto CreatePipelineState(PipelineStateDesc const& desc,
-                                         std::uint8_t num_32_bit_params) -> UniqueHandle<PipelineState>;
+  [[nodiscard]] auto CreatePipelineState(D3D12_PIPELINE_STATE_STREAM_DESC const& desc, std::uint8_t num_32_bit_params,
+                                         bool is_compute) -> UniqueHandle<PipelineState>;
   [[nodiscard]] auto CreateCommandList() -> UniqueHandle<CommandList>;
   [[nodiscard]] auto CreateFence(UINT64 initial_value) -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
   [[nodiscard]] auto CreateSwapChain(SwapChainDesc const& desc, HWND window_handle) -> UniqueHandle<SwapChain>;
@@ -309,20 +289,23 @@ private:
 };
 
 
-class Buffer {
+class Resource {
 public:
-  [[nodiscard]] auto GetConstantBuffer() const -> UINT;
+  [[nodiscard]] auto SetDebugName(std::wstring_view name) const -> bool;
+  [[nodiscard]] auto Map() const -> void*;
   [[nodiscard]] auto GetShaderResource() const -> UINT;
   [[nodiscard]] auto GetUnorderedAccess() const -> UINT;
-  [[nodiscard]] auto Map() const -> void*;
+
+protected:
+  Resource(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
+           UINT srv, UINT uav);
+
+  [[nodiscard]] auto InternalMap(UINT subresource, D3D12_RANGE const* read_range) const -> void*;
 
 private:
-  Buffer(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
-         UINT cbv, UINT srv, UINT uav);
-
   Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation_;
   Microsoft::WRL::ComPtr<ID3D12Resource2> resource_;
-  UINT cbv_;
+
   UINT srv_;
   UINT uav_;
 
@@ -331,22 +314,31 @@ private:
 };
 
 
-class Texture {
+class Buffer : public Resource {
 public:
-  [[nodiscard]] auto GetShaderResource() const -> UINT;
-  [[nodiscard]] auto GetUnorderedAccess() const -> UINT;
+  [[nodiscard]] auto GetConstantBuffer() const -> UINT;
+
+private:
+  Buffer(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
+         UINT cbv, UINT srv, UINT uav);
+
+  UINT cbv_;
+
+  friend GraphicsDevice;
+  friend CommandList;
+};
+
+
+class Texture : Resource {
+public:
   [[nodiscard]] auto Map(UINT subresource) const -> void*;
 
 private:
   Texture(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
           UINT dsv, UINT rtv, UINT srv, UINT uav);
 
-  Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation_;
-  Microsoft::WRL::ComPtr<ID3D12Resource2> resource_;
   UINT dsv_;
   UINT rtv_;
-  UINT srv_;
-  UINT uav_;
 
   friend GraphicsDevice;
   friend CommandList;
