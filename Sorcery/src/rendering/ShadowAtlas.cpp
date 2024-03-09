@@ -4,15 +4,16 @@
 
 
 namespace sorcery {
-ShadowAtlas::ShadowAtlas(graphics::GraphicsDevice* const device, UINT const size, int const subdiv_size):
+ShadowAtlas::ShadowAtlas(graphics::GraphicsDevice* const device, DXGI_FORMAT const depth_format, UINT const size,
+                         int const subdiv_size):
   GridLike{subdiv_size},
   tex_{
     device->CreateTexture(
       graphics::TextureDesc{
-        graphics::TextureDimension::k2D, size, size, 1, 1, DXGI_FORMAT_D32_FLOAT, {1, 0},
+        graphics::TextureDimension::k2D, size, size, 1, 1, depth_format, {1, 0},
         D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL, true, false, true, false
       }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COMMON, std::array{
-        D3D12_CLEAR_VALUE{.Format = DXGI_FORMAT_D32_FLOAT, .DepthStencil = {0.0f, 0}}
+        D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {0.0f, 0}}
       }.data())
   },
   size_{size} {

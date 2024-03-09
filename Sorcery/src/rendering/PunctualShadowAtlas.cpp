@@ -8,8 +8,9 @@
 
 
 namespace sorcery {
-PunctualShadowAtlas::PunctualShadowAtlas(graphics::GraphicsDevice* const device, UINT const size):
-  ShadowAtlas{device, size, 2},
+PunctualShadowAtlas::PunctualShadowAtlas(graphics::GraphicsDevice* const device, DXGI_FORMAT const depth_format,
+                                         UINT const size):
+  ShadowAtlas{device, depth_format, size, 2},
   cells_{Cell{1}, Cell{2}, Cell{4}, Cell{8}} {}
 
 

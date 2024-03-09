@@ -16,7 +16,7 @@ protected:
   UINT size_;
 
 
-  ShadowAtlas(graphics::GraphicsDevice* device, UINT size, int subdiv_size);
+  ShadowAtlas(graphics::GraphicsDevice* device, DXGI_FORMAT depth_format, UINT size, int subdiv_size);
 
 public:
   class Cell : public GridLike {
