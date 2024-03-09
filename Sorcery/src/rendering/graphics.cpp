@@ -415,6 +415,10 @@ auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc, HWND const windo
     return UniqueHandle<SwapChain>{nullptr, *this};
   }
 
+  if (FAILED(factory_->MakeWindowAssociation(window_handle, DXGI_MWA_NO_ALT_ENTER))) {
+    return UniqueHandle<SwapChain>{nullptr, *this};
+  }
+
   auto const swap_chain{new SwapChain{std::move(swap_chain4)}};
   SwapChainCreateTextures(*swap_chain);
 
