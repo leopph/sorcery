@@ -1,68 +1,64 @@
 #include "RendererImpl.hpp"
 
 #include "ShadowCascadeBoundary.hpp"
+#include "shaders/shader_interop.h"
 #include "../MemoryAllocation.hpp"
 #include "../Window.hpp"
 #include "../scene_objects/Entity.hpp"
 #include "../scene_objects/TransformComponent.hpp"
-#include "shaders\shader_interop.h"
-
-
-#ifndef NDEBUG
-#include "shaders/generated/Debug/DepthNormalPSBin.h"
-#include "shaders/generated/Debug/DepthNormalVSBin.h"
-#include "shaders/generated/Debug/DepthOnlyPSBin.h"
-#include "shaders/generated/Debug/DepthOnlyVSBin.h"
-#include "shaders/generated/Debug/DepthResolveCSBin.h"
-#include "shaders/generated/Debug/GizmoPSBin.h"
-#include "shaders/generated/Debug/LineGizmoVSBin.h"
-#include "shaders/generated/Debug/MeshPbrPSBin.h"
-#include "shaders/generated/Debug/MeshVSBin.h"
-#include "shaders/generated/Debug/PostProcessPSBin.h"
-#include "shaders/generated/Debug/ScreenVSBin.h"
-#include "shaders/generated/Debug/SkyboxPSBin.h"
-#include "shaders/generated/Debug/SkyboxVSBin.h"
-#include "shaders/generated/Debug/SsaoBlurPSBin.h"
-#include "shaders/generated/Debug/SsaoPSBin.h"
-#else
-#include "shaders/generated/Release/DepthNormalPSBin.h"
-#include "shaders/generated/Release/DepthNormalVSBin.h"
-#include "shaders/generated/Release/DepthOnlyPSBin.h"
-#include "shaders/generated/Release/DepthOnlyVSBin.h"
-#include "shaders/generated/Release/DepthResolveCSBin.h"
-#include "shaders/generated/Release/GizmoPSBin.h"
-#include "shaders/generated/Release/LineGizmoVSBin.h"
-#include "shaders/generated/Release/MeshPbrPSBin.h"
-#include "shaders/generated/Release/MeshVSBin.h"
-#include "shaders/generated/Release/PostProcessPSBin.h"
-#include "shaders/generated/Release/ScreenVSBin.h"
-#include "shaders/generated/Release/SkyboxPSBin.h"
-#include "shaders/generated/Release/SkyboxVSBin.h"
-#include "shaders/generated/Release/SsaoBlurPSBin.h"
-#include "shaders/generated/Release/SsaoPSBin.h"
-#endif
-
 #include "../Resources/Scene.hpp"
 
-#include <d3d11_1.h>
+#ifndef NDEBUG
+#include "shaders/generated/Debug/depth_normal_ps.h"
+#include "shaders/generated/Debug/depth_normal_vs.h"
+#include "shaders/generated/Debug/depth_only_ps.h"
+#include "shaders/generated/Debug/depth_only_vs.h"
+#include "shaders/generated/Debug/depth_resolve_cs.h"
+#include "shaders/generated/Debug/gizmos_line_vs.h"
+#include "shaders/generated/Debug/gizmos_ps.h"
+#include "shaders/generated/Debug/object_pbr_ps.h"
+#include "shaders/generated/Debug/object_pbr_vs.h"
+#include "shaders/generated/Debug/post_process_ps.h"
+#include "shaders/generated/Debug/post_process_vs.h"
+#include "shaders/generated/Debug/skybox_ps.h"
+#include "shaders/generated/Debug/skybox_vs.h"
+#include "shaders/generated/Debug/ssao_blur_ps.h"
+#include "shaders/generated/Debug/ssao_main_ps.h"
+#include "shaders/generated/Debug/ssao_vs.h"
+#else
+#include "shaders/generated/Release/depth_normal_ps.h"
+#include "shaders/generated/Release/depth_normal_vs.h"
+#include "shaders/generated/Release/depth_only_ps.h"
+#include "shaders/generated/Release/depth_only_vs.h"
+#include "shaders/generated/Release/depth_resolve_cs.h"
+#include "shaders/generated/Release/gizmos_line_vs.h"
+#include "shaders/generated/Release/gizmos_ps.h"
+#include "shaders/generated/Release/object_pbr_ps.h"
+#include "shaders/generated/Release/object_pbr_vs.h"
+#include "shaders/generated/Release/post_process_ps.h"
+#include "shaders/generated/Release/post_process_vs.h"
+#include "shaders/generated/Release/skybox_ps.h"
+#include "shaders/generated/Release/skybox_vs.h"
+#include "shaders/generated/Release/ssao_blur_ps.h"
+#include "shaders/generated/Release/ssao_main_ps.h"
+#include "shaders/generated/Release/ssao_vs.h"
+#endif
 
 #include <random>
-
-using Microsoft::WRL::ComPtr;
 
 
 namespace sorcery {
 namespace {
-std::vector const QUAD_POSITIONS{Vector3{-1, 1, 0}, Vector3{-1, -1, 0}, Vector3{1, -1, 0}, Vector3{1, 1, 0}};
+std::vector const kQuadPositions{Vector3{-1, 1, 0}, Vector3{-1, -1, 0}, Vector3{1, -1, 0}, Vector3{1, 1, 0}};
 
 
-std::vector const QUAD_UVS{Vector2{0, 0}, Vector2{0, 1}, Vector2{1, 1}, Vector2{1, 0}};
+std::vector const kQuadUvs{Vector2{0, 0}, Vector2{0, 1}, Vector2{1, 1}, Vector2{1, 0}};
 
 
-std::vector<std::uint32_t> const QUAD_INDICES{2, 1, 0, 0, 3, 2};
+std::vector<std::uint32_t> const kQuadIndices{2, 1, 0, 0, 3, 2};
 
 
-std::vector const CUBE_POSITIONS{
+std::vector const kCubePositions{
   Vector3{0.5f, 0.5f, 0.5f}, Vector3{0.5f, 0.5f, 0.5f}, Vector3{0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f},
   Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, -0.5f}, Vector3{-0.5f, 0.5f, -0.5f},
   Vector3{-0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f},
@@ -72,7 +68,7 @@ std::vector const CUBE_POSITIONS{
 };
 
 
-std::vector const CUBE_UVS{
+std::vector const kCubeUvs{
   Vector2{1, 0}, Vector2{1, 0}, Vector2{0, 0}, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 0}, Vector2{1, 0},
   Vector2{0, 1}, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 1}, Vector2{1, 0}, Vector2{1, 1}, Vector2{1, 1},
   Vector2{0, 1}, Vector2{0, 1}, Vector2{0, 1}, Vector2{1, 1}, Vector2{1, 1}, Vector2{0, 0}, Vector2{0, 1},
@@ -80,7 +76,7 @@ std::vector const CUBE_UVS{
 };
 
 
-std::vector<std::uint32_t> const CUBE_INDICES{
+std::vector<std::uint32_t> const kCubeIndices{
   // Top face
   7, 4, 1, 1, 10, 7,
   // Bottom face
@@ -99,21 +95,21 @@ std::vector<std::uint32_t> const CUBE_INDICES{
 
 auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(Camera const& cam) const -> ShadowCascadeBoundaries {
   auto const camNear{cam.GetNearClipPlane()};
-  auto const shadowDistance{std::min(cam.GetFarClipPlane(), mShadowDistance)};
+  auto const shadowDistance{std::min(cam.GetFarClipPlane(), shadow_distance_)};
   auto const shadowedFrustumDepth{shadowDistance - camNear};
 
   ShadowCascadeBoundaries boundaries;
 
   boundaries[0].nearClip = camNear;
 
-  for (int i = 0; i < mCascadeCount - 1; i++) {
-    boundaries[i + 1].nearClip = camNear + mCascadeSplits[i] * shadowedFrustumDepth;
+  for (int i = 0; i < cascade_count_ - 1; i++) {
+    boundaries[i + 1].nearClip = camNear + cascade_splits_[i] * shadowedFrustumDepth;
     boundaries[i].farClip = boundaries[i + 1].nearClip * 1.005f;
   }
 
-  boundaries[mCascadeCount - 1].farClip = shadowDistance;
+  boundaries[cascade_count_ - 1].farClip = shadowDistance;
 
-  for (int i = mCascadeCount; i < MAX_CASCADE_COUNT; i++) {
+  for (int i = cascade_count_; i < MAX_CASCADE_COUNT; i++) {
     boundaries[i].nearClip = std::numeric_limits<float>::infinity();
     boundaries[i].farClip = std::numeric_limits<float>::infinity();
   }
@@ -125,10 +121,10 @@ auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(Camera const& cam) c
 auto Renderer::Impl::CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) const -> void {
   visibility.staticMeshIndices.clear();
 
-  for (int i = 0; i < static_cast<int>(mStaticMeshComponents.size()); i++) {
-    if (auto const mesh{mStaticMeshComponents[i]->GetMesh()}) {
-      if (auto const& modelMtx{mStaticMeshComponents[i]->GetEntity().GetTransform().GetLocalToWorldMatrix()}; frustumWS.
-        Intersects(mesh->GetBounds().Transform(modelMtx))) {
+  for (int i = 0; i < static_cast<int>(static_mesh_components_.size()); i++) {
+    if (auto const mesh{static_mesh_components_[i]->GetMesh()}) {
+      if (auto const& modelMtx{static_mesh_components_[i]->GetEntity().GetTransform().GetLocalToWorldMatrix()};
+        frustumWS.Intersects(mesh->GetBounds().Transform(modelMtx))) {
         auto const submeshes{mesh->GetSubMeshes()};
         for (int j{0}; j < std::ssize(submeshes); j++) {
           if (frustumWS.Intersects(submeshes[j].bounds.Transform(modelMtx))) {
@@ -144,8 +140,8 @@ auto Renderer::Impl::CullStaticMeshComponents(Frustum const& frustumWS, Visibili
 auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility) const -> void {
   visibility.lightIndices.clear();
 
-  for (int lightIdx = 0; lightIdx < static_cast<int>(mLights.size()); lightIdx++) {
-    switch (auto const light{mLights[lightIdx]}; light->GetType()) {
+  for (int lightIdx = 0; lightIdx < static_cast<int>(lights_.size()); lightIdx++) {
+    switch (auto const light{lights_[lightIdx]}; light->GetType()) {
       case LightComponent::Type::Directional: {
         visibility.lightIndices.emplace_back(lightIdx);
         break;
@@ -196,9 +192,9 @@ auto Renderer::Impl::SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> const
 
   *static_cast<PerFrameCB*>(mapped.pData) = PerFrameCB{
     .gPerFrameConstants = ShaderPerFrameConstants{
-      .ambientLightColor = Scene::GetActiveScene()->GetAmbientLightVector(), .shadowCascadeCount = mCascadeCount,
-      .screenSize = Vector2{rtWidth, rtHeight}, .visualizeShadowCascades = mVisualizeShadowCascades,
-      .shadowFilteringMode = static_cast<int>(mShadowFilteringMode)
+      .ambientLightColor = Scene::GetActiveScene()->GetAmbientLightVector(), .shadowCascadeCount = cascade_count_,
+      .screenSize = Vector2{rtWidth, rtHeight}, .visualizeShadowCascades = shadow_cascades_,
+      .shadowFilteringMode = static_cast<int>(shadow_filtering_mode_)
     }
   };
 
@@ -250,7 +246,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
                                                std::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices,
                                                ObserverPtr<ID3D11DeviceContext> const ctx) -> void {
   for (auto const lightIdx : visibility.lightIndices) {
-    if (auto const light{mLights[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->
+    if (auto const light{lights_[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->
                                              IsCastingShadow()) {
       float const camNear{cam.GetNearClipPlane()};
       float const camFar{cam.GetFarClipPlane()};
@@ -330,7 +326,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
 
       auto const frustumDepth{camFar - camNear};
 
-      for (auto cascadeIdx{0}; cascadeIdx < mCascadeCount; cascadeIdx++) {
+      for (auto cascadeIdx{0}; cascadeIdx < cascade_count_; cascadeIdx++) {
         // cascade vertices in world space
         auto const cascadeVertsWS{
           [&frustumVertsWS, &shadowCascadeBoundaries, cascadeIdx, camNear, frustumDepth] {
@@ -367,7 +363,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
           sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
         }
 
-        auto const shadowMapSize{mDirShadowMapArr->GetSize()};
+        auto const shadowMapSize{dir_shadow_map_arr_->GetSize()};
         auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
 
         Matrix4 shadowViewMtx{Matrix4::LookTo(Vector3::Zero(), light->GetDirection(), Vector3::Up())};
@@ -380,20 +376,20 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
 
         shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light->GetDirection(), Vector3::Up());
         auto const shadowProjMtx{
-          GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
-            sphereRadius, -sphereRadius, -sphereRadius - light->GetShadowExtension(), sphereRadius))
+          GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius, sphereRadius,
+            -sphereRadius, -sphereRadius - light->GetShadowExtension(), sphereRadius))
         };
 
         shadowViewProjMatrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
 
-        ctx->OMSetRenderTargets(0, nullptr, mDirShadowMapArr->GetDsv(cascadeIdx));
+        ctx->OMSetRenderTargets(0, nullptr, dir_shadow_map_arr_->GetDsv(cascadeIdx));
         ctx->OMSetDepthStencilState(mDepthTestGreaterWriteDss.Get(), 0);
 
         ctx->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
 
         ctx->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
-        ctx->ClearDepthStencilView(mDirShadowMapArr->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH, 0, 0);
+        ctx->ClearDepthStencilView(dir_shadow_map_arr_->GetDsv(cascadeIdx), D3D11_CLEAR_DEPTH, 0, 0);
 
         ctx->RSSetState(mShadowPassRs.Get());
 
@@ -486,7 +482,7 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
   ctx->PSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
 
   for (auto const& [meshIdx, submeshIdx] : culledIndices) {
-    auto const component{mStaticMeshComponents[meshIdx]};
+    auto const component{static_mesh_components_[meshIdx]};
     auto const mesh{component->GetMesh()};
 
     if (!mesh) {
@@ -570,11 +566,11 @@ auto Renderer::Impl::DrawMeshes(std::span<StaticMeshSubmeshIndex const> const cu
 
 
 auto Renderer::Impl::DrawSkybox(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
-  ID3D11Buffer* const vertexBuffer{mCubeMesh->GetPositionBuffer().Get()};
+  ID3D11Buffer* const vertexBuffer{cube_mesh_->GetPositionBuffer().Get()};
   UINT constexpr stride{sizeof(Vector3)};
   UINT constexpr offset{0};
   ctx->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-  ctx->IASetIndexBuffer(mCubeMesh->GetIndexBuffer().Get(), mCubeMesh->GetIndexFormat(), 0);
+  ctx->IASetIndexBuffer(cube_mesh_->GetIndexBuffer().Get(), cube_mesh_->GetIndexFormat(), 0);
   ctx->IASetInputLayout(mAllAttribsIl.Get());
   ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -589,7 +585,7 @@ auto Renderer::Impl::DrawSkybox(ObserverPtr<ID3D11DeviceContext> const ctx) cons
   ctx->OMSetDepthStencilState(mDepthTestGreaterEqualNoWriteDss.Get(), 0);
   ctx->RSSetState(mSkyboxPassRs.Get());
 
-  ctx->DrawIndexed(clamp_cast<UINT>(CUBE_INDICES.size()), 0, 0);
+  ctx->DrawIndexed(clamp_cast<UINT>(kCubeIndices.size()), 0, 0);
 
   // Restore state
   ctx->OMSetDepthStencilState(nullptr, 0);
@@ -597,8 +593,11 @@ auto Renderer::Impl::DrawSkybox(ObserverPtr<ID3D11DeviceContext> const ctx) cons
 }
 
 
-auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst,
-                                 ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void {
+auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView * const src, ID3D11RenderTargetView * const dst,
+ ObserverPtr<ID3D11DeviceContext > ctx)
+noexcept
+->
+void {
   // Back up old views to restore later.
 
   ComPtr<ID3D11RenderTargetView> rtvBackup;
@@ -612,7 +611,7 @@ auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11Rend
   D3D11_MAPPED_SUBRESOURCE mappedCb;
   ctx->Map(mPostProcessCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb);
   auto const cbData{static_cast<PostProcessCB*>(mappedCb.pData)};
-  cbData->invGamma = mInvGamma;
+  cbData->invGamma = inv_gamma_;
   ctx->Unmap(mPostProcessCb.Get(), 0);
 
   ctx->VSSetShader(mScreenVs.Get(), nullptr, 0);
@@ -636,23 +635,23 @@ auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11Rend
 
 
 auto Renderer::Impl::ClearGizmoDrawQueue() noexcept -> void {
-  mGizmoColors.clear();
-  mLineGizmoVertexData.clear();
+  gizmo_colors_.clear();
+  line_gizmo_vertex_data_.clear();
 }
 
 
 auto Renderer::Impl::ReleaseTempRenderTargets() noexcept -> void {
   std::erase_if(mTmpRenderTargets, [](TempRenderTargetRecord& tmpRtRecord) {
-    tmpRtRecord.ageInFrames += 1;
-    return tmpRtRecord.ageInFrames >= MAX_TMP_RT_AGE;
+    tmpRtRecord.age_in_frames += 1;
+    return tmpRtRecord.age_in_frames >= max_tmp_rt_age_;
   });
 }
 
 
 auto Renderer::Impl::RecreateSsaoSamples(int const sampleCount) noexcept -> void {
-  mSsaoSamplesBuffer->Resize(sampleCount);
+  ssao_samples_buffer_->Resize(sampleCount);
   auto const ctx{GetThreadContext()};
-  auto const ssaoSamples{mSsaoSamplesBuffer->Map(ctx)};
+  auto const ssaoSamples{ssao_samples_buffer_->Map(ctx)};
 
   std::uniform_real_distribution dist{0.0f, 1.0f};
   std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
@@ -669,27 +668,181 @@ auto Renderer::Impl::RecreateSsaoSamples(int const sampleCount) noexcept -> void
     ssaoSamples[i] = Vector4{sample, 0};
   }
 
-  mSsaoSamplesBuffer->Unmap(ctx);
+  ssao_samples_buffer_->Unmap(ctx);
 }
 
 
-auto Renderer::Impl::SetDebugName(ObserverPtr<ID3D11DeviceChild> const deviceChild,
-                                  std::string_view const name) noexcept -> void {
-  [[maybe_unused]] auto const hr{
-    deviceChild->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(name)), name.data())
+auto Renderer::Impl::RecreatePipelines() -> bool {
+  if (!device_->WaitIdle()) {
+    return false;
+  }
+
+  CD3DX12_DEPTH_STENCIL_DESC const depth_stencil_desc{
+    TRUE, D3D12_DEPTH_WRITE_MASK_ALL, D3D12_COMPARISON_FUNC_GREATER, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
   };
-  assert(SUCCEEDED(hr));
+  DXGI_SAMPLE_DESC const sample_desc{static_cast<UINT>(msaa_mode_), 0};
+  CD3DX12_RT_FORMAT_ARRAY const render_target_format{&render_target_format_, 1};
+  CD3DX12_RT_FORMAT_ARRAY const color_format{&color_buffer_format_, 1};
+  CD3DX12_RT_FORMAT_ARRAY const ssao_format{&ssao_buffer_format_, 1};
+
+  struct {
+    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
+    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
+    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL depth_stencil;
+    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT depth_stencil_format;
+    CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC sample_desc;
+    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rt_formats;
+  } depth_normal_pso_desc{
+      CD3DX12_SHADER_BYTECODE{g_depth_normal_vs_bytes, ARRAYSIZE(g_depth_normal_vs_bytes)},
+      CD3DX12_SHADER_BYTECODE{g_depth_normal_ps_bytes, ARRAYSIZE(g_depth_normal_ps_bytes)}, depth_stencil_desc,
+      depth_format_, sample_desc, CD3DX12_RT_FORMAT_ARRAY{&normal_buffer_format_, 1}
+    };
+
+  depth_normal_pso_ = device_->CreatePipelineState({sizeof(depth_normal_pso_desc), &depth_normal_pso_desc},
+    sizeof(DepthNormalDrawParams) / 4, false);
+
+  struct {
+    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
+    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
+    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL depth_stencil;
+    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT depth_stencil_format;
+    CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC sample_desc;
+  } depth_only_pso_desc{
+      CD3DX12_SHADER_BYTECODE{g_depth_only_vs_bytes, ARRAYSIZE(g_depth_only_vs_bytes)},
+      CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)}, depth_stencil_desc,
+      depth_format_, sample_desc
+    };
+
+  depth_only_pso_ = device_->CreatePipelineState({sizeof(depth_only_pso_desc), &depth_only_pso_desc},
+    sizeof(DepthOnlyDrawParams) / 4, false);
+
+  struct {
+    CD3DX12_PIPELINE_STATE_STREAM_CS cs;
+  } depth_resolve_pso_desc{CD3DX12_SHADER_BYTECODE{g_depth_resolve_cs_bytes, ARRAYSIZE(g_depth_resolve_cs_bytes)}};
+
+  depth_resolve_pso_ = device_->CreatePipelineState({sizeof(depth_resolve_pso_desc), &depth_resolve_pso_desc},
+    sizeof(DepthResolveDrawParams) / 4, true);
+
+  struct {
+    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
+    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
+    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rt_formats;
+  } line_gizmo_pso_desc{
+      CD3DX12_SHADER_BYTECODE{g_gizmos_line_vs_bytes, ARRAYSIZE(g_gizmos_line_vs_bytes)},
+      CD3DX12_SHADER_BYTECODE{g_gizmos_ps_bytes, ARRAYSIZE(g_gizmos_ps_bytes)}, render_target_format
+    };
+
+  line_gizmo_pso_ = device_->CreatePipelineState({sizeof(line_gizmo_pso_desc), &line_gizmo_pso_desc},
+    sizeof(GizmoDrawParams) / 4, false);
+
+  struct {
+    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
+    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
+    CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC sample_desc;
+    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rt_formats;
+    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT depth_stencil_format;
+    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL depth_stencil;
+  } object_pso_desc{
+      CD3DX12_SHADER_BYTECODE{g_object_pbr_vs_bytes, ARRAYSIZE(g_object_pbr_vs_bytes)},
+      CD3DX12_SHADER_BYTECODE{g_object_pbr_ps_bytes, ARRAYSIZE(g_object_pbr_ps_bytes)}, sample_desc, color_format,
+      depth_format_, depth_stencil_desc
+    };
+
+  object_pso_ = device_->CreatePipelineState({sizeof(object_pso_desc), &object_pso_desc}, sizeof(ObjectDrawParams) / 4,
+    false);
+
+  struct {
+    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
+    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
+    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rtv_formats;
+  } post_process_pso_desc{
+      CD3DX12_SHADER_BYTECODE{&g_post_process_vs_bytes, ARRAYSIZE(g_post_process_vs_bytes)},
+      CD3DX12_SHADER_BYTECODE{&g_post_process_ps_bytes, ARRAYSIZE(g_post_process_ps_bytes)}, render_target_format
+    };
+
+  post_process_pso_ = device_->CreatePipelineState({sizeof(post_process_pso_desc), &post_process_pso_desc},
+    sizeof(PostProcessDrawParams) / 4, false);
+
+  struct {
+    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
+    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
+    CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC sample_desc;
+    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rt_formats;
+    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT depth_stencil_format;
+    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL depth_stencil;
+    CD3DX12_RASTERIZER_DESC rasterizer;
+  } skybox_pso_desc{
+      CD3DX12_SHADER_BYTECODE{&g_skybox_vs_bytes, ARRAYSIZE(g_skybox_vs_bytes)},
+      CD3DX12_SHADER_BYTECODE{&g_skybox_ps_bytes, ARRAYSIZE(g_skybox_ps_bytes)}, sample_desc, color_format,
+      depth_format_,
+      CD3DX12_DEPTH_STENCIL_DESC{
+        TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {},
+        {}, {}
+      },
+      CD3DX12_RASTERIZER_DESC{
+        D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+        D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, TRUE, TRUE, FALSE, 0, {}
+      }
+    };
+
+  skybox_pso_ = device_->CreatePipelineState({sizeof(skybox_pso_desc), &skybox_pso_desc}, sizeof(SkyboxDrawParams) / 4,
+    false);
+
+  struct {
+    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
+    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
+    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rt_formats;
+  } ssao_pso_desc{
+      CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
+      CD3DX12_SHADER_BYTECODE{&g_ssao_main_ps_bytes, ARRAYSIZE(g_ssao_main_ps_bytes)}, ssao_format
+    };
+
+  ssao_pso_ = device_->CreatePipelineState({sizeof(ssao_pso_desc), &ssao_pso_desc}, sizeof(SsaoDrawParams) / 4, false);
+
+  decltype(ssao_pso_desc) ssao_blur_pso_desc{
+    CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
+    CD3DX12_SHADER_BYTECODE{&g_ssao_blur_ps_bytes, ARRAYSIZE(g_ssao_blur_ps_bytes)}, ssao_format
+  };
+
+  ssao_blur_pso_ = device_->CreatePipelineState({sizeof(ssao_blur_pso_desc), &ssao_blur_pso_desc},
+    sizeof(SsaoBlurDrawParams) / 4, false);
+
+  return true;
+}
+
+
+auto Renderer::Impl::CreatePerViewConstantBuffers(UINT const count) -> void {
+  for (auto& cbs : per_view_cbs_) {
+    cbs.reserve(cbs.size() + count);
+
+    for (std::size_t i{0}; i < count; i++) {
+      cbs.emplace_back(device_->CreateBuffer(
+        graphics::BufferDesc{sizeof(ShaderPerViewConstants), 0, true, false, false}, D3D12_HEAP_TYPE_UPLOAD));
+    }
+  }
+}
+
+
+auto Renderer::Impl::CreatePerDrawConstantBuffers(UINT const count) -> void {
+  for (auto& cbs : per_draw_cbs_) {
+    cbs.reserve(cbs.size() + count);
+
+    for (std::size_t i{0}; i < count; i++) {
+      cbs.emplace_back(device_->CreateBuffer(
+        graphics::BufferDesc{sizeof(ShaderPerViewConstants), 0, true, false, false}, D3D12_HEAP_TYPE_UPLOAD));
+    }
+  }
 }
 
 
 auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<std::uint32_t> const size) -> void {
-  self->mSwapChain->Resize(size.width, size.height);
+  std::ignore = self->device_->SwapChainResize(*self->swap_chain_, size.width, size.height);
 
   if (size.width != 0 && size.height != 0) {
-    RenderTarget::Desc desc{self->mMainRt->GetDesc()};
+    RenderTarget::Desc desc{self->main_rt_->GetDesc()};
     desc.width = size.width;
     desc.height = size.height;
-    self->mMainRt = std::make_unique<RenderTarget>(desc);
+    self->main_rt_ = RenderTarget::New(*self->device_, desc);
   }
 }
 
@@ -759,396 +912,41 @@ auto Renderer::Impl::GetProjectionMatrixForRendering(Matrix4 const& proj_mtx) no
 
 
 auto Renderer::Impl::StartUp() -> void {
-  // CREATE DEVICE AND IMMEDIATE CONTEXT
-
-  UINT creationFlags{0};
-  D3D_FEATURE_LEVEL constexpr requestedFeatureLevels[]{D3D_FEATURE_LEVEL_11_0};
+  bool device_debug{false};
 
 #ifndef NDEBUG
-  creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+  device_debug = true;
 #endif
 
-  if (FAILED(
-    D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1,
-      D3D11_SDK_VERSION, mDevice.GetAddressOf(), nullptr, mImmediateContext.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create D3D device."};
-  }
+  device_ = graphics::GraphicsDevice::New(device_debug);
+  swap_chain_ = device_->CreateSwapChain(graphics::SwapChainDesc{0, 0, 2, render_target_format_, 0, DXGI_SCALING_NONE},
+    static_cast<HWND>(gWindow.GetNativeHandle()));
 
-  // SET DEBUG BREAKS
+  light_buffer_ = std::make_unique<StructuredBuffer<ShaderLight>>(device_.get());
 
-#ifndef NDEBUG
-  ComPtr<ID3D11Debug> d3dDebug;
-  if (FAILED(mDevice.As(&d3dDebug))) {
-    throw std::runtime_error{"Failed to get ID3D11Debug interface."};
-  }
+  gizmo_color_buffer_ = std::make_unique<StructuredBuffer<Vector4>>(device_.get());
 
-  ComPtr<ID3D11InfoQueue> d3dInfoQueue;
-  if (FAILED(d3dDebug.As<ID3D11InfoQueue>(&d3dInfoQueue))) {
-    throw std::runtime_error{"Failed to get ID3D11InfoQueue interface."};
-  }
+  line_gizmo_vertex_data_buffer_ = std::make_unique<StructuredBuffer<ShaderLineGizmoVertexData>>(device_.get());
 
-  d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-  d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-#endif
-
-  if (FAILED(mDevice.As(&mDxgiDevice))) {
-    throw std::runtime_error{"Failed to query IDXGIDevice interface."};
-  }
-
-  SetInFlightFrameCount(2);
-
-  ComPtr<IDXGIAdapter> dxgiAdapter;
-  if (FAILED(mDxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to get IDXGIAdapter."};
-  }
-
-  ComPtr<IDXGIFactory2> dxgiFactory2;
-  if (FAILED(dxgiAdapter->GetParent(IID_PPV_ARGS(dxgiFactory2.GetAddressOf())))) {
-    throw std::runtime_error{"Failed to query IDXGIFactory2 interface."};
-  }
-
-  mSwapChain = std::make_unique<SwapChain>(mDevice, dxgiFactory2.Get());
-
-  mLightBuffer = std::make_unique<StructuredBuffer<ShaderLight>>(mDevice);
-  mGizmoColorBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice);
-  mLineGizmoVertexDataBuffer = std::make_unique<StructuredBuffer<ShaderLineGizmoVertexData>>(mDevice);
-  mMainRt = std::make_unique<RenderTarget>(RenderTarget::Desc{
-    .width = static_cast<UINT>(gWindow.GetClientAreaSize().width),
-    .height = static_cast<UINT>(gWindow.GetClientAreaSize().height), .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
-    .depthBufferBitCount = 0, .stencilBufferBitCount = 0, .debugName = "Main RT"
+  main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
+    static_cast<UINT>(gWindow.GetClientAreaSize().width), static_cast<UINT>(gWindow.GetClientAreaSize().height),
+    DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Main RT", false
   });
 
-  // CREATE INPUT LAYOUTS
+  dir_shadow_map_arr_ = std::make_unique<DirectionalShadowMapArray>(device_.get(), depth_format_, 4096);
+  punctual_shadow_atlas_ = std::make_unique<PunctualShadowAtlas>(device_.get(), depth_format_, 4096);
 
-  D3D11_INPUT_ELEMENT_DESC constexpr inputDescs[]{
-    {
-      .SemanticName = "POSITION", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32B32_FLOAT, .InputSlot = 0,
-      .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0
-    },
-    {
-      .SemanticName = "NORMAL", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32B32_FLOAT, .InputSlot = 1,
-      .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0
-    },
-    {
-      .SemanticName = "TEXCOORD", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32_FLOAT, .InputSlot = 2,
-      .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0
-    },
-    {
-      .SemanticName = "TANGENT", .SemanticIndex = 0, .Format = DXGI_FORMAT_R32G32B32_FLOAT, .InputSlot = 3,
-      .AlignedByteOffset = 0, .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA, .InstanceDataStepRate = 0
-    }
-  };
+  std::ignore = RecreatePipelines();
 
-  if (FAILED(
-    mDevice->CreateInputLayout(inputDescs, ARRAYSIZE(inputDescs), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mAllAttribsIl.
-      GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create all-attributes input layout."};
+  for (auto& cb : per_frame_cbs_) {
+    cb = device_->CreateBuffer(graphics::BufferDesc{sizeof(ShaderPerFrameConstants), 0, true, false, false},
+      D3D12_HEAP_TYPE_UPLOAD);
   }
 
-  // CREATE SHADERS
-
-  if (FAILED(mDevice->CreateVertexShader(gMeshVSBin, ARRAYSIZE(gMeshVSBin), nullptr, mMeshVs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create mesh vertex shader."};
-  }
-
-  char constexpr meshVsName[]{"Mesh Vertex Shader"};
-  mMeshVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(meshVsName), meshVsName);
-
-  if (FAILED(mDevice->CreatePixelShader(gMeshPbrPSBin, ARRAYSIZE(gMeshPbrPSBin), nullptr, mMeshPbrPs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create mesh pbr pixel shader."};
-  }
-
-  char constexpr meshPbrPsName[]{"Mesh PBR Pixel Shader"};
-  mMeshPbrPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(meshPbrPsName), meshPbrPsName);
-
-  if (FAILED(
-    mDevice->CreatePixelShader(gPostProcessPSBin, ARRAYSIZE(gPostProcessPSBin), nullptr, mPostProcessPs.GetAddressOf()
-    ))) {
-    throw std::runtime_error{"Failed to create textured post process pixel shader."};
-  }
-
-  char constexpr postProcessPsName[]{"Postprocess Pixel Shader"};
-  mPostProcessPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(postProcessPsName), postProcessPsName);
-
-  if (FAILED(
-    mDevice->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, mSkyboxVs.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{"Failed to create skybox vertex shader."};
-  }
-
-  char constexpr skyboxVsName[]{"Skybox Vertex Shader"};
-  mSkyboxVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(skyboxVsName), skyboxVsName);
-
-  if (FAILED(
-    mDevice->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, mSkyboxPs.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{"Failed to create skybox pixel shader."};
-  }
-
-  char constexpr skyboxPsName[]{"Skybox Pixel Shader"};
-  mSkyboxPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(skyboxPsName), skyboxPsName);
-
-  if (FAILED(
-    mDevice->CreateVertexShader(gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), nullptr, mDepthOnlyVs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create depth-only vertex shader."};
-  }
-
-  char constexpr depthOnlyVsName[]{"Depth-Only Vertex Shader"};
-  mDepthOnlyVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthOnlyVsName), depthOnlyVsName);
-
-  if (FAILED(
-    mDevice->CreatePixelShader(gDepthOnlyPSBin, ARRAYSIZE(gDepthOnlyPSBin), nullptr, mDepthOnlyPs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create depth-only pixel shader."};
-  }
-
-  char constexpr depthOnlyPsName[]{"Depth-Only Pixel Shader"};
-  mDepthOnlyPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthOnlyPsName), depthOnlyPsName);
-
-  if (FAILED(mDevice->CreateVertexShader(gScreenVSBin, ARRAYSIZE(gScreenVSBin), nullptr, mScreenVs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create screen vertex shader."};
-  }
-
-  char constexpr screenVsName[]{"Screen Vertex Shader"};
-  mScreenVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(screenVsName), screenVsName);
-
-  if (FAILED(
-    mDevice->CreateVertexShader(gLineGizmoVSBin, ARRAYSIZE(gLineGizmoVSBin), nullptr, mLineGizmoVs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create line gizmo vertex shader."};
-  }
-
-  char constexpr lineGizmoVsName[]{"Line Gizmo Vertex Shader"};
-  mLineGizmoVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(lineGizmoVsName), lineGizmoVsName);
-
-  if (FAILED(mDevice->CreatePixelShader(gGizmoPSBin, ARRAYSIZE(gGizmoPSBin), nullptr, mGizmoPs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create gizmo pixel shader."};
-  }
-
-  char constexpr gizmoPsName[]{"Gizmo Pixel Shader"};
-  mGizmoPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(gizmoPsName), gizmoPsName);
-
-  [[maybe_unused]] auto hr{
-    mDevice->CreatePixelShader(gDepthNormalPSBin, ARRAYSIZE(gDepthNormalPSBin), nullptr, mDepthNormalPs.GetAddressOf())
-  };
-  assert(SUCCEEDED(hr));
-  char constexpr depthNormalPsName[]{"Depth-Normal Pixel Shader"};
-  hr = mDepthNormalPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthNormalPsName), depthNormalPsName);
-  assert(SUCCEEDED(hr));
-
-  hr = mDevice->CreateVertexShader(gDepthNormalVSBin, ARRAYSIZE(gDepthNormalVSBin), nullptr,
-    mDepthNormalVs.GetAddressOf());
-  assert(SUCCEEDED(hr));
-  char constexpr depthNormalVsName[]{"Depth-Normal Vertex Shader"};
-  hr = mDepthNormalVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthNormalVsName), depthNormalVsName);
-  assert(SUCCEEDED(hr));
-
-  hr = mDevice->CreatePixelShader(gSsaoPSBin, ARRAYSIZE(gSsaoPSBin), nullptr, mSsaoPs.GetAddressOf());
-  assert(SUCCEEDED(hr));
-  char constexpr ssaoPsName[]{"SSAO Pixel Shader"};
-  hr = mSsaoPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(ssaoPsName), ssaoPsName);
-  assert(SUCCEEDED(hr));
-
-  hr = mDevice->CreatePixelShader(gSsaoBlurPSBin, ARRAYSIZE(gSsaoBlurPSBin), nullptr, mSsaoBlurPs.GetAddressOf());
-  assert(SUCCEEDED(hr));
-  char constexpr ssaoBlurPsName[]{"SSAO Blur Pixel Shader"};
-  hr = mSsaoBlurPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(ssaoBlurPsName), ssaoBlurPsName);
-  assert(SUCCEEDED(hr));
-
-  hr = mDevice->CreateComputeShader(gDepthResolveCSBin, ARRAYSIZE(gDepthResolveCSBin), nullptr,
-    mDepthResolveCs.GetAddressOf());
-  assert(SUCCEEDED(hr));
-  SetDebugName(mDepthResolveCs.Get(), "Depth Resolve Compute Shader");
-
-  // CREATE CONSTANT BUFFERS
-
-
-  D3D11_BUFFER_DESC constexpr perFrameCbDesc{
-    .ByteWidth = sizeof(PerFrameCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0
-  };
-
-  if (FAILED(mDevice->CreateBuffer(&perFrameCbDesc, nullptr, mPerFrameCb.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create per frame CB."};
-  }
-
-  D3D11_BUFFER_DESC constexpr perViewCbDesc{
-    .ByteWidth = sizeof(PerViewCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0
-  };
-
-  if (FAILED(mDevice->CreateBuffer(&perViewCbDesc, nullptr, mPerViewCb.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create per view CB."};
-  }
-
-  D3D11_BUFFER_DESC constexpr perDrawCbDesc{
-    .ByteWidth = sizeof(PerDrawCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0
-  };
-
-  if (FAILED(mDevice->CreateBuffer(&perDrawCbDesc, nullptr, mPerDrawCb.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create per draw CB."};
-  }
-
-  D3D11_BUFFER_DESC constexpr postProcessCbDesc{
-    .ByteWidth = sizeof(PostProcessCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0
-  };
-
-  if (FAILED(mDevice->CreateBuffer(&postProcessCbDesc, nullptr, mPostProcessCb.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create post-process CB."};
-  }
-
-  D3D11_BUFFER_DESC constexpr ssaoCbDesc{
-    .ByteWidth = sizeof(SsaoCB), .Usage = D3D11_USAGE_DYNAMIC, .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE, .MiscFlags = 0, .StructureByteStride = 0
-  };
-
-  hr = mDevice->CreateBuffer(&ssaoCbDesc, nullptr, mSsaoCb.GetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  // CREATE RASTERIZER STATES
-
-  D3D11_RASTERIZER_DESC constexpr skyboxPassRasterizerDesc{
-    .FillMode = D3D11_FILL_SOLID, .CullMode = D3D11_CULL_NONE, .FrontCounterClockwise = FALSE, .DepthBias = 0,
-    .DepthBiasClamp = 0.0f, .SlopeScaledDepthBias = 0.0f, .DepthClipEnable = TRUE, .ScissorEnable = FALSE,
-    .MultisampleEnable = FALSE, .AntialiasedLineEnable = FALSE
-  };
-
-  if (FAILED(mDevice->CreateRasterizerState(&skyboxPassRasterizerDesc, mSkyboxPassRs.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{"Failed to create skybox pass rasterizer state."};
-  }
-
-  D3D11_RASTERIZER_DESC constexpr shadowPassRasterizerDesc{
-    .FillMode = D3D11_FILL_SOLID, .CullMode = D3D11_CULL_BACK, .FrontCounterClockwise = FALSE, .DepthBias = -1,
-    .DepthBiasClamp = 0, .SlopeScaledDepthBias = -2.5, .DepthClipEnable = TRUE, .ScissorEnable = FALSE,
-    .MultisampleEnable = FALSE, .AntialiasedLineEnable = FALSE
-  };
-
-  if (FAILED(mDevice->CreateRasterizerState(&shadowPassRasterizerDesc, mShadowPassRs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create shadow pass rasterizer state."};
-  }
-
-  // CREATE DEPTH STENCIL STATES
-
-
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterWrite{
-    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_GREATER,
-    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
-    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
-    .FrontFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    },
-    .BackFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    }
-  };
-
-  if (FAILED(mDevice->CreateDepthStencilState(&depthTestGreaterWrite, mDepthTestGreaterWriteDss.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create depth-test greater write depth-stencil state."};
-  }
-
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessrWrite{
-    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_LESS,
-    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
-    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
-    .FrontFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    },
-    .BackFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    }
-  };
-
-  if (FAILED(mDevice->CreateDepthStencilState(&depthTestLessrWrite, mDepthTestLessWriteDss.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create depth-test less write depth-stencil state."};
-  }
-
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterEqualNoWriteDesc{
-    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO, .DepthFunc = D3D11_COMPARISON_GREATER_EQUAL,
-    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
-    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
-    .FrontFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    },
-    .BackFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    }
-  };
-
-  if (FAILED(
-    mDevice->CreateDepthStencilState(&depthTestGreaterEqualNoWriteDesc, mDepthTestGreaterEqualNoWriteDss.GetAddressOf()
-    ))) {
-    throw std::runtime_error{"Failed to create depth-test greater-or-equal no-write DSS."};
-  }
-
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterEqualWriteDesc{
-    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_GREATER_EQUAL,
-    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
-    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
-    .FrontFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    },
-    .BackFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    }
-  };
-
-  if (FAILED(
-    mDevice->CreateDepthStencilState(&depthTestGreaterEqualWriteDesc, mDepthTestGreaterEqualWriteDss.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create depth-test greater-or-equal write DSS."};
-  }
-
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualNoWriteDesc{
-    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO, .DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
-    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
-    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
-    .FrontFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    },
-    .BackFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    }
-  };
-
-  if (FAILED(
-    mDevice->CreateDepthStencilState(&depthTestLessEqualNoWriteDesc, mDepthTestLessEqualNoWriteDss.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create depth-test less-or-equal no-write DSS."};
-  }
-
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualWriteDesc{
-    .DepthEnable = TRUE, .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL, .DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
-    .StencilEnable = FALSE, .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
-    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
-    .FrontFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    },
-    .BackFace = {
-      .StencilFailOp = D3D11_STENCIL_OP_KEEP, .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-      .StencilPassOp = D3D11_STENCIL_OP_KEEP, .StencilFunc = D3D11_COMPARISON_ALWAYS
-    }
-  };
-
-  if (FAILED(
-    mDevice->CreateDepthStencilState(&depthTestLessEqualWriteDesc, mDepthTestLessEqualWriteDss.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create depth-test less-or-equal write DSS."};
-  }
-
-  // CREATE SHADOW ATLASES
-
-  //mDirectionalShadowAtlas = std::make_unique<DirectionalShadowAtlas>(mDevice.Get(), 4096);
-  mDirShadowMapArr = std::make_unique<DirectionalShadowMapArray>(mDevice.Get(), 4096);
-  mPunctualShadowAtlas = std::make_unique<PunctualShadowAtlas>(mDevice.Get(), 4096);
+  CreatePerViewConstantBuffers(1);
+  CreatePerDrawConstantBuffers(100);
 
   // CREATE SAMPLER STATES
-
 
   D3D11_SAMPLER_DESC constexpr cmpPcfGreaterEqual{
     .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
@@ -1157,7 +955,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = 0
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&cmpPcfGreaterEqual, mCmpPcfGreaterEqualSs.GetAddressOf()))) {
+  if (FAILED(mDevice->CreateSamplerState(&cmpPcfGreaterEqual, samp_cmp_pcf_ge_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create PCF greater-equal comparison sampler state."};
   }
 
@@ -1168,7 +966,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = 0
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&cmpPcfLessEqual, mCmpPcfLessEqualSs.GetAddressOf()))) {
+  if (FAILED(mDevice->CreateSamplerState(&cmpPcfLessEqual, samp_cmp_pcf_le_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create PCF less-equal comparison sampler state."};
   }
 
@@ -1179,7 +977,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = 0
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&cmpPointGreaterEqualDesc, mCmpPointGreaterEqualSs.GetAddressOf()))) {
+  if (FAILED(mDevice->CreateSamplerState(&cmpPointGreaterEqualDesc, samp_cmp_point_ge_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create point-filter greater-equal comparison sampler state."};
   }
 
@@ -1190,7 +988,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = 0
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&cmpPointLessEqualDesc, mCmpPointLessEqualSs.GetAddressOf()))) {
+  if (FAILED(mDevice->CreateSamplerState(&cmpPointLessEqualDesc, samp_cmp_point_le_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create point-filter less-equal comparison sampler state."};
   }
 
@@ -1201,7 +999,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&af16ClampDesc, mAf16ClampSs.GetAddressOf()))) {
+  if (FAILED(mDevice->CreateSamplerState(&af16ClampDesc, samp_af16_clamp_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create AF16 clamp sampler state."};
   }
 
@@ -1212,7 +1010,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&af8ClampDesc, mAf8ClampSs.GetAddressOf()))) {
+  if (FAILED(mDevice->CreateSamplerState(&af8ClampDesc, samp_af8_clamp_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create AF8 clamp sampler state."};
   }
 
@@ -1223,7 +1021,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&af4ClampDesc, mAf4ClampSs.GetAddressOf()))) {
+  if (FAILED(mDevice->CreateSamplerState(&af4ClampDesc, samp_af4_clamp_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create AF4 clamp sampler state."};
   }
 
@@ -1234,7 +1032,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
   };
 
-  hr = mDevice->CreateSamplerState(&af2ClampDesc, mAf2ClampSs.GetAddressOf());
+  hr = mDevice->CreateSamplerState(&af2ClampDesc, samp_af2_clamp_.GetAddressOf());
   assert(SUCCEEDED(hr));
 
   D3D11_SAMPLER_DESC constexpr trilinearClampDesc{
@@ -1244,7 +1042,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&trilinearClampDesc, mTrilinearClampSs.GetAddressOf()))) {
+  if (FAILED(mDevice->CreateSamplerState(&trilinearClampDesc, samp_tri_clamp_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create trilinear clamp sampler state."};
   }
 
@@ -1255,7 +1053,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&bilinearClampDesc, mBilinearClampSs.GetAddressOf()))) {
+  if (FAILED(mDevice->CreateSamplerState(&bilinearClampDesc, samp_bi_clamp_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create bilinear clamp sampler state."};
   }
 
@@ -1266,7 +1064,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MinLOD = -FLT_MAX, .MaxLOD = FLT_MAX
   };
 
-  if (FAILED(mDevice->CreateSamplerState(&pointClampDesc, mPointClampSs.GetAddressOf()))) {
+  if (FAILED(mDevice->CreateSamplerState(&pointClampDesc, samp_point_clamp_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create point-filter clamp sampler state."};
   }
 
@@ -1277,7 +1075,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  hr = mDevice->CreateSamplerState(&af16WrapDesc, mAf16WrapSs.GetAddressOf());
+  hr = mDevice->CreateSamplerState(&af16WrapDesc, samp_af16_wrap_.GetAddressOf());
   assert(SUCCEEDED(hr));
 
   D3D11_SAMPLER_DESC constexpr af8WrapDesc{
@@ -1287,7 +1085,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  hr = mDevice->CreateSamplerState(&af8WrapDesc, mAf8WrapSs.GetAddressOf());
+  hr = mDevice->CreateSamplerState(&af8WrapDesc, samp_af8_wrap_.GetAddressOf());
   assert(SUCCEEDED(hr));
 
   D3D11_SAMPLER_DESC constexpr af4WrapDesc{
@@ -1297,7 +1095,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  hr = mDevice->CreateSamplerState(&af4WrapDesc, mAf4WrapSs.GetAddressOf());
+  hr = mDevice->CreateSamplerState(&af4WrapDesc, samp_af4_wrap_.GetAddressOf());
   assert(SUCCEEDED(hr));
 
   D3D11_SAMPLER_DESC constexpr af2WrapDesc{
@@ -1307,7 +1105,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  hr = mDevice->CreateSamplerState(&af2WrapDesc, mAf2WrapSs.GetAddressOf());
+  hr = mDevice->CreateSamplerState(&af2WrapDesc, samp_af2_wrap_.GetAddressOf());
   assert(SUCCEEDED(hr));
 
   D3D11_SAMPLER_DESC constexpr trilinearWrapDesc{
@@ -1317,7 +1115,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  hr = mDevice->CreateSamplerState(&trilinearWrapDesc, mTrilinearWrapSs.GetAddressOf());
+  hr = mDevice->CreateSamplerState(&trilinearWrapDesc, samp_tri_wrap_.GetAddressOf());
   assert(SUCCEEDED(hr));
 
   D3D11_SAMPLER_DESC constexpr bilinearWrapDesc{
@@ -1327,7 +1125,7 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  hr = mDevice->CreateSamplerState(&bilinearWrapDesc, mBilinearWrapSs.GetAddressOf());
+  hr = mDevice->CreateSamplerState(&bilinearWrapDesc, samp_bi_wrap_.GetAddressOf());
   assert(SUCCEEDED(hr));
 
   D3D11_SAMPLER_DESC constexpr pointWrapDesc{
@@ -1337,61 +1135,61 @@ auto Renderer::Impl::StartUp() -> void {
     .MaxLOD = FLT_MAX
   };
 
-  hr = mDevice->CreateSamplerState(&pointWrapDesc, mPointWrapSs.GetAddressOf());
+  hr = mDevice->CreateSamplerState(&pointWrapDesc, samp_point_wrap_.GetAddressOf());
   assert(SUCCEEDED(hr));
 
   // CREATE DEFAULT ASSETS
 
-  mDefaultMaterial = CreateAndInitialize<Material>();
-  mDefaultMaterial->SetGuid(DEFAULT_MATERIAL_GUID);
-  mDefaultMaterial->SetName("Default Material");
-  gResourceManager.Add(mDefaultMaterial);
+  default_material_ = CreateAndInitialize<Material>();
+  default_material_->SetGuid(default_material_guid_);
+  default_material_->SetName("Default Material");
+  gResourceManager.Add(default_material_);
 
   std::vector<Vector3> cubeNormals;
-  CalculateNormals(CUBE_POSITIONS, CUBE_INDICES, cubeNormals);
+  CalculateNormals(kCubePositions, kCubeIndices, cubeNormals);
 
   std::vector<Vector3> cubeTangents;
-  CalculateTangents(CUBE_POSITIONS, CUBE_UVS, CUBE_INDICES, cubeTangents);
+  CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cubeTangents);
 
   std::vector<Vector3> quadNormals;
-  CalculateNormals(QUAD_POSITIONS, QUAD_INDICES, quadNormals);
+  CalculateNormals(kQuadPositions, kQuadIndices, quadNormals);
 
   std::vector<Vector3> quadTangents;
-  CalculateTangents(QUAD_POSITIONS, QUAD_UVS, QUAD_INDICES, quadTangents);
+  CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, quadTangents);
 
-  mCubeMesh = CreateAndInitialize<Mesh>();
-  mCubeMesh->SetGuid(CUBE_MESH_GUID);
-  mCubeMesh->SetName("Cube");
-  mCubeMesh->SetPositions(CUBE_POSITIONS);
-  mCubeMesh->SetNormals(std::move(cubeNormals));
-  mCubeMesh->SetUVs(CUBE_UVS);
-  mCubeMesh->SetTangents(std::move(cubeTangents));
-  mCubeMesh->SetIndices(CUBE_INDICES);
-  mCubeMesh->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  mCubeMesh->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(CUBE_INDICES.size()), 0, AABB{}}});
-  if (!mCubeMesh->ValidateAndUpdate(false)) {
+  cube_mesh_ = CreateAndInitialize<Mesh>();
+  cube_mesh_->SetGuid(cube_mesh_guid_);
+  cube_mesh_->SetName("Cube");
+  cube_mesh_->SetPositions(kCubePositions);
+  cube_mesh_->SetNormals(std::move(cubeNormals));
+  cube_mesh_->SetUVs(kCubeUvs);
+  cube_mesh_->SetTangents(std::move(cubeTangents));
+  cube_mesh_->SetIndices(kCubeIndices);
+  cube_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  cube_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kCubeIndices.size()), 0, AABB{}}});
+  if (!cube_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default cube mesh."};
   }
-  gResourceManager.Add(mCubeMesh);
+  gResourceManager.Add(cube_mesh_);
 
-  mPlaneMesh = CreateAndInitialize<Mesh>();
-  mPlaneMesh->SetGuid(PLANE_MESH_GUID);
-  mPlaneMesh->SetName("Plane");
-  mPlaneMesh->SetPositions(QUAD_POSITIONS);
-  mPlaneMesh->SetNormals(std::move(quadNormals));
-  mPlaneMesh->SetUVs(QUAD_UVS);
-  mPlaneMesh->SetTangents(std::move(quadTangents));
-  mPlaneMesh->SetIndices(QUAD_INDICES);
-  mPlaneMesh->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  mPlaneMesh->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(QUAD_INDICES.size()), 0, AABB{}}});
-  if (!mPlaneMesh->ValidateAndUpdate(false)) {
+  plane_mesh_ = CreateAndInitialize<Mesh>();
+  plane_mesh_->SetGuid(plane_mesh_guid_);
+  plane_mesh_->SetName("Plane");
+  plane_mesh_->SetPositions(kQuadPositions);
+  plane_mesh_->SetNormals(std::move(quadNormals));
+  plane_mesh_->SetUVs(kQuadUvs);
+  plane_mesh_->SetTangents(std::move(quadTangents));
+  plane_mesh_->SetIndices(kQuadIndices);
+  plane_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  plane_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kQuadIndices.size()), 0, AABB{}}});
+  if (!plane_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default plane mesh."};
   }
-  gResourceManager.Add(mPlaneMesh);
+  gResourceManager.Add(plane_mesh_);
 
-  mSphereMesh = CreateAndInitialize<Mesh>();
-  mSphereMesh->SetGuid(SPHERE_MESH_GUID);
-  mSphereMesh->SetName("Sphere");
+  sphere_mesh_ = CreateAndInitialize<Mesh>();
+  sphere_mesh_->SetGuid(sphere_mesh_guid_);
+  sphere_mesh_->SetName("Sphere");
   std::vector<Vector3> spherePositions;
   std::vector<Vector3> sphereNormals;
   std::vector<Vector3> sphereTangents;
@@ -1400,86 +1198,89 @@ auto Renderer::Impl::StartUp() -> void {
   GenerateSphere(1, 50, 50, spherePositions, sphereNormals, sphereUvs, sphereIndices);
   auto const sphereIdxCount{std::size(sphereIndices)};
   CalculateTangents(spherePositions, sphereUvs, sphereIndices, sphereTangents);
-  mSphereMesh->SetPositions(std::move(spherePositions));
-  mSphereMesh->SetNormals(std::move(sphereNormals));
-  mSphereMesh->SetUVs(std::move(sphereUvs));
-  mSphereMesh->SetTangents(std::move(sphereTangents));
-  mSphereMesh->SetIndices(std::move(sphereIndices));
-  mSphereMesh->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  mSphereMesh->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
-  if (!mSphereMesh->ValidateAndUpdate(false)) {
+  sphere_mesh_->SetPositions(std::move(spherePositions));
+  sphere_mesh_->SetNormals(std::move(sphereNormals));
+  sphere_mesh_->SetUVs(std::move(sphereUvs));
+  sphere_mesh_->SetTangents(std::move(sphereTangents));
+  sphere_mesh_->SetIndices(std::move(sphereIndices));
+  sphere_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  sphere_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
+  if (!sphere_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default sphere mesh."};
   }
-  gResourceManager.Add(mSphereMesh);
+  gResourceManager.Add(sphere_mesh_);
 
   gWindow.OnWindowSize.add_handler(this, &OnWindowSize);
 
-  dxgiFactory2->MakeWindowAssociation(static_cast<HWND>(gWindow.GetNativeHandle()), DXGI_MWA_NO_WINDOW_CHANGES);
+  ssao_samples_buffer_ = std::make_unique<StructuredBuffer<Vector4>>(device_.get());
+  RecreateSsaoSamples(ssao_params_.sampleCount);
 
-  // CREATE SSAO SAMPLES
-
-  mSsaoSamplesBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice);
-  RecreateSsaoSamples(mSsaoParams.sampleCount);
-
-  // CREATE SSAO NOISE TEXTURE
-
-  std::vector<Vector4> ssaoNoise;
+  std::vector<Vector4> ssao_noise;
   std::uniform_real_distribution dist{0.0f, 1.0f};
   std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
 
   for (auto i{0}; i < SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM; i++) {
-    ssaoNoise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
+    ssao_noise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
   }
 
-  D3D11_TEXTURE2D_DESC constexpr ssaoNoiseTexDesc{
-    .Width = SSAO_NOISE_TEX_DIM, .Height = SSAO_NOISE_TEX_DIM, .MipLevels = 1, .ArraySize = 1,
-    .Format = DXGI_FORMAT_R32G32B32A32_FLOAT, .SampleDesc = {.Count = 1, .Quality = 0}, .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_SHADER_RESOURCE, .CPUAccessFlags = 0, .MiscFlags = 0
+  auto const ssao_noise_upload_buf{
+    device_->CreateBuffer(graphics::BufferDesc{
+      static_cast<UINT>(ssao_noise.size() * sizeof(Vector4)), 0, false, false, false
+    }, D3D12_HEAP_TYPE_UPLOAD)
   };
+  std::memcpy(ssao_noise_upload_buf->Map(), ssao_noise.data(), ssao_noise.size() * sizeof(Vector4));
 
-  D3D11_SUBRESOURCE_DATA const ssaoNoiseTexData{
-    .pSysMem = ssaoNoise.data(), .SysMemPitch = SSAO_NOISE_TEX_DIM * sizeof(decltype(ssaoNoise)::value_type)
+  auto constexpr ssao_noise_tex_format{DXGI_FORMAT_R32G32B32A32_FLOAT};
+
+  ssao_noise_tex_ = device_->CreateTexture(graphics::TextureDesc{
+    graphics::TextureDimension::k2D, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1, 1, ssao_noise_tex_format, {1, 0},
+    D3D12_RESOURCE_FLAG_NONE, false, false, true, false
+  }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
+  std::ignore = ssao_noise_tex_->SetDebugName(L"SSAO Noise");
+
+  std::array<std::uint8_t, 4> constexpr static white_color_data{255, 255, 255, 255};
+
+  auto const white_tex_upload_buf{
+    device_->CreateBuffer(graphics::BufferDesc{white_color_data.size()}, D3D12_HEAP_TYPE_UPLOAD)
   };
+  std::memcpy(white_tex_upload_buf->Map(), white_color_data.data(), white_color_data.size());
 
-  hr = mDevice->CreateTexture2D(&ssaoNoiseTexDesc, &ssaoNoiseTexData, mSsaoNoiseTex.GetAddressOf());
-  assert(SUCCEEDED(hr));
-  SetDebugName(mSsaoNoiseTex.Get(), "SSAO Noise");
+  auto constexpr white_tex_format{DXGI_FORMAT_R8G8B8A8_UNORM};
 
-  D3D11_SHADER_RESOURCE_VIEW_DESC constexpr ssaoNoiseSrvDesc{
-    .Format = ssaoNoiseTexDesc.Format, .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-    .Texture2D = {.MostDetailedMip = 0, .MipLevels = 1}
-  };
+  white_tex_ = device_->CreateTexture(graphics::TextureDesc{
+    graphics::TextureDimension::k2D, 1, 1, 1, 1, white_tex_format, {1, 0}, D3D12_RESOURCE_FLAG_NONE, false, false, true,
+    false
+  }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
 
-  hr = mDevice->CreateShaderResourceView(mSsaoNoiseTex.Get(), &ssaoNoiseSrvDesc, mSsaoNoiseSrv.GetAddressOf());
-  assert(SUCCEEDED(hr));
-  SetDebugName(mSsaoNoiseSrv.Get(), "SSAO Noise");
+  std::ignore = command_lists_[0]->Begin(nullptr);
+  command_lists_[0]->CopyTextureRegion(*ssao_noise_tex_, 0, 0, 0, 0, *ssao_noise_upload_buf,
+    D3D12_PLACED_SUBRESOURCE_FOOTPRINT{
+      0,
+      D3D12_SUBRESOURCE_FOOTPRINT{
+        ssao_noise_tex_format, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1,
+        RoundToNextMultiple(SSAO_NOISE_TEX_DIM * 16, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)
+      }
+    });
+  command_lists_[0]->CopyTextureRegion(*white_tex_, 0, 0, 0, 0, *white_tex_upload_buf.Get(),
+    D3D12_PLACED_SUBRESOURCE_FOOTPRINT{
+      0, D3D12_SUBRESOURCE_FOOTPRINT{white_tex_format, 1, 1, 1, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT}
+    });
+  command_lists_[0]->Barrier({}, {}, std::array{
+    graphics::TextureBarrier{
+      D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
+      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, ssao_noise_tex_.Get(),
+      D3D12_BARRIER_SUBRESOURCE_RANGE{0, 1, 0, 1, 0, 1}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+    },
+    graphics::TextureBarrier{
+      D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
+      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, white_tex_.Get(),
+      D3D12_BARRIER_SUBRESOURCE_RANGE{0, 1, 0, 1, 0, 1}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+    }
+  });
 
-  // CREATE WHITE TEXTURE
-
-  D3D11_TEXTURE2D_DESC constexpr whiteTexDesc{
-    .Width = 1, .Height = 1, .MipLevels = 1, .ArraySize = 1, .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-    .SampleDesc = {.Count = 1, .Quality = 0}, .Usage = D3D11_USAGE_IMMUTABLE, .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-    .CPUAccessFlags = 0, .MiscFlags = 0
-  };
-
-  std::array<std::uint8_t, 4> constexpr static whiteColorData{255, 255, 255, 255};
-
-  D3D11_SUBRESOURCE_DATA constexpr whiteTexData{
-    .pSysMem = whiteColorData.data(), .SysMemPitch = sizeof(whiteColorData), .SysMemSlicePitch = 0
-  };
-
-  hr = mDevice->CreateTexture2D(&whiteTexDesc, &whiteTexData, mWhiteTex.GetAddressOf());
-  assert(SUCCEEDED(hr));
-  SetDebugName(mWhiteTex.Get(), "White");
-
-  D3D11_SHADER_RESOURCE_VIEW_DESC constexpr whiteTexSrvDesc{
-    .Format = whiteTexDesc.Format, .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-    .Texture2D = {.MostDetailedMip = 0, .MipLevels = 1}
-  };
-
-  hr = mDevice->CreateShaderResourceView(mWhiteTex.Get(), &whiteTexSrvDesc, mWhiteTexSrv.GetAddressOf());
-  assert(SUCCEEDED(hr));
-  SetDebugName(mWhiteTexSrv.Get(), "White");
+  std::ignore = command_lists_[0]->End();
+  device_->ExecuteCommandLists(std::span{command_lists_[0].Get(), 1});
+  std::ignore = device_->WaitIdle();
 }
 
 
@@ -1499,10 +1300,9 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   auto const rtAspect{static_cast<float>(rtWidth) / static_cast<float>(rtHeight)};
 
   RenderTarget::Desc const hdrRtDesc{
-    .width = rtWidth, .height = rtHeight,
-    .colorFormat = mUsePreciseColorBuffer ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R11G11B10_FLOAT,
-    .depthBufferBitCount = 32, .stencilBufferBitCount = 0, .sampleCount = static_cast<int>(GetMultisamplingMode()),
-    .debugName = "Camera HDR RenderTarget"
+    .width = rtWidth, .height = rtHeight, .color_format = color_buffer_format_, .depth_buffer_bit_count = 32,
+    .stencil_buffer_bit_count = 0, .sample_count = static_cast<int>(GetMultisamplingMode()),
+    .debug_name = "Camera HDR RenderTarget"
   };
 
   auto const& hdrRt{GetTemporaryRenderTarget(hdrRtDesc)};
@@ -1521,22 +1321,22 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     .MinDepth = 0, .MaxDepth = 1
   };
 
-  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, mCmpPcfGreaterEqualSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, mCmpPointGreaterEqualSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF16_CLAMP, 1, mAf16ClampSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF8_CLAMP, 1, mAf8ClampSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF4_CLAMP, 1, mAf4ClampSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF2_CLAMP, 1, mAf2ClampSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_TRI_CLAMP, 1, mTrilinearClampSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_BI_CLAMP, 1, mBilinearClampSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_POINT_CLAMP, 1, mPointClampSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF16_WRAP, 1, mAf16WrapSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF8_WRAP, 1, mAf8WrapSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF4_WRAP, 1, mAf4WrapSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF2_WRAP, 1, mAf2WrapSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_TRI_WRAP, 1, mTrilinearWrapSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_BI_WRAP, 1, mBilinearWrapSs.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_POINT_WRAP, 1, mPointWrapSs.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, samp_cmp_pcf_ge_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, samp_cmp_point_ge_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF16_CLAMP, 1, samp_af16_clamp_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF8_CLAMP, 1, samp_af8_clamp_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF4_CLAMP, 1, samp_af4_clamp_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF2_CLAMP, 1, samp_af2_clamp_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_TRI_CLAMP, 1, samp_tri_clamp_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_BI_CLAMP, 1, samp_bi_clamp_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_POINT_CLAMP, 1, samp_point_clamp_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF16_WRAP, 1, samp_af16_wrap_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF8_WRAP, 1, samp_af8_wrap_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF4_WRAP, 1, samp_af4_wrap_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_AF2_WRAP, 1, samp_af2_wrap_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_TRI_WRAP, 1, samp_tri_wrap_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_BI_WRAP, 1, samp_bi_wrap_.GetAddressOf());
+  ctx->PSSetSamplers(SAMPLER_SLOT_POINT_WRAP, 1, samp_point_wrap_.GetAddressOf());
 
   SetPerFrameConstants(ctx, static_cast<int>(rtWidth), static_cast<int>(rtHeight));
   ctx->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
@@ -1572,8 +1372,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   annot->EndEvent();
 
   annot->BeginEvent(L"Punctual Light Shadows");
-  mPunctualShadowAtlas->Update(mLights, visibility, cam, camViewProjMtx, mShadowDistance);
-  DrawShadowMaps(*mPunctualShadowAtlas, ctx);
+  punctual_shadow_atlas_->Update(lights_, visibility, cam, camViewProjMtx, shadow_distance_);
+  DrawShadowMaps(*punctual_shadow_atlas_, ctx);
   annot->EndEvent();
 
   CullStaticMeshComponents(camFrustWS, visibility);
@@ -1586,13 +1386,13 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   auto const& normalRt{
     GetTemporaryRenderTarget(RenderTarget::Desc{
-      .width = rtWidth, .height = rtHeight, .colorFormat = DXGI_FORMAT_R8G8B8A8_SNORM, .depthBufferBitCount = 0,
-      .stencilBufferBitCount = 0, .sampleCount = 1, .debugName = "Camera Normal RT"
+      .width = rtWidth, .height = rtHeight, .color_format = normal_buffer_format_, .depth_buffer_bit_count = 0,
+      .stencil_buffer_bit_count = 0, .sample_count = 1, .debug_name = "Camera Normal RT"
     })
   };
 
   // Depth-Normal pre-pass
-  if (mDepthNormalPrePassEnabled) {
+  if (depth_normal_pre_pass_enabled_) {
     annot->BeginEvent(L"Depth-Normal Pre-Pass");
 
     // If MSAA is enabled we render into an MSAA RT and then resolve into normalRt
@@ -1603,7 +1403,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
         }
 
         auto actualNormalRtDesc{normalRt.GetDesc()};
-        actualNormalRtDesc.sampleCount = static_cast<int>(GetMultisamplingMode());
+        actualNormalRtDesc.sample_count = static_cast<int>(GetMultisamplingMode());
         return GetTemporaryRenderTarget(actualNormalRtDesc);
       }()
     };
@@ -1626,7 +1426,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
     if (GetMultisamplingMode() != MultisamplingMode::Off) {
       ctx->ResolveSubresource(normalRt.GetColorTexture(), 0, actualNormalRt.GetColorTexture(), 0,
-        *normalRt.GetDesc().colorFormat);
+        *normalRt.GetDesc().color_format);
     }
 
     annot->EndEvent();
@@ -1635,7 +1435,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ObserverPtr<ID3D11ShaderResourceView> ssaoTexSrv{mWhiteTexSrv.Get()};
 
   // SSAO pass
-  if (mSsaoEnabled) {
+  if (ssao_enabled_) {
     annot->BeginEvent(L"SSAO");
 
     D3D11_MAPPED_SUBRESOURCE mapped;
@@ -1644,8 +1444,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
     *static_cast<SsaoCB*>(mapped.pData) = SsaoCB{
       .gSsaoConstants = ShaderSsaoConstants{
-        .radius = mSsaoParams.radius, .bias = mSsaoParams.bias, .power = mSsaoParams.power,
-        .sampleCount = mSsaoParams.sampleCount
+        .radius = ssao_params_.radius, .bias = ssao_params_.bias, .power = ssao_params_.power,
+        .sampleCount = ssao_params_.sampleCount
       }
     };
 
@@ -1653,8 +1453,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
     auto const& ssaoRt{
       GetTemporaryRenderTarget(RenderTarget::Desc{
-        .width = rtWidth, .height = rtHeight, .colorFormat = DXGI_FORMAT_R8_UNORM, .depthBufferBitCount = 0,
-        .stencilBufferBitCount = 0, .sampleCount = 1, .debugName = "SSAO RT"
+        .width = rtWidth, .height = rtHeight, .color_format = ssao_buffer_format_, .depth_buffer_bit_count = 0,
+        .stencil_buffer_bit_count = 0, .sample_count = 1, .debug_name = "SSAO RT"
       })
     };
 
@@ -1666,24 +1466,24 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
         }
 
         auto ssaoDepthRtDesc{hdrRt.GetDesc()};
-        ssaoDepthRtDesc.colorFormat = [&ssaoDepthRtDesc] {
+        ssaoDepthRtDesc.color_format = [&ssaoDepthRtDesc] {
           // NOTE: 24 bit formats are not supported for UAVs!
-          assert(ssaoDepthRtDesc.depthBufferBitCount == 32 || ssaoDepthRtDesc.depthBufferBitCount == 16);
+          assert(ssaoDepthRtDesc.depth_buffer_bit_count == 32 || ssaoDepthRtDesc.depth_buffer_bit_count == 16);
 
-          if (ssaoDepthRtDesc.depthBufferBitCount == 32) {
+          if (ssaoDepthRtDesc.depth_buffer_bit_count == 32) {
             return DXGI_FORMAT_R32_FLOAT;
           }
 
-          if (ssaoDepthRtDesc.depthBufferBitCount == 16) {
+          if (ssaoDepthRtDesc.depth_buffer_bit_count == 16) {
             return DXGI_FORMAT_R16_FLOAT;
           }
 
           return DXGI_FORMAT_UNKNOWN; // This should never be reached.
         }();
-        ssaoDepthRtDesc.sampleCount = 1;
-        ssaoDepthRtDesc.depthBufferBitCount = 0;
-        ssaoDepthRtDesc.stencilBufferBitCount = 0;
-        ssaoDepthRtDesc.enableUnorderedAccess = true;
+        ssaoDepthRtDesc.sample_count = 1;
+        ssaoDepthRtDesc.depth_buffer_bit_count = 0;
+        ssaoDepthRtDesc.stencil_buffer_bit_count = 0;
+        ssaoDepthRtDesc.enable_unordered_access = true;
         auto const& ssaoDepthRt{GetTemporaryRenderTarget(ssaoDepthRtDesc)};
 
         ctx->OMSetRenderTargets(1, std::array{static_cast<ID3D11RenderTargetView*>(nullptr)}.data(), nullptr);
@@ -1714,7 +1514,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     ctx->PSSetShaderResources(RES_SLOT_SSAO_DEPTH, 1, std::addressof(ssaoDepthSrv));
     ctx->PSSetShaderResources(RES_SLOT_SSAO_NORMAL, 1, std::array{normalRt.GetColorSrv()}.data());
     ctx->PSSetShaderResources(RES_SLOT_SSAO_NOISE, 1, mSsaoNoiseSrv.GetAddressOf());
-    ctx->PSSetShaderResources(RES_SLOT_SSAO_SAMPLES, 1, std::array{mSsaoSamplesBuffer->GetSrv()}.data());
+    ctx->PSSetShaderResources(RES_SLOT_SSAO_SAMPLES, 1, std::array{ssao_samples_buffer_->GetBuffer()}.data());
     ctx->PSSetConstantBuffers(CB_SLOT_SSAO, 1, mSsaoCb.GetAddressOf());
 
     ctx->VSSetShader(mScreenVs.Get(), nullptr, 0);
@@ -1727,7 +1527,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     auto const& ssaoBlurRt{
       GetTemporaryRenderTarget([&ssaoRt] {
         auto ret{ssaoRt.GetDesc()};
-        ret.debugName = "SSAO Blur RT";
+        ret.debug_name = "SSAO Blur RT";
         return ret;
       }())
     };
@@ -1750,23 +1550,23 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   annot->BeginEvent(L"Forward Lit Pass");
 
   auto const lightCount{std::ssize(visibility.lightIndices)};
-  mLightBuffer->Resize(static_cast<int>(lightCount));
-  auto const lightBufferData{mLightBuffer->Map(ctx)};
+  light_buffer_->Resize(static_cast<int>(lightCount));
+  auto const lightBufferData{light_buffer_->Map(ctx)};
 
   for (int i = 0; i < lightCount; i++) {
-    lightBufferData[i].color = mLights[visibility.lightIndices[i]]->GetColor();
-    lightBufferData[i].intensity = mLights[visibility.lightIndices[i]]->GetIntensity();
-    lightBufferData[i].type = static_cast<int>(mLights[visibility.lightIndices[i]]->GetType());
-    lightBufferData[i].direction = mLights[visibility.lightIndices[i]]->GetDirection();
+    lightBufferData[i].color = lights_[visibility.lightIndices[i]]->GetColor();
+    lightBufferData[i].intensity = lights_[visibility.lightIndices[i]]->GetIntensity();
+    lightBufferData[i].type = static_cast<int>(lights_[visibility.lightIndices[i]]->GetType());
+    lightBufferData[i].direction = lights_[visibility.lightIndices[i]]->GetDirection();
     lightBufferData[i].isCastingShadow = FALSE;
-    lightBufferData[i].range = mLights[visibility.lightIndices[i]]->GetRange();
+    lightBufferData[i].range = lights_[visibility.lightIndices[i]]->GetRange();
     lightBufferData[i].halfInnerAngleCos = std::cos(
-      ToRadians(mLights[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
+      ToRadians(lights_[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
     lightBufferData[i].halfOuterAngleCos = std::cos(
-      ToRadians(mLights[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
-    lightBufferData[i].position = mLights[visibility.lightIndices[i]]->GetEntity().GetTransform().GetWorldPosition();
-    lightBufferData[i].depthBias = mLights[visibility.lightIndices[i]]->GetShadowDepthBias();
-    lightBufferData[i].normalBias = mLights[visibility.lightIndices[i]]->GetShadowNormalBias();
+      ToRadians(lights_[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
+    lightBufferData[i].position = lights_[visibility.lightIndices[i]]->GetEntity().GetTransform().GetWorldPosition();
+    lightBufferData[i].depthBias = lights_[visibility.lightIndices[i]]->GetShadowDepthBias();
+    lightBufferData[i].normalBias = lights_[visibility.lightIndices[i]]->GetShadowNormalBias();
 
     for (auto& sample : lightBufferData[i].sampleShadowMap) {
       sample = FALSE;
@@ -1776,11 +1576,11 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   // Set directional light shadow constant data
 
   for (auto i{0}; i < lightCount; i++) {
-    if (auto const light{mLights[visibility.lightIndices[i]]};
+    if (auto const light{lights_[visibility.lightIndices[i]]};
       light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
       lightBufferData[i].isCastingShadow = TRUE;
 
-      for (auto cascadeIdx{0}; cascadeIdx < mCascadeCount; cascadeIdx++) {
+      for (auto cascadeIdx{0}; cascadeIdx < cascade_count_; cascadeIdx++) {
         lightBufferData[i].sampleShadowMap[cascadeIdx] = TRUE;
         lightBufferData[i].shadowViewProjMatrices[cascadeIdx] = shadowViewProjMatrices[cascadeIdx];
       }
@@ -1790,19 +1590,19 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   }
 
   //mDirectionalShadowAtlas->SetLookUpInfo(lightBufferData);
-  mPunctualShadowAtlas->SetLookUpInfo(lightBufferData);
+  punctual_shadow_atlas_->SetLookUpInfo(lightBufferData);
 
-  mLightBuffer->Unmap(ctx);
+  light_buffer_->Unmap(ctx);
 
   ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
-  ctx->OMSetDepthStencilState(mDepthNormalPrePassEnabled
+  ctx->OMSetDepthStencilState(depth_normal_pre_pass_enabled_
                                 ? mDepthTestGreaterEqualNoWriteDss.Get()
                                 : mDepthTestGreaterEqualWriteDss.Get(), 0);
 
   ctx->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
-  ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
-  ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{mDirShadowMapArr->GetSrv()}.data());
-  ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{light_buffer_->GetBuffer()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{dir_shadow_map_arr_->GetSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{punctual_shadow_atlas_->GetSrv()}.data());
   ctx->PSSetShaderResources(RES_SLOT_SSAO_TEX, 1, std::array{ssaoTexSrv}.data());
 
   ctx->RSSetViewports(1, &viewport);
@@ -1830,9 +1630,9 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     postProcessRt = std::addressof(hdrRt);
   } else {
     auto resolveHdrRtDesc{hdrRtDesc};
-    resolveHdrRtDesc.sampleCount = 1;
+    resolveHdrRtDesc.sample_count = 1;
     auto const& resolveHdrRt{GetTemporaryRenderTarget(resolveHdrRtDesc)};
-    ctx->ResolveSubresource(resolveHdrRt.GetColorTexture(), 0, hdrRt.GetColorTexture(), 0, *hdrRtDesc.colorFormat);
+    ctx->ResolveSubresource(resolveHdrRt.GetColorTexture(), 0, hdrRt.GetColorTexture(), 0, *hdrRtDesc.color_format);
     postProcessRt = std::addressof(resolveHdrRt);
   }
 
@@ -1846,15 +1646,15 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
 
 auto Renderer::Impl::DrawAllCameras(RenderTarget const* const rt) -> void {
-  for (auto const& cam : mGameRenderCameras) {
+  for (auto const& cam : game_render_cameras_) {
     DrawCamera(*cam, rt);
   }
 }
 
 
 auto Renderer::Impl::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void {
-  mGizmoColors.emplace_back(color);
-  mLineGizmoVertexData.emplace_back(from, static_cast<std::uint32_t>(mGizmoColors.size() - 1), to, 0.0f);
+  gizmo_colors_.emplace_back(color);
+  line_gizmo_vertex_data_.emplace_back(from, static_cast<std::uint32_t>(gizmo_colors_.size() - 1), to, 0.0f);
 }
 
 
@@ -1863,22 +1663,23 @@ auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
 
   ctx->OMSetRenderTargets(1, std::array{rt ? rt->GetRtv() : mSwapChain->GetRtv()}.data(), nullptr);
 
-  mGizmoColorBuffer->Resize(static_cast<int>(std::ssize(mGizmoColors)));
-  std::ranges::copy(mGizmoColors, std::begin(mGizmoColorBuffer->Map(ctx)));
-  mGizmoColorBuffer->Unmap(ctx);
+  gizmo_color_buffer_->Resize(static_cast<int>(std::ssize(gizmo_colors_)));
+  std::ranges::copy(gizmo_colors_, std::begin(gizmo_color_buffer_->Map(ctx)));
+  gizmo_color_buffer_->Unmap(ctx);
 
-  mLineGizmoVertexDataBuffer->Resize(static_cast<int>(std::ssize(mLineGizmoVertexData)));
-  std::ranges::copy(mLineGizmoVertexData, std::begin(mLineGizmoVertexDataBuffer->Map(ctx)));
-  mLineGizmoVertexDataBuffer->Unmap(ctx);
+  line_gizmo_vertex_data_buffer_->Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
+  std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_->Map(ctx)));
+  line_gizmo_vertex_data_buffer_->Unmap(ctx);
 
   ctx->PSSetShader(mGizmoPs.Get(), nullptr, 0);
-  ctx->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, std::array{mGizmoColorBuffer->GetSrv()}.data());
+  ctx->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, std::array{gizmo_color_buffer_->GetBuffer()}.data());
 
-  if (!mLineGizmoVertexData.empty()) {
+  if (!line_gizmo_vertex_data_.empty()) {
     ctx->VSSetShader(mLineGizmoVs.Get(), nullptr, 0);
-    ctx->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1, std::array{mLineGizmoVertexDataBuffer->GetSrv()}.data());
+    ctx->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1,
+      std::array{line_gizmo_vertex_data_buffer_->GetBuffer()}.data());
     ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-    ctx->DrawInstanced(2, static_cast<UINT>(mLineGizmoVertexData.size()), 0, 0);
+    ctx->DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);
   }
 
   ComPtr<ID3D11CommandList> cmdList;
@@ -1890,7 +1691,7 @@ auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
 
 
 auto Renderer::Impl::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
-  auto const rtv{mMainRt->GetRtv()};
+  auto const rtv{main_rt_->GetRtv()};
   FLOAT constexpr clearColor[]{0, 0, 0, 1};
   ctx->ClearRenderTargetView(rtv, clearColor);
   ctx->OMSetRenderTargets(1, &rtv, nullptr);
@@ -1899,7 +1700,7 @@ auto Renderer::Impl::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const c
 
 auto Renderer::Impl::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
   ComPtr<ID3D11Resource> mainRtColorTex;
-  mMainRt->GetRtv()->GetResource(mainRtColorTex.GetAddressOf());
+  main_rt_->GetRtv()->GetResource(mainRtColorTex.GetAddressOf());
 
   ComPtr<ID3D11Resource> backBuf;
   mSwapChain->GetRtv()->GetResource(backBuf.GetAddressOf());
@@ -1909,7 +1710,7 @@ auto Renderer::Impl::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> cons
 
 
 auto Renderer::Impl::Present() noexcept -> void {
-  mSwapChain->Present(static_cast<UINT>(mSyncInterval));
+  mSwapChain->Present(static_cast<UINT>(sync_interval_));
 
   ClearGizmoDrawQueue();
   ReleaseTempRenderTargets();
@@ -1970,66 +1771,52 @@ auto Renderer::Impl::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) ->
 
 
 auto Renderer::Impl::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
-  return mDefaultMaterial;
+  return default_material_;
 }
 
 
 auto Renderer::Impl::GetCubeMesh() const noexcept -> ObserverPtr<Mesh> {
-  return mCubeMesh;
+  return cube_mesh_;
 }
 
 
 auto Renderer::Impl::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
-  return mPlaneMesh;
+  return plane_mesh_;
 }
 
 
 auto Renderer::Impl::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
-  return mSphereMesh;
+  return sphere_mesh_;
 }
 
 
 auto Renderer::Impl::GetSyncInterval() const noexcept -> int {
-  return mSyncInterval;
+  return sync_interval_;
 }
 
 
 auto Renderer::Impl::SetSyncInterval(int const interval) noexcept -> void {
-  mSyncInterval = interval;
-}
-
-
-auto Renderer::Impl::GetInFlightFrameCount() const noexcept -> int {
-  return mInFlightFrameCount;
-}
-
-
-auto Renderer::Impl::SetInFlightFrameCount(int const count) -> void {
-  mInFlightFrameCount = std::clamp(count, MIN_IN_FLIGHT_FRAME_COUNT, MAX_IN_FLIGHT_FRAME_COUNT);
-
-  if (FAILED(mDxgiDevice->SetMaximumFrameLatency(mInFlightFrameCount))) {
-    throw std::runtime_error{"Failed to set in-flight frame count."};
-  }
+  sync_interval_ = interval;
 }
 
 
 auto Renderer::Impl::GetMultisamplingMode() const noexcept -> MultisamplingMode {
-  return mMsaaMode;
+  return msaa_mode_;
 }
 
 
 auto Renderer::Impl::SetMultisamplingMode(MultisamplingMode const mode) noexcept -> void {
-  mMsaaMode = mode;
+  msaa_mode_ = mode;
 }
 
 
 auto Renderer::Impl::IsDepthNormalPrePassEnabled() const noexcept -> bool {
-  return mDepthNormalPrePassEnabled;
+  return depth_normal_pre_pass_enabled_;
 }
 
 
 auto Renderer::Impl::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -> void {
-  mDepthNormalPrePassEnabled = enabled;
+  depth_normal_pre_pass_enabled_ = enabled;
 
   if (!enabled && IsSsaoEnabled()) {
     SetSsaoEnabled(false);
@@ -2038,86 +1825,86 @@ auto Renderer::Impl::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -
 
 
 auto Renderer::Impl::IsUsingPreciseColorFormat() const noexcept -> bool {
-  return mUsePreciseColorBuffer;
+  return color_buffer_format_ == precise_color_buffer_format_;
 }
 
 
 auto Renderer::Impl::SetUsePreciseColorFormat(bool const value) noexcept -> void {
-  mUsePreciseColorBuffer = value;
+  color_buffer_format_ = value ? precise_color_buffer_format_ : imprecise_color_buffer_format_;
 }
 
 
 auto Renderer::Impl::GetShadowDistance() const noexcept -> float {
-  return mShadowDistance;
+  return shadow_distance_;
 }
 
 
 auto Renderer::Impl::SetShadowDistance(float const shadowDistance) noexcept -> void {
-  mShadowDistance = std::max(shadowDistance, 0.0f);
+  shadow_distance_ = std::max(shadowDistance, 0.0f);
 }
 
 
 auto Renderer::Impl::GetShadowCascadeCount() const noexcept -> int {
-  return mCascadeCount;
+  return cascade_count_;
 }
 
 
 auto Renderer::Impl::SetShadowCascadeCount(int const cascadeCount) noexcept -> void {
-  mCascadeCount = std::clamp(cascadeCount, 1, MAX_CASCADE_COUNT);
-  int const splitCount{mCascadeCount - 1};
+  cascade_count_ = std::clamp(cascadeCount, 1, MAX_CASCADE_COUNT);
+  int const splitCount{cascade_count_ - 1};
 
   for (int i = 1; i < splitCount; i++) {
-    mCascadeSplits[i] = std::max(mCascadeSplits[i - 1], mCascadeSplits[i]);
+    cascade_splits_[i] = std::max(cascade_splits_[i - 1], cascade_splits_[i]);
   }
 }
 
 
 auto Renderer::Impl::GetNormalizedShadowCascadeSplits() const noexcept -> std::span<float const> {
-  return {std::begin(mCascadeSplits), static_cast<std::size_t>(mCascadeCount - 1)};
+  return {std::begin(cascade_splits_), static_cast<std::size_t>(cascade_count_ - 1)};
 }
 
 
 auto Renderer::Impl::SetNormalizedShadowCascadeSplit(int const idx, float const split) noexcept -> void {
-  auto const splitCount{mCascadeCount - 1};
+  auto const splitCount{cascade_count_ - 1};
 
   if (idx < 0 || idx >= splitCount) {
     return;
   }
 
-  float const clampMin{idx == 0 ? 0.0f : mCascadeSplits[idx - 1]};
-  float const clampMax{idx == splitCount - 1 ? 1.0f : mCascadeSplits[idx + 1]};
+  float const clampMin{idx == 0 ? 0.0f : cascade_splits_[idx - 1]};
+  float const clampMax{idx == splitCount - 1 ? 1.0f : cascade_splits_[idx + 1]};
 
-  mCascadeSplits[idx] = std::clamp(split, clampMin, clampMax);
+  cascade_splits_[idx] = std::clamp(split, clampMin, clampMax);
 }
 
 
 auto Renderer::Impl::IsVisualizingShadowCascades() const noexcept -> bool {
-  return mVisualizeShadowCascades;
+  return shadow_cascades_;
 }
 
 
 auto Renderer::Impl::VisualizeShadowCascades(bool const visualize) noexcept -> void {
-  mVisualizeShadowCascades = visualize;
+  shadow_cascades_ = visualize;
 }
 
 
 auto Renderer::Impl::GetShadowFilteringMode() const noexcept -> ShadowFilteringMode {
-  return mShadowFilteringMode;
+  return shadow_filtering_mode_;
 }
 
 
 auto Renderer::Impl::SetShadowFilteringMode(ShadowFilteringMode const filteringMode) noexcept -> void {
-  mShadowFilteringMode = filteringMode;
+  shadow_filtering_mode_ = filteringMode;
 }
 
 
 auto Renderer::Impl::IsSsaoEnabled() const noexcept -> bool {
-  return mSsaoEnabled;
+  return ssao_enabled_;
 }
 
 
 auto Renderer::Impl::SetSsaoEnabled(bool const enabled) noexcept -> void {
-  mSsaoEnabled = enabled;
+  ssao_enabled_ = enabled;
 
   if (enabled && !IsDepthNormalPrePassEnabled()) {
     SetDepthNormalPrePassEnabled(true);
@@ -2126,61 +1913,61 @@ auto Renderer::Impl::SetSsaoEnabled(bool const enabled) noexcept -> void {
 
 
 auto Renderer::Impl::GetSsaoParams() const noexcept -> SsaoParams const& {
-  return mSsaoParams;
+  return ssao_params_;
 }
 
 
 auto Renderer::Impl::SetSsaoParams(SsaoParams const& ssaoParams) noexcept -> void {
-  if (mSsaoParams.sampleCount != ssaoParams.sampleCount) {
+  if (ssao_params_.sampleCount != ssaoParams.sampleCount) {
     RecreateSsaoSamples(ssaoParams.sampleCount);
   }
 
-  mSsaoParams = ssaoParams;
+  ssao_params_ = ssaoParams;
 }
 
 
 auto Renderer::Impl::GetGamma() const noexcept -> f32 {
-  return 1.f / mInvGamma;
+  return 1.f / inv_gamma_;
 }
 
 
 auto Renderer::Impl::SetGamma(f32 const gamma) noexcept -> void {
-  mInvGamma = 1.f / gamma;
+  inv_gamma_ = 1.f / gamma;
 }
 
 
 auto Renderer::Impl::Register(StaticMeshComponent const& staticMeshComponent) noexcept -> void {
   std::unique_lock const lock{mStaticMeshMutex};
-  mStaticMeshComponents.emplace_back(std::addressof(staticMeshComponent));
+  static_mesh_components_.emplace_back(std::addressof(staticMeshComponent));
 }
 
 
 auto Renderer::Impl::Unregister(StaticMeshComponent const& staticMeshComponent) noexcept -> void {
   std::unique_lock const lock{mStaticMeshMutex};
-  std::erase(mStaticMeshComponents, std::addressof(staticMeshComponent));
+  std::erase(static_mesh_components_, std::addressof(staticMeshComponent));
 }
 
 
 auto Renderer::Impl::Register(LightComponent const& lightComponent) noexcept -> void {
   std::unique_lock const lock{mLightMutex};
-  mLights.emplace_back(std::addressof(lightComponent));
+  lights_.emplace_back(std::addressof(lightComponent));
 }
 
 
 auto Renderer::Impl::Unregister(LightComponent const& lightComponent) noexcept -> void {
   std::unique_lock const lock{mLightMutex};
-  std::erase(mLights, std::addressof(lightComponent));
+  std::erase(lights_, std::addressof(lightComponent));
 }
 
 
 auto Renderer::Impl::Register(Camera const& cam) noexcept -> void {
   std::unique_lock const lock{mGameCameraMutex};
-  mGameRenderCameras.emplace_back(&cam);
+  game_render_cameras_.emplace_back(&cam);
 }
 
 
 auto Renderer::Impl::Unregister(Camera const& cam) noexcept -> void {
   std::unique_lock const lock{mGameCameraMutex};
-  std::erase(mGameRenderCameras, &cam);
+  std::erase(game_render_cameras_, &cam);
 }
 }

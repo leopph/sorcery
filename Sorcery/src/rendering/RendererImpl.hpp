@@ -1,14 +1,14 @@
 #pragma once
 
+#include "graphics.hpp"
 #include "DirectionalShadowMapArray.hpp"
 #include "PunctualShadowAtlas.hpp"
 #include "Renderer.hpp"
-#include "SwapChain.hpp"
 #include "StructuredBuffer.hpp"
+#include "shaders/shader_interop.h"
 #include "../Core.hpp"
 #include "../Color.hpp"
 #include "../Math.hpp"
-#include "shaders\shader_interop.h"
 
 #include <array>
 #include <memory>
@@ -20,118 +20,103 @@ namespace sorcery {
 class Renderer::Impl {
   struct TempRenderTargetRecord {
     std::unique_ptr<RenderTarget> rt;
-    int ageInFrames;
+    int age_in_frames;
   };
 
 
-  constexpr static int MAX_TMP_RT_AGE{10};
-  inline static Guid const DEFAULT_MATERIAL_GUID{1, 0};
-  inline static Guid const CUBE_MESH_GUID{2, 0};
-  inline static Guid const PLANE_MESH_GUID{3, 0};
-  inline static Guid const SPHERE_MESH_GUID{4, 0};
+  constexpr static int max_tmp_rt_age_{10};
+  inline static Guid const default_material_guid_{1, 0};
+  inline static Guid const cube_mesh_guid_{2, 0};
+  inline static Guid const plane_mesh_guid_{3, 0};
+  inline static Guid const sphere_mesh_guid_{4, 0};
+  static UINT constexpr max_frames_in_flight_{2};
+  static DXGI_FORMAT constexpr imprecise_color_buffer_format_{DXGI_FORMAT_R11G11B10_FLOAT};
+  static DXGI_FORMAT constexpr precise_color_buffer_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
+  static DXGI_FORMAT constexpr depth_format_{DXGI_FORMAT_D32_FLOAT};
+  static DXGI_FORMAT constexpr render_target_format_{DXGI_FORMAT_R8G8B8A8_UNORM};
+  static DXGI_FORMAT constexpr ssao_buffer_format_{DXGI_FORMAT_R8_UNORM};
+  static DXGI_FORMAT constexpr normal_buffer_format_{DXGI_FORMAT_R8G8B8A8_SNORM};
 
-  Microsoft::WRL::ComPtr<ID3D11Device> mDevice;
-  Microsoft::WRL::ComPtr<ID3D11DeviceContext> mImmediateContext;
+  std::unique_ptr<graphics::GraphicsDevice> device_;
+  graphics::UniqueHandle<graphics::SwapChain> swap_chain_;
 
-  Microsoft::WRL::ComPtr<IDXGIDevice1> mDxgiDevice;
+  std::array<graphics::UniqueHandle<graphics::CommandList>, max_frames_in_flight_> command_lists_;
+  std::array<graphics::UniqueHandle<graphics::Buffer>, max_frames_in_flight_> per_frame_cbs_;
+  std::array<std::vector<graphics::UniqueHandle<graphics::Buffer>>, max_frames_in_flight_> per_view_cbs_;
+  std::array<std::vector<graphics::UniqueHandle<graphics::Buffer>>, max_frames_in_flight_> per_draw_cbs_;
 
-  Microsoft::WRL::ComPtr<ID3D11PixelShader> mDepthNormalPs;
-  Microsoft::WRL::ComPtr<ID3D11PixelShader> mDepthOnlyPs;
-  Microsoft::WRL::ComPtr<ID3D11PixelShader> mGizmoPs;
-  Microsoft::WRL::ComPtr<ID3D11PixelShader> mMeshPbrPs;
-  Microsoft::WRL::ComPtr<ID3D11PixelShader> mPostProcessPs;
-  Microsoft::WRL::ComPtr<ID3D11PixelShader> mSkyboxPs;
-  Microsoft::WRL::ComPtr<ID3D11PixelShader> mSsaoBlurPs;
-  Microsoft::WRL::ComPtr<ID3D11PixelShader> mSsaoPs;
+  graphics::UniqueHandle<graphics::Texture> white_tex_;
+  graphics::UniqueHandle<graphics::Texture> ssao_noise_tex_;
 
-  Microsoft::WRL::ComPtr<ID3D11VertexShader> mDepthNormalVs;
-  Microsoft::WRL::ComPtr<ID3D11VertexShader> mDepthOnlyVs;
-  Microsoft::WRL::ComPtr<ID3D11VertexShader> mLineGizmoVs;
-  Microsoft::WRL::ComPtr<ID3D11VertexShader> mMeshVs;
-  Microsoft::WRL::ComPtr<ID3D11VertexShader> mScreenVs;
-  Microsoft::WRL::ComPtr<ID3D11VertexShader> mSkyboxVs;
+  graphics::UniqueHandle<graphics::PipelineState> depth_only_pso_;
+  graphics::UniqueHandle<graphics::PipelineState> depth_normal_pso_;
+  graphics::UniqueHandle<graphics::PipelineState> depth_resolve_pso_;
+  graphics::UniqueHandle<graphics::PipelineState> line_gizmo_pso_;
+  graphics::UniqueHandle<graphics::PipelineState> object_pso_;
+  graphics::UniqueHandle<graphics::PipelineState> post_process_pso_;
+  graphics::UniqueHandle<graphics::PipelineState> skybox_pso_;
+  graphics::UniqueHandle<graphics::PipelineState> ssao_pso_;
+  graphics::UniqueHandle<graphics::PipelineState> ssao_blur_pso_;
 
-  Microsoft::WRL::ComPtr<ID3D11ComputeShader> mDepthResolveCs;
+  graphics::UniqueHandle<graphics::Sampler> samp_cmp_pcf_ge_;
+  graphics::UniqueHandle<graphics::Sampler> samp_cmp_pcf_le_;
+  graphics::UniqueHandle<graphics::Sampler> samp_cmp_point_ge_;
+  graphics::UniqueHandle<graphics::Sampler> samp_cmp_point_le_;
+  graphics::UniqueHandle<graphics::Sampler> samp_af16_clamp_;
+  graphics::UniqueHandle<graphics::Sampler> samp_af8_clamp_;
+  graphics::UniqueHandle<graphics::Sampler> samp_af4_clamp_;
+  graphics::UniqueHandle<graphics::Sampler> samp_af2_clamp_;
+  graphics::UniqueHandle<graphics::Sampler> samp_tri_clamp_;
+  graphics::UniqueHandle<graphics::Sampler> samp_bi_clamp_;
+  graphics::UniqueHandle<graphics::Sampler> samp_point_clamp_;
+  graphics::UniqueHandle<graphics::Sampler> samp_af16_wrap_;
+  graphics::UniqueHandle<graphics::Sampler> samp_af8_wrap_;
+  graphics::UniqueHandle<graphics::Sampler> samp_af4_wrap_;
+  graphics::UniqueHandle<graphics::Sampler> samp_af2_wrap_;
+  graphics::UniqueHandle<graphics::Sampler> samp_tri_wrap_;
+  graphics::UniqueHandle<graphics::Sampler> samp_bi_wrap_;
+  graphics::UniqueHandle<graphics::Sampler> samp_point_wrap_;
 
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mPerFrameCb;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mPerViewCb;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mPerDrawCb;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mPostProcessCb;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mSsaoCb;
+  UINT frame_idx_{0};
 
-  Microsoft::WRL::ComPtr<ID3D11InputLayout> mAllAttribsIl;
+  ObserverPtr<Material> default_material_{nullptr};
+  ObserverPtr<Mesh> cube_mesh_{nullptr};
+  ObserverPtr<Mesh> plane_mesh_{nullptr};
+  ObserverPtr<Mesh> sphere_mesh_{nullptr};
 
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mCmpPcfGreaterEqualSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mCmpPcfLessEqualSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mCmpPointGreaterEqualSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mCmpPointLessEqualSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf16ClampSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf8ClampSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf4ClampSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf2ClampSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mTrilinearClampSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mBilinearClampSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mPointClampSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf16WrapSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf8WrapSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf4WrapSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mAf2WrapSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mTrilinearWrapSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mBilinearWrapSs;
-  Microsoft::WRL::ComPtr<ID3D11SamplerState> mPointWrapSs;
+  std::unique_ptr<DirectionalShadowMapArray> dir_shadow_map_arr_;
+  std::unique_ptr<PunctualShadowAtlas> punctual_shadow_atlas_;
+  std::unique_ptr<StructuredBuffer<ShaderLight>> light_buffer_;
+  std::unique_ptr<StructuredBuffer<Vector4>> gizmo_color_buffer_;
+  std::unique_ptr<StructuredBuffer<ShaderLineGizmoVertexData>> line_gizmo_vertex_data_buffer_;
+  std::unique_ptr<RenderTarget> main_rt_;
+  std::unique_ptr<StructuredBuffer<Vector4>> ssao_samples_buffer_;
 
-  Microsoft::WRL::ComPtr<ID3D11RasterizerState> mSkyboxPassRs;
-  Microsoft::WRL::ComPtr<ID3D11RasterizerState> mShadowPassRs;
+  std::vector<StaticMeshComponent const*> static_mesh_components_;
+  std::vector<LightComponent const*> lights_;
+  std::vector<Camera const*> game_render_cameras_;
 
-  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestGreaterWriteDss;
-  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestLessWriteDss;
-  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestGreaterEqualNoWriteDss;
-  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestGreaterEqualWriteDss;
-  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestLessEqualNoWriteDss;
-  Microsoft::WRL::ComPtr<ID3D11DepthStencilState> mDepthTestLessEqualWriteDss;
-
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mSsaoNoiseTex;
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mWhiteTex;
-
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSsaoNoiseSrv;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mWhiteTexSrv;
-
-  ObserverPtr<Material> mDefaultMaterial{nullptr};
-  ObserverPtr<Mesh> mCubeMesh{nullptr};
-  ObserverPtr<Mesh> mPlaneMesh{nullptr};
-  ObserverPtr<Mesh> mSphereMesh{nullptr};
-
-  //std::unique_ptr<DirectionalShadowAtlas> mDirectionalShadowAtlas;
-  std::unique_ptr<DirectionalShadowMapArray> mDirShadowMapArr;
-  std::unique_ptr<PunctualShadowAtlas> mPunctualShadowAtlas;
-  std::unique_ptr<SwapChain> mSwapChain;
-  std::unique_ptr<StructuredBuffer<ShaderLight>> mLightBuffer;
-  std::unique_ptr<StructuredBuffer<Vector4>> mGizmoColorBuffer;
-  std::unique_ptr<StructuredBuffer<ShaderLineGizmoVertexData>> mLineGizmoVertexDataBuffer;
-  std::unique_ptr<RenderTarget> mMainRt;
-  std::unique_ptr<StructuredBuffer<Vector4>> mSsaoSamplesBuffer;
-
-  std::vector<StaticMeshComponent const*> mStaticMeshComponents;
-  std::vector<LightComponent const*> mLights;
-  std::vector<Camera const*> mGameRenderCameras;
-
-  std::vector<Vector4> mGizmoColors;
-  std::vector<ShaderLineGizmoVertexData> mLineGizmoVertexData;
+  std::vector<Vector4> gizmo_colors_;
+  std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;
 
   // Normalized to [0, 1]
-  std::array<float, MAX_CASCADE_COUNT - 1> mCascadeSplits{0.1f, 0.3f, 0.6f};
-  int mCascadeCount{4};
-  float mShadowDistance{100};
-  bool mVisualizeShadowCascades{false};
-  ShadowFilteringMode mShadowFilteringMode{ShadowFilteringMode::PCFTent5x5};
-  MultisamplingMode mMsaaMode{MultisamplingMode::X8};
-  int mSyncInterval{0};
-  float mInvGamma{1.f / 2.2f};
-  int mInFlightFrameCount{2};
-  bool mDepthNormalPrePassEnabled{true};
-  SsaoParams mSsaoParams{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sampleCount = 12};
-  bool mSsaoEnabled{true};
-  bool mUsePreciseColorBuffer{true};
+  std::array<float, MAX_CASCADE_COUNT - 1> cascade_splits_{0.1f, 0.3f, 0.6f};
+  int cascade_count_{4};
+  bool shadow_cascades_{false};
+  float shadow_distance_{100};
+  ShadowFilteringMode shadow_filtering_mode_{ShadowFilteringMode::PCFTent5x5};
+
+  MultisamplingMode msaa_mode_{MultisamplingMode::X8};
+
+  int sync_interval_{0};
+
+  float inv_gamma_{1.f / 2.2f};
+
+  bool depth_normal_pre_pass_enabled_{true};
+  bool ssao_enabled_{true};
+  SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sampleCount = 12};
+
+  DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
   std::unordered_map<std::thread::id, Microsoft::WRL::ComPtr<ID3D11DeviceContext>> mPerThreadCtx;
 
@@ -171,7 +156,9 @@ class Renderer::Impl {
 
   auto RecreateSsaoSamples(int sampleCount) noexcept -> void;
 
-  static auto SetDebugName(ObserverPtr<ID3D11DeviceChild> deviceChild, std::string_view name) noexcept -> void;
+  [[nodiscard]] auto RecreatePipelines() -> bool;
+  auto CreatePerViewConstantBuffers(UINT count) -> void;
+  auto CreatePerDrawConstantBuffers(UINT count) -> void;
 
   static auto OnWindowSize(Impl* self, Extent2D<std::uint32_t> size) -> void;
 
@@ -221,9 +208,6 @@ public:
 
   [[nodiscard]] auto GetSyncInterval() const noexcept -> int;
   auto SetSyncInterval(int interval) noexcept -> void;
-
-  [[nodiscard]] auto GetInFlightFrameCount() const noexcept -> int;
-  auto SetInFlightFrameCount(int count) -> void;
 
   [[nodiscard]] auto GetMultisamplingMode() const noexcept -> MultisamplingMode;
   auto SetMultisamplingMode(MultisamplingMode mode) noexcept -> void;
