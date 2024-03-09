@@ -335,7 +335,7 @@ private:
 };
 
 
-class Texture : Resource {
+class Texture : public Resource {
 public:
   [[nodiscard]] auto Map(UINT subresource) const -> void*;
 
