@@ -213,10 +213,15 @@ auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDev
     return nullptr;
   }
 
+  ComPtr<ID3D12Fence> fence;
+  if (FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))) {
+    return nullptr;
+  }
+
   return std::unique_ptr<GraphicsDevice>{
     new GraphicsDevice{
       std::move(factory), std::move(device), std::move(allocator), std::move(rtv_heap), std::move(dsv_heap),
-      std::move(res_desc_heap), std::move(sampler_heap), std::move(queue)
+      std::move(res_desc_heap), std::move(sampler_heap), std::move(queue), std::move(fence)
     }
   };
 }
@@ -633,13 +638,19 @@ auto GraphicsDevice::SignalFence(ID3D12Fence& fence, UINT64 const signal_value) 
 }
 
 
-auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) const -> void {
+auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) -> bool {
   std::pmr::vector<ID3D12CommandList*> submit_list{&GetTmpMemRes()};
   submit_list.reserve(cmd_lists.size());
   std::ranges::transform(cmd_lists, std::back_inserter(submit_list), [](CommandList const& cmd_list) {
     return cmd_list.cmd_list_.Get();
   });
   queue_->ExecuteCommandLists(static_cast<UINT>(submit_list.size()), submit_list.data());
+  return SUCCEEDED(queue_->Signal(fence_.Get(), next_fence_val_.fetch_add(1)));
+}
+
+
+auto GraphicsDevice::WaitIdle() const -> bool {
+  return WaitFence(*fence_.Get(), next_fence_val_.load() - 1);
 }
 
 
@@ -672,7 +683,8 @@ auto GraphicsDevice::SwapChainResize(SwapChain& swap_chain, UINT const width, UI
 GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
                                ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
                                ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,
-                               ComPtr<ID3D12DescriptorHeap> sampler_heap, ComPtr<ID3D12CommandQueue> queue) :
+                               ComPtr<ID3D12DescriptorHeap> sampler_heap, ComPtr<ID3D12CommandQueue> queue,
+                               Microsoft::WRL::ComPtr<ID3D12Fence> fence) :
   factory_{std::move(factory)},
   device_{std::move(device)},
   allocator_{std::move(allocator)},
@@ -680,7 +692,8 @@ GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Devic
   dsv_heap_{std::move(dsv_heap), *device_.Get()},
   res_desc_heap_{std::move(res_desc_heap), *device_.Get()},
   sampler_heap_{std::move(sampler_heap), *device_.Get()},
-  queue_{std::move(queue)} {
+  queue_{std::move(queue)},
+  fence_{std::move(fence)} {
   if (BOOL allow_tearing; SUCCEEDED(
     factory_->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allow_tearing, sizeof(allow_tearing)
     )) && allow_tearing) {
@@ -994,7 +1007,7 @@ auto Resource::GetUnorderedAccess() const -> UINT {
 
 
 Resource::Resource(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, UINT const srv,
-                         UINT const uav) :
+                   UINT const uav) :
   allocation_{std::move(allocation)},
   resource_{std::move(resource)},
   srv_{srv},

@@ -11,6 +11,7 @@
 
 #include <D3D12MemAlloc.h>
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -245,7 +246,8 @@ public:
 
   [[nodiscard]] auto WaitFence(ID3D12Fence& fence, UINT64 wait_value) const -> bool;
   [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;
-  auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) const -> void;
+  auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) -> bool;
+  [[nodiscard]] auto WaitIdle() const -> bool;
 
   [[nodiscard]] auto SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<UniqueHandle<Texture> const>;
   [[nodiscard]] auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
@@ -259,7 +261,7 @@ private:
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsv_heap,
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> res_desc_heap,
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> sampler_heap,
-                 Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue);
+                 Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue, Microsoft::WRL::ComPtr<ID3D12Fence> fence);
 
   auto SwapChainCreateTextures(SwapChain& swap_chain) -> bool;
 
@@ -287,6 +289,9 @@ private:
 
   UINT swap_chain_flags_{0};
   UINT present_flags_{0};
+
+  Microsoft::WRL::ComPtr<ID3D12Fence> fence_;
+  std::atomic<UINT64> next_fence_val_{1};
 };
 
 
