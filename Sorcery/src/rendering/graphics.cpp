@@ -1057,15 +1057,16 @@ PipelineState::PipelineState(ComPtr<ID3D12RootSignature> root_signature, ComPtr<
   is_compute_{is_compute} {}
 
 
-auto CommandList::Begin(PipelineState const& pipeline_state) -> bool {
-  if (FAILED(allocator_->Reset()) || FAILED(cmd_list_->Reset(allocator_.Get(), pipeline_state.pipeline_state_.Get()))) {
+auto CommandList::Begin(PipelineState const* pipeline_state) -> bool {
+  if (FAILED(allocator_->Reset()) || FAILED(
+        cmd_list_->Reset(allocator_.Get(), pipeline_state ? pipeline_state->pipeline_state_.Get() : nullptr))) {
     return false;
   }
 
   cmd_list_->SetDescriptorHeaps(2,
     std::array{res_desc_heap_->GetInternalPtr(), sampler_heap_->GetInternalPtr()}.data());
-  compute_pipeline_set_ = pipeline_state.is_compute_;
-  SetRootSignature(pipeline_state.num_params_);
+  compute_pipeline_set_ = pipeline_state && pipeline_state->is_compute_;
+  SetRootSignature(pipeline_state ? pipeline_state->num_params_ : 0);
   return true;
 }
 

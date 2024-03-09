@@ -367,7 +367,7 @@ class PipelineState {
 
 class CommandList {
 public:
-  [[nodiscard]] auto Begin(PipelineState const& pipeline_state) -> bool;
+  [[nodiscard]] auto Begin(PipelineState const* pipeline_state) -> bool;
   [[nodiscard]] auto End() const -> bool;
   auto Barrier(std::span<GlobalBarrier const> global_barriers, std::span<BufferBarrier const> buffer_barriers,
                std::span<TextureBarrier const> texture_barriers) const -> void;
