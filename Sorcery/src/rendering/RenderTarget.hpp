@@ -1,9 +1,11 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <string>
 
 #include "../Core.hpp"
+#include "graphics.hpp"
 
 
 namespace sorcery {
@@ -13,38 +15,21 @@ public:
     UINT width{1024};
     UINT height{1024};
 
-    std::optional<DXGI_FORMAT> colorFormat{DXGI_FORMAT_R8G8B8A8_UNORM};
-    int depthBufferBitCount{0};
-    int stencilBufferBitCount{0};
+    std::optional<DXGI_FORMAT> color_format{DXGI_FORMAT_R8G8B8A8_UNORM};
+    std::optional<DXGI_FORMAT> depth_stencil_format{DXGI_FORMAT_D32_FLOAT};
 
-    int sampleCount{1};
+    UINT sample_count{1};
 
-    std::string debugName;
+    std::wstring debug_name;
 
-    bool enableUnorderedAccess{false};
+    bool enable_unordered_access{false};
 
     LEOPPHAPI [[nodiscard]] auto operator==(Desc const& other) const -> bool;
   };
 
-private:
-  Desc mDesc;
 
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mColorTex;
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mDepthStencilTex;
+  [[nodiscard]] static auto New(graphics::GraphicsDevice& device, Desc const& desc) -> std::unique_ptr<RenderTarget>;
 
-  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mRtv;
-  Microsoft::WRL::ComPtr<ID3D11DepthStencilView> mDsv;
-
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mColorSrv;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mDepthSrv;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mStencilSrv;
-
-  Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> mColorUav;
-  Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> mDepthUav;
-  Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> mStencilUav;
-
-public:
-  LEOPPHAPI explicit RenderTarget(Desc const& desc);
   RenderTarget(RenderTarget const&) = delete;
   RenderTarget(RenderTarget&&) = delete;
 
@@ -54,19 +39,16 @@ public:
   auto operator=(RenderTarget&&) -> void = delete;
 
   [[nodiscard]] LEOPPHAPI auto GetDesc() const noexcept -> Desc const&;
+  [[nodiscard]] LEOPPHAPI auto GetColorTex() const noexcept -> graphics::Texture*;
+  [[nodiscard]] LEOPPHAPI auto GetDepthStencilTex() const noexcept -> graphics::Texture*;
 
-  [[nodiscard]] LEOPPHAPI auto GetColorTexture() const noexcept -> ObserverPtr<ID3D11Texture2D>;
-  [[nodiscard]] LEOPPHAPI auto GetDepthStencilTexture() const noexcept -> ObserverPtr<ID3D11Texture2D>;
+private:
+  RenderTarget(Desc desc, graphics::UniqueHandle<graphics::Texture> color_tex,
+               graphics::UniqueHandle<graphics::Texture> depth_stencil_tex);
 
-  [[nodiscard]] LEOPPHAPI auto GetRtv() const noexcept -> ObserverPtr<ID3D11RenderTargetView>;
-  [[nodiscard]] LEOPPHAPI auto GetDsv() const noexcept -> ObserverPtr<ID3D11DepthStencilView>;
+  Desc desc_;
 
-  [[nodiscard]] LEOPPHAPI auto GetColorSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>;
-  [[nodiscard]] LEOPPHAPI auto GetDepthSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>;
-  [[nodiscard]] LEOPPHAPI auto GetStencilSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>;
-
-  [[nodiscard]] LEOPPHAPI auto GetColorUav() const noexcept -> ObserverPtr<ID3D11UnorderedAccessView>;
-  [[nodiscard]] LEOPPHAPI auto GetDepthUav() const noexcept -> ObserverPtr<ID3D11UnorderedAccessView>;
-  [[nodiscard]] LEOPPHAPI auto GetStencilUav() const noexcept -> ObserverPtr<ID3D11UnorderedAccessView>;
+  graphics::UniqueHandle<graphics::Texture> color_tex_;
+  graphics::UniqueHandle<graphics::Texture> depth_stencil_tex_;
 };
 }
