@@ -2,7 +2,7 @@
 
 #include "graphics.hpp"
 #include "Camera.hpp"
-#include "ShadowAtlas.hpp"
+#include "shadow_atlas.hpp"
 #include "Visibility.hpp"
 #include "../scene_objects/LightComponents.hpp"
 

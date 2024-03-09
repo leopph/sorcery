@@ -1,10 +1,11 @@
 #pragma once
 
 #include "graphics.hpp"
-#include "DirectionalShadowMapArray.hpp"
-#include "PunctualShadowAtlas.hpp"
+#include "directional_shadow_map_array.hpp"
+#include "punctual_shadow_atlas.hpp"
 #include "Renderer.hpp"
-#include "StructuredBuffer.hpp"
+#include "structured_buffer.hpp"
+#include "constant_buffer.hpp"
 #include "shaders/shader_interop.h"
 #include "../Core.hpp"
 #include "../Color.hpp"
@@ -41,9 +42,9 @@ class Renderer::Impl {
   graphics::UniqueHandle<graphics::SwapChain> swap_chain_;
 
   std::array<graphics::UniqueHandle<graphics::CommandList>, max_frames_in_flight_> command_lists_;
-  std::array<graphics::UniqueHandle<graphics::Buffer>, max_frames_in_flight_> per_frame_cbs_;
-  std::array<std::vector<graphics::UniqueHandle<graphics::Buffer>>, max_frames_in_flight_> per_view_cbs_;
-  std::array<std::vector<graphics::UniqueHandle<graphics::Buffer>>, max_frames_in_flight_> per_draw_cbs_;
+  std::array<ConstantBuffer<ShaderPerFrameConstants>, max_frames_in_flight_> per_frame_cbs_;
+  std::array<std::vector<ConstantBuffer<ShaderPerViewConstants>>, max_frames_in_flight_> per_view_cbs_;
+  std::array<std::vector<ConstantBuffer<ShaderPerDrawConstants>>, max_frames_in_flight_> per_draw_cbs_;
 
   graphics::UniqueHandle<graphics::Texture> white_tex_;
   graphics::UniqueHandle<graphics::Texture> ssao_noise_tex_;

@@ -1,4 +1,4 @@
-#include "PunctualShadowAtlas.hpp"
+#include "punctual_shadow_atlas.hpp"
 
 #include "Renderer.hpp"
 #include "../Bounds.hpp"

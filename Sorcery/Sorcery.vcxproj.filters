@@ -78,7 +78,7 @@
     <ClCompile Include="src\Serialization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\ShadowAtlas.cpp">
+    <ClCompile Include="src\rendering\shadow_atlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\GridLike.cpp">
@@ -87,10 +87,10 @@
     <ClCompile Include="src\rendering\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\PunctualShadowAtlas.cpp">
+    <ClCompile Include="src\rendering\punctual_shadow_atlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\RenderTarget.cpp">
+    <ClCompile Include="src\rendering\render_target.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ResourceManager.cpp">
@@ -108,7 +108,7 @@
     <ClCompile Include="src\GUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\DirectionalShadowMapArray.cpp">
+    <ClCompile Include="src\rendering\directional_shadow_map_array.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ExternalResource.cpp">
@@ -120,7 +120,7 @@
     <ClCompile Include="src\MemoryAllocation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\RendererImpl.cpp">
+    <ClCompile Include="src\rendering\renderer_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Window.cpp">
@@ -212,7 +212,7 @@
     <ClInclude Include="src\rendering\shaders\shadow_filtering_modes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\ShadowAtlas.hpp">
+    <ClInclude Include="src\rendering\shadow_atlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\GridLike.hpp">
@@ -221,13 +221,13 @@
     <ClInclude Include="src\rendering\Camera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\PunctualShadowAtlas.hpp">
+    <ClInclude Include="src\rendering\punctual_shadow_atlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\RenderTarget.hpp">
+    <ClInclude Include="src\rendering\render_target.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\StructuredBuffer.hpp">
+    <ClInclude Include="src\rendering\structured_buffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp">
@@ -254,7 +254,7 @@
     <ClInclude Include="src\Serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\DirectionalShadowMapArray.hpp">
+    <ClInclude Include="src\rendering\directional_shadow_map_array.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ExternalResource.hpp">
@@ -272,7 +272,7 @@
     <ClInclude Include="src\PoolAllocator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\RendererImpl.hpp">
+    <ClInclude Include="src\rendering\renderer_impl.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Window.hpp">
@@ -285,6 +285,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\graphics.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\constant_buffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

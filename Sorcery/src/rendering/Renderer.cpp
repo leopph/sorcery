@@ -1,6 +1,6 @@
 #include "Renderer.hpp"
 
-#include "RendererImpl.hpp"
+#include "renderer_impl.hpp"
 
 #include <cassert>
 

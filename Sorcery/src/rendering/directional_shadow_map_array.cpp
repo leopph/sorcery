@@ -1,4 +1,4 @@
-#include "DirectionalShadowMapArray.hpp"
+#include "directional_shadow_map_array.hpp"
 
 #include "shaders/shader_interop.h"
 

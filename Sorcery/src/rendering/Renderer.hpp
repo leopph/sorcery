@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Camera.hpp"
-#include "RenderTarget.hpp"
+#include "render_target.hpp"
 #include "../Core.hpp"
 #include "../Util.hpp"
 #include "../scene_objects/StaticMeshComponent.hpp"

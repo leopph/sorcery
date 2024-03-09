@@ -1,4 +1,4 @@
-#include "ShadowAtlas.hpp"
+#include "shadow_atlas.hpp"
 
 #include "shaders/shader_interop.h"
 

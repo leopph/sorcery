@@ -1,4 +1,4 @@
-#include "RendererImpl.hpp"
+#include "renderer_impl.hpp"
 
 #include "ShadowCascadeBoundary.hpp"
 #include "shaders/shader_interop.h"
@@ -816,8 +816,9 @@ auto Renderer::Impl::CreatePerViewConstantBuffers(UINT const count) -> void {
     cbs.reserve(cbs.size() + count);
 
     for (std::size_t i{0}; i < count; i++) {
-      cbs.emplace_back(device_->CreateBuffer(
-        graphics::BufferDesc{sizeof(ShaderPerViewConstants), 0, true, false, false}, D3D12_HEAP_TYPE_UPLOAD));
+      if (auto opt{ConstantBuffer<ShaderPerViewConstants>::New(*device_)}) {
+        cbs.emplace_back(std::move(*opt));
+      }
     }
   }
 }
@@ -828,8 +829,9 @@ auto Renderer::Impl::CreatePerDrawConstantBuffers(UINT const count) -> void {
     cbs.reserve(cbs.size() + count);
 
     for (std::size_t i{0}; i < count; i++) {
-      cbs.emplace_back(device_->CreateBuffer(
-        graphics::BufferDesc{sizeof(ShaderPerViewConstants), 0, true, false, false}, D3D12_HEAP_TYPE_UPLOAD));
+      if (auto opt{ConstantBuffer<ShaderPerDrawConstants>::New(*device_)}) {
+        cbs.emplace_back(std::move(*opt));
+      }
     }
   }
 }
@@ -939,8 +941,9 @@ auto Renderer::Impl::StartUp() -> void {
   std::ignore = RecreatePipelines();
 
   for (auto& cb : per_frame_cbs_) {
-    cb = device_->CreateBuffer(graphics::BufferDesc{sizeof(ShaderPerFrameConstants), 0, true, false, false},
-      D3D12_HEAP_TYPE_UPLOAD);
+    if (auto opt{ConstantBuffer<ShaderPerFrameConstants>::New(*device_)}) {
+      cb = std::move(*opt);
+    }
   }
 
   CreatePerViewConstantBuffers(1);
