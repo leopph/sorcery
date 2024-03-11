@@ -211,12 +211,12 @@ auto Renderer::Impl::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>&
 }
 
 
-auto Renderer::Impl::SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants> cb, Matrix4 const& model_mtx) -> void {
+auto Renderer::Impl::SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx) -> void {
   cb.Update(ShaderPerDrawConstants{.modelMtx = model_mtx, .invTranspModelMtx = model_mtx.Inverse().Transpose()});
 }
 
 
-auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rt_aspect,
+auto Renderer::Impl::DrawDirectionalShadowMaps(std::span<int const> light_indices, Camera const& cam, float rt_aspect,
                                                ShadowCascadeBoundaries const& shadow_cascade_boundaries,
                                                std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
                                                graphics::CommandList& cmd) -> void {
@@ -224,7 +224,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(Visibility const& visibility, Cam
   cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex());
   cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, {});
 
-  for (auto const lightIdx : visibility.lightIndices) {
+  for (auto const lightIdx : light_indices) {
     if (auto const light{lights_[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->
                                              IsCastingShadow()) {
       float const camNear{cam.GetNearClipPlane()};
@@ -524,7 +524,7 @@ auto Renderer::Impl::PostProcess(graphics::Texture const& src, graphics::Texture
                                  graphics::CommandList& cmd) const noexcept -> void {
   cmd.SetPipelineState(*post_process_pso_);
   cmd.SetPipelineParameter(offsetof(PostProcessDrawParams, in_tex_idx), src.GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(PostProcessDrawParams, inv_gamma), inv_gamma_);
+  cmd.SetPipelineParameter(offsetof(PostProcessDrawParams, inv_gamma), *std::bit_cast<UINT*>(&inv_gamma_));
   cmd.SetRenderTargets(std::array{dst}, nullptr);
   cmd.DrawInstanced(3, 1, 0, 0);
 }
@@ -544,27 +544,24 @@ auto Renderer::Impl::ReleaseTempRenderTargets() noexcept -> void {
 }
 
 
-auto Renderer::Impl::RecreateSsaoSamples(int const sampleCount) noexcept -> void {
-  ssao_samples_buffer_->Resize(sampleCount);
-  auto const ctx{GetThreadContext()};
-  auto const ssaoSamples{ssao_samples_buffer_->Map(ctx)};
+auto Renderer::Impl::RecreateSsaoSamples(int const sample_count) const noexcept -> void {
+  ssao_samples_buffer_->Resize(sample_count);
+  auto const ssao_samples{ssao_samples_buffer_->GetData()};
 
   std::uniform_real_distribution dist{0.0f, 1.0f};
   std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
 
-  for (auto i{0}; i < sampleCount; i++) {
+  for (auto i{0}; i < sample_count; i++) {
     Vector3 sample{dist(gen) * 2 - 1, dist(gen) * 2 - 1, dist(gen)};
     Normalize(sample);
     sample *= dist(gen);
 
-    auto scale{static_cast<float>(i) / static_cast<float>(sampleCount)};
+    auto scale{static_cast<float>(i) / static_cast<float>(sample_count)};
     scale = std::lerp(0.1f, 1.0f, scale * scale);
     sample *= scale;
 
-    ssaoSamples[i] = Vector4{sample, 0};
+    ssao_samples[i] = Vector4{sample, 0};
   }
-
-  ssao_samples_buffer_->Unmap(ctx);
 }
 
 
@@ -1030,7 +1027,7 @@ auto Renderer::Impl::StartUp() -> void {
   std::array<std::uint8_t, 4> constexpr static white_color_data{255, 255, 255, 255};
 
   auto const white_tex_upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{white_color_data.size()}, D3D12_HEAP_TYPE_UPLOAD)
+    device_->CreateBuffer(graphics::BufferDesc{white_color_data.size(), 0, false, false, false}, D3D12_HEAP_TYPE_UPLOAD)
   };
   std::memcpy(white_tex_upload_buf->Map(), white_color_data.data(), white_color_data.size());
 
@@ -1079,16 +1076,18 @@ auto Renderer::Impl::ShutDown() -> void {
 
 
 auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt) -> void {
-  auto const ctx{GetThreadContext()};
+  auto& cmd{*command_lists_[frame_idx_]};
+  if (!cmd.Begin(nullptr)) {
+    return;
+  }
 
   auto const rtWidth{rt ? rt->GetDesc().width : gWindow.GetClientAreaSize().width};
   auto const rtHeight{rt ? rt->GetDesc().height : gWindow.GetClientAreaSize().height};
   auto const rtAspect{static_cast<float>(rtWidth) / static_cast<float>(rtHeight)};
 
   RenderTarget::Desc const hdrRtDesc{
-    .width = rtWidth, .height = rtHeight, .color_format = color_buffer_format_, .depth_buffer_bit_count = 32,
-    .stencil_buffer_bit_count = 0, .sample_count = static_cast<int>(GetMultisamplingMode()),
-    .debug_name = "Camera HDR RenderTarget"
+    rtWidth, rtHeight, color_buffer_format_, depth_format_, static_cast<UINT>(GetMultisamplingMode()),
+    L"Camera HDR RenderTarget", false
   };
 
   auto const& hdrRt{GetTemporaryRenderTarget(hdrRtDesc)};
@@ -1099,88 +1098,54 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
       ? Vector4{Scene::GetActiveScene()->GetSkyColor(), 1}
       : Vector4{0, 0, 0, 1}
   };
-  ctx->ClearRenderTargetView(hdrRt.GetRtv(), clearColor.GetData());
+
+  cmd.ClearRenderTarget(*hdrRt.GetColorTex(), std::span<FLOAT const, 4>{clearColor.GetData(), 4}, {});
 
 
-  D3D11_VIEWPORT const viewport{
-    .TopLeftX = 0, .TopLeftY = 0, .Width = static_cast<FLOAT>(rtWidth), .Height = static_cast<FLOAT>(rtHeight),
-    .MinDepth = 0, .MaxDepth = 1
-  };
+  D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rtWidth), static_cast<FLOAT>(rtHeight), 0, 1};
 
-  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, samp_cmp_pcf_ge_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, samp_cmp_point_ge_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF16_CLAMP, 1, samp_af16_clamp_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF8_CLAMP, 1, samp_af8_clamp_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF4_CLAMP, 1, samp_af4_clamp_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF2_CLAMP, 1, samp_af2_clamp_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_TRI_CLAMP, 1, samp_tri_clamp_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_BI_CLAMP, 1, samp_bi_clamp_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_POINT_CLAMP, 1, samp_point_clamp_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF16_WRAP, 1, samp_af16_wrap_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF8_WRAP, 1, samp_af8_wrap_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF4_WRAP, 1, samp_af4_wrap_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_AF2_WRAP, 1, samp_af2_wrap_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_TRI_WRAP, 1, samp_tri_wrap_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_BI_WRAP, 1, samp_bi_wrap_.GetAddressOf());
-  ctx->PSSetSamplers(SAMPLER_SLOT_POINT_WRAP, 1, samp_point_wrap_.GetAddressOf());
-
-  SetPerFrameConstants(ctx, static_cast<int>(rtWidth), static_cast<int>(rtHeight));
-  ctx->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
-  ctx->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
+  SetPerFrameConstants(per_frame_cbs_[frame_idx_], static_cast<int>(rtWidth), static_cast<int>(rtHeight));
 
   auto const camPos{cam.GetPosition()};
   auto const camViewMtx{cam.CalculateViewMatrix()};
   auto const camProjMtx{GetProjectionMatrixForRendering(cam.CalculateProjectionMatrix(rtAspect))};
   auto const camViewProjMtx{camViewMtx * camProjMtx};
-
   Frustum const camFrustWS{camViewProjMtx};
-  Visibility visibility{
-    .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
-    .staticMeshIndices = std::pmr::vector<StaticMeshSubmeshIndex>{&GetTmpMemRes()}
-  };
-  CullLights(camFrustWS, visibility);
+
+  std::pmr::vector<int> light_indices{&GetTmpMemRes()};
+  CullLights(camFrustWS, light_indices);
 
   // Shadow pass
-
-  annot->BeginEvent(L"Directional Light Shadows");
-  ID3D11ShaderResourceView* const nullSrv{nullptr};
-  ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
-  ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, &nullSrv);
-  ctx->PSSetShader(nullptr, nullptr, 0);
-  ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
   std::array<Matrix4, MAX_CASCADE_COUNT> shadowViewProjMatrices;
   auto const shadowCascadeBoundaries{CalculateCameraShadowCascadeBoundaries(cam)};
-  DrawDirectionalShadowMaps(visibility, cam, rtAspect, shadowCascadeBoundaries, shadowViewProjMatrices, ctx);
+  DrawDirectionalShadowMaps(light_indices, cam, rtAspect, shadowCascadeBoundaries, shadowViewProjMatrices, cmd);
 
-  //mDirectionalShadowAtlas->Update(mLights, visibility, cam, shadowCascadeBoundaries, rtAspect, mCascadeCount);
-  //DrawShadowMaps(*mDirectionalShadowAtlas);
-  annot->EndEvent();
+  punctual_shadow_atlas_->Update(lights_, light_indices, cam, camViewProjMtx, shadow_distance_);
+  DrawPunctualShadowMaps(*punctual_shadow_atlas_, cmd);
 
-  annot->BeginEvent(L"Punctual Light Shadows");
-  punctual_shadow_atlas_->Update(lights_, visibility, cam, camViewProjMtx, shadow_distance_);
-  DrawShadowMaps(*punctual_shadow_atlas_, ctx);
-  annot->EndEvent();
+  std::pmr::vector<StaticMeshSubmeshIndex> static_mesh_indices{&GetTmpMemRes()};
+  CullStaticMeshComponents(camFrustWS, static_mesh_indices);
 
-  CullStaticMeshComponents(camFrustWS, visibility);
+  if (next_per_view_cb_idx_ >= per_view_cbs_[frame_idx_].size()) {
+    CreatePerViewConstantBuffers(1);
+  }
 
-  SetPerViewConstants(ctx, camViewMtx, camProjMtx, shadowCascadeBoundaries, camPos);
-  ctx->VSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, std::array{mPerViewCb.Get()}.data());
-  ctx->PSSetConstantBuffers(CB_SLOT_PER_VIEW, 1, std::array{mPerViewCb.Get()}.data());
+  auto const cam_per_view_cb_idx{next_per_view_cb_idx_};
+  ++next_per_view_cb_idx_;
 
-  ctx->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, 0, 0);
+  SetPerViewConstants(per_view_cbs_[frame_idx_][cam_per_view_cb_idx], camViewMtx, camProjMtx, shadowCascadeBoundaries,
+    camPos);
+
+  cmd.ClearDepthStencil(*hdrRt.GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
   auto const& normalRt{
     GetTemporaryRenderTarget(RenderTarget::Desc{
-      .width = rtWidth, .height = rtHeight, .color_format = normal_buffer_format_, .depth_buffer_bit_count = 0,
-      .stencil_buffer_bit_count = 0, .sample_count = 1, .debug_name = "Camera Normal RT"
+      rtWidth, rtHeight, normal_buffer_format_, std::nullopt, 1, L"Camera Normal RT"
     })
   };
 
   // Depth-Normal pre-pass
   if (depth_normal_pre_pass_enabled_) {
-    annot->BeginEvent(L"Depth-Normal Pre-Pass");
-
     // If MSAA is enabled we render into an MSAA RT and then resolve into normalRt
     auto const& actualNormalRt{
       [this, &normalRt]() -> auto const& {
@@ -1194,165 +1159,152 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
       }()
     };
 
-    ctx->OMSetRenderTargets(1, std::array{actualNormalRt.GetRtv()}.data(), hdrRt.GetDsv());
-    ctx->OMSetDepthStencilState(mDepthTestGreaterWriteDss.Get(), 0);
+    cmd.SetPipelineState(*depth_normal_pso_);
+    cmd.SetRenderTargets(std::span{actualNormalRt.GetColorTex(), 1}, hdrRt.GetDepthStencilTex());
+    cmd.ClearRenderTarget(*actualNormalRt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
 
-    ctx->PSSetShader(mDepthNormalPs.Get(), nullptr, 0);
+    for (auto const [staticMeshIdx, submeshIdx] : static_mesh_indices) {
+      auto const& component{*static_mesh_components_[staticMeshIdx]};
+      auto const mesh{component.GetMesh()};
 
-    ctx->RSSetViewports(1, &viewport);
-    ctx->RSSetState(nullptr);
+      if (!mesh) {
+        continue;
+      }
 
-    ctx->VSSetShader(mDepthNormalVs.Get(), nullptr, 0);
+      auto const submesh{mesh->GetSubMeshes()[submeshIdx]};
+      auto const mtl{component.GetMaterials()[submesh.material_index]};
 
-    ctx->IASetInputLayout(mAllAttribsIl.Get());
+      if (!mtl) {
+        continue;
+      }
 
-    ctx->ClearRenderTargetView(actualNormalRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
-    DrawMeshes(visibility.staticMeshIndices, ctx);
+      if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
+        CreatePerDrawConstantBuffers(1);
+      }
+
+      SetPerDrawConstants(per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_],
+        component.GetEntity().GetTransform().GetLocalToWorldMatrix());
+
+      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, pos_buf_idx),
+        mesh->GetPositionBuffer()->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, norm_buf_idx),
+        mesh->GetNormalBuffer()->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, tan_buf_idx),
+        mesh->GetTangentBuffer()->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, uv_buf_idx), mesh->GetUvBuffer()->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, mtl_idx), mtl->GetBuffer()->GetConstantBuffer());
+      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, samp_idx), samp_af16_wrap_.Get());
+      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, rt_idx), 0);
+      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_draw_cb_idx),
+        per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
+      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_view_cb_idx),
+        per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
+      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_frame_cb_idx),
+        per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
+
+      ++next_per_draw_cb_idx_;
+    }
 
     // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
     if (GetMultisamplingMode() != MultisamplingMode::Off) {
-      ctx->ResolveSubresource(normalRt.GetColorTexture(), 0, actualNormalRt.GetColorTexture(), 0,
-        *normalRt.GetDesc().color_format);
+      cmd.Resolve(*normalRt.GetColorTex(), *actualNormalRt.GetColorTex(), *normalRt.GetDesc().color_format);
     }
-
-    annot->EndEvent();
   }
 
-  ObserverPtr<ID3D11ShaderResourceView> ssaoTexSrv{mWhiteTexSrv.Get()};
+  auto ssaoTexSrv{white_tex_.Get()};
 
   // SSAO pass
   if (ssao_enabled_) {
-    annot->BeginEvent(L"SSAO");
-
-    D3D11_MAPPED_SUBRESOURCE mapped;
-    hr = ctx->Map(mSsaoCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-    assert(SUCCEEDED(hr));
-
-    *static_cast<SsaoCB*>(mapped.pData) = SsaoCB{
-      .gSsaoConstants = ShaderSsaoConstants{
-        .radius = ssao_params_.radius, .bias = ssao_params_.bias, .power = ssao_params_.power,
-        .sampleCount = ssao_params_.sampleCount
-      }
-    };
-
-    ctx->Unmap(mSsaoCb.Get(), 0);
-
     auto const& ssaoRt{
-      GetTemporaryRenderTarget(RenderTarget::Desc{
-        .width = rtWidth, .height = rtHeight, .color_format = ssao_buffer_format_, .depth_buffer_bit_count = 0,
-        .stencil_buffer_bit_count = 0, .sample_count = 1, .debug_name = "SSAO RT"
-      })
+      GetTemporaryRenderTarget(RenderTarget::Desc{rtWidth, rtHeight, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"})
     };
 
     // If MSAA is enabled we have to resolve the depth texture before running SSAO
-    auto const ssaoDepthSrv{
-      [this, &hdrRt, ctx] {
+    auto const ssao_depth_tex{
+      [this, &hdrRt, &cmd] {
         if (GetMultisamplingMode() == MultisamplingMode::Off) {
-          return hdrRt.GetDepthSrv();
+          return hdrRt.GetDepthStencilTex();
         }
 
         auto ssaoDepthRtDesc{hdrRt.GetDesc()};
-        ssaoDepthRtDesc.color_format = [&ssaoDepthRtDesc] {
-          // NOTE: 24 bit formats are not supported for UAVs!
-          assert(ssaoDepthRtDesc.depth_buffer_bit_count == 32 || ssaoDepthRtDesc.depth_buffer_bit_count == 16);
-
-          if (ssaoDepthRtDesc.depth_buffer_bit_count == 32) {
-            return DXGI_FORMAT_R32_FLOAT;
-          }
-
-          if (ssaoDepthRtDesc.depth_buffer_bit_count == 16) {
-            return DXGI_FORMAT_R16_FLOAT;
-          }
-
-          return DXGI_FORMAT_UNKNOWN; // This should never be reached.
-        }();
+        ssaoDepthRtDesc.color_format = DXGI_FORMAT_R32_FLOAT;
         ssaoDepthRtDesc.sample_count = 1;
-        ssaoDepthRtDesc.depth_buffer_bit_count = 0;
-        ssaoDepthRtDesc.stencil_buffer_bit_count = 0;
+        ssaoDepthRtDesc.depth_stencil_format = std::nullopt;
         ssaoDepthRtDesc.enable_unordered_access = true;
         auto const& ssaoDepthRt{GetTemporaryRenderTarget(ssaoDepthRtDesc)};
 
-        ctx->OMSetRenderTargets(1, std::array{static_cast<ID3D11RenderTargetView*>(nullptr)}.data(), nullptr);
-
-        ctx->CSSetUnorderedAccessViews(UAV_SLOT_DEPTH_RESOLVE_OUTPUT, 1, std::array{ssaoDepthRt.GetColorUav()}.data(),
-          nullptr);
-        ctx->CSSetShaderResources(RES_SLOT_DEPTH_RESOLVE_INPUT, 1, std::array{hdrRt.GetDepthSrv()}.data());
-        ctx->CSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
-        ctx->CSSetShader(mDepthResolveCs.Get(), nullptr, 0);
-
-        ctx->Dispatch(
+        cmd.SetPipelineState(*depth_resolve_pso_);
+        cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, in_tex_idx),
+          ssaoDepthRt.GetColorTex()->GetUnorderedAccess());
+        cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, out_tex_idx),
+          hdrRt.GetColorTex()->GetUnorderedAccess());
+        cmd.Dispatch(
           static_cast<UINT>(std::ceil(static_cast<float>(ssaoDepthRtDesc.width) / DEPTH_RESOLVE_CS_THREADS_X)),
           static_cast<UINT>(std::ceil(static_cast<float>(ssaoDepthRtDesc.height) / DEPTH_RESOLVE_CS_THREADS_Y)),
           static_cast<UINT>(std::ceil(1.0f / DEPTH_RESOLVE_CS_THREADS_Z)));
 
-        ctx->CSSetUnorderedAccessViews(UAV_SLOT_DEPTH_RESOLVE_OUTPUT, 1,
-          std::array{static_cast<ID3D11UnorderedAccessView*>(nullptr)}.data(), nullptr);
-        ctx->CSSetShaderResources(RES_SLOT_DEPTH_RESOLVE_INPUT, 1,
-          std::array{static_cast<ID3D11ShaderResourceView*>(nullptr)}.data());
-
-        return ssaoDepthRt.GetColorSrv();
+        return ssaoDepthRt.GetColorTex();
       }()
     };
 
-    ctx->OMSetRenderTargets(1, std::array{ssaoRt.GetRtv()}.data(), nullptr);
-
-    ctx->PSSetShader(mSsaoPs.Get(), nullptr, 0);
-    ctx->PSSetShaderResources(RES_SLOT_SSAO_DEPTH, 1, std::addressof(ssaoDepthSrv));
-    ctx->PSSetShaderResources(RES_SLOT_SSAO_NORMAL, 1, std::array{normalRt.GetColorSrv()}.data());
-    ctx->PSSetShaderResources(RES_SLOT_SSAO_NOISE, 1, mSsaoNoiseSrv.GetAddressOf());
-    ctx->PSSetShaderResources(RES_SLOT_SSAO_SAMPLES, 1, std::array{ssao_samples_buffer_->GetBuffer()}.data());
-    ctx->PSSetConstantBuffers(CB_SLOT_SSAO, 1, mSsaoCb.GetAddressOf());
-
-    ctx->VSSetShader(mScreenVs.Get(), nullptr, 0);
-
-    ctx->IASetInputLayout(nullptr);
-
-    ctx->ClearRenderTargetView(ssaoRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
-    ctx->Draw(3, 0);
+    cmd.SetPipelineState(*ssao_pso_);
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, noise_tex_idx), ssao_noise_tex_->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, depth_tex_idx), ssao_depth_tex->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, normal_tex_idx), normalRt.GetColorTex()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, samp_buf_idx),
+      ssao_samples_buffer_->GetBuffer()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, point_wrap_samp_idx), samp_point_wrap_.Get());
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, radius), *std::bit_cast<UINT*>(&ssao_params_.radius));
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, bias), *std::bit_cast<UINT*>(&ssao_params_.bias));
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, power), *std::bit_cast<UINT*>(&ssao_params_.power));
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, sample_count), ssao_params_.sampleCount);
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_view_cb_idx),
+      per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
+    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_frame_cb_idx),
+      per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
+    cmd.SetRenderTargets(std::span{ssaoRt.GetColorTex(), 1}, nullptr);
+    cmd.ClearRenderTarget(*ssaoRt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+    cmd.DrawInstanced(3, 1, 0, 0);
 
     auto const& ssaoBlurRt{
       GetTemporaryRenderTarget([&ssaoRt] {
         auto ret{ssaoRt.GetDesc()};
-        ret.debug_name = "SSAO Blur RT";
+        ret.debug_name = L"SSAO Blur RT";
         return ret;
       }())
     };
 
-    ctx->OMSetRenderTargets(1, std::array{ssaoBlurRt.GetRtv()}.data(), nullptr);
+    cmd.SetPipelineState(*ssao_blur_pso_);
+    cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, in_tex_idx), ssaoBlurRt.GetColorTex()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
+    cmd.SetRenderTargets(std::span{ssaoBlurRt.GetColorTex(), 1}, nullptr);
+    cmd.ClearRenderTarget(*ssaoBlurRt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+    cmd.DrawInstanced(3, 1, 0, 0);
 
-    ctx->PSSetShader(mSsaoBlurPs.Get(), nullptr, 0);
-    ctx->PSSetShaderResources(RES_SLOT_SSAO_BLUR_INPUT, 1, std::array{ssaoRt.GetColorSrv()}.data());
-
-    ctx->ClearRenderTargetView(ssaoBlurRt.GetRtv(), std::array{0.0f, 0.0f, 0.0f, 0.0f}.data());
-    ctx->Draw(3, 0);
-
-    annot->EndEvent();
-
-    ssaoTexSrv = ssaoBlurRt.GetColorSrv();
+    ssaoTexSrv = ssaoBlurRt.GetColorTex();
   }
 
   // Full forward lighting pass
 
-  annot->BeginEvent(L"Forward Lit Pass");
-
-  auto const lightCount{std::ssize(visibility.lightIndices)};
+  auto const lightCount{std::ssize(light_indices)};
   light_buffer_->Resize(static_cast<int>(lightCount));
-  auto const lightBufferData{light_buffer_->Map(ctx)};
+  auto const lightBufferData{light_buffer_->GetData()};
 
   for (int i = 0; i < lightCount; i++) {
-    lightBufferData[i].color = lights_[visibility.lightIndices[i]]->GetColor();
-    lightBufferData[i].intensity = lights_[visibility.lightIndices[i]]->GetIntensity();
-    lightBufferData[i].type = static_cast<int>(lights_[visibility.lightIndices[i]]->GetType());
-    lightBufferData[i].direction = lights_[visibility.lightIndices[i]]->GetDirection();
+    lightBufferData[i].color = lights_[light_indices[i]]->GetColor();
+    lightBufferData[i].intensity = lights_[light_indices[i]]->GetIntensity();
+    lightBufferData[i].type = static_cast<int>(lights_[light_indices[i]]->GetType());
+    lightBufferData[i].direction = lights_[light_indices[i]]->GetDirection();
     lightBufferData[i].isCastingShadow = FALSE;
-    lightBufferData[i].range = lights_[visibility.lightIndices[i]]->GetRange();
+    lightBufferData[i].range = lights_[light_indices[i]]->GetRange();
     lightBufferData[i].halfInnerAngleCos = std::cos(
-      ToRadians(lights_[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
+      ToRadians(lights_[light_indices[i]]->GetInnerAngle() / 2.0f));
     lightBufferData[i].halfOuterAngleCos = std::cos(
-      ToRadians(lights_[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
-    lightBufferData[i].position = lights_[visibility.lightIndices[i]]->GetEntity().GetTransform().GetWorldPosition();
-    lightBufferData[i].depthBias = lights_[visibility.lightIndices[i]]->GetShadowDepthBias();
-    lightBufferData[i].normalBias = lights_[visibility.lightIndices[i]]->GetShadowNormalBias();
+      ToRadians(lights_[light_indices[i]]->GetOuterAngle() / 2.0f));
+    lightBufferData[i].position = lights_[light_indices[i]]->GetEntity().GetTransform().GetWorldPosition();
+    lightBufferData[i].depthBias = lights_[light_indices[i]]->GetShadowDepthBias();
+    lightBufferData[i].normalBias = lights_[light_indices[i]]->GetShadowNormalBias();
 
     for (auto& sample : lightBufferData[i].sampleShadowMap) {
       sample = FALSE;
@@ -1362,7 +1314,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   // Set directional light shadow constant data
 
   for (auto i{0}; i < lightCount; i++) {
-    if (auto const light{lights_[visibility.lightIndices[i]]};
+    if (auto const light{lights_[light_indices[i]]};
       light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
       lightBufferData[i].isCastingShadow = TRUE;
 
@@ -1375,41 +1327,57 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     }
   }
 
-  //mDirectionalShadowAtlas->SetLookUpInfo(lightBufferData);
   punctual_shadow_atlas_->SetLookUpInfo(lightBufferData);
 
-  light_buffer_->Unmap(ctx);
+  cmd.SetPipelineState(*object_pso_);
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, ssao_tex_idx), ssaoTexSrv->GetShaderResource());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, light_buf_idx), light_buffer_->GetBuffer()->GetShaderResource());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, dir_shadow_arr_idx), dir_shadow_map_arr_->GetTex()->GetShaderResource());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, punc_shadow_atlas_idx), punctual_shadow_atlas_->GetTex()->GetShaderResource());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_view_cb_idx), per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_frame_cb_idx), per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
+  cmd.SetRenderTargets(std::span{hdrRt.GetColorTex(), 1}, hdrRt.GetDepthStencilTex());
 
-  ctx->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
-  ctx->OMSetDepthStencilState(depth_normal_pre_pass_enabled_
-                                ? mDepthTestGreaterEqualNoWriteDss.Get()
-                                : mDepthTestGreaterEqualWriteDss.Get(), 0);
+  for (auto const [staticMeshIdx, submeshIdx] : static_mesh_indices) {
+    auto const& component{static_mesh_components_[staticMeshIdx]};
+    auto const mesh{component->GetMesh()};
 
-  ctx->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
-  ctx->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{light_buffer_->GetBuffer()}.data());
-  ctx->PSSetShaderResources(RES_SLOT_DIR_SHADOW_MAP_ARRAY, 1, std::array{dir_shadow_map_arr_->GetSrv()}.data());
-  ctx->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{punctual_shadow_atlas_->GetSrv()}.data());
-  ctx->PSSetShaderResources(RES_SLOT_SSAO_TEX, 1, std::array{ssaoTexSrv}.data());
+    if (!mesh) {
+      continue;
+    }
 
-  ctx->RSSetViewports(1, &viewport);
-  ctx->RSSetState(nullptr);
+    auto const& submesh{mesh->GetSubMeshes()[submeshIdx]};
+    auto const mtl{component->GetMaterials()[submesh.material_index]};
 
-  ctx->VSSetShader(mMeshVs.Get(), nullptr, 0);
+    if (!mtl) {
+      continue;
+    }
 
-  ctx->IASetInputLayout(mAllAttribsIl.Get());
+    if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
+      CreatePerDrawConstantBuffers(1);
+    }
 
-  DrawMeshes(visibility.staticMeshIndices, ctx);
+    SetPerDrawConstants(per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_], component->GetEntity().GetTransform().GetLocalToWorldMatrix());
 
-  annot->EndEvent();
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, pos_buf_idx), mesh->GetPositionBuffer()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, norm_buf_idx), mesh->GetNormalBuffer()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, tan_buf_idx), mesh->GetTangentBuffer()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, uv_buf_idx), mesh->GetUvBuffer()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, mtl_idx), mtl->GetBuffer()->GetConstantBuffer());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_draw_cb_idx), per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
+
+    ++next_per_draw_cb_idx_;
+  }
+
 
   if (auto const& activeScene{Scene::GetActiveScene()};
     activeScene->GetSkyMode() == SkyMode::Skybox && activeScene->GetSkybox()) {
-    annot->BeginEvent(L"Skybox Pass");
-    DrawSkybox(ctx);
-    annot->EndEvent();
+    DrawSkybox(cmd);
   }
 
-  annot->BeginEvent(L"Post-Process Pass");
   RenderTarget const* postProcessRt;
 
   if (GetMultisamplingMode() == MultisamplingMode::Off) {
@@ -1418,16 +1386,12 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     auto resolveHdrRtDesc{hdrRtDesc};
     resolveHdrRtDesc.sample_count = 1;
     auto const& resolveHdrRt{GetTemporaryRenderTarget(resolveHdrRtDesc)};
-    ctx->ResolveSubresource(resolveHdrRt.GetColorTexture(), 0, hdrRt.GetColorTexture(), 0, *hdrRtDesc.color_format);
+    cmd.Resolve(*resolveHdrRt.GetColorTex(), *hdrRt.GetColorTex(), *hdrRtDesc.color_format);
     postProcessRt = std::addressof(resolveHdrRt);
   }
 
-  ctx->RSSetViewports(1, &viewport);
-  PostProcess(postProcessRt->GetColorSrv(), rt ? rt->GetRtv() : mSwapChain->GetRtv(), ctx);
-
-  annot->EndEvent();
-
-  ExecuteCommandList(ctx);
+  cmd.SetViewports(std::span{&viewport, 1});
+  PostProcess(*postProcessRt->GetColorTex(), *(rt ? rt->GetColorTex() : device_->SwapChainGetBuffers(*swap_chain_)[device_->SwapChainGetCurrentBufferIndex(*swap_chain_)]), cmd);
 }
 
 
@@ -1445,38 +1409,34 @@ auto Renderer::Impl::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to
 
 
 auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
-  auto const ctx{GetThreadContext()};
-
-  ctx->OMSetRenderTargets(1, std::array{rt ? rt->GetRtv() : mSwapChain->GetRtv()}.data(), nullptr);
-
   gizmo_color_buffer_->Resize(static_cast<int>(std::ssize(gizmo_colors_)));
-  std::ranges::copy(gizmo_colors_, std::begin(gizmo_color_buffer_->Map(ctx)));
-  gizmo_color_buffer_->Unmap(ctx);
+  std::ranges::copy(gizmo_colors_, std::begin(gizmo_color_buffer_->GetData()));
 
   line_gizmo_vertex_data_buffer_->Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
-  std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_->Map(ctx)));
-  line_gizmo_vertex_data_buffer_->Unmap(ctx);
+  std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_->GetData()));
 
-  ctx->PSSetShader(mGizmoPs.Get(), nullptr, 0);
-  ctx->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, std::array{gizmo_color_buffer_->GetBuffer()}.data());
+  auto& cmd{*command_lists_[frame_idx_]};
+  cmd.SetPipelineState(*line_gizmo_pso_);
+  cmd.SetPipelineParameter(offsetof(GizmoDrawParams, vertex_buf_idx),
+    line_gizmo_vertex_data_buffer_->GetBuffer()->GetShaderResource());
+  cmd.SetPipelineParameter(offsetof(GizmoDrawParams, color_buf_idx),
+    gizmo_color_buffer_->GetBuffer()->GetShaderResource());
+  // TODO set per view cb
+
+  auto const actual_rt{
+    rt
+      ? rt->GetColorTex()
+      : device_->SwapChainGetBuffers(*swap_chain_)[device_->SwapChainGetCurrentBufferIndex(*swap_chain_)]
+  };
+  cmd.SetRenderTargets(std::span{1, actual_rt}, nullptr);
 
   if (!line_gizmo_vertex_data_.empty()) {
-    ctx->VSSetShader(mLineGizmoVs.Get(), nullptr, 0);
-    ctx->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1,
-      std::array{line_gizmo_vertex_data_buffer_->GetBuffer()}.data());
-    ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-    ctx->DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);
+    cmd.DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);
   }
-
-  ComPtr<ID3D11CommandList> cmdList;
-  [[maybe_unused]] auto const hr{ctx->FinishCommandList(FALSE, cmdList.GetAddressOf())};
-  assert(SUCCEEDED(hr));
-
-  ExecuteCommandList(cmdList.Get());
 }
 
 
-auto Renderer::Impl::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
+/*auto Renderer::Impl::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
   auto const rtv{main_rt_->GetRtv()};
   FLOAT constexpr clearColor[]{0, 0, 0, 1};
   ctx->ClearRenderTargetView(rtv, clearColor);
@@ -1492,12 +1452,11 @@ auto Renderer::Impl::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> cons
   mSwapChain->GetRtv()->GetResource(backBuf.GetAddressOf());
 
   ctx->CopyResource(backBuf.Get(), mainRtColorTex.Get());
-}
+} TODO */
 
 
 auto Renderer::Impl::Present() noexcept -> void {
-  mSwapChain->Present(static_cast<UINT>(sync_interval_));
-
+  std::ignore = device_->SwapChainPresent(*swap_chain_, static_cast<UINT>(sync_interval_));
   ClearGizmoDrawQueue();
   ReleaseTempRenderTargets();
 }
@@ -1518,7 +1477,7 @@ auto Renderer::Impl::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) ->
     }
   }
 
-  return *tmp_render_targets_.emplace_back(std::make_unique<RenderTarget>(desc), 0).rt;
+  return *tmp_render_targets_.emplace_back(RenderTarget::New(*device_, desc), 0).rt;
 }
 
 

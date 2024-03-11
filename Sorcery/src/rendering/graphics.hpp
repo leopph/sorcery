@@ -389,6 +389,7 @@ public:
                             INT base_vertex_location, UINT start_instance_location) const -> void;
   auto DrawInstanced(UINT vertex_count_per_instance, UINT instance_count, UINT start_vertex_location,
                      UINT start_instance_location) const -> void;
+  auto Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT format) const -> void;
   auto SetBlendFactor(std::span<FLOAT const, 4> blend_factor) const -> void;
   auto SetRenderTargets(std::span<Texture const> render_targets, Texture const* depth_stencil) const -> void;
   auto SetStencilRef(UINT stencil_ref) const -> void;

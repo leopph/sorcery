@@ -10,6 +10,7 @@
 #include "../Core.hpp"
 #include "../Color.hpp"
 #include "../Math.hpp"
+#include "Visibility.hpp"
 
 #include <array>
 #include <memory>
@@ -140,9 +141,9 @@ class Renderer::Impl {
   static auto SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
                                   Matrix4 const& proj_mtx, ShadowCascadeBoundaries const& cascade_bounds,
                                   Vector3 const& view_pos) -> void;
-  static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants> cb, Matrix4 const& model_mtx) -> void;
+  static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx) -> void;
 
-  auto DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rt_aspect,
+  auto DrawDirectionalShadowMaps(std::span<int const> light_indices, Camera const& cam, float rt_aspect,
                                  ShadowCascadeBoundaries const& shadow_cascade_boundaries,
                                  std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
                                  graphics::CommandList& cmd) -> void;
@@ -154,7 +155,7 @@ class Renderer::Impl {
   auto ClearGizmoDrawQueue() noexcept -> void;
   auto ReleaseTempRenderTargets() noexcept -> void;
 
-  auto RecreateSsaoSamples(int sampleCount) noexcept -> void;
+  auto RecreateSsaoSamples(int sample_count) const noexcept -> void;
 
   [[nodiscard]] auto RecreatePipelines() -> bool;
   auto CreatePerViewConstantBuffers(UINT count) -> void;
@@ -182,8 +183,8 @@ public:
   auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
   auto DrawGizmos(RenderTarget const* rt = nullptr) -> void;
 
-  auto ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
-  auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
+  /*auto ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
+  auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void; TODO*/
 
   auto Present() noexcept -> void;
 

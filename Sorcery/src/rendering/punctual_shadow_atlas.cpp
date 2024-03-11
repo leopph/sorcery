@@ -14,9 +14,9 @@ PunctualShadowAtlas::PunctualShadowAtlas(graphics::GraphicsDevice* const device,
   cells_{Cell{1}, Cell{2}, Cell{4}, Cell{8}} {}
 
 
-auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const all_lights, Visibility const& visibility,
-                                 Camera const& cam, Matrix4 const& cam_view_proj_mtx,
-                                 float const shadow_distance) -> void {
+auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const all_lights,
+                                 std::span<int const> const visible_light_indices, Camera const& cam,
+                                 Matrix4 const& cam_view_proj_mtx, float const shadow_distance) -> void {
   struct LightCascadeIndex {
     int lightIdxIdx;
     int shadowIdx;
@@ -74,8 +74,8 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
     }
   };
 
-  for (int i = 0; i < static_cast<int>(visibility.lightIndices.size()); i++) {
-    if (auto const light{all_lights[visibility.lightIndices[i]]};
+  for (int i = 0; i < static_cast<int>(visible_light_indices.size()); i++) {
+    if (auto const light{all_lights[visible_light_indices[i]]};
       light->IsCastingShadow() && (light->GetType() == LightComponent::Type::Spot || light->GetType() ==
                                    LightComponent::Type::Point)) {
       Vector3 const& lightPos{light->GetEntity().GetTransform().GetWorldPosition()};
@@ -126,9 +126,9 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
 
   for (int i = 0; i < 4; i++) {
     std::ranges::sort(lightIndexIndicesInCell[i],
-      [&visibility, &camPos, &all_lights](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
-        auto const leftLight{all_lights[visibility.lightIndices[lhs.lightIdxIdx]]};
-        auto const rightLight{all_lights[visibility.lightIndices[rhs.lightIdxIdx]]};
+      [&visible_light_indices, &camPos, &all_lights](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
+        auto const leftLight{all_lights[visible_light_indices[lhs.lightIdxIdx]]};
+        auto const rightLight{all_lights[visible_light_indices[rhs.lightIdxIdx]]};
 
         auto const leftLightPos{leftLight->GetEntity().GetTransform().GetWorldPosition()};
         auto const rightLightPos{rightLight->GetEntity().GetTransform().GetWorldPosition()};
@@ -148,7 +148,7 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
       }
 
       auto const [lightIdxIdx, shadowIdx]{lightIndexIndicesInCell[i].back()};
-      auto const light{all_lights[visibility.lightIndices[lightIdxIdx]]};
+      auto const light{all_lights[visible_light_indices[lightIdxIdx]]};
       lightIndexIndicesInCell[i].pop_back();
 
       if (light->GetType() == LightComponent::Type::Spot) {

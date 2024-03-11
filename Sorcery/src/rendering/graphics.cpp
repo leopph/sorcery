@@ -1216,6 +1216,11 @@ auto CommandList::DrawInstanced(UINT const vertex_count_per_instance, UINT const
 }
 
 
+auto CommandList::Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT const format) const -> void {
+  cmd_list_->ResolveSubresource(dst.resource_.Get(), 0, src.resource_.Get(), 0, format);
+}
+
+
 auto CommandList::SetBlendFactor(std::span<FLOAT const, 4> const blend_factor) const -> void {
   cmd_list_->OMSetBlendFactor(blend_factor.data());
 }
