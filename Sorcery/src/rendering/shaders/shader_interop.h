@@ -33,7 +33,7 @@ typedef bool BOOL;
 #define RWTEXTURE2D(name, type, slot) RWTexture2D<type> name : register(MAKE_UAV_SLOT(slot))
 #endif
 
-#define INVALID_RES_IDX (-1)
+#define INVALID_RES_IDX ((uint)-1)
 
 #define RES_SLOT_ALBEDO_MAP 0
 #define RES_SLOT_METALLIC_MAP 1

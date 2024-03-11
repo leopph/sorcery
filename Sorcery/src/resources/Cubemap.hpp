@@ -2,17 +2,18 @@
 
 #include "Resource.hpp"
 #include "../Image.hpp"
+#include "../rendering/graphics.hpp"
 
 
 namespace sorcery {
 class Cubemap final : public Resource {
   RTTR_ENABLE(Resource)
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
+
+  graphics::UniqueHandle<graphics::Texture> tex_;
 
 public:
   LEOPPHAPI Cubemap(ID3D11Texture2D& tex, ID3D11ShaderResourceView& srv) noexcept;
 
-  [[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>;
+  [[nodiscard]] LEOPPHAPI auto GetTex() const noexcept -> graphics::Texture*;
 };
 }

@@ -30,12 +30,12 @@ auto Material::UpdateGPUData() const noexcept -> void {
   auto const ctx{gRenderer.GetThreadContext()};
 
   D3D11_MAPPED_SUBRESOURCE mapped;
-  [[maybe_unused]] auto hr{ctx->Map(mCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
+  [[maybe_unused]] auto hr{ctx->Map(cb_.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
   assert(SUCCEEDED(hr));
 
   *static_cast<ShaderMaterial*>(mapped.pData) = mShaderMtl;
 
-  ctx->Unmap(mCB.Get(), 0);
+  ctx->Unmap(cb_.Get(), 0);
 
   Microsoft::WRL::ComPtr<ID3D11CommandList> cmdList;
   hr = ctx->FinishCommandList(FALSE, cmdList.GetAddressOf());
@@ -61,7 +61,7 @@ auto Material::CreateCB() -> void {
     .SysMemSlicePitch = 0
   };
 
-  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&cbDesc, &initialData, mCB.GetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&cbDesc, &initialData, cb_.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create material CB."};
   }
 }
@@ -128,61 +128,61 @@ auto Material::SetAo(f32 const ao) noexcept -> void {
 
 
 auto Material::GetAlbedoMap() const noexcept -> ObserverPtr<Texture2D> {
-  return mAlbedoMap;
+  return albedo_map_;
 }
 
 
 auto Material::SetAlbedoMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
-  mAlbedoMap = tex;
-  mShaderMtl.sampleAlbedo = mAlbedoMap != nullptr;
+  albedo_map_ = tex;
+  mShaderMtl.sampleAlbedo = albedo_map_ != nullptr;
   UpdateGPUData();
 }
 
 
 auto Material::GetMetallicMap() const noexcept -> ObserverPtr<Texture2D> {
-  return mMetallicMap;
+  return metallic_map_;
 }
 
 
 auto Material::SetMetallicMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
-  mMetallicMap = tex;
-  mShaderMtl.sampleMetallic = mMetallicMap != nullptr;
+  metallic_map_ = tex;
+  mShaderMtl.sampleMetallic = metallic_map_ != nullptr;
   UpdateGPUData();
 }
 
 
 auto Material::GetRoughnessMap() const noexcept -> ObserverPtr<Texture2D> {
-  return mRoughnessMap;
+  return roughness_map_;
 }
 
 
 auto Material::SetRoughnessMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
-  mRoughnessMap = tex;
-  mShaderMtl.sampleRoughness = mRoughnessMap != nullptr;
+  roughness_map_ = tex;
+  mShaderMtl.sampleRoughness = roughness_map_ != nullptr;
   UpdateGPUData();
 }
 
 
 auto Material::GetAoMap() const noexcept -> ObserverPtr<Texture2D> {
-  return mAoMap;
+  return ao_map_;
 }
 
 
 auto Material::SetAoMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
-  mAoMap = tex;
-  mShaderMtl.sampleAo = mAoMap != nullptr;
+  ao_map_ = tex;
+  mShaderMtl.sampleAo = ao_map_ != nullptr;
   UpdateGPUData();
 }
 
 
 auto Material::GetNormalMap() const noexcept -> ObserverPtr<Texture2D> {
-  return mNormalMap;
+  return normal_map_;
 }
 
 
 auto Material::SetNormalMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
-  mNormalMap = tex;
-  mShaderMtl.sampleNormal = mNormalMap != nullptr;
+  normal_map_ = tex;
+  mShaderMtl.sampleNormal = normal_map_ != nullptr;
   UpdateGPUData();
 }
 
@@ -209,19 +209,19 @@ auto Material::SetAlphaThreshold(float const threshold) noexcept -> void {
 
 
 auto Material::GetOpacityMask() const noexcept -> ObserverPtr<Texture2D> {
-  return mOpacityMask;
+  return opacity_mask_;
 }
 
 
 auto Material::SetOpacityMask(ObserverPtr<Texture2D> const opacityMask) noexcept -> void {
-  mOpacityMask = opacityMask;
-  mShaderMtl.sampleOpacityMap = mOpacityMask != nullptr;
+  opacity_mask_ = opacityMask;
+  mShaderMtl.sampleOpacityMap = opacity_mask_ != nullptr;
   UpdateGPUData();
 }
 
 
-auto Material::GetBuffer() const noexcept -> ObserverPtr<ID3D11Buffer> {
-  return mCB.Get();
+auto Material::GetBuffer() const noexcept -> graphics::Buffer* {
+  return cb_.Get();
 }
 
 

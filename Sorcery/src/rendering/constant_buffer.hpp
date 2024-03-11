@@ -14,6 +14,8 @@ class ConstantBuffer {
 public:
   static auto New(graphics::GraphicsDevice& device) -> std::optional<ConstantBuffer>;
 
+  ConstantBuffer() = default;
+
   auto Update(T const& val) -> void;
   [[nodiscard]] auto GetBuffer() const -> graphics::Buffer*;
 
@@ -21,7 +23,7 @@ private:
   ConstantBuffer(graphics::UniqueHandle<graphics::Buffer> buffer, T* ptr);
 
   graphics::UniqueHandle<graphics::Buffer> buffer_;
-  void* ptr_;
+  void* ptr_{nullptr};
 };
 
 

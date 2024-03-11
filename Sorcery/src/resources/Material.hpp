@@ -6,8 +6,8 @@
 #include "../Util.hpp"
 #include "Texture2D.hpp"
 #include "../ResourceManager.hpp"
-
-#include "..\rendering\shaders\shader_interop.h"
+#include "../rendering/shaders/shader_interop.h"
+#include "../rendering/graphics.hpp"
 
 
 namespace sorcery {
@@ -23,18 +23,19 @@ public:
 private:
   ShaderMaterial mShaderMtl{
     .albedo = Vector3{1, 1, 1}, .metallic = 0.0f, .roughness = 0.5f, .ao = 1.0f, .alphaThreshold = 1.0f,
-    .sampleAlbedo = FALSE, .sampleMetallic = FALSE, .sampleRoughness = FALSE, .sampleAo = FALSE, .sampleNormal = FALSE,
-    .sampleOpacityMap = FALSE, .blendMode = BLEND_MODE_OPAQUE
+    .albedo_map_idx = INVALID_RES_IDX, .metallic_map_idx = INVALID_RES_IDX, .roughness_map_idx = INVALID_RES_IDX,
+    .ao_map_idx = INVALID_RES_IDX, .normal_map_idx = INVALID_RES_IDX, .opacity_map_idx = INVALID_RES_IDX,
+    .blendMode = BLEND_MODE_OPAQUE
   };
 
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mCB;
+  graphics::UniqueHandle<graphics::Buffer> cb_;
 
-  ObserverPtr<Texture2D> mAlbedoMap{nullptr};
-  ObserverPtr<Texture2D> mMetallicMap{nullptr};
-  ObserverPtr<Texture2D> mRoughnessMap{nullptr};
-  ObserverPtr<Texture2D> mAoMap{nullptr};
-  ObserverPtr<Texture2D> mNormalMap{nullptr};
-  ObserverPtr<Texture2D> mOpacityMask{nullptr};
+  ObserverPtr<Texture2D> albedo_map_{nullptr};
+  ObserverPtr<Texture2D> metallic_map_{nullptr};
+  ObserverPtr<Texture2D> roughness_map_{nullptr};
+  ObserverPtr<Texture2D> ao_map_{nullptr};
+  ObserverPtr<Texture2D> normal_map_{nullptr};
+  ObserverPtr<Texture2D> opacity_mask_{nullptr};
 
   auto UpdateGPUData() const noexcept -> void;
   auto CreateCB() -> void;
@@ -81,7 +82,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetOpacityMask() const noexcept -> ObserverPtr<Texture2D>;
   LEOPPHAPI auto SetOpacityMask(ObserverPtr<Texture2D> opacityMask) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> ObserverPtr<ID3D11Buffer>;
+  [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> graphics::Buffer*;
 
   [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
   LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;

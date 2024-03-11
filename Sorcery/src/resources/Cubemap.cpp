@@ -17,7 +17,7 @@ Cubemap::Cubemap(ID3D11Texture2D& tex, ID3D11ShaderResourceView& srv) noexcept :
 }
 
 
-auto Cubemap::GetSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView> {
+auto Cubemap::GetTex() const noexcept -> graphics::Buffer* {
   return mSrv.Get();
 }
 }

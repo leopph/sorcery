@@ -3,6 +3,7 @@
 #include "Resource.hpp"
 #include "../Math.hpp"
 #include "../Bounds.hpp"
+#include "../rendering/graphics.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -31,10 +32,10 @@ public:
 
 
   struct SubMeshInfo {
-    int baseVertex;
-    int firstIndex;
-    int indexCount;
-    int materialIndex;
+    int base_vertex;
+    int first_index;
+    int index_count;
+    int material_index;
     AABB bounds;
   };
 
@@ -45,24 +46,24 @@ public:
     std::vector<Vector2> uvs;
     std::vector<Vector3> tangents;
     std::variant<std::vector<std::uint16_t>, std::vector<std::uint32_t>> indices;
-    std::vector<MaterialSlotInfo> materialSlots;
-    std::vector<SubMeshInfo> subMeshes;
+    std::vector<MaterialSlotInfo> material_slots;
+    std::vector<SubMeshInfo> sub_meshes;
   };
 
 private:
-  std::unique_ptr<GeometryData> mCpuData{nullptr};
-  std::vector<SubMeshInfo> mSubmeshes;
-  std::vector<MaterialSlotInfo> mMtlSlots;
-  AABB mBounds{};
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mPosBuf;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mNormBuf;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mUvBuf;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mTangentBuf;
-  Microsoft::WRL::ComPtr<ID3D11Buffer> mIdxBuf;
-  int mVertexCount{0};
-  int mIndexCount{0};
-  int mSubmeshCount{0};
-  DXGI_FORMAT mIdxFormat{DXGI_FORMAT_R16_UINT};
+  std::unique_ptr<GeometryData> m_cpu_data_{nullptr};
+  std::vector<SubMeshInfo> m_submeshes_;
+  std::vector<MaterialSlotInfo> m_mtl_slots_;
+  AABB m_bounds_{};
+  graphics::UniqueHandle<graphics::Buffer> pos_buf_;
+  graphics::UniqueHandle<graphics::Buffer> norm_buf_;
+  graphics::UniqueHandle<graphics::Buffer> tan_buf_;
+  graphics::UniqueHandle<graphics::Buffer> uv_buf_;
+  graphics::UniqueHandle<graphics::Buffer> idx_buf_;
+  int m_vertex_count_{0};
+  int m_index_count_{0};
+  int m_submesh_count_{0};
+  DXGI_FORMAT m_idx_format_{DXGI_FORMAT_R16_UINT};
 
   auto UploadToGpu() noexcept -> void;
   auto CalculateBounds() noexcept -> void;
@@ -71,7 +72,7 @@ private:
 
 public:
   Mesh() = default;
-  LEOPPHAPI explicit Mesh(Data data, bool keepDataInCpuMemory = false) noexcept;
+  LEOPPHAPI explicit Mesh(Data data, bool keep_data_in_cpu_memory = false) noexcept;
 
   [[nodiscard]] LEOPPHAPI auto GetPositions() const noexcept -> std::span<Vector3 const>;
   LEOPPHAPI auto SetPositions(std::span<Vector3 const> positions) noexcept -> void;
@@ -97,7 +98,7 @@ public:
   LEOPPHAPI auto SetIndices(std::vector<std::uint32_t>&& indices) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const>;
-  LEOPPHAPI auto SetMaterialSlots(std::span<MaterialSlotInfo const> mtlSlots) noexcept -> void;
+  LEOPPHAPI auto SetMaterialSlots(std::span<MaterialSlotInfo const> mtl_slots) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSubMeshes() const noexcept -> std::span<SubMeshInfo const>;
   LEOPPHAPI auto SetSubMeshes(std::span<SubMeshInfo const> submeshes) noexcept -> void;
@@ -107,16 +108,16 @@ public:
 
   LEOPPHAPI auto SetData(Data const& data) noexcept -> void;
   LEOPPHAPI auto SetData(Data&& data) noexcept -> void;
-  [[nodiscard]] LEOPPHAPI auto ValidateAndUpdate(bool keepDataInCpuMemory = false) noexcept -> bool;
+  [[nodiscard]] LEOPPHAPI auto ValidateAndUpdate(bool keep_data_in_cpu_memory = false) noexcept -> bool;
 
   [[nodiscard]] LEOPPHAPI auto HasCpuMemory() const noexcept -> bool;
   LEOPPHAPI auto ReleaseCpuMemory() noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
-  [[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
-  [[nodiscard]] LEOPPHAPI auto GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
-  [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
-  [[nodiscard]] LEOPPHAPI auto GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
+  [[nodiscard]] LEOPPHAPI auto GetPositionBuffer() const noexcept -> graphics::Buffer*;
+  [[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const noexcept -> graphics::Buffer*;
+  [[nodiscard]] LEOPPHAPI auto GetUvBuffer() const noexcept -> graphics::Buffer*;
+  [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const noexcept -> graphics::Buffer*;
+  [[nodiscard]] LEOPPHAPI auto GetIndexBuffer() const noexcept -> graphics::Buffer*;
 
   [[nodiscard]] LEOPPHAPI auto GetVertexCount() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetIndexCount() const noexcept -> int;

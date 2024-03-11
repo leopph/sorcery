@@ -188,38 +188,38 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
       curBytes = curBytes.subspan(idxCount * sizeof(T));
     }, meshData.indices);
 
-    meshData.materialSlots.resize(mtlCount);
+    meshData.material_slots.resize(mtlCount);
 
     for (auto i{0ull}; i < mtlCount; i++) {
-      if (!DeserializeFromBinary(curBytes, meshData.materialSlots[i].name)) {
+      if (!DeserializeFromBinary(curBytes, meshData.material_slots[i].name)) {
         return nullptr;
       }
 
-      curBytes = curBytes.subspan(meshData.materialSlots[i].name.size() + 8);
+      curBytes = curBytes.subspan(meshData.material_slots[i].name.size() + 8);
     }
 
-    meshData.subMeshes.resize(submeshCount);
+    meshData.sub_meshes.resize(submeshCount);
 
     for (auto i{0ull}; i < submeshCount; i++) {
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].baseVertex)) {
+      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].base_vertex)) {
         return nullptr;
       }
 
       curBytes = curBytes.subspan(sizeof(int));
 
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].firstIndex)) {
+      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].first_index)) {
         return nullptr;
       }
 
       curBytes = curBytes.subspan(sizeof(int));
 
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].indexCount)) {
+      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].index_count)) {
         return nullptr;
       }
 
       curBytes = curBytes.subspan(sizeof(int));
 
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].materialIndex)) {
+      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].material_index)) {
         return nullptr;
       }
 

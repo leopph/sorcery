@@ -16,49 +16,33 @@ RTTR_REGISTRATION {
 namespace sorcery {
 auto Mesh::UploadToGpu() noexcept -> void {
   D3D11_BUFFER_DESC const posBufDesc{
-    .ByteWidth = clamp_cast<UINT>(mCpuData->positions.size() * sizeof(Vector3)),
-    .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_VERTEX_BUFFER,
-    .CPUAccessFlags = 0,
-    .MiscFlags = 0,
-    .StructureByteStride = 0
+    .ByteWidth = clamp_cast<UINT>(m_cpu_data_->positions.size() * sizeof(Vector3)), .Usage = D3D11_USAGE_IMMUTABLE,
+    .BindFlags = D3D11_BIND_VERTEX_BUFFER, .CPUAccessFlags = 0, .MiscFlags = 0, .StructureByteStride = 0
   };
 
-  D3D11_SUBRESOURCE_DATA const posBufData{
-    .pSysMem = mCpuData->positions.data()
-  };
+  D3D11_SUBRESOURCE_DATA const posBufData{.pSysMem = m_cpu_data_->positions.data()};
 
-  [[maybe_unused]] auto hr{gRenderer.GetDevice()->CreateBuffer(&posBufDesc, &posBufData, mPosBuf.ReleaseAndGetAddressOf())};
+  [[maybe_unused]] auto hr{
+    gRenderer.GetDevice()->CreateBuffer(&posBufDesc, &posBufData, mPosBuf.ReleaseAndGetAddressOf())
+  };
   assert(SUCCEEDED(hr));
 
   D3D11_BUFFER_DESC const normBufDesc{
-    .ByteWidth = clamp_cast<UINT>(mCpuData->normals.size() * sizeof(Vector3)),
-    .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_VERTEX_BUFFER,
-    .CPUAccessFlags = 0,
-    .MiscFlags = 0,
-    .StructureByteStride = 0
+    .ByteWidth = clamp_cast<UINT>(m_cpu_data_->normals.size() * sizeof(Vector3)), .Usage = D3D11_USAGE_IMMUTABLE,
+    .BindFlags = D3D11_BIND_VERTEX_BUFFER, .CPUAccessFlags = 0, .MiscFlags = 0, .StructureByteStride = 0
   };
 
-  D3D11_SUBRESOURCE_DATA const normBufData{
-    .pSysMem = mCpuData->normals.data()
-  };
+  D3D11_SUBRESOURCE_DATA const normBufData{.pSysMem = m_cpu_data_->normals.data()};
 
   hr = gRenderer.GetDevice()->CreateBuffer(&normBufDesc, &normBufData, mNormBuf.ReleaseAndGetAddressOf());
   assert(SUCCEEDED(hr));
 
   D3D11_BUFFER_DESC const uvBufDesc{
-    .ByteWidth = clamp_cast<UINT>(mCpuData->uvs.size() * sizeof(Vector2)),
-    .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_VERTEX_BUFFER,
-    .CPUAccessFlags = 0,
-    .MiscFlags = 0,
-    .StructureByteStride = 0
+    .ByteWidth = clamp_cast<UINT>(m_cpu_data_->uvs.size() * sizeof(Vector2)), .Usage = D3D11_USAGE_IMMUTABLE,
+    .BindFlags = D3D11_BIND_VERTEX_BUFFER, .CPUAccessFlags = 0, .MiscFlags = 0, .StructureByteStride = 0
   };
 
-  D3D11_SUBRESOURCE_DATA const uvBufData{
-    .pSysMem = mCpuData->uvs.data()
-  };
+  D3D11_SUBRESOURCE_DATA const uvBufData{.pSysMem = m_cpu_data_->uvs.data()};
 
   hr = gRenderer.GetDevice()->CreateBuffer(&uvBufDesc, &uvBufData, mUvBuf.ReleaseAndGetAddressOf());
   assert(SUCCEEDED(hr));
@@ -70,44 +54,38 @@ auto Mesh::UploadToGpu() noexcept -> void {
 
   auto const& [idxBufSize, idxBufDataPtr]{
     [this] {
-      if (mIdxFormat == DXGI_FORMAT_R16_UINT) {
-        return IdxBufInfo{.size = static_cast<UINT>(std::size(mCpuData->indices16) * sizeof(std::uint16_t)), .dataPtr = mCpuData->indices16.data()};
+      if (m_idx_format_ == DXGI_FORMAT_R16_UINT) {
+        return IdxBufInfo{
+          .size = static_cast<UINT>(std::size(m_cpu_data_->indices16) * sizeof(std::uint16_t)),
+          .dataPtr = m_cpu_data_->indices16.data()
+        };
       }
-      if (mIdxFormat == DXGI_FORMAT_R32_UINT) {
-        return IdxBufInfo{.size = static_cast<UINT>(std::size(mCpuData->indices32) * sizeof(std::uint32_t)), .dataPtr = mCpuData->indices32.data()};
+      if (m_idx_format_ == DXGI_FORMAT_R32_UINT) {
+        return IdxBufInfo{
+          .size = static_cast<UINT>(std::size(m_cpu_data_->indices32) * sizeof(std::uint32_t)),
+          .dataPtr = m_cpu_data_->indices32.data()
+        };
       }
       return IdxBufInfo{.size = 0, .dataPtr = nullptr};
     }()
   };
 
   D3D11_BUFFER_DESC const idxBufDesc{
-    .ByteWidth = idxBufSize,
-    .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_INDEX_BUFFER,
-    .CPUAccessFlags = 0,
-    .MiscFlags = 0,
-    .StructureByteStride = 0
+    .ByteWidth = idxBufSize, .Usage = D3D11_USAGE_IMMUTABLE, .BindFlags = D3D11_BIND_INDEX_BUFFER, .CPUAccessFlags = 0,
+    .MiscFlags = 0, .StructureByteStride = 0
   };
 
-  D3D11_SUBRESOURCE_DATA const idxBufData{
-    .pSysMem = idxBufDataPtr
-  };
+  D3D11_SUBRESOURCE_DATA const idxBufData{.pSysMem = idxBufDataPtr};
 
   hr = gRenderer.GetDevice()->CreateBuffer(&idxBufDesc, &idxBufData, mIdxBuf.ReleaseAndGetAddressOf());
   assert(SUCCEEDED(hr));
 
   D3D11_BUFFER_DESC const tangentBufDesc{
-    .ByteWidth = static_cast<UINT>(mCpuData->tangents.size() * sizeof(Vector3)),
-    .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_VERTEX_BUFFER,
-    .CPUAccessFlags = 0,
-    .MiscFlags = 0,
-    .StructureByteStride = 0
+    .ByteWidth = static_cast<UINT>(m_cpu_data_->tangents.size() * sizeof(Vector3)), .Usage = D3D11_USAGE_IMMUTABLE,
+    .BindFlags = D3D11_BIND_VERTEX_BUFFER, .CPUAccessFlags = 0, .MiscFlags = 0, .StructureByteStride = 0
   };
 
-  D3D11_SUBRESOURCE_DATA const tangentBufData{
-    .pSysMem = mCpuData->tangents.data()
-  };
+  D3D11_SUBRESOURCE_DATA const tangentBufData{.pSysMem = m_cpu_data_->tangents.data()};
 
   hr = gRenderer.GetDevice()->CreateBuffer(&tangentBufDesc, &tangentBufData, mTangentBuf.ReleaseAndGetAddressOf());
   assert(SUCCEEDED(hr));
@@ -118,19 +96,23 @@ auto Mesh::CalculateBounds() noexcept -> void {
   auto constexpr floatMin{std::numeric_limits<float>::lowest()};
   auto constexpr floatMax{std::numeric_limits<float>::max()};
 
-  mBounds.min = Vector3{floatMax};
-  mBounds.max = Vector3{floatMin};
+  m_bounds_.min = Vector3{floatMax};
+  m_bounds_.max = Vector3{floatMin};
 
-  for (auto& submeshInfo : mSubmeshes) {
+  for (auto& submeshInfo : m_submeshes_) {
     submeshInfo.bounds.min = Vector3{floatMax};
     submeshInfo.bounds.max = Vector3{floatMin};
 
-    for (auto i{0}; i < submeshInfo.indexCount; i++) {
-      std::uint32_t const idx{mIdxFormat == DXGI_FORMAT_R16_UINT ? mCpuData->indices16[i + submeshInfo.firstIndex] : mCpuData->indices32[i + submeshInfo.firstIndex]};
-      auto const& position{mCpuData->positions[idx + submeshInfo.baseVertex]};
+    for (auto i{0}; i < submeshInfo.index_count; i++) {
+      std::uint32_t const idx{
+        m_idx_format_ == DXGI_FORMAT_R16_UINT
+          ? m_cpu_data_->indices16[i + submeshInfo.first_index]
+          : m_cpu_data_->indices32[i + submeshInfo.first_index]
+      };
+      auto const& position{m_cpu_data_->positions[idx + submeshInfo.base_vertex]};
 
-      mBounds.min = Min(mBounds.min, position);
-      mBounds.max = Max(mBounds.max, position);
+      m_bounds_.min = Min(m_bounds_.min, position);
+      m_bounds_.max = Max(m_bounds_.max, position);
 
       submeshInfo.bounds.min = Min(submeshInfo.bounds.min, position);
       submeshInfo.bounds.max = Max(submeshInfo.bounds.max, position);
@@ -140,113 +122,113 @@ auto Mesh::CalculateBounds() noexcept -> void {
 
 
 auto Mesh::EnsureCpuMemory() noexcept -> void {
-  if (!mCpuData) {
-    mCpuData = std::make_unique<GeometryData>();
+  if (!m_cpu_data_) {
+    m_cpu_data_ = std::make_unique<GeometryData>();
   }
 }
 
 
 auto Mesh::Set16BitIndicesFrom32BitBuffer(std::span<std::uint32_t const> const indices) noexcept -> void {
   assert(HasCpuMemory());
-  mCpuData->indices16.clear();
-  std::ranges::transform(indices, std::back_inserter(mCpuData->indices16), [](std::uint32_t const idx) {
+  m_cpu_data_->indices16.clear();
+  std::ranges::transform(indices, std::back_inserter(m_cpu_data_->indices16), [](std::uint32_t const idx) {
     return static_cast<std::uint16_t>(idx);
   });
-  mCpuData->indices32.clear();
-  mIdxFormat = DXGI_FORMAT_R16_UINT;
+  m_cpu_data_->indices32.clear();
+  m_idx_format_ = DXGI_FORMAT_R16_UINT;
 }
 
 
-Mesh::Mesh(Data data, bool const keepDataInCpuMemory) noexcept {
+Mesh::Mesh(Data data, bool const keep_data_in_cpu_memory) noexcept {
   SetData(std::move(data));
-  [[maybe_unused]] auto const isValid{ValidateAndUpdate(keepDataInCpuMemory)};
+  [[maybe_unused]] auto const isValid{ValidateAndUpdate(keep_data_in_cpu_memory)};
   assert(isValid);
 }
 
 
 auto Mesh::GetPositions() const noexcept -> std::span<Vector3 const> {
-  return mCpuData ? mCpuData->positions : std::span<Vector3 const>{};
+  return m_cpu_data_ ? m_cpu_data_->positions : std::span<Vector3 const>{};
 }
 
 
 auto Mesh::SetPositions(std::span<Vector3 const> positions) noexcept -> void {
   EnsureCpuMemory();
-  mCpuData->positions.assign(std::begin(positions), std::end(positions));
+  m_cpu_data_->positions.assign(std::begin(positions), std::end(positions));
 }
 
 
 auto Mesh::SetPositions(std::vector<Vector3>&& positions) noexcept -> void {
   EnsureCpuMemory();
-  mCpuData->positions = std::move(positions);
+  m_cpu_data_->positions = std::move(positions);
 }
 
 
 auto Mesh::GetNormals() const noexcept -> std::span<Vector3 const> {
-  return mCpuData ? mCpuData->normals : std::span<Vector3 const>{};
+  return m_cpu_data_ ? m_cpu_data_->normals : std::span<Vector3 const>{};
 }
 
 
 auto Mesh::SetNormals(std::span<Vector3 const> normals) noexcept -> void {
   EnsureCpuMemory();
-  mCpuData->normals.assign(std::begin(normals), std::end(normals));
+  m_cpu_data_->normals.assign(std::begin(normals), std::end(normals));
 }
 
 
 auto Mesh::SetNormals(std::vector<Vector3>&& normals) noexcept -> void {
   EnsureCpuMemory();
-  mCpuData->normals = std::move(normals);
+  m_cpu_data_->normals = std::move(normals);
 }
 
 
 auto Mesh::GetUVs() const noexcept -> std::span<Vector2 const> {
-  return mCpuData ? mCpuData->uvs : std::span<Vector2 const>{};
+  return m_cpu_data_ ? m_cpu_data_->uvs : std::span<Vector2 const>{};
 }
 
 
 auto Mesh::SetUVs(std::span<Vector2 const> uvs) noexcept -> void {
   EnsureCpuMemory();
-  mCpuData->uvs.assign(std::begin(uvs), std::end(uvs));
+  m_cpu_data_->uvs.assign(std::begin(uvs), std::end(uvs));
 }
 
 
 auto Mesh::SetUVs(std::vector<Vector2>&& uvs) noexcept -> void {
   EnsureCpuMemory();
-  mCpuData->uvs = std::move(uvs);
+  m_cpu_data_->uvs = std::move(uvs);
 }
 
 
 auto Mesh::GetTangents() const noexcept -> std::span<Vector3 const> {
-  return mCpuData ? mCpuData->tangents : std::span<Vector3 const>{};
+  return m_cpu_data_ ? m_cpu_data_->tangents : std::span<Vector3 const>{};
 }
 
 
 auto Mesh::SetTangents(std::span<Vector3 const> tangents) noexcept -> void {
   EnsureCpuMemory();
-  mCpuData->tangents.assign(std::begin(tangents), std::end(tangents));
+  m_cpu_data_->tangents.assign(std::begin(tangents), std::end(tangents));
 }
 
 
 auto Mesh::SetTangents(std::vector<Vector3>&& tangents) noexcept -> void {
   EnsureCpuMemory();
-  mCpuData->tangents = std::move(tangents);
+  m_cpu_data_->tangents = std::move(tangents);
 }
 
 
 auto Mesh::GetIndices16() const noexcept -> std::span<std::uint16_t const> {
-  return mCpuData ? mCpuData->indices16 : std::span<std::uint16_t const>{};
+  return m_cpu_data_ ? m_cpu_data_->indices16 : std::span<std::uint16_t const>{};
 }
 
 
 auto Mesh::GetIndices32() const noexcept -> std::span<std::uint32_t const> {
-  return mCpuData ? mCpuData->indices32 : std::span<std::uint32_t const>{};
+  return m_cpu_data_ ? m_cpu_data_->indices32 : std::span<std::uint32_t const>{};
 }
 
 
 auto Mesh::SetIndices(std::span<std::uint16_t const> const indices) noexcept -> void {
   EnsureCpuMemory();
-  mCpuData->indices16.assign(std::begin(indices), std::end(indices));
-  mCpuData->indices32.clear();
-  mIdxFormat = DXGI_FORMAT_R16_UINT;
+  m_cpu_data_->indices16.assign(std::begin(indices), std::end(indices));
+  m_cpu_data_->indices32.clear();
+  m_idx_format_ = DXGI_FORMAT_R16_UINT;
 }
 
 
@@ -255,9 +237,9 @@ auto Mesh::SetIndices(std::span<std::uint32_t const> const indices) noexcept -> 
 
   for (auto const idx : indices) {
     if (idx > std::numeric_limits<std::uint16_t>::max()) {
-      mCpuData->indices16.clear();
-      mCpuData->indices32.assign(std::begin(indices), std::end(indices));
-      mIdxFormat = DXGI_FORMAT_R32_UINT;
+      m_cpu_data_->indices16.clear();
+      m_cpu_data_->indices32.assign(std::begin(indices), std::end(indices));
+      m_idx_format_ = DXGI_FORMAT_R32_UINT;
       return;
     }
   }
@@ -268,9 +250,9 @@ auto Mesh::SetIndices(std::span<std::uint32_t const> const indices) noexcept -> 
 
 auto Mesh::SetIndices(std::vector<std::uint16_t>&& indices) noexcept -> void {
   EnsureCpuMemory();
-  mCpuData->indices16 = std::move(indices);
-  mCpuData->indices32.clear();
-  mIdxFormat = DXGI_FORMAT_R16_UINT;
+  m_cpu_data_->indices16 = std::move(indices);
+  m_cpu_data_->indices32.clear();
+  m_idx_format_ = DXGI_FORMAT_R16_UINT;
 }
 
 
@@ -279,9 +261,9 @@ auto Mesh::SetIndices(std::vector<std::uint32_t>&& indices) noexcept -> void {
 
   for (auto const idx : indices) {
     if (idx > std::numeric_limits<std::uint16_t>::max()) {
-      mCpuData->indices16.clear();
-      mCpuData->indices32 = std::move(indices);
-      mIdxFormat = DXGI_FORMAT_R32_UINT;
+      m_cpu_data_->indices16.clear();
+      m_cpu_data_->indices32 = std::move(indices);
+      m_idx_format_ = DXGI_FORMAT_R32_UINT;
       return;
     }
   }
@@ -291,32 +273,32 @@ auto Mesh::SetIndices(std::vector<std::uint32_t>&& indices) noexcept -> void {
 
 
 auto Mesh::GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const> {
-  return mMtlSlots;
+  return m_mtl_slots_;
 }
 
 
-auto Mesh::SetMaterialSlots(std::span<MaterialSlotInfo const> mtlSlots) noexcept -> void {
-  mMtlSlots.assign(std::begin(mtlSlots), std::end(mtlSlots));
+auto Mesh::SetMaterialSlots(std::span<MaterialSlotInfo const> mtl_slots) noexcept -> void {
+  m_mtl_slots_.assign(std::begin(mtl_slots), std::end(mtl_slots));
 }
 
 
 auto Mesh::GetSubMeshes() const noexcept -> std::span<SubMeshInfo const> {
-  return mSubmeshes;
+  return m_submeshes_;
 }
 
 
 auto Mesh::SetSubMeshes(std::span<SubMeshInfo const> submeshes) noexcept -> void {
-  mSubmeshes.assign(std::begin(submeshes), std::end(submeshes));
+  m_submeshes_.assign(std::begin(submeshes), std::end(submeshes));
 }
 
 
 auto Mesh::SetSubmeshes(std::vector<SubMeshInfo>&& submeshes) noexcept -> void {
-  mSubmeshes = std::move(submeshes);
+  m_submeshes_ = std::move(submeshes);
 }
 
 
 auto Mesh::GetBounds() const noexcept -> AABB const& {
-  return mBounds;
+  return m_bounds_;
 }
 
 
@@ -329,8 +311,8 @@ auto Mesh::SetData(Data const& data) noexcept -> void {
   std::visit([this]<typename T>(std::vector<T> const& indices) {
     SetIndices(indices);
   }, data.indices);
-  SetMaterialSlots(data.materialSlots);
-  SetSubMeshes(data.subMeshes);
+  SetMaterialSlots(data.material_slots);
+  SetSubMeshes(data.sub_meshes);
 }
 
 
@@ -343,55 +325,59 @@ auto Mesh::SetData(Data&& data) noexcept -> void {
   std::visit([this]<typename T>(std::vector<T>& indices) {
     SetIndices(std::move(indices));
   }, data.indices);
-  SetMaterialSlots(std::move(data.materialSlots));
-  SetSubMeshes(std::move(data.subMeshes));
+  SetMaterialSlots(std::move(data.material_slots));
+  SetSubMeshes(std::move(data.sub_meshes));
 }
 
 
-auto Mesh::ValidateAndUpdate(bool const keepDataInCpuMemory) noexcept -> bool {
-  if (!mCpuData) {
+auto Mesh::ValidateAndUpdate(bool const keep_data_in_cpu_memory) noexcept -> bool {
+  if (!m_cpu_data_) {
     return true;
   }
 
-  if (mCpuData->positions.size() != mCpuData->normals.size() || mCpuData->normals.size() != mCpuData->uvs.size() || mCpuData->uvs.size() != mCpuData->tangents.size() ||
-      mCpuData->positions.empty() || (mCpuData->indices16.empty() && mCpuData->indices32.empty())) {
+  if (m_cpu_data_->positions.size() != m_cpu_data_->normals.size() || m_cpu_data_->normals.size() != m_cpu_data_->uvs.
+      size() || m_cpu_data_->uvs.size() != m_cpu_data_->tangents.size() || m_cpu_data_->positions.empty() || (
+        m_cpu_data_->indices16.empty() && m_cpu_data_->indices32.empty())) {
     return false;
   }
 
-  for (auto const& [baseVertex, firstIdx, idxCount, mtlSlotIdx, bounds] : mSubmeshes) {
-    if (baseVertex >= std::ssize(mCpuData->positions)) {
+  for (auto const& [baseVertex, firstIdx, idxCount, mtlSlotIdx, bounds] : m_submeshes_) {
+    if (baseVertex >= std::ssize(m_cpu_data_->positions)) {
       return false;
     }
 
-    if (firstIdx >= std::ssize(mCpuData->indices16) && firstIdx >= std::ssize(mCpuData->indices32)) {
+    if (firstIdx >= std::ssize(m_cpu_data_->indices16) && firstIdx >= std::ssize(m_cpu_data_->indices32)) {
       return false;
     }
 
     auto const lastIdx{firstIdx + idxCount - 1};
 
-    if (lastIdx >= std::ssize(mCpuData->indices16) && lastIdx >= std::ssize(mCpuData->indices32)) {
+    if (lastIdx >= std::ssize(m_cpu_data_->indices16) && lastIdx >= std::ssize(m_cpu_data_->indices32)) {
       return false;
     }
 
     for (auto i{firstIdx}; i <= lastIdx; i++) {
-      if (auto const idx{std::ssize(mCpuData->indices16) > i ? mCpuData->indices16[i] : mCpuData->indices32[i]}; idx + baseVertex > std::size(mCpuData->positions)) {
+      if (auto const idx{std::ssize(m_cpu_data_->indices16) > i ? m_cpu_data_->indices16[i] : m_cpu_data_->indices32[i]}
+        ; idx + baseVertex > std::size(m_cpu_data_->positions)) {
         return false;
       }
     }
 
-    if (mtlSlotIdx < 0 || mtlSlotIdx >= std::ssize(mMtlSlots)) {
+    if (mtlSlotIdx < 0 || mtlSlotIdx >= std::ssize(m_mtl_slots_)) {
       return false;
     }
   }
 
-  mVertexCount = static_cast<int>(std::ssize(mCpuData->positions));
-  mIndexCount = static_cast<int>(mCpuData->indices16.empty() ? std::ssize(mCpuData->indices32) : std::ssize(mCpuData->indices16));
-  mSubmeshCount = static_cast<int>(std::ssize(mSubmeshes));
+  m_vertex_count_ = static_cast<int>(std::ssize(m_cpu_data_->positions));
+  m_index_count_ = static_cast<int>(m_cpu_data_->indices16.empty()
+                                      ? std::ssize(m_cpu_data_->indices32)
+                                      : std::ssize(m_cpu_data_->indices16));
+  m_submesh_count_ = static_cast<int>(std::ssize(m_submeshes_));
 
   CalculateBounds();
   UploadToGpu();
 
-  if (!keepDataInCpuMemory) {
+  if (!keep_data_in_cpu_memory) {
     ReleaseCpuMemory();
   }
 
@@ -400,57 +386,57 @@ auto Mesh::ValidateAndUpdate(bool const keepDataInCpuMemory) noexcept -> bool {
 
 
 auto Mesh::HasCpuMemory() const noexcept -> bool {
-  return static_cast<bool>(mCpuData);
+  return static_cast<bool>(m_cpu_data_);
 }
 
 
 auto Mesh::ReleaseCpuMemory() noexcept -> void {
-  mCpuData.reset();
+  m_cpu_data_.reset();
 }
 
 
-auto Mesh::GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
-  return mPosBuf;
+auto Mesh::GetPositionBuffer() const noexcept -> graphics::Buffer* {
+  return pos_buf_.Get();
 }
 
 
-auto Mesh::GetNormalBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
-  return mNormBuf;
+auto Mesh::GetNormalBuffer() const noexcept -> graphics::Buffer* {
+  return norm_buf_.Get();
 }
 
 
-auto Mesh::GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
-  return mUvBuf;
+auto Mesh::GetUvBuffer() const noexcept -> graphics::Buffer* {
+  return uv_buf_.Get();
 }
 
 
-auto Mesh::GetTangentBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
-  return mTangentBuf;
+auto Mesh::GetTangentBuffer() const noexcept -> graphics::Buffer* {
+  return tan_buf_.Get();
 }
 
 
-auto Mesh::GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
-  return mIdxBuf;
+auto Mesh::GetIndexBuffer() const noexcept -> graphics::Buffer* {
+  return idx_buf_.Get();
 }
 
 
 auto Mesh::GetVertexCount() const noexcept -> int {
-  return mVertexCount;
+  return m_vertex_count_;
 }
 
 
 auto Mesh::GetIndexCount() const noexcept -> int {
-  return mIndexCount;
+  return m_index_count_;
 }
 
 
 auto Mesh::GetSubmeshCount() const noexcept -> int {
-  return mSubmeshCount;
+  return m_submesh_count_;
 }
 
 
 auto Mesh::GetIndexFormat() const noexcept -> DXGI_FORMAT {
-  return mIdxFormat;
+  return m_idx_format_;
 }
 
 

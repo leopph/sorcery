@@ -119,38 +119,37 @@ class Renderer::Impl {
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
-  std::unordered_map<std::thread::id, Microsoft::WRL::ComPtr<ID3D11DeviceContext>> mPerThreadCtx;
+  std::mutex static_mesh_mutex_;
+  std::mutex light_mutex_;
+  std::mutex game_camera_mutex_;
+  std::mutex tmp_render_targets_mutex_;
 
-  std::mutex mPerThreadCtxMutex;
-  std::mutex mImmediateCtxMutex;
-  std::mutex mStaticMeshMutex;
-  std::mutex mLightMutex;
-  std::mutex mGameCameraMutex;
-  std::mutex mTmpRenderTargetsMutex;
+  std::vector<TempRenderTargetRecord> tmp_render_targets_;
 
-  std::vector<TempRenderTargetRecord> mTmpRenderTargets;
+  UINT next_per_draw_cb_idx_{0};
+  UINT next_per_view_cb_idx_{0};
 
   [[nodiscard]] auto CalculateCameraShadowCascadeBoundaries(Camera const& cam) const -> ShadowCascadeBoundaries;
 
-  auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) const -> void;
-  auto CullLights(Frustum const& frustumWS, Visibility& visibility) const -> void;
+  auto CullStaticMeshComponents(Frustum const& frustum_ws,
+                                std::pmr::vector<StaticMeshSubmeshIndex>& visible_indices) const -> void;
+  auto CullLights(Frustum const& frustum_ws, std::pmr::vector<int> visible_indices) const -> void;
 
-  auto SetPerFrameConstants(ObserverPtr<ID3D11DeviceContext> ctx, int rtWidth, int rtHeight) const noexcept -> void;
-  auto SetPerViewConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& viewMtx, Matrix4 const& projMtx,
-                           ShadowCascadeBoundaries const& shadowCascadeBoundaries,
-                           Vector3 const& viewPos) const noexcept -> void;
-  auto SetPerDrawConstants(ObserverPtr<ID3D11DeviceContext> ctx, Matrix4 const& modelMtx) const noexcept -> void;
+  auto SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int rt_width,
+                            int rt_height) const noexcept -> void;
+  static auto SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
+                                  Matrix4 const& proj_mtx, ShadowCascadeBoundaries const& cascade_bounds,
+                                  Vector3 const& view_pos) -> void;
+  static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants> cb, Matrix4 const& model_mtx) -> void;
 
-  auto DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rtAspect,
-                                 ShadowCascadeBoundaries const& shadowCascadeBoundaries,
-                                 std::array<Matrix4, MAX_CASCADE_COUNT>& shadowViewProjMatrices,
-                                 ObserverPtr<ID3D11DeviceContext> ctx) -> void;
-  auto DrawShadowMaps(ShadowAtlas const& atlas, ObserverPtr<ID3D11DeviceContext> ctx) -> void;
-  auto DrawMeshes(std::span<StaticMeshSubmeshIndex const> culledIndices,
-                  ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
-  auto DrawSkybox(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
-  auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst,
-                   ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  auto DrawDirectionalShadowMaps(Visibility const& visibility, Camera const& cam, float rt_aspect,
+                                 ShadowCascadeBoundaries const& shadow_cascade_boundaries,
+                                 std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
+                                 graphics::CommandList& cmd) -> void;
+  auto DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, graphics::CommandList& cmd) -> void;
+  auto DrawSkybox(graphics::CommandList& cmd) noexcept -> void;
+  auto PostProcess(graphics::Texture const& src, graphics::Texture const& dst,
+                   graphics::CommandList& cmd) const noexcept -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
   auto ReleaseTempRenderTargets() noexcept -> void;
@@ -190,11 +189,7 @@ public:
 
   // FUNCTIONS FOR CUSTOM EXTERNAL REQUESTS
 
-  [[nodiscard]] auto GetDevice() const noexcept -> ObserverPtr<ID3D11Device>;
-  [[nodiscard]] auto GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext>;
-
-  auto ExecuteCommandList(ObserverPtr<ID3D11CommandList> cmdList) noexcept -> void;
-  auto ExecuteCommandList(ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
+  [[nodiscard]] auto GetDevice() const noexcept -> ObserverPtr<graphics::GraphicsDevice>;
 
   auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget&;
 
