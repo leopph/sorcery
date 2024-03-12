@@ -35,10 +35,10 @@ public:
   [[nodiscard]] virtual auto GetForwardAxis() const noexcept -> Vector3 = 0;
 
   [[nodiscard]] LEOPPHAPI auto GetNearClipPlane() const noexcept -> float;
-  LEOPPHAPI auto SetNearClipPlane(float nearClipPlane) noexcept -> void;
+  LEOPPHAPI auto SetNearClipPlane(float near_clip_plane) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetFarClipPlane() const noexcept -> float;
-  LEOPPHAPI auto SetFarClipPlane(float farClipPlane) noexcept -> void;
+  LEOPPHAPI auto SetFarClipPlane(float far_clip_plane) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetType() const noexcept -> Type;
   LEOPPHAPI auto SetType(Type type) noexcept -> void;
@@ -53,10 +53,18 @@ public:
   LEOPPHAPI auto SetRenderTarget(std::shared_ptr<RenderTarget> rt) -> void;
 
   [[nodiscard]] LEOPPHAPI auto CalculateViewMatrix() const noexcept -> Matrix4;
-  [[nodiscard]] LEOPPHAPI auto CalculateProjectionMatrix(float aspectRatio) const noexcept -> Matrix4;
+  [[nodiscard]] LEOPPHAPI auto CalculateProjectionMatrix(float aspect_ratio) const noexcept -> Matrix4;
 
-  [[nodiscard]] LEOPPHAPI static auto HorizontalPerspectiveFovToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
-  [[nodiscard]] LEOPPHAPI static auto VerticalPerspectiveFovToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
+  [[nodiscard]] LEOPPHAPI static auto HorizontalPerspectiveFovToVertical(
+    float fov_degrees, float aspect_ratio) noexcept -> float;
+  [[nodiscard]] LEOPPHAPI static auto VerticalPerspectiveFovToHorizontal(
+    float fov_degrees, float aspect_ratio) noexcept -> float;
+
+  [[nodiscard]] LEOPPHAPI static auto CalculateViewMatrix(Vector3 const& position, Vector3 const& right,
+                                                          Vector3 const& up, Vector3 const& forward) -> Matrix4;
+  [[nodiscard]] LEOPPHAPI static auto CalculateProjectionMatrix(Type type, float fov_deg_vert, float size_vert,
+                                                                float aspect_ratio, float near_plane,
+                                                                float far_plane) -> Matrix4;
 
   Camera() = default;
   Camera(Camera const& other) = default;

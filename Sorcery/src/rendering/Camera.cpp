@@ -7,12 +7,12 @@ auto Camera::GetNearClipPlane() const noexcept -> float {
 }
 
 
-auto Camera::SetNearClipPlane(float const nearClipPlane) noexcept -> void {
+auto Camera::SetNearClipPlane(float const near_clip_plane) noexcept -> void {
   if (GetType() == Type::Perspective) {
-    mNear = std::max(nearClipPlane, MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE);
+    mNear = std::max(near_clip_plane, MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE);
     SetFarClipPlane(GetFarClipPlane());
   } else {
-    mNear = nearClipPlane;
+    mNear = near_clip_plane;
   }
 }
 
@@ -22,11 +22,11 @@ auto Camera::GetFarClipPlane() const noexcept -> float {
 }
 
 
-auto Camera::SetFarClipPlane(float const farClipPlane) noexcept -> void {
+auto Camera::SetFarClipPlane(float const far_clip_plane) noexcept -> void {
   if (GetType() == Type::Perspective) {
-    mFar = std::max(farClipPlane, mNear + MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET);
+    mFar = std::max(far_clip_plane, mNear + MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET);
   } else {
-    mFar = farClipPlane;
+    mFar = far_clip_plane;
   }
 }
 
@@ -78,39 +78,45 @@ auto Camera::SetRenderTarget(std::shared_ptr<RenderTarget> rt) -> void {
 
 
 auto Camera::CalculateViewMatrix() const noexcept -> Matrix4 {
-  auto const rightAxis{GetRightAxis()};
-  auto const upAxis{GetUpAxis()};
-  auto const forwardAxis{GetForwardAxis()};
-  auto const position{GetPosition()};
+  return CalculateViewMatrix(GetPosition(), GetRightAxis(), GetUpAxis(), GetForwardAxis());
+}
 
+
+auto Camera::CalculateProjectionMatrix(float const aspect_ratio) const noexcept -> Matrix4 {
+  return CalculateProjectionMatrix(GetType(), GetVerticalPerspectiveFov(), GetVerticalOrthographicSize(), aspect_ratio,
+    GetNearClipPlane(), GetFarClipPlane());
+}
+
+
+auto Camera::HorizontalPerspectiveFovToVertical(float const fov_degrees, float const aspect_ratio) noexcept -> float {
+  return ToDegrees(2.0f * std::atan(std::tan(ToRadians(fov_degrees) / 2.0f) / aspect_ratio));
+}
+
+
+auto Camera::VerticalPerspectiveFovToHorizontal(float const fov_degrees, float const aspect_ratio) noexcept -> float {
+  return ToDegrees(2.0f * std::atan(std::tan(ToRadians(fov_degrees) / 2.0f) * aspect_ratio));
+}
+
+
+auto Camera::CalculateViewMatrix(Vector3 const& position, Vector3 const& right, Vector3 const& up,
+                                 Vector3 const& forward) -> Matrix4 {
   return Matrix4{
-    rightAxis[0], upAxis[0], forwardAxis[0], 0,
-    rightAxis[1], upAxis[1], forwardAxis[1], 0,
-    rightAxis[2], upAxis[2], forwardAxis[2], 0,
-    -Dot(position, rightAxis), -Dot(position, upAxis), -Dot(position, forwardAxis), 1
+    right[0], up[0], forward[0], 0, right[1], up[1], forward[1], 0, right[2], up[2], forward[2], 0,
+    -Dot(position, right), -Dot(position, up), -Dot(position, forward), 1
   };
 }
 
 
-auto Camera::CalculateProjectionMatrix(float const aspectRatio) const noexcept -> Matrix4 {
-  switch (GetType()) {
-    case Type::Perspective:
-      return Matrix4::PerspectiveFov(ToRadians(GetVerticalPerspectiveFov()), aspectRatio, GetNearClipPlane(), GetFarClipPlane());
+auto Camera::CalculateProjectionMatrix(Type const type, float const fov_deg_vert, float const size_vert,
+                                       float const aspect_ratio, float const near_plane,
+                                       float const far_plane) -> Matrix4 {
+  switch (type) {
+    case Type::Perspective: return Matrix4::PerspectiveFov(ToRadians(fov_deg_vert), aspect_ratio, near_plane,
+        far_plane);
 
-    case Type::Orthographic:
-      return Matrix4::Orthographic(GetVerticalOrthographicSize() * aspectRatio, GetVerticalOrthographicSize(), GetNearClipPlane(), GetFarClipPlane());
+    case Type::Orthographic: return Matrix4::Orthographic(size_vert * aspect_ratio, size_vert, near_plane, far_plane);
   }
 
   return Matrix4{};
-}
-
-
-auto Camera::HorizontalPerspectiveFovToVertical(float const fovDegrees, float const aspectRatio) noexcept -> float {
-  return ToDegrees(2.0f * std::atan(std::tan(ToRadians(fovDegrees) / 2.0f) / aspectRatio));
-}
-
-
-auto Camera::VerticalPerspectiveFovToHorizontal(float const fovDegrees, float const aspectRatio) noexcept -> float {
-  return ToDegrees(2.0f * std::atan(std::tan(ToRadians(fovDegrees) / 2.0f) * aspectRatio));
 }
 }
