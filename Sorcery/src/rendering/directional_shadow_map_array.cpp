@@ -18,8 +18,8 @@ DirectionalShadowMapArray::DirectionalShadowMapArray(graphics::GraphicsDevice* c
   size_{size} {}
 
 
-auto DirectionalShadowMapArray::GetTex() const noexcept -> graphics::Texture* {
-  return tex_.Get();
+auto DirectionalShadowMapArray::GetTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+  return tex_;
 }
 
 

@@ -221,7 +221,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(std::span<int const> light_indice
                                                std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
                                                graphics::CommandList& cmd) -> void {
   cmd.SetPipelineState(*depth_only_pso_);
-  cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex());
+  cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
   cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, {});
 
   for (auto const lightIdx : light_indices) {
@@ -361,7 +361,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(std::span<int const> light_indice
 
         shadow_view_proj_matrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
 
-        cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex());
+        cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
         cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, rt_idx), cascadeIdx);
 
         D3D12_VIEWPORT const shadowViewport{
@@ -430,7 +430,7 @@ auto Renderer::Impl::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, gr
   cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
 
-  cmd.SetRenderTargets({}, atlas.GetTex());
+  cmd.SetRenderTargets({}, atlas.GetTex().get());
   cmd.ClearDepthStencil(*atlas.GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
   auto const cell_size_norm{atlas.GetNormalizedElementSize()};
@@ -1047,25 +1047,25 @@ auto Renderer::Impl::StartUp() -> void {
         RoundToNextMultiple(SSAO_NOISE_TEX_DIM * 16, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)
       }
     });
-  command_lists_[0]->CopyTextureRegion(*white_tex_, 0, 0, 0, 0, *white_tex_upload_buf.Get(),
+  command_lists_[0]->CopyTextureRegion(*white_tex_, 0, 0, 0, 0, *white_tex_upload_buf.get(),
     D3D12_PLACED_SUBRESOURCE_FOOTPRINT{
       0, D3D12_SUBRESOURCE_FOOTPRINT{white_tex_format, 1, 1, 1, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT}
     });
   command_lists_[0]->Barrier({}, {}, std::array{
     graphics::TextureBarrier{
       D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, ssao_noise_tex_.Get(),
+      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, ssao_noise_tex_.get(),
       D3D12_BARRIER_SUBRESOURCE_RANGE{0, 1, 0, 1, 0, 1}, D3D12_TEXTURE_BARRIER_FLAG_NONE
     },
     graphics::TextureBarrier{
       D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, white_tex_.Get(),
+      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, white_tex_.get(),
       D3D12_BARRIER_SUBRESOURCE_RANGE{0, 1, 0, 1, 0, 1}, D3D12_TEXTURE_BARRIER_FLAG_NONE
     }
   });
 
   std::ignore = command_lists_[0]->End();
-  device_->ExecuteCommandLists(std::span{command_lists_[0].Get(), 1});
+  device_->ExecuteCommandLists(std::span{command_lists_[0].get(), 1});
   std::ignore = device_->WaitIdle();
 }
 
@@ -1160,7 +1160,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     };
 
     cmd.SetPipelineState(*depth_normal_pso_);
-    cmd.SetRenderTargets(std::span{actualNormalRt.GetColorTex(), 1}, hdrRt.GetDepthStencilTex());
+    cmd.SetRenderTargets(std::span{actualNormalRt.GetColorTex().get(), 1}, hdrRt.GetDepthStencilTex().get());
     cmd.ClearRenderTarget(*actualNormalRt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
 
     for (auto const [staticMeshIdx, submeshIdx] : static_mesh_indices) {
@@ -1211,7 +1211,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     }
   }
 
-  auto ssaoTexSrv{white_tex_.Get()};
+  auto ssaoTexSrv{white_tex_.get()};
 
   // SSAO pass
   if (ssao_enabled_) {
@@ -1263,7 +1263,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
       per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
     cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_frame_cb_idx),
       per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
-    cmd.SetRenderTargets(std::span{ssaoRt.GetColorTex(), 1}, nullptr);
+    cmd.SetRenderTargets(std::span{ssaoRt.GetColorTex().get(), 1}, nullptr);
     cmd.ClearRenderTarget(*ssaoRt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cmd.DrawInstanced(3, 1, 0, 0);
 
@@ -1278,11 +1278,11 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     cmd.SetPipelineState(*ssao_blur_pso_);
     cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, in_tex_idx), ssaoBlurRt.GetColorTex()->GetShaderResource());
     cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-    cmd.SetRenderTargets(std::span{ssaoBlurRt.GetColorTex(), 1}, nullptr);
+    cmd.SetRenderTargets(std::span{ssaoBlurRt.GetColorTex().get(), 1}, nullptr);
     cmd.ClearRenderTarget(*ssaoBlurRt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cmd.DrawInstanced(3, 1, 0, 0);
 
-    ssaoTexSrv = ssaoBlurRt.GetColorTex();
+    ssaoTexSrv = ssaoBlurRt.GetColorTex().get();
   }
 
   // Full forward lighting pass
@@ -1298,10 +1298,8 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     lightBufferData[i].direction = lights_[light_indices[i]]->GetDirection();
     lightBufferData[i].isCastingShadow = FALSE;
     lightBufferData[i].range = lights_[light_indices[i]]->GetRange();
-    lightBufferData[i].halfInnerAngleCos = std::cos(
-      ToRadians(lights_[light_indices[i]]->GetInnerAngle() / 2.0f));
-    lightBufferData[i].halfOuterAngleCos = std::cos(
-      ToRadians(lights_[light_indices[i]]->GetOuterAngle() / 2.0f));
+    lightBufferData[i].halfInnerAngleCos = std::cos(ToRadians(lights_[light_indices[i]]->GetInnerAngle() / 2.0f));
+    lightBufferData[i].halfOuterAngleCos = std::cos(ToRadians(lights_[light_indices[i]]->GetOuterAngle() / 2.0f));
     lightBufferData[i].position = lights_[light_indices[i]]->GetEntity().GetTransform().GetWorldPosition();
     lightBufferData[i].depthBias = lights_[light_indices[i]]->GetShadowDepthBias();
     lightBufferData[i].normalBias = lights_[light_indices[i]]->GetShadowNormalBias();
@@ -1335,11 +1333,15 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   cmd.SetPipelineParameter(offsetof(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
   cmd.SetPipelineParameter(offsetof(ObjectDrawParams, ssao_tex_idx), ssaoTexSrv->GetShaderResource());
   cmd.SetPipelineParameter(offsetof(ObjectDrawParams, light_buf_idx), light_buffer_->GetBuffer()->GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, dir_shadow_arr_idx), dir_shadow_map_arr_->GetTex()->GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, punc_shadow_atlas_idx), punctual_shadow_atlas_->GetTex()->GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_view_cb_idx), per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_frame_cb_idx), per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
-  cmd.SetRenderTargets(std::span{hdrRt.GetColorTex(), 1}, hdrRt.GetDepthStencilTex());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, dir_shadow_arr_idx),
+    dir_shadow_map_arr_->GetTex()->GetShaderResource());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, punc_shadow_atlas_idx),
+    punctual_shadow_atlas_->GetTex()->GetShaderResource());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_view_cb_idx),
+    per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
+  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_frame_cb_idx),
+    per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
+  cmd.SetRenderTargets(std::span{hdrRt.GetColorTex().get(), 1}, hdrRt.GetDepthStencilTex().get());
 
   for (auto const [staticMeshIdx, submeshIdx] : static_mesh_indices) {
     auto const& component{static_mesh_components_[staticMeshIdx]};
@@ -1360,14 +1362,16 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
       CreatePerDrawConstantBuffers(1);
     }
 
-    SetPerDrawConstants(per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_], component->GetEntity().GetTransform().GetLocalToWorldMatrix());
+    SetPerDrawConstants(per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_],
+      component->GetEntity().GetTransform().GetLocalToWorldMatrix());
 
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, pos_buf_idx), mesh->GetPositionBuffer()->GetShaderResource());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, norm_buf_idx), mesh->GetNormalBuffer()->GetShaderResource());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, tan_buf_idx), mesh->GetTangentBuffer()->GetShaderResource());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, uv_buf_idx), mesh->GetUvBuffer()->GetShaderResource());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, mtl_idx), mtl->GetBuffer()->GetConstantBuffer());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_draw_cb_idx), per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_draw_cb_idx),
+      per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
 
     ++next_per_draw_cb_idx_;
   }
@@ -1391,7 +1395,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   }
 
   cmd.SetViewports(std::span{&viewport, 1});
-  PostProcess(*postProcessRt->GetColorTex(), *(rt ? rt->GetColorTex() : device_->SwapChainGetBuffers(*swap_chain_)[device_->SwapChainGetCurrentBufferIndex(*swap_chain_)]), cmd);
+  PostProcess(*postProcessRt->GetColorTex(),
+    *(rt
+        ? rt->GetColorTex()
+        : device_->SwapChainGetBuffers(*swap_chain_)[device_->SwapChainGetCurrentBufferIndex(*swap_chain_)]), cmd);
 }
 
 
@@ -1425,10 +1432,10 @@ auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
 
   auto const actual_rt{
     rt
-      ? rt->GetColorTex()
-      : device_->SwapChainGetBuffers(*swap_chain_)[device_->SwapChainGetCurrentBufferIndex(*swap_chain_)]
+      ? rt->GetColorTex().get()
+      : device_->SwapChainGetBuffers(*swap_chain_)[device_->SwapChainGetCurrentBufferIndex(*swap_chain_)].get()
   };
-  cmd.SetRenderTargets(std::span{1, actual_rt}, nullptr);
+  cmd.SetRenderTargets(std::span{actual_rt, 1}, nullptr);
 
   if (!line_gizmo_vertex_data_.empty()) {
     cmd.DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);

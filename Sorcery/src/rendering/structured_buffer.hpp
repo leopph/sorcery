@@ -12,7 +12,7 @@ class StructuredBuffer {
   static_assert(sizeof(T) % 16 == 0, "StructuredBuffer contained type must have a size divisible by 16.");
 
   graphics::GraphicsDevice* device_;
-  graphics::UniqueHandle<graphics::Buffer> buffer_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> buffer_;
   T* mapped_ptr_{nullptr};
   int capacity_{1};
   int size_{0};
@@ -22,7 +22,7 @@ class StructuredBuffer {
 public:
   explicit StructuredBuffer(graphics::GraphicsDevice* device);
 
-  [[nodiscard]] auto GetBuffer() const noexcept -> graphics::Buffer*;
+  [[nodiscard]] auto GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
   [[nodiscard]] auto GetData() const noexcept -> std::span<T>;
   auto Resize(int new_size) -> void;
 };
@@ -43,8 +43,8 @@ StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice* const device):
 
 
 template<typename T>
-auto StructuredBuffer<T>::GetBuffer() const noexcept -> graphics::Buffer* {
-  return buffer_.Get();
+auto StructuredBuffer<T>::GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return buffer_;
 }
 
 

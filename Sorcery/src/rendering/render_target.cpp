@@ -16,8 +16,8 @@ auto RenderTarget::New(graphics::GraphicsDevice& device, Desc const& desc) -> st
     return nullptr;
   }
 
-  graphics::UniqueHandle<graphics::Texture> color_tex;
-  graphics::UniqueHandle<graphics::Texture> depth_stencil_tex;
+  graphics::SharedDeviceChildHandle<graphics::Texture> color_tex;
+  graphics::SharedDeviceChildHandle<graphics::Texture> depth_stencil_tex;
 
   if (desc.color_format) {
     D3D12_CLEAR_VALUE const clear_value{.Format = *desc.color_format, .Color = {0.0f, 0.0f, 0.0f, 1.0f}};
@@ -52,18 +52,18 @@ auto RenderTarget::GetDesc() const noexcept -> Desc const& {
 }
 
 
-auto RenderTarget::GetColorTex() const noexcept -> graphics::Texture* {
-  return color_tex_.Get();
+auto RenderTarget::GetColorTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+  return color_tex_;
 }
 
 
-auto RenderTarget::GetDepthStencilTex() const noexcept -> graphics::Texture* {
-  return color_tex_.Get();
+auto RenderTarget::GetDepthStencilTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+  return color_tex_;
 }
 
 
-RenderTarget::RenderTarget(Desc desc, graphics::UniqueHandle<graphics::Texture> color_tex,
-                           graphics::UniqueHandle<graphics::Texture> depth_stencil_tex) :
+RenderTarget::RenderTarget(Desc desc, graphics::SharedDeviceChildHandle<graphics::Texture> color_tex,
+                           graphics::SharedDeviceChildHandle<graphics::Texture> depth_stencil_tex) :
   desc_{std::move(desc)},
   color_tex_{std::move(color_tex)},
   depth_stencil_tex_{std::move(depth_stencil_tex)} {}

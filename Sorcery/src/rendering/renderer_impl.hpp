@@ -40,44 +40,44 @@ class Renderer::Impl {
   static DXGI_FORMAT constexpr normal_buffer_format_{DXGI_FORMAT_R8G8B8A8_SNORM};
 
   std::unique_ptr<graphics::GraphicsDevice> device_;
-  graphics::UniqueHandle<graphics::SwapChain> swap_chain_;
+  graphics::SharedDeviceChildHandle<graphics::SwapChain> swap_chain_;
 
-  std::array<graphics::UniqueHandle<graphics::CommandList>, max_frames_in_flight_> command_lists_;
+  std::array<graphics::SharedDeviceChildHandle<graphics::CommandList>, max_frames_in_flight_> command_lists_;
   std::array<ConstantBuffer<ShaderPerFrameConstants>, max_frames_in_flight_> per_frame_cbs_;
   std::array<std::vector<ConstantBuffer<ShaderPerViewConstants>>, max_frames_in_flight_> per_view_cbs_;
   std::array<std::vector<ConstantBuffer<ShaderPerDrawConstants>>, max_frames_in_flight_> per_draw_cbs_;
 
-  graphics::UniqueHandle<graphics::Texture> white_tex_;
-  graphics::UniqueHandle<graphics::Texture> ssao_noise_tex_;
+  graphics::SharedDeviceChildHandle<graphics::Texture> white_tex_;
+  graphics::SharedDeviceChildHandle<graphics::Texture> ssao_noise_tex_;
 
-  graphics::UniqueHandle<graphics::PipelineState> depth_only_pso_;
-  graphics::UniqueHandle<graphics::PipelineState> depth_normal_pso_;
-  graphics::UniqueHandle<graphics::PipelineState> depth_resolve_pso_;
-  graphics::UniqueHandle<graphics::PipelineState> line_gizmo_pso_;
-  graphics::UniqueHandle<graphics::PipelineState> object_pso_;
-  graphics::UniqueHandle<graphics::PipelineState> post_process_pso_;
-  graphics::UniqueHandle<graphics::PipelineState> skybox_pso_;
-  graphics::UniqueHandle<graphics::PipelineState> ssao_pso_;
-  graphics::UniqueHandle<graphics::PipelineState> ssao_blur_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_only_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_normal_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_resolve_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> line_gizmo_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> object_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> post_process_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso_;
 
-  graphics::UniqueHandle<graphics::Sampler> samp_cmp_pcf_ge_;
-  graphics::UniqueHandle<graphics::Sampler> samp_cmp_pcf_le_;
-  graphics::UniqueHandle<graphics::Sampler> samp_cmp_point_ge_;
-  graphics::UniqueHandle<graphics::Sampler> samp_cmp_point_le_;
-  graphics::UniqueHandle<graphics::Sampler> samp_af16_clamp_;
-  graphics::UniqueHandle<graphics::Sampler> samp_af8_clamp_;
-  graphics::UniqueHandle<graphics::Sampler> samp_af4_clamp_;
-  graphics::UniqueHandle<graphics::Sampler> samp_af2_clamp_;
-  graphics::UniqueHandle<graphics::Sampler> samp_tri_clamp_;
-  graphics::UniqueHandle<graphics::Sampler> samp_bi_clamp_;
-  graphics::UniqueHandle<graphics::Sampler> samp_point_clamp_;
-  graphics::UniqueHandle<graphics::Sampler> samp_af16_wrap_;
-  graphics::UniqueHandle<graphics::Sampler> samp_af8_wrap_;
-  graphics::UniqueHandle<graphics::Sampler> samp_af4_wrap_;
-  graphics::UniqueHandle<graphics::Sampler> samp_af2_wrap_;
-  graphics::UniqueHandle<graphics::Sampler> samp_tri_wrap_;
-  graphics::UniqueHandle<graphics::Sampler> samp_bi_wrap_;
-  graphics::UniqueHandle<graphics::Sampler> samp_point_wrap_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_cmp_pcf_ge_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_cmp_pcf_le_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_cmp_point_ge_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_cmp_point_le_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af16_clamp_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af8_clamp_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af4_clamp_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af2_clamp_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_tri_clamp_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_bi_clamp_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_point_clamp_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af16_wrap_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af8_wrap_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af4_wrap_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af2_wrap_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_tri_wrap_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_bi_wrap_;
+  graphics::UniqueSamplerHandle<graphics::Sampler> samp_point_wrap_;
 
   UINT frame_idx_{0};
 

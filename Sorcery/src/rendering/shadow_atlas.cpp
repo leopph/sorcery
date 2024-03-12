@@ -49,8 +49,8 @@ auto ShadowAtlas::Cell::Resize(int const subdiv_size) -> void {
 ShadowAtlas::~ShadowAtlas() = default;
 
 
-auto ShadowAtlas::GetTex() const noexcept -> graphics::Texture* {
-  return tex_.Get();
+auto ShadowAtlas::GetTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+  return tex_;
 }
 
 

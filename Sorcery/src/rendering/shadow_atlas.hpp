@@ -12,7 +12,7 @@
 namespace sorcery {
 class ShadowAtlas : public GridLike {
 protected:
-  graphics::UniqueHandle<graphics::Texture> tex_;
+  graphics::SharedDeviceChildHandle<graphics::Texture> tex_;
   UINT size_;
 
 
@@ -49,7 +49,7 @@ public:
   auto operator=(ShadowAtlas const&) -> void = delete;
   auto operator=(ShadowAtlas&&) -> void = delete;
 
-  [[nodiscard]] auto GetTex() const noexcept -> graphics::Texture*;
+  [[nodiscard]] auto GetTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
   [[nodiscard]] auto GetSize() const noexcept -> UINT;
 
   auto SetLookUpInfo(std::span<ShaderLight> lights) const -> void;

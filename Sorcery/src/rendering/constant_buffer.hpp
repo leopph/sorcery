@@ -20,9 +20,9 @@ public:
   [[nodiscard]] auto GetBuffer() const -> graphics::Buffer*;
 
 private:
-  ConstantBuffer(graphics::UniqueHandle<graphics::Buffer> buffer, T* ptr);
+  ConstantBuffer(graphics::SharedDeviceChildHandle<graphics::Buffer> buffer, T* ptr);
 
-  graphics::UniqueHandle<graphics::Buffer> buffer_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> buffer_;
   void* ptr_{nullptr};
 };
 
@@ -34,7 +34,7 @@ auto ConstantBuffer<T>::New(graphics::GraphicsDevice& device) -> std::optional<C
       D3D12_HEAP_TYPE_UPLOAD)
   };
 
-  if (!buf.IsValid()) {
+  if (!buf) {
     return std::nullopt;
   }
 
@@ -56,12 +56,12 @@ auto ConstantBuffer<T>::Update(T const& val) -> void {
 
 template<typename T>
 auto ConstantBuffer<T>::GetBuffer() const -> graphics::Buffer* {
-  return buffer_.Get();
+  return buffer_.get();
 }
 
 
 template<typename T>
-ConstantBuffer<T>::ConstantBuffer(graphics::UniqueHandle<graphics::Buffer> buffer, T* ptr) :
+ConstantBuffer<T>::ConstantBuffer(graphics::SharedDeviceChildHandle<graphics::Buffer> buffer, T* ptr) :
   buffer_{std::move(buffer)},
   ptr_{ptr} {}
 }

@@ -39,16 +39,16 @@ public:
   auto operator=(RenderTarget&&) -> void = delete;
 
   [[nodiscard]] LEOPPHAPI auto GetDesc() const noexcept -> Desc const&;
-  [[nodiscard]] LEOPPHAPI auto GetColorTex() const noexcept -> graphics::Texture*;
-  [[nodiscard]] LEOPPHAPI auto GetDepthStencilTex() const noexcept -> graphics::Texture*;
+  [[nodiscard]] LEOPPHAPI auto GetColorTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
+  [[nodiscard]] LEOPPHAPI auto GetDepthStencilTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
 
 private:
-  RenderTarget(Desc desc, graphics::UniqueHandle<graphics::Texture> color_tex,
-               graphics::UniqueHandle<graphics::Texture> depth_stencil_tex);
+  RenderTarget(Desc desc, graphics::SharedDeviceChildHandle<graphics::Texture> color_tex,
+               graphics::SharedDeviceChildHandle<graphics::Texture> depth_stencil_tex);
 
   Desc desc_;
 
-  graphics::UniqueHandle<graphics::Texture> color_tex_;
-  graphics::UniqueHandle<graphics::Texture> depth_stencil_tex_;
+  graphics::SharedDeviceChildHandle<graphics::Texture> color_tex_;
+  graphics::SharedDeviceChildHandle<graphics::Texture> depth_stencil_tex_;
 };
 }
