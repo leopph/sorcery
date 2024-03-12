@@ -12,11 +12,11 @@
 #include <D3D12MemAlloc.h>
 
 #include <atomic>
+#include <concepts>
 #include <cstdint>
 #include <memory>
 #include <mutex>
 #include <span>
-#include <type_traits>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -41,58 +41,21 @@ using Sampler = UINT;
 
 namespace details {
 UINT constexpr kInvalidResourceIndex{static_cast<UINT>(-1)};
+
+template<typename T>concept DeviceChild = std::same_as<T, Buffer> || std::same_as<T, Texture> || std::same_as<
+                                            T, PipelineState> || std::same_as<T, CommandList> || std::same_as<
+                                            T, SwapChain>;
+
+template<DeviceChild T>
+class DeviceChildDeleter;
 }
 
 
-template<typename T>
-class UniqueHandle {
-public:
-  UniqueHandle() = default;
-  UniqueHandle(T* resource, GraphicsDevice& device);
-  UniqueHandle(UniqueHandle const& other) = delete;
-  UniqueHandle(UniqueHandle&& other) noexcept;
-
-  ~UniqueHandle();
-
-  auto operator=(UniqueHandle const& other) -> void = delete;
-  auto operator=(UniqueHandle&& other) noexcept -> UniqueHandle&;
-
-  [[nodiscard]] auto Get() const -> T*;
-  [[nodiscard]] auto IsValid() const -> bool;
-
-  [[nodiscard]] auto operator*() const -> T&;
-  [[nodiscard]] auto operator->() const -> T*;
-
-private:
-  auto InternalDestruct() const -> void;
-
-  T* resource_{nullptr};
-  GraphicsDevice* device_{nullptr};
-};
-
-
-template<>
-class UniqueHandle<Sampler> {
-public:
-  UniqueHandle() = default;
-  UniqueHandle(UINT resource, GraphicsDevice& device);
-  UniqueHandle(UniqueHandle const& other) = delete;
-  UniqueHandle(UniqueHandle&& other) noexcept;
-
-  ~UniqueHandle();
-
-  auto operator=(UniqueHandle const& other) -> void = delete;
-  auto operator=(UniqueHandle&& other) noexcept -> UniqueHandle&;
-
-  [[nodiscard]] auto Get() const -> UINT;
-  [[nodiscard]] auto IsValid() const -> bool;
-
-private:
-  auto InternalDestruct() const -> void;
-
-  UINT resource_{details::kInvalidResourceIndex};
-  GraphicsDevice* device_{nullptr};
-};
+template<details::DeviceChild T>
+using UniqueDeviceChildHandle = std::unique_ptr<T, details::DeviceChildDeleter<T>>;
+template<details::DeviceChild T>
+using SharedDeviceChildHandle = std::shared_ptr<T>;
+class UniqueSamplerHandle;
 
 
 struct BufferDesc {
@@ -222,20 +185,21 @@ class GraphicsDevice {
 public:
   [[nodiscard]] static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
 
-  [[nodiscard]] auto CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE heap_type) -> UniqueHandle<Buffer>;
+  [[nodiscard]] auto CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE heap_type) -> SharedDeviceChildHandle<Buffer>;
   [[nodiscard]] auto CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE heap_type,
                                    D3D12_BARRIER_LAYOUT initial_layout,
-                                   D3D12_CLEAR_VALUE const* clear_value) -> UniqueHandle<Texture>;
+                                   D3D12_CLEAR_VALUE const* clear_value) -> SharedDeviceChildHandle<Texture>;
   [[nodiscard]] auto CreatePipelineState(D3D12_PIPELINE_STATE_STREAM_DESC const& desc, std::uint8_t num_32_bit_params,
-                                         bool is_compute) -> UniqueHandle<PipelineState>;
-  [[nodiscard]] auto CreateCommandList() -> UniqueHandle<CommandList>;
+                                         bool is_compute) -> SharedDeviceChildHandle<PipelineState>;
+  [[nodiscard]] auto CreateCommandList() -> SharedDeviceChildHandle<CommandList>;
   [[nodiscard]] auto CreateFence(UINT64 initial_value) -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
-  [[nodiscard]] auto CreateSwapChain(SwapChainDesc const& desc, HWND window_handle) -> UniqueHandle<SwapChain>;
-  [[nodiscard]] auto CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueHandle<Sampler>;
+  [[nodiscard]] auto CreateSwapChain(SwapChainDesc const& desc,
+                                     HWND window_handle) -> SharedDeviceChildHandle<SwapChain>;
+  [[nodiscard]] auto CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle;
   auto CreateAliasingResources(std::span<BufferDesc const> buffer_descs,
                                std::span<AliasedTextureCreateInfo const> texture_infos, D3D12_HEAP_TYPE heap_type,
-                               std::pmr::vector<UniqueHandle<Buffer>>* buffers,
-                               std::pmr::vector<UniqueHandle<Texture>>* textures) -> void;
+                               std::pmr::vector<SharedDeviceChildHandle<Buffer>>* buffers,
+                               std::pmr::vector<SharedDeviceChildHandle<Texture>>* textures) -> void;
 
   auto DestroyBuffer(Buffer const* buffer) -> void;
   auto DestroyTexture(Texture const* texture) -> void;
@@ -249,7 +213,8 @@ public:
   auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) -> bool;
   [[nodiscard]] auto WaitIdle() const -> bool;
 
-  [[nodiscard]] auto SwapChainGetBuffers(SwapChain const& swap_chain) const -> std::span<UniqueHandle<Texture> const>;
+  [[nodiscard]] auto SwapChainGetBuffers(
+    SwapChain const& swap_chain) const -> std::span<SharedDeviceChildHandle<Texture> const>;
   [[nodiscard]] auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
   [[nodiscard]] auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> bool;
   [[nodiscard]] auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> bool;
@@ -425,84 +390,68 @@ class SwapChain {
   explicit SwapChain(Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain);
 
   Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain_;
-  std::vector<UniqueHandle<Texture>> textures_;
+  std::vector<SharedDeviceChildHandle<Texture>> textures_;
 
   friend GraphicsDevice;
 };
 
 
-template<typename T>
-UniqueHandle<T>::UniqueHandle(T* resource, GraphicsDevice& device) :
-  resource_{resource},
+namespace details {
+template<DeviceChild T>
+class DeviceChildDeleter {
+public:
+  DeviceChildDeleter() = default;
+  explicit DeviceChildDeleter(GraphicsDevice& device);
+  auto operator()(T const* device_child) -> void;
+
+private:
+  GraphicsDevice* device_;
+};
+
+
+template<DeviceChild T>
+DeviceChildDeleter<T>::DeviceChildDeleter(GraphicsDevice& device):
   device_{&device} {}
 
 
-template<typename T>
-UniqueHandle<T>::UniqueHandle(UniqueHandle&& other) noexcept :
-  resource_{other.resource_},
-  device_{other.device_} {
-  other.resource_ = nullptr;
-  other.device_ = nullptr;
-}
-
-
-template<typename T>
-UniqueHandle<T>::~UniqueHandle() {
-  InternalDestruct();
-}
-
-
-template<typename T>
-auto UniqueHandle<T>::operator=(UniqueHandle&& other) noexcept -> UniqueHandle& {
-  if (this != &other) {
-    InternalDestruct();
-    resource_ = other.resource_;
-    device_ = other.device_;
-    other.resource_ = nullptr;
-    other.device_ = nullptr;
-  }
-  return *this;
-}
-
-
-template<typename T>
-auto UniqueHandle<T>::Get() const -> T* {
-  return resource_;
-}
-
-
-template<typename T>
-auto UniqueHandle<T>::IsValid() const -> bool {
-  return resource_ != nullptr;
-}
-
-
-template<typename T>
-auto UniqueHandle<T>::operator*() const -> T& {
-  return *resource_;
-}
-
-
-template<typename T>
-auto UniqueHandle<T>::operator->() const -> T* {
-  return resource_;
-}
-
-
-template<typename T>
-auto UniqueHandle<T>::InternalDestruct() const -> void {
+template<DeviceChild T>
+auto DeviceChildDeleter<T>::operator()(T const* device_child) -> void {
   if (device_) {
-    if constexpr (std::is_same_v<T, Buffer>) {
-      device_->DestroyBuffer(resource_);
-    } else if constexpr (std::is_same_v<T, Texture>) {
-      device_->DestroyTexture(resource_);
-    } else if constexpr (std::is_same_v<T, PipelineState>) {
-      device_->DestroyPipelineState(resource_);
-    } else if constexpr (std::is_same_v<T, CommandList>) {
-      device_->DestroyCommandList(resource_);
-    } else if constexpr (std::is_same_v<T, SwapChain>) {
-      device_->DestroySwapChain(resource_);
+    if constexpr (std::same_as<T, Buffer>) {
+      device_->DestroyBuffer(device_child);
+    } else if constexpr (std::same_as<T, Texture>) {
+      device_->DestroyTexture(device_child);
+    } else if constexpr (std::same_as<T, PipelineState>) {
+      device_->DestroyPipelineState(device_child);
+    } else if constexpr (std::same_as<T, CommandList>) {
+      device_->DestroyCommandList(device_child);
+    } else if constexpr (std::same_as<T, SwapChain>) {
+      device_->DestroySwapChain(device_child);
     }
   }
 }
+}
+
+
+class UniqueSamplerHandle {
+public:
+  UniqueSamplerHandle() = default;
+  UniqueSamplerHandle(UINT resource, GraphicsDevice& device);
+  UniqueSamplerHandle(UniqueSamplerHandle const& other) = delete;
+  UniqueSamplerHandle(UniqueSamplerHandle&& other) noexcept;
+
+  ~UniqueSamplerHandle();
+
+  auto operator=(UniqueSamplerHandle const& other) -> void = delete;
+  auto operator=(UniqueSamplerHandle&& other) noexcept -> UniqueSamplerHandle&;
+
+  [[nodiscard]] auto Get() const -> UINT;
+  [[nodiscard]] auto IsValid() const -> bool;
+
+private:
+  auto InternalDestruct() const -> void;
+
+  UINT resource_{details::kInvalidResourceIndex};
+  GraphicsDevice* device_{nullptr};
+};
 }
