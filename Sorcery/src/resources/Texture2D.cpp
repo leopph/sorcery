@@ -12,22 +12,15 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Texture2D::Texture2D(ID3D11Texture2D& tex, ID3D11ShaderResourceView& srv) noexcept :
-  mTex{&tex},
-  mSrv{&srv} {
-  mTex->AddRef();
-  mSrv->AddRef();
-
-  D3D11_TEXTURE2D_DESC desc;
-  mTex->GetDesc(&desc);
-
+Texture2D::Texture2D(graphics::SharedDeviceChildHandle<graphics::Texture> tex) noexcept :
+tex_{std::move(tex)} {
   mWidth = static_cast<int>(desc.Width);
   mHeight = static_cast<int>(desc.Height);
 }
 
 
-auto Texture2D::GetSrv() const noexcept -> NotNull<ObserverPtr<ID3D11ShaderResourceView>> {
-  return mSrv.Get();
+auto Texture2D::GetTex() const -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+  return tex_;
 }
 
 

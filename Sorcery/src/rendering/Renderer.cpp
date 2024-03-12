@@ -27,15 +27,9 @@ auto Renderer::ShutDown() -> void {
 }
 
 
-auto Renderer::DrawCamera(Camera const& cam, RenderTarget const* rt) -> void {
+auto Renderer::Render() -> void {
   assert(mImpl);
-  mImpl->DrawCamera(cam, rt);
-}
-
-
-auto Renderer::DrawAllCameras(RenderTarget const* rt) -> void {
-  assert(mImpl);
-  mImpl->DrawAllCameras(rt);
+  mImpl->Render();
 }
 
 
@@ -51,7 +45,7 @@ auto Renderer::DrawGizmos(RenderTarget const* const rt) -> void {
 }
 
 
-auto Renderer::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
+/*auto Renderer::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
   assert(mImpl);
   mImpl->ClearAndBindMainRt(ctx);
 }
@@ -60,7 +54,7 @@ auto Renderer::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) co
 auto Renderer::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
   assert(mImpl);
   mImpl->BlitMainRtToSwapChain(ctx);
-}
+}*/
 
 
 auto Renderer::Present() noexcept -> void {
@@ -72,24 +66,6 @@ auto Renderer::Present() noexcept -> void {
 auto Renderer::GetDevice() const noexcept -> graphics::GraphicsDevice* {
   assert(mImpl);
   return mImpl->GetDevice();
-}
-
-
-auto Renderer::GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext> {
-  assert(mImpl);
-  return mImpl->GetThreadContext();
-}
-
-
-auto Renderer::ExecuteCommandList(ObserverPtr<ID3D11CommandList> const cmdList) noexcept -> void {
-  assert(mImpl);
-  mImpl->ExecuteCommandList(cmdList);
-}
-
-
-auto Renderer::ExecuteCommandList(ObserverPtr<ID3D11DeviceContext> const ctx) noexcept -> void {
-  assert(mImpl);
-  mImpl->ExecuteCommandList(ctx);
 }
 
 
@@ -132,18 +108,6 @@ auto Renderer::GetSyncInterval() const noexcept -> int {
 auto Renderer::SetSyncInterval(int interval) noexcept -> void {
   assert(mImpl);
   mImpl->SetSyncInterval(interval);
-}
-
-
-auto Renderer::GetInFlightFrameCount() const noexcept -> int {
-  assert(mImpl);
-  return mImpl->GetInFlightFrameCount();
-}
-
-
-auto Renderer::SetInFlightFrameCount(int const count) -> void {
-  assert(mImpl);
-  mImpl->SetInFlightFrameCount(count);
 }
 
 

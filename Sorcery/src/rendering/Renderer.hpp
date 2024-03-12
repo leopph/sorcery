@@ -49,31 +49,22 @@ private:
 public:
   static auto GetProjectionMatrixForRendering(Matrix4 const& proj_mtx) noexcept -> Matrix4;
 
-  // LIFETIME FUNCTIONS
-
   LEOPPHAPI auto StartUp() -> void;
   LEOPPHAPI auto ShutDown() -> void;
 
-  // FRAME RENDERING FUNCTIONS
-
-  LEOPPHAPI auto DrawCamera(Camera const& cam, RenderTarget const* rt = nullptr) -> void;
-  LEOPPHAPI auto DrawAllCameras(RenderTarget const* rt = nullptr) -> void;
+  LEOPPHAPI auto Render() -> void;
 
   LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
   LEOPPHAPI auto DrawGizmos(RenderTarget const* rt = nullptr) -> void;
 
-  LEOPPHAPI auto ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
-  LEOPPHAPI auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
+  /*LEOPPHAPI auto ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
+  LEOPPHAPI auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;*/
 
   LEOPPHAPI auto Present() noexcept -> void;
 
   // FUNCTIONS FOR CUSTOM EXTERNAL REQUESTS
 
   [[nodiscard]] LEOPPHAPI auto GetDevice() const noexcept -> graphics::GraphicsDevice*;
-  [[nodiscard]] LEOPPHAPI auto GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext>;
-
-  LEOPPHAPI auto ExecuteCommandList(ObserverPtr<ID3D11CommandList> cmdList) noexcept -> void;
-  LEOPPHAPI auto ExecuteCommandList(ObserverPtr<ID3D11DeviceContext> ctx) noexcept -> void;
 
   LEOPPHAPI auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget&;
 
@@ -88,9 +79,6 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetSyncInterval() const noexcept -> int;
   LEOPPHAPI auto SetSyncInterval(int interval) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetInFlightFrameCount() const noexcept -> int;
-  LEOPPHAPI auto SetInFlightFrameCount(int count) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetMultisamplingMode() const noexcept -> MultisamplingMode;
   LEOPPHAPI auto SetMultisamplingMode(MultisamplingMode mode) noexcept -> void;

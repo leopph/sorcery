@@ -9,11 +9,11 @@ namespace sorcery {
 class Cubemap final : public Resource {
   RTTR_ENABLE(Resource)
 
-  graphics::UniqueHandle<graphics::Texture> tex_;
+  graphics::SharedDeviceChildHandle<graphics::Texture> tex_;
 
 public:
-  LEOPPHAPI Cubemap(ID3D11Texture2D& tex, ID3D11ShaderResourceView& srv) noexcept;
+  LEOPPHAPI Cubemap(graphics::SharedDeviceChildHandle<graphics::Texture> tex) noexcept;
 
-  [[nodiscard]] LEOPPHAPI auto GetTex() const noexcept -> graphics::Texture*;
+  [[nodiscard]] LEOPPHAPI auto GetTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
 };
 }

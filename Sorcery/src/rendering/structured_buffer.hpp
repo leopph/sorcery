@@ -11,34 +11,41 @@ template<typename T>
 class StructuredBuffer {
   static_assert(sizeof(T) % 16 == 0, "StructuredBuffer contained type must have a size divisible by 16.");
 
-  graphics::GraphicsDevice* device_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> buffer_;
-  T* mapped_ptr_{nullptr};
-  int capacity_{1};
-  int size_{0};
-
   auto RecreateBuffer() -> void;
 
 public:
-  explicit StructuredBuffer(graphics::GraphicsDevice* device);
+  static auto New(graphics::GraphicsDevice& device) -> StructuredBuffer;
+
+  StructuredBuffer() = default;
 
   [[nodiscard]] auto GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
   [[nodiscard]] auto GetData() const noexcept -> std::span<T>;
-  auto Resize(int new_size) -> void;
+  auto Resize(UINT new_size) -> void;
+
+private:
+  graphics::GraphicsDevice* device_{nullptr};
+  graphics::SharedDeviceChildHandle<graphics::Buffer> buffer_;
+  T* mapped_ptr_{nullptr};
+  UINT capacity_{1};
+  UINT size_{0};
 };
 
 
 template<typename T>
 auto StructuredBuffer<T>::RecreateBuffer() -> void {
-  buffer_ = device_->CreateBuffer(graphics::BufferDesc{capacity_ * sizeof(T), sizeof(T), false, true, false});
-  mapped_ptr_ = buffer_->Map();
+  buffer_ = device_->CreateBuffer(graphics::BufferDesc{
+    static_cast<UINT>(capacity_ * sizeof(T)), sizeof(T), false, true, false
+  }, D3D12_HEAP_TYPE_UPLOAD);
+  mapped_ptr_ = static_cast<T*>(buffer_->Map());
 }
 
 
 template<typename T>
-StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice* const device):
-  device_{device} {
-  RecreateBuffer();
+auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device) -> StructuredBuffer {
+  StructuredBuffer sb;
+  sb.device_ = &device;
+  sb.RecreateBuffer();
+  return sb;
 }
 
 
@@ -55,7 +62,7 @@ auto StructuredBuffer<T>::GetData() const noexcept -> std::span<T> {
 
 
 template<typename T>
-auto StructuredBuffer<T>::Resize(int const new_size) -> void {
+auto StructuredBuffer<T>::Resize(UINT const new_size) -> void {
   assert(!mapped_ptr_);
 
   auto new_capacity = capacity_;

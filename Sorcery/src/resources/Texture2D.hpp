@@ -9,7 +9,6 @@
 namespace sorcery {
 class Texture2D final : public Resource {
   RTTR_ENABLE(Resource)
-
   graphics::SharedDeviceChildHandle<graphics::Texture> tex_;
 
   int mWidth;
@@ -17,7 +16,7 @@ class Texture2D final : public Resource {
   int mChannelCount;
 
 public:
-  LEOPPHAPI Texture2D(ID3D11Texture2D& tex, ID3D11ShaderResourceView& srv) noexcept;
+  LEOPPHAPI Texture2D(graphics::SharedDeviceChildHandle<graphics::Texture> tex) noexcept;
 
   [[nodiscard]] LEOPPHAPI auto GetTex() const -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
 

@@ -55,5 +55,6 @@ public:
   auto SetLookUpInfo(std::span<ShaderLight> lights) const -> void;
 
   [[nodiscard]] virtual auto GetCell(int idx) const -> Cell const& = 0;
+  [[nodiscard]] virtual auto GetCell(int idx) -> Cell& = 0;
 };
 }

@@ -81,5 +81,6 @@ private:
 };
 
 
-[[nodiscard]] LEOPPHAPI auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5>;
+[[nodiscard]] LEOPPHAPI auto CalculateSpotLightLocalVertices(float range,
+                                                             float outer_angle) noexcept -> std::array<Vector3, 5>;
 }

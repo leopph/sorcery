@@ -38,9 +38,6 @@ private:
   ObserverPtr<Texture2D> normal_map_{nullptr};
   ObserverPtr<Texture2D> opacity_mask_{nullptr};
 
-  auto UpdateGPUData() noexcept -> void;
-  auto CreateCB() -> void;
-
 public:
   LEOPPHAPI Material();
 
@@ -82,6 +79,8 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetOpacityMask() const noexcept -> ObserverPtr<Texture2D>;
   LEOPPHAPI auto SetOpacityMask(ObserverPtr<Texture2D> opacityMask) noexcept -> void;
+
+  LEOPPHAPI auto Update() -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
 

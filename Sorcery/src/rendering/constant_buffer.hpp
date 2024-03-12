@@ -17,7 +17,7 @@ public:
   ConstantBuffer() = default;
 
   auto Update(T const& val) -> void;
-  [[nodiscard]] auto GetBuffer() const -> graphics::Buffer*;
+  [[nodiscard]] auto GetBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
 
 private:
   ConstantBuffer(graphics::SharedDeviceChildHandle<graphics::Buffer> buffer, T* ptr);
@@ -30,8 +30,9 @@ private:
 template<typename T>
 auto ConstantBuffer<T>::New(graphics::GraphicsDevice& device) -> std::optional<ConstantBuffer> {
   auto buf{
-    device.CreateBuffer(graphics::BufferDesc{RoundToNextMultiple(sizeof(T), 256), 0, true, false, false},
-      D3D12_HEAP_TYPE_UPLOAD)
+    device.CreateBuffer(graphics::BufferDesc{
+      static_cast<UINT>(RoundToNextMultiple(sizeof(T), 256)), 0, true, false, false
+    }, D3D12_HEAP_TYPE_UPLOAD)
   };
 
   if (!buf) {
@@ -44,7 +45,7 @@ auto ConstantBuffer<T>::New(graphics::GraphicsDevice& device) -> std::optional<C
     return std::nullopt;
   }
 
-  return ConstantBuffer{std::move(buf), ptr};
+  return ConstantBuffer{std::move(buf), static_cast<T*>(ptr)};
 }
 
 
@@ -55,8 +56,8 @@ auto ConstantBuffer<T>::Update(T const& val) -> void {
 
 
 template<typename T>
-auto ConstantBuffer<T>::GetBuffer() const -> graphics::Buffer* {
-  return buffer_.get();
+auto ConstantBuffer<T>::GetBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return buffer_;
 }
 
 

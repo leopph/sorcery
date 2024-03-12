@@ -13,26 +13,24 @@ RTTR_REGISTRATION {
   rttr::registration::enumeration<sorcery::LightComponent::Type>("Light Type")(
     rttr::value("Directional", sorcery::LightComponent::Type::Directional),
     rttr::value("Spot", sorcery::LightComponent::Type::Spot),
-    rttr::value("Point", sorcery::LightComponent::Type::Point)
-  );
+    rttr::value("Point", sorcery::LightComponent::Type::Point));
 
-  rttr::registration::class_<sorcery::LightComponent>{"Light Component"}
-    .REFLECT_REGISTER_COMPONENT_CTOR
-    .property("color", &sorcery::LightComponent::GetColor, &sorcery::LightComponent::SetColor)
-    .property("intensity", &sorcery::LightComponent::GetIntensity, &sorcery::LightComponent::SetIntensity)
-    .property("type", &sorcery::LightComponent::GetType, &sorcery::LightComponent::SetType)
-    .property("castsShadow", &sorcery::LightComponent::IsCastingShadow, &sorcery::LightComponent::SetCastingShadow)
-    .property("shadowNearClipPlane", &sorcery::LightComponent::GetShadowNearPlane,
-      &sorcery::LightComponent::SetShadowNearPlane)
-    .property("shadowNormalBias", &sorcery::LightComponent::GetShadowNormalBias,
-      &sorcery::LightComponent::SetShadowNormalBias)
-    .property("shadowDepthBias", &sorcery::LightComponent::GetShadowDepthBias,
-      &sorcery::LightComponent::SetShadowDepthBias)
-    .property("shadowExtension", &sorcery::LightComponent::GetShadowExtension,
-      &sorcery::LightComponent::SetShadowExtension)
-    .property("range", &sorcery::LightComponent::GetRange, &sorcery::LightComponent::SetRange)
-    .property("innerAngle", &sorcery::LightComponent::GetInnerAngle, &sorcery::LightComponent::SetInnerAngle)
-    .property("outerAngle", &sorcery::LightComponent::GetOuterAngle, &sorcery::LightComponent::SetOuterAngle);
+  rttr::registration::class_<sorcery::LightComponent>{"Light Component"}.REFLECT_REGISTER_COMPONENT_CTOR.
+    property("color", &sorcery::LightComponent::GetColor, &sorcery::LightComponent::SetColor).
+    property("intensity", &sorcery::LightComponent::GetIntensity, &sorcery::LightComponent::SetIntensity).
+    property("type", &sorcery::LightComponent::GetType, &sorcery::LightComponent::SetType).
+    property("castsShadow", &sorcery::LightComponent::IsCastingShadow, &sorcery::LightComponent::SetCastingShadow).
+    property("shadowNearClipPlane", &sorcery::LightComponent::GetShadowNearPlane,
+      &sorcery::LightComponent::SetShadowNearPlane).
+    property("shadowNormalBias", &sorcery::LightComponent::GetShadowNormalBias,
+      &sorcery::LightComponent::SetShadowNormalBias).
+    property("shadowDepthBias", &sorcery::LightComponent::GetShadowDepthBias,
+      &sorcery::LightComponent::SetShadowDepthBias).
+    property("shadowExtension", &sorcery::LightComponent::GetShadowExtension,
+      &sorcery::LightComponent::SetShadowExtension).
+    property("range", &sorcery::LightComponent::GetRange, &sorcery::LightComponent::SetRange).property("innerAngle",
+      &sorcery::LightComponent::GetInnerAngle, &sorcery::LightComponent::SetInnerAngle).property("outerAngle",
+      &sorcery::LightComponent::GetOuterAngle, &sorcery::LightComponent::SetOuterAngle);
 }
 
 
@@ -289,7 +287,7 @@ auto LightComponent::OnDrawGizmosSelected() -> void {
 
   if (GetType() == Type::Spot) {
     auto const modelMtxNoScale{GetEntity().GetTransform().CalculateLocalToWorldMatrixWithoutScale()};
-    auto vertices{CalculateSpotLightLocalVertices(*this)};
+    auto vertices{CalculateSpotLightLocalVertices(GetRange(), GetOuterAngle())};
 
     for (auto& vertex : vertices) {
       vertex = Vector3{Vector4{vertex, 1} * modelMtxNoScale};
@@ -306,16 +304,12 @@ auto LightComponent::OnDrawGizmosSelected() -> void {
 }
 
 
-auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5> {
-  auto const range{spotLight.GetRange()};
-  auto const coneBaseRadius{std::tan(ToRadians(spotLight.GetOuterAngle() / 2.0f)) * range};
+auto CalculateSpotLightLocalVertices(float const range, float const outer_angle) noexcept -> std::array<Vector3, 5> {
+  auto const coneBaseRadius{std::tan(ToRadians(outer_angle / 2.0f)) * range};
 
   return std::array{
-    Vector3{-coneBaseRadius, -coneBaseRadius, range},
-    Vector3{coneBaseRadius, -coneBaseRadius, range},
-    Vector3{coneBaseRadius, coneBaseRadius, range},
-    Vector3{-coneBaseRadius, coneBaseRadius, range},
-    Vector3::Zero()
+    Vector3{-coneBaseRadius, -coneBaseRadius, range}, Vector3{coneBaseRadius, -coneBaseRadius, range},
+    Vector3{coneBaseRadius, coneBaseRadius, range}, Vector3{-coneBaseRadius, coneBaseRadius, range}, Vector3::Zero()
   };
 }
 }

@@ -107,7 +107,8 @@ auto Renderer::Impl::ExtractCurrentState(FramePacket& packet) const -> void {
     packet.light_data.emplace_back(light->GetColor(), light->GetIntensity(), light->GetDirection(),
       light->GetEntity().GetTransform().GetWorldPosition(), light->GetType(), light->GetRange(), light->GetInnerAngle(),
       light->GetOuterAngle(), light->IsCastingShadow(), light->GetShadowNearPlane(), light->GetShadowNormalBias(),
-      light->GetShadowDepthBias(), light->GetShadowExtension());
+      light->GetShadowDepthBias(), light->GetShadowExtension(),
+      light->GetEntity().GetTransform().CalculateLocalToWorldMatrixWithoutScale());
   }
 
   packet.mesh_data.reserve(static_mesh_components_.size());
@@ -155,7 +156,7 @@ auto Renderer::Impl::ExtractCurrentState(FramePacket& packet) const -> void {
     auto const uv_buf_local_idx{find_or_emplace_back_buffer(mesh->GetUvBuffer())};
     auto const idx_buf_local_idx{find_or_emplace_back_buffer(mesh->GetIndexBuffer())};
     packet.mesh_data.emplace_back(pos_buf_local_idx, norm_buf_local_idx, tan_buf_local_idx, uv_buf_local_idx,
-      idx_buf_local_idx);
+      idx_buf_local_idx, mesh->GetBounds());
 
     packet.submesh_data.reserve(packet.submesh_data.size() + mesh->GetSubmeshCount());
 
@@ -195,9 +196,10 @@ auto Renderer::Impl::ExtractCurrentState(FramePacket& packet) const -> void {
 }
 
 
-auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(Camera const& cam) const -> ShadowCascadeBoundaries {
-  auto const camNear{cam.GetNearClipPlane()};
-  auto const shadowDistance{std::min(cam.GetFarClipPlane(), shadow_distance_)};
+auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(
+  CameraData const& cam_data) const -> ShadowCascadeBoundaries {
+  auto const camNear{cam_data.near_plane};
+  auto const shadowDistance{std::min(cam_data.far_plane, shadow_distance_)};
   auto const shadowedFrustumDepth{shadowDistance - camNear};
 
   ShadowCascadeBoundaries boundaries;
@@ -220,44 +222,23 @@ auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(Camera const& cam) c
 }
 
 
-auto Renderer::Impl::CullStaticMeshComponents(Frustum const& frustum_ws,
-                                              std::pmr::vector<StaticMeshSubmeshIndex>& visible_indices) const -> void {
-  visible_indices.clear();
+auto Renderer::Impl::CullLights(Frustum const& frustum_ws, std::span<LightData const> const lights,
+                                std::pmr::vector<unsigned> visible_light_indices) -> void {
+  visible_light_indices.clear();
 
-  for (int i = 0; i < static_cast<int>(static_mesh_components_.size()); i++) {
-    if (auto const mesh{static_mesh_components_[i]->GetMesh()}) {
-      if (auto const& modelMtx{static_mesh_components_[i]->GetEntity().GetTransform().GetLocalToWorldMatrix()};
-        frustum_ws.Intersects(mesh->GetBounds().Transform(modelMtx))) {
-        auto const submeshes{mesh->GetSubMeshes()};
-        for (int j{0}; j < std::ssize(submeshes); j++) {
-          if (frustum_ws.Intersects(submeshes[j].bounds.Transform(modelMtx))) {
-            visible_indices.emplace_back(i, j);
-          }
-        }
-      }
-    }
-  }
-}
-
-
-auto Renderer::Impl::CullLights(Frustum const& frustum_ws, std::pmr::vector<int> visible_indices) const -> void {
-  visible_indices.clear();
-
-  for (int light_idx = 0; light_idx < static_cast<int>(lights_.size()); light_idx++) {
-    switch (auto const light{lights_[light_idx]}; light->GetType()) {
+  for (unsigned light_idx = 0; light_idx < static_cast<unsigned>(lights.size()); light_idx++) {
+    switch (auto const light{lights[light_idx]}; light.type) {
       case LightComponent::Type::Directional: {
-        visible_indices.emplace_back(light_idx);
+        visible_light_indices.emplace_back(light_idx);
         break;
       }
 
       case LightComponent::Type::Spot: {
         auto const light_vertices_ws{
           [light] {
-            auto vertices{CalculateSpotLightLocalVertices(*light)};
+            auto vertices{CalculateSpotLightLocalVertices(light.range, light.outer_angle)};
 
-            for (auto const model_mtx_no_scale{
-                   light->GetEntity().GetTransform().CalculateLocalToWorldMatrixWithoutScale()
-                 }; auto& vertex : vertices) {
+            for (auto const model_mtx_no_scale{light.local_to_world_mtx_no_scale}; auto& vertex : vertices) {
               vertex = Vector3{Vector4{vertex, 1} * model_mtx_no_scale};
             }
 
@@ -266,20 +247,38 @@ auto Renderer::Impl::CullLights(Frustum const& frustum_ws, std::pmr::vector<int>
         };
 
         if (frustum_ws.Intersects(AABB::FromVertices(light_vertices_ws))) {
-          visible_indices.emplace_back(light_idx);
+          visible_light_indices.emplace_back(light_idx);
         }
 
         break;
       }
 
       case LightComponent::Type::Point: {
-        if (BoundingSphere const bounds_ws{
-          Vector3{light->GetEntity().GetTransform().GetWorldPosition()}, light->GetRange()
-        }; frustum_ws.Intersects(bounds_ws)) {
-          visible_indices.emplace_back(light_idx);
+        if (BoundingSphere const bounds_ws{Vector3{light.position}, light.range}; frustum_ws.Intersects(bounds_ws)) {
+          visible_light_indices.emplace_back(light_idx);
         }
         break;
       }
+    }
+  }
+}
+
+
+auto Renderer::Impl::CullStaticSubmeshInstances(Frustum const& frustum_ws, std::span<MeshData const> const meshes,
+                                                std::span<SubmeshData const> const submeshes,
+                                                std::span<InstanceData const> const instances,
+                                                std::pmr::vector<unsigned>& visible_static_submesh_instance_indices) ->
+  void {
+  visible_static_submesh_instance_indices.clear();
+
+  for (unsigned i{0}; i < static_cast<unsigned>(instances.size()); i++) {
+    auto const& instance{instances[i]};
+    auto const& submesh{submeshes[instance.submesh_local_idx]};
+    auto const& mesh{meshes[submesh.mesh_local_idx]};
+
+    if (frustum_ws.Intersects(mesh.bounds.Transform(instance.local_to_world_mtx)) && frustum_ws.Intersects(
+          submesh.bounds.Transform(instance.local_to_world_mtx))) {
+      visible_static_submesh_instance_indices.emplace_back(i);
     }
   }
 }
@@ -318,7 +317,182 @@ auto Renderer::Impl::SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>&
 }
 
 
-auto Renderer::Impl::DrawDirectionalShadowMaps(std::span<int const> light_indices, Camera const& cam, float rt_aspect,
+auto Renderer::Impl::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
+                                               std::span<Renderer::Impl::LightData const> const lights,
+                                               std::span<unsigned const> visible_light_indices,
+                                               Renderer::Impl::CameraData const& cam_data,
+                                               Matrix4 const& cam_view_proj_mtx, float const shadow_distance) -> void {
+  struct LightCascadeIndex {
+    int lightIdxIdx;
+    int shadowIdx;
+  };
+
+  auto& tmpMemRes{GetTmpMemRes()};
+  std::array lightIndexIndicesInCell{
+    std::pmr::vector<LightCascadeIndex>{&tmpMemRes}, std::pmr::vector<LightCascadeIndex>{&tmpMemRes},
+    std::pmr::vector<LightCascadeIndex>{&tmpMemRes}, std::pmr::vector<LightCascadeIndex>{&tmpMemRes}
+  };
+
+  auto const& camPos{cam_data.position};
+
+  auto const determineScreenCoverage{
+    [&camPos, &cam_view_proj_mtx](std::span<Vector3 const> const vertices) -> std::optional<int> {
+      std::optional<int> cellIdx;
+
+      if (auto const [worldMin, worldMax]{AABB::FromVertices(vertices)};
+        worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] && worldMax[0] >= camPos[0] &&
+        worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
+        cellIdx = 0;
+      } else {
+        Vector2 const bottomLeft{-1, -1};
+        Vector2 const topRight{1, 1};
+
+        Vector2 min{std::numeric_limits<float>::max()};
+        Vector2 max{std::numeric_limits<float>::lowest()};
+
+        for (auto& vertex : vertices) {
+          Vector4 vertex4{vertex, 1};
+          vertex4 *= cam_view_proj_mtx;
+          auto const projected{Vector2{vertex4} / vertex4[3]};
+          min = Clamp(Min(min, projected), bottomLeft, topRight);
+          max = Clamp(Max(max, projected), bottomLeft, topRight);
+        }
+
+        auto const width{max[0] - min[0]};
+        auto const height{max[1] - min[1]};
+
+        auto const area{width * height};
+        auto const coverage{area / 4};
+
+        if (coverage >= 1) {
+          cellIdx = 0;
+        } else if (coverage >= 0.25f) {
+          cellIdx = 1;
+        } else if (coverage >= 0.0625f) {
+          cellIdx = 2;
+        } else if (coverage >= 0.015625f) {
+          cellIdx = 3;
+        }
+      }
+
+      return cellIdx;
+    }
+  };
+
+  for (int i = 0; i < static_cast<int>(visible_light_indices.size()); i++) {
+    if (auto const light{lights[visible_light_indices[i]]};
+      light.casts_shadow && (light.type == LightComponent::Type::Spot || light.type == LightComponent::Type::Point)) {
+      Vector3 const& lightPos{light.position};
+      float const lightRange{light.range};
+
+      // Skip the light if its bounding sphere is farther than the shadow distance
+      if (Vector3 const camToLightDir{Normalize(lightPos - camPos)}; Distance(lightPos - camToLightDir * lightRange,
+                                                                       cam_data.position) > shadow_distance) {
+        continue;
+      }
+
+      if (light.type == LightComponent::Type::Spot) {
+        auto lightVertices{CalculateSpotLightLocalVertices(light.range, light.outer_angle)};
+
+        for (auto const modelMtxNoScale{light.local_to_world_mtx_no_scale}; auto& vertex : lightVertices) {
+          vertex = Vector3{Vector4{vertex, 1} * modelMtxNoScale};
+        }
+
+        if (auto const cellIdx{determineScreenCoverage(lightVertices)}) {
+          lightIndexIndicesInCell[*cellIdx].emplace_back(i, 0);
+        }
+      } else if (light.type == LightComponent::Type::Point) {
+        for (auto j = 0; j < 6; j++) {
+          std::array static const faceBoundsRotations{
+            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(90)), // +X
+            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(-90)), // -X
+            Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(-90)), // +Y
+            Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(90)), // -Y
+            Quaternion{}, // +Z
+            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(180)) // -Z
+          };
+
+          std::array const shadowFrustumVertices{
+            faceBoundsRotations[i].Rotate(Vector3{lightRange, lightRange, lightRange}) + lightPos,
+            faceBoundsRotations[i].Rotate(Vector3{-lightRange, lightRange, lightRange}) + lightPos,
+            faceBoundsRotations[i].Rotate(Vector3{-lightRange, -lightRange, lightRange}) + lightPos,
+            faceBoundsRotations[i].Rotate(Vector3{lightRange, -lightRange, lightRange}) + lightPos, lightPos,
+          };
+
+          if (auto const cellIdx{determineScreenCoverage(shadowFrustumVertices)}) {
+            lightIndexIndicesInCell[*cellIdx].emplace_back(i, j);
+          }
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < 4; i++) {
+    std::ranges::sort(lightIndexIndicesInCell[i],
+      [&visible_light_indices, &camPos, &lights](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
+        auto const leftLight{lights[visible_light_indices[lhs.lightIdxIdx]]};
+        auto const rightLight{lights[visible_light_indices[rhs.lightIdxIdx]]};
+
+        auto const leftLightPos{leftLight.position};
+        auto const rightLightPos{rightLight.position};
+
+        auto const leftDist{Distance(leftLightPos, camPos)};
+        auto const rightDist{Distance(camPos, rightLightPos)};
+
+        return leftDist > rightDist;
+      });
+
+    for (int j = 0; j < atlas.GetCell(i).GetElementCount(); j++) {
+      auto& subcell{atlas.GetCell(i).GetSubcell(j)};
+      subcell.reset();
+
+      if (lightIndexIndicesInCell[i].empty()) {
+        continue;
+      }
+
+      auto const [lightIdxIdx, shadowIdx]{lightIndexIndicesInCell[i].back()};
+      auto const light{lights[visible_light_indices[lightIdxIdx]]};
+      lightIndexIndicesInCell[i].pop_back();
+
+      if (light.type == LightComponent::Type::Spot) {
+        auto const shadowViewMtx{Matrix4::LookTo(light.position, light.direction, Vector3::Up())};
+        auto const shadowProjMtx{
+          Matrix4::PerspectiveFov(ToRadians(light.outer_angle), 1.f, light.range, light.shadow_near_plane)
+        };
+
+        subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
+      } else if (light.type == LightComponent::Type::Point) {
+        auto const lightPos{light.position};
+
+        std::array const faceViewMatrices{
+          Matrix4::LookTo(lightPos, Vector3::Right(), Vector3::Up()), // +X
+          Matrix4::LookTo(lightPos, Vector3::Left(), Vector3::Up()), // -X
+          Matrix4::LookTo(lightPos, Vector3::Up(), Vector3::Backward()), // +Y
+          Matrix4::LookTo(lightPos, Vector3::Down(), Vector3::Forward()), // -Y
+          Matrix4::LookTo(lightPos, Vector3::Forward(), Vector3::Up()), // +Z
+          Matrix4::LookTo(lightPos, Vector3::Backward(), Vector3::Up()), // -Z
+        };
+
+        auto const shadowViewMtx{faceViewMatrices[shadowIdx]};
+        auto const shadowProjMtx{
+          Renderer::GetProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, light.shadow_near_plane,
+            light.range))
+        };
+
+        subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
+      }
+    }
+
+    if (i + 1 < 4) {
+      std::ranges::copy(lightIndexIndicesInCell[i], std::back_inserter(lightIndexIndicesInCell[i + 1]));
+    }
+  }
+}
+
+
+auto Renderer::Impl::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
+                                               std::span<unsigned const> const visible_light_indices,
+                                               CameraData const& cam_data, float rt_aspect,
                                                ShadowCascadeBoundaries const& shadow_cascade_boundaries,
                                                std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
                                                graphics::CommandList& cmd) -> void {
@@ -326,11 +500,11 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(std::span<int const> light_indice
   cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
   cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, {});
 
-  for (auto const lightIdx : light_indices) {
-    if (auto const light{lights_[lightIdx]}; light->GetType() == LightComponent::Type::Directional && light->
-                                             IsCastingShadow()) {
-      float const camNear{cam.GetNearClipPlane()};
-      float const camFar{cam.GetFarClipPlane()};
+  for (auto const lightIdx : visible_light_indices) {
+    if (auto const light{frame_packet.light_data[lightIdx]};
+      light.type == LightComponent::Type::Directional && light.casts_shadow) {
+      float const camNear{cam_data.near_plane};
+      float const camFar{cam_data.far_plane};
 
       enum FrustumVertex : int {
         FrustumVertex_NearTopRight    = 0,
@@ -345,58 +519,48 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(std::span<int const> light_indice
 
       // Order of vertices is CCW from top right, near first
       auto const frustumVertsWS{
-        [&cam, rt_aspect, camNear, camFar] {
+        [&cam_data, rt_aspect, camNear, camFar] {
           std::array<Vector3, 8> ret;
 
-          Vector3 const nearWorldForward{cam.GetPosition() + cam.GetForwardAxis() * camNear};
-          Vector3 const farWorldForward{cam.GetPosition() + cam.GetForwardAxis() * camFar};
+          Vector3 const nearWorldForward{cam_data.position + cam_data.forward * camNear};
+          Vector3 const farWorldForward{cam_data.position + cam_data.forward * camFar};
 
-          switch (cam.GetType()) {
+          switch (cam_data.type) {
             case Camera::Type::Perspective: {
-              float const tanHalfFov{std::tan(ToRadians(cam.GetVerticalPerspectiveFov() / 2.0f))};
+              float const tanHalfFov{std::tan(ToRadians(cam_data.fov_vert_deg / 2.0f))};
               float const nearExtentY{camNear * tanHalfFov};
               float const nearExtentX{nearExtentY * rt_aspect};
               float const farExtentY{camFar * tanHalfFov};
               float const farExtentX{farExtentY * rt_aspect};
 
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam_data.right * nearExtentX + cam_data.up *
                                                 nearExtentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() *
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam_data.right * nearExtentX + cam_data.up *
                                                nearExtentY;
               ret[FrustumVertex_NearBottomLeft] =
-                nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+                nearWorldForward - cam_data.right * nearExtentX - cam_data.up * nearExtentY;
               ret[FrustumVertex_NearBottomRight] =
-                nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() *
-                                               farExtentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() *
-                                              farExtentY;
+                nearWorldForward + cam_data.right * nearExtentX - cam_data.up * nearExtentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam_data.right * farExtentX + cam_data.up * farExtentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam_data.right * farExtentX + cam_data.up * farExtentY;
               ret[FrustumVertex_FarBottomLeft] =
-                farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+                farWorldForward - cam_data.right * farExtentX - cam_data.up * farExtentY;
               ret[FrustumVertex_FarBottomRight] =
-                farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+                farWorldForward + cam_data.right * farExtentX - cam_data.up * farExtentY;
               break;
             }
             case Camera::Type::Orthographic: {
-              float const extentX{cam.GetVerticalOrthographicSize() / 2.0f};
+              float const extentX{cam_data.size_vert / 2.0f};
               float const extentY{extentX / rt_aspect};
 
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() *
-                                                extentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() *
-                                               extentY;
-              ret[FrustumVertex_NearBottomLeft] =
-                nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_NearBottomRight] =
-                nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() *
-                                               extentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() *
-                                              extentY;
-              ret[FrustumVertex_FarBottomLeft] =
-                farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-              ret[FrustumVertex_FarBottomRight] =
-                farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam_data.right * extentX + cam_data.up * extentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam_data.right * extentX + cam_data.up * extentY;
+              ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam_data.right * extentX - cam_data.up * extentY;
+              ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam_data.right * extentX - cam_data.up * extentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam_data.right * extentX + cam_data.up * extentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam_data.right * extentX + cam_data.up * extentY;
+              ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam_data.right * extentX - cam_data.up * extentY;
+              ret[FrustumVertex_FarBottomRight] = farWorldForward + cam_data.right * extentX - cam_data.up * extentY;
               break;
             }
           }
@@ -447,7 +611,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(std::span<int const> light_indice
         auto const shadowMapSize{dir_shadow_map_arr_->GetSize()};
         auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
 
-        Matrix4 shadowViewMtx{Matrix4::LookTo(Vector3::Zero(), light->GetDirection(), Vector3::Up())};
+        Matrix4 shadowViewMtx{Matrix4::LookTo(Vector3::Zero(), light.direction, Vector3::Up())};
         cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
         cascadeCenterWS /= worldUnitsPerTexel;
         cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
@@ -455,10 +619,10 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(std::span<int const> light_indice
         cascadeCenterWS *= worldUnitsPerTexel;
         cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Inverse()};
 
-        shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light->GetDirection(), Vector3::Up());
+        shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light.direction, Vector3::Up());
         auto const shadowProjMtx{
           GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius, sphereRadius,
-            -sphereRadius, -sphereRadius - light->GetShadowExtension(), sphereRadius))
+            -sphereRadius, -sphereRadius - light.shadow_extension, sphereRadius))
         };
 
         shadow_view_proj_matrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
@@ -481,35 +645,26 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(std::span<int const> light_indice
         cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_view_cb_idx),
           per_view_cbs_[frame_idx_][next_per_view_cb_idx_].GetBuffer()->GetConstantBuffer());
 
-        Frustum const shadowFrustumWS{shadow_view_proj_matrices[cascadeIdx]};
+        Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
 
-        std::pmr::vector<StaticMeshSubmeshIndex> static_mesh_indices{&GetTmpMemRes()};
-        CullStaticMeshComponents(shadowFrustumWS, static_mesh_indices);
+        std::pmr::vector<unsigned> visible_static_submesh_instance_indices{&GetTmpMemRes()};
+        CullStaticSubmeshInstances(shadow_frustum_ws, frame_packet.mesh_data, frame_packet.submesh_data,
+          frame_packet.instance_data, visible_static_submesh_instance_indices);
 
-        for (auto const& [mesh_idx, submesh_idx] : static_mesh_indices) {
-          auto const component{static_mesh_components_[mesh_idx]};
-          auto const mesh{component->GetMesh()};
-
-          if (!mesh) {
-            continue;
-          }
-
-          auto const submesh{mesh->GetSubMeshes()[submesh_idx]};
-          auto const mtl{component->GetMaterials()[submesh.material_index]};
-
-          if (!mtl) {
-            continue;
-          }
-
-          auto const mtl_buf{mtl->GetBuffer()};
+        for (auto const instance_idx : visible_static_submesh_instance_indices) {
+          auto const& instance{frame_packet.instance_data[instance_idx]};
+          auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
+          auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
+          auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
           if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
             CreatePerDrawConstantBuffers(1);
           }
 
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, pos_buf_idx),
-            mesh->GetPositionBuffer()->GetShaderResource());
-          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, uv_buf_idx), mesh->GetUvBuffer()->GetShaderResource());
+            frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
+          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, uv_buf_idx),
+            frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_draw_cb_idx),
             per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
@@ -527,7 +682,9 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(std::span<int const> light_indice
 }
 
 
-auto Renderer::Impl::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, graphics::CommandList& cmd) -> void {
+auto Renderer::Impl::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
+                                            Renderer::Impl::FramePacket const& frame_packet,
+                                            graphics::CommandList& cmd) -> void {
   cmd.SetPipelineState(*depth_only_pso_);
   cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
@@ -563,33 +720,24 @@ auto Renderer::Impl::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, gr
 
         Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
 
-        std::pmr::vector<StaticMeshSubmeshIndex> static_mesh_indices{&GetTmpMemRes()};
-        CullStaticMeshComponents(shadow_frustum_ws, static_mesh_indices);
+        std::pmr::vector<unsigned> visible_static_submesh_instance_indices{&GetTmpMemRes()};
+        CullStaticSubmeshInstances(shadow_frustum_ws, frame_packet.mesh_data, frame_packet.submesh_data,
+          frame_packet.instance_data, visible_static_submesh_instance_indices);
 
-        for (auto const& [mesh_idx, submesh_idx] : static_mesh_indices) {
-          auto const component{static_mesh_components_[mesh_idx]};
-          auto const mesh{component->GetMesh()};
-
-          if (!mesh) {
-            continue;
-          }
-
-          auto const submesh{mesh->GetSubMeshes()[submesh_idx]};
-          auto const mtl{component->GetMaterials()[submesh.material_index]};
-
-          if (!mtl) {
-            continue;
-          }
-
-          auto const mtl_buf{mtl->GetBuffer()};
+        for (auto const instance_idx : visible_static_submesh_instance_indices) {
+          auto const& instance{frame_packet.instance_data[instance_idx]};
+          auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
+          auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
+          auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
           if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
             CreatePerDrawConstantBuffers(1);
           }
 
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, pos_buf_idx),
-            mesh->GetPositionBuffer()->GetShaderResource());
-          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, uv_buf_idx), mesh->GetUvBuffer()->GetShaderResource());
+            frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
+          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, uv_buf_idx),
+            frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_draw_cb_idx),
             per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
@@ -646,9 +794,9 @@ auto Renderer::Impl::ReleaseTempRenderTargets() noexcept -> void {
 }
 
 
-auto Renderer::Impl::RecreateSsaoSamples(int const sample_count) const noexcept -> void {
-  ssao_samples_buffer_->Resize(sample_count);
-  auto const ssao_samples{ssao_samples_buffer_->GetData()};
+auto Renderer::Impl::RecreateSsaoSamples(int const sample_count) noexcept -> void {
+  ssao_samples_buffer_.Resize(sample_count);
+  auto const ssao_samples{ssao_samples_buffer_.GetData()};
 
   std::uniform_real_distribution dist{0.0f, 1.0f};
   std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
@@ -919,11 +1067,13 @@ auto Renderer::Impl::StartUp() -> void {
   swap_chain_ = device_->CreateSwapChain(graphics::SwapChainDesc{0, 0, 2, render_target_format_, 0, DXGI_SCALING_NONE},
     static_cast<HWND>(gWindow.GetNativeHandle()));
 
-  light_buffer_ = std::make_unique<StructuredBuffer<ShaderLight>>(device_.get());
+  for (auto& buf : light_buffers_) {
+    buf = StructuredBuffer<ShaderLight>::New(*device_);
+  }
 
-  gizmo_color_buffer_ = std::make_unique<StructuredBuffer<Vector4>>(device_.get());
+  gizmo_color_buffer_ = StructuredBuffer<Vector4>::New(*device_);
 
-  line_gizmo_vertex_data_buffer_ = std::make_unique<StructuredBuffer<ShaderLineGizmoVertexData>>(device_.get());
+  line_gizmo_vertex_data_buffer_ = StructuredBuffer<ShaderLineGizmoVertexData>::New(*device_);
 
   main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
     static_cast<UINT>(gWindow.GetClientAreaSize().width), static_cast<UINT>(gWindow.GetClientAreaSize().height),
@@ -1100,7 +1250,7 @@ auto Renderer::Impl::StartUp() -> void {
 
   gWindow.OnWindowSize.add_handler(this, &OnWindowSize);
 
-  ssao_samples_buffer_ = std::make_unique<StructuredBuffer<Vector4>>(device_.get());
+  ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_);
   RecreateSsaoSamples(ssao_params_.sampleCount);
 
   std::vector<Vector4> ssao_noise;
@@ -1129,7 +1279,7 @@ auto Renderer::Impl::StartUp() -> void {
   std::array<std::uint8_t, 4> constexpr static white_color_data{255, 255, 255, 255};
 
   auto const white_tex_upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{white_color_data.size(), 0, false, false, false}, D3D12_HEAP_TYPE_UPLOAD)
+    device_->CreateBuffer(graphics::BufferDesc{static_cast<UINT>(white_color_data.size()), 0, false, false, false}, D3D12_HEAP_TYPE_UPLOAD)
   };
   std::memcpy(white_tex_upload_buf->Map(), white_color_data.data(), white_color_data.size());
 
@@ -1181,341 +1331,339 @@ auto Renderer::Impl::Render() -> void {
   auto& frame_packet{frame_packets_[frame_idx_]};
   ExtractCurrentState(frame_packet);
 
-  frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
-}
-
-
-auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt) -> void {
   auto& cmd{*command_lists_[frame_idx_]};
+
   if (!cmd.Begin(nullptr)) {
     return;
   }
 
-  auto const rtWidth{rt ? rt->GetDesc().width : gWindow.GetClientAreaSize().width};
-  auto const rtHeight{rt ? rt->GetDesc().height : gWindow.GetClientAreaSize().height};
-  auto const rtAspect{static_cast<float>(rtWidth) / static_cast<float>(rtHeight)};
+  for (auto const& cam_data : frame_packet.cam_data) {
+    auto const rt_width{
+      cam_data.render_target ? cam_data.render_target->GetDesc().width : gWindow.GetClientAreaSize().width
+    };
+    auto const rt_height{
+      cam_data.render_target ? cam_data.render_target->GetDesc().height : gWindow.GetClientAreaSize().height
+    };
+    auto const rt_aspect{static_cast<float>(rt_width) / static_cast<float>(rt_height)};
 
-  RenderTarget::Desc const hdrRtDesc{
-    rtWidth, rtHeight, color_buffer_format_, depth_format_, static_cast<UINT>(GetMultisamplingMode()),
-    L"Camera HDR RenderTarget", false
-  };
-
-  auto const& hdrRt{GetTemporaryRenderTarget(hdrRtDesc)};
-
-
-  auto const clearColor{
-    Scene::GetActiveScene()->GetSkyMode() == SkyMode::Color
-      ? Vector4{Scene::GetActiveScene()->GetSkyColor(), 1}
-      : Vector4{0, 0, 0, 1}
-  };
-
-  cmd.ClearRenderTarget(*hdrRt.GetColorTex(), std::span<FLOAT const, 4>{clearColor.GetData(), 4}, {});
-
-
-  D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rtWidth), static_cast<FLOAT>(rtHeight), 0, 1};
-
-  SetPerFrameConstants(per_frame_cbs_[frame_idx_], static_cast<int>(rtWidth), static_cast<int>(rtHeight));
-
-  auto const camPos{cam.GetPosition()};
-  auto const camViewMtx{cam.CalculateViewMatrix()};
-  auto const camProjMtx{GetProjectionMatrixForRendering(cam.CalculateProjectionMatrix(rtAspect))};
-  auto const camViewProjMtx{camViewMtx * camProjMtx};
-  Frustum const camFrustWS{camViewProjMtx};
-
-  std::pmr::vector<int> light_indices{&GetTmpMemRes()};
-  CullLights(camFrustWS, light_indices);
-
-  // Shadow pass
-  std::array<Matrix4, MAX_CASCADE_COUNT> shadowViewProjMatrices;
-  auto const shadowCascadeBoundaries{CalculateCameraShadowCascadeBoundaries(cam)};
-  DrawDirectionalShadowMaps(light_indices, cam, rtAspect, shadowCascadeBoundaries, shadowViewProjMatrices, cmd);
-
-  punctual_shadow_atlas_->Update(lights_, light_indices, cam, camViewProjMtx, shadow_distance_);
-  DrawPunctualShadowMaps(*punctual_shadow_atlas_, cmd);
-
-  std::pmr::vector<StaticMeshSubmeshIndex> static_mesh_indices{&GetTmpMemRes()};
-  CullStaticMeshComponents(camFrustWS, static_mesh_indices);
-
-  if (next_per_view_cb_idx_ >= per_view_cbs_[frame_idx_].size()) {
-    CreatePerViewConstantBuffers(1);
-  }
-
-  auto const cam_per_view_cb_idx{next_per_view_cb_idx_};
-  ++next_per_view_cb_idx_;
-
-  SetPerViewConstants(per_view_cbs_[frame_idx_][cam_per_view_cb_idx], camViewMtx, camProjMtx, shadowCascadeBoundaries,
-    camPos);
-
-  cmd.ClearDepthStencil(*hdrRt.GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
-
-  auto const& normalRt{
-    GetTemporaryRenderTarget(RenderTarget::Desc{
-      rtWidth, rtHeight, normal_buffer_format_, std::nullopt, 1, L"Camera Normal RT"
-    })
-  };
-
-  // Depth-Normal pre-pass
-  if (depth_normal_pre_pass_enabled_) {
-    // If MSAA is enabled we render into an MSAA RT and then resolve into normalRt
-    auto const& actualNormalRt{
-      [this, &normalRt]() -> auto const& {
-        if (GetMultisamplingMode() == MultisamplingMode::Off) {
-          return normalRt;
-        }
-
-        auto actualNormalRtDesc{normalRt.GetDesc()};
-        actualNormalRtDesc.sample_count = static_cast<int>(GetMultisamplingMode());
-        return GetTemporaryRenderTarget(actualNormalRtDesc);
-      }()
+    RenderTarget::Desc const hdr_rt_desc{
+      rt_width, rt_height, color_buffer_format_, depth_format_, static_cast<UINT>(GetMultisamplingMode()),
+      L"Camera HDR RenderTarget", false
     };
 
-    cmd.SetPipelineState(*depth_normal_pso_);
-    cmd.SetRenderTargets(std::span{actualNormalRt.GetColorTex().get(), 1}, hdrRt.GetDepthStencilTex().get());
-    cmd.ClearRenderTarget(*actualNormalRt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+    auto const& hdr_rt{GetTemporaryRenderTarget(hdr_rt_desc)};
 
-    for (auto const [staticMeshIdx, submeshIdx] : static_mesh_indices) {
-      auto const& component{*static_mesh_components_[staticMeshIdx]};
-      auto const mesh{component.GetMesh()};
 
-      if (!mesh) {
-        continue;
+    auto const clear_color{
+      Scene::GetActiveScene()->GetSkyMode() == SkyMode::Color
+        ? Vector4{Scene::GetActiveScene()->GetSkyColor(), 1}
+        : Vector4{0, 0, 0, 1}
+    };
+
+    cmd.ClearRenderTarget(*hdr_rt.GetColorTex(), std::span<FLOAT const, 4>{clear_color.GetData(), 4}, {});
+
+    D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rt_width), static_cast<FLOAT>(rt_height), 0, 1};
+
+    SetPerFrameConstants(per_frame_cbs_[frame_idx_], static_cast<int>(rt_width), static_cast<int>(rt_height));
+
+    auto const cam_view_mtx{
+      Camera::CalculateViewMatrix(cam_data.position, cam_data.right, cam_data.up, cam_data.forward)
+    };
+    auto const cam_proj_mtx{
+      GetProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(cam_data.type, cam_data.fov_vert_deg,
+        cam_data.size_vert, rt_aspect, cam_data.near_plane, cam_data.far_plane))
+    };
+    auto const cam_view_proj_mtx{cam_view_mtx * cam_proj_mtx};
+    Frustum const cam_frust_ws{cam_view_proj_mtx};
+
+    std::pmr::vector<unsigned> visible_light_indices{&GetTmpMemRes()};
+    CullLights(cam_frust_ws, frame_packet.light_data, visible_light_indices);
+
+    // Shadow pass
+    std::array<Matrix4, MAX_CASCADE_COUNT> shadow_view_proj_matrices;
+    auto const shadow_cascade_boundaries{CalculateCameraShadowCascadeBoundaries(cam_data)};
+    DrawDirectionalShadowMaps(frame_packet, visible_light_indices, cam_data, rt_aspect, shadow_cascade_boundaries,
+      shadow_view_proj_matrices, cmd);
+
+    UpdatePunctualShadowAtlas(*punctual_shadow_atlas_, frame_packet.light_data, visible_light_indices, cam_data,
+      cam_view_proj_mtx, shadow_distance_);
+    DrawPunctualShadowMaps(*punctual_shadow_atlas_, frame_packet, cmd);
+
+    std::pmr::vector<unsigned> visible_static_submesh_instance_indices{&GetTmpMemRes()};
+    CullStaticSubmeshInstances(cam_frust_ws, frame_packet.mesh_data, frame_packet.submesh_data,
+      frame_packet.instance_data, visible_static_submesh_instance_indices);
+
+    if (next_per_view_cb_idx_ >= per_view_cbs_[frame_idx_].size()) {
+      CreatePerViewConstantBuffers(1);
+    }
+
+    auto const cam_per_view_cb_idx{next_per_view_cb_idx_};
+    ++next_per_view_cb_idx_;
+
+    SetPerViewConstants(per_view_cbs_[frame_idx_][cam_per_view_cb_idx], cam_view_mtx, cam_proj_mtx,
+      shadow_cascade_boundaries, cam_data.position);
+
+    cmd.ClearDepthStencil(*hdr_rt.GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
+
+    auto const& normal_rt{
+      GetTemporaryRenderTarget(RenderTarget::Desc{
+        rt_width, rt_height, normal_buffer_format_, std::nullopt, 1, L"Camera Normal RT"
+      })
+    };
+
+    // Depth-Normal pre-pass
+    if (depth_normal_pre_pass_enabled_) {
+      // If MSAA is enabled we render into an MSAA RT and then resolve into normalRt
+      auto const& actual_normal_rt{
+        [this, &normal_rt]() -> auto const& {
+          if (GetMultisamplingMode() == MultisamplingMode::Off) {
+            return normal_rt;
+          }
+
+          auto actual_normal_rt_desc{normal_rt.GetDesc()};
+          actual_normal_rt_desc.sample_count = static_cast<int>(GetMultisamplingMode());
+          return GetTemporaryRenderTarget(actual_normal_rt_desc);
+        }()
+      };
+
+      cmd.SetPipelineState(*depth_normal_pso_);
+      cmd.SetRenderTargets(std::span{actual_normal_rt.GetColorTex().get(), 1}, hdr_rt.GetDepthStencilTex().get());
+      cmd.ClearRenderTarget(*actual_normal_rt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+
+      for (auto const instance_idx : visible_static_submesh_instance_indices) {
+        auto const& instance{frame_packet.instance_data[instance_idx]};
+        auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
+        auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
+        auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
+
+        if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
+          CreatePerDrawConstantBuffers(1);
+        }
+
+        SetPerDrawConstants(per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_], instance.local_to_world_mtx);
+
+        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, pos_buf_idx),
+          frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
+        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, norm_buf_idx),
+          frame_packet.buffers[mesh.norm_buf_local_idx]->GetShaderResource());
+        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, tan_buf_idx),
+          frame_packet.buffers[mesh.tan_buf_local_idx]->GetShaderResource());
+        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, uv_buf_idx),
+          frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
+        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
+        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, samp_idx), samp_af16_wrap_.Get());
+        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, rt_idx), 0);
+        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_draw_cb_idx),
+          per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
+        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_view_cb_idx),
+          per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
+        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_frame_cb_idx),
+          per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
+
+        ++next_per_draw_cb_idx_;
       }
 
-      auto const submesh{mesh->GetSubMeshes()[submeshIdx]};
-      auto const mtl{component.GetMaterials()[submesh.material_index]};
-
-      if (!mtl) {
-        continue;
+      // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
+      if (GetMultisamplingMode() != MultisamplingMode::Off) {
+        cmd.Resolve(*normal_rt.GetColorTex(), *actual_normal_rt.GetColorTex(), *normal_rt.GetDesc().color_format);
       }
+    }
+
+    auto ssao_tex{white_tex_.get()};
+
+    // SSAO pass
+    if (ssao_enabled_) {
+      auto const& ssao_rt{
+        GetTemporaryRenderTarget(RenderTarget::Desc{
+          rt_width, rt_height, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"
+        })
+      };
+
+      // If MSAA is enabled we have to resolve the depth texture before running SSAO
+      auto const ssao_depth_tex{
+        [this, &hdr_rt, &cmd] {
+          if (GetMultisamplingMode() == MultisamplingMode::Off) {
+            return hdr_rt.GetDepthStencilTex();
+          }
+
+          auto ssao_depth_rt_desc{hdr_rt.GetDesc()};
+          ssao_depth_rt_desc.color_format = DXGI_FORMAT_R32_FLOAT;
+          ssao_depth_rt_desc.sample_count = 1;
+          ssao_depth_rt_desc.depth_stencil_format = std::nullopt;
+          ssao_depth_rt_desc.enable_unordered_access = true;
+          auto const& ssao_depth_rt{GetTemporaryRenderTarget(ssao_depth_rt_desc)};
+
+          cmd.SetPipelineState(*depth_resolve_pso_);
+          cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, in_tex_idx),
+            ssao_depth_rt.GetColorTex()->GetUnorderedAccess());
+          cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, out_tex_idx),
+            hdr_rt.GetColorTex()->GetUnorderedAccess());
+          cmd.Dispatch(
+            static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.width) / DEPTH_RESOLVE_CS_THREADS_X)),
+            static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.height) / DEPTH_RESOLVE_CS_THREADS_Y)),
+            static_cast<UINT>(std::ceil(1.0f / DEPTH_RESOLVE_CS_THREADS_Z)));
+
+          return ssao_depth_rt.GetColorTex();
+        }()
+      };
+
+      cmd.SetPipelineState(*ssao_pso_);
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, noise_tex_idx), ssao_noise_tex_->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, depth_tex_idx), ssao_depth_tex->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, normal_tex_idx), normal_rt.GetColorTex()->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, samp_buf_idx),
+        ssao_samples_buffer_.GetBuffer()->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, point_wrap_samp_idx), samp_point_wrap_.Get());
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, radius), *std::bit_cast<UINT*>(&ssao_params_.radius));
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, bias), *std::bit_cast<UINT*>(&ssao_params_.bias));
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, power), *std::bit_cast<UINT*>(&ssao_params_.power));
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, sample_count), ssao_params_.sampleCount);
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_view_cb_idx),
+        per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_frame_cb_idx),
+        per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
+      cmd.SetRenderTargets(std::span{ssao_rt.GetColorTex().get(), 1}, nullptr);
+      cmd.ClearRenderTarget(*ssao_rt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+      cmd.DrawInstanced(3, 1, 0, 0);
+
+      auto const& ssao_blur_rt{
+        GetTemporaryRenderTarget([&ssao_rt] {
+          auto ret{ssao_rt.GetDesc()};
+          ret.debug_name = L"SSAO Blur RT";
+          return ret;
+        }())
+      };
+
+      cmd.SetPipelineState(*ssao_blur_pso_);
+      cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, in_tex_idx),
+        ssao_blur_rt.GetColorTex()->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
+      cmd.SetRenderTargets(std::span{ssao_blur_rt.GetColorTex().get(), 1}, nullptr);
+      cmd.ClearRenderTarget(*ssao_blur_rt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+      cmd.DrawInstanced(3, 1, 0, 0);
+
+      ssao_tex = ssao_blur_rt.GetColorTex().get();
+    }
+
+    // Full forward lighting pass
+
+    auto const light_count{std::ssize(visible_light_indices)};
+    light_buffers_[frame_idx_].Resize(static_cast<int>(light_count));
+    auto const light_buffer_data{light_buffers_[frame_idx_].GetData()};
+
+    for (int i = 0; i < light_count; i++) {
+      light_buffer_data[i].color = frame_packet.light_data[visible_light_indices[i]].color;
+      light_buffer_data[i].intensity = frame_packet.light_data[visible_light_indices[i]].intensity;
+      light_buffer_data[i].type = static_cast<int>(frame_packet.light_data[visible_light_indices[i]].type);
+      light_buffer_data[i].direction = frame_packet.light_data[visible_light_indices[i]].direction;
+      light_buffer_data[i].isCastingShadow = FALSE;
+      light_buffer_data[i].range = frame_packet.light_data[visible_light_indices[i]].range;
+      light_buffer_data[i].halfInnerAngleCos = std::cos(
+        ToRadians(frame_packet.light_data[visible_light_indices[i]].inner_angle / 2.0f));
+      light_buffer_data[i].halfOuterAngleCos = std::cos(
+        ToRadians(frame_packet.light_data[visible_light_indices[i]].outer_angle / 2.0f));
+      light_buffer_data[i].position = frame_packet.light_data[visible_light_indices[i]].position;
+      light_buffer_data[i].depthBias = frame_packet.light_data[visible_light_indices[i]].shadow_depth_bias;
+      light_buffer_data[i].normalBias = frame_packet.light_data[visible_light_indices[i]].shadow_normal_bias;
+
+      for (auto& sample : light_buffer_data[i].sampleShadowMap) {
+        sample = FALSE;
+      }
+    }
+
+    // Set directional light shadow constant data
+
+    for (auto i{0}; i < light_count; i++) {
+      if (auto const light{frame_packet.light_data[visible_light_indices[i]]};
+        light.type == LightComponent::Type::Directional && light.casts_shadow) {
+        light_buffer_data[i].isCastingShadow = TRUE;
+
+        for (auto cascade_idx{0}; cascade_idx < cascade_count_; cascade_idx++) {
+          light_buffer_data[i].sampleShadowMap[cascade_idx] = TRUE;
+          light_buffer_data[i].shadowViewProjMatrices[cascade_idx] = shadow_view_proj_matrices[cascade_idx];
+        }
+
+        break;
+      }
+    }
+
+    punctual_shadow_atlas_->SetLookUpInfo(light_buffer_data);
+
+    cmd.SetPipelineState(*object_pso_);
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, ssao_tex_idx), ssao_tex->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, light_buf_idx),
+      light_buffers_[frame_idx_].GetBuffer()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, dir_shadow_arr_idx),
+      dir_shadow_map_arr_->GetTex()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, punc_shadow_atlas_idx),
+      punctual_shadow_atlas_->GetTex()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_view_cb_idx),
+      per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_frame_cb_idx),
+      per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
+    cmd.SetRenderTargets(std::span{hdr_rt.GetColorTex().get(), 1}, hdr_rt.GetDepthStencilTex().get());
+
+    for (auto const instance_idx : visible_static_submesh_instance_indices) {
+      auto const& instance{frame_packet.instance_data[instance_idx]};
+      auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
+      auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
+      auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
       if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
         CreatePerDrawConstantBuffers(1);
       }
 
-      SetPerDrawConstants(per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_],
-        component.GetEntity().GetTransform().GetLocalToWorldMatrix());
+      SetPerDrawConstants(per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_], instance.local_to_world_mtx);
 
-      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, pos_buf_idx),
-        mesh->GetPositionBuffer()->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, norm_buf_idx),
-        mesh->GetNormalBuffer()->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, tan_buf_idx),
-        mesh->GetTangentBuffer()->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, uv_buf_idx), mesh->GetUvBuffer()->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, mtl_idx), mtl->GetBuffer()->GetConstantBuffer());
-      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, samp_idx), samp_af16_wrap_.Get());
-      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, rt_idx), 0);
-      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_draw_cb_idx),
+      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, pos_buf_idx),
+        frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, norm_buf_idx),
+        frame_packet.buffers[mesh.norm_buf_local_idx]->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, tan_buf_idx),
+        frame_packet.buffers[mesh.tan_buf_local_idx]->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, uv_buf_idx),
+        frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
+      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_draw_cb_idx),
         per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
-      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_view_cb_idx),
-        per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
-      cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_frame_cb_idx),
-        per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
 
       ++next_per_draw_cb_idx_;
     }
 
-    // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
-    if (GetMultisamplingMode() != MultisamplingMode::Off) {
-      cmd.Resolve(*normalRt.GetColorTex(), *actualNormalRt.GetColorTex(), *normalRt.GetDesc().color_format);
-    }
-  }
 
-  auto ssaoTexSrv{white_tex_.get()};
-
-  // SSAO pass
-  if (ssao_enabled_) {
-    auto const& ssaoRt{
-      GetTemporaryRenderTarget(RenderTarget::Desc{rtWidth, rtHeight, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"})
-    };
-
-    // If MSAA is enabled we have to resolve the depth texture before running SSAO
-    auto const ssao_depth_tex{
-      [this, &hdrRt, &cmd] {
-        if (GetMultisamplingMode() == MultisamplingMode::Off) {
-          return hdrRt.GetDepthStencilTex();
-        }
-
-        auto ssaoDepthRtDesc{hdrRt.GetDesc()};
-        ssaoDepthRtDesc.color_format = DXGI_FORMAT_R32_FLOAT;
-        ssaoDepthRtDesc.sample_count = 1;
-        ssaoDepthRtDesc.depth_stencil_format = std::nullopt;
-        ssaoDepthRtDesc.enable_unordered_access = true;
-        auto const& ssaoDepthRt{GetTemporaryRenderTarget(ssaoDepthRtDesc)};
-
-        cmd.SetPipelineState(*depth_resolve_pso_);
-        cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, in_tex_idx),
-          ssaoDepthRt.GetColorTex()->GetUnorderedAccess());
-        cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, out_tex_idx),
-          hdrRt.GetColorTex()->GetUnorderedAccess());
-        cmd.Dispatch(
-          static_cast<UINT>(std::ceil(static_cast<float>(ssaoDepthRtDesc.width) / DEPTH_RESOLVE_CS_THREADS_X)),
-          static_cast<UINT>(std::ceil(static_cast<float>(ssaoDepthRtDesc.height) / DEPTH_RESOLVE_CS_THREADS_Y)),
-          static_cast<UINT>(std::ceil(1.0f / DEPTH_RESOLVE_CS_THREADS_Z)));
-
-        return ssaoDepthRt.GetColorTex();
-      }()
-    };
-
-    cmd.SetPipelineState(*ssao_pso_);
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, noise_tex_idx), ssao_noise_tex_->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, depth_tex_idx), ssao_depth_tex->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, normal_tex_idx), normalRt.GetColorTex()->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, samp_buf_idx),
-      ssao_samples_buffer_->GetBuffer()->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, point_wrap_samp_idx), samp_point_wrap_.Get());
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, radius), *std::bit_cast<UINT*>(&ssao_params_.radius));
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, bias), *std::bit_cast<UINT*>(&ssao_params_.bias));
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, power), *std::bit_cast<UINT*>(&ssao_params_.power));
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, sample_count), ssao_params_.sampleCount);
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_view_cb_idx),
-      per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
-    cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_frame_cb_idx),
-      per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
-    cmd.SetRenderTargets(std::span{ssaoRt.GetColorTex().get(), 1}, nullptr);
-    cmd.ClearRenderTarget(*ssaoRt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
-    cmd.DrawInstanced(3, 1, 0, 0);
-
-    auto const& ssaoBlurRt{
-      GetTemporaryRenderTarget([&ssaoRt] {
-        auto ret{ssaoRt.GetDesc()};
-        ret.debug_name = L"SSAO Blur RT";
-        return ret;
-      }())
-    };
-
-    cmd.SetPipelineState(*ssao_blur_pso_);
-    cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, in_tex_idx), ssaoBlurRt.GetColorTex()->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-    cmd.SetRenderTargets(std::span{ssaoBlurRt.GetColorTex().get(), 1}, nullptr);
-    cmd.ClearRenderTarget(*ssaoBlurRt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
-    cmd.DrawInstanced(3, 1, 0, 0);
-
-    ssaoTexSrv = ssaoBlurRt.GetColorTex().get();
-  }
-
-  // Full forward lighting pass
-
-  auto const lightCount{std::ssize(light_indices)};
-  light_buffer_->Resize(static_cast<int>(lightCount));
-  auto const lightBufferData{light_buffer_->GetData()};
-
-  for (int i = 0; i < lightCount; i++) {
-    lightBufferData[i].color = lights_[light_indices[i]]->GetColor();
-    lightBufferData[i].intensity = lights_[light_indices[i]]->GetIntensity();
-    lightBufferData[i].type = static_cast<int>(lights_[light_indices[i]]->GetType());
-    lightBufferData[i].direction = lights_[light_indices[i]]->GetDirection();
-    lightBufferData[i].isCastingShadow = FALSE;
-    lightBufferData[i].range = lights_[light_indices[i]]->GetRange();
-    lightBufferData[i].halfInnerAngleCos = std::cos(ToRadians(lights_[light_indices[i]]->GetInnerAngle() / 2.0f));
-    lightBufferData[i].halfOuterAngleCos = std::cos(ToRadians(lights_[light_indices[i]]->GetOuterAngle() / 2.0f));
-    lightBufferData[i].position = lights_[light_indices[i]]->GetEntity().GetTransform().GetWorldPosition();
-    lightBufferData[i].depthBias = lights_[light_indices[i]]->GetShadowDepthBias();
-    lightBufferData[i].normalBias = lights_[light_indices[i]]->GetShadowNormalBias();
-
-    for (auto& sample : lightBufferData[i].sampleShadowMap) {
-      sample = FALSE;
-    }
-  }
-
-  // Set directional light shadow constant data
-
-  for (auto i{0}; i < lightCount; i++) {
-    if (auto const light{lights_[light_indices[i]]};
-      light->GetType() == LightComponent::Type::Directional && light->IsCastingShadow()) {
-      lightBufferData[i].isCastingShadow = TRUE;
-
-      for (auto cascadeIdx{0}; cascadeIdx < cascade_count_; cascadeIdx++) {
-        lightBufferData[i].sampleShadowMap[cascadeIdx] = TRUE;
-        lightBufferData[i].shadowViewProjMatrices[cascadeIdx] = shadowViewProjMatrices[cascadeIdx];
-      }
-
-      break;
-    }
-  }
-
-  punctual_shadow_atlas_->SetLookUpInfo(lightBufferData);
-
-  cmd.SetPipelineState(*object_pso_);
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, ssao_tex_idx), ssaoTexSrv->GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, light_buf_idx), light_buffer_->GetBuffer()->GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, dir_shadow_arr_idx),
-    dir_shadow_map_arr_->GetTex()->GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, punc_shadow_atlas_idx),
-    punctual_shadow_atlas_->GetTex()->GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_view_cb_idx),
-    per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
-  cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_frame_cb_idx),
-    per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
-  cmd.SetRenderTargets(std::span{hdrRt.GetColorTex().get(), 1}, hdrRt.GetDepthStencilTex().get());
-
-  for (auto const [staticMeshIdx, submeshIdx] : static_mesh_indices) {
-    auto const& component{static_mesh_components_[staticMeshIdx]};
-    auto const mesh{component->GetMesh()};
-
-    if (!mesh) {
-      continue;
+    if (auto const& active_scene{Scene::GetActiveScene()};
+      active_scene->GetSkyMode() == SkyMode::Skybox && active_scene->GetSkybox()) {
+      DrawSkybox(cmd);
     }
 
-    auto const& submesh{mesh->GetSubMeshes()[submeshIdx]};
-    auto const mtl{component->GetMaterials()[submesh.material_index]};
+    RenderTarget const* post_process_rt;
 
-    if (!mtl) {
-      continue;
+    if (GetMultisamplingMode() == MultisamplingMode::Off) {
+      post_process_rt = std::addressof(hdr_rt);
+    } else {
+      auto resolve_hdr_rt_desc{hdr_rt_desc};
+      resolve_hdr_rt_desc.sample_count = 1;
+      auto const& resolve_hdr_rt{GetTemporaryRenderTarget(resolve_hdr_rt_desc)};
+      cmd.Resolve(*resolve_hdr_rt.GetColorTex(), *hdr_rt.GetColorTex(), *hdr_rt_desc.color_format);
+      post_process_rt = std::addressof(resolve_hdr_rt);
     }
 
-    if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
-      CreatePerDrawConstantBuffers(1);
-    }
-
-    SetPerDrawConstants(per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_],
-      component->GetEntity().GetTransform().GetLocalToWorldMatrix());
-
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, pos_buf_idx), mesh->GetPositionBuffer()->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, norm_buf_idx), mesh->GetNormalBuffer()->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, tan_buf_idx), mesh->GetTangentBuffer()->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, uv_buf_idx), mesh->GetUvBuffer()->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, mtl_idx), mtl->GetBuffer()->GetConstantBuffer());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_draw_cb_idx),
-      per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
-
-    ++next_per_draw_cb_idx_;
+    cmd.SetViewports(std::span{&viewport, 1});
+    PostProcess(*post_process_rt->GetColorTex(),
+      *(cam_data.render_target
+          ? cam_data.render_target->GetColorTex()
+          : device_->SwapChainGetBuffers(*swap_chain_)[device_->SwapChainGetCurrentBufferIndex(*swap_chain_)]), cmd);
   }
 
-
-  if (auto const& activeScene{Scene::GetActiveScene()};
-    activeScene->GetSkyMode() == SkyMode::Skybox && activeScene->GetSkybox()) {
-    DrawSkybox(cmd);
+  if (!cmd.End()) {
+    return;
   }
 
-  RenderTarget const* postProcessRt;
-
-  if (GetMultisamplingMode() == MultisamplingMode::Off) {
-    postProcessRt = std::addressof(hdrRt);
-  } else {
-    auto resolveHdrRtDesc{hdrRtDesc};
-    resolveHdrRtDesc.sample_count = 1;
-    auto const& resolveHdrRt{GetTemporaryRenderTarget(resolveHdrRtDesc)};
-    cmd.Resolve(*resolveHdrRt.GetColorTex(), *hdrRt.GetColorTex(), *hdrRtDesc.color_format);
-    postProcessRt = std::addressof(resolveHdrRt);
-  }
-
-  cmd.SetViewports(std::span{&viewport, 1});
-  PostProcess(*postProcessRt->GetColorTex(),
-    *(rt
-        ? rt->GetColorTex()
-        : device_->SwapChainGetBuffers(*swap_chain_)[device_->SwapChainGetCurrentBufferIndex(*swap_chain_)]), cmd);
-}
-
-
-auto Renderer::Impl::DrawAllCameras(RenderTarget const* const rt) -> void {
-  for (auto const& cam : game_render_cameras_) {
-    DrawCamera(*cam, rt);
-  }
+  frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
 }
 
 
@@ -1526,18 +1674,18 @@ auto Renderer::Impl::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to
 
 
 auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
-  gizmo_color_buffer_->Resize(static_cast<int>(std::ssize(gizmo_colors_)));
-  std::ranges::copy(gizmo_colors_, std::begin(gizmo_color_buffer_->GetData()));
+  gizmo_color_buffer_.Resize(static_cast<int>(std::ssize(gizmo_colors_)));
+  std::ranges::copy(gizmo_colors_, std::begin(gizmo_color_buffer_.GetData()));
 
-  line_gizmo_vertex_data_buffer_->Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
-  std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_->GetData()));
+  line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
+  std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
   auto& cmd{*command_lists_[frame_idx_]};
   cmd.SetPipelineState(*line_gizmo_pso_);
   cmd.SetPipelineParameter(offsetof(GizmoDrawParams, vertex_buf_idx),
-    line_gizmo_vertex_data_buffer_->GetBuffer()->GetShaderResource());
+    line_gizmo_vertex_data_buffer_.GetBuffer()->GetShaderResource());
   cmd.SetPipelineParameter(offsetof(GizmoDrawParams, color_buf_idx),
-    gizmo_color_buffer_->GetBuffer()->GetShaderResource());
+    gizmo_color_buffer_.GetBuffer()->GetShaderResource());
   // TODO set per view cb
 
   auto const actual_rt{

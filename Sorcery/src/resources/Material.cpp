@@ -8,29 +8,23 @@
 
 #include <cstdint>
 #include <imgui.h>
-#include <stdexcept>
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Material>{"Material"}
-    .property("albedo", &sorcery::Material::GetAlbedoVector, &sorcery::Material::SetAlbedoVector)
-    .property("metallic", &sorcery::Material::GetMetallic, &sorcery::Material::SetMetallic)
-    .property("roughness", &sorcery::Material::GetRoughness, &sorcery::Material::SetRoughness)
-    .property("ao", &sorcery::Material::GetAo, &sorcery::Material::SetAo)
-    .property("albedoMap", &sorcery::Material::GetAlbedoMap, &sorcery::Material::SetAlbedoMap)
-    .property("metallicMap", &sorcery::Material::GetMetallicMap, &sorcery::Material::SetMetallicMap)
-    .property("roughnessMap", &sorcery::Material::GetRoughnessMap, &sorcery::Material::SetRoughnessMap)
-    .property("aoMap", &sorcery::Material::GetAoMap, &sorcery::Material::SetAoMap)
-    .property("normalMap", &sorcery::Material::GetNormalMap, &sorcery::Material::SetNormalMap);
+  rttr::registration::class_<sorcery::Material>{"Material"}.
+    property("albedo", &sorcery::Material::GetAlbedoVector, &sorcery::Material::SetAlbedoVector).
+    property("metallic", &sorcery::Material::GetMetallic, &sorcery::Material::SetMetallic).
+    property("roughness", &sorcery::Material::GetRoughness, &sorcery::Material::SetRoughness).
+    property("ao", &sorcery::Material::GetAo, &sorcery::Material::SetAo).
+    property("albedoMap", &sorcery::Material::GetAlbedoMap, &sorcery::Material::SetAlbedoMap).property("metallicMap",
+      &sorcery::Material::GetMetallicMap, &sorcery::Material::SetMetallicMap).property("roughnessMap",
+      &sorcery::Material::GetRoughnessMap, &sorcery::Material::SetRoughnessMap).property("aoMap",
+      &sorcery::Material::GetAoMap, &sorcery::Material::SetAoMap).property("normalMap",
+      &sorcery::Material::GetNormalMap, &sorcery::Material::SetNormalMap);
 }
 
 
 namespace sorcery {
-auto Material::UpdateGPUData() noexcept -> void {
-  cb_.Update(mShaderMtl);
-}
-
-
 Material::Material() {
   ConstantBuffer<ShaderMaterial>::New(*gRenderer.GetDevice());
 }
@@ -43,18 +37,24 @@ auto Material::GetAlbedoVector() const noexcept -> Vector3 const& {
 
 auto Material::SetAlbedoVector(Vector3 const& albedoVector) noexcept -> void {
   mShaderMtl.albedo = albedoVector;
-  UpdateGPUData();
+  Update();
 }
 
 
 auto Material::GetAlbedoColor() const noexcept -> Color {
   auto const mulColorVec{GetAlbedoVector() * 255};
-  return Color{static_cast<std::uint8_t>(mulColorVec[0]), static_cast<std::uint8_t>(mulColorVec[1]), static_cast<std::uint8_t>(mulColorVec[2]), static_cast<std::uint8_t>(mulColorVec[3])};
+  return Color{
+    static_cast<std::uint8_t>(mulColorVec[0]), static_cast<std::uint8_t>(mulColorVec[1]),
+    static_cast<std::uint8_t>(mulColorVec[2]), static_cast<std::uint8_t>(mulColorVec[3])
+  };
 }
 
 
 auto Material::SetAlbedoColor(Color const albedoColor) noexcept -> void {
-  SetAlbedoVector(Vector3{static_cast<float>(albedoColor.red) / 255.f, static_cast<float>(albedoColor.green) / 255.f, static_cast<float>(albedoColor.blue) / 255.f});
+  SetAlbedoVector(Vector3{
+    static_cast<float>(albedoColor.red) / 255.f, static_cast<float>(albedoColor.green) / 255.f,
+    static_cast<float>(albedoColor.blue) / 255.f
+  });
 }
 
 
@@ -65,7 +65,7 @@ auto Material::GetMetallic() const noexcept -> f32 {
 
 auto Material::SetMetallic(f32 const metallic) noexcept -> void {
   mShaderMtl.metallic = metallic;
-  UpdateGPUData();
+  Update();
 }
 
 
@@ -76,7 +76,7 @@ auto Material::GetRoughness() const noexcept -> f32 {
 
 auto Material::SetRoughness(f32 const roughness) noexcept -> void {
   mShaderMtl.roughness = roughness;
-  UpdateGPUData();
+  Update();
 }
 
 
@@ -87,7 +87,7 @@ auto Material::GetAo() const noexcept -> f32 {
 
 auto Material::SetAo(f32 const ao) noexcept -> void {
   mShaderMtl.ao = ao;
-  UpdateGPUData();
+  Update();
 }
 
 
@@ -98,8 +98,8 @@ auto Material::GetAlbedoMap() const noexcept -> ObserverPtr<Texture2D> {
 
 auto Material::SetAlbedoMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
   albedo_map_ = tex;
-  mShaderMtl.sampleAlbedo = albedo_map_ != nullptr;
-  UpdateGPUData();
+  mShaderMtl.albedo_map_idx = albedo_map_ ? albedo_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
+  Update();
 }
 
 
@@ -110,8 +110,8 @@ auto Material::GetMetallicMap() const noexcept -> ObserverPtr<Texture2D> {
 
 auto Material::SetMetallicMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
   metallic_map_ = tex;
-  mShaderMtl.sampleMetallic = metallic_map_ != nullptr;
-  UpdateGPUData();
+  mShaderMtl.metallic_map_idx = metallic_map_ ? metallic_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
+  Update();
 }
 
 
@@ -122,8 +122,8 @@ auto Material::GetRoughnessMap() const noexcept -> ObserverPtr<Texture2D> {
 
 auto Material::SetRoughnessMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
   roughness_map_ = tex;
-  mShaderMtl.sampleRoughness = roughness_map_ != nullptr;
-  UpdateGPUData();
+  mShaderMtl.roughness_map_idx = roughness_map_ ? roughness_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
+  Update();
 }
 
 
@@ -134,8 +134,8 @@ auto Material::GetAoMap() const noexcept -> ObserverPtr<Texture2D> {
 
 auto Material::SetAoMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
   ao_map_ = tex;
-  mShaderMtl.sampleAo = ao_map_ != nullptr;
-  UpdateGPUData();
+  mShaderMtl.ao_map_idx = ao_map_ ? ao_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
+  Update();
 }
 
 
@@ -146,8 +146,8 @@ auto Material::GetNormalMap() const noexcept -> ObserverPtr<Texture2D> {
 
 auto Material::SetNormalMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
   normal_map_ = tex;
-  mShaderMtl.sampleNormal = normal_map_ != nullptr;
-  UpdateGPUData();
+  mShaderMtl.normal_map_idx = normal_map_ ? normal_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
+  Update();
 }
 
 
@@ -168,7 +168,7 @@ auto Material::GetAlphaThreshold() const noexcept -> float {
 
 auto Material::SetAlphaThreshold(float const threshold) noexcept -> void {
   mShaderMtl.alphaThreshold = threshold;
-  UpdateGPUData();
+  Update();
 }
 
 
@@ -179,13 +179,18 @@ auto Material::GetOpacityMask() const noexcept -> ObserverPtr<Texture2D> {
 
 auto Material::SetOpacityMask(ObserverPtr<Texture2D> const opacityMask) noexcept -> void {
   opacity_mask_ = opacityMask;
-  mShaderMtl.sampleOpacityMap = opacity_mask_ != nullptr;
-  UpdateGPUData();
+  mShaderMtl.opacity_map_idx = opacity_mask_ ? opacity_mask_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
+  Update();
+}
+
+
+auto Material::Update() -> void {
+  cb_.Update(mShaderMtl);
 }
 
 
 auto Material::GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return cb_.;
+  return cb_.GetBuffer();
 }
 
 
@@ -349,7 +354,8 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
     ImGui::Text("%s", "Blend Mode");
     ImGui::TableNextColumn();
-    if (char const* blendModeNames[]{"Opaque", "Alpha Clipping"}; ImGui::BeginCombo("##blendMode", blendModeNames[static_cast<int>(GetBlendMode())])) {
+    if (char const* blendModeNames[]{"Opaque", "Alpha Clipping"}; ImGui::BeginCombo("##blendMode",
+      blendModeNames[static_cast<int>(GetBlendMode())])) {
       for (int i = 0; i < 2; i++) {
         if (ImGui::Selectable(blendModeNames[i], i == static_cast<int>(GetBlendMode()))) {
           SetBlendMode(static_cast<BlendMode>(i));

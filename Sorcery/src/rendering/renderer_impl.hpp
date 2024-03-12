@@ -25,6 +25,7 @@ class Renderer::Impl {
     int age_in_frames;
   };
 
+
   struct LightData {
     Vector3 color;
     float intensity;
@@ -42,7 +43,10 @@ class Renderer::Impl {
     float shadow_normal_bias;
     float shadow_depth_bias;
     float shadow_extension;
+
+    Matrix4 local_to_world_mtx_no_scale;
   };
+
 
   struct MeshData {
     unsigned pos_buf_local_idx;
@@ -50,7 +54,9 @@ class Renderer::Impl {
     unsigned tan_buf_local_idx;
     unsigned uv_buf_local_idx;
     unsigned idx_buf_local_idx;
+    AABB bounds;
   };
+
 
   struct SubmeshData {
     unsigned mesh_local_idx;
@@ -61,10 +67,12 @@ class Renderer::Impl {
     AABB bounds;
   };
 
+
   struct InstanceData {
     unsigned submesh_local_idx;
     Matrix4 local_to_world_mtx;
   };
+
 
   struct CameraData {
     Vector3 position;
@@ -114,6 +122,7 @@ class Renderer::Impl {
   std::array<ConstantBuffer<ShaderPerFrameConstants>, max_frames_in_flight_> per_frame_cbs_;
   std::array<std::vector<ConstantBuffer<ShaderPerViewConstants>>, max_frames_in_flight_> per_view_cbs_;
   std::array<std::vector<ConstantBuffer<ShaderPerDrawConstants>>, max_frames_in_flight_> per_draw_cbs_;
+  std::array<StructuredBuffer<ShaderLight>, max_frames_in_flight_> light_buffers_;
 
   graphics::SharedDeviceChildHandle<graphics::Texture> white_tex_;
   graphics::SharedDeviceChildHandle<graphics::Texture> ssao_noise_tex_;
@@ -128,24 +137,24 @@ class Renderer::Impl {
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso_;
 
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_cmp_pcf_ge_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_cmp_pcf_le_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_cmp_point_ge_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_cmp_point_le_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af16_clamp_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af8_clamp_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af4_clamp_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af2_clamp_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_tri_clamp_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_bi_clamp_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_point_clamp_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af16_wrap_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af8_wrap_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af4_wrap_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_af2_wrap_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_tri_wrap_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_bi_wrap_;
-  graphics::UniqueSamplerHandle<graphics::Sampler> samp_point_wrap_;
+  graphics::UniqueSamplerHandle samp_cmp_pcf_ge_;
+  graphics::UniqueSamplerHandle samp_cmp_pcf_le_;
+  graphics::UniqueSamplerHandle samp_cmp_point_ge_;
+  graphics::UniqueSamplerHandle samp_cmp_point_le_;
+  graphics::UniqueSamplerHandle samp_af16_clamp_;
+  graphics::UniqueSamplerHandle samp_af8_clamp_;
+  graphics::UniqueSamplerHandle samp_af4_clamp_;
+  graphics::UniqueSamplerHandle samp_af2_clamp_;
+  graphics::UniqueSamplerHandle samp_tri_clamp_;
+  graphics::UniqueSamplerHandle samp_bi_clamp_;
+  graphics::UniqueSamplerHandle samp_point_clamp_;
+  graphics::UniqueSamplerHandle samp_af16_wrap_;
+  graphics::UniqueSamplerHandle samp_af8_wrap_;
+  graphics::UniqueSamplerHandle samp_af4_wrap_;
+  graphics::UniqueSamplerHandle samp_af2_wrap_;
+  graphics::UniqueSamplerHandle samp_tri_wrap_;
+  graphics::UniqueSamplerHandle samp_bi_wrap_;
+  graphics::UniqueSamplerHandle samp_point_wrap_;
 
   std::array<FramePacket, max_frames_in_flight_> frame_packets_;
 
@@ -158,11 +167,10 @@ class Renderer::Impl {
 
   std::unique_ptr<DirectionalShadowMapArray> dir_shadow_map_arr_;
   std::unique_ptr<PunctualShadowAtlas> punctual_shadow_atlas_;
-  std::unique_ptr<StructuredBuffer<ShaderLight>> light_buffer_;
-  std::unique_ptr<StructuredBuffer<Vector4>> gizmo_color_buffer_;
-  std::unique_ptr<StructuredBuffer<ShaderLineGizmoVertexData>> line_gizmo_vertex_data_buffer_;
+  StructuredBuffer<Vector4> gizmo_color_buffer_;
+  StructuredBuffer<ShaderLineGizmoVertexData> line_gizmo_vertex_data_buffer_;
   std::unique_ptr<RenderTarget> main_rt_;
-  std::unique_ptr<StructuredBuffer<Vector4>> ssao_samples_buffer_;
+  StructuredBuffer<Vector4> ssao_samples_buffer_;
 
 
   std::vector<Vector4> gizmo_colors_;
@@ -204,11 +212,19 @@ class Renderer::Impl {
 
   auto ExtractCurrentState(FramePacket& packet) const -> void;
 
-  [[nodiscard]] auto CalculateCameraShadowCascadeBoundaries(Camera const& cam) const -> ShadowCascadeBoundaries;
+  [[nodiscard]] auto
+  CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data) const -> ShadowCascadeBoundaries;
 
-  auto CullStaticMeshComponents(Frustum const& frustum_ws,
-                                std::pmr::vector<StaticMeshSubmeshIndex>& visible_indices) const -> void;
-  auto CullLights(Frustum const& frustum_ws, std::pmr::vector<int> visible_indices) const -> void;
+  // Culling
+
+  static auto CullLights(Frustum const& frustum_ws, std::span<LightData const> lights,
+                         std::pmr::vector<unsigned> visible_light_indices) -> void;
+  static auto CullStaticSubmeshInstances(Frustum const& frustum_ws, std::span<MeshData const> meshes,
+                                         std::span<SubmeshData const> submeshes,
+                                         std::span<InstanceData const> instances,
+                                         std::pmr::vector<unsigned>& visible_static_submesh_instance_indices) -> void;
+
+  // Constant buffers
 
   auto SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int rt_width,
                             int rt_height) const noexcept -> void;
@@ -217,11 +233,21 @@ class Renderer::Impl {
                                   Vector3 const& view_pos) -> void;
   static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx) -> void;
 
-  auto DrawDirectionalShadowMaps(std::span<int const> light_indices, Camera const& cam, float rt_aspect,
+  // Shadow map preparation
+  auto UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas, std::span<LightData const> const lights,
+                                 std::span<unsigned const> visible_light_indices, CameraData const& cam_data,
+                                 Matrix4 const& cam_view_proj_mtx, float shadow_distance) -> void;
+
+  // Shadow map rendering
+
+  auto DrawDirectionalShadowMaps(FramePacket const& frame_packet, std::span<unsigned const> visible_light_indices,
+                                 CameraData const& cam_data, float rt_aspect,
                                  ShadowCascadeBoundaries const& shadow_cascade_boundaries,
                                  std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
                                  graphics::CommandList& cmd) -> void;
-  auto DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, graphics::CommandList& cmd) -> void;
+  auto DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, FramePacket const& frame_packet,
+                              graphics::CommandList& cmd) -> void;
+
   auto DrawSkybox(graphics::CommandList& cmd) noexcept -> void;
   auto PostProcess(graphics::Texture const& src, graphics::Texture const& dst,
                    graphics::CommandList& cmd) const noexcept -> void;
@@ -229,7 +255,7 @@ class Renderer::Impl {
   auto ClearGizmoDrawQueue() noexcept -> void;
   auto ReleaseTempRenderTargets() noexcept -> void;
 
-  auto RecreateSsaoSamples(int sample_count) const noexcept -> void;
+  auto RecreateSsaoSamples(int sample_count) noexcept -> void;
 
   [[nodiscard]] auto RecreatePipelines() -> bool;
   auto CreatePerViewConstantBuffers(UINT count) -> void;
@@ -244,17 +270,10 @@ class Renderer::Impl {
 public:
   static auto GetProjectionMatrixForRendering(Matrix4 const& proj_mtx) noexcept -> Matrix4;
 
-  // LIFETIME FUNCTIONS
-
   auto StartUp() -> void;
   auto ShutDown() -> void;
 
   auto Render() -> void;
-
-  // FRAME RENDERING FUNCTIONS
-
-  auto DrawCamera(Camera const& cam, RenderTarget const* rt = nullptr) -> void;
-  auto DrawAllCameras(RenderTarget const* rt = nullptr) -> void;
 
   auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
   auto DrawGizmos(RenderTarget const* rt = nullptr) -> void;
