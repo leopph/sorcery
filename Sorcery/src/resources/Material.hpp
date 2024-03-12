@@ -8,6 +8,7 @@
 #include "../ResourceManager.hpp"
 #include "../rendering/shaders/shader_interop.h"
 #include "../rendering/graphics.hpp"
+#include "../rendering/constant_buffer.hpp"
 
 
 namespace sorcery {
@@ -28,7 +29,7 @@ private:
     .blendMode = BLEND_MODE_OPAQUE
   };
 
-  graphics::UniqueHandle<graphics::Buffer> cb_;
+  ConstantBuffer<ShaderMaterial> cb_;
 
   ObserverPtr<Texture2D> albedo_map_{nullptr};
   ObserverPtr<Texture2D> metallic_map_{nullptr};
@@ -37,7 +38,7 @@ private:
   ObserverPtr<Texture2D> normal_map_{nullptr};
   ObserverPtr<Texture2D> opacity_mask_{nullptr};
 
-  auto UpdateGPUData() const noexcept -> void;
+  auto UpdateGPUData() noexcept -> void;
   auto CreateCB() -> void;
 
 public:
@@ -82,7 +83,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetOpacityMask() const noexcept -> ObserverPtr<Texture2D>;
   LEOPPHAPI auto SetOpacityMask(ObserverPtr<Texture2D> opacityMask) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> graphics::Buffer*;
+  [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
 
   [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
   LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;

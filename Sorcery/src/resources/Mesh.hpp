@@ -55,11 +55,11 @@ private:
   std::vector<SubMeshInfo> m_submeshes_;
   std::vector<MaterialSlotInfo> m_mtl_slots_;
   AABB m_bounds_{};
-  graphics::UniqueHandle<graphics::Buffer> pos_buf_;
-  graphics::UniqueHandle<graphics::Buffer> norm_buf_;
-  graphics::UniqueHandle<graphics::Buffer> tan_buf_;
-  graphics::UniqueHandle<graphics::Buffer> uv_buf_;
-  graphics::UniqueHandle<graphics::Buffer> idx_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> pos_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> norm_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> tan_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> uv_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> idx_buf_;
   int m_vertex_count_{0};
   int m_index_count_{0};
   int m_submesh_count_{0};
@@ -113,11 +113,16 @@ public:
   [[nodiscard]] LEOPPHAPI auto HasCpuMemory() const noexcept -> bool;
   LEOPPHAPI auto ReleaseCpuMemory() noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetPositionBuffer() const noexcept -> graphics::Buffer*;
-  [[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const noexcept -> graphics::Buffer*;
-  [[nodiscard]] LEOPPHAPI auto GetUvBuffer() const noexcept -> graphics::Buffer*;
-  [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const noexcept -> graphics::Buffer*;
-  [[nodiscard]] LEOPPHAPI auto GetIndexBuffer() const noexcept -> graphics::Buffer*;
+  [[nodiscard]] LEOPPHAPI auto GetPositionBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer>
+    const&;
+  [[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer>
+    const&;
+  [[nodiscard]] LEOPPHAPI auto GetUvBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const
+    &;
+  [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer>
+    const&;
+  [[nodiscard]] LEOPPHAPI auto GetIndexBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer>
+    const&;
 
   [[nodiscard]] LEOPPHAPI auto GetVertexCount() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetIndexCount() const noexcept -> int;

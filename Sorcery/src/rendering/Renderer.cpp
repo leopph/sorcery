@@ -69,7 +69,7 @@ auto Renderer::Present() noexcept -> void {
 }
 
 
-auto Renderer::GetDevice() const noexcept -> ObserverPtr<ID3D11Device> {
+auto Renderer::GetDevice() const noexcept -> graphics::GraphicsDevice* {
   assert(mImpl);
   return mImpl->GetDevice();
 }

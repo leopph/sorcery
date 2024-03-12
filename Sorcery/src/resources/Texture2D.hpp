@@ -3,14 +3,14 @@
 #include "Resource.hpp"
 #include "../Image.hpp"
 #include "../Util.hpp"
+#include "../rendering/graphics.hpp"
 
 
 namespace sorcery {
 class Texture2D final : public Resource {
   RTTR_ENABLE(Resource)
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
-  Microsoft::WRL::ComPtr<ID3D11Resource> mRes;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
+
+  graphics::SharedDeviceChildHandle<graphics::Texture> tex_;
 
   int mWidth;
   int mHeight;
@@ -19,7 +19,7 @@ class Texture2D final : public Resource {
 public:
   LEOPPHAPI Texture2D(ID3D11Texture2D& tex, ID3D11ShaderResourceView& srv) noexcept;
 
-  [[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> NotNull<ObserverPtr<ID3D11ShaderResourceView>>;
+  [[nodiscard]] LEOPPHAPI auto GetTex() const -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
 
   [[nodiscard]] LEOPPHAPI auto GetWidth() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetHeight() const noexcept -> int;

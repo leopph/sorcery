@@ -2,6 +2,7 @@
 
 #include "../Core.hpp"
 #include "../Math.hpp"
+#include "render_target.hpp"
 
 #include <cstdint>
 
@@ -25,6 +26,7 @@ private:
   float mVertOrhoSize{10};
   float mVertPerspFovDeg{60};
   Type mType{Type::Perspective};
+  std::shared_ptr<RenderTarget> render_target_{nullptr};
 
 public:
   [[nodiscard]] virtual auto GetPosition() const noexcept -> Vector3 = 0;
@@ -46,6 +48,9 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetVerticalOrthographicSize() const -> float;
   LEOPPHAPI auto SetVerticalOrthographicSize(float size) -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetRenderTarget() const -> std::shared_ptr<RenderTarget> const&;
+  LEOPPHAPI auto SetRenderTarget(std::shared_ptr<RenderTarget> rt) -> void;
 
   [[nodiscard]] LEOPPHAPI auto CalculateViewMatrix() const noexcept -> Matrix4;
   [[nodiscard]] LEOPPHAPI auto CalculateProjectionMatrix(float aspectRatio) const noexcept -> Matrix4;

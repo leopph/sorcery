@@ -26,49 +26,13 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto Material::UpdateGPUData() const noexcept -> void {
-  auto const ctx{gRenderer.GetThreadContext()};
-
-  D3D11_MAPPED_SUBRESOURCE mapped;
-  [[maybe_unused]] auto hr{ctx->Map(cb_.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)};
-  assert(SUCCEEDED(hr));
-
-  *static_cast<ShaderMaterial*>(mapped.pData) = mShaderMtl;
-
-  ctx->Unmap(cb_.Get(), 0);
-
-  Microsoft::WRL::ComPtr<ID3D11CommandList> cmdList;
-  hr = ctx->FinishCommandList(FALSE, cmdList.GetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  gRenderer.ExecuteCommandList(cmdList.Get());
-}
-
-
-auto Material::CreateCB() -> void {
-  D3D11_BUFFER_DESC constexpr cbDesc{
-    .ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(ShaderMaterial), 16)),
-    .Usage = D3D11_USAGE_DYNAMIC,
-    .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
-    .MiscFlags = 0,
-    .StructureByteStride = 0
-  };
-
-  D3D11_SUBRESOURCE_DATA const initialData{
-    .pSysMem = &mShaderMtl,
-    .SysMemPitch = 0,
-    .SysMemSlicePitch = 0
-  };
-
-  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&cbDesc, &initialData, cb_.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create material CB."};
-  }
+auto Material::UpdateGPUData() noexcept -> void {
+  cb_.Update(mShaderMtl);
 }
 
 
 Material::Material() {
-  CreateCB();
+  ConstantBuffer<ShaderMaterial>::New(*gRenderer.GetDevice());
 }
 
 
@@ -220,8 +184,8 @@ auto Material::SetOpacityMask(ObserverPtr<Texture2D> const opacityMask) noexcept
 }
 
 
-auto Material::GetBuffer() const noexcept -> graphics::Buffer* {
-  return cb_.Get();
+auto Material::GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return cb_.;
 }
 
 

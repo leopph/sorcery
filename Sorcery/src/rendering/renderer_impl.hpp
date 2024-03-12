@@ -25,6 +25,74 @@ class Renderer::Impl {
     int age_in_frames;
   };
 
+  struct LightData {
+    Vector3 color;
+    float intensity;
+
+    Vector3 direction;
+    Vector3 position;
+
+    LightComponent::Type type;
+    float range;
+    float inner_angle;
+    float outer_angle;
+
+    bool casts_shadow;
+    float shadow_near_plane;
+    float shadow_normal_bias;
+    float shadow_depth_bias;
+    float shadow_extension;
+  };
+
+  struct MeshData {
+    unsigned pos_buf_local_idx;
+    unsigned norm_buf_local_idx;
+    unsigned tan_buf_local_idx;
+    unsigned uv_buf_local_idx;
+    unsigned idx_buf_local_idx;
+  };
+
+  struct SubmeshData {
+    unsigned mesh_local_idx;
+    INT base_vertex;
+    UINT first_index;
+    UINT index_count;
+    UINT mtl_buf_local_idx;
+    AABB bounds;
+  };
+
+  struct InstanceData {
+    unsigned submesh_local_idx;
+    Matrix4 local_to_world_mtx;
+  };
+
+  struct CameraData {
+    Vector3 position;
+    Vector3 right;
+    Vector3 up;
+    Vector3 forward;
+
+    float near_plane;
+    float far_plane;
+
+    Camera::Type type;
+    float fov_vert_deg;
+    float size_vert;
+
+    std::shared_ptr<RenderTarget> render_target;
+  };
+
+
+  struct FramePacket {
+    std::vector<graphics::SharedDeviceChildHandle<graphics::Buffer>> buffers;
+    std::vector<graphics::SharedDeviceChildHandle<graphics::Texture>> textures;
+    std::vector<LightData> light_data;
+    std::vector<MeshData> mesh_data;
+    std::vector<SubmeshData> submesh_data;
+    std::vector<InstanceData> instance_data;
+    std::vector<CameraData> cam_data;
+  };
+
 
   constexpr static int max_tmp_rt_age_{10};
   inline static Guid const default_material_guid_{1, 0};
@@ -79,6 +147,8 @@ class Renderer::Impl {
   graphics::UniqueSamplerHandle<graphics::Sampler> samp_bi_wrap_;
   graphics::UniqueSamplerHandle<graphics::Sampler> samp_point_wrap_;
 
+  std::array<FramePacket, max_frames_in_flight_> frame_packets_;
+
   UINT frame_idx_{0};
 
   ObserverPtr<Material> default_material_{nullptr};
@@ -94,9 +164,6 @@ class Renderer::Impl {
   std::unique_ptr<RenderTarget> main_rt_;
   std::unique_ptr<StructuredBuffer<Vector4>> ssao_samples_buffer_;
 
-  std::vector<StaticMeshComponent const*> static_mesh_components_;
-  std::vector<LightComponent const*> lights_;
-  std::vector<Camera const*> game_render_cameras_;
 
   std::vector<Vector4> gizmo_colors_;
   std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;
@@ -121,14 +188,21 @@ class Renderer::Impl {
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
   std::mutex static_mesh_mutex_;
+  std::vector<StaticMeshComponent const*> static_mesh_components_;
+
   std::mutex light_mutex_;
+  std::vector<LightComponent const*> lights_;
+
   std::mutex game_camera_mutex_;
-  std::mutex tmp_render_targets_mutex_;
+  std::vector<Camera const*> game_render_cameras_;
 
   std::vector<TempRenderTargetRecord> tmp_render_targets_;
+  std::mutex tmp_render_targets_mutex_;
 
   UINT next_per_draw_cb_idx_{0};
   UINT next_per_view_cb_idx_{0};
+
+  auto ExtractCurrentState(FramePacket& packet) const -> void;
 
   [[nodiscard]] auto CalculateCameraShadowCascadeBoundaries(Camera const& cam) const -> ShadowCascadeBoundaries;
 
@@ -174,6 +248,8 @@ public:
 
   auto StartUp() -> void;
   auto ShutDown() -> void;
+
+  auto Render() -> void;
 
   // FRAME RENDERING FUNCTIONS
 

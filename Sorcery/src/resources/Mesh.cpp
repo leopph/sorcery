@@ -395,27 +395,27 @@ auto Mesh::ReleaseCpuMemory() noexcept -> void {
 }
 
 
-auto Mesh::GetPositionBuffer() const noexcept -> graphics::Buffer* {
+auto Mesh::GetPositionBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
   return pos_buf_.Get();
 }
 
 
-auto Mesh::GetNormalBuffer() const noexcept -> graphics::Buffer* {
+auto Mesh::GetNormalBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
   return norm_buf_.Get();
 }
 
 
-auto Mesh::GetUvBuffer() const noexcept -> graphics::Buffer* {
+auto Mesh::GetUvBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
   return uv_buf_.Get();
 }
 
 
-auto Mesh::GetTangentBuffer() const noexcept -> graphics::Buffer* {
+auto Mesh::GetTangentBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
   return tan_buf_.Get();
 }
 
 
-auto Mesh::GetIndexBuffer() const noexcept -> graphics::Buffer* {
+auto Mesh::GetIndexBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
   return idx_buf_.Get();
 }
 

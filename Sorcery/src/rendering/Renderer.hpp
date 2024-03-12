@@ -6,8 +6,8 @@
 #include "../Util.hpp"
 #include "../scene_objects/StaticMeshComponent.hpp"
 #include "../scene_objects/LightComponents.hpp"
-#include "shaders\shadow_filtering_modes.h"
-
+#include "shaders/shadow_filtering_modes.h"
+#include "graphics.hpp"
 
 namespace sorcery {
 class Renderer {
@@ -69,7 +69,7 @@ public:
 
   // FUNCTIONS FOR CUSTOM EXTERNAL REQUESTS
 
-  [[nodiscard]] LEOPPHAPI auto GetDevice() const noexcept -> ObserverPtr<ID3D11Device>;
+  [[nodiscard]] LEOPPHAPI auto GetDevice() const noexcept -> graphics::GraphicsDevice*;
   [[nodiscard]] LEOPPHAPI auto GetThreadContext() noexcept -> ObserverPtr<ID3D11DeviceContext>;
 
   LEOPPHAPI auto ExecuteCommandList(ObserverPtr<ID3D11CommandList> cmdList) noexcept -> void;

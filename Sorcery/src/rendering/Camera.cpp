@@ -67,6 +67,16 @@ auto Camera::SetVerticalOrthographicSize(float size) -> void {
 }
 
 
+auto Camera::GetRenderTarget() const -> std::shared_ptr<RenderTarget> const& {
+  return render_target_;
+}
+
+
+auto Camera::SetRenderTarget(std::shared_ptr<RenderTarget> rt) -> void {
+  render_target_ = std::move(rt);
+}
+
+
 auto Camera::CalculateViewMatrix() const noexcept -> Matrix4 {
   auto const rightAxis{GetRightAxis()};
   auto const upAxis{GetUpAxis()};

@@ -93,6 +93,108 @@ std::vector<std::uint32_t> const kCubeIndices{
 }
 
 
+auto Renderer::Impl::ExtractCurrentState(FramePacket& packet) const -> void {
+  packet.buffers.clear();
+  packet.textures.clear();
+  packet.light_data.clear();
+  packet.mesh_data.clear();
+  packet.submesh_data.clear();
+  packet.cam_data.clear();
+
+  packet.light_data.reserve(lights_.size());
+
+  for (auto const light : lights_) {
+    packet.light_data.emplace_back(light->GetColor(), light->GetIntensity(), light->GetDirection(),
+      light->GetEntity().GetTransform().GetWorldPosition(), light->GetType(), light->GetRange(), light->GetInnerAngle(),
+      light->GetOuterAngle(), light->IsCastingShadow(), light->GetShadowNearPlane(), light->GetShadowNormalBias(),
+      light->GetShadowDepthBias(), light->GetShadowExtension());
+  }
+
+  packet.mesh_data.reserve(static_mesh_components_.size());
+
+  auto const find_or_emplace_back_buffer{
+    [&packet](graphics::SharedDeviceChildHandle<graphics::Buffer> const& buf) -> unsigned {
+      unsigned idx;
+
+      if (auto const it{std::ranges::find(packet.buffers, buf)}; it != std::ranges::end(packet.buffers)) {
+        idx = static_cast<unsigned>(it - packet.buffers.begin());
+      } else {
+        idx = static_cast<unsigned>(packet.buffers.size());
+        packet.buffers.emplace_back(buf);
+      }
+
+      return idx;
+    }
+  };
+
+  auto const find_or_emplace_back_texture{
+    [&packet](graphics::SharedDeviceChildHandle<graphics::Texture> const& tex) -> unsigned {
+      unsigned idx;
+
+      if (auto const it{std::ranges::find(packet.textures, tex)}; it != std::ranges::end(packet.textures)) {
+        idx = static_cast<unsigned>(it - packet.textures.begin());
+      } else {
+        idx = static_cast<unsigned>(packet.textures.size());
+        packet.textures.emplace_back(tex);
+      }
+
+      return idx;
+    }
+  };
+
+  for (auto const comp : static_mesh_components_) {
+    auto const mesh{comp->GetMesh()};
+
+    if (!mesh) {
+      continue;
+    }
+
+    auto const pos_buf_local_idx{find_or_emplace_back_buffer(mesh->GetPositionBuffer())};
+    auto const norm_buf_local_idx{find_or_emplace_back_buffer(mesh->GetNormalBuffer())};
+    auto const tan_buf_local_idx{find_or_emplace_back_buffer(mesh->GetTangentBuffer())};
+    auto const uv_buf_local_idx{find_or_emplace_back_buffer(mesh->GetUvBuffer())};
+    auto const idx_buf_local_idx{find_or_emplace_back_buffer(mesh->GetIndexBuffer())};
+    packet.mesh_data.emplace_back(pos_buf_local_idx, norm_buf_local_idx, tan_buf_local_idx, uv_buf_local_idx,
+      idx_buf_local_idx);
+
+    packet.submesh_data.reserve(packet.submesh_data.size() + mesh->GetSubmeshCount());
+
+    for (auto const& submesh : mesh->GetSubMeshes()) {
+      auto const mtl{comp->GetMaterials()[submesh.material_index]};
+
+      if (!mtl) {
+        continue;
+      }
+
+      auto const mtl_buf_local_idx{find_or_emplace_back_buffer(mtl->GetBuffer())};
+
+      for (auto const tex : {
+             mtl->GetAlbedoMap(), mtl->GetMetallicMap(), mtl->GetRoughnessMap(), mtl->GetAoMap(), mtl->GetNormalMap(),
+             mtl->GetOpacityMask()
+           }) {
+        if (tex) {
+          find_or_emplace_back_texture(tex->GetTex());
+        }
+      }
+
+      packet.submesh_data.emplace_back(static_cast<unsigned>(packet.mesh_data.size() - 1), submesh.base_vertex,
+        submesh.first_index, submesh.index_count, mtl_buf_local_idx, submesh.bounds);
+
+      packet.instance_data.emplace_back(static_cast<unsigned>(packet.submesh_data.size() - 1),
+        comp->GetEntity().GetTransform().GetLocalToWorldMatrix());
+    }
+  }
+
+  packet.cam_data.reserve(game_render_cameras_.size());
+
+  for (auto const cam : game_render_cameras_) {
+    packet.cam_data.emplace_back(cam->GetPosition(), cam->GetRightAxis(), cam->GetUpAxis(), cam->GetForwardAxis(),
+      cam->GetNearClipPlane(), cam->GetFarClipPlane(), cam->GetType(), cam->GetVerticalPerspectiveFov(),
+      cam->GetVerticalOrthographicSize(), cam->GetRenderTarget());
+  }
+}
+
+
 auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(Camera const& cam) const -> ShadowCascadeBoundaries {
   auto const camNear{cam.GetNearClipPlane()};
   auto const shadowDistance{std::min(cam.GetFarClipPlane(), shadow_distance_)};
@@ -1072,6 +1174,14 @@ auto Renderer::Impl::StartUp() -> void {
 
 auto Renderer::Impl::ShutDown() -> void {
   gWindow.OnWindowSize.remove_handler(this, &OnWindowSize);
+}
+
+
+auto Renderer::Impl::Render() -> void {
+  auto& frame_packet{frame_packets_[frame_idx_]};
+  ExtractCurrentState(frame_packet);
+
+  frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
 }
 
 
