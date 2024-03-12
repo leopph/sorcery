@@ -263,6 +263,7 @@ private:
 class Resource {
 public:
   [[nodiscard]] auto SetDebugName(std::wstring_view name) const -> bool;
+  [[nodiscard]] auto GetDesc() const -> D3D12_RESOURCE_DESC1;
   [[nodiscard]] auto Map() const -> void*;
   [[nodiscard]] auto GetShaderResource() const -> UINT;
   [[nodiscard]] auto GetUnorderedAccess() const -> UINT;

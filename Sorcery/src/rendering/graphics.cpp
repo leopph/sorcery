@@ -1007,6 +1007,11 @@ auto Resource::SetDebugName(std::wstring_view const name) const -> bool {
 }
 
 
+auto Resource::GetDesc() const -> D3D12_RESOURCE_DESC1 {
+  return resource_->GetDesc1();
+}
+
+
 auto Resource::Map() const -> void* {
   return InternalMap(0, nullptr);
 }
