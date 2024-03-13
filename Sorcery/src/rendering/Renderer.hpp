@@ -69,8 +69,8 @@ public:
 
   // FUNCTIONS FOR CUSTOM EXTERNAL REQUESTS
 
-  auto LoadReadonlyTexture(DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
-
+  [[nodiscard]] auto LoadReadonlyTexture(DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
+  [[nodiscard]] auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::uint8_t const> data) -> bool;
 
   [[nodiscard]] LEOPPHAPI auto GetDevice() const noexcept -> graphics::GraphicsDevice*;
 

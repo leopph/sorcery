@@ -44,6 +44,7 @@
 #include "shaders/generated/Release/ssao_vs.h"
 #endif
 
+#include <cstring>
 #include <random>
 
 
@@ -1837,6 +1838,60 @@ auto Renderer::Impl::LoadReadonlyTexture(
   }
 
   return tex;
+}
+
+
+auto Renderer::Impl::UpdateBuffer(graphics::Buffer const& buf, std::span<std::uint8_t const> const data) -> bool {
+  if (buf.GetRequiredIntermediateSize() != data.size()) {
+    return false;
+  }
+
+  auto const upload_buf{device_->CreateBuffer(graphics::BufferDesc{static_cast<UINT>(data.size()), 0, false, false, false}, D3D12_HEAP_TYPE_UPLOAD)};
+
+  if (!upload_buf) {
+    return false;
+  }
+
+  auto const ptr{upload_buf->Map()};
+
+  if (!ptr) {
+    return false;
+  }
+
+  std::memcpy(ptr, data.data(), data.size());
+
+  auto& cmd{AcquireCommandList()};
+
+  if (!cmd.Begin(nullptr)) {
+    return false;
+  }
+
+  cmd.CopyBuffer(buf, *upload_buf);
+
+  if (!cmd.End()) {
+    return false;
+  }
+
+  device_->ExecuteCommandLists(std::span{&cmd, 1});
+
+  auto constexpr init_fence_val{0};
+  auto constexpr final_fence_val{1};
+
+  auto const fence{device_->CreateFence(init_fence_val)};
+
+  if (!fence) {
+    return false;
+  }
+
+  if (!device_->SignalFence(*fence.Get(), final_fence_val)) {
+    return false;
+  }
+
+  if (FAILED(fence->SetEventOnCompletion(final_fence_val, nullptr))) {
+    return false;
+  }
+
+  return true;
 }
 
 

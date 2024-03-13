@@ -14,6 +14,7 @@
 #include <DirectXTex.h>
 
 #include <array>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -37,7 +38,8 @@ public:
 
   auto Present() noexcept -> void;
 
-  auto LoadReadonlyTexture(DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
+  [[nodiscard]] auto LoadReadonlyTexture(DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
+  [[nodiscard]] auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::uint8_t const> data) -> bool;
 
   // FUNCTIONS FOR CUSTOM EXTERNAL REQUESTS
 

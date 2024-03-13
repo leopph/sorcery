@@ -70,6 +70,12 @@ auto Renderer::LoadReadonlyTexture(
 }
 
 
+auto Renderer::UpdateBuffer(graphics::Buffer const& buf, std::span<std::uint8_t const> const data) -> bool {
+  assert(mImpl);
+  return mImpl->UpdateBuffer(buf, data);
+}
+
+
 auto Renderer::GetDevice() const noexcept -> graphics::GraphicsDevice* {
   assert(mImpl);
   return mImpl->GetDevice();
