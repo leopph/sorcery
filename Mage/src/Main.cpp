@@ -42,6 +42,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto const window{std::make_unique<sorcery::Window>()};
     sorcery::g_engine_context.window.Reset(window.get());
 
+    if (!window) {
+      throw std::runtime_error{"Failed to create window."};
+    }
+
 #ifndef NDEBUG
     auto constexpr debug_graphics_device{true};
 #else
@@ -51,11 +55,25 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto const graphics_device{sorcery::graphics::GraphicsDevice::New(debug_graphics_device)};
     sorcery::g_engine_context.graphics_device.Reset(graphics_device.get());
 
+    if (!graphics_device) {
+      throw std::runtime_error{"Failed to create graphics device."};
+    }
+
     auto const render_manager{std::make_unique<sorcery::rendering::RenderManager>(*graphics_device)};
     sorcery::g_engine_context.render_manager.Reset(render_manager.get());
 
-    auto const scene_renderer{std::make_unique<sorcery::rendering::SceneRenderer>(*render_manager, *window)};
+    if (!render_manager) {
+      throw std::runtime_error{"Failed to create render manager."};
+    }
+
+    auto const scene_renderer{
+      std::make_unique<sorcery::rendering::SceneRenderer>(*window, *graphics_device, *render_manager)
+    };
     sorcery::g_engine_context.scene_renderer.Reset(scene_renderer.get());
+
+    if (!scene_renderer) {
+      throw std::runtime_error{"Failed to create scene renderer."};
+    }
 
     sorcery::timing::SetTargetFrameRate(sorcery::mage::SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
 
