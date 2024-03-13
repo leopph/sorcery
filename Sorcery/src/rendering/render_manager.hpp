@@ -19,6 +19,13 @@ namespace sorcery::rendering {
 class RenderManager {
 public:
   explicit RenderManager(graphics::GraphicsDevice& device);
+  RenderManager(RenderManager const&) = delete;
+  RenderManager(RenderManager&&) = delete;
+
+  ~RenderManager() = default;
+
+  auto operator=(RenderManager const&) -> void = delete;
+  auto operator=(RenderManager&&) -> void = delete;
 
   auto BeginNewFrame() -> void;
 
@@ -31,6 +38,8 @@ public:
   [[nodiscard]] auto LoadReadonlyTexture(
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
   [[nodiscard]] auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::uint8_t const> data) -> bool;
+
+  [[nodiscard]] auto GetDevice() const -> graphics::GraphicsDevice&;
 
   [[nodiscard]] auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
   [[nodiscard]] auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;

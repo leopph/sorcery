@@ -15,6 +15,7 @@
 #include "../scene_objects/StaticMeshComponent.hpp"
 #include "../scene_objects/LightComponents.hpp"
 #include "../Util.hpp"
+#include "../Window.hpp"
 
 #include <array>
 #include <cstdint>
@@ -62,8 +63,14 @@ struct ShadowParams {
 
 class SceneRenderer {
 public:
-  auto StartUp() -> void;
-  auto ShutDown() -> void;
+  SceneRenderer(RenderManager& render_manager, Window& window);
+  SceneRenderer(SceneRenderer const&) = delete;
+  SceneRenderer(SceneRenderer&&) = delete;
+
+  ~SceneRenderer();
+
+  auto operator=(SceneRenderer const&) -> void = delete;
+  auto operator=(SceneRenderer&&) -> void = delete;
 
   auto Render() -> void;
 
@@ -222,7 +229,7 @@ private:
   static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx) -> void;
 
   // Shadow map preparation
-  auto UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas, std::span<LightData const> const lights,
+  auto UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas, std::span<LightData const> lights,
                                  std::span<unsigned const> visible_light_indices, CameraData const& cam_data,
                                  Matrix4 const& cam_view_proj_mtx, float shadow_distance) -> void;
 
@@ -255,7 +262,6 @@ private:
 
   static auto OnWindowSize(SceneRenderer* self, Extent2D<std::uint32_t> size) -> void;
 
-  static UINT constexpr max_frames_in_flight_{2};
   static DXGI_FORMAT constexpr imprecise_color_buffer_format_{DXGI_FORMAT_R11G11B10_FLOAT};
   static DXGI_FORMAT constexpr precise_color_buffer_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
   static DXGI_FORMAT constexpr depth_format_{DXGI_FORMAT_D32_FLOAT};
@@ -263,13 +269,16 @@ private:
   static DXGI_FORMAT constexpr ssao_buffer_format_{DXGI_FORMAT_R8_UNORM};
   static DXGI_FORMAT constexpr normal_buffer_format_{DXGI_FORMAT_R8G8B8A8_SNORM};
 
-  std::unique_ptr<graphics::GraphicsDevice> device_;
+  ObserverPtr<RenderManager> render_manager_;
+  ObserverPtr<Window> window_;
+
+  ObserverPtr<graphics::GraphicsDevice> device_;
   graphics::SharedDeviceChildHandle<graphics::SwapChain> swap_chain_;
 
-  std::array<ConstantBuffer<ShaderPerFrameConstants>, max_frames_in_flight_> per_frame_cbs_;
-  std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, max_frames_in_flight_>> per_view_cbs_;
-  std::vector<std::array<ConstantBuffer<ShaderPerDrawConstants>, max_frames_in_flight_>> per_draw_cbs_;
-  std::array<StructuredBuffer<ShaderLight>, max_frames_in_flight_> light_buffers_;
+  std::array<ConstantBuffer<ShaderPerFrameConstants>, RenderManager::GetMaxFramesInFlight()> per_frame_cbs_;
+  std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, RenderManager::GetMaxFramesInFlight()>> per_view_cbs_;
+  std::vector<std::array<ConstantBuffer<ShaderPerDrawConstants>, RenderManager::GetMaxFramesInFlight()>> per_draw_cbs_;
+  std::array<StructuredBuffer<ShaderLight>, RenderManager::GetMaxFramesInFlight()> light_buffers_;
 
   graphics::SharedDeviceChildHandle<graphics::Texture> white_tex_;
   graphics::SharedDeviceChildHandle<graphics::Texture> ssao_noise_tex_;
@@ -303,7 +312,7 @@ private:
   graphics::UniqueSamplerHandle samp_bi_wrap_;
   graphics::UniqueSamplerHandle samp_point_wrap_;
 
-  std::array<FramePacket, max_frames_in_flight_> frame_packets_;
+  std::array<FramePacket, RenderManager::GetMaxFramesInFlight()> frame_packets_;
 
   UINT next_per_draw_cb_idx_{0};
   UINT next_per_view_cb_idx_{0};

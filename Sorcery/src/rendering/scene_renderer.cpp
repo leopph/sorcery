@@ -158,21 +158,21 @@ auto SceneRenderer::ExtractCurrentState(FramePacket& packet) const -> void {
 auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(
   CameraData const& cam_data) const -> ShadowCascadeBoundaries {
   auto const camNear{cam_data.near_plane};
-  auto const shadowDistance{std::min(cam_data.far_plane, shadow_distance_)};
+  auto const shadowDistance{std::min(cam_data.far_plane, shadow_params_.distance)};
   auto const shadowedFrustumDepth{shadowDistance - camNear};
 
   ShadowCascadeBoundaries boundaries;
 
   boundaries[0].nearClip = camNear;
 
-  for (int i = 0; i < cascade_count_ - 1; i++) {
-    boundaries[i + 1].nearClip = camNear + cascade_splits_[i] * shadowedFrustumDepth;
+  for (int i = 0; i < shadow_params_.cascade_count - 1; i++) {
+    boundaries[i + 1].nearClip = camNear + shadow_params_.normalized_cascade_splits[i] * shadowedFrustumDepth;
     boundaries[i].farClip = boundaries[i + 1].nearClip * 1.005f;
   }
 
-  boundaries[cascade_count_ - 1].farClip = shadowDistance;
+  boundaries[shadow_params_.cascade_count - 1].farClip = shadowDistance;
 
-  for (int i = cascade_count_; i < MAX_CASCADE_COUNT; i++) {
+  for (int i = shadow_params_.cascade_count; i < MAX_CASCADE_COUNT; i++) {
     boundaries[i].nearClip = std::numeric_limits<float>::infinity();
     boundaries[i].farClip = std::numeric_limits<float>::infinity();
   }
@@ -246,8 +246,9 @@ auto SceneRenderer::CullStaticSubmeshInstances(Frustum const& frustum_ws, std::s
 auto SceneRenderer::SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int const rt_width,
                                          int const rt_height) const noexcept -> void {
   cb.Update(ShaderPerFrameConstants{
-    .ambientLightColor = Scene::GetActiveScene()->GetAmbientLightVector(), .shadowCascadeCount = shadow_params_.cascade_count,
-    .screenSize = Vector2{rt_width, rt_height}, .visualizeShadowCascades = shadow_params_.visualize_cascades,
+    .ambientLightColor = Scene::GetActiveScene()->GetAmbientLightVector(),
+    .shadowCascadeCount = shadow_params_.cascade_count, .screenSize = Vector2{rt_width, rt_height},
+    .visualizeShadowCascades = shadow_params_.visualize_cascades,
     .shadowFilteringMode = static_cast<int>(shadow_params_.filtering_mode)
   });
 }
@@ -580,8 +581,8 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
         shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light.direction, Vector3::Up());
         auto const shadowProjMtx{
-          TransformProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius, sphereRadius,
-            -sphereRadius, -sphereRadius - light.shadow_extension, sphereRadius))
+          TransformProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
+            sphereRadius, -sphereRadius, -sphereRadius - light.shadow_extension, sphereRadius))
         };
 
         shadow_view_proj_matrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
@@ -704,11 +705,11 @@ auto SceneRenderer::DrawSkybox(graphics::CommandList& cmd) noexcept -> void {
 
   cmd.SetPipelineState(*skybox_pso_);
   cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, pos_buf_idx),
-    cube_mesh_->GetPositionBuffer()->GetShaderResource());
+    render_manager_->GetCubeMesh()->GetPositionBuffer()->GetShaderResource());
   cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, cubemap_idx), cubemap->GetTex()->GetShaderResource());
   cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
   // TODO set per view cb
-  cmd.DrawIndexedInstanced(static_cast<UINT>(cube_mesh_->GetIndexCount()), 1, 0, 0, 0);
+  cmd.DrawIndexedInstanced(static_cast<UINT>(render_manager_->GetCubeMesh()->GetIndexCount()), 1, 0, 0, 0);
 }
 
 
@@ -894,7 +895,7 @@ auto SceneRenderer::CreatePerViewConstantBuffers(UINT const count) -> void {
   for (UINT i{0}; i < count; i++) {
     auto& arr{per_view_cbs_.emplace_back()};
 
-    for (UINT j{0}; j < max_frames_in_flight_; j++) {
+    for (UINT j{0}; j < RenderManager::GetMaxFramesInFlight(); j++) {
       if (auto opt{ConstantBuffer<ShaderPerViewConstants>::New(*device_, true)}) {
         arr[i] = std::move(*opt);
       }
@@ -909,7 +910,7 @@ auto SceneRenderer::CreatePerDrawConstantBuffers(UINT const count) -> void {
   for (UINT i{0}; i < count; i++) {
     auto& arr{per_draw_cbs_.emplace_back()};
 
-    for (UINT j{0}; j < max_frames_in_flight_; j++) {
+    for (UINT j{0}; j < RenderManager::GetMaxFramesInFlight(); j++) {
       if (auto opt{ConstantBuffer<ShaderPerDrawConstants>::New(*device_, true)}) {
         arr[i] = std::move(*opt);
       }
@@ -923,7 +924,7 @@ auto SceneRenderer::AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerVi
     CreatePerViewConstantBuffers(1);
   }
 
-  return per_view_cbs_[next_per_view_cb_idx_++][frame_idx_];
+  return per_view_cbs_[next_per_view_cb_idx_++][render_manager_->GetCurrentFrameIndex()];
 }
 
 
@@ -932,7 +933,7 @@ auto SceneRenderer::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDr
     CreatePerDrawConstantBuffers(1);
   }
 
-  return per_draw_cbs_[next_per_draw_cb_idx_++][frame_idx_];
+  return per_draw_cbs_[next_per_draw_cb_idx_++][render_manager_->GetCurrentFrameIndex()];
 }
 
 
@@ -954,14 +955,11 @@ auto SceneRenderer::OnWindowSize(SceneRenderer* const self, Extent2D<std::uint32
 }
 
 
-auto SceneRenderer::StartUp() -> void {
-  bool device_debug{false};
+SceneRenderer::SceneRenderer(RenderManager& render_manager, Window& window) :
+  render_manager_{&render_manager},
+  window_{&window} {
+  device_.Reset(&render_manager_->GetDevice());
 
-#ifndef NDEBUG
-  device_debug = true;
-#endif
-
-  device_ = graphics::GraphicsDevice::New(device_debug);
   swap_chain_ = device_->CreateSwapChain(graphics::SwapChainDesc{0, 0, 2, render_target_format_, 0, DXGI_SCALING_NONE},
     static_cast<HWND>(gWindow.GetNativeHandle()));
 
@@ -978,8 +976,8 @@ auto SceneRenderer::StartUp() -> void {
     DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Main RT", false
   });
 
-  dir_shadow_map_arr_ = std::make_unique<DirectionalShadowMapArray>(device_.get(), depth_format_, 4096);
-  punctual_shadow_atlas_ = std::make_unique<PunctualShadowAtlas>(device_.get(), depth_format_, 4096);
+  dir_shadow_map_arr_ = std::make_unique<DirectionalShadowMapArray>(device_.Get(), depth_format_, 4096);
+  punctual_shadow_atlas_ = std::make_unique<PunctualShadowAtlas>(device_.Get(), depth_format_, 4096);
 
   std::ignore = RecreatePipelines();
 
@@ -1074,9 +1072,6 @@ auto SceneRenderer::StartUp() -> void {
     D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
   });
 
-  // CREATE DEFAULT ASSETS
-
-
   gWindow.OnWindowSize.add_handler(this, &OnWindowSize);
 
   ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_, true);
@@ -1120,7 +1115,7 @@ auto SceneRenderer::StartUp() -> void {
     false
   }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
 
-  auto& cmd{AcquireCommandList()};
+  auto& cmd{render_manager_->AcquireCommandList()};
 
   std::ignore = cmd.Begin(nullptr);
   cmd.CopyTextureRegion(*ssao_noise_tex_, 0, 0, 0, 0, *ssao_noise_upload_buf, D3D12_PLACED_SUBRESOURCE_FOOTPRINT{
@@ -1152,16 +1147,18 @@ auto SceneRenderer::StartUp() -> void {
 }
 
 
-auto SceneRenderer::ShutDown() -> void {
+SceneRenderer::~SceneRenderer() {
   gWindow.OnWindowSize.remove_handler(this, &OnWindowSize);
 }
 
 
 auto SceneRenderer::Render() -> void {
-  auto& frame_packet{frame_packets_[frame_idx_]};
+  auto const frame_idx{render_manager_->GetCurrentFrameIndex()};
+
+  auto& frame_packet{frame_packets_[frame_idx]};
   ExtractCurrentState(frame_packet);
 
-  auto& cmd{AcquireCommandList()};
+  auto& cmd{render_manager_->AcquireCommandList()};
 
   if (!cmd.Begin(nullptr)) {
     return;
@@ -1181,7 +1178,7 @@ auto SceneRenderer::Render() -> void {
       L"Camera HDR RenderTarget", false
     };
 
-    auto const& hdr_rt{GetTemporaryRenderTarget(hdr_rt_desc)};
+    auto const& hdr_rt{render_manager_->GetTemporaryRenderTarget(hdr_rt_desc)};
 
 
     auto const clear_color{
@@ -1194,7 +1191,7 @@ auto SceneRenderer::Render() -> void {
 
     D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rt_width), static_cast<FLOAT>(rt_height), 0, 1};
 
-    auto& per_frame_cb{per_frame_cbs_[frame_idx_]};
+    auto& per_frame_cb{per_frame_cbs_[frame_idx]};
     SetPerFrameConstants(per_frame_cb, static_cast<int>(rt_width), static_cast<int>(rt_height));
 
     auto const cam_view_mtx{
@@ -1230,7 +1227,7 @@ auto SceneRenderer::Render() -> void {
     cmd.ClearDepthStencil(*hdr_rt.GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
     auto const& normal_rt{
-      GetTemporaryRenderTarget(RenderTarget::Desc{
+      render_manager_->GetTemporaryRenderTarget(RenderTarget::Desc{
         rt_width, rt_height, normal_buffer_format_, std::nullopt, 1, L"Camera Normal RT"
       })
     };
@@ -1246,7 +1243,7 @@ auto SceneRenderer::Render() -> void {
 
           auto actual_normal_rt_desc{normal_rt.GetDesc()};
           actual_normal_rt_desc.sample_count = static_cast<int>(GetMultisamplingMode());
-          return GetTemporaryRenderTarget(actual_normal_rt_desc);
+          return render_manager_->GetTemporaryRenderTarget(actual_normal_rt_desc);
         }()
       };
 
@@ -1293,7 +1290,7 @@ auto SceneRenderer::Render() -> void {
     // SSAO pass
     if (ssao_enabled_) {
       auto const& ssao_rt{
-        GetTemporaryRenderTarget(RenderTarget::Desc{
+        render_manager_->GetTemporaryRenderTarget(RenderTarget::Desc{
           rt_width, rt_height, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"
         })
       };
@@ -1310,7 +1307,7 @@ auto SceneRenderer::Render() -> void {
           ssao_depth_rt_desc.sample_count = 1;
           ssao_depth_rt_desc.depth_stencil_format = std::nullopt;
           ssao_depth_rt_desc.enable_unordered_access = true;
-          auto const& ssao_depth_rt{GetTemporaryRenderTarget(ssao_depth_rt_desc)};
+          auto const& ssao_depth_rt{render_manager_->GetTemporaryRenderTarget(ssao_depth_rt_desc)};
 
           cmd.SetPipelineState(*depth_resolve_pso_);
           cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, in_tex_idx),
@@ -1347,7 +1344,7 @@ auto SceneRenderer::Render() -> void {
       cmd.DrawInstanced(3, 1, 0, 0);
 
       auto const& ssao_blur_rt{
-        GetTemporaryRenderTarget([&ssao_rt] {
+        render_manager_->GetTemporaryRenderTarget([&ssao_rt] {
           auto ret{ssao_rt.GetDesc()};
           ret.debug_name = L"SSAO Blur RT";
           return ret;
@@ -1368,7 +1365,7 @@ auto SceneRenderer::Render() -> void {
     // Full forward lighting pass
 
     auto const light_count{std::ssize(visible_light_indices)};
-    auto& light_buffer{light_buffers_[frame_idx_]};
+    auto& light_buffer{light_buffers_[frame_idx]};
     light_buffer.Resize(static_cast<int>(light_count));
     auto const light_buffer_data{light_buffer.GetData()};
 
@@ -1461,7 +1458,7 @@ auto SceneRenderer::Render() -> void {
     } else {
       auto resolve_hdr_rt_desc{hdr_rt_desc};
       resolve_hdr_rt_desc.sample_count = 1;
-      auto const& resolve_hdr_rt{GetTemporaryRenderTarget(resolve_hdr_rt_desc)};
+      auto const& resolve_hdr_rt{render_manager_->GetTemporaryRenderTarget(resolve_hdr_rt_desc)};
       cmd.Resolve(*resolve_hdr_rt.GetColorTex(), *hdr_rt.GetColorTex(), *hdr_rt_desc.color_format);
       post_process_rt = std::addressof(resolve_hdr_rt);
     }
@@ -1494,7 +1491,7 @@ auto SceneRenderer::DrawGizmos(RenderTarget const* const rt) -> void {
   line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
   std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
-  auto& cmd{AcquireCommandList()};
+  auto& cmd{render_manager_->AcquireCommandList()};
   cmd.SetPipelineState(*line_gizmo_pso_);
   cmd.SetPipelineParameter(offsetof(GizmoDrawParams, vertex_buf_idx),
     line_gizmo_vertex_data_buffer_.GetBuffer()->GetShaderResource());
@@ -1591,7 +1588,6 @@ auto SceneRenderer::GetShadowDistance() const noexcept -> float {
 
 auto SceneRenderer::SetShadowDistance(float const distance) noexcept -> void {
   shadow_params_.distance = std::max(0.0f, distance);
-  
 }
 
 
@@ -1605,13 +1601,16 @@ auto SceneRenderer::SetShadowCascadeCount(int const cascade_count) noexcept -> v
   int const splitCount{shadow_params_.cascade_count - 1};
 
   for (int i = 1; i < splitCount; i++) {
-    shadow_params_.normalized_cascade_splits[i] = std::max(shadow_params_.normalized_cascade_splits[i - 1], shadow_params_.normalized_cascade_splits[i]);
+    shadow_params_.normalized_cascade_splits[i] = std::max(shadow_params_.normalized_cascade_splits[i - 1],
+      shadow_params_.normalized_cascade_splits[i]);
   }
 }
 
 
 auto SceneRenderer::GetNormalizedShadowCascadeSplits() const noexcept -> std::span<float const> {
-  return {std::begin(shadow_params_.normalized_cascade_splits), static_cast<std::size_t>(shadow_params_.cascade_count - 1)};
+  return {
+    std::begin(shadow_params_.normalized_cascade_splits), static_cast<std::size_t>(shadow_params_.cascade_count - 1)
+  };
 }
 
 
