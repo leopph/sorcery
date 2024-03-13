@@ -181,7 +181,7 @@ private:
 
 class GraphicsDevice {
 public:
-  [[nodiscard]] static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
+  [[nodiscard]] LEOPPHAPI static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
 
   [[nodiscard]] auto CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE heap_type) -> SharedDeviceChildHandle<Buffer>;
   [[nodiscard]] auto CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE heap_type,

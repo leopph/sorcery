@@ -63,75 +63,75 @@ struct ShadowParams {
 
 class SceneRenderer {
 public:
-  SceneRenderer(RenderManager& render_manager, Window& window);
+  LEOPPHAPI SceneRenderer(RenderManager& render_manager, Window& window);
   SceneRenderer(SceneRenderer const&) = delete;
   SceneRenderer(SceneRenderer&&) = delete;
 
-  ~SceneRenderer();
+  LEOPPHAPI ~SceneRenderer();
 
   auto operator=(SceneRenderer const&) -> void = delete;
   auto operator=(SceneRenderer&&) -> void = delete;
 
-  auto Render() -> void;
+  LEOPPHAPI auto Render() -> void;
 
-  auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
-  auto DrawGizmos(RenderTarget const* rt = nullptr) -> void;
+  LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
+  LEOPPHAPI auto DrawGizmos(RenderTarget const* rt = nullptr) -> void;
 
   // If a render target override is set, all cameras not targeting a specific render target
   // will render into the override RT.
-  [[nodiscard]] auto GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> const&;
-  auto SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> const&;
+  LEOPPHAPI auto SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void;
 
   /*auto ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
   auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void; TODO*/
 
-  auto Present() noexcept -> void;
+  LEOPPHAPI auto Present() noexcept -> void;
 
-  [[nodiscard]] auto GetSyncInterval() const noexcept -> UINT;
-  auto SetSyncInterval(UINT interval) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetSyncInterval() const noexcept -> UINT;
+  LEOPPHAPI auto SetSyncInterval(UINT interval) noexcept -> void;
 
-  [[nodiscard]] auto GetMultisamplingMode() const noexcept -> MultisamplingMode;
-  auto SetMultisamplingMode(MultisamplingMode mode) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetMultisamplingMode() const noexcept -> MultisamplingMode;
+  LEOPPHAPI auto SetMultisamplingMode(MultisamplingMode mode) noexcept -> void;
 
-  [[nodiscard]] auto IsDepthNormalPrePassEnabled() const noexcept -> bool;
-  auto SetDepthNormalPrePassEnabled(bool enabled) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto IsDepthNormalPrePassEnabled() const noexcept -> bool;
+  LEOPPHAPI auto SetDepthNormalPrePassEnabled(bool enabled) noexcept -> void;
 
-  [[nodiscard]] auto IsUsingPreciseColorFormat() const noexcept -> bool;
-  auto SetUsePreciseColorFormat(bool precise) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto IsUsingPreciseColorFormat() const noexcept -> bool;
+  LEOPPHAPI auto SetUsePreciseColorFormat(bool precise) noexcept -> void;
 
-  [[nodiscard]] auto GetShadowDistance() const noexcept -> float;
-  auto SetShadowDistance(float distance) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetShadowDistance() const noexcept -> float;
+  LEOPPHAPI auto SetShadowDistance(float distance) noexcept -> void;
 
   [[nodiscard]] constexpr static auto GetMaxShadowCascadeCount() noexcept -> int;
-  [[nodiscard]] auto GetShadowCascadeCount() const noexcept -> int;
-  auto SetShadowCascadeCount(int cascade_count) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetShadowCascadeCount() const noexcept -> int;
+  LEOPPHAPI auto SetShadowCascadeCount(int cascade_count) noexcept -> void;
 
-  [[nodiscard]] auto GetNormalizedShadowCascadeSplits() const noexcept -> std::span<float const>;
-  auto SetNormalizedShadowCascadeSplit(int idx, float split) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetNormalizedShadowCascadeSplits() const noexcept -> std::span<float const>;
+  LEOPPHAPI auto SetNormalizedShadowCascadeSplit(int idx, float split) noexcept -> void;
 
-  [[nodiscard]] auto IsVisualizingShadowCascades() const noexcept -> bool;
-  auto VisualizeShadowCascades(bool visualize) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto IsVisualizingShadowCascades() const noexcept -> bool;
+  LEOPPHAPI auto VisualizeShadowCascades(bool visualize) noexcept -> void;
 
-  [[nodiscard]] auto GetShadowFilteringMode() const noexcept -> ShadowFilteringMode;
-  auto SetShadowFilteringMode(ShadowFilteringMode filtering_mode) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetShadowFilteringMode() const noexcept -> ShadowFilteringMode;
+  LEOPPHAPI auto SetShadowFilteringMode(ShadowFilteringMode filtering_mode) noexcept -> void;
 
-  [[nodiscard]] auto IsSsaoEnabled() const noexcept -> bool;
-  auto SetSsaoEnabled(bool enabled) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto IsSsaoEnabled() const noexcept -> bool;
+  LEOPPHAPI auto SetSsaoEnabled(bool enabled) noexcept -> void;
 
-  [[nodiscard]] auto GetSsaoParams() const noexcept -> SsaoParams const&;
-  auto SetSsaoParams(SsaoParams const& ssao_params) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetSsaoParams() const noexcept -> SsaoParams const&;
+  LEOPPHAPI auto SetSsaoParams(SsaoParams const& ssao_params) noexcept -> void;
 
-  [[nodiscard]] auto GetGamma() const noexcept -> float;
-  auto SetGamma(float gamma) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetGamma() const noexcept -> float;
+  LEOPPHAPI auto SetGamma(float gamma) noexcept -> void;
 
-  auto Register(StaticMeshComponent const& static_mesh_component) noexcept -> void;
-  auto Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void;
+  LEOPPHAPI auto Register(StaticMeshComponent const& static_mesh_component) noexcept -> void;
+  LEOPPHAPI auto Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void;
 
-  auto Register(LightComponent const& light_component) noexcept -> void;
-  auto Unregister(LightComponent const& light_component) noexcept -> void;
+  LEOPPHAPI auto Register(LightComponent const& light_component) noexcept -> void;
+  LEOPPHAPI auto Unregister(LightComponent const& light_component) noexcept -> void;
 
-  auto Register(Camera const& cam) noexcept -> void;
-  auto Unregister(Camera const& cam) noexcept -> void;
+  LEOPPHAPI auto Register(Camera const& cam) noexcept -> void;
+  LEOPPHAPI auto Unregister(Camera const& cam) noexcept -> void;
 
 private:
   struct LightData {

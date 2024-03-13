@@ -2,6 +2,7 @@
 
 #include "graphics.hpp"
 #include "render_target.hpp"
+#include "../Core.hpp"
 #include "../Math.hpp"
 #include "../observer_ptr.hpp"
 #include "../resources/Material.hpp"
@@ -19,7 +20,7 @@
 namespace sorcery::rendering {
 class RenderManager {
 public:
-  explicit RenderManager(graphics::GraphicsDevice& device);
+  LEOPPHAPI explicit RenderManager(graphics::GraphicsDevice& device);
   RenderManager(RenderManager const&) = delete;
   RenderManager(RenderManager&&) = delete;
 
@@ -28,24 +29,25 @@ public:
   auto operator=(RenderManager const&) -> void = delete;
   auto operator=(RenderManager&&) -> void = delete;
 
-  auto BeginNewFrame() -> void;
+  LEOPPHAPI auto BeginNewFrame() -> void;
 
   [[nodiscard]] constexpr static auto GetMaxFramesInFlight() -> UINT;
-  [[nodiscard]] auto GetCurrentFrameIndex() const -> UINT;
+  [[nodiscard]] LEOPPHAPI auto GetCurrentFrameIndex() const -> UINT;
 
-  [[nodiscard]] auto AcquireCommandList() -> graphics::CommandList&;
-  [[nodiscard]] auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget>;
+  [[nodiscard]] LEOPPHAPI auto AcquireCommandList() -> graphics::CommandList&;
+  [[nodiscard]] LEOPPHAPI auto
+  GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget>;
 
-  [[nodiscard]] auto LoadReadonlyTexture(
+  [[nodiscard]] LEOPPHAPI auto LoadReadonlyTexture(
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
-  [[nodiscard]] auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> data) -> bool;
+  [[nodiscard]] LEOPPHAPI auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> data) -> bool;
 
-  [[nodiscard]] auto GetDevice() const -> graphics::GraphicsDevice&;
+  [[nodiscard]] LEOPPHAPI auto GetDevice() const -> graphics::GraphicsDevice&;
 
-  [[nodiscard]] auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
-  [[nodiscard]] auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
-  [[nodiscard]] auto GetPlaneMesh() const noexcept -> ObserverPtr<Mesh>;
-  [[nodiscard]] auto GetSphereMesh() const noexcept -> ObserverPtr<Mesh>;
+  [[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
+  [[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
+  [[nodiscard]] LEOPPHAPI auto GetPlaneMesh() const noexcept -> ObserverPtr<Mesh>;
+  [[nodiscard]] LEOPPHAPI auto GetSphereMesh() const noexcept -> ObserverPtr<Mesh>;
 
 private:
   struct TempRenderTargetRecord {
