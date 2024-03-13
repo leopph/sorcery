@@ -1,11 +1,13 @@
 #include "Mesh.hpp"
 
-#include "..\rendering\scene_renderer.hpp"
+#include "../engine_context.hpp"
 #include "../Serialization.hpp"
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <cassert>
+#include <utility>
 
 
 RTTR_REGISTRATION {
@@ -15,37 +17,54 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 auto Mesh::UploadToGpu() noexcept -> void {
-  D3D11_BUFFER_DESC const posBufDesc{
-    .ByteWidth = clamp_cast<UINT>(m_cpu_data_->positions.size() * sizeof(Vector3)), .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_VERTEX_BUFFER, .CPUAccessFlags = 0, .MiscFlags = 0, .StructureByteStride = 0
+  std::vector<Vector4> positions4{m_cpu_data_->positions.size()};
+  std::ranges::transform(m_cpu_data_->positions, positions4.begin(), [](Vector3 const& p) {
+    return Vector4{p, 1};
+  });
+
+  pos_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{
+    static_cast<UINT>(positions4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, false
+  }, D3D12_HEAP_TYPE_DEFAULT);
+  assert(pos_buf_);
+
+  [[maybe_unused]] auto success{
+    g_engine_context.render_manager->UpdateBuffer(*pos_buf_, as_bytes(std::span{positions4}))
   };
+  assert(success);
 
-  D3D11_SUBRESOURCE_DATA const posBufData{.pSysMem = m_cpu_data_->positions.data()};
+  std::vector<Vector4> normals4{m_cpu_data_->normals.size()};
+  std::ranges::transform(m_cpu_data_->normals, normals4.begin(), [](Vector3 const& n) {
+    return Vector4{n, 0};
+  });
 
-  [[maybe_unused]] auto hr{
-    gRenderer.GetDevice()->CreateBuffer(&posBufDesc, &posBufData, mPosBuf.ReleaseAndGetAddressOf())
-  };
-  assert(SUCCEEDED(hr));
+  norm_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{
+    static_cast<UINT>(normals4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, false
+  }, D3D12_HEAP_TYPE_DEFAULT);
+  assert(norm_buf_);
 
-  D3D11_BUFFER_DESC const normBufDesc{
-    .ByteWidth = clamp_cast<UINT>(m_cpu_data_->normals.size() * sizeof(Vector3)), .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_VERTEX_BUFFER, .CPUAccessFlags = 0, .MiscFlags = 0, .StructureByteStride = 0
-  };
+  success = g_engine_context.render_manager->UpdateBuffer(*norm_buf_, as_bytes(std::span{normals4}));
+  assert(success);
 
-  D3D11_SUBRESOURCE_DATA const normBufData{.pSysMem = m_cpu_data_->normals.data()};
+  std::vector<Vector4> tangents4{m_cpu_data_->tangents.size()};
+  std::ranges::transform(m_cpu_data_->tangents, tangents4.begin(), [](Vector3 const& t) {
+    return Vector4{t, 0};
+  });
 
-  hr = gRenderer.GetDevice()->CreateBuffer(&normBufDesc, &normBufData, mNormBuf.ReleaseAndGetAddressOf());
-  assert(SUCCEEDED(hr));
+  tan_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{
+    static_cast<UINT>(tangents4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, false
+  }, D3D12_HEAP_TYPE_DEFAULT);
+  assert(norm_buf_);
 
-  D3D11_BUFFER_DESC const uvBufDesc{
-    .ByteWidth = clamp_cast<UINT>(m_cpu_data_->uvs.size() * sizeof(Vector2)), .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_VERTEX_BUFFER, .CPUAccessFlags = 0, .MiscFlags = 0, .StructureByteStride = 0
-  };
+  success = g_engine_context.render_manager->UpdateBuffer(*tan_buf_, as_bytes(std::span{tangents4}));
+  assert(success);
 
-  D3D11_SUBRESOURCE_DATA const uvBufData{.pSysMem = m_cpu_data_->uvs.data()};
+  uv_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{
+    static_cast<UINT>(m_cpu_data_->uvs.size() * sizeof(Vector2)), sizeof(Vector2), false, true, false
+  }, D3D12_HEAP_TYPE_DEFAULT);
+  assert(uv_buf_);
 
-  hr = gRenderer.GetDevice()->CreateBuffer(&uvBufDesc, &uvBufData, mUvBuf.ReleaseAndGetAddressOf());
-  assert(SUCCEEDED(hr));
+  success = g_engine_context.render_manager->UpdateBuffer(*uv_buf_, as_bytes(std::span{m_cpu_data_->uvs}));
+  assert(success);
 
   struct IdxBufInfo {
     UINT size;
@@ -70,25 +89,14 @@ auto Mesh::UploadToGpu() noexcept -> void {
     }()
   };
 
-  D3D11_BUFFER_DESC const idxBufDesc{
-    .ByteWidth = idxBufSize, .Usage = D3D11_USAGE_IMMUTABLE, .BindFlags = D3D11_BIND_INDEX_BUFFER, .CPUAccessFlags = 0,
-    .MiscFlags = 0, .StructureByteStride = 0
-  };
+  idx_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{idxBufSize, 0, false, false, false},
+    D3D12_HEAP_TYPE_DEFAULT);
+  assert(idx_buf_);
 
-  D3D11_SUBRESOURCE_DATA const idxBufData{.pSysMem = idxBufDataPtr};
-
-  hr = gRenderer.GetDevice()->CreateBuffer(&idxBufDesc, &idxBufData, mIdxBuf.ReleaseAndGetAddressOf());
-  assert(SUCCEEDED(hr));
-
-  D3D11_BUFFER_DESC const tangentBufDesc{
-    .ByteWidth = static_cast<UINT>(m_cpu_data_->tangents.size() * sizeof(Vector3)), .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_VERTEX_BUFFER, .CPUAccessFlags = 0, .MiscFlags = 0, .StructureByteStride = 0
-  };
-
-  D3D11_SUBRESOURCE_DATA const tangentBufData{.pSysMem = m_cpu_data_->tangents.data()};
-
-  hr = gRenderer.GetDevice()->CreateBuffer(&tangentBufDesc, &tangentBufData, mTangentBuf.ReleaseAndGetAddressOf());
-  assert(SUCCEEDED(hr));
+  success = g_engine_context.render_manager->UpdateBuffer(*idx_buf_, std::span{
+    std::bit_cast<std::byte const*>(idxBufDataPtr), idxBufSize
+  });
+  assert(success);
 }
 
 

@@ -239,7 +239,7 @@ auto RenderManager::LoadReadonlyTexture(
 }
 
 
-auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::uint8_t const> data) -> bool {
+auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> const data) -> bool {
   if (buf.GetRequiredIntermediateSize() != data.size()) {
     return false;
   }

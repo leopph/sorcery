@@ -10,6 +10,7 @@
 #include <DirectXTex.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
@@ -37,7 +38,7 @@ public:
 
   [[nodiscard]] auto LoadReadonlyTexture(
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
-  [[nodiscard]] auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::uint8_t const> data) -> bool;
+  [[nodiscard]] auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> data) -> bool;
 
   [[nodiscard]] auto GetDevice() const -> graphics::GraphicsDevice&;
 
