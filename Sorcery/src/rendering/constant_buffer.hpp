@@ -12,7 +12,7 @@ namespace sorcery {
 template<typename T>
 class ConstantBuffer {
 public:
-  static auto New(graphics::GraphicsDevice& device) -> std::optional<ConstantBuffer>;
+  static auto New(graphics::GraphicsDevice& device, bool cpu_accessible) -> std::optional<ConstantBuffer>;
 
   ConstantBuffer() = default;
 
@@ -28,21 +28,26 @@ private:
 
 
 template<typename T>
-auto ConstantBuffer<T>::New(graphics::GraphicsDevice& device) -> std::optional<ConstantBuffer> {
+auto ConstantBuffer<T>::New(graphics::GraphicsDevice& device,
+                            bool const cpu_accessible) -> std::optional<ConstantBuffer> {
   auto buf{
     device.CreateBuffer(graphics::BufferDesc{
       static_cast<UINT>(RoundToNextMultiple(sizeof(T), 256)), 0, true, false, false
-    }, D3D12_HEAP_TYPE_UPLOAD)
+    }, cpu_accessible ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT)
   };
 
   if (!buf) {
     return std::nullopt;
   }
 
-  auto const ptr{buf->Map()};
+  void* ptr{nullptr};
 
-  if (!ptr) {
-    return std::nullopt;
+  if (cpu_accessible) {
+    ptr = buf->Map();
+
+    if (!ptr) {
+      return std::nullopt;
+    }
   }
 
   return ConstantBuffer{std::move(buf), static_cast<T*>(ptr)};

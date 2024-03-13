@@ -957,7 +957,7 @@ auto Renderer::Impl::CreatePerViewConstantBuffers(UINT const count) -> void {
     auto& arr{per_view_cbs_.emplace_back()};
 
     for (UINT j{0}; j < max_frames_in_flight_; j++) {
-      if (auto opt{ConstantBuffer<ShaderPerViewConstants>::New(*device_)}) {
+      if (auto opt{ConstantBuffer<ShaderPerViewConstants>::New(*device_, true)}) {
         arr[i] = std::move(*opt);
       }
     }
@@ -972,7 +972,7 @@ auto Renderer::Impl::CreatePerDrawConstantBuffers(UINT const count) -> void {
     auto& arr{per_draw_cbs_.emplace_back()};
 
     for (UINT j{0}; j < max_frames_in_flight_; j++) {
-      if (auto opt{ConstantBuffer<ShaderPerDrawConstants>::New(*device_)}) {
+      if (auto opt{ConstantBuffer<ShaderPerDrawConstants>::New(*device_, true)}) {
         arr[i] = std::move(*opt);
       }
     }
@@ -1121,7 +1121,7 @@ auto Renderer::Impl::StartUp() -> void {
   std::ignore = RecreatePipelines();
 
   for (auto& cb : per_frame_cbs_) {
-    if (auto opt{ConstantBuffer<ShaderPerFrameConstants>::New(*device_)}) {
+    if (auto opt{ConstantBuffer<ShaderPerFrameConstants>::New(*device_, true)}) {
       cb = std::move(*opt);
     }
   }
