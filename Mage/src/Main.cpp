@@ -12,7 +12,7 @@
 #include "StartupScreen.hpp"
 #include "MemoryAllocation.hpp"
 #include "Platform.hpp"
-#include "..\..\Sorcery\src\rendering\scene_renderer.hpp"
+#include "../../Sorcery/src/rendering/scene_renderer.hpp"
 #include "Window.hpp"
 
 #include <imgui.h>
@@ -29,6 +29,12 @@
 #include <cwchar>
 #include <stdexcept>
 #include <exception>
+
+
+extern "C" {
+__declspec(dllexport) UINT const D3D12SDKVersion{sorcery::graphics::kD3D12SdkVersion};
+__declspec(dllexport) char const* const D3D12SDKPath{sorcery::graphics::kD3D12SdkPath};
+}
 
 
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE,

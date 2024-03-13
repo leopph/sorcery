@@ -4,6 +4,7 @@
 #include "Object.hpp"
 #include "ResourceManager.hpp"
 #include "Resources/Resource.hpp"
+#include "Util.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>

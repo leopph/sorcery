@@ -80,7 +80,7 @@ auto ResourceDB::WriteExternalResourceBinary(Guid const& guid, ExternalResourceC
 }
 
 
-ResourceDB::ResourceDB(ObserverPtr<Object>& selectedObjectPtr) :
+ResourceDB::ResourceDB(Object*& selectedObjectPtr) :
   mSelectedObjectPtr{std::addressof(selectedObjectPtr)} {}
 
 
@@ -255,7 +255,7 @@ auto ResourceDB::SaveResource(NativeResource const& res) -> void {
 }
 
 
-auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, ObserverPtr<ResourceImporter> importer) -> bool {
+auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, ResourceImporter* importer) -> bool {
   // Temporary to keep a potentially freshly created importer alive in this stack frame.
   // Use the observer ptr, do not access this directly.
   std::unique_ptr<ResourceImporter> ownedImporter;
@@ -412,7 +412,7 @@ auto ResourceDB::IsMetaFile(std::filesystem::path const& path) -> bool {
 }
 
 
-auto ResourceDB::LoadMeta(std::filesystem::path const& resPathAbs, ObserverPtr<Guid> const guid, ObserverPtr<std::unique_ptr<ResourceImporter>> const importer) noexcept -> bool {
+auto ResourceDB::LoadMeta(std::filesystem::path const& resPathAbs, Guid* const guid, std::unique_ptr<ResourceImporter>* const importer) noexcept -> bool {
   auto const metaPathAbs{GetMetaPath(resPathAbs)};
 
   if (!exists(metaPathAbs)) {

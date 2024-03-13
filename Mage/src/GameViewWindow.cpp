@@ -1,9 +1,9 @@
 #include "GameViewWindow.hpp"
 
-#include <imgui.h>
-
-#include "..\..\Sorcery\src\rendering\scene_renderer.hpp"
+#include "engine_context.hpp"
 #include "Util.hpp"
+
+#include <imgui.h>
 
 
 namespace sorcery::mage {
@@ -51,23 +51,22 @@ auto GameViewWindow::Draw(bool const gameRunning) -> void {
 
     assert(std::size(resolutionLabels) == std::size(resolutionValues));
 
-    auto const& rt{
-      gRenderer.GetTemporaryRenderTarget(RenderTarget::Desc{
+    auto const rt{
+      g_engine_context.render_manager->GetTemporaryRenderTarget(rendering::RenderTarget::Desc{
         .width = resolutionValues[mResIdx].width,
         .height = resolutionValues[mResIdx].height,
-        .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
-        .depthBufferBitCount = 0,
-        .stencilBufferBitCount = 0,
-        .sampleCount = 1,
-        .debugName = "Game View RT"
+        .color_format = DXGI_FORMAT_R8G8B8A8_UNORM,
+        .depth_stencil_format = std::nullopt,
+        .sample_count = 1,
+        .debug_name = L"Game View RT"
       })
     };
 
-    gRenderer.DrawAllCameras(std::addressof(rt));
+    g_engine_context.scene_renderer->SetRenderTargetOverride(rt);
 
-    ImGui::Image(rt.GetColorSrv(), [contentRegionSize, &rt] {
-      auto const scale{std::min(contentRegionSize.x / static_cast<float>(rt.GetDesc().width), contentRegionSize.y / static_cast<float>(rt.GetDesc().height))};
-      return ImVec2{static_cast<float>(rt.GetDesc().width) * scale, static_cast<float>(rt.GetDesc().height) * scale};
+    ImGui::Image(rt->GetColorTex().get(), [contentRegionSize, &rt] {
+      auto const scale{std::min(contentRegionSize.x / static_cast<float>(rt->GetDesc().width), contentRegionSize.y / static_cast<float>(rt->GetDesc().height))};
+      return ImVec2{static_cast<float>(rt->GetDesc().width) * scale, static_cast<float>(rt->GetDesc().height) * scale};
     }());
   } else {
     ImGui::PopStyleVar();

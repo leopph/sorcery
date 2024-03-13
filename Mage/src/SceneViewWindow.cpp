@@ -4,6 +4,7 @@
 #include "Platform.hpp"
 #include "Timing.hpp"
 #include "Window.hpp"
+#include "engine_context.hpp"
 
 
 namespace sorcery::mage {
@@ -84,17 +85,18 @@ auto SceneViewWindow::Draw(Application& context) -> void {
 
     auto const contentRegionSize{ImGui::GetContentRegionAvail()};
 
-    auto const& rt{
-      gRenderer.GetTemporaryRenderTarget(RenderTarget::Desc{
+    auto const rt{
+      g_engine_context.render_manager->GetTemporaryRenderTarget(rendering::RenderTarget::Desc{
         .width = static_cast<UINT>(contentRegionSize.x),
         .height = static_cast<UINT>(contentRegionSize.y),
-        .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
-        .depthBufferBitCount = 0,
-        .stencilBufferBitCount = 0,
-        .sampleCount = 1,
-        .debugName = "Scene View RT"
+        .color_format = DXGI_FORMAT_R8G8B8A8_UNORM,
+        .depth_stencil_format = std::nullopt,
+        .sample_count = 1,
+        .debug_name = L"Scene View RT"
       })
     };
+
+    mCam.SetRenderTarget(rt);
 
     auto const wasCamMoving{mCamMoving};
     mCamMoving = wasCamMoving ? ImGui::IsMouseDown(ImGuiMouseButton_Right) : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
@@ -145,9 +147,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
       selectedObject->OnDrawGizmosSelected();
     }
 
-    gRenderer.DrawCamera(mCam, std::addressof(rt));
-    gRenderer.DrawGizmos(std::addressof(rt));
-    ImGui::Image(rt.GetColorSrv(), contentRegionSize);
+    ImGui::Image(rt->GetColorTex().get(), contentRegionSize);
 
     auto const aspect{ImGui::GetWindowWidth() / ImGui::GetWindowHeight()};
     auto const camViewMtx{mCam.CalculateViewMatrix()};

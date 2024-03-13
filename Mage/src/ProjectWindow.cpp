@@ -101,8 +101,8 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
     }
 
     if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropData::TYPE_STR.data())}) {
-      if (auto const objectDragDropData{static_cast<ObserverPtr<ObjectDragDropData>>(payload->Data)}; objectDragDropData && objectDragDropData->ptr && rttr::type::get(*objectDragDropData->ptr).is_derived_from(rttr::type::get<Resource>())) {
-        if (auto const res{static_cast<ObserverPtr<Resource>>(objectDragDropData->ptr)}; resDb.MoveResource(res->GetGuid(), thisPathResDirRel / resDb.GuidToPath(res->GetGuid()).filename())) {
+      if (auto const objectDragDropData{static_cast<ObjectDragDropData*>(payload->Data)}; objectDragDropData && objectDragDropData->ptr && rttr::type::get(*objectDragDropData->ptr).is_derived_from(rttr::type::get<Resource>())) {
+        if (auto const res{static_cast<Resource*>(objectDragDropData->ptr)}; resDb.MoveResource(res->GetGuid(), thisPathResDirRel / resDb.GuidToPath(res->GetGuid()).filename())) {
           ret = true;
         }
       }
