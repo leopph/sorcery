@@ -7,6 +7,7 @@
 #include "../scene_objects/Entity.hpp"
 #include "../scene_objects/TransformComponent.hpp"
 #include "../Resources/Scene.hpp"
+#include "../engine_context.hpp"
 
 #ifndef NDEBUG
 #include "shaders/generated/Debug/depth_normal_ps.h"
@@ -705,11 +706,12 @@ auto SceneRenderer::DrawSkybox(graphics::CommandList& cmd) noexcept -> void {
 
   cmd.SetPipelineState(*skybox_pso_);
   cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, pos_buf_idx),
-    render_manager_->GetCubeMesh()->GetPositionBuffer()->GetShaderResource());
+    g_engine_context.resource_manager->GetCubeMesh()->GetPositionBuffer()->GetShaderResource());
   cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, cubemap_idx), cubemap->GetTex()->GetShaderResource());
   cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
   // TODO set per view cb
-  cmd.DrawIndexedInstanced(static_cast<UINT>(render_manager_->GetCubeMesh()->GetIndexCount()), 1, 0, 0, 0);
+  cmd.DrawIndexedInstanced(static_cast<UINT>(g_engine_context.resource_manager->GetCubeMesh()->GetIndexCount()), 1, 0,
+    0, 0);
 }
 
 

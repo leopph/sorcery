@@ -4,7 +4,6 @@
 #include "Texture2D.hpp"
 #include "../Color.hpp"
 #include "../Util.hpp"
-#include "../ResourceManager.hpp"
 #include "../rendering/shaders/shader_interop.h"
 #include "../rendering/graphics.hpp"
 #include "../rendering/constant_buffer.hpp"

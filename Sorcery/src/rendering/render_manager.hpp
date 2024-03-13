@@ -42,11 +42,6 @@ public:
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
   [[nodiscard]] LEOPPHAPI auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> data) -> bool;
 
-  [[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
-  [[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
-  [[nodiscard]] LEOPPHAPI auto GetPlaneMesh() const noexcept -> ObserverPtr<Mesh>;
-  [[nodiscard]] LEOPPHAPI auto GetSphereMesh() const noexcept -> ObserverPtr<Mesh>;
-
 private:
   struct TempRenderTargetRecord {
     std::shared_ptr<RenderTarget> rt;
@@ -59,10 +54,6 @@ private:
 
   static UINT constexpr max_tmp_rt_age_{10};
   static UINT constexpr max_frames_in_flight_{2};
-  inline static Guid const default_material_guid_{1, 0};
-  inline static Guid const cube_mesh_guid_{2, 0};
-  inline static Guid const plane_mesh_guid_{3, 0};
-  inline static Guid const sphere_mesh_guid_{4, 0};
 
   ObserverPtr<graphics::GraphicsDevice> device_;
 
@@ -71,11 +62,6 @@ private:
 
   std::vector<std::array<graphics::SharedDeviceChildHandle<graphics::CommandList>, max_frames_in_flight_>> cmd_lists_;
   std::vector<TempRenderTargetRecord> tmp_render_targets_;
-
-  ObserverPtr<Material> default_mtl_;
-  ObserverPtr<Mesh> cube_mesh_;
-  ObserverPtr<Mesh> plane_mesh_;
-  ObserverPtr<Mesh> sphere_mesh_;
 };
 
 

@@ -1,5 +1,6 @@
 #include "Scene.hpp"
 
+#include "../engine_context.hpp"
 #include "../scene_objects/SceneObject.hpp"
 #include "../Platform.hpp"
 #include "../Serialization.hpp"
@@ -154,7 +155,7 @@ auto Scene::Load() -> void {
 
   if (auto const node{mYamlData["skybox"]}) {
     if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-      mSkybox = gResourceManager.GetOrLoad<Cubemap>(guid);
+      mSkybox = g_engine_context.resource_manager->GetOrLoad<Cubemap>(guid);
     }
   }
 

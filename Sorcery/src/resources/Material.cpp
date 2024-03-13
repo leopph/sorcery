@@ -240,27 +240,27 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   SetAlphaThreshold(yamlNode["alphaThresh"].as<float>(GetAlphaThreshold()));
 
   if (auto const guid{yamlNode["albedoMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    SetAlbedoMap(gResourceManager.GetOrLoad<Texture2D>(guid));
+    SetAlbedoMap(g_engine_context.resource_manager->GetOrLoad<Texture2D>(guid));
   }
 
   if (auto const guid{yamlNode["metallicMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    SetMetallicMap(gResourceManager.GetOrLoad<Texture2D>(guid));
+    SetMetallicMap(g_engine_context.resource_manager->GetOrLoad<Texture2D>(guid));
   }
 
   if (auto const guid{yamlNode["roughnessMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    SetRoughnessMap(gResourceManager.GetOrLoad<Texture2D>(guid));
+    SetRoughnessMap(g_engine_context.resource_manager->GetOrLoad<Texture2D>(guid));
   }
 
   if (auto const guid{yamlNode["aoMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    SetAoMap(gResourceManager.GetOrLoad<Texture2D>(guid));
+    SetAoMap(g_engine_context.resource_manager->GetOrLoad<Texture2D>(guid));
   }
 
   if (auto const guid{yamlNode["normalMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    SetNormalMap(gResourceManager.GetOrLoad<Texture2D>(guid));
+    SetNormalMap(g_engine_context.resource_manager->GetOrLoad<Texture2D>(guid));
   }
 
   if (auto const guid{yamlNode["opacityMask"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    SetOpacityMask(gResourceManager.GetOrLoad<Texture2D>(guid));
+    SetOpacityMask(g_engine_context.resource_manager->GetOrLoad<Texture2D>(guid));
   }
 }
 

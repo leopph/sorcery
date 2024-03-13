@@ -75,6 +75,13 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       throw std::runtime_error{"Failed to create scene renderer."};
     }
 
+    auto const resource_manager{std::make_unique<sorcery::ResourceManager>()};
+    sorcery::g_engine_context.resource_manager.Reset(resource_manager.get());
+
+    if (!resource_manager) {
+      throw std::runtime_error{"Failed to create resource manager."};
+    }
+
     sorcery::timing::SetTargetFrameRate(sorcery::mage::SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
 
     ImGui::CreateContext();
@@ -114,7 +121,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
       if (argc > 1) {
         if (auto const scene{
-          sorcery::gResourceManager.GetOrLoad<sorcery::Scene>(app.GetResourceDatabase().PathToGuid(argv[1]))
+          resource_manager->GetOrLoad<sorcery::Scene>(app.GetResourceDatabase().PathToGuid(argv[1]))
         }) {
           app.OpenScene(*scene);
         }

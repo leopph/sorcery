@@ -29,14 +29,14 @@ auto StaticMeshComponent::ResizeMaterialListToSubmeshCount() -> void {
     mMaterials.resize(subMeshCount);
 
     for (std::size_t i{mtlCount}; i < subMeshCount; i++) {
-      mMaterials[i] = g_engine_context.render_manager->GetDefaultMaterial().Get();
+      mMaterials[i] = g_engine_context.resource_manager->GetDefaultMaterial().Get();
     }
   }
 }
 
 
 StaticMeshComponent::StaticMeshComponent() :
-  mMesh{g_engine_context.render_manager->GetCubeMesh()} {
+  mMesh{g_engine_context.resource_manager->GetCubeMesh()} {
   ResizeMaterialListToSubmeshCount();
 }
 

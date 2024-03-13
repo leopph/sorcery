@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
+#include "engine_context.hpp"
 #include "Object.hpp"
 #include "ResourceManager.hpp"
 #include "Resources/Resource.hpp"
@@ -59,12 +60,12 @@ template<std::derived_from<Object> T>
 auto ObjectPicker<T>::QueryObjects(bool const insertNull) noexcept -> void {
   if constexpr (std::derived_from<T, Resource>) {
     mGuids.clear();
-    gResourceManager.GetGuidsForResourcesOfType<T>(mGuids);
+    g_engine_context.resource_manager->GetGuidsForResourcesOfType<T>(mGuids);
 
     mObjects.clear();
     mObjects.reserve(mGuids.size());
     for (auto const& guid : mGuids) {
-      mObjects.emplace_back(gResourceManager.GetOrLoad<T>(guid));
+      mObjects.emplace_back(g_engine_context.resource_manager->GetOrLoad<T>(guid));
     }
   } else {
     mObjects.clear();
