@@ -204,7 +204,6 @@
     <ClInclude Include="src\scene_objects\TransformComponent.hpp" />
     <ClInclude Include="src\Util.hpp" />
     <ClInclude Include="src\Platform.hpp" />
-    <ClInclude Include="src\rendering\Visibility.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
