@@ -10,7 +10,7 @@ class Entity;
 class Component : public SceneObject {
   RTTR_REGISTRATION_FRIEND
   RTTR_ENABLE(SceneObject)
-  ObserverPtr<Entity> mEntity{nullptr};
+  Entity* mEntity{nullptr};
 
 public:
   [[nodiscard]] LEOPPHAPI auto GetEntity() const -> Entity&;

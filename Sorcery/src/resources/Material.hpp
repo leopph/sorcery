@@ -28,14 +28,14 @@ private:
     .blendMode = BLEND_MODE_OPAQUE
   };
 
-  ConstantBuffer<ShaderMaterial> cb_;
+  rendering::ConstantBuffer<ShaderMaterial> cb_;
 
-  ObserverPtr<Texture2D> albedo_map_{nullptr};
-  ObserverPtr<Texture2D> metallic_map_{nullptr};
-  ObserverPtr<Texture2D> roughness_map_{nullptr};
-  ObserverPtr<Texture2D> ao_map_{nullptr};
-  ObserverPtr<Texture2D> normal_map_{nullptr};
-  ObserverPtr<Texture2D> opacity_mask_{nullptr};
+  Texture2D* albedo_map_{nullptr};
+  Texture2D* metallic_map_{nullptr};
+  Texture2D* roughness_map_{nullptr};
+  Texture2D* ao_map_{nullptr};
+  Texture2D* normal_map_{nullptr};
+  Texture2D* opacity_mask_{nullptr};
 
 public:
   LEOPPHAPI Material();
@@ -55,20 +55,20 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetAo() const noexcept -> f32;
   LEOPPHAPI auto SetAo(f32 ao) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAlbedoMap() const noexcept -> ObserverPtr<Texture2D>;
-  LEOPPHAPI auto SetAlbedoMap(ObserverPtr<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetAlbedoMap() const noexcept -> Texture2D*;
+  LEOPPHAPI auto SetAlbedoMap(Texture2D* tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetMetallicMap() const noexcept -> ObserverPtr<Texture2D>;
-  LEOPPHAPI auto SetMetallicMap(ObserverPtr<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetMetallicMap() const noexcept -> Texture2D*;
+  LEOPPHAPI auto SetMetallicMap(Texture2D* tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetRoughnessMap() const noexcept -> ObserverPtr<Texture2D>;
-  LEOPPHAPI auto SetRoughnessMap(ObserverPtr<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetRoughnessMap() const noexcept -> Texture2D*;
+  LEOPPHAPI auto SetRoughnessMap(Texture2D* tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAoMap() const noexcept -> ObserverPtr<Texture2D>;
-  LEOPPHAPI auto SetAoMap(ObserverPtr<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetAoMap() const noexcept -> Texture2D*;
+  LEOPPHAPI auto SetAoMap(Texture2D* tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetNormalMap() const noexcept -> ObserverPtr<Texture2D>;
-  LEOPPHAPI auto SetNormalMap(ObserverPtr<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetNormalMap() const noexcept -> Texture2D*;
+  LEOPPHAPI auto SetNormalMap(Texture2D* tex) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBlendMode() const noexcept -> BlendMode;
   LEOPPHAPI auto SetBlendMode(BlendMode blendMode) noexcept -> void;
@@ -76,8 +76,8 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetAlphaThreshold() const noexcept -> float;
   LEOPPHAPI auto SetAlphaThreshold(float threshold) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetOpacityMask() const noexcept -> ObserverPtr<Texture2D>;
-  LEOPPHAPI auto SetOpacityMask(ObserverPtr<Texture2D> opacityMask) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetOpacityMask() const noexcept -> Texture2D*;
+  LEOPPHAPI auto SetOpacityMask(Texture2D* opacityMask) noexcept -> void;
 
   LEOPPHAPI auto Update() const -> void;
 

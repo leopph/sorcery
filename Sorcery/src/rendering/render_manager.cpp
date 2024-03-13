@@ -42,10 +42,10 @@ std::vector<std::uint32_t> const kCubeIndices{
 RenderManager::RenderManager(graphics::GraphicsDevice& device) {
   device_.Reset(&device);
 
-  default_mtl_ = CreateAndInitialize<Material>();
+  default_mtl_.Reset(CreateAndInitialize<Material>());
   default_mtl_->SetGuid(default_material_guid_);
   default_mtl_->SetName("Default Material");
-  gResourceManager.Add(default_mtl_);
+  gResourceManager.Add(default_mtl_.Get());
 
   std::vector<Vector3> cubeNormals;
   CalculateNormals(kCubePositions, kCubeIndices, cubeNormals);
@@ -59,7 +59,7 @@ RenderManager::RenderManager(graphics::GraphicsDevice& device) {
   std::vector<Vector3> quadTangents;
   CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, quadTangents);
 
-  cube_mesh_ = CreateAndInitialize<Mesh>();
+  cube_mesh_.Reset(CreateAndInitialize<Mesh>());
   cube_mesh_->SetGuid(cube_mesh_guid_);
   cube_mesh_->SetName("Cube");
   cube_mesh_->SetPositions(kCubePositions);
@@ -72,9 +72,9 @@ RenderManager::RenderManager(graphics::GraphicsDevice& device) {
   if (!cube_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default cube mesh."};
   }
-  gResourceManager.Add(cube_mesh_);
+  gResourceManager.Add(cube_mesh_.Get());
 
-  plane_mesh_ = CreateAndInitialize<Mesh>();
+  plane_mesh_.Reset(CreateAndInitialize<Mesh>());
   plane_mesh_->SetGuid(plane_mesh_guid_);
   plane_mesh_->SetName("Plane");
   plane_mesh_->SetPositions(kQuadPositions);
@@ -87,9 +87,9 @@ RenderManager::RenderManager(graphics::GraphicsDevice& device) {
   if (!plane_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default plane mesh."};
   }
-  gResourceManager.Add(plane_mesh_);
+  gResourceManager.Add(plane_mesh_.Get());
 
-  sphere_mesh_ = CreateAndInitialize<Mesh>();
+  sphere_mesh_.Reset(CreateAndInitialize<Mesh>());
   sphere_mesh_->SetGuid(sphere_mesh_guid_);
   sphere_mesh_->SetName("Sphere");
   std::vector<Vector3> spherePositions;
@@ -110,7 +110,7 @@ RenderManager::RenderManager(graphics::GraphicsDevice& device) {
   if (!sphere_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default sphere mesh."};
   }
-  gResourceManager.Add(sphere_mesh_);
+  gResourceManager.Add(sphere_mesh_.Get());
 }
 
 

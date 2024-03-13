@@ -2,7 +2,7 @@
 
 #include "Entity.hpp"
 #include "../Gui.hpp"
-#include "..\rendering\scene_renderer.hpp"
+#include "../engine_context.hpp"
 
 #include <imgui.h>
 
@@ -29,41 +29,41 @@ auto StaticMeshComponent::ResizeMaterialListToSubmeshCount() -> void {
     mMaterials.resize(subMeshCount);
 
     for (std::size_t i{mtlCount}; i < subMeshCount; i++) {
-      mMaterials[i] = gRenderer.GetDefaultMaterial();
+      mMaterials[i] = g_engine_context.render_manager->GetDefaultMaterial().Get();
     }
   }
 }
 
 
 StaticMeshComponent::StaticMeshComponent() :
-  mMesh{gRenderer.GetCubeMesh()} {
+  mMesh{g_engine_context.render_manager->GetCubeMesh()} {
   ResizeMaterialListToSubmeshCount();
 }
 
 
-auto StaticMeshComponent::GetMesh() const noexcept -> ObserverPtr<Mesh> {
+auto StaticMeshComponent::GetMesh() const noexcept -> Mesh* {
   return mMesh;
 }
 
 
-auto StaticMeshComponent::SetMesh(ObserverPtr<Mesh> const mesh) noexcept -> void {
+auto StaticMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
   mMesh = mesh;
   ResizeMaterialListToSubmeshCount();
 }
 
 
-auto StaticMeshComponent::GetMaterials() const noexcept -> std::vector<ObserverPtr<Material>> const& {
+auto StaticMeshComponent::GetMaterials() const noexcept -> std::vector<Material*> const& {
   return mMaterials;
 }
 
 
-auto StaticMeshComponent::SetMaterials(std::vector<ObserverPtr<Material>> const& materials) -> void {
+auto StaticMeshComponent::SetMaterials(std::vector<Material*> const& materials) -> void {
   mMaterials = materials;
   ResizeMaterialListToSubmeshCount();
 }
 
 
-auto StaticMeshComponent::SetMaterial(int const idx, ObserverPtr<Material> const mtl) -> void {
+auto StaticMeshComponent::SetMaterial(int const idx, Material* const mtl) -> void {
   if (idx >= std::ssize(mMaterials)) {
     throw std::runtime_error{
       std::format("Invalid index {} while attempting to replace material on StaticMeshComponent.", idx)
@@ -76,12 +76,12 @@ auto StaticMeshComponent::SetMaterial(int const idx, ObserverPtr<Material> const
 
 auto StaticMeshComponent::OnInit() -> void {
   Component::OnInit();
-  gRenderer.Register(*this);
+  g_engine_context.scene_renderer->Register(*this);
 }
 
 
 auto StaticMeshComponent::OnDestroy() -> void {
-  gRenderer.Unregister(*this);
+  g_engine_context.scene_renderer->Unregister(*this);
   Component::OnDestroy();
 }
 

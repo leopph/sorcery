@@ -12,7 +12,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-std::vector<ObserverPtr<Object>> Object::sAllObjects;
+std::vector<Object*> Object::sAllObjects;
 std::recursive_mutex Object::sAllObjectsMutex;
 
 

@@ -32,7 +32,7 @@ private:
   Vector3 mUp{Vector3::Up()};
 
   TransformComponent* mParent{nullptr};
-  std::vector<ObserverPtr<TransformComponent>> mChildren;
+  std::vector<TransformComponent*> mChildren;
 
   Matrix4 mLocalToWorldMtx{Matrix4::Identity()};
 
@@ -73,10 +73,10 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetUpAxis() const -> Vector3 const&;
   [[nodiscard]] LEOPPHAPI auto GetForwardAxis() const -> Vector3 const&;
 
-  [[nodiscard]] LEOPPHAPI auto GetParent() const -> ObserverPtr<TransformComponent>;
-  LEOPPHAPI auto SetParent(ObserverPtr<TransformComponent> parent) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetParent() const -> TransformComponent*;
+  LEOPPHAPI auto SetParent(TransformComponent* parent) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetChildren() const -> std::vector<ObserverPtr<TransformComponent>> const&;
+  [[nodiscard]] LEOPPHAPI auto GetChildren() const -> std::vector<TransformComponent*> const&;
 
   [[nodiscard]] LEOPPHAPI auto GetLocalToWorldMatrix() const noexcept -> Matrix4 const&;
   [[nodiscard]] LEOPPHAPI auto CalculateLocalToWorldMatrixWithoutScale() const noexcept -> Matrix4;

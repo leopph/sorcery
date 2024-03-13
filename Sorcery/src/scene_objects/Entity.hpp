@@ -17,9 +17,9 @@ class Entity final : public SceneObject {
   RTTR_ENABLE(SceneObject)
   RTTR_REGISTRATION_FRIEND
 
-  ObserverPtr<Scene> mScene{nullptr};
-  mutable ObserverPtr<TransformComponent> mTransform{nullptr};
-  std::vector<ObserverPtr<Component>> mComponents;
+  Scene* mScene{nullptr};
+  mutable TransformComponent* mTransform{nullptr};
+  std::vector<Component*> mComponents;
 
 public:
   LEOPPHAPI Entity();
@@ -32,13 +32,13 @@ public:
   LEOPPHAPI auto RemoveComponent(Component& component) -> void;
 
   template<std::derived_from<Component> T>
-  auto GetComponent() const -> ObserverPtr<T>;
+  auto GetComponent() const -> T*;
 
   template<std::derived_from<Component> T>
-  auto GetComponents(std::vector<ObserverPtr<T>>& out) const -> std::vector<ObserverPtr<T>>&;
+  auto GetComponents(std::vector<T*>& out) const -> std::vector<T*>&;
 
   template<std::derived_from<Component> T>
-  auto GetComponents() const -> std::vector<ObserverPtr<T>>;
+  auto GetComponents() const -> std::vector<T*>;
 
   LEOPPHAPI auto OnInit() -> void override;
   LEOPPHAPI auto OnDestroy() -> void override;
@@ -50,14 +50,14 @@ public:
 
 
 template<std::derived_from<Component> T>
-auto Entity::GetComponent() const -> ObserverPtr<T> {
+auto Entity::GetComponent() const -> T* {
   if constexpr (std::same_as<Component, T>) {
     return mComponents.empty()
              ? nullptr
              : mComponents.front();
   } else {
     for (auto const component : mComponents) {
-      if (auto const castPtr{rttr::rttr_cast<ObserverPtr<T>>(component)}) {
+      if (auto const castPtr{rttr::rttr_cast<T*>(component)}) {
         return castPtr;
       }
     }
@@ -68,14 +68,14 @@ auto Entity::GetComponent() const -> ObserverPtr<T> {
 
 
 template<std::derived_from<Component> T>
-auto Entity::GetComponents(std::vector<ObserverPtr<T>>& out) const -> std::vector<ObserverPtr<T>>& {
+auto Entity::GetComponents(std::vector<T*>& out) const -> std::vector<T*>& {
   if constexpr (std::is_same_v<T, Component>) {
     out = mComponents;
   } else {
     out.clear();
 
     for (auto const component : mComponents) {
-      if (auto const castPtr{rttr::rttr_cast<ObserverPtr<T>>(component)}) {
+      if (auto const castPtr{rttr::rttr_cast<T*>(component)}) {
         out.emplace_back(castPtr);
       }
     }
@@ -86,8 +86,8 @@ auto Entity::GetComponents(std::vector<ObserverPtr<T>>& out) const -> std::vecto
 
 
 template<std::derived_from<Component> T>
-auto Entity::GetComponents() const -> std::vector<ObserverPtr<T>> {
-  std::vector<ObserverPtr<T>> ret;
+auto Entity::GetComponents() const -> std::vector<T*> {
+  std::vector<T*> ret;
   GetComponents(ret);
   return ret;
 }

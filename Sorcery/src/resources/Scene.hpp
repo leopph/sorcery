@@ -15,13 +15,13 @@ class Scene final : public NativeResource {
   static Scene* sActiveScene;
   static std::vector<Scene*> sAllScenes;
 
-  std::vector<ObserverPtr<Entity>> mEntities;
+  std::vector<Entity*> mEntities;
 
   YAML::Node mYamlData;
 
   Vector3 mAmbientLight{20.0f / 255.0f};
 
-  ObserverPtr<Cubemap> mSkybox{nullptr};
+  Cubemap* mSkybox{nullptr};
   SkyMode mSkyMode{SkyMode::Color};
   Vector3 mSkyColor{10.0f / 255.0f};
 
@@ -39,7 +39,7 @@ public:
 
   LEOPPHAPI auto AddEntity(Entity& entity) -> void;
   LEOPPHAPI auto RemoveEntity(Entity const& entity) -> void;
-  [[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::vector<ObserverPtr<Entity>> const&;
+  [[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::vector<Entity*> const&;
 
   LEOPPHAPI auto Save() -> void;
   LEOPPHAPI auto Load() -> void;
@@ -61,7 +61,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetSkyColor() const noexcept -> Vector3 const&;
   LEOPPHAPI auto SetSkyColor(Vector3 const& skyColor) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetSkybox() const noexcept -> ObserverPtr<Cubemap>;
-  LEOPPHAPI auto SetSkybox(ObserverPtr<Cubemap> skybox) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetSkybox() const noexcept -> Cubemap*;
+  LEOPPHAPI auto SetSkybox(Cubemap* skybox) noexcept -> void;
 };
 }

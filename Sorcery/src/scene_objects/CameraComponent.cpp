@@ -2,7 +2,7 @@
 
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
-#include "..\rendering\scene_renderer.hpp"
+#include "../engine_context.hpp"
 #include "../Reflection.hpp"
 
 #include <imgui.h>
@@ -74,12 +74,12 @@ auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
 
 auto CameraComponent::OnInit() -> void {
   Component::OnInit();
-  gRenderer.Register(*this);
+  g_engine_context.scene_renderer->Register(*this);
 }
 
 
 auto CameraComponent::OnDestroy() -> void {
-  gRenderer.Unregister(*this);
+  g_engine_context.scene_renderer->Unregister(*this);
   Component::OnDestroy();
 }
 

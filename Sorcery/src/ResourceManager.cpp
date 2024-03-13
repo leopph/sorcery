@@ -3,7 +3,7 @@
 #include "Reflection.hpp"
 #include "ExternalResource.hpp"
 #include "FileIo.hpp"
-#include "rendering\scene_renderer.hpp"
+#include "engine_context.hpp"
 #include "Resources/Scene.hpp"
 
 #include <DirectXTex.h>
@@ -19,23 +19,23 @@ namespace sorcery {
 ResourceManager gResourceManager;
 
 
-auto ResourceManager::ResourceGuidLess::operator()(ObserverPtr<Resource> const lhs, ObserverPtr<Resource> const rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(Resource* const lhs, Resource* const rhs) const noexcept -> bool {
   return lhs->GetGuid() < rhs->GetGuid();
 }
 
 
-auto ResourceManager::ResourceGuidLess::operator()(ObserverPtr<Resource> const lhs, Guid const& rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(Resource* const lhs, Guid const& rhs) const noexcept -> bool {
   return lhs->GetGuid() < rhs;
 }
 
 
-auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, ObserverPtr<Resource> const rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, Resource* const rhs) const noexcept -> bool {
   return lhs < rhs->GetGuid();
 }
 
 
-auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> ObserverPtr<Resource> {
-  ObserverPtr<Resource> res{nullptr};
+auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> Resource* {
+  Resource* res{nullptr};
 
   if (desc.pathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
     std::vector<std::uint8_t> fileBytes;
@@ -84,20 +84,20 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
 }
 
 
-auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexcept -> MaybeNull<ObserverPtr<Resource>> {
+auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexcept -> MaybeNull<Resource*> {
   DirectX::TexMetadata meta;
   DirectX::ScratchImage img;
   if (FAILED(LoadFromDDSMemory(bytes.data(), bytes.size(), DirectX::DDS_FLAGS_NONE, &meta, img))) {
     return nullptr;
   }
 
-  auto tex{gRenderer.LoadReadonlyTexture(img)};
+  auto tex{g_engine_context.render_manager->LoadReadonlyTexture(img)};
 
   if (!tex) {
     return nullptr;
   }
 
-  ObserverPtr<Resource> ret;
+  Resource* ret;
 
   if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
     ret = new Texture2D{std::move(tex)};
@@ -112,7 +112,7 @@ auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexce
 }
 
 
-auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeNull<ObserverPtr<Resource>> {
+auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeNull<Resource*> {
   if constexpr (std::endian::native != std::endian::little) {
     return nullptr; // TODO
   } else {

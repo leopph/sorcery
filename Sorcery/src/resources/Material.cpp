@@ -1,6 +1,6 @@
 #include "Material.hpp"
 
-#include "..\rendering\scene_renderer.hpp"
+#include "../engine_context.hpp"
 #include "../Serialization.hpp"
 #undef FindResource
 #include "../GUI.hpp"
@@ -29,7 +29,7 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 Material::Material() {
-  ConstantBuffer<ShaderMaterial>::New(*gRenderer.GetDevice(), false);
+  rendering::ConstantBuffer<ShaderMaterial>::New(*g_engine_context.graphics_device, false);
 }
 
 
@@ -94,60 +94,60 @@ auto Material::SetAo(f32 const ao) noexcept -> void {
 }
 
 
-auto Material::GetAlbedoMap() const noexcept -> ObserverPtr<Texture2D> {
+auto Material::GetAlbedoMap() const noexcept -> Texture2D* {
   return albedo_map_;
 }
 
 
-auto Material::SetAlbedoMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
+auto Material::SetAlbedoMap(Texture2D* const tex) noexcept -> void {
   albedo_map_ = tex;
   mShaderMtl.albedo_map_idx = albedo_map_ ? albedo_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
   Update();
 }
 
 
-auto Material::GetMetallicMap() const noexcept -> ObserverPtr<Texture2D> {
+auto Material::GetMetallicMap() const noexcept -> Texture2D* {
   return metallic_map_;
 }
 
 
-auto Material::SetMetallicMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
+auto Material::SetMetallicMap(Texture2D* const tex) noexcept -> void {
   metallic_map_ = tex;
   mShaderMtl.metallic_map_idx = metallic_map_ ? metallic_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
   Update();
 }
 
 
-auto Material::GetRoughnessMap() const noexcept -> ObserverPtr<Texture2D> {
+auto Material::GetRoughnessMap() const noexcept -> Texture2D* {
   return roughness_map_;
 }
 
 
-auto Material::SetRoughnessMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
+auto Material::SetRoughnessMap(Texture2D* const tex) noexcept -> void {
   roughness_map_ = tex;
   mShaderMtl.roughness_map_idx = roughness_map_ ? roughness_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
   Update();
 }
 
 
-auto Material::GetAoMap() const noexcept -> ObserverPtr<Texture2D> {
+auto Material::GetAoMap() const noexcept -> Texture2D* {
   return ao_map_;
 }
 
 
-auto Material::SetAoMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
+auto Material::SetAoMap(Texture2D* const tex) noexcept -> void {
   ao_map_ = tex;
   mShaderMtl.ao_map_idx = ao_map_ ? ao_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
   Update();
 }
 
 
-auto Material::GetNormalMap() const noexcept -> ObserverPtr<Texture2D> {
+auto Material::GetNormalMap() const noexcept -> Texture2D* {
   return normal_map_;
 }
 
 
-auto Material::SetNormalMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
+auto Material::SetNormalMap(Texture2D* const tex) noexcept -> void {
   normal_map_ = tex;
   mShaderMtl.normal_map_idx = normal_map_ ? normal_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
   Update();
@@ -175,12 +175,12 @@ auto Material::SetAlphaThreshold(float const threshold) noexcept -> void {
 }
 
 
-auto Material::GetOpacityMask() const noexcept -> ObserverPtr<Texture2D> {
+auto Material::GetOpacityMask() const noexcept -> Texture2D* {
   return opacity_mask_;
 }
 
 
-auto Material::SetOpacityMask(ObserverPtr<Texture2D> const opacityMask) noexcept -> void {
+auto Material::SetOpacityMask(Texture2D* const opacityMask) noexcept -> void {
   opacity_mask_ = opacityMask;
   mShaderMtl.opacity_map_idx = opacity_mask_ ? opacity_mask_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
   Update();
@@ -188,7 +188,7 @@ auto Material::SetOpacityMask(ObserverPtr<Texture2D> const opacityMask) noexcept
 
 
 auto Material::Update() const -> void {
-  std::ignore = gRenderer.UpdateBuffer(*cb_.GetBuffer(), std::span{
+  std::ignore = g_engine_context.render_manager->UpdateBuffer(*cb_.GetBuffer(), std::span{
     std::bit_cast<std::uint8_t const*>(&mShaderMtl), sizeof(mShaderMtl)
   });
 }

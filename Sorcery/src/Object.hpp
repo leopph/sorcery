@@ -13,7 +13,7 @@ namespace sorcery {
 class Object {
   RTTR_ENABLE()
   RTTR_REGISTRATION_FRIEND
-  LEOPPHAPI static std::vector<ObserverPtr<Object>> sAllObjects;
+  LEOPPHAPI static std::vector<Object*> sAllObjects;
   LEOPPHAPI static std::recursive_mutex sAllObjectsMutex;
 
   std::string mName{"New Object"};
@@ -37,33 +37,33 @@ public:
   virtual auto OnDrawGizmosSelected() -> void {}
 
   template<std::derived_from<Object> T>
-  [[nodiscard]] static auto FindObjectOfType() -> ObserverPtr<T>;
+  [[nodiscard]] static auto FindObjectOfType() -> T*;
 
   template<std::derived_from<Object> T>
-  static auto FindObjectsOfType(std::vector<ObserverPtr<T>>& out) -> std::vector<ObserverPtr<T>>&;
+  static auto FindObjectsOfType(std::vector<T*>& out) -> std::vector<T*>&;
 
   template<std::derived_from<Object> T>
-  [[nodiscard]] auto FindObjectsOfType() -> std::vector<ObserverPtr<T>>;
+  [[nodiscard]] auto FindObjectsOfType() -> std::vector<T*>;
 
   LEOPPHAPI static auto DestroyAll() -> void;
 };
 
 
 template<std::derived_from<Object> T>
-[[nodiscard]] auto CreateAndInitialize() -> ObserverPtr<T>;
+[[nodiscard]] auto CreateAndInitialize() -> T*;
 
 LEOPPHAPI auto Destroy(Object& obj) -> void;
 
 
 template<std::derived_from<Object> T>
-auto Object::FindObjectOfType() -> ObserverPtr<T> {
+auto Object::FindObjectOfType() -> T* {
   std::unique_lock const lock{sAllObjectsMutex};
 
   if constexpr (std::same_as<Object, T>) {
     return sAllObjects.empty() ? nullptr : sAllObjects.front();
   } else {
     for (auto const obj : sAllObjects) {
-      if (auto const castObj{rttr::rttr_cast<ObserverPtr<T>>(obj)}) {
+      if (auto const castObj{rttr::rttr_cast<T*>(obj)}) {
         return castObj;
       }
     }
@@ -74,7 +74,7 @@ auto Object::FindObjectOfType() -> ObserverPtr<T> {
 
 
 template<std::derived_from<Object> T>
-auto Object::FindObjectsOfType(std::vector<ObserverPtr<T>>& out) -> std::vector<ObserverPtr<T>>& {
+auto Object::FindObjectsOfType(std::vector<T*>& out) -> std::vector<T*>& {
   std::unique_lock const lock{sAllObjectsMutex};
 
   if constexpr (std::same_as<Object, T>) {
@@ -83,7 +83,7 @@ auto Object::FindObjectsOfType(std::vector<ObserverPtr<T>>& out) -> std::vector<
     out.clear();
 
     for (auto const obj : sAllObjects) {
-      if (auto const castObj{rttr::rttr_cast<ObserverPtr<T>>(obj)}) {
+      if (auto const castObj{rttr::rttr_cast<T*>(obj)}) {
         out.emplace_back(castObj);
       }
     }
@@ -94,15 +94,15 @@ auto Object::FindObjectsOfType(std::vector<ObserverPtr<T>>& out) -> std::vector<
 
 
 template<std::derived_from<Object> T>
-auto Object::FindObjectsOfType() -> std::vector<ObserverPtr<T>> {
-  std::vector<ObserverPtr<T>> ret;
+auto Object::FindObjectsOfType() -> std::vector<T*> {
+  std::vector<T*> ret;
   FindObjectsOfType<T>(ret);
   return ret;
 }
 
 
 template<std::derived_from<Object> T>
-auto CreateAndInitialize() -> ObserverPtr<T> {
+auto CreateAndInitialize() -> T* {
   auto const obj{new T{}};
   obj->OnInit();
   return obj;

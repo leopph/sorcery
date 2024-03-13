@@ -2,7 +2,7 @@
 
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
-#include "..\rendering\scene_renderer.hpp"
+#include "../engine_context.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -152,12 +152,12 @@ auto LightComponent::SetShadowExtension(float const shadowExtension) noexcept ->
 
 auto LightComponent::OnInit() -> void {
   Component::OnInit();
-  gRenderer.Register(*this);
+  g_engine_context.scene_renderer->Register(*this);
 }
 
 
 auto LightComponent::OnDestroy() -> void {
-  gRenderer.Unregister(*this);
+  g_engine_context.scene_renderer->Unregister(*this);
   Component::OnDestroy();
 }
 
@@ -297,8 +297,8 @@ auto LightComponent::OnDrawGizmosSelected() -> void {
 
     // This highly depends on the order CalculateSpotLightLocalVertices returns the vertices
     for (int i = 0; i < 4; i++) {
-      gRenderer.DrawLineAtNextRender(vertices[4], vertices[i], lineColor);
-      gRenderer.DrawLineAtNextRender(vertices[i], vertices[(i + 1) % 4], lineColor);
+      g_engine_context.scene_renderer->DrawLineAtNextRender(vertices[4], vertices[i], lineColor);
+      g_engine_context.scene_renderer->DrawLineAtNextRender(vertices[i], vertices[(i + 1) % 4], lineColor);
     }
   }
 }

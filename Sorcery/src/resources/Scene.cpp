@@ -71,16 +71,16 @@ auto Scene::RemoveEntity(Entity const& entity) -> void {
 }
 
 
-auto Scene::GetEntities() const noexcept -> std::vector<ObserverPtr<Entity>> const& {
+auto Scene::GetEntities() const noexcept -> std::vector<Entity*> const& {
   return mEntities;
 }
 
 
 auto Scene::Save() -> void {
-  static std::vector<ObserverPtr<SceneObject>> tmpThisSceneObjects;
+  static std::vector<SceneObject*> tmpThisSceneObjects;
   tmpThisSceneObjects.clear();
 
-  static std::vector<ObserverPtr<Component>> tmpComponents;
+  static std::vector<Component*> tmpComponents;
   tmpComponents.clear();
 
   static std::unordered_map<void const*, int> ptrFixUp;
@@ -241,12 +241,12 @@ auto Scene::SetSkyColor(Vector3 const& skyColor) noexcept -> void {
 }
 
 
-auto Scene::GetSkybox() const noexcept -> ObserverPtr<Cubemap> {
+auto Scene::GetSkybox() const noexcept -> Cubemap* {
   return mSkybox;
 }
 
 
-auto Scene::SetSkybox(ObserverPtr<Cubemap> const skybox) noexcept -> void {
+auto Scene::SetSkybox(Cubemap* const skybox) noexcept -> void {
   mSkybox = skybox;
 }
 }

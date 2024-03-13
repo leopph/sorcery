@@ -31,7 +31,7 @@ protected:
 template<std::derived_from<Object> T>
 class ObjectPicker : detail::ObjectPickerBase {
   std::vector<Guid> mGuids;
-  std::vector<ObserverPtr<T>> mObjects;
+  std::vector<T*> mObjects;
   std::string mFilter;
   int const mInstanceId{GetNextInstanceId()};
   std::string const mPopupId{std::format("PopupObjectPicker{}", mInstanceId)};
@@ -44,13 +44,13 @@ class ObjectPicker : detail::ObjectPickerBase {
 
 public:
   // Returns whether an assignment was made.
-  [[nodiscard]] auto Draw(ObserverPtr<T>& targetObj, bool allowNull = true) noexcept -> bool;
+  [[nodiscard]] auto Draw(T*& targetObj, bool allowNull = true) noexcept -> bool;
 };
 
 
 struct ObjectDragDropData {
   LEOPPHAPI static std::string_view const TYPE_STR;
-  ObserverPtr<Object> ptr;
+  Object* ptr;
 };
 
 
@@ -85,7 +85,7 @@ auto ObjectPicker<T>::QueryObjects(bool const insertNull) noexcept -> void {
 
 
 template<std::derived_from<Object> T>
-auto ObjectPicker<T>::Draw(ObserverPtr<T>& targetObj, bool const allowNull) noexcept -> bool {
+auto ObjectPicker<T>::Draw(T*& targetObj, bool const allowNull) noexcept -> bool {
   auto ret{false};
 
   if (ImGui::BeginPopup(mPopupId.c_str())) {
@@ -120,8 +120,8 @@ auto ObjectPicker<T>::Draw(ObserverPtr<T>& targetObj, bool const allowNull) noex
 
   if (ImGui::BeginDragDropTarget()) {
     if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropData::TYPE_STR.data())}) {
-      if (auto const dragDropData{static_cast<ObserverPtr<ObjectDragDropData>>(payload->Data)}; dragDropData && dragDropData->ptr && rttr::type::get(*dragDropData->ptr).is_derived_from(rttr::type::get<T>())) {
-        targetObj = static_cast<ObserverPtr<T>>(dragDropData->ptr);
+      if (auto const dragDropData{static_cast<ObjectDragDropData*>(payload->Data)}; dragDropData && dragDropData->ptr && rttr::type::get(*dragDropData->ptr).is_derived_from(rttr::type::get<T>())) {
+        targetObj = static_cast<T*>(dragDropData->ptr);
         ret = true;
       }
     }
