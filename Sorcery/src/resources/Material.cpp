@@ -6,8 +6,11 @@
 #include "../GUI.hpp"
 #include "../ResourceManager.hpp"
 
-#include <cstdint>
 #include <imgui.h>
+
+#include <bit>
+#include <cstdint>
+#include <tuple>
 
 
 RTTR_REGISTRATION {
@@ -26,7 +29,7 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 Material::Material() {
-  ConstantBuffer<ShaderMaterial>::New(*gRenderer.GetDevice());
+  ConstantBuffer<ShaderMaterial>::New(*gRenderer.GetDevice(), false);
 }
 
 
@@ -184,8 +187,10 @@ auto Material::SetOpacityMask(ObserverPtr<Texture2D> const opacityMask) noexcept
 }
 
 
-auto Material::Update() -> void {
-  cb_.Update(mShaderMtl);
+auto Material::Update() const -> void {
+  std::ignore = gRenderer.UpdateBuffer(*cb_.GetBuffer(), std::span{
+    std::bit_cast<std::uint8_t const*>(&mShaderMtl), sizeof(mShaderMtl)
+  });
 }
 
 

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "../Bounds.hpp"
-#include "../Color.hpp"
 #include "NativeResource.hpp"
-#include "../Util.hpp"
 #include "Texture2D.hpp"
+#include "../Color.hpp"
+#include "../Util.hpp"
 #include "../ResourceManager.hpp"
 #include "../rendering/shaders/shader_interop.h"
 #include "../rendering/graphics.hpp"
@@ -80,7 +79,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetOpacityMask() const noexcept -> ObserverPtr<Texture2D>;
   LEOPPHAPI auto SetOpacityMask(ObserverPtr<Texture2D> opacityMask) noexcept -> void;
 
-  LEOPPHAPI auto Update() -> void;
+  LEOPPHAPI auto Update() const -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
 
