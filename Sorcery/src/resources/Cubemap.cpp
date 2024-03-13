@@ -1,6 +1,6 @@
 #include "Cubemap.hpp"
 
-#include "../Rendering/Renderer.hpp"
+#include <utility>
 
 
 RTTR_REGISTRATION {
@@ -9,15 +9,11 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Cubemap::Cubemap(ID3D11Texture2D& tex, ID3D11ShaderResourceView& srv) noexcept :
-  mTex{&tex},
-  mSrv{&srv} {
-  mTex->AddRef();
-  mSrv->AddRef();
-}
+Cubemap::Cubemap(graphics::SharedDeviceChildHandle<graphics::Texture> tex) noexcept :
+  tex_{std::move(tex)} {}
 
 
-auto Cubemap::GetTex() const noexcept -> graphics::Buffer* {
-  return mSrv.Get();
+auto Cubemap::GetTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+  return tex_;
 }
 }

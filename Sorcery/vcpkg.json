@@ -1,6 +1,6 @@
 {
 	"$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-	"builtin-baseline": "8eb57355a4ffb410a2e94c07b4dca2dffbee8e50",
+	"builtin-baseline": "fba75d09065fcc76a25dcf386b1d00d33f5175af",
 	"dependencies": [
 		{
 			"name": "yaml-cpp",
@@ -16,8 +16,8 @@
 			"version>=": "1.89.9"
 		},
 		{
-			"name": "directxtk",
-			"version>=": "2023-06-13"
+			"name": "directxtex",
+			"version>=": "2023-12-31"
 		}
 	]
 }

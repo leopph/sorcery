@@ -63,6 +63,13 @@ auto Renderer::Present() noexcept -> void {
 }
 
 
+auto Renderer::LoadReadonlyTexture(
+  DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture> {
+  assert(mImpl);
+  return mImpl->LoadReadonlyTexture(img);
+}
+
+
 auto Renderer::GetDevice() const noexcept -> graphics::GraphicsDevice* {
   assert(mImpl);
   return mImpl->GetDevice();

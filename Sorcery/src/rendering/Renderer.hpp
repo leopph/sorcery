@@ -9,6 +9,11 @@
 #include "shaders/shadow_filtering_modes.h"
 #include "graphics.hpp"
 
+namespace DirectX {
+class ScratchImage;
+}
+
+
 namespace sorcery {
 class Renderer {
 public:
@@ -63,6 +68,9 @@ public:
   LEOPPHAPI auto Present() noexcept -> void;
 
   // FUNCTIONS FOR CUSTOM EXTERNAL REQUESTS
+
+  auto LoadReadonlyTexture(DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
+
 
   [[nodiscard]] LEOPPHAPI auto GetDevice() const noexcept -> graphics::GraphicsDevice*;
 

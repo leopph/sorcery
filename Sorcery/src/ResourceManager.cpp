@@ -6,7 +6,7 @@
 #include "Rendering/Renderer.hpp"
 #include "Resources/Scene.hpp"
 
-#include <directxtk/DDSTextureLoader.h>
+#include <DirectXTex.h>
 #include <wrl/client.h>
 
 #include <cassert>
@@ -85,37 +85,30 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
 
 
 auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexcept -> MaybeNull<ObserverPtr<Resource>> {
-  ComPtr<ID3D11Resource> res;
-  ComPtr<ID3D11ShaderResourceView> srv;
-
-  if (FAILED(DirectX::CreateDDSTextureFromMemoryEx(gRenderer.GetDevice(), reinterpret_cast<std::uint8_t const*>(bytes.data()), std::size(bytes), 0, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE, 0, 0, DirectX::DDS_LOADER_DEFAULT, res.GetAddressOf(), srv.GetAddressOf()))) {
+  DirectX::TexMetadata meta;
+  DirectX::ScratchImage img;
+  if (FAILED(LoadFromDDSMemory(bytes.data(), bytes.size(), DirectX::DDS_FLAGS_NONE, &meta, img))) {
     return nullptr;
   }
 
-  D3D11_RESOURCE_DIMENSION resDim;
-  res->GetType(&resDim);
+  auto tex{gRenderer.LoadReadonlyTexture(img)};
 
-  if (resDim == D3D11_RESOURCE_DIMENSION_TEXTURE2D) {
-    ComPtr<ID3D11Texture2D> tex2D;
-    if (FAILED(res.As(&tex2D))) {
-      return nullptr;
-    }
-
-    D3D11_TEXTURE2D_DESC desc;
-    tex2D->GetDesc(&desc);
-
-    if (desc.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) {
-      auto const ret{new Cubemap{*tex2D.Get(), *srv.Get()}};
-      ret->OnInit();
-      return ret;
-    }
-
-    auto const ret{new Texture2D{*tex2D.Get(), *srv.Get()}};
-    ret->OnInit();
-    return ret;
+  if (!tex) {
+    return nullptr;
   }
 
-  return nullptr;
+  ObserverPtr<Resource> ret;
+
+  if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
+    ret = new Texture2D{std::move(tex)};
+  } else if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE3D && meta.IsCubemap()) {
+    ret = new Cubemap{std::move(tex)};
+  } else {
+    return nullptr;
+  }
+
+  ret->OnInit();
+  return ret;
 }
 
 

@@ -10,7 +10,8 @@
 #include "../Core.hpp"
 #include "../Color.hpp"
 #include "../Math.hpp"
-#include "Visibility.hpp"
+
+#include <DirectXTex.h>
 
 #include <array>
 #include <memory>
@@ -35,6 +36,8 @@ public:
   auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void; TODO*/
 
   auto Present() noexcept -> void;
+
+  auto LoadReadonlyTexture(DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
 
   // FUNCTIONS FOR CUSTOM EXTERNAL REQUESTS
 

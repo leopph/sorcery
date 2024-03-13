@@ -1747,6 +1747,99 @@ auto Renderer::Impl::Present() noexcept -> void {
 }
 
 
+auto Renderer::Impl::LoadReadonlyTexture(
+  DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture> {
+  auto& cmd{AcquireCommandList()};
+
+  auto const& meta{img.GetMetadata()};
+
+  graphics::TextureDesc desc;
+  desc.width = static_cast<UINT>(meta.width);
+  desc.mip_levels = static_cast<UINT16>(meta.mipLevels);
+  desc.format = meta.format;
+  desc.sample_desc.Count = 1;
+  desc.sample_desc.Quality = 0;
+  desc.flags = D3D12_RESOURCE_FLAG_NONE;
+  desc.depth_stencil = false;
+  desc.render_target = false;
+  desc.shader_resource = true;
+  desc.unordered_access = false;
+
+  if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE1D) {
+    desc.dimension = graphics::TextureDimension::k1D;
+    desc.height = 1;
+    desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
+  } else if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
+    desc.dimension = graphics::TextureDimension::k2D;
+    desc.height = static_cast<UINT>(meta.height);
+    desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
+  } else if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE3D) {
+    if (meta.IsCubemap()) {
+      desc.dimension = graphics::TextureDimension::kCube;
+      desc.height = static_cast<UINT>(meta.height);
+      desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
+    } else {
+      desc.dimension = graphics::TextureDimension::k3D;
+      desc.height = static_cast<UINT>(meta.height);
+      desc.depth_or_array_size = static_cast<UINT16>(meta.depth);
+    }
+  }
+
+  auto tex{device_->CreateTexture(desc, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr)};
+
+  auto const upload_buf{
+    device_->CreateBuffer(graphics::BufferDesc{
+      static_cast<UINT>(tex->GetRequiredIntermediateSize()), 0, false, false, false
+    }, D3D12_HEAP_TYPE_UPLOAD)
+  };
+
+  if (!cmd.Begin(nullptr)) {
+    return nullptr;
+  }
+
+  std::pmr::vector<D3D12_SUBRESOURCE_DATA> subresource_data{&GetTmpMemRes()};
+  subresource_data.reserve(img.GetImageCount());
+
+  for (std::size_t i{0}; i < img.GetImageCount(); i++) {
+    auto const subimg{img.GetImages()[i]};
+    subresource_data.emplace_back(subimg.pixels, subimg.rowPitch, subimg.slicePitch);
+  }
+
+  cmd.UpdateSubresources(*tex, *upload_buf, 0, 0, static_cast<UINT>(img.GetImageCount()), subresource_data.data());
+
+  cmd.Barrier({}, {}, std::array{
+    graphics::TextureBarrier{
+      D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
+      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, tex.get(),
+      D3D12_BARRIER_SUBRESOURCE_RANGE{
+        0, static_cast<UINT>(meta.mipLevels), 0, static_cast<UINT>(std::max(meta.depth, meta.arraySize)), 0, 1
+      },
+      D3D12_TEXTURE_BARRIER_FLAG_NONE
+    }
+  });
+
+  if (!cmd.End()) {
+    return nullptr;
+  }
+
+  auto constexpr init_fence_val{0};
+  auto constexpr completed_fence_val{1};
+  auto const fence{device_->CreateFence(init_fence_val)};
+
+  device_->ExecuteCommandLists(std::span{&cmd, 1});
+
+  if (!device_->SignalFence(*fence.Get(), completed_fence_val)) {
+    return nullptr;
+  }
+
+  if (FAILED(fence->SetEventOnCompletion(completed_fence_val, nullptr))) {
+    return nullptr;
+  }
+
+  return tex;
+}
+
+
 auto Renderer::Impl::GetDevice() const noexcept -> ObserverPtr<graphics::GraphicsDevice> {
   return device_.get();
 }

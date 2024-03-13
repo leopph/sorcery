@@ -1,9 +1,10 @@
 #include "Texture2D.hpp"
 
-#include "../Util.hpp"
-#include "../Rendering/Renderer.hpp"
-
 #include <imgui.h>
+#include <DirectXTex.h>
+
+#include <format>
+#include <utility>
 
 
 RTTR_REGISTRATION {
@@ -13,9 +14,11 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 Texture2D::Texture2D(graphics::SharedDeviceChildHandle<graphics::Texture> tex) noexcept :
-tex_{std::move(tex)} {
-  mWidth = static_cast<int>(desc.Width);
-  mHeight = static_cast<int>(desc.Height);
+  tex_{std::move(tex)} {
+  m_width_ = static_cast<int>(tex->GetDesc().Width);
+  m_height_ = static_cast<int>(tex->GetDesc().Height);
+  auto const desc{tex_->GetDesc()};
+  m_channel_count_ = static_cast<unsigned>(DirectX::BitsPerPixel(desc.Format) / DirectX::BitsPerColor(desc.Format));
 }
 
 
@@ -24,18 +27,18 @@ auto Texture2D::GetTex() const -> graphics::SharedDeviceChildHandle<graphics::Te
 }
 
 
-auto Texture2D::GetWidth() const noexcept -> int {
-  return mWidth;
+auto Texture2D::GetWidth() const noexcept -> unsigned {
+  return m_width_;
 }
 
 
-auto Texture2D::GetHeight() const noexcept -> int {
-  return mHeight;
+auto Texture2D::GetHeight() const noexcept -> unsigned {
+  return m_height_;
 }
 
 
-auto Texture2D::GetChannelCount() const noexcept -> int {
-  return mChannelCount;
+auto Texture2D::GetChannelCount() const noexcept -> unsigned {
+  return m_channel_count_;
 }
 
 
@@ -85,6 +88,6 @@ auto Texture2D::OnDrawProperties(bool& changed) -> void {
     displaySize.y = imgHeight * widthRatio;
   }
 
-  ImGui::Image(GetSrv(), displaySize);
+  ImGui::Image(tex_.get(), displaySize);
 }
 }
