@@ -636,14 +636,10 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
         cmd.SetViewports(std::array{shadowViewport});
 
-        if (next_per_view_cb_idx_ >= per_view_cbs_[frame_idx_].size()) {
-          CreatePerViewConstantBuffers(1);
-        }
-
-        SetPerViewConstants(per_view_cbs_[frame_idx_][next_per_view_cb_idx_], shadowViewMtx, shadowProjMtx,
-          ShadowCascadeBoundaries{}, Vector3{});
+        auto& per_view_cb{AcquirePerViewConstantBuffer()};
+        SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, ShadowCascadeBoundaries{}, Vector3{});
         cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_view_cb_idx),
-          per_view_cbs_[frame_idx_][next_per_view_cb_idx_].GetBuffer()->GetConstantBuffer());
+          per_view_cb.GetBuffer()->GetConstantBuffer());
 
         Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
 
@@ -657,9 +653,8 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
           auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
-          if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
-            CreatePerDrawConstantBuffers(1);
-          }
+          auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
+          SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, pos_buf_idx),
             frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
@@ -667,13 +662,9 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
             frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_draw_cb_idx),
-            per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
+            per_draw_cb.GetBuffer()->GetConstantBuffer());
           cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
-
-          ++next_per_draw_cb_idx_;
         }
-
-        ++next_per_view_cb_idx_;
       }
 
       break;
@@ -709,14 +700,11 @@ auto Renderer::Impl::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 
         cmd.SetViewports(std::span{&viewport, 1});
 
-        if (next_per_view_cb_idx_ >= per_view_cbs_[frame_idx_].size()) {
-          CreatePerViewConstantBuffers(1);
-        }
-
-        SetPerViewConstants(per_view_cbs_[frame_idx_][next_per_view_cb_idx_], Matrix4::Identity(),
-          subcell->shadowViewProjMtx, ShadowCascadeBoundaries{}, Vector3{});
+        auto& per_view_cb{AcquirePerViewConstantBuffer()};
+        SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, ShadowCascadeBoundaries{},
+          Vector3{});
         cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_view_cb_idx),
-          per_view_cbs_[frame_idx_][next_per_view_cb_idx_].GetBuffer()->GetConstantBuffer());
+          per_view_cb.GetBuffer()->GetConstantBuffer());
 
         Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
 
@@ -730,9 +718,8 @@ auto Renderer::Impl::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
           auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
           auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
-          if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
-            CreatePerDrawConstantBuffers(1);
-          }
+          auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
+          SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, pos_buf_idx),
             frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
@@ -740,13 +727,9 @@ auto Renderer::Impl::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
             frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
           cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_draw_cb_idx),
-            per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
+            per_draw_cb.GetBuffer()->GetConstantBuffer());
           cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
-
-          ++next_per_draw_cb_idx_;
         }
-
-        ++next_per_view_cb_idx_;
       }
     }
   }
@@ -954,13 +937,28 @@ auto Renderer::Impl::RecreatePipelines() -> bool {
 }
 
 
-auto Renderer::Impl::CreatePerViewConstantBuffers(UINT const count) -> void {
-  for (auto& cbs : per_view_cbs_) {
-    cbs.reserve(cbs.size() + count);
+auto Renderer::Impl::CreateCommandLists(UINT const count) -> void {
+  command_lists_.reserve(command_lists_.size() + count);
 
-    for (std::size_t i{0}; i < count; i++) {
+  for (UINT i{0}; i < count; i++) {
+    auto& arr{command_lists_.emplace_back()};
+
+    for (UINT j{0}; j < max_frames_in_flight_; j++) {
+      arr[i] = device_->CreateCommandList();
+    }
+  }
+}
+
+
+auto Renderer::Impl::CreatePerViewConstantBuffers(UINT const count) -> void {
+  per_view_cbs_.reserve(per_view_cbs_.size() + count);
+
+  for (UINT i{0}; i < count; i++) {
+    auto& arr{per_view_cbs_.emplace_back()};
+
+    for (UINT j{0}; j < max_frames_in_flight_; j++) {
       if (auto opt{ConstantBuffer<ShaderPerViewConstants>::New(*device_)}) {
-        cbs.emplace_back(std::move(*opt));
+        arr[i] = std::move(*opt);
       }
     }
   }
@@ -968,15 +966,52 @@ auto Renderer::Impl::CreatePerViewConstantBuffers(UINT const count) -> void {
 
 
 auto Renderer::Impl::CreatePerDrawConstantBuffers(UINT const count) -> void {
-  for (auto& cbs : per_draw_cbs_) {
-    cbs.reserve(cbs.size() + count);
+  per_draw_cbs_.reserve(per_draw_cbs_.size() + count);
 
-    for (std::size_t i{0}; i < count; i++) {
+  for (UINT i{0}; i < count; i++) {
+    auto& arr{per_draw_cbs_.emplace_back()};
+
+    for (UINT j{0}; j < max_frames_in_flight_; j++) {
       if (auto opt{ConstantBuffer<ShaderPerDrawConstants>::New(*device_)}) {
-        cbs.emplace_back(std::move(*opt));
+        arr[i] = std::move(*opt);
       }
     }
   }
+}
+
+
+auto Renderer::Impl::AcquireCommandList() -> graphics::CommandList& {
+  if (next_cmd_list_idx_ >= command_lists_.size()) {
+    CreateCommandLists(1);
+  }
+
+  return *command_lists_[next_cmd_list_idx_++][frame_idx_];
+}
+
+
+auto Renderer::Impl::AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>& {
+  if (next_per_view_cb_idx_ >= per_view_cbs_.size()) {
+    CreatePerViewConstantBuffers(1);
+  }
+
+  return per_view_cbs_[next_per_view_cb_idx_++][frame_idx_];
+}
+
+
+auto Renderer::Impl::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>& {
+  if (next_per_draw_cb_idx_ >= per_draw_cbs_.size()) {
+    CreatePerDrawConstantBuffers(1);
+  }
+
+  return per_draw_cbs_[next_per_draw_cb_idx_++][frame_idx_];
+}
+
+
+auto Renderer::Impl::EndFrame() -> void {
+  frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
+  next_cmd_list_idx_ = 0;
+  next_per_draw_cb_idx_ = 0;
+  next_per_view_cb_idx_ = 0;
 }
 
 
@@ -1279,7 +1314,8 @@ auto Renderer::Impl::StartUp() -> void {
   std::array<std::uint8_t, 4> constexpr static white_color_data{255, 255, 255, 255};
 
   auto const white_tex_upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{static_cast<UINT>(white_color_data.size()), 0, false, false, false}, D3D12_HEAP_TYPE_UPLOAD)
+    device_->CreateBuffer(graphics::BufferDesc{static_cast<UINT>(white_color_data.size()), 0, false, false, false},
+      D3D12_HEAP_TYPE_UPLOAD)
   };
   std::memcpy(white_tex_upload_buf->Map(), white_color_data.data(), white_color_data.size());
 
@@ -1290,20 +1326,20 @@ auto Renderer::Impl::StartUp() -> void {
     false
   }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
 
-  std::ignore = command_lists_[0]->Begin(nullptr);
-  command_lists_[0]->CopyTextureRegion(*ssao_noise_tex_, 0, 0, 0, 0, *ssao_noise_upload_buf,
-    D3D12_PLACED_SUBRESOURCE_FOOTPRINT{
-      0,
-      D3D12_SUBRESOURCE_FOOTPRINT{
-        ssao_noise_tex_format, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1,
-        RoundToNextMultiple(SSAO_NOISE_TEX_DIM * 16, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)
-      }
-    });
-  command_lists_[0]->CopyTextureRegion(*white_tex_, 0, 0, 0, 0, *white_tex_upload_buf.get(),
-    D3D12_PLACED_SUBRESOURCE_FOOTPRINT{
-      0, D3D12_SUBRESOURCE_FOOTPRINT{white_tex_format, 1, 1, 1, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT}
-    });
-  command_lists_[0]->Barrier({}, {}, std::array{
+  auto& cmd{AcquireCommandList()};
+
+  std::ignore = cmd.Begin(nullptr);
+  cmd.CopyTextureRegion(*ssao_noise_tex_, 0, 0, 0, 0, *ssao_noise_upload_buf, D3D12_PLACED_SUBRESOURCE_FOOTPRINT{
+    0,
+    D3D12_SUBRESOURCE_FOOTPRINT{
+      ssao_noise_tex_format, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1,
+      RoundToNextMultiple(SSAO_NOISE_TEX_DIM * 16, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)
+    }
+  });
+  cmd.CopyTextureRegion(*white_tex_, 0, 0, 0, 0, *white_tex_upload_buf.get(), D3D12_PLACED_SUBRESOURCE_FOOTPRINT{
+    0, D3D12_SUBRESOURCE_FOOTPRINT{white_tex_format, 1, 1, 1, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT}
+  });
+  cmd.Barrier({}, {}, std::array{
     graphics::TextureBarrier{
       D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
       D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, ssao_noise_tex_.get(),
@@ -1316,8 +1352,8 @@ auto Renderer::Impl::StartUp() -> void {
     }
   });
 
-  std::ignore = command_lists_[0]->End();
-  device_->ExecuteCommandLists(std::span{command_lists_[0].get(), 1});
+  std::ignore = cmd.End();
+  device_->ExecuteCommandLists(std::span{&cmd, 1});
   std::ignore = device_->WaitIdle();
 }
 
@@ -1331,7 +1367,7 @@ auto Renderer::Impl::Render() -> void {
   auto& frame_packet{frame_packets_[frame_idx_]};
   ExtractCurrentState(frame_packet);
 
-  auto& cmd{*command_lists_[frame_idx_]};
+  auto& cmd{AcquireCommandList()};
 
   if (!cmd.Begin(nullptr)) {
     return;
@@ -1364,7 +1400,8 @@ auto Renderer::Impl::Render() -> void {
 
     D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rt_width), static_cast<FLOAT>(rt_height), 0, 1};
 
-    SetPerFrameConstants(per_frame_cbs_[frame_idx_], static_cast<int>(rt_width), static_cast<int>(rt_height));
+    auto& per_frame_cb{per_frame_cbs_[frame_idx_]};
+    SetPerFrameConstants(per_frame_cb, static_cast<int>(rt_width), static_cast<int>(rt_height));
 
     auto const cam_view_mtx{
       Camera::CalculateViewMatrix(cam_data.position, cam_data.right, cam_data.up, cam_data.forward)
@@ -1393,15 +1430,8 @@ auto Renderer::Impl::Render() -> void {
     CullStaticSubmeshInstances(cam_frust_ws, frame_packet.mesh_data, frame_packet.submesh_data,
       frame_packet.instance_data, visible_static_submesh_instance_indices);
 
-    if (next_per_view_cb_idx_ >= per_view_cbs_[frame_idx_].size()) {
-      CreatePerViewConstantBuffers(1);
-    }
-
-    auto const cam_per_view_cb_idx{next_per_view_cb_idx_};
-    ++next_per_view_cb_idx_;
-
-    SetPerViewConstants(per_view_cbs_[frame_idx_][cam_per_view_cb_idx], cam_view_mtx, cam_proj_mtx,
-      shadow_cascade_boundaries, cam_data.position);
+    auto& cam_per_view_cb{AcquirePerViewConstantBuffer()};
+    SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, shadow_cascade_boundaries, cam_data.position);
 
     cmd.ClearDepthStencil(*hdr_rt.GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
@@ -1436,11 +1466,8 @@ auto Renderer::Impl::Render() -> void {
         auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
         auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
-        if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
-          CreatePerDrawConstantBuffers(1);
-        }
-
-        SetPerDrawConstants(per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_], instance.local_to_world_mtx);
+        auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
+        SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
         cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, pos_buf_idx),
           frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
@@ -1454,13 +1481,11 @@ auto Renderer::Impl::Render() -> void {
         cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, samp_idx), samp_af16_wrap_.Get());
         cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, rt_idx), 0);
         cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_draw_cb_idx),
-          per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
+          per_draw_cb.GetBuffer()->GetConstantBuffer());
         cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_view_cb_idx),
-          per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
+          cam_per_view_cb.GetBuffer()->GetConstantBuffer());
         cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_frame_cb_idx),
-          per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
-
-        ++next_per_draw_cb_idx_;
+          per_frame_cb.GetBuffer()->GetConstantBuffer());
       }
 
       // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
@@ -1520,9 +1545,9 @@ auto Renderer::Impl::Render() -> void {
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, power), *std::bit_cast<UINT*>(&ssao_params_.power));
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, sample_count), ssao_params_.sampleCount);
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_view_cb_idx),
-        per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
+        cam_per_view_cb.GetBuffer()->GetConstantBuffer());
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_frame_cb_idx),
-        per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
+        per_frame_cb.GetBuffer()->GetConstantBuffer());
       cmd.SetRenderTargets(std::span{ssao_rt.GetColorTex().get(), 1}, nullptr);
       cmd.ClearRenderTarget(*ssao_rt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
       cmd.DrawInstanced(3, 1, 0, 0);
@@ -1549,8 +1574,9 @@ auto Renderer::Impl::Render() -> void {
     // Full forward lighting pass
 
     auto const light_count{std::ssize(visible_light_indices)};
-    light_buffers_[frame_idx_].Resize(static_cast<int>(light_count));
-    auto const light_buffer_data{light_buffers_[frame_idx_].GetData()};
+    auto& light_buffer{light_buffers_[frame_idx_]};
+    light_buffer.Resize(static_cast<int>(light_count));
+    auto const light_buffer_data{light_buffer.GetData()};
 
     for (int i = 0; i < light_count; i++) {
       light_buffer_data[i].color = frame_packet.light_data[visible_light_indices[i]].color;
@@ -1595,16 +1621,15 @@ auto Renderer::Impl::Render() -> void {
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, ssao_tex_idx), ssao_tex->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, light_buf_idx),
-      light_buffers_[frame_idx_].GetBuffer()->GetShaderResource());
+    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, light_buf_idx), light_buffer.GetBuffer()->GetShaderResource());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, dir_shadow_arr_idx),
       dir_shadow_map_arr_->GetTex()->GetShaderResource());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, punc_shadow_atlas_idx),
       punctual_shadow_atlas_->GetTex()->GetShaderResource());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_view_cb_idx),
-      per_view_cbs_[frame_idx_][cam_per_view_cb_idx].GetBuffer()->GetConstantBuffer());
+      cam_per_view_cb.GetBuffer()->GetConstantBuffer());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_frame_cb_idx),
-      per_frame_cbs_[frame_idx_].GetBuffer()->GetConstantBuffer());
+      per_frame_cb.GetBuffer()->GetConstantBuffer());
     cmd.SetRenderTargets(std::span{hdr_rt.GetColorTex().get(), 1}, hdr_rt.GetDepthStencilTex().get());
 
     for (auto const instance_idx : visible_static_submesh_instance_indices) {
@@ -1613,11 +1638,8 @@ auto Renderer::Impl::Render() -> void {
       auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
       auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
-      if (next_per_draw_cb_idx_ >= per_draw_cbs_[frame_idx_].size()) {
-        CreatePerDrawConstantBuffers(1);
-      }
-
-      SetPerDrawConstants(per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_], instance.local_to_world_mtx);
+      auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
+      SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
       cmd.SetPipelineParameter(offsetof(ObjectDrawParams, pos_buf_idx),
         frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
@@ -1629,9 +1651,7 @@ auto Renderer::Impl::Render() -> void {
         frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
       cmd.SetPipelineParameter(offsetof(ObjectDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
       cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_draw_cb_idx),
-        per_draw_cbs_[frame_idx_][next_per_draw_cb_idx_].GetBuffer()->GetConstantBuffer());
-
-      ++next_per_draw_cb_idx_;
+        per_draw_cb.GetBuffer()->GetConstantBuffer());
     }
 
 
@@ -1663,7 +1683,7 @@ auto Renderer::Impl::Render() -> void {
     return;
   }
 
-  frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
+  EndFrame();
 }
 
 
@@ -1680,7 +1700,7 @@ auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
   line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
   std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
-  auto& cmd{*command_lists_[frame_idx_]};
+  auto& cmd{AcquireCommandList()};
   cmd.SetPipelineState(*line_gizmo_pso_);
   cmd.SetPipelineParameter(offsetof(GizmoDrawParams, vertex_buf_idx),
     line_gizmo_vertex_data_buffer_.GetBuffer()->GetShaderResource());
