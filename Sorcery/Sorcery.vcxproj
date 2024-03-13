@@ -114,6 +114,7 @@
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <ClCompile Include="src\Bounds.cpp" />
+    <ClCompile Include="src\engine_context.cpp" />
     <ClCompile Include="src\ExternalResource.cpp" />
     <ClCompile Include="src\FileIo.cpp" />
     <ClCompile Include="src\rendering\graphics.cpp" />
@@ -148,6 +149,7 @@
     <ClCompile Include="src\Util.cpp" />
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
+    <ClInclude Include="src\engine_context.hpp" />
     <ClInclude Include="src\ExternalResource.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\observer_ptr.hpp" />
