@@ -31,8 +31,8 @@
 
 
 extern "C" {
-__declspec(dllexport) UINT const D3D12SDKVersion{D3D12_SDK_VERSION};
-__declspec(dllexport) char const* const D3D12SDKPath{".\\D3D12\\"};
+__declspec(dllexport) extern UINT const D3D12SDKVersion{D3D12_SDK_VERSION};
+__declspec(dllexport) extern char const* const D3D12SDKPath{".\\D3D12\\"};
 }
 
 
