@@ -102,12 +102,12 @@ auto SceneViewWindow::Draw(Application& context) -> void {
     mCamMoving = wasCamMoving ? ImGui::IsMouseDown(ImGuiMouseButton_Right) : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
     if (!wasCamMoving && mCamMoving) {
-      gWindow.SetCursorLock(GetCursorPosition());
-      gWindow.SetCursorHiding(true);
+      g_engine_context.window->SetCursorLock(GetCursorPosition());
+      g_engine_context.window->SetCursorHiding(true);
       ImGuizmo::Enable(false);
     } else if (wasCamMoving && !mCamMoving) {
-      gWindow.SetCursorLock(std::nullopt);
-      gWindow.SetCursorHiding(false);
+      g_engine_context.window->SetCursorLock(std::nullopt);
+      g_engine_context.window->SetCursorHiding(false);
       ImGuizmo::Enable(true);
     }
 
