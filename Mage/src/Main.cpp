@@ -1,5 +1,6 @@
 #include "Timing.hpp"
 #include "Application.hpp"
+#include "engine_context.hpp"
 #include "SettingsWindow.hpp"
 #include "EntityHierarchyWindow.hpp"
 #include "GameViewWindow.hpp"
@@ -12,12 +13,10 @@
 #include "StartupScreen.hpp"
 #include "MemoryAllocation.hpp"
 #include "Platform.hpp"
-#include "../../Sorcery/src/rendering/scene_renderer.hpp"
 #include "Window.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
-#include <imgui_impl_dx11.h>
 
 #include <ImGuizmo.h>
 #include <implot.h>
@@ -40,8 +39,23 @@ __declspec(dllexport) char const* const D3D12SDKPath{sorcery::graphics::kD3D12Sd
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE,
                      _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
   try {
-    sorcery::gWindow.StartUp();
-    sorcery::gRenderer.StartUp();
+    auto const window{std::make_unique<sorcery::Window>()};
+    sorcery::g_engine_context.window.Reset(window.get());
+
+#ifndef NDEBUG
+    auto constexpr debug_graphics_device{true};
+#else
+    auto constexpr debug_graphics_device{false};
+#endif
+
+    auto const graphics_device{sorcery::graphics::GraphicsDevice::New(debug_graphics_device)};
+    sorcery::g_engine_context.graphics_device.Reset(graphics_device.get());
+
+    auto const render_manager{std::make_unique<sorcery::rendering::RenderManager>(*graphics_device)};
+    sorcery::g_engine_context.render_manager.Reset(render_manager.get());
+
+    auto const scene_renderer{std::make_unique<sorcery::rendering::SceneRenderer>(*render_manager, *window)};
+    sorcery::g_engine_context.scene_renderer.Reset(scene_renderer.get());
 
     sorcery::timing::SetTargetFrameRate(sorcery::mage::SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
 
@@ -56,17 +70,13 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     ImGui::StyleColorsDark();
 
-    if (!ImGui_ImplWin32_Init(sorcery::gWindow.GetNativeHandle())) {
+    if (!ImGui_ImplWin32_Init(window->GetNativeHandle())) {
       throw std::runtime_error{"Failed to initialize Dear ImGui Win32 Implementation."};
-    }
-
-    if (!ImGui_ImplDX11_Init(sorcery::gRenderer.GetDevice(), sorcery::gRenderer.GetThreadContext())) {
-      throw std::runtime_error{"Failed to initialize Dear ImGui DX11 Implementation."};
     }
 
     extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 
-    sorcery::gWindow.SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
+    window->SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
 
     bool runGame{false};
 
@@ -105,7 +115,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     while (!sorcery::IsQuitSignaled()) {
       sorcery::ProcessEvents();
-      ImGui_ImplDX11_NewFrame();
+      render_manager->BeginNewFrame();
       ImGui_ImplWin32_NewFrame();
       ImGui::NewFrame();
       ImGuizmo::BeginFrame();
@@ -119,9 +129,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
           if (runGame) {
             if (GetKeyDown(sorcery::Key::Escape)) {
               runGame = false;
-              sorcery::gWindow.SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
-              sorcery::gWindow.SetCursorLock(std::nullopt);
-              sorcery::gWindow.SetCursorHiding(false);
+              window->SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
+              window->SetCursorLock(std::nullopt);
+              window->SetCursorHiding(false);
               sorcery::timing::SetTargetFrameRate(targetFrameRate);
               app.GetScene().Load();
               app.SetSelectedObject(nullptr);
@@ -129,7 +139,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
           } else {
             if (GetKeyDown(sorcery::Key::F5)) {
               runGame = true;
-              sorcery::gWindow.SetEventHandler(nullptr);
+              window->SetEventHandler(nullptr);
               sorcery::timing::SetTargetFrameRate(-1);
               app.GetScene().Save();
               targetFrameRate = sorcery::timing::GetTargetFrameRate();
@@ -158,33 +168,22 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
       ImGui::Render();
 
-      auto const ctx{sorcery::gRenderer.GetThreadContext()};
-      sorcery::gRenderer.ClearAndBindMainRt(ctx);
-      ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-      sorcery::gRenderer.BlitMainRtToSwapChain(ctx);
-
-      Microsoft::WRL::ComPtr<ID3D11CommandList> cmdList;
-      [[maybe_unused]] auto const hr{ctx->FinishCommandList(FALSE, cmdList.GetAddressOf())};
-      assert(SUCCEEDED(hr));
-
-      sorcery::gRenderer.ExecuteCommandList(cmdList.Get());
-      sorcery::gRenderer.Present();
+      scene_renderer->Render();
+      // TODO draw UI
+      // TODO present
 
       sorcery::GetTmpMemRes().Clear();
 
       sorcery::timing::OnFrameEnd();
     }
 
-    ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
+    sorcery::Object::DestroyAll();
   } catch (std::exception const& ex) {
     sorcery::DisplayError(ex.what());
   }
 
-  sorcery::Object::DestroyAll();
-  sorcery::gRenderer.ShutDown();
-  sorcery::gWindow.ShutDown();
   return 0;
 }
