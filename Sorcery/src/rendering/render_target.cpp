@@ -3,7 +3,7 @@
 #include <utility>
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 auto RenderTarget::Desc::operator==(Desc const& other) const -> bool {
   return width == other.width && height == other.height && color_format == other.color_format && depth_stencil_format ==
          other.depth_stencil_format && sample_count == other.sample_count && enable_unordered_access == other.

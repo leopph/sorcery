@@ -2,7 +2,7 @@
 
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
-#include "../Rendering/Renderer.hpp"
+#include "..\rendering\scene_renderer.hpp"
 #include "../Reflection.hpp"
 
 #include <imgui.h>

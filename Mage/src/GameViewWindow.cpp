@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 
-#include "Renderer.hpp"
+#include "..\..\Sorcery\src\rendering\scene_renderer.hpp"
 #include "Util.hpp"
 
 

@@ -2,7 +2,7 @@
 
 #include "MemoryAllocation.hpp"
 #include "Timing.hpp"
-#include "Renderer.hpp"
+#include "..\..\Sorcery\src\rendering\scene_renderer.hpp"
 
 #include <imgui.h>
 

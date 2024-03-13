@@ -1,6 +1,6 @@
 #include "Material.hpp"
 
-#include "../Rendering/Renderer.hpp"
+#include "..\rendering\scene_renderer.hpp"
 #include "../Serialization.hpp"
 #undef FindResource
 #include "../GUI.hpp"

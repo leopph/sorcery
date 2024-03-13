@@ -12,7 +12,7 @@
 #include "StartupScreen.hpp"
 #include "MemoryAllocation.hpp"
 #include "Platform.hpp"
-#include "Renderer.hpp"
+#include "..\..\Sorcery\src\rendering\scene_renderer.hpp"
 #include "Window.hpp"
 
 #include <imgui.h>

@@ -1,7 +1,7 @@
 #include "punctual_shadow_atlas.hpp"
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 PunctualShadowAtlas::PunctualShadowAtlas(graphics::GraphicsDevice* const device, DXGI_FORMAT const depth_format,
                                          UINT const size):
   ShadowAtlas{device, depth_format, size, 2},

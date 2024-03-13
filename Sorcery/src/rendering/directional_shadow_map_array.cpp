@@ -3,7 +3,7 @@
 #include "shaders/shader_interop.h"
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 DirectionalShadowMapArray::DirectionalShadowMapArray(graphics::GraphicsDevice* const device,
                                                      DXGI_FORMAT const depth_format, UINT const size) :
   tex_{

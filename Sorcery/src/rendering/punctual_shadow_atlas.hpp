@@ -6,7 +6,7 @@
 #include <array>
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 class PunctualShadowAtlas final : public ShadowAtlas {
   std::array<Cell, 4> cells_;
 

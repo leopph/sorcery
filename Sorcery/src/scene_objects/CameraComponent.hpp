@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component.hpp"
-#include "../Rendering/Renderer.hpp"
+#include "..\rendering\scene_renderer.hpp"
 
 #include "../Math.hpp"
 #include "../Util.hpp"

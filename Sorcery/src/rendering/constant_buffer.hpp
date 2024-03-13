@@ -8,7 +8,7 @@
 #include <utility>
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 template<typename T>
 class ConstantBuffer {
 public:

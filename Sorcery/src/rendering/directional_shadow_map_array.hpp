@@ -3,7 +3,7 @@
 #include "graphics.hpp"
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 class DirectionalShadowMapArray {
   graphics::SharedDeviceChildHandle<graphics::Texture> tex_;
   UINT size_;

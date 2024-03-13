@@ -1,4 +1,4 @@
-#include "renderer_impl.hpp"
+#include "scene_renderer.hpp"
 
 #include "ShadowCascadeBoundary.hpp"
 #include "shaders/shader_interop.h"
@@ -48,53 +48,11 @@
 #include <random>
 
 
-namespace sorcery {
-namespace {
-std::vector const kQuadPositions{Vector3{-1, 1, 0}, Vector3{-1, -1, 0}, Vector3{1, -1, 0}, Vector3{1, 1, 0}};
+namespace sorcery::rendering {
+namespace {}
 
 
-std::vector const kQuadUvs{Vector2{0, 0}, Vector2{0, 1}, Vector2{1, 1}, Vector2{1, 0}};
-
-
-std::vector<std::uint32_t> const kQuadIndices{2, 1, 0, 0, 3, 2};
-
-
-std::vector const kCubePositions{
-  Vector3{0.5f, 0.5f, 0.5f}, Vector3{0.5f, 0.5f, 0.5f}, Vector3{0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f},
-  Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, -0.5f}, Vector3{-0.5f, 0.5f, -0.5f},
-  Vector3{-0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f},
-  Vector3{0.5f, -0.5f, 0.5f}, Vector3{0.5f, -0.5f, 0.5f}, Vector3{0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, 0.5f},
-  Vector3{-0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, -0.5f}, Vector3{-0.5f, -0.5f, -0.5f},
-  Vector3{-0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f},
-};
-
-
-std::vector const kCubeUvs{
-  Vector2{1, 0}, Vector2{1, 0}, Vector2{0, 0}, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 0}, Vector2{1, 0},
-  Vector2{0, 1}, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 1}, Vector2{1, 0}, Vector2{1, 1}, Vector2{1, 1},
-  Vector2{0, 1}, Vector2{0, 1}, Vector2{0, 1}, Vector2{1, 1}, Vector2{1, 1}, Vector2{0, 0}, Vector2{0, 1},
-  Vector2{0, 1}, Vector2{1, 0}, Vector2{1, 1}
-};
-
-
-std::vector<std::uint32_t> const kCubeIndices{
-  // Top face
-  7, 4, 1, 1, 10, 7,
-  // Bottom face
-  16, 19, 22, 22, 13, 16,
-  // Front face
-  23, 20, 8, 8, 11, 23,
-  // Back face
-  17, 14, 2, 2, 5, 17,
-  // Right face
-  21, 9, 0, 0, 12, 21,
-  // Left face
-  15, 3, 6, 6, 18, 15
-};
-}
-
-
-auto Renderer::Impl::ExtractCurrentState(FramePacket& packet) const -> void {
+auto SceneRenderer::ExtractCurrentState(FramePacket& packet) const -> void {
   packet.buffers.clear();
   packet.textures.clear();
   packet.light_data.clear();
@@ -197,7 +155,7 @@ auto Renderer::Impl::ExtractCurrentState(FramePacket& packet) const -> void {
 }
 
 
-auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(
+auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(
   CameraData const& cam_data) const -> ShadowCascadeBoundaries {
   auto const camNear{cam_data.near_plane};
   auto const shadowDistance{std::min(cam_data.far_plane, shadow_distance_)};
@@ -223,8 +181,8 @@ auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(
 }
 
 
-auto Renderer::Impl::CullLights(Frustum const& frustum_ws, std::span<LightData const> const lights,
-                                std::pmr::vector<unsigned> visible_light_indices) -> void {
+auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData const> const lights,
+                               std::pmr::vector<unsigned> visible_light_indices) -> void {
   visible_light_indices.clear();
 
   for (unsigned light_idx = 0; light_idx < static_cast<unsigned>(lights.size()); light_idx++) {
@@ -265,10 +223,10 @@ auto Renderer::Impl::CullLights(Frustum const& frustum_ws, std::span<LightData c
 }
 
 
-auto Renderer::Impl::CullStaticSubmeshInstances(Frustum const& frustum_ws, std::span<MeshData const> const meshes,
-                                                std::span<SubmeshData const> const submeshes,
-                                                std::span<InstanceData const> const instances,
-                                                std::pmr::vector<unsigned>& visible_static_submesh_instance_indices) ->
+auto SceneRenderer::CullStaticSubmeshInstances(Frustum const& frustum_ws, std::span<MeshData const> const meshes,
+                                               std::span<SubmeshData const> const submeshes,
+                                               std::span<InstanceData const> const instances,
+                                               std::pmr::vector<unsigned>& visible_static_submesh_instance_indices) ->
   void {
   visible_static_submesh_instance_indices.clear();
 
@@ -285,19 +243,19 @@ auto Renderer::Impl::CullStaticSubmeshInstances(Frustum const& frustum_ws, std::
 }
 
 
-auto Renderer::Impl::SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int const rt_width,
-                                          int const rt_height) const noexcept -> void {
+auto SceneRenderer::SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int const rt_width,
+                                         int const rt_height) const noexcept -> void {
   cb.Update(ShaderPerFrameConstants{
-    .ambientLightColor = Scene::GetActiveScene()->GetAmbientLightVector(), .shadowCascadeCount = cascade_count_,
-    .screenSize = Vector2{rt_width, rt_height}, .visualizeShadowCascades = shadow_cascades_,
-    .shadowFilteringMode = static_cast<int>(shadow_filtering_mode_)
+    .ambientLightColor = Scene::GetActiveScene()->GetAmbientLightVector(), .shadowCascadeCount = shadow_params_.cascade_count,
+    .screenSize = Vector2{rt_width, rt_height}, .visualizeShadowCascades = shadow_params_.visualize_cascades,
+    .shadowFilteringMode = static_cast<int>(shadow_params_.filtering_mode)
   });
 }
 
 
-auto Renderer::Impl::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
-                                         Matrix4 const& proj_mtx, ShadowCascadeBoundaries const& cascade_bounds,
-                                         Vector3 const& view_pos) -> void {
+auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
+                                        Matrix4 const& proj_mtx, ShadowCascadeBoundaries const& cascade_bounds,
+                                        Vector3 const& view_pos) -> void {
   ShaderPerViewConstants data;
   data.viewMtx = view_mtx;
   data.projMtx = proj_mtx;
@@ -313,16 +271,16 @@ auto Renderer::Impl::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>&
 }
 
 
-auto Renderer::Impl::SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx) -> void {
+auto SceneRenderer::SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx) -> void {
   cb.Update(ShaderPerDrawConstants{.modelMtx = model_mtx, .invTranspModelMtx = model_mtx.Inverse().Transpose()});
 }
 
 
-auto Renderer::Impl::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
-                                               std::span<Renderer::Impl::LightData const> const lights,
-                                               std::span<unsigned const> visible_light_indices,
-                                               Renderer::Impl::CameraData const& cam_data,
-                                               Matrix4 const& cam_view_proj_mtx, float const shadow_distance) -> void {
+auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
+                                              std::span<SceneRenderer::LightData const> const lights,
+                                              std::span<unsigned const> visible_light_indices,
+                                              SceneRenderer::CameraData const& cam_data,
+                                              Matrix4 const& cam_view_proj_mtx, float const shadow_distance) -> void {
   struct LightCascadeIndex {
     int lightIdxIdx;
     int shadowIdx;
@@ -476,7 +434,7 @@ auto Renderer::Impl::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
 
         auto const shadowViewMtx{faceViewMatrices[shadowIdx]};
         auto const shadowProjMtx{
-          Renderer::GetProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, light.shadow_near_plane,
+          TransformProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, light.shadow_near_plane,
             light.range))
         };
 
@@ -491,12 +449,12 @@ auto Renderer::Impl::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
 }
 
 
-auto Renderer::Impl::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
-                                               std::span<unsigned const> const visible_light_indices,
-                                               CameraData const& cam_data, float rt_aspect,
-                                               ShadowCascadeBoundaries const& shadow_cascade_boundaries,
-                                               std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
-                                               graphics::CommandList& cmd) -> void {
+auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
+                                              std::span<unsigned const> const visible_light_indices,
+                                              CameraData const& cam_data, float rt_aspect,
+                                              ShadowCascadeBoundaries const& shadow_cascade_boundaries,
+                                              std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
+                                              graphics::CommandList& cmd) -> void {
   cmd.SetPipelineState(*depth_only_pso_);
   cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
   cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, {});
@@ -572,7 +530,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
       auto const frustumDepth{camFar - camNear};
 
-      for (auto cascadeIdx{0}; cascadeIdx < cascade_count_; cascadeIdx++) {
+      for (auto cascadeIdx{0}; cascadeIdx < shadow_params_.cascade_count; cascadeIdx++) {
         // cascade vertices in world space
         auto const cascadeVertsWS{
           [&frustumVertsWS, &shadow_cascade_boundaries, cascadeIdx, camNear, frustumDepth] {
@@ -622,7 +580,7 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
         shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light.direction, Vector3::Up());
         auto const shadowProjMtx{
-          GetProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius, sphereRadius,
+          TransformProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius, sphereRadius,
             -sphereRadius, -sphereRadius - light.shadow_extension, sphereRadius))
         };
 
@@ -674,9 +632,9 @@ auto Renderer::Impl::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 }
 
 
-auto Renderer::Impl::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
-                                            Renderer::Impl::FramePacket const& frame_packet,
-                                            graphics::CommandList& cmd) -> void {
+auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
+                                           SceneRenderer::FramePacket const& frame_packet,
+                                           graphics::CommandList& cmd) -> void {
   cmd.SetPipelineState(*depth_only_pso_);
   cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
@@ -737,7 +695,7 @@ auto Renderer::Impl::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 }
 
 
-auto Renderer::Impl::DrawSkybox(graphics::CommandList& cmd) noexcept -> void {
+auto SceneRenderer::DrawSkybox(graphics::CommandList& cmd) noexcept -> void {
   auto const cubemap{Scene::GetActiveScene()->GetSkybox()};
 
   if (!cubemap) {
@@ -750,12 +708,12 @@ auto Renderer::Impl::DrawSkybox(graphics::CommandList& cmd) noexcept -> void {
   cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, cubemap_idx), cubemap->GetTex()->GetShaderResource());
   cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
   // TODO set per view cb
-  cmd.DrawIndexedInstanced(static_cast<UINT>(kCubeIndices.size()), 1, 0, 0, 0);
+  cmd.DrawIndexedInstanced(static_cast<UINT>(cube_mesh_->GetIndexCount()), 1, 0, 0, 0);
 }
 
 
-auto Renderer::Impl::PostProcess(graphics::Texture const& src, graphics::Texture const& dst,
-                                 graphics::CommandList& cmd) const noexcept -> void {
+auto SceneRenderer::PostProcess(graphics::Texture const& src, graphics::Texture const& dst,
+                                graphics::CommandList& cmd) const noexcept -> void {
   cmd.SetPipelineState(*post_process_pso_);
   cmd.SetPipelineParameter(offsetof(PostProcessDrawParams, in_tex_idx), src.GetShaderResource());
   cmd.SetPipelineParameter(offsetof(PostProcessDrawParams, inv_gamma), *std::bit_cast<UINT*>(&inv_gamma_));
@@ -764,21 +722,13 @@ auto Renderer::Impl::PostProcess(graphics::Texture const& src, graphics::Texture
 }
 
 
-auto Renderer::Impl::ClearGizmoDrawQueue() noexcept -> void {
+auto SceneRenderer::ClearGizmoDrawQueue() noexcept -> void {
   gizmo_colors_.clear();
   line_gizmo_vertex_data_.clear();
 }
 
 
-auto Renderer::Impl::ReleaseTempRenderTargets() noexcept -> void {
-  std::erase_if(tmp_render_targets_, [](TempRenderTargetRecord& tmpRtRecord) {
-    tmpRtRecord.age_in_frames += 1;
-    return tmpRtRecord.age_in_frames >= max_tmp_rt_age_;
-  });
-}
-
-
-auto Renderer::Impl::RecreateSsaoSamples(int const sample_count) noexcept -> void {
+auto SceneRenderer::RecreateSsaoSamples(int const sample_count) noexcept -> void {
   ssao_samples_buffer_.Resize(sample_count);
   auto const ssao_samples{ssao_samples_buffer_.GetData()};
 
@@ -799,7 +749,7 @@ auto Renderer::Impl::RecreateSsaoSamples(int const sample_count) noexcept -> voi
 }
 
 
-auto Renderer::Impl::RecreatePipelines() -> bool {
+auto SceneRenderer::RecreatePipelines() -> bool {
   if (!device_->WaitIdle()) {
     return false;
   }
@@ -938,20 +888,7 @@ auto Renderer::Impl::RecreatePipelines() -> bool {
 }
 
 
-auto Renderer::Impl::CreateCommandLists(UINT const count) -> void {
-  command_lists_.reserve(command_lists_.size() + count);
-
-  for (UINT i{0}; i < count; i++) {
-    auto& arr{command_lists_.emplace_back()};
-
-    for (UINT j{0}; j < max_frames_in_flight_; j++) {
-      arr[i] = device_->CreateCommandList();
-    }
-  }
-}
-
-
-auto Renderer::Impl::CreatePerViewConstantBuffers(UINT const count) -> void {
+auto SceneRenderer::CreatePerViewConstantBuffers(UINT const count) -> void {
   per_view_cbs_.reserve(per_view_cbs_.size() + count);
 
   for (UINT i{0}; i < count; i++) {
@@ -966,7 +903,7 @@ auto Renderer::Impl::CreatePerViewConstantBuffers(UINT const count) -> void {
 }
 
 
-auto Renderer::Impl::CreatePerDrawConstantBuffers(UINT const count) -> void {
+auto SceneRenderer::CreatePerDrawConstantBuffers(UINT const count) -> void {
   per_draw_cbs_.reserve(per_draw_cbs_.size() + count);
 
   for (UINT i{0}; i < count; i++) {
@@ -981,16 +918,7 @@ auto Renderer::Impl::CreatePerDrawConstantBuffers(UINT const count) -> void {
 }
 
 
-auto Renderer::Impl::AcquireCommandList() -> graphics::CommandList& {
-  if (next_cmd_list_idx_ >= command_lists_.size()) {
-    CreateCommandLists(1);
-  }
-
-  return *command_lists_[next_cmd_list_idx_++][frame_idx_];
-}
-
-
-auto Renderer::Impl::AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>& {
+auto SceneRenderer::AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>& {
   if (next_per_view_cb_idx_ >= per_view_cbs_.size()) {
     CreatePerViewConstantBuffers(1);
   }
@@ -999,7 +927,7 @@ auto Renderer::Impl::AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerV
 }
 
 
-auto Renderer::Impl::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>& {
+auto SceneRenderer::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>& {
   if (next_per_draw_cb_idx_ >= per_draw_cbs_.size()) {
     CreatePerDrawConstantBuffers(1);
   }
@@ -1008,15 +936,13 @@ auto Renderer::Impl::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerD
 }
 
 
-auto Renderer::Impl::EndFrame() -> void {
-  frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
-  next_cmd_list_idx_ = 0;
+auto SceneRenderer::EndFrame() -> void {
   next_per_draw_cb_idx_ = 0;
   next_per_view_cb_idx_ = 0;
 }
 
 
-auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<std::uint32_t> const size) -> void {
+auto SceneRenderer::OnWindowSize(SceneRenderer* const self, Extent2D<std::uint32_t> const size) -> void {
   std::ignore = self->device_->SwapChainResize(*self->swap_chain_, size.width, size.height);
 
   if (size.width != 0 && size.height != 0) {
@@ -1028,71 +954,7 @@ auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<std::uint32_t> cons
 }
 
 
-auto Renderer::Impl::GenerateSphere(float const radius, int const latitudes, int const longitudes,
-                                    std::vector<Vector3>& vertices, std::vector<Vector3>& normals,
-                                    std::vector<Vector2>& uvs, std::vector<std::uint32_t>& indices) -> void {
-  // Based on: https://gist.github.com/Pikachuxxxx/5c4c490a7d7679824e0e18af42918efc
-
-  auto const deltaLatitude{PI / static_cast<float>(latitudes)};
-  auto const deltaLongitude{2 * PI / static_cast<float>(longitudes)};
-
-  for (int i = 0; i <= latitudes; i++) {
-    auto const latitudeAngle{PI / 2 - static_cast<float>(i) * deltaLatitude};
-
-    float const xz{radius * std::cos(latitudeAngle)};
-    float const y{radius * std::sin(latitudeAngle)};
-
-    /* We add (latitudes + 1) vertices per longitude because of equator,
-     * the North pole and South pole are not counted here, as they overlap.
-     * The first and last vertices have same position and normal, but
-     * different tex coords. */
-    for (int j = 0; j <= longitudes; j++) {
-      auto const longitudeAngle{static_cast<float>(j) * deltaLongitude};
-
-      auto const x{xz * std::cos(longitudeAngle)};
-      auto const z{xz * std::sin(longitudeAngle)};
-      auto const u{static_cast<float>(j) / static_cast<float>(longitudes)};
-      auto const v{static_cast<float>(i) / static_cast<float>(latitudes)};
-      vertices.emplace_back(x, y, z);
-      uvs.emplace_back(u, v);
-      normals.emplace_back(x / radius, y / radius, z / radius);
-    }
-  }
-
-
-  /*  Indices
-   *  k1--k1+1
-   *  |  / |
-   *  | /  |
-   *  k2--k2+1 */
-  for (int i = 0; i < latitudes; ++i) {
-    unsigned int v1 = i * (longitudes + 1);
-    unsigned int v2 = v1 + longitudes + 1;
-
-    // 2 Triangles per latitude block excluding the first and last longitudes blocks
-    for (int j = 0; j < longitudes; j++, v1++, v2++) {
-      if (i != 0) {
-        indices.push_back(v1);
-        indices.push_back(v1 + 1);
-        indices.push_back(v2);
-      }
-
-      if (i != latitudes - 1) {
-        indices.push_back(v1 + 1);
-        indices.push_back(v2 + 1);
-        indices.push_back(v2);
-      }
-    }
-  }
-}
-
-
-auto Renderer::Impl::GetProjectionMatrixForRendering(Matrix4 const& proj_mtx) noexcept -> Matrix4 {
-  return proj_mtx * Matrix4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1};
-}
-
-
-auto Renderer::Impl::StartUp() -> void {
+auto SceneRenderer::StartUp() -> void {
   bool device_debug{false};
 
 #ifndef NDEBUG
@@ -1214,80 +1076,11 @@ auto Renderer::Impl::StartUp() -> void {
 
   // CREATE DEFAULT ASSETS
 
-  default_material_ = CreateAndInitialize<Material>();
-  default_material_->SetGuid(default_material_guid_);
-  default_material_->SetName("Default Material");
-  gResourceManager.Add(default_material_);
-
-  std::vector<Vector3> cubeNormals;
-  CalculateNormals(kCubePositions, kCubeIndices, cubeNormals);
-
-  std::vector<Vector3> cubeTangents;
-  CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cubeTangents);
-
-  std::vector<Vector3> quadNormals;
-  CalculateNormals(kQuadPositions, kQuadIndices, quadNormals);
-
-  std::vector<Vector3> quadTangents;
-  CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, quadTangents);
-
-  cube_mesh_ = CreateAndInitialize<Mesh>();
-  cube_mesh_->SetGuid(cube_mesh_guid_);
-  cube_mesh_->SetName("Cube");
-  cube_mesh_->SetPositions(kCubePositions);
-  cube_mesh_->SetNormals(std::move(cubeNormals));
-  cube_mesh_->SetUVs(kCubeUvs);
-  cube_mesh_->SetTangents(std::move(cubeTangents));
-  cube_mesh_->SetIndices(kCubeIndices);
-  cube_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  cube_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kCubeIndices.size()), 0, AABB{}}});
-  if (!cube_mesh_->ValidateAndUpdate(false)) {
-    throw std::runtime_error{"Failed to validate and update default cube mesh."};
-  }
-  gResourceManager.Add(cube_mesh_);
-
-  plane_mesh_ = CreateAndInitialize<Mesh>();
-  plane_mesh_->SetGuid(plane_mesh_guid_);
-  plane_mesh_->SetName("Plane");
-  plane_mesh_->SetPositions(kQuadPositions);
-  plane_mesh_->SetNormals(std::move(quadNormals));
-  plane_mesh_->SetUVs(kQuadUvs);
-  plane_mesh_->SetTangents(std::move(quadTangents));
-  plane_mesh_->SetIndices(kQuadIndices);
-  plane_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  plane_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kQuadIndices.size()), 0, AABB{}}});
-  if (!plane_mesh_->ValidateAndUpdate(false)) {
-    throw std::runtime_error{"Failed to validate and update default plane mesh."};
-  }
-  gResourceManager.Add(plane_mesh_);
-
-  sphere_mesh_ = CreateAndInitialize<Mesh>();
-  sphere_mesh_->SetGuid(sphere_mesh_guid_);
-  sphere_mesh_->SetName("Sphere");
-  std::vector<Vector3> spherePositions;
-  std::vector<Vector3> sphereNormals;
-  std::vector<Vector3> sphereTangents;
-  std::vector<Vector2> sphereUvs;
-  std::vector<std::uint32_t> sphereIndices;
-  GenerateSphere(1, 50, 50, spherePositions, sphereNormals, sphereUvs, sphereIndices);
-  auto const sphereIdxCount{std::size(sphereIndices)};
-  CalculateTangents(spherePositions, sphereUvs, sphereIndices, sphereTangents);
-  sphere_mesh_->SetPositions(std::move(spherePositions));
-  sphere_mesh_->SetNormals(std::move(sphereNormals));
-  sphere_mesh_->SetUVs(std::move(sphereUvs));
-  sphere_mesh_->SetTangents(std::move(sphereTangents));
-  sphere_mesh_->SetIndices(std::move(sphereIndices));
-  sphere_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  sphere_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
-  if (!sphere_mesh_->ValidateAndUpdate(false)) {
-    throw std::runtime_error{"Failed to validate and update default sphere mesh."};
-  }
-  gResourceManager.Add(sphere_mesh_);
 
   gWindow.OnWindowSize.add_handler(this, &OnWindowSize);
 
   ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_, true);
-  RecreateSsaoSamples(ssao_params_.sampleCount);
+  RecreateSsaoSamples(ssao_params_.sample_count);
 
   std::vector<Vector4> ssao_noise;
   std::uniform_real_distribution dist{0.0f, 1.0f};
@@ -1359,12 +1152,12 @@ auto Renderer::Impl::StartUp() -> void {
 }
 
 
-auto Renderer::Impl::ShutDown() -> void {
+auto SceneRenderer::ShutDown() -> void {
   gWindow.OnWindowSize.remove_handler(this, &OnWindowSize);
 }
 
 
-auto Renderer::Impl::Render() -> void {
+auto SceneRenderer::Render() -> void {
   auto& frame_packet{frame_packets_[frame_idx_]};
   ExtractCurrentState(frame_packet);
 
@@ -1408,7 +1201,7 @@ auto Renderer::Impl::Render() -> void {
       Camera::CalculateViewMatrix(cam_data.position, cam_data.right, cam_data.up, cam_data.forward)
     };
     auto const cam_proj_mtx{
-      GetProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(cam_data.type, cam_data.fov_vert_deg,
+      TransformProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(cam_data.type, cam_data.fov_vert_deg,
         cam_data.size_vert, rt_aspect, cam_data.near_plane, cam_data.far_plane))
     };
     auto const cam_view_proj_mtx{cam_view_mtx * cam_proj_mtx};
@@ -1424,7 +1217,7 @@ auto Renderer::Impl::Render() -> void {
       shadow_view_proj_matrices, cmd);
 
     UpdatePunctualShadowAtlas(*punctual_shadow_atlas_, frame_packet.light_data, visible_light_indices, cam_data,
-      cam_view_proj_mtx, shadow_distance_);
+      cam_view_proj_mtx, shadow_params_.distance);
     DrawPunctualShadowMaps(*punctual_shadow_atlas_, frame_packet, cmd);
 
     std::pmr::vector<unsigned> visible_static_submesh_instance_indices{&GetTmpMemRes()};
@@ -1447,7 +1240,7 @@ auto Renderer::Impl::Render() -> void {
       // If MSAA is enabled we render into an MSAA RT and then resolve into normalRt
       auto const& actual_normal_rt{
         [this, &normal_rt]() -> auto const& {
-          if (GetMultisamplingMode() == MultisamplingMode::Off) {
+          if (GetMultisamplingMode() == MultisamplingMode::kOff) {
             return normal_rt;
           }
 
@@ -1490,7 +1283,7 @@ auto Renderer::Impl::Render() -> void {
       }
 
       // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
-      if (GetMultisamplingMode() != MultisamplingMode::Off) {
+      if (GetMultisamplingMode() != MultisamplingMode::kOff) {
         cmd.Resolve(*normal_rt.GetColorTex(), *actual_normal_rt.GetColorTex(), *normal_rt.GetDesc().color_format);
       }
     }
@@ -1508,7 +1301,7 @@ auto Renderer::Impl::Render() -> void {
       // If MSAA is enabled we have to resolve the depth texture before running SSAO
       auto const ssao_depth_tex{
         [this, &hdr_rt, &cmd] {
-          if (GetMultisamplingMode() == MultisamplingMode::Off) {
+          if (GetMultisamplingMode() == MultisamplingMode::kOff) {
             return hdr_rt.GetDepthStencilTex();
           }
 
@@ -1544,7 +1337,7 @@ auto Renderer::Impl::Render() -> void {
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, radius), *std::bit_cast<UINT*>(&ssao_params_.radius));
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, bias), *std::bit_cast<UINT*>(&ssao_params_.bias));
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, power), *std::bit_cast<UINT*>(&ssao_params_.power));
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, sample_count), ssao_params_.sampleCount);
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, sample_count), ssao_params_.sample_count);
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_view_cb_idx),
         cam_per_view_cb.GetBuffer()->GetConstantBuffer());
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_frame_cb_idx),
@@ -1606,7 +1399,7 @@ auto Renderer::Impl::Render() -> void {
         light.type == LightComponent::Type::Directional && light.casts_shadow) {
         light_buffer_data[i].isCastingShadow = TRUE;
 
-        for (auto cascade_idx{0}; cascade_idx < cascade_count_; cascade_idx++) {
+        for (auto cascade_idx{0}; cascade_idx < shadow_params_.cascade_count; cascade_idx++) {
           light_buffer_data[i].sampleShadowMap[cascade_idx] = TRUE;
           light_buffer_data[i].shadowViewProjMatrices[cascade_idx] = shadow_view_proj_matrices[cascade_idx];
         }
@@ -1663,7 +1456,7 @@ auto Renderer::Impl::Render() -> void {
 
     RenderTarget const* post_process_rt;
 
-    if (GetMultisamplingMode() == MultisamplingMode::Off) {
+    if (GetMultisamplingMode() == MultisamplingMode::kOff) {
       post_process_rt = std::addressof(hdr_rt);
     } else {
       auto resolve_hdr_rt_desc{hdr_rt_desc};
@@ -1688,13 +1481,13 @@ auto Renderer::Impl::Render() -> void {
 }
 
 
-auto Renderer::Impl::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void {
+auto SceneRenderer::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void {
   gizmo_colors_.emplace_back(color);
   line_gizmo_vertex_data_.emplace_back(from, static_cast<std::uint32_t>(gizmo_colors_.size() - 1), to, 0.0f);
 }
 
 
-auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
+auto SceneRenderer::DrawGizmos(RenderTarget const* const rt) -> void {
   gizmo_color_buffer_.Resize(static_cast<int>(std::ssize(gizmo_colors_)));
   std::ranges::copy(gizmo_colors_, std::begin(gizmo_color_buffer_.GetData()));
 
@@ -1722,7 +1515,7 @@ auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
 }
 
 
-/*auto Renderer::Impl::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
+/*auto SceneRenderer::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
   auto const rtv{main_rt_->GetRtv()};
   FLOAT constexpr clearColor[]{0, 0, 0, 1};
   ctx->ClearRenderTargetView(rtv, clearColor);
@@ -1730,7 +1523,7 @@ auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
 }
 
 
-auto Renderer::Impl::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
+auto SceneRenderer::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
   ComPtr<ID3D11Resource> mainRtColorTex;
   main_rt_->GetRtv()->GetResource(mainRtColorTex.GetAddressOf());
 
@@ -1741,225 +1534,38 @@ auto Renderer::Impl::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> cons
 } TODO */
 
 
-auto Renderer::Impl::Present() noexcept -> void {
+auto SceneRenderer::Present() noexcept -> void {
   std::ignore = device_->SwapChainPresent(*swap_chain_, static_cast<UINT>(sync_interval_));
   ClearGizmoDrawQueue();
-  ReleaseTempRenderTargets();
 }
 
 
-auto Renderer::Impl::LoadReadonlyTexture(
-  DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture> {
-  auto& cmd{AcquireCommandList()};
-
-  auto const& meta{img.GetMetadata()};
-
-  graphics::TextureDesc desc;
-  desc.width = static_cast<UINT>(meta.width);
-  desc.mip_levels = static_cast<UINT16>(meta.mipLevels);
-  desc.format = meta.format;
-  desc.sample_desc.Count = 1;
-  desc.sample_desc.Quality = 0;
-  desc.flags = D3D12_RESOURCE_FLAG_NONE;
-  desc.depth_stencil = false;
-  desc.render_target = false;
-  desc.shader_resource = true;
-  desc.unordered_access = false;
-
-  if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE1D) {
-    desc.dimension = graphics::TextureDimension::k1D;
-    desc.height = 1;
-    desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
-  } else if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
-    desc.dimension = graphics::TextureDimension::k2D;
-    desc.height = static_cast<UINT>(meta.height);
-    desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
-  } else if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE3D) {
-    if (meta.IsCubemap()) {
-      desc.dimension = graphics::TextureDimension::kCube;
-      desc.height = static_cast<UINT>(meta.height);
-      desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
-    } else {
-      desc.dimension = graphics::TextureDimension::k3D;
-      desc.height = static_cast<UINT>(meta.height);
-      desc.depth_or_array_size = static_cast<UINT16>(meta.depth);
-    }
-  }
-
-  auto tex{device_->CreateTexture(desc, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr)};
-
-  auto const upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{
-      static_cast<UINT>(tex->GetRequiredIntermediateSize()), 0, false, false, false
-    }, D3D12_HEAP_TYPE_UPLOAD)
-  };
-
-  if (!cmd.Begin(nullptr)) {
-    return nullptr;
-  }
-
-  std::pmr::vector<D3D12_SUBRESOURCE_DATA> subresource_data{&GetTmpMemRes()};
-  subresource_data.reserve(img.GetImageCount());
-
-  for (std::size_t i{0}; i < img.GetImageCount(); i++) {
-    auto const subimg{img.GetImages()[i]};
-    subresource_data.emplace_back(subimg.pixels, subimg.rowPitch, subimg.slicePitch);
-  }
-
-  cmd.UpdateSubresources(*tex, *upload_buf, 0, 0, static_cast<UINT>(img.GetImageCount()), subresource_data.data());
-
-  cmd.Barrier({}, {}, std::array{
-    graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, tex.get(),
-      D3D12_BARRIER_SUBRESOURCE_RANGE{
-        0, static_cast<UINT>(meta.mipLevels), 0, static_cast<UINT>(std::max(meta.depth, meta.arraySize)), 0, 1
-      },
-      D3D12_TEXTURE_BARRIER_FLAG_NONE
-    }
-  });
-
-  if (!cmd.End()) {
-    return nullptr;
-  }
-
-  auto constexpr init_fence_val{0};
-  auto constexpr completed_fence_val{1};
-  auto const fence{device_->CreateFence(init_fence_val)};
-
-  device_->ExecuteCommandLists(std::span{&cmd, 1});
-
-  if (!device_->SignalFence(*fence.Get(), completed_fence_val)) {
-    return nullptr;
-  }
-
-  if (FAILED(fence->SetEventOnCompletion(completed_fence_val, nullptr))) {
-    return nullptr;
-  }
-
-  return tex;
-}
-
-
-auto Renderer::Impl::UpdateBuffer(graphics::Buffer const& buf, std::span<std::uint8_t const> const data) -> bool {
-  if (buf.GetRequiredIntermediateSize() != data.size()) {
-    return false;
-  }
-
-  auto const upload_buf{device_->CreateBuffer(graphics::BufferDesc{static_cast<UINT>(data.size()), 0, false, false, false}, D3D12_HEAP_TYPE_UPLOAD)};
-
-  if (!upload_buf) {
-    return false;
-  }
-
-  auto const ptr{upload_buf->Map()};
-
-  if (!ptr) {
-    return false;
-  }
-
-  std::memcpy(ptr, data.data(), data.size());
-
-  auto& cmd{AcquireCommandList()};
-
-  if (!cmd.Begin(nullptr)) {
-    return false;
-  }
-
-  cmd.CopyBuffer(buf, *upload_buf);
-
-  if (!cmd.End()) {
-    return false;
-  }
-
-  device_->ExecuteCommandLists(std::span{&cmd, 1});
-
-  auto constexpr init_fence_val{0};
-  auto constexpr final_fence_val{1};
-
-  auto const fence{device_->CreateFence(init_fence_val)};
-
-  if (!fence) {
-    return false;
-  }
-
-  if (!device_->SignalFence(*fence.Get(), final_fence_val)) {
-    return false;
-  }
-
-  if (FAILED(fence->SetEventOnCompletion(final_fence_val, nullptr))) {
-    return false;
-  }
-
-  return true;
-}
-
-
-auto Renderer::Impl::GetDevice() const noexcept -> ObserverPtr<graphics::GraphicsDevice> {
-  return device_.get();
-}
-
-
-auto Renderer::Impl::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget& {
-  std::unique_lock const lock{tmp_render_targets_mutex_};
-
-  for (auto& [rt, lastUseInFrames] : tmp_render_targets_) {
-    if (rt->GetDesc() == desc && lastUseInFrames != 0 /*The RT wasn't already handed out this frame*/) {
-      lastUseInFrames = 0;
-      return *rt;
-    }
-  }
-
-  return *tmp_render_targets_.emplace_back(RenderTarget::New(*device_, desc), 0).rt;
-}
-
-
-auto Renderer::Impl::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
-  return default_material_;
-}
-
-
-auto Renderer::Impl::GetCubeMesh() const noexcept -> ObserverPtr<Mesh> {
-  return cube_mesh_;
-}
-
-
-auto Renderer::Impl::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
-  return plane_mesh_;
-}
-
-
-auto Renderer::Impl::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
-  return sphere_mesh_;
-}
-
-
-auto Renderer::Impl::GetSyncInterval() const noexcept -> int {
+auto SceneRenderer::GetSyncInterval() const noexcept -> UINT {
   return sync_interval_;
 }
 
 
-auto Renderer::Impl::SetSyncInterval(int const interval) noexcept -> void {
+auto SceneRenderer::SetSyncInterval(UINT const interval) noexcept -> void {
   sync_interval_ = interval;
 }
 
 
-auto Renderer::Impl::GetMultisamplingMode() const noexcept -> MultisamplingMode {
+auto SceneRenderer::GetMultisamplingMode() const noexcept -> MultisamplingMode {
   return msaa_mode_;
 }
 
 
-auto Renderer::Impl::SetMultisamplingMode(MultisamplingMode const mode) noexcept -> void {
+auto SceneRenderer::SetMultisamplingMode(MultisamplingMode const mode) noexcept -> void {
   msaa_mode_ = mode;
 }
 
 
-auto Renderer::Impl::IsDepthNormalPrePassEnabled() const noexcept -> bool {
+auto SceneRenderer::IsDepthNormalPrePassEnabled() const noexcept -> bool {
   return depth_normal_pre_pass_enabled_;
 }
 
 
-auto Renderer::Impl::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -> void {
+auto SceneRenderer::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -> void {
   depth_normal_pre_pass_enabled_ = enabled;
 
   if (!enabled && IsSsaoEnabled()) {
@@ -1968,86 +1574,87 @@ auto Renderer::Impl::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -
 }
 
 
-auto Renderer::Impl::IsUsingPreciseColorFormat() const noexcept -> bool {
+auto SceneRenderer::IsUsingPreciseColorFormat() const noexcept -> bool {
   return color_buffer_format_ == precise_color_buffer_format_;
 }
 
 
-auto Renderer::Impl::SetUsePreciseColorFormat(bool const value) noexcept -> void {
-  color_buffer_format_ = value ? precise_color_buffer_format_ : imprecise_color_buffer_format_;
+auto SceneRenderer::SetUsePreciseColorFormat(bool const precise) noexcept -> void {
+  color_buffer_format_ = precise ? precise_color_buffer_format_ : imprecise_color_buffer_format_;
 }
 
 
-auto Renderer::Impl::GetShadowDistance() const noexcept -> float {
-  return shadow_distance_;
+auto SceneRenderer::GetShadowDistance() const noexcept -> float {
+  return shadow_params_.distance;
 }
 
 
-auto Renderer::Impl::SetShadowDistance(float const shadowDistance) noexcept -> void {
-  shadow_distance_ = std::max(shadowDistance, 0.0f);
+auto SceneRenderer::SetShadowDistance(float const distance) noexcept -> void {
+  shadow_params_.distance = std::max(0.0f, distance);
+  
 }
 
 
-auto Renderer::Impl::GetShadowCascadeCount() const noexcept -> int {
-  return cascade_count_;
+auto SceneRenderer::GetShadowCascadeCount() const noexcept -> int {
+  return shadow_params_.cascade_count;
 }
 
 
-auto Renderer::Impl::SetShadowCascadeCount(int const cascadeCount) noexcept -> void {
-  cascade_count_ = std::clamp(cascadeCount, 1, MAX_CASCADE_COUNT);
-  int const splitCount{cascade_count_ - 1};
+auto SceneRenderer::SetShadowCascadeCount(int const cascade_count) noexcept -> void {
+  shadow_params_.cascade_count = std::clamp(cascade_count, 1, MAX_CASCADE_COUNT);
+  int const splitCount{shadow_params_.cascade_count - 1};
 
   for (int i = 1; i < splitCount; i++) {
-    cascade_splits_[i] = std::max(cascade_splits_[i - 1], cascade_splits_[i]);
+    shadow_params_.normalized_cascade_splits[i] = std::max(shadow_params_.normalized_cascade_splits[i - 1], shadow_params_.normalized_cascade_splits[i]);
   }
 }
 
 
-auto Renderer::Impl::GetNormalizedShadowCascadeSplits() const noexcept -> std::span<float const> {
-  return {std::begin(cascade_splits_), static_cast<std::size_t>(cascade_count_ - 1)};
+auto SceneRenderer::GetNormalizedShadowCascadeSplits() const noexcept -> std::span<float const> {
+  return {std::begin(shadow_params_.normalized_cascade_splits), static_cast<std::size_t>(shadow_params_.cascade_count - 1)};
 }
 
 
-auto Renderer::Impl::SetNormalizedShadowCascadeSplit(int const idx, float const split) noexcept -> void {
-  auto const splitCount{cascade_count_ - 1};
+auto SceneRenderer::SetNormalizedShadowCascadeSplit(int const idx, float const split) noexcept -> void {
+  auto const splitCount{shadow_params_.cascade_count - 1};
 
   if (idx < 0 || idx >= splitCount) {
     return;
   }
 
-  float const clampMin{idx == 0 ? 0.0f : cascade_splits_[idx - 1]};
-  float const clampMax{idx == splitCount - 1 ? 1.0f : cascade_splits_[idx + 1]};
+  float const clampMin{idx == 0 ? 0.0f : shadow_params_.normalized_cascade_splits[idx - 1]};
+  float const clampMax{idx == splitCount - 1 ? 1.0f : shadow_params_.normalized_cascade_splits[idx + 1]};
 
-  cascade_splits_[idx] = std::clamp(split, clampMin, clampMax);
+  shadow_params_.normalized_cascade_splits[idx] = std::clamp(split, clampMin, clampMax);
 }
 
 
-auto Renderer::Impl::IsVisualizingShadowCascades() const noexcept -> bool {
-  return shadow_cascades_;
+auto SceneRenderer::IsVisualizingShadowCascades() const noexcept -> bool {
+  return shadow_params_.visualize_cascades;
 }
 
 
-auto Renderer::Impl::VisualizeShadowCascades(bool const visualize) noexcept -> void {
-  shadow_cascades_ = visualize;
+auto SceneRenderer::VisualizeShadowCascades(bool const visualize) noexcept -> void {
+  shadow_params_.visualize_cascades = visualize;
 }
 
 
-auto Renderer::Impl::GetShadowFilteringMode() const noexcept -> ShadowFilteringMode {
-  return shadow_filtering_mode_;
+auto SceneRenderer::GetShadowFilteringMode() const noexcept -> ShadowFilteringMode {
+  return shadow_params_.filtering_mode;
 }
 
 
-auto Renderer::Impl::SetShadowFilteringMode(ShadowFilteringMode const filteringMode) noexcept -> void {
-  shadow_filtering_mode_ = filteringMode;
+auto SceneRenderer::SetShadowFilteringMode(ShadowFilteringMode const filtering_mode) noexcept -> void {
+  shadow_params_.filtering_mode = filtering_mode;
 }
 
 
-auto Renderer::Impl::IsSsaoEnabled() const noexcept -> bool {
+auto SceneRenderer::IsSsaoEnabled() const noexcept -> bool {
   return ssao_enabled_;
 }
 
 
-auto Renderer::Impl::SetSsaoEnabled(bool const enabled) noexcept -> void {
+auto SceneRenderer::SetSsaoEnabled(bool const enabled) noexcept -> void {
   ssao_enabled_ = enabled;
 
   if (enabled && !IsDepthNormalPrePassEnabled()) {
@@ -2056,61 +1663,61 @@ auto Renderer::Impl::SetSsaoEnabled(bool const enabled) noexcept -> void {
 }
 
 
-auto Renderer::Impl::GetSsaoParams() const noexcept -> SsaoParams const& {
+auto SceneRenderer::GetSsaoParams() const noexcept -> SsaoParams const& {
   return ssao_params_;
 }
 
 
-auto Renderer::Impl::SetSsaoParams(SsaoParams const& ssaoParams) noexcept -> void {
-  if (ssao_params_.sampleCount != ssaoParams.sampleCount) {
-    RecreateSsaoSamples(ssaoParams.sampleCount);
+auto SceneRenderer::SetSsaoParams(SsaoParams const& ssao_params) noexcept -> void {
+  if (ssao_params_.sample_count != ssao_params.sample_count) {
+    RecreateSsaoSamples(ssao_params.sample_count);
   }
 
-  ssao_params_ = ssaoParams;
+  ssao_params_ = ssao_params;
 }
 
 
-auto Renderer::Impl::GetGamma() const noexcept -> f32 {
+auto SceneRenderer::GetGamma() const noexcept -> f32 {
   return 1.f / inv_gamma_;
 }
 
 
-auto Renderer::Impl::SetGamma(f32 const gamma) noexcept -> void {
+auto SceneRenderer::SetGamma(f32 const gamma) noexcept -> void {
   inv_gamma_ = 1.f / gamma;
 }
 
 
-auto Renderer::Impl::Register(StaticMeshComponent const& staticMeshComponent) noexcept -> void {
+auto SceneRenderer::Register(StaticMeshComponent const& static_mesh_component) noexcept -> void {
   std::unique_lock const lock{static_mesh_mutex_};
-  static_mesh_components_.emplace_back(std::addressof(staticMeshComponent));
+  static_mesh_components_.emplace_back(std::addressof(static_mesh_component));
 }
 
 
-auto Renderer::Impl::Unregister(StaticMeshComponent const& staticMeshComponent) noexcept -> void {
+auto SceneRenderer::Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void {
   std::unique_lock const lock{static_mesh_mutex_};
-  std::erase(static_mesh_components_, std::addressof(staticMeshComponent));
+  std::erase(static_mesh_components_, std::addressof(static_mesh_component));
 }
 
 
-auto Renderer::Impl::Register(LightComponent const& lightComponent) noexcept -> void {
+auto SceneRenderer::Register(LightComponent const& light_component) noexcept -> void {
   std::unique_lock const lock{light_mutex_};
-  lights_.emplace_back(std::addressof(lightComponent));
+  lights_.emplace_back(std::addressof(light_component));
 }
 
 
-auto Renderer::Impl::Unregister(LightComponent const& lightComponent) noexcept -> void {
+auto SceneRenderer::Unregister(LightComponent const& light_component) noexcept -> void {
   std::unique_lock const lock{light_mutex_};
-  std::erase(lights_, std::addressof(lightComponent));
+  std::erase(lights_, std::addressof(light_component));
 }
 
 
-auto Renderer::Impl::Register(Camera const& cam) noexcept -> void {
+auto SceneRenderer::Register(Camera const& cam) noexcept -> void {
   std::unique_lock const lock{game_camera_mutex_};
   game_render_cameras_.emplace_back(&cam);
 }
 
 
-auto Renderer::Impl::Unregister(Camera const& cam) noexcept -> void {
+auto SceneRenderer::Unregister(Camera const& cam) noexcept -> void {
   std::unique_lock const lock{game_camera_mutex_};
   std::erase(game_render_cameras_, &cam);
 }

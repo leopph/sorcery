@@ -19,9 +19,6 @@ static_assert(sizeof(double) == 8);
 using f64 = double;
 
 template<typename T>
-using ObserverPtr = T*;
-
-template<typename T>
 using NotNull = T;
 
 template<typename T>

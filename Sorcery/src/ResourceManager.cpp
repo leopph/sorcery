@@ -3,7 +3,7 @@
 #include "Reflection.hpp"
 #include "ExternalResource.hpp"
 #include "FileIo.hpp"
-#include "Rendering/Renderer.hpp"
+#include "rendering\scene_renderer.hpp"
 #include "Resources/Scene.hpp"
 
 #include <DirectXTex.h>

@@ -1,17 +1,20 @@
 #pragma once
 
-#include "graphics.hpp"
-#include "directional_shadow_map_array.hpp"
-#include "punctual_shadow_atlas.hpp"
-#include "Renderer.hpp"
-#include "structured_buffer.hpp"
+#include "Camera.hpp"
 #include "constant_buffer.hpp"
+#include "directional_shadow_map_array.hpp"
+#include "graphics.hpp"
+#include "punctual_shadow_atlas.hpp"
+#include "render_manager.hpp"
+#include "render_target.hpp"
 #include "shaders/shader_interop.h"
-#include "../Core.hpp"
+#include "shaders/shadow_filtering_modes.h"
+#include "structured_buffer.hpp"
 #include "../Color.hpp"
 #include "../Math.hpp"
-
-#include <DirectXTex.h>
+#include "../scene_objects/StaticMeshComponent.hpp"
+#include "../scene_objects/LightComponents.hpp"
+#include "../Util.hpp"
 
 #include <array>
 #include <cstdint>
@@ -20,11 +23,45 @@
 #include <vector>
 
 
-namespace sorcery {
-class Renderer::Impl {
-public:
-  static auto GetProjectionMatrixForRendering(Matrix4 const& proj_mtx) noexcept -> Matrix4;
+namespace sorcery::rendering {
+// Passing these enum values to shaders is valid
+enum class ShadowFilteringMode : int {
+  kNone        = SHADOW_FILTERING_NONE,
+  kHardwarePcf = SHADOW_FILTERING_HARDWARE_PCF,
+  kPcf3X3      = SHADOW_FILTERING_PCF_3x3,
+  kPcfTent3X3  = SHADOW_FILTERING_PCF_TENT_3x3,
+  kPcfTent5X5  = SHADOW_FILTERING_PCF_TENT_5x5
+};
 
+
+// Cast to int to get the sample count
+enum class MultisamplingMode : int {
+  kOff = 1,
+  kX2  = 2,
+  kX4  = 4,
+  kX8  = 8
+};
+
+
+struct SsaoParams {
+  float radius;
+  float bias;
+  float power;
+  int sample_count;
+};
+
+
+struct ShadowParams {
+  std::array<float, MAX_CASCADE_COUNT - 1> normalized_cascade_splits;
+  int cascade_count;
+  bool visualize_cascades;
+  float distance;
+  ShadowFilteringMode filtering_mode;
+};
+
+
+class SceneRenderer {
+public:
   auto StartUp() -> void;
   auto ShutDown() -> void;
 
@@ -38,26 +75,8 @@ public:
 
   auto Present() noexcept -> void;
 
-  [[nodiscard]] auto LoadReadonlyTexture(DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
-  [[nodiscard]] auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::uint8_t const> data) -> bool;
-
-  // FUNCTIONS FOR CUSTOM EXTERNAL REQUESTS
-
-  [[nodiscard]] auto GetDevice() const noexcept -> ObserverPtr<graphics::GraphicsDevice>;
-
-  auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget&;
-
-  // DEFAULT RENDERING RESOURCES
-
-  [[nodiscard]] auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
-  [[nodiscard]] auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
-  [[nodiscard]] auto GetPlaneMesh() const noexcept -> ObserverPtr<Mesh>;
-  [[nodiscard]] auto GetSphereMesh() const noexcept -> ObserverPtr<Mesh>;
-
-  // RENDER STATE CONFIGURATION
-
-  [[nodiscard]] auto GetSyncInterval() const noexcept -> int;
-  auto SetSyncInterval(int interval) noexcept -> void;
+  [[nodiscard]] auto GetSyncInterval() const noexcept -> UINT;
+  auto SetSyncInterval(UINT interval) noexcept -> void;
 
   [[nodiscard]] auto GetMultisamplingMode() const noexcept -> MultisamplingMode;
   auto SetMultisamplingMode(MultisamplingMode mode) noexcept -> void;
@@ -66,16 +85,14 @@ public:
   auto SetDepthNormalPrePassEnabled(bool enabled) noexcept -> void;
 
   [[nodiscard]] auto IsUsingPreciseColorFormat() const noexcept -> bool;
-  auto SetUsePreciseColorFormat(bool value) noexcept -> void;
-
-  // SHADOWS
+  auto SetUsePreciseColorFormat(bool precise) noexcept -> void;
 
   [[nodiscard]] auto GetShadowDistance() const noexcept -> float;
-  auto SetShadowDistance(float shadowDistance) noexcept -> void;
+  auto SetShadowDistance(float distance) noexcept -> void;
 
   [[nodiscard]] constexpr static auto GetMaxShadowCascadeCount() noexcept -> int;
   [[nodiscard]] auto GetShadowCascadeCount() const noexcept -> int;
-  auto SetShadowCascadeCount(int cascadeCount) noexcept -> void;
+  auto SetShadowCascadeCount(int cascade_count) noexcept -> void;
 
   [[nodiscard]] auto GetNormalizedShadowCascadeSplits() const noexcept -> std::span<float const>;
   auto SetNormalizedShadowCascadeSplit(int idx, float split) noexcept -> void;
@@ -84,39 +101,27 @@ public:
   auto VisualizeShadowCascades(bool visualize) noexcept -> void;
 
   [[nodiscard]] auto GetShadowFilteringMode() const noexcept -> ShadowFilteringMode;
-  auto SetShadowFilteringMode(ShadowFilteringMode filteringMode) noexcept -> void;
-
-  // LIGHTING
+  auto SetShadowFilteringMode(ShadowFilteringMode filtering_mode) noexcept -> void;
 
   [[nodiscard]] auto IsSsaoEnabled() const noexcept -> bool;
   auto SetSsaoEnabled(bool enabled) noexcept -> void;
 
   [[nodiscard]] auto GetSsaoParams() const noexcept -> SsaoParams const&;
-  auto SetSsaoParams(SsaoParams const& ssaoParams) noexcept -> void;
-
-  // POST-PROCESSING
+  auto SetSsaoParams(SsaoParams const& ssao_params) noexcept -> void;
 
   [[nodiscard]] auto GetGamma() const noexcept -> float;
   auto SetGamma(float gamma) noexcept -> void;
 
-  // REGISTRATION FUNCTIONS
+  auto Register(StaticMeshComponent const& static_mesh_component) noexcept -> void;
+  auto Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void;
 
-  auto Register(StaticMeshComponent const& staticMeshComponent) noexcept -> void;
-  auto Unregister(StaticMeshComponent const& staticMeshComponent) noexcept -> void;
-
-  auto Register(LightComponent const& lightComponent) noexcept -> void;
-  auto Unregister(LightComponent const& lightComponent) noexcept -> void;
+  auto Register(LightComponent const& light_component) noexcept -> void;
+  auto Unregister(LightComponent const& light_component) noexcept -> void;
 
   auto Register(Camera const& cam) noexcept -> void;
   auto Unregister(Camera const& cam) noexcept -> void;
 
 private:
-  struct TempRenderTargetRecord {
-    std::unique_ptr<RenderTarget> rt;
-    int age_in_frames;
-  };
-
-
   struct LightData {
     Vector3 color;
     float intensity;
@@ -236,33 +241,20 @@ private:
                    graphics::CommandList& cmd) const noexcept -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
-  auto ReleaseTempRenderTargets() noexcept -> void;
 
   auto RecreateSsaoSamples(int sample_count) noexcept -> void;
 
   [[nodiscard]] auto RecreatePipelines() -> bool;
-  auto CreateCommandLists(UINT count) -> void;
   auto CreatePerViewConstantBuffers(UINT count) -> void;
   auto CreatePerDrawConstantBuffers(UINT count) -> void;
 
-  auto AcquireCommandList() -> graphics::CommandList&;
   auto AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>&;
   auto AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>&;
 
   auto EndFrame() -> void;
 
-  static auto OnWindowSize(Impl* self, Extent2D<std::uint32_t> size) -> void;
+  static auto OnWindowSize(SceneRenderer* self, Extent2D<std::uint32_t> size) -> void;
 
-  static auto GenerateSphere(float radius, int latitudes, int longitudes, std::vector<Vector3>& vertices,
-                             std::vector<Vector3>& normals, std::vector<Vector2>& uvs,
-                             std::vector<std::uint32_t>& indices) -> void;
-
-
-  constexpr static int max_tmp_rt_age_{10};
-  inline static Guid const default_material_guid_{1, 0};
-  inline static Guid const cube_mesh_guid_{2, 0};
-  inline static Guid const plane_mesh_guid_{3, 0};
-  inline static Guid const sphere_mesh_guid_{4, 0};
   static UINT constexpr max_frames_in_flight_{2};
   static DXGI_FORMAT constexpr imprecise_color_buffer_format_{DXGI_FORMAT_R11G11B10_FLOAT};
   static DXGI_FORMAT constexpr precise_color_buffer_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
@@ -274,8 +266,6 @@ private:
   std::unique_ptr<graphics::GraphicsDevice> device_;
   graphics::SharedDeviceChildHandle<graphics::SwapChain> swap_chain_;
 
-  std::vector<std::array<graphics::SharedDeviceChildHandle<graphics::CommandList>, max_frames_in_flight_>>
-  command_lists_;
   std::array<ConstantBuffer<ShaderPerFrameConstants>, max_frames_in_flight_> per_frame_cbs_;
   std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, max_frames_in_flight_>> per_view_cbs_;
   std::vector<std::array<ConstantBuffer<ShaderPerDrawConstants>, max_frames_in_flight_>> per_draw_cbs_;
@@ -315,15 +305,8 @@ private:
 
   std::array<FramePacket, max_frames_in_flight_> frame_packets_;
 
-  UINT frame_idx_{0};
-  UINT next_cmd_list_idx_{0};
   UINT next_per_draw_cb_idx_{0};
   UINT next_per_view_cb_idx_{0};
-
-  ObserverPtr<Material> default_material_{nullptr};
-  ObserverPtr<Mesh> cube_mesh_{nullptr};
-  ObserverPtr<Mesh> plane_mesh_{nullptr};
-  ObserverPtr<Mesh> sphere_mesh_{nullptr};
 
   std::unique_ptr<DirectionalShadowMapArray> dir_shadow_map_arr_;
   std::unique_ptr<PunctualShadowAtlas> punctual_shadow_atlas_;
@@ -336,22 +319,16 @@ private:
   std::vector<Vector4> gizmo_colors_;
   std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;
 
-  // Normalized to [0, 1]
-  std::array<float, MAX_CASCADE_COUNT - 1> cascade_splits_{0.1f, 0.3f, 0.6f};
-  int cascade_count_{4};
-  bool shadow_cascades_{false};
-  float shadow_distance_{100};
-  ShadowFilteringMode shadow_filtering_mode_{ShadowFilteringMode::PCFTent5x5};
-
-  MultisamplingMode msaa_mode_{MultisamplingMode::X8};
-
-  int sync_interval_{0};
+  MultisamplingMode msaa_mode_{MultisamplingMode::kX8};
+  SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
+  ShadowParams shadow_params_{{0.1f, 0.3f, 0.6f}, 4, false, 100, ShadowFilteringMode::kPcfTent5X5};
 
   float inv_gamma_{1.f / 2.2f};
 
   bool depth_normal_pre_pass_enabled_{true};
   bool ssao_enabled_{true};
-  SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sampleCount = 12};
+
+  UINT sync_interval_{0};
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
@@ -363,13 +340,10 @@ private:
 
   std::mutex game_camera_mutex_;
   std::vector<Camera const*> game_render_cameras_;
-
-  std::vector<TempRenderTargetRecord> tmp_render_targets_;
-  std::mutex tmp_render_targets_mutex_;
 };
 
 
-constexpr auto Renderer::Impl::GetMaxShadowCascadeCount() noexcept -> int {
+constexpr auto SceneRenderer::GetMaxShadowCascadeCount() noexcept -> int {
   return MAX_CASCADE_COUNT;
 }
 }

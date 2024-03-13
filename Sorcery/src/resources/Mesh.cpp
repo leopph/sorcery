@@ -1,6 +1,6 @@
 #include "Mesh.hpp"
 
-#include "../Rendering/Renderer.hpp"
+#include "..\rendering\scene_renderer.hpp"
 #include "../Serialization.hpp"
 
 #include <imgui.h>
@@ -396,27 +396,27 @@ auto Mesh::ReleaseCpuMemory() noexcept -> void {
 
 
 auto Mesh::GetPositionBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return pos_buf_.Get();
+  return pos_buf_;
 }
 
 
 auto Mesh::GetNormalBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return norm_buf_.Get();
+  return norm_buf_;
 }
 
 
 auto Mesh::GetUvBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return uv_buf_.Get();
+  return uv_buf_;
 }
 
 
 auto Mesh::GetTangentBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return tan_buf_.Get();
+  return tan_buf_;
 }
 
 
 auto Mesh::GetIndexBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return idx_buf_.Get();
+  return idx_buf_;
 }
 
 

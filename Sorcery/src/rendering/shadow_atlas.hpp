@@ -9,7 +9,7 @@
 #include <vector>
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 class ShadowAtlas : public GridLike {
 protected:
   graphics::SharedDeviceChildHandle<graphics::Texture> tex_;

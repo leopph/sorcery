@@ -6,7 +6,7 @@
 #include <span>
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 template<typename T>
 class StructuredBuffer {
 public:

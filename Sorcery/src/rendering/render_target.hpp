@@ -8,7 +8,7 @@
 #include "graphics.hpp"
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 class RenderTarget {
 public:
   struct Desc {

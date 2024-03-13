@@ -2,7 +2,7 @@
 
 #include "Entity.hpp"
 #include "../Gui.hpp"
-#include "../Rendering/Renderer.hpp"
+#include "..\rendering\scene_renderer.hpp"
 
 #include <imgui.h>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Renderer.hpp>
+#include <..\..\Sorcery\src\rendering\scene_renderer.hpp>
 
 
 namespace sorcery::mage {

@@ -5,7 +5,7 @@
 #include "shaders\shader_interop.h"
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 struct ShadowCascadeBoundary {
   float nearClip;
   float farClip;
