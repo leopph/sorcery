@@ -1178,7 +1178,7 @@ auto SceneRenderer::Render() -> void {
       L"Camera HDR RenderTarget", false
     };
 
-    auto const& hdr_rt{render_manager_->GetTemporaryRenderTarget(hdr_rt_desc)};
+    auto const hdr_rt{render_manager_->GetTemporaryRenderTarget(hdr_rt_desc)};
 
 
     auto const clear_color{
@@ -1187,7 +1187,7 @@ auto SceneRenderer::Render() -> void {
         : Vector4{0, 0, 0, 1}
     };
 
-    cmd.ClearRenderTarget(*hdr_rt.GetColorTex(), std::span<FLOAT const, 4>{clear_color.GetData(), 4}, {});
+    cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), std::span<FLOAT const, 4>{clear_color.GetData(), 4}, {});
 
     D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rt_width), static_cast<FLOAT>(rt_height), 0, 1};
 
@@ -1224,9 +1224,9 @@ auto SceneRenderer::Render() -> void {
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer()};
     SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, shadow_cascade_boundaries, cam_data.position);
 
-    cmd.ClearDepthStencil(*hdr_rt.GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
+    cmd.ClearDepthStencil(*hdr_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
-    auto const& normal_rt{
+    auto const normal_rt{
       render_manager_->GetTemporaryRenderTarget(RenderTarget::Desc{
         rt_width, rt_height, normal_buffer_format_, std::nullopt, 1, L"Camera Normal RT"
       })
@@ -1235,21 +1235,21 @@ auto SceneRenderer::Render() -> void {
     // Depth-Normal pre-pass
     if (depth_normal_pre_pass_enabled_) {
       // If MSAA is enabled we render into an MSAA RT and then resolve into normalRt
-      auto const& actual_normal_rt{
-        [this, &normal_rt]() -> auto const& {
+      auto const actual_normal_rt{
+        [this, &normal_rt] {
           if (GetMultisamplingMode() == MultisamplingMode::kOff) {
             return normal_rt;
           }
 
-          auto actual_normal_rt_desc{normal_rt.GetDesc()};
+          auto actual_normal_rt_desc{normal_rt->GetDesc()};
           actual_normal_rt_desc.sample_count = static_cast<int>(GetMultisamplingMode());
           return render_manager_->GetTemporaryRenderTarget(actual_normal_rt_desc);
         }()
       };
 
       cmd.SetPipelineState(*depth_normal_pso_);
-      cmd.SetRenderTargets(std::span{actual_normal_rt.GetColorTex().get(), 1}, hdr_rt.GetDepthStencilTex().get());
-      cmd.ClearRenderTarget(*actual_normal_rt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+      cmd.SetRenderTargets(std::span{actual_normal_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
+      cmd.ClearRenderTarget(*actual_normal_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
 
       for (auto const instance_idx : visible_static_submesh_instance_indices) {
         auto const& instance{frame_packet.instance_data[instance_idx]};
@@ -1281,7 +1281,7 @@ auto SceneRenderer::Render() -> void {
 
       // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
       if (GetMultisamplingMode() != MultisamplingMode::kOff) {
-        cmd.Resolve(*normal_rt.GetColorTex(), *actual_normal_rt.GetColorTex(), *normal_rt.GetDesc().color_format);
+        cmd.Resolve(*normal_rt->GetColorTex(), *actual_normal_rt->GetColorTex(), *normal_rt->GetDesc().color_format);
       }
     }
 
@@ -1289,7 +1289,7 @@ auto SceneRenderer::Render() -> void {
 
     // SSAO pass
     if (ssao_enabled_) {
-      auto const& ssao_rt{
+      auto const ssao_rt{
         render_manager_->GetTemporaryRenderTarget(RenderTarget::Desc{
           rt_width, rt_height, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"
         })
@@ -1299,34 +1299,34 @@ auto SceneRenderer::Render() -> void {
       auto const ssao_depth_tex{
         [this, &hdr_rt, &cmd] {
           if (GetMultisamplingMode() == MultisamplingMode::kOff) {
-            return hdr_rt.GetDepthStencilTex();
+            return hdr_rt->GetDepthStencilTex();
           }
 
-          auto ssao_depth_rt_desc{hdr_rt.GetDesc()};
+          auto ssao_depth_rt_desc{hdr_rt->GetDesc()};
           ssao_depth_rt_desc.color_format = DXGI_FORMAT_R32_FLOAT;
           ssao_depth_rt_desc.sample_count = 1;
           ssao_depth_rt_desc.depth_stencil_format = std::nullopt;
           ssao_depth_rt_desc.enable_unordered_access = true;
-          auto const& ssao_depth_rt{render_manager_->GetTemporaryRenderTarget(ssao_depth_rt_desc)};
+          auto const ssao_depth_rt{render_manager_->GetTemporaryRenderTarget(ssao_depth_rt_desc)};
 
           cmd.SetPipelineState(*depth_resolve_pso_);
           cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, in_tex_idx),
-            ssao_depth_rt.GetColorTex()->GetUnorderedAccess());
+            ssao_depth_rt->GetColorTex()->GetUnorderedAccess());
           cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, out_tex_idx),
-            hdr_rt.GetColorTex()->GetUnorderedAccess());
+            hdr_rt->GetColorTex()->GetUnorderedAccess());
           cmd.Dispatch(
             static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.width) / DEPTH_RESOLVE_CS_THREADS_X)),
             static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.height) / DEPTH_RESOLVE_CS_THREADS_Y)),
             static_cast<UINT>(std::ceil(1.0f / DEPTH_RESOLVE_CS_THREADS_Z)));
 
-          return ssao_depth_rt.GetColorTex();
+          return ssao_depth_rt->GetColorTex();
         }()
       };
 
       cmd.SetPipelineState(*ssao_pso_);
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, noise_tex_idx), ssao_noise_tex_->GetShaderResource());
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, depth_tex_idx), ssao_depth_tex->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, normal_tex_idx), normal_rt.GetColorTex()->GetShaderResource());
+      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, normal_tex_idx), normal_rt->GetColorTex()->GetShaderResource());
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, samp_buf_idx),
         ssao_samples_buffer_.GetBuffer()->GetShaderResource());
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
@@ -1339,13 +1339,13 @@ auto SceneRenderer::Render() -> void {
         cam_per_view_cb.GetBuffer()->GetConstantBuffer());
       cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_frame_cb_idx),
         per_frame_cb.GetBuffer()->GetConstantBuffer());
-      cmd.SetRenderTargets(std::span{ssao_rt.GetColorTex().get(), 1}, nullptr);
-      cmd.ClearRenderTarget(*ssao_rt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+      cmd.SetRenderTargets(std::span{ssao_rt->GetColorTex().get(), 1}, nullptr);
+      cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
       cmd.DrawInstanced(3, 1, 0, 0);
 
-      auto const& ssao_blur_rt{
+      auto const ssao_blur_rt{
         render_manager_->GetTemporaryRenderTarget([&ssao_rt] {
-          auto ret{ssao_rt.GetDesc()};
+          auto ret{ssao_rt->GetDesc()};
           ret.debug_name = L"SSAO Blur RT";
           return ret;
         }())
@@ -1353,13 +1353,13 @@ auto SceneRenderer::Render() -> void {
 
       cmd.SetPipelineState(*ssao_blur_pso_);
       cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, in_tex_idx),
-        ssao_blur_rt.GetColorTex()->GetShaderResource());
+        ssao_blur_rt->GetColorTex()->GetShaderResource());
       cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-      cmd.SetRenderTargets(std::span{ssao_blur_rt.GetColorTex().get(), 1}, nullptr);
-      cmd.ClearRenderTarget(*ssao_blur_rt.GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+      cmd.SetRenderTargets(std::span{ssao_blur_rt->GetColorTex().get(), 1}, nullptr);
+      cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
       cmd.DrawInstanced(3, 1, 0, 0);
 
-      ssao_tex = ssao_blur_rt.GetColorTex().get();
+      ssao_tex = ssao_blur_rt->GetColorTex().get();
     }
 
     // Full forward lighting pass
@@ -1421,7 +1421,7 @@ auto SceneRenderer::Render() -> void {
       cam_per_view_cb.GetBuffer()->GetConstantBuffer());
     cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_frame_cb_idx),
       per_frame_cb.GetBuffer()->GetConstantBuffer());
-    cmd.SetRenderTargets(std::span{hdr_rt.GetColorTex().get(), 1}, hdr_rt.GetDepthStencilTex().get());
+    cmd.SetRenderTargets(std::span{hdr_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
 
     for (auto const instance_idx : visible_static_submesh_instance_indices) {
       auto const& instance{frame_packet.instance_data[instance_idx]};
@@ -1454,13 +1454,13 @@ auto SceneRenderer::Render() -> void {
     RenderTarget const* post_process_rt;
 
     if (GetMultisamplingMode() == MultisamplingMode::kOff) {
-      post_process_rt = std::addressof(hdr_rt);
+      post_process_rt = hdr_rt.get();
     } else {
       auto resolve_hdr_rt_desc{hdr_rt_desc};
       resolve_hdr_rt_desc.sample_count = 1;
-      auto const& resolve_hdr_rt{render_manager_->GetTemporaryRenderTarget(resolve_hdr_rt_desc)};
-      cmd.Resolve(*resolve_hdr_rt.GetColorTex(), *hdr_rt.GetColorTex(), *hdr_rt_desc.color_format);
-      post_process_rt = std::addressof(resolve_hdr_rt);
+      auto const resolve_hdr_rt{render_manager_->GetTemporaryRenderTarget(resolve_hdr_rt_desc)};
+      cmd.Resolve(*resolve_hdr_rt->GetColorTex(), *hdr_rt->GetColorTex(), *hdr_rt_desc.color_format);
+      post_process_rt = resolve_hdr_rt.get();
     }
 
     cmd.SetViewports(std::span{&viewport, 1});

@@ -34,7 +34,7 @@ public:
   [[nodiscard]] auto GetCurrentFrameIndex() const -> UINT;
 
   [[nodiscard]] auto AcquireCommandList() -> graphics::CommandList&;
-  [[nodiscard]] auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget&;
+  [[nodiscard]] auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget>;
 
   [[nodiscard]] auto LoadReadonlyTexture(
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
@@ -49,7 +49,7 @@ public:
 
 private:
   struct TempRenderTargetRecord {
-    std::unique_ptr<RenderTarget> rt;
+    std::shared_ptr<RenderTarget> rt;
     int age_in_frames;
   };
 

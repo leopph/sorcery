@@ -135,14 +135,15 @@ auto RenderManager::AcquireCommandList() -> graphics::CommandList& {
 }
 
 
-auto RenderManager::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget& {
+auto RenderManager::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget> {
   for (auto& [rt, lastUseInFrames] : tmp_render_targets_) {
     if (rt->GetDesc() == desc && lastUseInFrames != 0 /*The RT wasn't already handed out this frame*/) {
       lastUseInFrames = 0;
-      return *rt;
+      return rt;
     }
   }
-  return *tmp_render_targets_.emplace_back(RenderTarget::New(*device_, desc), 0).rt;
+  return tmp_render_targets_.emplace_back(std::shared_ptr<RenderTarget>{RenderTarget::New(*device_, desc).release()}, 0)
+                            .rt;
 }
 
 

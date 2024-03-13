@@ -1,9 +1,9 @@
 #pragma once
 
+#include "../Core.hpp"
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
-#include "graphics.hpp"
-
 #include <d3d12.h>
 #include <d3dx12.h>
 #include <dxgi1_6.h>
@@ -22,13 +22,11 @@
 #include <vector>
 
 
-extern "C" {
-__declspec(dllexport) extern UINT const D3D12SDKVersion;
-__declspec(dllexport) extern char const* D3D12SDKPath;
-}
-
-
 namespace sorcery::graphics {
+LEOPPHAPI extern UINT const kD3D12SdkVersion;
+LEOPPHAPI extern char const* const kD3D12SdkPath;
+
+
 class GraphicsDevice;
 
 class Buffer;
