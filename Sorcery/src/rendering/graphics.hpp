@@ -267,6 +267,7 @@ public:
   [[nodiscard]] auto Map() const -> void*;
   [[nodiscard]] auto GetShaderResource() const -> UINT;
   [[nodiscard]] auto GetUnorderedAccess() const -> UINT;
+  [[nodiscard]] auto GetRequiredIntermediateSize() const -> UINT64;
 
 protected:
   Resource(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
@@ -365,6 +366,8 @@ public:
   auto SetPipelineParameters(UINT index, std::span<UINT const> values) const -> void;
   auto SetPipelineState(PipelineState const& pipeline_state) -> void;
   auto SetStreamOutputTargets(UINT start_slot, std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
+  auto UpdateSubresources(Resource const& dst, Buffer const& upload_buf, UINT64 buf_offset, UINT first_subresource,
+                          UINT num_subresources, D3D12_SUBRESOURCE_DATA const* src_data) const -> UINT64;
 
 private:
   auto SetRootSignature(std::uint8_t num_params) const -> void;

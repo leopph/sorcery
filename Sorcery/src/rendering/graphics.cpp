@@ -3,7 +3,6 @@
 #include "../MemoryAllocation.hpp"
 
 #include <dxgidebug.h>
-#include <d3dx12.h>
 
 #include <algorithm>
 #include <array>
@@ -1027,6 +1026,12 @@ auto Resource::GetUnorderedAccess() const -> UINT {
 }
 
 
+auto Resource::GetRequiredIntermediateSize() const -> UINT64 {
+  auto const desc{GetDesc()};
+  return ::GetRequiredIntermediateSize(resource_.Get(), 0, desc.MipLevels * desc.DepthOrArraySize);
+}
+
+
 Resource::Resource(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, UINT const srv,
                    UINT const uav) :
   allocation_{std::move(allocation)},
@@ -1300,6 +1305,14 @@ auto CommandList::SetPipelineState(PipelineState const& pipeline_state) -> void 
 auto CommandList::SetStreamOutputTargets(UINT const start_slot,
                                          std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> const views) const -> void {
   cmd_list_->SOSetTargets(start_slot, static_cast<UINT>(views.size()), views.data());
+}
+
+
+auto CommandList::UpdateSubresources(Resource const& dst, Buffer const& upload_buf, UINT64 const buf_offset,
+                                     UINT const first_subresource, UINT const num_subresources,
+                                     D3D12_SUBRESOURCE_DATA const* const src_data) const -> UINT64 {
+  return ::UpdateSubresources(cmd_list_.Get(), dst.resource_.Get(), upload_buf.resource_.Get(), buf_offset,
+    first_subresource, num_subresources, src_data);
 }
 
 
