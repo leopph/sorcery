@@ -961,7 +961,7 @@ SceneRenderer::SceneRenderer(RenderManager& render_manager, Window& window) :
   device_.Reset(&render_manager_->GetDevice());
 
   swap_chain_ = device_->CreateSwapChain(graphics::SwapChainDesc{0, 0, 2, render_target_format_, 0, DXGI_SCALING_NONE},
-    static_cast<HWND>(gWindow.GetNativeHandle()));
+    static_cast<HWND>(window_->GetNativeHandle()));
 
   for (auto& buf : light_buffers_) {
     buf = StructuredBuffer<ShaderLight>::New(*device_, true);
@@ -972,7 +972,7 @@ SceneRenderer::SceneRenderer(RenderManager& render_manager, Window& window) :
   line_gizmo_vertex_data_buffer_ = StructuredBuffer<ShaderLineGizmoVertexData>::New(*device_, true);
 
   main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
-    static_cast<UINT>(gWindow.GetClientAreaSize().width), static_cast<UINT>(gWindow.GetClientAreaSize().height),
+    static_cast<UINT>(window_->GetClientAreaSize().width), static_cast<UINT>(window_->GetClientAreaSize().height),
     DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Main RT", false
   });
 
@@ -1072,7 +1072,7 @@ SceneRenderer::SceneRenderer(RenderManager& render_manager, Window& window) :
     D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
   });
 
-  gWindow.OnWindowSize.add_handler(this, &OnWindowSize);
+  window_->OnWindowSize.add_handler(this, &OnWindowSize);
 
   ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_, true);
   RecreateSsaoSamples(ssao_params_.sample_count);
@@ -1148,7 +1148,7 @@ SceneRenderer::SceneRenderer(RenderManager& render_manager, Window& window) :
 
 
 SceneRenderer::~SceneRenderer() {
-  gWindow.OnWindowSize.remove_handler(this, &OnWindowSize);
+  window_->OnWindowSize.remove_handler(this, &OnWindowSize);
 }
 
 

@@ -62,7 +62,4 @@ public:
 
   LEOPPHAPI auto UseImmersiveDarkMode(bool value) noexcept -> void;
 };
-
-
-LEOPPHAPI extern Window gWindow;
 }

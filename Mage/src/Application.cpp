@@ -3,7 +3,7 @@
 #include "Platform.hpp"
 #include "GUI.hpp"
 #include "ResourceManager.hpp"
-#include "Window.hpp"
+#include "engine_context.hpp"
 
 #include <nfd.h>
 
@@ -31,8 +31,8 @@ auto Application::HandleUnknownBackgroundThreadException() -> void {
 
 Application::Application(ImGuiIO& imGuiIO) :
   mImGuiIo{imGuiIO} {
-  gWindow.SetTitle(std::string{WINDOW_TITLE_BASE});
-  gWindow.OnWindowFocusGain.add_handler(this, &OnWindowFocusGain);
+  g_engine_context.window->SetTitle(std::string{WINDOW_TITLE_BASE});
+  g_engine_context.window->OnWindowFocusGain.add_handler(this, &OnWindowFocusGain);
   SetImGuiContext(*ImGui::GetCurrentContext());
   SetGuiDarkMode(mIsInDarkMode);
 
@@ -41,7 +41,7 @@ Application::Application(ImGuiIO& imGuiIO) :
 
 
 Application::~Application() {
-  gWindow.OnWindowFocusGain.remove_handler(this, &OnWindowFocusGain);
+  g_engine_context.window->OnWindowFocusGain.remove_handler(this, &OnWindowFocusGain);
 }
 
 
@@ -120,7 +120,7 @@ auto Application::OpenProject(std::filesystem::path const& targetPath) -> void {
   mScene = CreateAndInitialize<Scene>();
   mProjDirAbs = absolute(targetPath);
   mResourceDB.ChangeProjectDir(mProjDirAbs);
-  gWindow.SetTitle(std::string{WINDOW_TITLE_BASE} + " - " + targetPath.stem().string());
+  g_engine_context.window->SetTitle(std::string{WINDOW_TITLE_BASE} + " - " + targetPath.stem().string());
 }
 
 
@@ -212,7 +212,7 @@ auto Application::SetGuiDarkMode(bool const darkMode) noexcept -> void {
   style.TabRounding = 4;
   style.WindowRounding = 4;
 
-  gWindow.UseImmersiveDarkMode(darkMode);
+  g_engine_context.window->UseImmersiveDarkMode(darkMode);
   mIsInDarkMode = darkMode;
 }
 

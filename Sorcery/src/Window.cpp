@@ -6,9 +6,6 @@
 
 
 namespace sorcery {
-Window gWindow;
-
-
 Window::Window() :
   mImpl{new WindowImpl{}},
   OnWindowSize{mImpl->OnWindowSize},
