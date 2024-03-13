@@ -1,7 +1,7 @@
 #include "Camera.hpp"
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 auto Camera::GetNearClipPlane() const noexcept -> float {
   return mNear;
 }

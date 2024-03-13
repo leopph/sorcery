@@ -7,7 +7,7 @@
 #include <cstdint>
 
 
-namespace sorcery {
+namespace sorcery::rendering {
 class Camera {
 public:
   enum class Type : std::uint8_t {
