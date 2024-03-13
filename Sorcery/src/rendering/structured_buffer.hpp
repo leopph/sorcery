@@ -9,12 +9,8 @@
 namespace sorcery {
 template<typename T>
 class StructuredBuffer {
-  static_assert(sizeof(T) % 16 == 0, "StructuredBuffer contained type must have a size divisible by 16.");
-
-  auto RecreateBuffer() -> void;
-
 public:
-  static auto New(graphics::GraphicsDevice& device) -> StructuredBuffer;
+  static auto New(graphics::GraphicsDevice& device, bool cpu_accessible) -> StructuredBuffer;
 
   StructuredBuffer() = default;
 
@@ -23,29 +19,24 @@ public:
   auto Resize(UINT new_size) -> void;
 
 private:
+  StructuredBuffer(graphics::GraphicsDevice& device, bool cpu_accessible);
+
+  auto RecreateBuffer() -> void;
+
   graphics::GraphicsDevice* device_{nullptr};
   graphics::SharedDeviceChildHandle<graphics::Buffer> buffer_;
   T* mapped_ptr_{nullptr};
   UINT capacity_{1};
   UINT size_{0};
+  bool cpu_accessible_{false};
+
+  static_assert(sizeof(T) % 16 == 0, "StructuredBuffer contained type must have a size divisible by 16.");
 };
 
 
 template<typename T>
-auto StructuredBuffer<T>::RecreateBuffer() -> void {
-  buffer_ = device_->CreateBuffer(graphics::BufferDesc{
-    static_cast<UINT>(capacity_ * sizeof(T)), sizeof(T), false, true, false
-  }, D3D12_HEAP_TYPE_UPLOAD);
-  mapped_ptr_ = static_cast<T*>(buffer_->Map());
-}
-
-
-template<typename T>
-auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device) -> StructuredBuffer {
-  StructuredBuffer sb;
-  sb.device_ = &device;
-  sb.RecreateBuffer();
-  return sb;
+auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, bool const cpu_accessible) -> StructuredBuffer {
+  return StructuredBuffer{device, cpu_accessible};
 }
 
 
@@ -78,5 +69,22 @@ auto StructuredBuffer<T>::Resize(UINT const new_size) -> void {
   } else if (size_ != new_size) {
     size_ = new_size;
   }
+}
+
+
+template<typename T>
+StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice& device, bool cpu_accessible) :
+  device_{&device},
+  cpu_accessible_{cpu_accessible} {
+  RecreateBuffer();
+}
+
+
+template<typename T>
+auto StructuredBuffer<T>::RecreateBuffer() -> void {
+  buffer_ = device_->CreateBuffer(graphics::BufferDesc{
+    static_cast<UINT>(capacity_ * sizeof(T)), sizeof(T), false, true, false
+  }, cpu_accessible_ ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT);
+  mapped_ptr_ = static_cast<T*>(buffer_->Map());
 }
 }

@@ -1103,12 +1103,12 @@ auto Renderer::Impl::StartUp() -> void {
     static_cast<HWND>(gWindow.GetNativeHandle()));
 
   for (auto& buf : light_buffers_) {
-    buf = StructuredBuffer<ShaderLight>::New(*device_);
+    buf = StructuredBuffer<ShaderLight>::New(*device_, true);
   }
 
-  gizmo_color_buffer_ = StructuredBuffer<Vector4>::New(*device_);
+  gizmo_color_buffer_ = StructuredBuffer<Vector4>::New(*device_, true);
 
-  line_gizmo_vertex_data_buffer_ = StructuredBuffer<ShaderLineGizmoVertexData>::New(*device_);
+  line_gizmo_vertex_data_buffer_ = StructuredBuffer<ShaderLineGizmoVertexData>::New(*device_, true);
 
   main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
     static_cast<UINT>(gWindow.GetClientAreaSize().width), static_cast<UINT>(gWindow.GetClientAreaSize().height),
@@ -1285,7 +1285,7 @@ auto Renderer::Impl::StartUp() -> void {
 
   gWindow.OnWindowSize.add_handler(this, &OnWindowSize);
 
-  ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_);
+  ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_, true);
   RecreateSsaoSamples(ssao_params_.sampleCount);
 
   std::vector<Vector4> ssao_noise;
