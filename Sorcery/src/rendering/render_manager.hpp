@@ -42,8 +42,6 @@ public:
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
   [[nodiscard]] LEOPPHAPI auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> data) -> bool;
 
-  [[nodiscard]] LEOPPHAPI auto GetDevice() const -> graphics::GraphicsDevice&;
-
   [[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
   [[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
   [[nodiscard]] LEOPPHAPI auto GetPlaneMesh() const noexcept -> ObserverPtr<Mesh>;

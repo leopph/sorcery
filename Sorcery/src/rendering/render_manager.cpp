@@ -297,11 +297,6 @@ auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byt
 }
 
 
-auto RenderManager::GetDevice() const -> graphics::GraphicsDevice& {
-  return *device_;
-}
-
-
 auto RenderManager::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
   return default_mtl_;
 }

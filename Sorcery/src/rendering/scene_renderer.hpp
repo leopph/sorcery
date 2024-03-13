@@ -63,7 +63,7 @@ struct ShadowParams {
 
 class SceneRenderer {
 public:
-  LEOPPHAPI SceneRenderer(RenderManager& render_manager, Window& window);
+  LEOPPHAPI SceneRenderer(Window& window, graphics::GraphicsDevice& device, RenderManager& render_manager);
   SceneRenderer(SceneRenderer const&) = delete;
   SceneRenderer(SceneRenderer&&) = delete;
 

@@ -955,11 +955,10 @@ auto SceneRenderer::OnWindowSize(SceneRenderer* const self, Extent2D<std::uint32
 }
 
 
-SceneRenderer::SceneRenderer(RenderManager& render_manager, Window& window) :
+SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, RenderManager& render_manager) :
   render_manager_{&render_manager},
-  window_{&window} {
-  device_.Reset(&render_manager_->GetDevice());
-
+  window_{&window},
+  device_{&device} {
   swap_chain_ = device_->CreateSwapChain(graphics::SwapChainDesc{0, 0, 2, render_target_format_, 0, DXGI_SCALING_NONE},
     static_cast<HWND>(window_->GetNativeHandle()));
 
