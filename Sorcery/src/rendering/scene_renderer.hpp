@@ -77,6 +77,11 @@ public:
   auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
   auto DrawGizmos(RenderTarget const* rt = nullptr) -> void;
 
+  // If a render target override is set, all cameras not targeting a specific render target
+  // will render into the override RT.
+  [[nodiscard]] auto GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> const&;
+  auto SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void;
+
   /*auto ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
   auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void; TODO*/
 
@@ -319,14 +324,14 @@ private:
 
   std::unique_ptr<DirectionalShadowMapArray> dir_shadow_map_arr_;
   std::unique_ptr<PunctualShadowAtlas> punctual_shadow_atlas_;
-  StructuredBuffer<Vector4> gizmo_color_buffer_;
-  StructuredBuffer<ShaderLineGizmoVertexData> line_gizmo_vertex_data_buffer_;
-  std::unique_ptr<RenderTarget> main_rt_;
-  StructuredBuffer<Vector4> ssao_samples_buffer_;
-
 
   std::vector<Vector4> gizmo_colors_;
+  StructuredBuffer<Vector4> gizmo_color_buffer_;
+
   std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;
+  StructuredBuffer<ShaderLineGizmoVertexData> line_gizmo_vertex_data_buffer_;
+
+  StructuredBuffer<Vector4> ssao_samples_buffer_;
 
   MultisamplingMode msaa_mode_{MultisamplingMode::kX8};
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
@@ -349,6 +354,9 @@ private:
 
   std::mutex game_camera_mutex_;
   std::vector<Camera const*> game_render_cameras_;
+
+  std::unique_ptr<RenderTarget> main_rt_;
+  std::shared_ptr<RenderTarget> rt_override_;
 };
 
 

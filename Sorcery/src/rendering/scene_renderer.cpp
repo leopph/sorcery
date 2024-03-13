@@ -1164,13 +1164,14 @@ auto SceneRenderer::Render() -> void {
     return;
   }
 
+  auto& global_rt{rt_override_ ? *rt_override_ : *main_rt_};
+
   for (auto const& cam_data : frame_packet.cam_data) {
-    auto const rt_width{
-      cam_data.render_target ? cam_data.render_target->GetDesc().width : gWindow.GetClientAreaSize().width
-    };
-    auto const rt_height{
-      cam_data.render_target ? cam_data.render_target->GetDesc().height : gWindow.GetClientAreaSize().height
-    };
+    auto& target_rt{cam_data.render_target ? *cam_data.render_target : global_rt};
+    auto const& target_rt_desc{target_rt.GetDesc()};
+
+    auto const rt_width{target_rt_desc.width};
+    auto const rt_height{target_rt_desc.height};
     auto const rt_aspect{static_cast<float>(rt_width) / static_cast<float>(rt_height)};
 
     RenderTarget::Desc const hdr_rt_desc{
@@ -1464,10 +1465,7 @@ auto SceneRenderer::Render() -> void {
     }
 
     cmd.SetViewports(std::span{&viewport, 1});
-    PostProcess(*post_process_rt->GetColorTex(),
-      *(cam_data.render_target
-          ? cam_data.render_target->GetColorTex()
-          : device_->SwapChainGetBuffers(*swap_chain_)[device_->SwapChainGetCurrentBufferIndex(*swap_chain_)]), cmd);
+    PostProcess(*post_process_rt->GetColorTex(), *target_rt.GetColorTex(), cmd);
   }
 
   if (!cmd.End()) {
@@ -1509,6 +1507,16 @@ auto SceneRenderer::DrawGizmos(RenderTarget const* const rt) -> void {
   if (!line_gizmo_vertex_data_.empty()) {
     cmd.DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);
   }
+}
+
+
+auto SceneRenderer::GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> const& {
+  return rt_override_;
+}
+
+
+auto SceneRenderer::SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void {
+  rt_override_ = std::move(rt_override);
 }
 
 
