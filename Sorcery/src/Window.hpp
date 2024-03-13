@@ -14,16 +14,13 @@ class Window {
 
 public:
   LEOPPHAPI Window();
-  Window(Window const& other) = delete;
-  Window(Window&& other) = delete;
+  Window(Window const&) = delete;
+  Window(Window&&) = delete;
 
   LEOPPHAPI ~Window();
 
-  void operator=(Window const& other) = delete;
-  void operator=(Window&& other) = delete;
-
-  LEOPPHAPI auto StartUp() -> void;
-  LEOPPHAPI auto ShutDown() noexcept -> void;
+  auto operator=(Window const&) -> void = delete;
+  auto operator=(Window&&) -> void = delete;
 
   GuardedEventReference<Extent2D<unsigned>>& OnWindowSize;
   GuardedEventReference<>& OnWindowFocusGain;

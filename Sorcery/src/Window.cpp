@@ -19,18 +19,6 @@ Window::~Window() {
 }
 
 
-auto Window::StartUp() -> void {
-  assert(mImpl);
-  mImpl->StartUp();
-}
-
-
-auto Window::ShutDown() noexcept -> void {
-  assert(mImpl);
-  mImpl->ShutDown();
-}
-
-
 auto Window::GetNativeHandle() const noexcept -> void* {
   return mImpl->GetNativeHandle();
 }
@@ -144,7 +132,7 @@ auto Window::SetEventHandler(void const* handler) noexcept -> void {
 }
 
 
-auto Window::UseImmersiveDarkMode(const bool value) noexcept -> void {
+auto Window::UseImmersiveDarkMode(bool const value) noexcept -> void {
   assert(mImpl);
   mImpl->UseImmersiveDarkMode(value);
 }

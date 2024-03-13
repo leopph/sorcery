@@ -29,8 +29,14 @@ class WindowImpl {
   [[nodiscard]] static auto RectToExtent(RECT rect) noexcept -> Extent2D<int>;
 
 public:
-  auto StartUp() -> void;
-  auto ShutDown() noexcept -> void;
+  WindowImpl();
+  WindowImpl(WindowImpl const&) = delete;
+  WindowImpl(WindowImpl&&) = delete;
+
+  ~WindowImpl();
+
+  auto operator=(WindowImpl const&) -> void = delete;
+  auto operator=(WindowImpl&&) -> void = delete;
 
   GuardedEventReference<Extent2D<std::uint32_t>> OnWindowSize{mOnSizeEvent};
   GuardedEventReference<> OnWindowFocusGain{mOnFocusGainEvent};

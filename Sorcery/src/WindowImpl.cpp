@@ -9,7 +9,8 @@
 
 
 namespace sorcery {
-auto CALLBACK WindowImpl::WindowProc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) noexcept -> LRESULT {
+auto CALLBACK WindowImpl::WindowProc(HWND const hwnd, UINT const msg, WPARAM const wparam,
+                                     LPARAM const lparam) noexcept -> LRESULT {
   if (auto const self{reinterpret_cast<WindowImpl*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA))}) {
     if (self->mEventHandler && self->mEventHandler(hwnd, msg, wparam, lparam)) {
       return true;
@@ -50,7 +51,8 @@ auto CALLBACK WindowImpl::WindowProc(HWND const hwnd, UINT const msg, WPARAM con
       case WM_INPUT: {
         if (wparam == RIM_INPUT) {
           UINT requiredSize;
-          GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, nullptr, &requiredSize, sizeof(RAWINPUTHEADER));
+          GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, nullptr, &requiredSize,
+            sizeof(RAWINPUTHEADER));
 
           auto static bufferSize = requiredSize;
           auto static buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
@@ -60,7 +62,8 @@ auto CALLBACK WindowImpl::WindowProc(HWND const hwnd, UINT const msg, WPARAM con
             buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
           }
 
-          GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, buffer.get(), &bufferSize, sizeof(RAWINPUTHEADER));
+          GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, buffer.get(), &bufferSize,
+            sizeof(RAWINPUTHEADER));
 
           if (auto const* const raw = reinterpret_cast<RAWINPUT*>(buffer.get()); raw->header.dwType == RIM_TYPEMOUSE) {
             if (raw->data.mouse.usFlags == MOUSE_MOVE_RELATIVE) {
@@ -98,11 +101,9 @@ auto WindowImpl::RectToExtent(RECT const rect) noexcept -> Extent2D<int> {
 }
 
 
-auto WindowImpl::StartUp() -> void {
+WindowImpl::WindowImpl() {
   WNDCLASSEXW const wx{
-    .cbSize = sizeof(WNDCLASSEXW),
-    .lpfnWndProc = &WindowProc,
-    .hInstance = GetModuleHandleW(nullptr),
+    .cbSize = sizeof(WNDCLASSEXW), .lpfnWndProc = &WindowProc, .hInstance = GetModuleHandleW(nullptr),
     .lpszClassName = L"SorceryWindowClass"
   };
 
@@ -110,7 +111,8 @@ auto WindowImpl::StartUp() -> void {
     throw std::runtime_error{"Failed to register window class."};
   }
 
-  mHwnd = CreateWindowExW(0, wx.lpszClassName, Utf8ToWide(mTitle).c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, wx.hInstance, nullptr);
+  mHwnd = CreateWindowExW(0, wx.lpszClassName, Utf8ToWide(mTitle).c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
+    CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, wx.hInstance, nullptr);
 
   if (!mHwnd) {
     throw std::runtime_error{"Failed to create window."};
@@ -118,12 +120,8 @@ auto WindowImpl::StartUp() -> void {
 
   SetWindowLongPtrW(mHwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
-  RAWINPUTDEVICE const rid
-  {
-    .usUsagePage = HID_USAGE_PAGE_GENERIC,
-    .usUsage = HID_USAGE_GENERIC_MOUSE,
-    .dwFlags = 0,
-    .hwndTarget = mHwnd
+  RAWINPUTDEVICE const rid{
+    .usUsagePage = HID_USAGE_PAGE_GENERIC, .usUsage = HID_USAGE_GENERIC_MOUSE, .dwFlags = 0, .hwndTarget = mHwnd
   };
 
   if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
@@ -134,7 +132,7 @@ auto WindowImpl::StartUp() -> void {
 }
 
 
-auto WindowImpl::ShutDown() noexcept -> void {
+WindowImpl::~WindowImpl() {
   if (mHwnd) {
     DestroyWindow(mHwnd);
     mHwnd = nullptr;
@@ -167,12 +165,7 @@ auto WindowImpl::GetClientAreaSize() const noexcept -> Extent2D<int> {
 
 
 auto WindowImpl::SetClientAreaSize(Extent2D<int> const size) noexcept -> void {
-  RECT rect{
-    .left = 0,
-    .top = 0,
-    .right = size.width,
-    .bottom = size.height
-  };
+  RECT rect{.left = 0, .top = 0, .right = size.width, .bottom = size.height};
 
   AdjustWindowRect(&rect, static_cast<DWORD>(GetWindowLongPtrW(mHwnd, GWL_STYLE)), FALSE);
   SetWindowPos(mHwnd, nullptr, 0, 0, rect.right - rect.left, rect.bottom - rect.top, SWP_NOMOVE);
@@ -263,7 +256,9 @@ auto WindowImpl::SetEventHandler(void const* handler) noexcept -> void {
 
 auto WindowImpl::UseImmersiveDarkMode(bool const value) noexcept -> void {
   BOOL const useImmersiveDarkMode{value ? TRUE : FALSE};
-  [[maybe_unused]] auto const hr{DwmSetWindowAttribute(mHwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useImmersiveDarkMode, sizeof(useImmersiveDarkMode))};
+  [[maybe_unused]] auto const hr{
+    DwmSetWindowAttribute(mHwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useImmersiveDarkMode, sizeof(useImmersiveDarkMode))
+  };
   assert(SUCCEEDED(hr));
 }
 }
