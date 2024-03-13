@@ -14,9 +14,6 @@ using Microsoft::WRL::ComPtr;
 
 
 namespace sorcery::graphics {
-UINT const kD3D12SdkVersion{D3D12_SDK_VERSION};
-char const* const kD3D12SdkPath{".\\D3D12\\"};
-
 UINT const GraphicsDevice::rtv_heap_size_{1'000'000};
 UINT const GraphicsDevice::dsv_heap_size_{1'000'000};
 UINT const GraphicsDevice::res_desc_heap_size_{1'000'000};

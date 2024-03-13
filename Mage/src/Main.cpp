@@ -31,8 +31,8 @@
 
 
 extern "C" {
-__declspec(dllexport) UINT const D3D12SDKVersion{sorcery::graphics::kD3D12SdkVersion};
-__declspec(dllexport) char const* const D3D12SDKPath{sorcery::graphics::kD3D12SdkPath};
+__declspec(dllexport) UINT const D3D12SDKVersion{D3D12_SDK_VERSION};
+__declspec(dllexport) char const* const D3D12SDKPath{".\\D3D12\\"};
 }
 
 

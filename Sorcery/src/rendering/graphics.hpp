@@ -23,10 +23,6 @@
 
 
 namespace sorcery::graphics {
-LEOPPHAPI extern UINT const kD3D12SdkVersion;
-LEOPPHAPI extern char const* const kD3D12SdkPath;
-
-
 class GraphicsDevice;
 
 class Buffer;
