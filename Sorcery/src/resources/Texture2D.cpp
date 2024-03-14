@@ -15,9 +15,9 @@ RTTR_REGISTRATION {
 namespace sorcery {
 Texture2D::Texture2D(graphics::SharedDeviceChildHandle<graphics::Texture> tex) noexcept :
   tex_{std::move(tex)} {
-  m_width_ = static_cast<int>(tex->GetDesc().Width);
-  m_height_ = static_cast<int>(tex->GetDesc().Height);
   auto const desc{tex_->GetDesc()};
+  m_width_ = static_cast<int>(desc.Width);
+  m_height_ = static_cast<int>(desc.Height);
   m_channel_count_ = static_cast<unsigned>(DirectX::BitsPerPixel(desc.Format) / DirectX::BitsPerColor(desc.Format));
 }
 
