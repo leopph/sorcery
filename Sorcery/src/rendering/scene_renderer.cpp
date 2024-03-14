@@ -1044,6 +1044,18 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_, true);
   RecreateSsaoSamples(ssao_params_.sample_count);
 
+  ssao_noise_tex_ = device_->CreateTexture(graphics::TextureDesc{
+    graphics::TextureDimension::k2D, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT,
+    {1, 0}, D3D12_RESOURCE_FLAG_NONE, false, false, true, false
+  }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
+  std::ignore = ssao_noise_tex_->SetDebugName(L"SSAO Noise");
+
+  auto const ssao_noise_upload_buf{
+    device_->CreateBuffer(graphics::BufferDesc{
+      static_cast<UINT>(ssao_noise_tex_->GetRequiredIntermediateSize()), 0, false, false, false
+    }, D3D12_HEAP_TYPE_UPLOAD)
+  };
+
   std::vector<Vector4> ssao_noise;
   std::uniform_real_distribution dist{0.0f, 1.0f};
   std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
@@ -1052,62 +1064,31 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
     ssao_noise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
   }
 
-  auto const ssao_noise_upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{
-      static_cast<UINT>(ssao_noise.size() * sizeof(Vector4)), 0, false, false, false
-    }, D3D12_HEAP_TYPE_UPLOAD)
+  D3D12_SUBRESOURCE_DATA const ssao_noise_upload_data{
+    ssao_noise.data(), SSAO_NOISE_TEX_DIM * sizeof(Vector4), SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM * sizeof(Vector4)
   };
-  std::memcpy(ssao_noise_upload_buf->Map(), ssao_noise.data(), ssao_noise.size() * sizeof(Vector4));
-
-  auto constexpr ssao_noise_tex_format{DXGI_FORMAT_R32G32B32A32_FLOAT};
-
-  ssao_noise_tex_ = device_->CreateTexture(graphics::TextureDesc{
-    graphics::TextureDimension::k2D, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1, 1, ssao_noise_tex_format, {1, 0},
-    D3D12_RESOURCE_FLAG_NONE, false, false, true, false
-  }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
-  std::ignore = ssao_noise_tex_->SetDebugName(L"SSAO Noise");
-
-  std::array<std::uint8_t, 4> constexpr static white_color_data{255, 255, 255, 255};
-
-  auto const white_tex_upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{static_cast<UINT>(white_color_data.size()), 0, false, false, false},
-      D3D12_HEAP_TYPE_UPLOAD)
-  };
-  std::memcpy(white_tex_upload_buf->Map(), white_color_data.data(), white_color_data.size());
-
-  auto constexpr white_tex_format{DXGI_FORMAT_R8G8B8A8_UNORM};
 
   white_tex_ = device_->CreateTexture(graphics::TextureDesc{
-    graphics::TextureDimension::k2D, 1, 1, 1, 1, white_tex_format, {1, 0}, D3D12_RESOURCE_FLAG_NONE, false, false, true,
-    false
+    graphics::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, {1, 0}, D3D12_RESOURCE_FLAG_NONE, false,
+    false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
 
+  auto const white_tex_upload_buf{
+    device_->CreateBuffer(graphics::BufferDesc{
+      static_cast<UINT>(white_tex_->GetRequiredIntermediateSize()), 0, false, false, false
+    }, D3D12_HEAP_TYPE_UPLOAD)
+  };
+
+  std::array<std::uint8_t, 4> constexpr white_tex_data{255, 255, 255, 255};
+
+  D3D12_SUBRESOURCE_DATA const white_tex_upload_data{
+    white_tex_data.data(), sizeof(white_tex_data), sizeof(white_tex_data)
+  };
+
   auto& cmd{render_manager_->AcquireCommandList()};
-
   std::ignore = cmd.Begin(nullptr);
-  cmd.CopyTextureRegion(*ssao_noise_tex_, 0, 0, 0, 0, *ssao_noise_upload_buf, D3D12_PLACED_SUBRESOURCE_FOOTPRINT{
-    0,
-    D3D12_SUBRESOURCE_FOOTPRINT{
-      ssao_noise_tex_format, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1,
-      RoundToNextMultiple(SSAO_NOISE_TEX_DIM * 16, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)
-    }
-  });
-  cmd.CopyTextureRegion(*white_tex_, 0, 0, 0, 0, *white_tex_upload_buf.get(), D3D12_PLACED_SUBRESOURCE_FOOTPRINT{
-    0, D3D12_SUBRESOURCE_FOOTPRINT{white_tex_format, 1, 1, 1, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT}
-  });
-  cmd.Barrier({}, {}, std::array{
-    graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, ssao_noise_tex_.get(),
-      D3D12_BARRIER_SUBRESOURCE_RANGE{0, 1, 0, 1, 0, 1}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-    },
-    graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, white_tex_.get(),
-      D3D12_BARRIER_SUBRESOURCE_RANGE{0, 1, 0, 1, 0, 1}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-    }
-  });
-
+  std::ignore = cmd.UpdateSubresources(*ssao_noise_tex_, *ssao_noise_upload_buf, 0, 0, 1, &ssao_noise_upload_data);
+  std::ignore = cmd.UpdateSubresources(*white_tex_, *white_tex_upload_buf, 0, 0, 1, &white_tex_upload_data);
   std::ignore = cmd.End();
   device_->ExecuteCommandLists(std::span{&cmd, 1});
   std::ignore = device_->WaitIdle();
