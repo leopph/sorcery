@@ -12,7 +12,7 @@ namespace sorcery::rendering {
 template<typename T>
 class ConstantBuffer {
 public:
-  static auto New(graphics::GraphicsDevice& device, bool cpu_accessible) -> std::optional<ConstantBuffer>;
+  [[nodiscard]] static auto New(graphics::GraphicsDevice& device, bool cpu_accessible) -> std::optional<ConstantBuffer>;
 
   ConstantBuffer() = default;
 

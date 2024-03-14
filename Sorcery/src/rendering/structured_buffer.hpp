@@ -10,7 +10,7 @@ namespace sorcery::rendering {
 template<typename T>
 class StructuredBuffer {
 public:
-  static auto New(graphics::GraphicsDevice& device, bool cpu_accessible) -> StructuredBuffer;
+  [[nodiscard]] static auto New(graphics::GraphicsDevice& device, bool cpu_accessible) -> StructuredBuffer;
 
   StructuredBuffer() = default;
 
