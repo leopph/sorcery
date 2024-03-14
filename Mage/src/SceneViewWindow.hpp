@@ -49,6 +49,15 @@ class SceneViewWindow {
   bool mShowGrid{false};
 
 public:
+  SceneViewWindow();
+  SceneViewWindow(SceneViewWindow const&) = delete;
+  SceneViewWindow(SceneViewWindow&&) = delete;
+
+  ~SceneViewWindow();
+
+  void operator=(SceneViewWindow const&) = delete;
+  void operator=(SceneViewWindow&&) = delete;
+
   auto Draw(Application& context) -> void;
   [[nodiscard]] auto GetCamera() noexcept -> StandaloneCamera&;
 };

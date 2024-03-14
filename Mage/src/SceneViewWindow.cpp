@@ -8,8 +8,20 @@
 
 
 namespace sorcery::mage {
+SceneViewWindow::SceneViewWindow() {
+  g_engine_context.scene_renderer->Register(mCam);
+}
+
+
+SceneViewWindow::~SceneViewWindow() {
+  g_engine_context.scene_renderer->Unregister(mCam);
+}
+
+
 auto SceneViewWindow::Draw(Application& context) -> void {
-  ImGui::SetNextWindowSizeConstraints(ImVec2{480, 270}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
+  ImGui::SetNextWindowSizeConstraints(ImVec2{480, 270}, ImVec2{
+    std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
+  });
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
   if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
@@ -60,23 +72,22 @@ auto SceneViewWindow::Draw(Application& context) -> void {
       auto constexpr clipPlaneSliderFormat{"%.2f"};
       auto constexpr clipPlaneSliderFlags{ImGuiSliderFlags_AlwaysClamp};
 
-      if (auto nearPlane{mCam.GetNearClipPlane()}; ImGui::DragFloat("Near Clip Plane", &nearPlane,
-        clipPlaneSliderSpeed, clipPlaneMin, clipPlaneMax, clipPlaneSliderFormat,
-        clipPlaneSliderFlags)) {
+      if (auto nearPlane{mCam.GetNearClipPlane()}; ImGui::DragFloat("Near Clip Plane", &nearPlane, clipPlaneSliderSpeed,
+        clipPlaneMin, clipPlaneMax, clipPlaneSliderFormat, clipPlaneSliderFlags)) {
         mCam.SetNearClipPlane(nearPlane);
         mCam.SetFarClipPlane(std::max(nearPlane, mCam.GetFarClipPlane()));
       }
 
-      if (auto farPlane{mCam.GetFarClipPlane()}; ImGui::DragFloat("Far Clip Plane", &farPlane,
-        clipPlaneSliderSpeed, clipPlaneMin, clipPlaneMax, clipPlaneSliderFormat,
-        clipPlaneSliderFlags)) {
+      if (auto farPlane{mCam.GetFarClipPlane()}; ImGui::DragFloat("Far Clip Plane", &farPlane, clipPlaneSliderSpeed,
+        clipPlaneMin, clipPlaneMax, clipPlaneSliderFormat, clipPlaneSliderFlags)) {
         mCam.SetFarClipPlane(farPlane);
         mCam.SetNearClipPlane(std::min(farPlane, mCam.GetNearClipPlane()));
       }
 
       ImGui::DragFloat("Speed", &mCam.speed, 0.1f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
 
-      if (auto fov{mCam.GetVerticalPerspectiveFov()}; ImGui::SliderFloat("FOV", &fov, 5, 120, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
+      if (auto fov{mCam.GetVerticalPerspectiveFov()}; ImGui::SliderFloat("FOV", &fov, 5, 120, "%.0f",
+        ImGuiSliderFlags_AlwaysClamp)) {
         mCam.SetVerticalPerspectiveFov(fov);
       }
 
@@ -87,11 +98,8 @@ auto SceneViewWindow::Draw(Application& context) -> void {
 
     auto const rt{
       g_engine_context.render_manager->GetTemporaryRenderTarget(rendering::RenderTarget::Desc{
-        .width = static_cast<UINT>(contentRegionSize.x),
-        .height = static_cast<UINT>(contentRegionSize.y),
-        .color_format = DXGI_FORMAT_R8G8B8A8_UNORM,
-        .depth_stencil_format = std::nullopt,
-        .sample_count = 1,
+        .width = static_cast<UINT>(contentRegionSize.x), .height = static_cast<UINT>(contentRegionSize.y),
+        .color_format = DXGI_FORMAT_R8G8B8A8_UNORM, .depth_stencil_format = std::nullopt, .sample_count = 1,
         .debug_name = L"Scene View RT"
       })
     };
@@ -99,7 +107,9 @@ auto SceneViewWindow::Draw(Application& context) -> void {
     mCam.SetRenderTarget(rt);
 
     auto const wasCamMoving{mCamMoving};
-    mCamMoving = wasCamMoving ? ImGui::IsMouseDown(ImGuiMouseButton_Right) : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
+    mCamMoving = wasCamMoving
+                   ? ImGui::IsMouseDown(ImGuiMouseButton_Right)
+                   : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
     if (!wasCamMoving && mCamMoving) {
       g_engine_context.window->SetCursorLock(GetCursorPosition());
@@ -153,7 +163,8 @@ auto SceneViewWindow::Draw(Application& context) -> void {
     auto const camViewMtx{mCam.CalculateViewMatrix()};
     auto const camProjMtx{mCam.CalculateProjectionMatrix(aspect)};
 
-    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(),
+      ImGui::GetWindowHeight());
     ImGuizmo::AllowAxisFlip(false);
     ImGuizmo::SetDrawlist();
 
@@ -193,11 +204,14 @@ auto SceneViewWindow::Draw(Application& context) -> void {
 
     if (auto const selectedEntity{dynamic_cast<Entity*>(context.GetSelectedObject())}; selectedEntity) {
       if (!context.GetImGuiIo().WantTextInput && !mCamMoving && GetKeyDown(Key::F)) {
-        mFocusTarget.emplace(mCam.GetPosition(), selectedEntity->GetTransform().GetWorldPosition() - mCam.GetForwardAxis() * 2, 0.0f);
+        mFocusTarget.emplace(mCam.GetPosition(),
+          selectedEntity->GetTransform().GetWorldPosition() - mCam.GetForwardAxis() * 2, 0.0f);
       }
 
       // TODO this breaks if the transform is a child of a rotated transform
-      if (Matrix4 modelMat{selectedEntity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(camViewMtx.GetData(), camProjMtx.GetData(), GIZMO_OP_OPTIONS[mGizmoOpIdx].op, GIZMO_MODE_OPTIONS[mGizmoModeIdx].mode, modelMat.GetData())) {
+      if (Matrix4 modelMat{selectedEntity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(camViewMtx.GetData(),
+        camProjMtx.GetData(), GIZMO_OP_OPTIONS[mGizmoOpIdx].op, GIZMO_MODE_OPTIONS[mGizmoModeIdx].mode,
+        modelMat.GetData())) {
         Vector3 pos, euler, scale;
         ImGuizmo::DecomposeMatrixToComponents(modelMat.GetData(), pos.GetData(), euler.GetData(), scale.GetData());
         selectedEntity->GetTransform().SetWorldPosition(pos);
