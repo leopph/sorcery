@@ -375,6 +375,8 @@ public:
                      UINT start_instance_location) const -> void;
   LEOPPHAPI auto Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT format) const -> void;
   LEOPPHAPI auto SetBlendFactor(std::span<FLOAT const, 4> blend_factor) const -> void;
+  LEOPPHAPI auto SetIndexBuffer(Buffer const& buf, DXGI_FORMAT index_format) const -> void;
+  LEOPPHAPI auto SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY primitive_topology) const -> void;
   LEOPPHAPI auto SetRenderTargets(std::span<Texture const> render_targets, Texture const* depth_stencil) const -> void;
   LEOPPHAPI auto SetStencilRef(UINT stencil_ref) const -> void;
   LEOPPHAPI auto SetScissorRects(std::span<D3D12_RECT const> rects) const -> void;
@@ -476,17 +478,17 @@ auto DeviceChildDeleter<T>::operator()(T const* device_child) -> void {
 class UniqueSamplerHandle {
 public:
   UniqueSamplerHandle() = default;
-  UniqueSamplerHandle(UINT resource, GraphicsDevice& device);
+  LEOPPHAPI UniqueSamplerHandle(UINT resource, GraphicsDevice& device);
   UniqueSamplerHandle(UniqueSamplerHandle const& other) = delete;
-  UniqueSamplerHandle(UniqueSamplerHandle&& other) noexcept;
+  LEOPPHAPI UniqueSamplerHandle(UniqueSamplerHandle&& other) noexcept;
 
-  ~UniqueSamplerHandle();
+  LEOPPHAPI ~UniqueSamplerHandle();
 
   auto operator=(UniqueSamplerHandle const& other) -> void = delete;
-  auto operator=(UniqueSamplerHandle&& other) noexcept -> UniqueSamplerHandle&;
+  LEOPPHAPI auto operator=(UniqueSamplerHandle&& other) noexcept -> UniqueSamplerHandle&;
 
-  [[nodiscard]] auto Get() const -> UINT;
-  [[nodiscard]] auto IsValid() const -> bool;
+  [[nodiscard]] LEOPPHAPI auto Get() const -> UINT;
+  [[nodiscard]] LEOPPHAPI auto IsValid() const -> bool;
 
 private:
   auto InternalDestruct() const -> void;

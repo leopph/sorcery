@@ -1281,6 +1281,19 @@ auto CommandList::SetBlendFactor(std::span<FLOAT const, 4> const blend_factor) c
 }
 
 
+auto CommandList::SetIndexBuffer(Buffer const& buf, DXGI_FORMAT const index_format) const -> void {
+  D3D12_INDEX_BUFFER_VIEW const ibv{
+    buf.resource_->GetGPUVirtualAddress(), static_cast<UINT>(buf.resource_->GetDesc1().Width), index_format
+  };
+  cmd_list_->IASetIndexBuffer(&ibv);
+}
+
+
+auto CommandList::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY const primitive_topology) const -> void {
+  cmd_list_->IASetPrimitiveTopology(primitive_topology);
+}
+
+
 auto CommandList::SetRenderTargets(std::span<Texture const> render_targets,
                                    Texture const* depth_stencil) const -> void {
   std::pmr::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt{&GetTmpMemRes()};
