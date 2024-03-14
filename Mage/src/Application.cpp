@@ -36,7 +36,7 @@ Application::Application(ImGuiIO& imGuiIO) :
   SetImGuiContext(*ImGui::GetCurrentContext());
   SetGuiDarkMode(mIsInDarkMode);
 
-  imGuiIO.FontDefault = imGuiIO.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 14);
+  // imGuiIO.FontDefault = imGuiIO.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 14); TODO
 }
 
 

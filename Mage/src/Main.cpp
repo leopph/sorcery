@@ -14,6 +14,7 @@
 #include "MemoryAllocation.hpp"
 #include "Platform.hpp"
 #include "Window.hpp"
+#include "rendering/imgui_renderer.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
@@ -102,6 +103,12 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 
     window->SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
+
+    auto const imgui_renderer{std::make_unique<sorcery::mage::ImGuiRenderer>(*graphics_device, *window, *render_manager)};
+
+    if (!imgui_renderer) {
+      throw std::runtime_error{"Failed to create ImGui renderer."};
+    }
 
     bool runGame{false};
 
@@ -194,7 +201,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       ImGui::Render();
 
       scene_renderer->Render();
-      // TODO draw UI
+      imgui_renderer->Render(ImGui::GetDrawData());
 
       if (!graphics_device->SwapChainPresent(*window->GetSwapChain(), scene_renderer->GetSyncInterval())) {
         throw std::runtime_error{"Failed to present."};
@@ -207,6 +214,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       sorcery::GetTmpMemRes().Clear();
 
       sorcery::timing::OnFrameEnd();
+    }
+
+    if (!graphics_device->WaitIdle()) {
+      throw std::runtime_error{"Failed to wait for graphics device idle."};
     }
 
     ImGui_ImplWin32_Shutdown();
