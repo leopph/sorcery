@@ -595,7 +595,10 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           0, 0, static_cast<float>(shadowMapSize), static_cast<float>(shadowMapSize), 0, 1
         };
 
+        D3D12_RECT const shadow_scissor{0, 0, static_cast<LONG>(shadowMapSize), static_cast<LONG>(shadowMapSize)};
+
         cmd.SetViewports(std::array{shadowViewport});
+        cmd.SetScissorRects(std::array{shadow_scissor});
 
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
         SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, ShadowCascadeBoundaries{}, Vector3{});
@@ -658,8 +661,10 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
         };
 
         D3D12_VIEWPORT const viewport{subcell_offset[0], subcell_offset[1], subcell_size, subcell_size, 0, 1};
+        D3D12_RECT const scissor{0, 0, static_cast<LONG>(subcell_size), static_cast<LONG>(subcell_size)};
 
         cmd.SetViewports(std::span{&viewport, 1});
+        cmd.SetScissorRects(std::array{scissor});
 
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
         SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, ShadowCascadeBoundaries{},
@@ -1108,6 +1113,8 @@ auto SceneRenderer::Render() -> void {
     return;
   }
 
+  cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
   auto& global_rt{rt_override_ ? *rt_override_ : *main_rt_};
 
   for (auto const& cam_data : frame_packet.cam_data) {
@@ -1142,9 +1149,6 @@ auto SceneRenderer::Render() -> void {
     auto const hdr_rt{render_manager_->GetTemporaryRenderTarget(hdr_rt_desc)};
 
     cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), clear_color, {});
-
-
-    D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rt_width), static_cast<FLOAT>(rt_height), 0, 1};
 
     auto& per_frame_cb{per_frame_cbs_[frame_idx]};
     SetPerFrameConstants(per_frame_cb, static_cast<int>(rt_width), static_cast<int>(rt_height));
@@ -1181,6 +1185,12 @@ auto SceneRenderer::Render() -> void {
 
     cmd.ClearDepthStencil(*hdr_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
+    D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rt_width), static_cast<FLOAT>(rt_height), 0, 1};
+    D3D12_RECT const scissor{0, 0, static_cast<LONG>(rt_width), static_cast<LONG>(rt_height)};
+
+    cmd.SetViewports(std::array{viewport});
+    cmd.SetScissorRects(std::array{scissor});
+
     auto const normal_rt{
       render_manager_->GetTemporaryRenderTarget(RenderTarget::Desc{
         rt_width, rt_height, normal_buffer_format_, std::nullopt, 1, L"Camera Normal RT"
@@ -1204,7 +1214,7 @@ auto SceneRenderer::Render() -> void {
 
       cmd.SetPipelineState(*depth_normal_pso_);
       cmd.SetRenderTargets(std::span{actual_normal_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
-      cmd.ClearRenderTarget(*actual_normal_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+      cmd.ClearRenderTarget(*actual_normal_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
 
       for (auto const instance_idx : visible_static_submesh_instance_indices) {
         auto const& instance{frame_packet.instance_data[instance_idx]};
@@ -1279,14 +1289,18 @@ auto SceneRenderer::Render() -> void {
       };
 
       cmd.SetPipelineState(*ssao_pso_);
-      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx), ssao_noise_tex_->GetShaderResource());
-      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, depth_tex_idx), ssao_depth_tex->GetShaderResource());
-      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, normal_tex_idx), normal_rt->GetColorTex()->GetShaderResource());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx),
+        ssao_noise_tex_->GetShaderResource());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, depth_tex_idx),
+        ssao_depth_tex->GetShaderResource());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, normal_tex_idx),
+        normal_rt->GetColorTex()->GetShaderResource());
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx),
         ssao_samples_buffer_.GetBuffer()->GetShaderResource());
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_wrap_samp_idx), samp_point_wrap_.Get());
-      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, radius), *std::bit_cast<UINT*>(&ssao_params_.radius));
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, radius),
+        *std::bit_cast<UINT*>(&ssao_params_.radius));
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, bias), *std::bit_cast<UINT*>(&ssao_params_.bias));
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, power), *std::bit_cast<UINT*>(&ssao_params_.power));
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, sample_count), ssao_params_.sample_count);
@@ -1295,7 +1309,7 @@ auto SceneRenderer::Render() -> void {
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx),
         per_frame_cb.GetBuffer()->GetConstantBuffer());
       cmd.SetRenderTargets(std::span{ssao_rt->GetColorTex().get(), 1}, nullptr);
-      cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+      cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cmd.DrawInstanced(3, 1, 0, 0);
 
       auto const ssao_blur_rt{
@@ -1311,7 +1325,7 @@ auto SceneRenderer::Render() -> void {
         ssao_blur_rt->GetColorTex()->GetShaderResource());
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
       cmd.SetRenderTargets(std::span{ssao_blur_rt->GetColorTex().get(), 1}, nullptr);
-      cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+      cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cmd.DrawInstanced(3, 1, 0, 0);
 
       ssao_tex = ssao_blur_rt->GetColorTex().get();
@@ -1367,7 +1381,8 @@ auto SceneRenderer::Render() -> void {
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, ssao_tex_idx), ssao_tex->GetShaderResource());
-    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, light_buf_idx), light_buffer.GetBuffer()->GetShaderResource());
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, light_buf_idx),
+      light_buffer.GetBuffer()->GetShaderResource());
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, dir_shadow_arr_idx),
       dir_shadow_map_arr_->GetTex()->GetShaderResource());
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, punc_shadow_atlas_idx),
@@ -1418,7 +1433,6 @@ auto SceneRenderer::Render() -> void {
       post_process_rt = resolve_hdr_rt.get();
     }
 
-    cmd.SetViewports(std::span{&viewport, 1});
     PostProcess(*post_process_rt->GetColorTex(), *target_rt.GetColorTex(), cmd);
   }
 
