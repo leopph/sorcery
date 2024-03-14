@@ -52,7 +52,7 @@ VertexOut VsMain(const uint vertex_id : SV_VertexID) {
 }
 
 
-float3 PsMain(const VertexOut vs_out) : SV_Target {
+float4 PsMain(const VertexOut vs_out) : SV_Target {
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
 
   if (mtl.blendMode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {
@@ -69,9 +69,9 @@ float3 PsMain(const VertexOut vs_out) : SV_Target {
     const SamplerState samp = SamplerDescriptorHeap[g_params.samp_idx];
 
     const float3 normal_ts = normal_map.Sample(samp, vs_out.uv).rgb * 2.0 - 1.0;
-    return normalize(mul(normal_ts, vs_out.tbn_mtx_ws));
+    return float4(normalize(mul(normal_ts, vs_out.tbn_mtx_ws)), 0);
   }
 
-  return normalize(vs_out.norm_ws);
+  return float4(normalize(vs_out.norm_ws), 0);
 }
 #endif
