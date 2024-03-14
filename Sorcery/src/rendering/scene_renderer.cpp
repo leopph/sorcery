@@ -115,8 +115,9 @@ auto SceneRenderer::ExtractCurrentState(FramePacket& packet) const -> void {
     auto const tan_buf_local_idx{find_or_emplace_back_buffer(mesh->GetTangentBuffer())};
     auto const uv_buf_local_idx{find_or_emplace_back_buffer(mesh->GetUvBuffer())};
     auto const idx_buf_local_idx{find_or_emplace_back_buffer(mesh->GetIndexBuffer())};
+    auto const idx_format{mesh->GetIndexFormat()};
     packet.mesh_data.emplace_back(pos_buf_local_idx, norm_buf_local_idx, tan_buf_local_idx, uv_buf_local_idx,
-      idx_buf_local_idx, mesh->GetBounds());
+      idx_buf_local_idx, mesh->GetBounds(), idx_format);
 
     packet.submesh_data.reserve(packet.submesh_data.size() + mesh->GetSubmeshCount());
 
@@ -459,6 +460,14 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
                                               graphics::CommandList& cmd) -> void {
   cmd.SetPipelineState(*depth_only_pso_);
   cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
+  cmd.Barrier({}, {}, std::array{
+    graphics::TextureBarrier{
+      D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_NO_ACCESS,
+      D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_UNDEFINED,
+      D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, dir_shadow_map_arr_->GetTex().get(), {0xffffffff, 0},
+      D3D12_TEXTURE_BARRIER_FLAG_NONE
+    }
+  });
   cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, {});
 
   for (auto const lightIdx : visible_light_indices) {
@@ -627,6 +636,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
             per_draw_cb.GetBuffer()->GetConstantBuffer());
+          cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
           cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
         }
       }
@@ -643,8 +653,17 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
   cmd.SetPipelineState(*depth_only_pso_);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
-
   cmd.SetRenderTargets({}, atlas.GetTex().get());
+
+  cmd.Barrier({}, {}, std::array{
+    graphics::TextureBarrier{
+      D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_NO_ACCESS,
+      D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_UNDEFINED,
+      D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, punctual_shadow_atlas_->GetTex().get(), {0, 0},
+      D3D12_TEXTURE_BARRIER_FLAG_NONE
+    }
+  });
+
   cmd.ClearDepthStencil(*atlas.GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
   auto const cell_size_norm{atlas.GetNormalizedElementSize()};
@@ -694,6 +713,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
             per_draw_cb.GetBuffer()->GetConstantBuffer());
+          cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
           cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
         }
       }
@@ -714,7 +734,7 @@ auto SceneRenderer::DrawSkybox(graphics::CommandList& cmd) noexcept -> void {
     g_engine_context.resource_manager->GetCubeMesh()->GetPositionBuffer()->GetShaderResource());
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, cubemap_idx), cubemap->GetTex()->GetShaderResource());
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
-  // TODO set per view cb
+  // TODO set per view cb and barrier
   cmd.DrawIndexedInstanced(static_cast<UINT>(g_engine_context.resource_manager->GetCubeMesh()->GetIndexCount()), 1, 0,
     0, 0);
 }
@@ -945,7 +965,10 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   });
 
   dir_shadow_map_arr_ = std::make_unique<DirectionalShadowMapArray>(device_.Get(), depth_format_, 4096);
+  std::ignore = dir_shadow_map_arr_->GetTex()->SetDebugName(L"Directional Shadow Map Array");
+
   punctual_shadow_atlas_ = std::make_unique<PunctualShadowAtlas>(device_.Get(), depth_format_, 4096);
+  std::ignore = punctual_shadow_atlas_->GetTex()->SetDebugName(L"Punctual Shadow Atlas");
 
   std::ignore = RecreatePipelines();
 
@@ -1148,8 +1171,6 @@ auto SceneRenderer::Render() -> void {
 
     auto const hdr_rt{render_manager_->GetTemporaryRenderTarget(hdr_rt_desc)};
 
-    cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), clear_color, {});
-
     auto& per_frame_cb{per_frame_cbs_[frame_idx]};
     SetPerFrameConstants(per_frame_cb, static_cast<int>(rt_width), static_cast<int>(rt_height));
 
@@ -1183,6 +1204,15 @@ auto SceneRenderer::Render() -> void {
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer()};
     SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, shadow_cascade_boundaries, cam_data.position);
 
+    cmd.Barrier({}, {}, std::array{
+      graphics::TextureBarrier{
+        D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_NO_ACCESS,
+        D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_UNDEFINED,
+        D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, hdr_rt->GetDepthStencilTex().get(), {0, 1, 0, 1, 0, 1},
+        D3D12_TEXTURE_BARRIER_FLAG_NONE
+      },
+    });
+
     cmd.ClearDepthStencil(*hdr_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
     D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rt_width), static_cast<FLOAT>(rt_height), 0, 1};
@@ -1214,6 +1244,13 @@ auto SceneRenderer::Render() -> void {
 
       cmd.SetPipelineState(*depth_normal_pso_);
       cmd.SetRenderTargets(std::span{actual_normal_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
+      cmd.Barrier({}, {}, std::array{
+        graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
+          D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+          actual_normal_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+        }
+      });
       cmd.ClearRenderTarget(*actual_normal_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
 
       for (auto const instance_idx : visible_static_submesh_instance_indices) {
@@ -1246,7 +1283,37 @@ auto SceneRenderer::Render() -> void {
 
       // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
       if (GetMultisamplingMode() != MultisamplingMode::kOff) {
+        cmd.Barrier({}, {}, std::array{
+          graphics::TextureBarrier{
+            D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+            D3D12_BARRIER_ACCESS_RESOLVE_SOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+            D3D12_BARRIER_LAYOUT_RESOLVE_SOURCE, actual_normal_rt->GetColorTex().get(), {0, 0},
+            D3D12_TEXTURE_BARRIER_FLAG_NONE
+          },
+          graphics::TextureBarrier{
+            D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_ACCESS_NO_ACCESS,
+            D3D12_BARRIER_ACCESS_RESOLVE_DEST, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RESOLVE_DEST,
+            normal_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+          }
+        });
         cmd.Resolve(*normal_rt->GetColorTex(), *actual_normal_rt->GetColorTex(), *normal_rt->GetDesc().color_format);
+        cmd.Barrier({}, {}, std::array{
+          graphics::TextureBarrier{
+            D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RESOLVE_DEST,
+            D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RESOLVE_DEST,
+            D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, normal_rt->GetColorTex().get(), {0, 0},
+            D3D12_TEXTURE_BARRIER_FLAG_NONE
+          }
+        });
+      } else {
+        cmd.Barrier({}, {}, std::array{
+          graphics::TextureBarrier{
+            D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+            D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+            D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, actual_normal_rt->GetColorTex().get(), {0, 0},
+            D3D12_TEXTURE_BARRIER_FLAG_NONE
+          }
+        });
       }
     }
 
@@ -1264,6 +1331,14 @@ auto SceneRenderer::Render() -> void {
       auto const ssao_depth_tex{
         [this, &hdr_rt, &cmd] {
           if (GetMultisamplingMode() == MultisamplingMode::kOff) {
+            cmd.Barrier({}, {}, std::array{
+              graphics::TextureBarrier{
+                D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_SYNC_PIXEL_SHADING,
+                D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
+                D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+                hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+              }
+            });
             return hdr_rt->GetDepthStencilTex();
           }
 
@@ -1274,15 +1349,40 @@ auto SceneRenderer::Render() -> void {
           ssao_depth_rt_desc.enable_unordered_access = true;
           auto const ssao_depth_rt{render_manager_->GetTemporaryRenderTarget(ssao_depth_rt_desc)};
 
+          cmd.Barrier({}, {}, std::array{
+            graphics::TextureBarrier{
+              D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_SYNC_COMPUTE_SHADING,
+              D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
+              D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+              hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+            },
+            graphics::TextureBarrier{
+              D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_COMPUTE_SHADING, D3D12_BARRIER_ACCESS_NO_ACCESS,
+              D3D12_BARRIER_ACCESS_UNORDERED_ACCESS, D3D12_BARRIER_LAYOUT_UNDEFINED,
+              D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS, ssao_depth_rt->GetColorTex().get(), {0, 0},
+              D3D12_TEXTURE_BARRIER_FLAG_NONE
+            }
+          });
+
           cmd.SetPipelineState(*depth_resolve_pso_);
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthResolveDrawParams, in_tex_idx),
-            ssao_depth_rt->GetColorTex()->GetUnorderedAccess());
+            hdr_rt->GetDepthStencilTex()->GetShaderResource());
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthResolveDrawParams, out_tex_idx),
-            hdr_rt->GetColorTex()->GetUnorderedAccess());
+            ssao_depth_rt->GetColorTex()->GetUnorderedAccess());
+
           cmd.Dispatch(
             static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.width) / DEPTH_RESOLVE_CS_THREADS_X)),
             static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.height) / DEPTH_RESOLVE_CS_THREADS_Y)),
             static_cast<UINT>(std::ceil(1.0f / DEPTH_RESOLVE_CS_THREADS_Z)));
+
+          cmd.Barrier({}, {}, std::array{
+            graphics::TextureBarrier{
+              D3D12_BARRIER_SYNC_COMPUTE_SHADING, D3D12_BARRIER_SYNC_PIXEL_SHADING,
+              D3D12_BARRIER_ACCESS_UNORDERED_ACCESS, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
+              D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+              ssao_depth_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+            }
+          });
 
           return ssao_depth_rt->GetColorTex();
         }()
@@ -1309,6 +1409,13 @@ auto SceneRenderer::Render() -> void {
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx),
         per_frame_cb.GetBuffer()->GetConstantBuffer());
       cmd.SetRenderTargets(std::span{ssao_rt->GetColorTex().get(), 1}, nullptr);
+      cmd.Barrier({}, {}, std::array{
+        graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
+          D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+          ssao_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+        }
+      });
       cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cmd.DrawInstanced(3, 1, 0, 0);
 
@@ -1325,8 +1432,28 @@ auto SceneRenderer::Render() -> void {
         ssao_blur_rt->GetColorTex()->GetShaderResource());
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
       cmd.SetRenderTargets(std::span{ssao_blur_rt->GetColorTex().get(), 1}, nullptr);
+      cmd.Barrier({}, {}, std::array{
+        graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
+          D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+          ssao_blur_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+        },
+        graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+          D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+          D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, ssao_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+        }
+      });
       cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cmd.DrawInstanced(3, 1, 0, 0);
+      cmd.Barrier({}, {}, std::array{
+        graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+          D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+          D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, ssao_blur_rt->GetColorTex().get(), {0, 0},
+          D3D12_TEXTURE_BARRIER_FLAG_NONE
+        }
+      });
 
       ssao_tex = ssao_blur_rt->GetColorTex().get();
     }
@@ -1376,6 +1503,21 @@ auto SceneRenderer::Render() -> void {
 
     punctual_shadow_atlas_->SetLookUpInfo(light_buffer_data);
 
+    cmd.Barrier({}, {}, std::array{
+      graphics::TextureBarrier{
+        D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE,
+        D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE,
+        D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, dir_shadow_map_arr_->GetTex().get(), {0xffffffff, 0},
+        D3D12_TEXTURE_BARRIER_FLAG_NONE
+      },
+      graphics::TextureBarrier{
+        D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE,
+        D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE,
+        D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, punctual_shadow_atlas_->GetTex().get(), {0, 0},
+        D3D12_TEXTURE_BARRIER_FLAG_NONE
+      }
+    });
+
     cmd.SetPipelineState(*object_pso_);
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
@@ -1392,6 +1534,28 @@ auto SceneRenderer::Render() -> void {
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_frame_cb_idx),
       per_frame_cb.GetBuffer()->GetConstantBuffer());
     cmd.SetRenderTargets(std::span{hdr_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
+
+    cmd.Barrier({}, {}, std::array{
+      graphics::TextureBarrier{
+        D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
+        D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+        hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+      },
+      GetMultisamplingMode() == MultisamplingMode::kOff ?
+      graphics::TextureBarrier{
+        D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
+        D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE,
+        hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+      } : graphics::TextureBarrier{
+        D3D12_BARRIER_SYNC_COMPUTE_SHADING, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
+        D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE,
+        hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+      }
+    });
+
+    // TODO disable depth write if pre pass is enabled
+
+    cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), clear_color, {});
 
     for (auto const instance_idx : visible_static_submesh_instance_indices) {
       auto const& instance{frame_packet.instance_data[instance_idx]};
@@ -1413,8 +1577,9 @@ auto SceneRenderer::Render() -> void {
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_draw_cb_idx),
         per_draw_cb.GetBuffer()->GetConstantBuffer());
+      cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
+      cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
     }
-
 
     if (auto const& active_scene{Scene::GetActiveScene()};
       active_scene->GetSkyMode() == SkyMode::Skybox && active_scene->GetSkybox()) {
@@ -1425,20 +1590,70 @@ auto SceneRenderer::Render() -> void {
 
     if (GetMultisamplingMode() == MultisamplingMode::kOff) {
       post_process_rt = hdr_rt.get();
+      cmd.Barrier({}, {}, std::array{
+        graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+          D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+          D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+        }
+      });
     } else {
       auto resolve_hdr_rt_desc{hdr_rt_desc};
       resolve_hdr_rt_desc.sample_count = 1;
       auto const resolve_hdr_rt{render_manager_->GetTemporaryRenderTarget(resolve_hdr_rt_desc)};
+
+      cmd.Barrier({}, {}, std::array{
+        graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+          D3D12_BARRIER_ACCESS_RESOLVE_SOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET, D3D12_BARRIER_LAYOUT_RESOLVE_SOURCE,
+          hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+        },
+        graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_ACCESS_NO_ACCESS,
+          D3D12_BARRIER_ACCESS_RESOLVE_DEST, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RESOLVE_DEST,
+          resolve_hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+        }
+      });
+
       cmd.Resolve(*resolve_hdr_rt->GetColorTex(), *hdr_rt->GetColorTex(), *hdr_rt_desc.color_format);
+
+      cmd.Barrier({}, {}, std::array{
+        graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RESOLVE_DEST,
+          D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RESOLVE_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+          resolve_hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+        }
+      });
+
       post_process_rt = resolve_hdr_rt.get();
     }
 
+    cmd.Barrier({}, {}, std::array{
+      graphics::TextureBarrier{
+        D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
+        D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+        target_rt.GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+      }
+    });
+
     PostProcess(*post_process_rt->GetColorTex(), *target_rt.GetColorTex(), cmd);
+
+    cmd.Barrier({}, {}, std::array{
+      graphics::TextureBarrier{
+        D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+        D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_LAYOUT_RENDER_TARGET, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+        target_rt.GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+      }
+    });
+
+    // TODO ensure multiple cameras in same RT don't discard each other
   }
 
   if (!cmd.End()) {
     return;
   }
+
+  device_->ExecuteCommandLists(std::span{&cmd, 1});
 
   EndFrame();
 }
@@ -1576,8 +1791,8 @@ auto SceneRenderer::SetNormalizedShadowCascadeSplit(int const idx, float const s
   float const clampMin{idx == 0 ? 0.0f : shadow_params_.normalized_cascade_splits[idx - 1]};
   float const clampMax{idx == splitCount - 1 ? 1.0f : shadow_params_.normalized_cascade_splits[idx + 1]};
 
-  shadow_params_.normalized_cascade_splits[idx] = std::clamp(split, clampMin, clampMax);
-}
+    shadow_params_.normalized_cascade_splits[idx] = std::clamp(split, clampMin, clampMax);
+  }
 
 
 auto SceneRenderer::IsVisualizingShadowCascades() const noexcept -> bool {

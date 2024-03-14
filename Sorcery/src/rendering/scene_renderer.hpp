@@ -160,6 +160,7 @@ private:
     unsigned uv_buf_local_idx;
     unsigned idx_buf_local_idx;
     AABB bounds;
+    DXGI_FORMAT idx_format;
   };
 
 
