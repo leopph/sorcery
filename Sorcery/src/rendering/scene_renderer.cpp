@@ -757,135 +757,101 @@ auto SceneRenderer::RecreatePipelines() -> bool {
     return false;
   }
 
-  CD3DX12_DEPTH_STENCIL_DESC const depth_stencil_desc{
-    TRUE, D3D12_DEPTH_WRITE_MASK_ALL, D3D12_COMPARISON_FUNC_GREATER, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
-  };
-  DXGI_SAMPLE_DESC const sample_desc{static_cast<UINT>(msaa_mode_), 0};
-  CD3DX12_RT_FORMAT_ARRAY const render_target_format{&render_target_format_, 1};
-  CD3DX12_RT_FORMAT_ARRAY const color_format{&color_buffer_format_, 1};
-  CD3DX12_RT_FORMAT_ARRAY const ssao_format{&ssao_buffer_format_, 1};
-
-  struct {
-    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
-    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL depth_stencil;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT depth_stencil_format;
-    CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC sample_desc;
-    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rt_formats;
-  } depth_normal_pso_desc{
-      CD3DX12_SHADER_BYTECODE{g_depth_normal_vs_bytes, ARRAYSIZE(g_depth_normal_vs_bytes)},
-      CD3DX12_SHADER_BYTECODE{g_depth_normal_ps_bytes, ARRAYSIZE(g_depth_normal_ps_bytes)}, depth_stencil_desc,
-      depth_format_, sample_desc, CD3DX12_RT_FORMAT_ARRAY{&normal_buffer_format_, 1}
-    };
-
-  depth_normal_pso_ = device_->CreatePipelineState({sizeof(depth_normal_pso_desc), &depth_normal_pso_desc},
-    sizeof(DepthNormalDrawParams) / 4, false);
-
-  struct {
-    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
-    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL depth_stencil;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT depth_stencil_format;
-    CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC sample_desc;
-  } depth_only_pso_desc{
-      CD3DX12_SHADER_BYTECODE{g_depth_only_vs_bytes, ARRAYSIZE(g_depth_only_vs_bytes)},
-      CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)}, depth_stencil_desc,
-      depth_format_, sample_desc
-    };
-
-  depth_only_pso_ = device_->CreatePipelineState({sizeof(depth_only_pso_desc), &depth_only_pso_desc},
-    sizeof(DepthOnlyDrawParams) / 4, false);
-
-  struct {
-    CD3DX12_PIPELINE_STATE_STREAM_CS cs;
-  } depth_resolve_pso_desc{CD3DX12_SHADER_BYTECODE{g_depth_resolve_cs_bytes, ARRAYSIZE(g_depth_resolve_cs_bytes)}};
-
-  depth_resolve_pso_ = device_->CreatePipelineState({sizeof(depth_resolve_pso_desc), &depth_resolve_pso_desc},
-    sizeof(DepthResolveDrawParams) / 4, true);
-
-  struct {
-    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
-    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
-    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rt_formats;
-  } line_gizmo_pso_desc{
-      CD3DX12_SHADER_BYTECODE{g_gizmos_line_vs_bytes, ARRAYSIZE(g_gizmos_line_vs_bytes)},
-      CD3DX12_SHADER_BYTECODE{g_gizmos_ps_bytes, ARRAYSIZE(g_gizmos_ps_bytes)}, render_target_format
-    };
-
-  line_gizmo_pso_ = device_->CreatePipelineState({sizeof(line_gizmo_pso_desc), &line_gizmo_pso_desc},
-    sizeof(GizmoDrawParams) / 4, false);
-
-  struct {
-    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
-    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
-    CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC sample_desc;
-    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rt_formats;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT depth_stencil_format;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL depth_stencil;
-  } object_pso_desc{
-      CD3DX12_SHADER_BYTECODE{g_object_pbr_vs_bytes, ARRAYSIZE(g_object_pbr_vs_bytes)},
-      CD3DX12_SHADER_BYTECODE{g_object_pbr_ps_bytes, ARRAYSIZE(g_object_pbr_ps_bytes)}, sample_desc, color_format,
-      depth_format_, depth_stencil_desc
-    };
-
-  object_pso_ = device_->CreatePipelineState({sizeof(object_pso_desc), &object_pso_desc}, sizeof(ObjectDrawParams) / 4,
-    false);
-
-  struct {
-    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
-    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
-    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rtv_formats;
-  } post_process_pso_desc{
-      CD3DX12_SHADER_BYTECODE{&g_post_process_vs_bytes, ARRAYSIZE(g_post_process_vs_bytes)},
-      CD3DX12_SHADER_BYTECODE{&g_post_process_ps_bytes, ARRAYSIZE(g_post_process_ps_bytes)}, render_target_format
-    };
-
-  post_process_pso_ = device_->CreatePipelineState({sizeof(post_process_pso_desc), &post_process_pso_desc},
-    sizeof(PostProcessDrawParams) / 4, false);
-
-  struct {
-    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
-    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
-    CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC sample_desc;
-    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rt_formats;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT depth_stencil_format;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL depth_stencil;
-    CD3DX12_RASTERIZER_DESC rasterizer;
-  } skybox_pso_desc{
-      CD3DX12_SHADER_BYTECODE{&g_skybox_vs_bytes, ARRAYSIZE(g_skybox_vs_bytes)},
-      CD3DX12_SHADER_BYTECODE{&g_skybox_ps_bytes, ARRAYSIZE(g_skybox_ps_bytes)}, sample_desc, color_format,
-      depth_format_,
-      CD3DX12_DEPTH_STENCIL_DESC{
-        TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {},
-        {}, {}
-      },
-      CD3DX12_RASTERIZER_DESC{
-        D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-        D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, TRUE, TRUE, FALSE, 0, {}
-      }
-    };
-
-  skybox_pso_ = device_->CreatePipelineState({sizeof(skybox_pso_desc), &skybox_pso_desc}, sizeof(SkyboxDrawParams) / 4,
-    false);
-
-  struct {
-    CD3DX12_PIPELINE_STATE_STREAM_VS vs;
-    CD3DX12_PIPELINE_STATE_STREAM_VS ps;
-    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rt_formats;
-  } ssao_pso_desc{
-      CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
-      CD3DX12_SHADER_BYTECODE{&g_ssao_main_ps_bytes, ARRAYSIZE(g_ssao_main_ps_bytes)}, ssao_format
-    };
-
-  ssao_pso_ = device_->CreatePipelineState({sizeof(ssao_pso_desc), &ssao_pso_desc}, sizeof(SsaoDrawParams) / 4, false);
-
-  decltype(ssao_pso_desc) ssao_blur_pso_desc{
-    CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
-    CD3DX12_SHADER_BYTECODE{&g_ssao_blur_ps_bytes, ARRAYSIZE(g_ssao_blur_ps_bytes)}, ssao_format
+  CD3DX12_DEPTH_STENCIL_DESC1 const reverse_z_depth_stencil{
+    TRUE, D3D12_DEPTH_WRITE_MASK_ALL, D3D12_COMPARISON_FUNC_GREATER, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+    FALSE
   };
 
-  ssao_blur_pso_ = device_->CreatePipelineState({sizeof(ssao_blur_pso_desc), &ssao_blur_pso_desc},
-    sizeof(SsaoBlurDrawParams) / 4, false);
+  CD3DX12_DEPTH_STENCIL_DESC1 const disabled_depth_stencil{
+    FALSE, D3D12_DEPTH_WRITE_MASK_ZERO, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, FALSE
+  };
+
+  DXGI_SAMPLE_DESC const msaa_sample_desc{static_cast<UINT>(msaa_mode_), 0};
+  CD3DX12_RT_FORMAT_ARRAY const render_target_format{D3D12_RT_FORMAT_ARRAY{{render_target_format_}, 1}};
+  CD3DX12_RT_FORMAT_ARRAY const color_format{D3D12_RT_FORMAT_ARRAY{{color_buffer_format_}, 1}};
+  CD3DX12_RT_FORMAT_ARRAY const ssao_format{D3D12_RT_FORMAT_ARRAY{{ssao_buffer_format_}, 1}};
+
+  graphics::PipelineDesc const depth_normal_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{g_depth_normal_vs_bytes, ARRAYSIZE(g_depth_normal_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{g_depth_normal_ps_bytes, ARRAYSIZE(g_depth_normal_ps_bytes)},
+    .depth_stencil_state = reverse_z_depth_stencil, .ds_format = depth_format_,
+    .rt_formats = CD3DX12_RT_FORMAT_ARRAY{D3D12_RT_FORMAT_ARRAY{{normal_buffer_format_}, 1}},
+    .sample_desc = msaa_sample_desc
+  };
+
+  depth_normal_pso_ = device_->CreatePipelineState(depth_normal_pso_desc, sizeof(DepthNormalDrawParams) / 4);
+
+  graphics::PipelineDesc const depth_only_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{g_depth_only_vs_bytes, ARRAYSIZE(g_depth_only_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
+    .depth_stencil_state = reverse_z_depth_stencil, .ds_format = depth_format_, .sample_desc = msaa_sample_desc
+  };
+
+  depth_only_pso_ = device_->CreatePipelineState(depth_only_pso_desc, sizeof(DepthOnlyDrawParams) / 4);
+
+  graphics::PipelineDesc const depth_resolve_pso_desc{
+    .cs = CD3DX12_SHADER_BYTECODE{g_depth_resolve_cs_bytes, ARRAYSIZE(g_depth_resolve_cs_bytes)}
+  };
+
+  depth_resolve_pso_ = device_->CreatePipelineState(depth_resolve_pso_desc, sizeof(DepthResolveDrawParams) / 4);
+
+  graphics::PipelineDesc const line_gizmo_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{g_gizmos_line_vs_bytes, ARRAYSIZE(g_gizmos_line_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{g_gizmos_ps_bytes, ARRAYSIZE(g_gizmos_ps_bytes)},
+    .depth_stencil_state = disabled_depth_stencil, .rt_formats = render_target_format, .sample_desc = msaa_sample_desc
+  };
+
+  line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
+
+  graphics::PipelineDesc const object_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{g_object_pbr_vs_bytes, ARRAYSIZE(g_object_pbr_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{g_object_pbr_ps_bytes, ARRAYSIZE(g_object_pbr_ps_bytes)},
+    .depth_stencil_state = reverse_z_depth_stencil, .ds_format = depth_format_, .rt_formats = color_format,
+    .sample_desc = msaa_sample_desc,
+  };
+
+  object_pso_ = device_->CreatePipelineState(object_pso_desc, sizeof(ObjectDrawParams) / 4);
+
+  graphics::PipelineDesc const post_process_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_post_process_vs_bytes, ARRAYSIZE(g_post_process_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_post_process_ps_bytes, ARRAYSIZE(g_post_process_ps_bytes)},
+    .depth_stencil_state = disabled_depth_stencil, .rt_formats = render_target_format,
+  };
+
+  post_process_pso_ = device_->CreatePipelineState(post_process_pso_desc, sizeof(PostProcessDrawParams) / 4);
+
+  graphics::PipelineDesc const skybox_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_skybox_vs_bytes, ARRAYSIZE(g_skybox_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_skybox_ps_bytes, ARRAYSIZE(g_skybox_ps_bytes)},
+    .depth_stencil_state = CD3DX12_DEPTH_STENCIL_DESC1{
+      TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {},
+      {}, FALSE
+    },
+    .ds_format = depth_format_,
+    .rasterizer_state = CD3DX12_RASTERIZER_DESC{
+      D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+      D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, TRUE, TRUE, FALSE, 0, {}
+    },
+    .rt_formats = color_format, .sample_desc = msaa_sample_desc
+  };
+
+  skybox_pso_ = device_->CreatePipelineState(skybox_pso_desc, sizeof(SkyboxDrawParams) / 4);
+
+  graphics::PipelineDesc const ssao_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_main_ps_bytes, ARRAYSIZE(g_ssao_main_ps_bytes)},
+    .depth_stencil_state = disabled_depth_stencil, .rt_formats = ssao_format,
+  };
+
+  ssao_pso_ = device_->CreatePipelineState(ssao_pso_desc, sizeof(SsaoDrawParams) / 4);
+
+  graphics::PipelineDesc const ssao_blur_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_blur_ps_bytes, ARRAYSIZE(g_ssao_blur_ps_bytes)},
+    .depth_stencil_state = disabled_depth_stencil, .rt_formats = ssao_format
+  };
+
+  ssao_blur_pso_ = device_->CreatePipelineState(ssao_blur_pso_desc, sizeof(SsaoBlurDrawParams) / 4);
 
   return true;
 }
