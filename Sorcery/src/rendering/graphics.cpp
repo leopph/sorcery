@@ -759,12 +759,16 @@ auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> bool {
       return false;
     }
 
-    UINT const rtv{
-      desc.BufferUsage & DXGI_USAGE_RENDER_TARGET_OUTPUT ? rtv_heap_.Allocate() : details::kInvalidResourceIndex
-    };
-    UINT const srv{
-      desc.BufferUsage & DXGI_USAGE_SHADER_INPUT ? res_desc_heap_.Allocate() : details::kInvalidResourceIndex
-    };
+    UINT dsv;
+    UINT rtv;
+    UINT srv;
+    UINT uav;
+
+    CreateTextureViews(*buf.Get(), TextureDesc{
+      TextureDimension::k2D, desc.Width, desc.Height, 1, 1, desc.Format, {1, 0}, D3D12_RESOURCE_FLAG_NONE, false,
+      static_cast<bool>(desc.BufferUsage & DXGI_USAGE_RENDER_TARGET_OUTPUT),
+      static_cast<bool>(desc.BufferUsage & DXGI_USAGE_SHADER_INPUT), false
+    }, dsv, rtv, srv, uav);
 
     swap_chain.textures_.emplace_back(new Texture{
       nullptr, std::move(buf), details::kInvalidResourceIndex, rtv, srv, details::kInvalidResourceIndex
