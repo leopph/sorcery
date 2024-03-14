@@ -1034,6 +1034,11 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
     std::numeric_limits<float>::max()
   });
 
+  samp_point_clamp_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
+
   samp_af16_wrap_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
     D3D12_FILTER_COMPARISON_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP,
     D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 16, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
@@ -1061,6 +1066,11 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
 
   samp_bi_wrap_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
     D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+    D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
+  });
+
+  samp_point_wrap_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
+    D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP,
     D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
   });
 
