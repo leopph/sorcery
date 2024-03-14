@@ -65,6 +65,10 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, Window const& win
   device_{&device},
   window_{&window},
   render_manager_{&render_manager} {
+  auto& io{ImGui::GetIO()};
+  io.BackendRendererName = "Sorcery ImGui Renderer";
+  io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
+
   pso_ = device_->CreatePipelineState(graphics::PipelineDesc{
     .vs = CD3DX12_SHADER_BYTECODE{g_imgui_vs_bytes, ARRAYSIZE(g_imgui_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_imgui_ps_bytes, ARRAYSIZE(g_imgui_ps_bytes)},
@@ -142,7 +146,7 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, Window const& win
     throw std::runtime_error{"Failed to wait for font texture upload."};
   }
 
-  ImGui::GetIO().Fonts->SetTexID(fonts_tex_.get());
+  io.Fonts->SetTexID(fonts_tex_.get());
 }
 
 
