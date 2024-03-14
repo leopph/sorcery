@@ -54,7 +54,7 @@ class UniqueSamplerHandle;
 
 
 struct BufferDesc {
-  UINT size;
+  UINT64 size;
   UINT stride;
   bool constant_buffer;
   bool shader_resource;
