@@ -29,7 +29,9 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 Material::Material() :
-  cb_{rendering::ConstantBuffer<ShaderMaterial>::New(*g_engine_context.graphics_device, false).value()} {}
+  cb_{rendering::ConstantBuffer<ShaderMaterial>::New(*g_engine_context.graphics_device, false).value()} {
+  Update();
+}
 
 
 auto Material::GetAlbedoVector() const noexcept -> Vector3 const& {
