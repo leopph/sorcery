@@ -1118,21 +1118,31 @@ auto SceneRenderer::Render() -> void {
     auto const rt_height{target_rt_desc.height};
     auto const rt_aspect{static_cast<float>(rt_width) / static_cast<float>(rt_height)};
 
+    auto const clear_color{
+      [] {
+        std::array<float, 4> ret;
+        if (Scene::GetActiveScene()->GetSkyMode() == SkyMode::Color) {
+          auto const sky_color{Scene::GetActiveScene()->GetSkyColor()};
+          ret[0] = sky_color[0];
+          ret[1] = sky_color[1];
+          ret[2] = sky_color[2];
+          ret[3] = 1.0f;
+        } else {
+          ret = {0, 0, 0, 1};
+        }
+        return ret;
+      }()
+    };
+
     RenderTarget::Desc const hdr_rt_desc{
       rt_width, rt_height, color_buffer_format_, depth_format_, static_cast<UINT>(GetMultisamplingMode()),
-      L"Camera HDR RenderTarget", false
+      L"Camera HDR RenderTarget", false, clear_color, 0.0f
     };
 
     auto const hdr_rt{render_manager_->GetTemporaryRenderTarget(hdr_rt_desc)};
 
+    cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), clear_color, {});
 
-    auto const clear_color{
-      Scene::GetActiveScene()->GetSkyMode() == SkyMode::Color
-        ? Vector4{Scene::GetActiveScene()->GetSkyColor(), 1}
-        : Vector4{0, 0, 0, 1}
-    };
-
-    cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), std::span<FLOAT const, 4>{clear_color.GetData(), 4}, {});
 
     D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rt_width), static_cast<FLOAT>(rt_height), 0, 1};
 

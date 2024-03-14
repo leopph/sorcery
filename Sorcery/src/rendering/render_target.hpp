@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -24,6 +26,10 @@ public:
 
     bool enable_unordered_access{false};
 
+    std::array<float, 4> color_clear_value{0.0f, 0.0f, 0.0f, 1.0f};
+    float depth_clear_value{0.0f};
+    std::uint8_t stencil_clear_value{0};
+
     LEOPPHAPI [[nodiscard]] auto operator==(Desc const& other) const -> bool;
   };
 
@@ -39,8 +45,10 @@ public:
   auto operator=(RenderTarget&&) -> void = delete;
 
   [[nodiscard]] LEOPPHAPI auto GetDesc() const noexcept -> Desc const&;
-  [[nodiscard]] LEOPPHAPI auto GetColorTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
-  [[nodiscard]] LEOPPHAPI auto GetDepthStencilTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
+  [[nodiscard]] LEOPPHAPI auto
+  GetColorTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
+  [[nodiscard]] LEOPPHAPI auto
+  GetDepthStencilTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
 
 private:
   RenderTarget(Desc desc, graphics::SharedDeviceChildHandle<graphics::Texture> color_tex,
