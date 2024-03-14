@@ -104,6 +104,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     window->SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
 
+    sorcery::mage::Application app{imGuiIo};
+
     auto const imgui_renderer{std::make_unique<sorcery::mage::ImGuiRenderer>(*graphics_device, *window, *render_manager)};
 
     if (!imgui_renderer) {
@@ -111,8 +113,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     }
 
     bool runGame{false};
-
-    sorcery::mage::Application app{imGuiIo};
 
     sorcery::timing::OnApplicationStart();
 
