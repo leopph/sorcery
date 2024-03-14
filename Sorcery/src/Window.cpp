@@ -6,8 +6,8 @@
 
 
 namespace sorcery {
-Window::Window() :
-  mImpl{new WindowImpl{}},
+Window::Window(graphics::GraphicsDevice& graphics_device) :
+  mImpl{new WindowImpl{graphics_device}},
   OnWindowSize{mImpl->OnWindowSize},
   OnWindowFocusGain{mImpl->OnWindowFocusGain},
   OnWindowFocusLoss{mImpl->OnWindowFocusLoss} {}
@@ -135,5 +135,11 @@ auto Window::SetEventHandler(void const* handler) noexcept -> void {
 auto Window::UseImmersiveDarkMode(bool const value) noexcept -> void {
   assert(mImpl);
   mImpl->UseImmersiveDarkMode(value);
+}
+
+
+auto Window::GetSwapChain() const -> graphics::SharedDeviceChildHandle<graphics::SwapChain> const& {
+  assert(mImpl);
+  return mImpl->GetSwapChain();
 }
 }

@@ -202,40 +202,40 @@ class GraphicsDevice {
 public:
   [[nodiscard]] LEOPPHAPI static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
 
-  [[nodiscard]] auto CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE heap_type) -> SharedDeviceChildHandle<Buffer>;
-  [[nodiscard]] auto CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE heap_type,
+  [[nodiscard]] LEOPPHAPI auto CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE heap_type) -> SharedDeviceChildHandle<Buffer>;
+  [[nodiscard]] LEOPPHAPI auto CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE heap_type,
                                    D3D12_BARRIER_LAYOUT initial_layout,
                                    D3D12_CLEAR_VALUE const* clear_value) -> SharedDeviceChildHandle<Texture>;
-  [[nodiscard]] auto CreatePipelineState(PipelineDesc const& desc,
+  [[nodiscard]] LEOPPHAPI auto CreatePipelineState(PipelineDesc const& desc,
                                          std::uint8_t num_32_bit_params) -> SharedDeviceChildHandle<PipelineState>;
-  [[nodiscard]] auto CreateCommandList() -> SharedDeviceChildHandle<CommandList>;
-  [[nodiscard]] auto CreateFence(UINT64 initial_value) -> SharedDeviceChildHandle<Fence>;
-  [[nodiscard]] auto CreateSwapChain(SwapChainDesc const& desc,
+  [[nodiscard]] LEOPPHAPI auto CreateCommandList() -> SharedDeviceChildHandle<CommandList>;
+  [[nodiscard]] LEOPPHAPI auto CreateFence(UINT64 initial_value) -> SharedDeviceChildHandle<Fence>;
+  [[nodiscard]] LEOPPHAPI auto CreateSwapChain(SwapChainDesc const& desc,
                                      HWND window_handle) -> SharedDeviceChildHandle<SwapChain>;
-  [[nodiscard]] auto CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle;
-  auto CreateAliasingResources(std::span<BufferDesc const> buffer_descs,
+  [[nodiscard]] LEOPPHAPI auto CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle;
+  LEOPPHAPI auto CreateAliasingResources(std::span<BufferDesc const> buffer_descs,
                                std::span<AliasedTextureCreateInfo const> texture_infos, D3D12_HEAP_TYPE heap_type,
                                std::pmr::vector<SharedDeviceChildHandle<Buffer>>* buffers,
                                std::pmr::vector<SharedDeviceChildHandle<Texture>>* textures) -> void;
 
-  auto DestroyBuffer(Buffer const* buffer) -> void;
-  auto DestroyTexture(Texture const* texture) -> void;
-  auto DestroyPipelineState(PipelineState const* pipeline_state) -> void;
-  auto DestroyCommandList(CommandList const* command_list) -> void;
-  auto DestroyFence(Fence const* fence) -> void;
-  auto DestroySwapChain(SwapChain const* swap_chain) -> void;
-  auto DestroySampler(UINT sampler) -> void;
+  LEOPPHAPI auto DestroyBuffer(Buffer const* buffer) -> void;
+  LEOPPHAPI auto DestroyTexture(Texture const* texture) -> void;
+  LEOPPHAPI auto DestroyPipelineState(PipelineState const* pipeline_state) -> void;
+  LEOPPHAPI auto DestroyCommandList(CommandList const* command_list) -> void;
+  LEOPPHAPI auto DestroyFence(Fence const* fence) -> void;
+  LEOPPHAPI auto DestroySwapChain(SwapChain const* swap_chain) -> void;
+  LEOPPHAPI auto DestroySampler(UINT sampler) -> void;
 
-  [[nodiscard]] auto WaitFence(Fence const& fence, UINT64 wait_value) const -> bool;
-  [[nodiscard]] auto SignalFence(Fence& fence, UINT64 signal_value) const -> bool;
-  auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) const -> void;
-  [[nodiscard]] auto WaitIdle() const -> bool;
+  [[nodiscard]] LEOPPHAPI auto WaitFence(Fence const& fence, UINT64 wait_value) const -> bool;
+  [[nodiscard]] LEOPPHAPI auto SignalFence(Fence& fence, UINT64 signal_value) const -> bool;
+  LEOPPHAPI auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) const -> void;
+  [[nodiscard]] LEOPPHAPI auto WaitIdle() const -> bool;
 
-  [[nodiscard]] auto SwapChainGetBuffers(
+  [[nodiscard]] LEOPPHAPI auto SwapChainGetBuffers(
     SwapChain const& swap_chain) const -> std::span<SharedDeviceChildHandle<Texture> const>;
-  [[nodiscard]] auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
-  [[nodiscard]] auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> bool;
-  [[nodiscard]] auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> bool;
+  [[nodiscard]] LEOPPHAPI auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
+  [[nodiscard]] LEOPPHAPI auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> bool;
+  [[nodiscard]] LEOPPHAPI auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> bool;
 
 private:
   GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
@@ -279,12 +279,12 @@ private:
 
 class Resource {
 public:
-  [[nodiscard]] auto SetDebugName(std::wstring_view name) const -> bool;
-  [[nodiscard]] auto GetDesc() const -> D3D12_RESOURCE_DESC1;
-  [[nodiscard]] auto Map() const -> void*;
-  [[nodiscard]] auto GetShaderResource() const -> UINT;
-  [[nodiscard]] auto GetUnorderedAccess() const -> UINT;
-  [[nodiscard]] auto GetRequiredIntermediateSize() const -> UINT64;
+  [[nodiscard]] LEOPPHAPI auto SetDebugName(std::wstring_view name) const -> bool;
+  [[nodiscard]] LEOPPHAPI auto GetDesc() const -> D3D12_RESOURCE_DESC1;
+  [[nodiscard]] LEOPPHAPI auto Map() const -> void*;
+  [[nodiscard]] LEOPPHAPI auto GetShaderResource() const -> UINT;
+  [[nodiscard]] LEOPPHAPI auto GetUnorderedAccess() const -> UINT;
+  [[nodiscard]] LEOPPHAPI auto GetRequiredIntermediateSize() const -> UINT64;
 
 protected:
   Resource(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
@@ -306,7 +306,7 @@ private:
 
 class Buffer : public Resource {
 public:
-  [[nodiscard]] auto GetConstantBuffer() const -> UINT;
+  [[nodiscard]] LEOPPHAPI auto GetConstantBuffer() const -> UINT;
 
 private:
   Buffer(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
@@ -321,7 +321,7 @@ private:
 
 class Texture : public Resource {
 public:
-  [[nodiscard]] auto Map(UINT subresource) const -> void*;
+  [[nodiscard]] LEOPPHAPI auto Map(UINT subresource) const -> void*;
 
 private:
   Texture(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
@@ -351,39 +351,39 @@ class PipelineState {
 
 class CommandList {
 public:
-  [[nodiscard]] auto Begin(PipelineState const* pipeline_state) -> bool;
-  [[nodiscard]] auto End() const -> bool;
-  auto Barrier(std::span<GlobalBarrier const> global_barriers, std::span<BufferBarrier const> buffer_barriers,
+  [[nodiscard]] LEOPPHAPI auto Begin(PipelineState const* pipeline_state) -> bool;
+  [[nodiscard]] LEOPPHAPI auto End() const -> bool;
+  LEOPPHAPI auto Barrier(std::span<GlobalBarrier const> global_barriers, std::span<BufferBarrier const> buffer_barriers,
                std::span<TextureBarrier const> texture_barriers) const -> void;
-  auto ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth, UINT8 stencil,
+  LEOPPHAPI auto ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth, UINT8 stencil,
                          std::span<D3D12_RECT const> rects) const -> void;
-  auto ClearRenderTarget(Texture const& tex, std::span<FLOAT const, 4> color_rgba,
+  LEOPPHAPI auto ClearRenderTarget(Texture const& tex, std::span<FLOAT const, 4> color_rgba,
                          std::span<D3D12_RECT const> rects) const -> void;
-  auto CopyBuffer(Buffer const& dst, Buffer const& src) const -> void;
-  auto CopyBufferRegion(Buffer const& dst, UINT64 dst_offset, Buffer const& src, UINT64 src_offset,
+  LEOPPHAPI auto CopyBuffer(Buffer const& dst, Buffer const& src) const -> void;
+  LEOPPHAPI auto CopyBufferRegion(Buffer const& dst, UINT64 dst_offset, Buffer const& src, UINT64 src_offset,
                         UINT64 num_bytes) const -> void;
-  auto CopyTexture(Texture const& dst, Texture const& src) const -> void;
-  auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
+  LEOPPHAPI auto CopyTexture(Texture const& dst, Texture const& src) const -> void;
+  LEOPPHAPI auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
                          Texture const& src, UINT src_subresource_index, D3D12_BOX const* src_box) const -> void;
-  auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
+  LEOPPHAPI auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
                          Buffer const& src, D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void;
-  auto Dispatch(UINT thread_group_count_x, UINT thread_group_count_y, UINT thread_group_count_z) const -> void;
-  auto DispatchMesh(UINT thread_group_count_x, UINT thread_group_count_y, UINT thread_group_count_z) const -> void;
-  auto DrawIndexedInstanced(UINT index_count_per_instance, UINT instance_count, UINT start_index_location,
+  LEOPPHAPI auto Dispatch(UINT thread_group_count_x, UINT thread_group_count_y, UINT thread_group_count_z) const -> void;
+  LEOPPHAPI auto DispatchMesh(UINT thread_group_count_x, UINT thread_group_count_y, UINT thread_group_count_z) const -> void;
+  LEOPPHAPI auto DrawIndexedInstanced(UINT index_count_per_instance, UINT instance_count, UINT start_index_location,
                             INT base_vertex_location, UINT start_instance_location) const -> void;
-  auto DrawInstanced(UINT vertex_count_per_instance, UINT instance_count, UINT start_vertex_location,
+  LEOPPHAPI auto DrawInstanced(UINT vertex_count_per_instance, UINT instance_count, UINT start_vertex_location,
                      UINT start_instance_location) const -> void;
-  auto Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT format) const -> void;
-  auto SetBlendFactor(std::span<FLOAT const, 4> blend_factor) const -> void;
-  auto SetRenderTargets(std::span<Texture const> render_targets, Texture const* depth_stencil) const -> void;
-  auto SetStencilRef(UINT stencil_ref) const -> void;
-  auto SetScissorRects(std::span<D3D12_RECT const> rects) const -> void;
-  auto SetViewports(std::span<D3D12_VIEWPORT const> viewports) const -> void;
-  auto SetPipelineParameter(UINT index, UINT value) const -> void;
-  auto SetPipelineParameters(UINT index, std::span<UINT const> values) const -> void;
-  auto SetPipelineState(PipelineState const& pipeline_state) -> void;
-  auto SetStreamOutputTargets(UINT start_slot, std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
-  auto UpdateSubresources(Resource const& dst, Buffer const& upload_buf, UINT64 buf_offset, UINT first_subresource,
+  LEOPPHAPI auto Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT format) const -> void;
+  LEOPPHAPI auto SetBlendFactor(std::span<FLOAT const, 4> blend_factor) const -> void;
+  LEOPPHAPI auto SetRenderTargets(std::span<Texture const> render_targets, Texture const* depth_stencil) const -> void;
+  LEOPPHAPI auto SetStencilRef(UINT stencil_ref) const -> void;
+  LEOPPHAPI auto SetScissorRects(std::span<D3D12_RECT const> rects) const -> void;
+  LEOPPHAPI auto SetViewports(std::span<D3D12_VIEWPORT const> viewports) const -> void;
+  LEOPPHAPI auto SetPipelineParameter(UINT index, UINT value) const -> void;
+  LEOPPHAPI auto SetPipelineParameters(UINT index, std::span<UINT const> values) const -> void;
+  LEOPPHAPI auto SetPipelineState(PipelineState const& pipeline_state) -> void;
+  LEOPPHAPI auto SetStreamOutputTargets(UINT start_slot, std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
+  LEOPPHAPI auto UpdateSubresources(Resource const& dst, Buffer const& upload_buf, UINT64 buf_offset, UINT first_subresource,
                           UINT num_subresources, D3D12_SUBRESOURCE_DATA const* src_data) const -> UINT64;
 
 private:
@@ -409,10 +409,10 @@ private:
 
 class Fence {
 public:
-  [[nodiscard]] auto GetNextValue() const -> UINT64;
-  [[nodiscard]] auto GetCompletedValue() const -> UINT64;
-  [[nodiscard]] auto Signal(UINT64 value) -> bool;
-  [[nodiscard]] auto Wait(UINT64 value) const -> bool;
+  [[nodiscard]] LEOPPHAPI auto GetNextValue() const -> UINT64;
+  [[nodiscard]] LEOPPHAPI auto GetCompletedValue() const -> UINT64;
+  [[nodiscard]] LEOPPHAPI auto Signal(UINT64 value) -> bool;
+  [[nodiscard]] LEOPPHAPI auto Wait(UINT64 value) const -> bool;
 
 private:
   explicit Fence(Microsoft::WRL::ComPtr<ID3D12Fence> fence, UINT64 next_value);

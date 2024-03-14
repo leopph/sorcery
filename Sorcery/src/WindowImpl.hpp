@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.hpp"
+#include "observer_ptr.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -9,27 +10,12 @@
 
 namespace sorcery {
 class WindowImpl {
-  using WindowProcType = LRESULT(*)(HWND, UINT, WPARAM, LPARAM);
-
-  HWND mHwnd{nullptr};
-  HCURSOR mCursor{LoadCursorW(nullptr, IDC_ARROW)};
-  WindowProcType mEventHandler{nullptr};
-  bool mIsBorderless{false};
-  bool mMinimizeOnBorderlessFocusLoss{false};
-  bool mHideCursor{false};
-  bool mIsInFocus{true};
-  std::string mTitle{"Sorcery"};
-  std::optional<Point2D<int>> mLockedCursorPos;
-
-  Event<Extent2D<unsigned>> mOnSizeEvent;
-  Event<> mOnFocusGainEvent;
-  Event<> mOnFocusLossEvent;
-
-  static auto CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) noexcept -> LRESULT;
-  [[nodiscard]] static auto RectToExtent(RECT rect) noexcept -> Extent2D<int>;
+  Event<Extent2D<unsigned>> on_size_event_;
+  Event<> on_focus_gain_event_;
+  Event<> on_focus_loss_event_;
 
 public:
-  WindowImpl();
+  explicit WindowImpl(graphics::GraphicsDevice& graphics_device);
   WindowImpl(WindowImpl const&) = delete;
   WindowImpl(WindowImpl&&) = delete;
 
@@ -38,9 +24,9 @@ public:
   auto operator=(WindowImpl const&) -> void = delete;
   auto operator=(WindowImpl&&) -> void = delete;
 
-  GuardedEventReference<Extent2D<std::uint32_t>> OnWindowSize{mOnSizeEvent};
-  GuardedEventReference<> OnWindowFocusGain{mOnFocusGainEvent};
-  GuardedEventReference<> OnWindowFocusLoss{mOnFocusLossEvent};
+  GuardedEventReference<Extent2D<std::uint32_t>> OnWindowSize{on_size_event_};
+  GuardedEventReference<> OnWindowFocusGain{on_focus_gain_event_};
+  GuardedEventReference<> OnWindowFocusLoss{on_focus_loss_event_};
 
   [[nodiscard]] auto GetNativeHandle() const noexcept -> void*;
 
@@ -73,5 +59,25 @@ public:
   auto SetEventHandler(void const* handler) noexcept -> void;
 
   auto UseImmersiveDarkMode(bool value) noexcept -> void;
+
+  [[nodiscard]] auto GetSwapChain() const -> graphics::SharedDeviceChildHandle<graphics::SwapChain> const&;
+
+private:
+  using WindowProcType = LRESULT(*)(HWND, UINT, WPARAM, LPARAM);
+
+  static auto CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) noexcept -> LRESULT;
+  [[nodiscard]] static auto RectToExtent(RECT rect) noexcept -> Extent2D<int>;
+
+  HWND hwnd_{nullptr};
+  HCURSOR cursor_{LoadCursorW(nullptr, IDC_ARROW)};
+  WindowProcType handler_{nullptr};
+  bool is_borderless_{false};
+  bool minimize_on_borderless_focus_loss_{false};
+  bool hide_cursor_{false};
+  bool is_in_focus_{true};
+  std::string title_{"Sorcery"};
+  std::optional<Point2D<int>> locked_cursor_pos_;
+  ObserverPtr<graphics::GraphicsDevice> graphics_device_;
+  graphics::SharedDeviceChildHandle<graphics::SwapChain> swap_chain_;
 };
 }

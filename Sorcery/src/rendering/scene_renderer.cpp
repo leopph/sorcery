@@ -906,14 +906,13 @@ auto SceneRenderer::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDr
 
 
 auto SceneRenderer::EndFrame() -> void {
+  ClearGizmoDrawQueue();
   next_per_draw_cb_idx_ = 0;
   next_per_view_cb_idx_ = 0;
 }
 
 
 auto SceneRenderer::OnWindowSize(SceneRenderer* const self, Extent2D<std::uint32_t> const size) -> void {
-  std::ignore = self->device_->SwapChainResize(*self->swap_chain_, size.width, size.height);
-
   if (size.width != 0 && size.height != 0) {
     RenderTarget::Desc desc{self->main_rt_->GetDesc()};
     desc.width = size.width;
@@ -927,9 +926,6 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   render_manager_{&render_manager},
   window_{&window},
   device_{&device} {
-  swap_chain_ = device_->CreateSwapChain(graphics::SwapChainDesc{0, 0, 2, render_target_format_, 0, DXGI_SCALING_NONE},
-    static_cast<HWND>(window_->GetNativeHandle()));
-
   for (auto& buf : light_buffers_) {
     buf = StructuredBuffer<ShaderLight>::New(*device_, true);
   }
@@ -1445,12 +1441,8 @@ auto SceneRenderer::DrawGizmos(RenderTarget const* const rt) -> void {
     gizmo_color_buffer_.GetBuffer()->GetShaderResource());
   // TODO set per view cb
 
-  auto const actual_rt{
-    rt
-      ? rt->GetColorTex().get()
-      : device_->SwapChainGetBuffers(*swap_chain_)[device_->SwapChainGetCurrentBufferIndex(*swap_chain_)].get()
-  };
-  cmd.SetRenderTargets(std::span{actual_rt, 1}, nullptr);
+  auto& actual_rt{rt ? *rt : rt_override_ ? *rt_override_ : *main_rt_};
+  cmd.SetRenderTargets(std::span{actual_rt.GetColorTex().get(), 1}, nullptr);
 
   if (!line_gizmo_vertex_data_.empty()) {
     cmd.DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);
@@ -1465,6 +1457,11 @@ auto SceneRenderer::GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> c
 
 auto SceneRenderer::SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void {
   rt_override_ = std::move(rt_override);
+}
+
+
+auto SceneRenderer::GetCurrentRenderTarget() const -> RenderTarget const& {
+  return rt_override_ ? *rt_override_ : *main_rt_;
 }
 
 
@@ -1485,12 +1482,6 @@ auto SceneRenderer::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> const
 
   ctx->CopyResource(backBuf.Get(), mainRtColorTex.Get());
 } TODO */
-
-
-auto SceneRenderer::Present() noexcept -> void {
-  std::ignore = device_->SwapChainPresent(*swap_chain_, static_cast<UINT>(sync_interval_));
-  ClearGizmoDrawQueue();
-}
 
 
 auto SceneRenderer::GetSyncInterval() const noexcept -> UINT {

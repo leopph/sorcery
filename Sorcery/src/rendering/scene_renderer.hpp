@@ -82,10 +82,10 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> const&;
   LEOPPHAPI auto SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void;
 
+  [[nodiscard]] LEOPPHAPI auto GetCurrentRenderTarget() const -> RenderTarget const&;
+
   /*auto ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
   auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void; TODO*/
-
-  LEOPPHAPI auto Present() noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSyncInterval() const noexcept -> UINT;
   LEOPPHAPI auto SetSyncInterval(UINT interval) noexcept -> void;
@@ -278,7 +278,6 @@ private:
   ObserverPtr<Window> window_;
 
   ObserverPtr<graphics::GraphicsDevice> device_;
-  graphics::SharedDeviceChildHandle<graphics::SwapChain> swap_chain_;
 
   std::array<ConstantBuffer<ShaderPerFrameConstants>, RenderManager::GetMaxFramesInFlight()> per_frame_cbs_;
   std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, RenderManager::GetMaxFramesInFlight()>> per_view_cbs_;

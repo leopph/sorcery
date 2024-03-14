@@ -39,13 +39,6 @@ __declspec(dllexport) extern char const* const D3D12SDKPath{".\\D3D12\\"};
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE,
                      _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
   try {
-    auto const window{std::make_unique<sorcery::Window>()};
-    sorcery::g_engine_context.window.Reset(window.get());
-
-    if (!window) {
-      throw std::runtime_error{"Failed to create window."};
-    }
-
 #ifndef NDEBUG
     auto constexpr debug_graphics_device{true};
 #else
@@ -57,6 +50,13 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     if (!graphics_device) {
       throw std::runtime_error{"Failed to create graphics device."};
+    }
+
+    auto const window{std::make_unique<sorcery::Window>(*graphics_device)};
+    sorcery::g_engine_context.window.Reset(window.get());
+
+    if (!window) {
+      throw std::runtime_error{"Failed to create window."};
     }
 
     auto const render_manager{std::make_unique<sorcery::rendering::RenderManager>(*graphics_device)};
@@ -195,7 +195,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
       scene_renderer->Render();
       // TODO draw UI
-      // TODO present
+
+      if (!graphics_device->SwapChainPresent(*window->GetSwapChain(), scene_renderer->GetSyncInterval())) {
+        throw std::runtime_error{"Failed to present."};
+      }
 
       sorcery::GetTmpMemRes().Clear();
 

@@ -5,8 +5,6 @@
 #include "../Core.hpp"
 #include "../Math.hpp"
 #include "../observer_ptr.hpp"
-#include "../resources/Material.hpp"
-#include "../resources/Mesh.hpp"
 
 #include <DirectXTex.h>
 
