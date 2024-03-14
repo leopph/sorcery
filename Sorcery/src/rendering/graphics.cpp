@@ -23,6 +23,18 @@ UINT const GraphicsDevice::sampler_heap_size_{2048};
 namespace details {
 auto DescriptorHeap::Allocate() -> UINT {
   std::scoped_lock const lock{mutex_};
+
+  if (free_indices_.empty()) {
+    auto const old_reserve_count{reserved_idx_count_};
+    reserved_idx_count_ += 100;
+
+    for (UINT idx{old_reserve_count}; idx < reserved_idx_count_; idx++) {
+      free_indices_.emplace_back(idx);
+    }
+
+    // TODO start descriptor heap itself small, grow it on demand
+  }
+
   auto const idx{free_indices_.back()};
   free_indices_.pop_back();
   return idx;
@@ -61,13 +73,7 @@ auto DescriptorHeap::GetInternalPtr() const -> ID3D12DescriptorHeap* {
 
 DescriptorHeap::DescriptorHeap(ComPtr<ID3D12DescriptorHeap> heap, ID3D12Device& device) :
   heap_{std::move(heap)},
-  increment_size_{device.GetDescriptorHandleIncrementSize(heap_->GetDesc().Type)} {
-  auto const size{heap_->GetDesc().NumDescriptors};
-  free_indices_.reserve(size);
-  for (UINT i{0}; i < size; i++) {
-    free_indices_.emplace_back(i);
-  }
-}
+  increment_size_{device.GetDescriptorHandleIncrementSize(heap_->GetDesc().Type)} {}
 
 
 auto RootSignatureCache::Add(std::uint8_t const num_params, ComPtr<ID3D12RootSignature> root_signature) -> void {

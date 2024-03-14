@@ -183,6 +183,7 @@ private:
   std::vector<UINT> free_indices_;
   std::mutex mutex_;
   UINT increment_size_;
+  UINT reserved_idx_count_{0};
 };
 
 
