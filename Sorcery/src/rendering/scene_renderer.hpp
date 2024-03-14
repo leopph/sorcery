@@ -84,9 +84,6 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetCurrentRenderTarget() const -> RenderTarget const&;
 
-  /*auto ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void;
-  auto BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> ctx) const noexcept -> void; TODO*/
-
   [[nodiscard]] LEOPPHAPI auto GetSyncInterval() const noexcept -> UINT;
   LEOPPHAPI auto SetSyncInterval(UINT interval) noexcept -> void;
 

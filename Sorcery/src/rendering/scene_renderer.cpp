@@ -1465,25 +1465,6 @@ auto SceneRenderer::GetCurrentRenderTarget() const -> RenderTarget const& {
 }
 
 
-/*auto SceneRenderer::ClearAndBindMainRt(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
-  auto const rtv{main_rt_->GetRtv()};
-  FLOAT constexpr clearColor[]{0, 0, 0, 1};
-  ctx->ClearRenderTargetView(rtv, clearColor);
-  ctx->OMSetRenderTargets(1, &rtv, nullptr);
-}
-
-
-auto SceneRenderer::BlitMainRtToSwapChain(ObserverPtr<ID3D11DeviceContext> const ctx) const noexcept -> void {
-  ComPtr<ID3D11Resource> mainRtColorTex;
-  main_rt_->GetRtv()->GetResource(mainRtColorTex.GetAddressOf());
-
-  ComPtr<ID3D11Resource> backBuf;
-  mSwapChain->GetRtv()->GetResource(backBuf.GetAddressOf());
-
-  ctx->CopyResource(backBuf.Get(), mainRtColorTex.Get());
-} TODO */
-
-
 auto SceneRenderer::GetSyncInterval() const noexcept -> UINT {
   return sync_interval_;
 }

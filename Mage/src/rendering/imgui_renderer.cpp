@@ -19,46 +19,6 @@
 #include <stdexcept>
 
 
-// DirectX data
-struct ImGui_ImplDX12_RenderBuffers;
-
-
-struct ImGui_ImplDX12_Data {
-  ID3D12Device* pd3dDevice;
-  ID3D12RootSignature* pRootSignature;
-  ID3D12PipelineState* pPipelineState;
-  DXGI_FORMAT RTVFormat;
-  ID3D12Resource* pFontTextureResource;
-  D3D12_CPU_DESCRIPTOR_HANDLE hFontSrvCpuDescHandle;
-  D3D12_GPU_DESCRIPTOR_HANDLE hFontSrvGpuDescHandle;
-  ID3D12DescriptorHeap* pd3dSrvDescHeap;
-  UINT numFramesInFlight;
-
-  ImGui_ImplDX12_RenderBuffers* pFrameResources;
-  UINT frameIndex;
-
-
-  ImGui_ImplDX12_Data() {
-    memset((void*)this, 0, sizeof(*this));
-    frameIndex = UINT_MAX;
-  }
-};
-
-
-// Buffers used during the rendering of a frame
-struct ImGui_ImplDX12_RenderBuffers {
-  ID3D12Resource* IndexBuffer;
-  ID3D12Resource* VertexBuffer;
-  int IndexBufferSize;
-  int VertexBufferSize;
-};
-
-
-struct VERTEX_CONSTANT_BUFFER_DX12 {
-  float mvp[4][4];
-};
-
-
 namespace sorcery::mage {
 ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, Window const& window,
                              rendering::RenderManager& render_manager) :
