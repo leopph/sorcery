@@ -29,6 +29,7 @@ class Buffer;
 class Texture;
 class PipelineState;
 class CommandList;
+class Fence;
 class SwapChain;
 using Sampler = UINT;
 
@@ -37,8 +38,8 @@ namespace details {
 UINT constexpr kInvalidResourceIndex{static_cast<UINT>(-1)};
 
 template<typename T>concept DeviceChild = std::same_as<T, Buffer> || std::same_as<T, Texture> || std::same_as<
-                                            T, PipelineState> || std::same_as<T, CommandList> || std::same_as<
-                                            T, SwapChain>;
+                                            T, PipelineState> || std::same_as<T, CommandList> || std::same_as<T, Fence>
+                                          || std::same_as<T, SwapChain>;
 
 template<DeviceChild T>
 class DeviceChildDeleter;
@@ -208,7 +209,7 @@ public:
   [[nodiscard]] auto CreatePipelineState(PipelineDesc const& desc,
                                          std::uint8_t num_32_bit_params) -> SharedDeviceChildHandle<PipelineState>;
   [[nodiscard]] auto CreateCommandList() -> SharedDeviceChildHandle<CommandList>;
-  [[nodiscard]] auto CreateFence(UINT64 initial_value) -> Microsoft::WRL::ComPtr<ID3D12Fence1>;
+  [[nodiscard]] auto CreateFence(UINT64 initial_value) -> SharedDeviceChildHandle<Fence>;
   [[nodiscard]] auto CreateSwapChain(SwapChainDesc const& desc,
                                      HWND window_handle) -> SharedDeviceChildHandle<SwapChain>;
   [[nodiscard]] auto CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle;
@@ -221,12 +222,13 @@ public:
   auto DestroyTexture(Texture const* texture) -> void;
   auto DestroyPipelineState(PipelineState const* pipeline_state) -> void;
   auto DestroyCommandList(CommandList const* command_list) -> void;
+  auto DestroyFence(Fence const* fence) -> void;
   auto DestroySwapChain(SwapChain const* swap_chain) -> void;
   auto DestroySampler(UINT sampler) -> void;
 
-  [[nodiscard]] auto WaitFence(ID3D12Fence& fence, UINT64 wait_value) const -> bool;
-  [[nodiscard]] auto SignalFence(ID3D12Fence& fence, UINT64 signal_value) const -> bool;
-  auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) -> bool;
+  [[nodiscard]] auto WaitFence(Fence const& fence, UINT64 wait_value) const -> bool;
+  [[nodiscard]] auto SignalFence(Fence& fence, UINT64 signal_value) const -> bool;
+  auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) const -> void;
   [[nodiscard]] auto WaitIdle() const -> bool;
 
   [[nodiscard]] auto SwapChainGetBuffers(
@@ -242,7 +244,7 @@ private:
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsv_heap,
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> res_desc_heap,
                  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> sampler_heap,
-                 Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue, Microsoft::WRL::ComPtr<ID3D12Fence> fence);
+                 Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue);
 
   auto SwapChainCreateTextures(SwapChain& swap_chain) -> bool;
 
@@ -271,8 +273,7 @@ private:
   UINT swap_chain_flags_{0};
   UINT present_flags_{0};
 
-  Microsoft::WRL::ComPtr<ID3D12Fence> fence_;
-  std::atomic<UINT64> next_fence_val_{1};
+  SharedDeviceChildHandle<Fence> idle_fence_;
 };
 
 
@@ -406,6 +407,23 @@ private:
 };
 
 
+class Fence {
+public:
+  [[nodiscard]] auto GetNextValue() const -> UINT64;
+  [[nodiscard]] auto GetCompletedValue() const -> UINT64;
+  [[nodiscard]] auto Signal(UINT64 value) -> bool;
+  [[nodiscard]] auto Wait(UINT64 value) const -> bool;
+
+private:
+  explicit Fence(Microsoft::WRL::ComPtr<ID3D12Fence> fence, UINT64 next_value);
+
+  Microsoft::WRL::ComPtr<ID3D12Fence> fence_;
+  std::atomic<UINT64> next_val_;
+
+  friend GraphicsDevice;
+};
+
+
 class SwapChain {
   explicit SwapChain(Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain);
 
@@ -445,6 +463,8 @@ auto DeviceChildDeleter<T>::operator()(T const* device_child) -> void {
       device_->DestroyPipelineState(device_child);
     } else if constexpr (std::same_as<T, CommandList>) {
       device_->DestroyCommandList(device_child);
+    } else if constexpr (std::same_as<T, Fence>) {
+      device_->DestroyFence(device_child);
     } else if constexpr (std::same_as<T, SwapChain>) {
       device_->DestroySwapChain(device_child);
     }

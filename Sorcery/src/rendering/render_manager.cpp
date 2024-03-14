@@ -122,11 +122,11 @@ auto RenderManager::LoadReadonlyTexture(
 
   device_->ExecuteCommandLists(std::span{&cmd, 1});
 
-  if (!device_->SignalFence(*fence.Get(), completed_fence_val)) {
+  if (!device_->SignalFence(*fence, completed_fence_val)) {
     return nullptr;
   }
 
-  if (FAILED(fence->SetEventOnCompletion(completed_fence_val, nullptr))) {
+  if (!fence->Wait(completed_fence_val)) {
     return nullptr;
   }
 
@@ -179,11 +179,11 @@ auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byt
     return false;
   }
 
-  if (!device_->SignalFence(*fence.Get(), final_fence_val)) {
+  if (!device_->SignalFence(*fence, final_fence_val)) {
     return false;
   }
 
-  if (FAILED(fence->SetEventOnCompletion(final_fence_val, nullptr))) {
+  if (!fence->Wait(final_fence_val)) {
     return false;
   }
 
