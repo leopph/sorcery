@@ -315,9 +315,8 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
 }
 
 
-auto GraphicsDevice::CreatePipelineState(D3D12_PIPELINE_STATE_STREAM_DESC const& desc,
-                                         std::uint8_t const num_32_bit_params,
-                                         bool const is_compute) -> SharedDeviceChildHandle<PipelineState> {
+auto GraphicsDevice::CreatePipelineState(PipelineDesc const& desc,
+                                         std::uint8_t num_32_bit_params) -> SharedDeviceChildHandle<PipelineState> {
   ComPtr<ID3D12RootSignature> root_signature;
 
   if (auto rs{root_signatures_.Get(num_32_bit_params)}) {
@@ -353,12 +352,39 @@ auto GraphicsDevice::CreatePipelineState(D3D12_PIPELINE_STATE_STREAM_DESC const&
 
   ComPtr<ID3D12PipelineState> pipeline_state;
 
-  if (FAILED(device_->CreatePipelineState(&desc, IID_PPV_ARGS(&pipeline_state)))) {
+  CD3DX12_PIPELINE_STATE_STREAM2 pso_desc;
+  pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+  pso_desc.NodeMask = 0;
+  pso_desc.pRootSignature = root_signature.Get();
+  pso_desc.PrimitiveTopologyType = desc.primitive_topology_type;
+  pso_desc.VS = desc.vs;
+  pso_desc.GS = desc.gs;
+  pso_desc.StreamOutput = desc.stream_output;
+  pso_desc.HS = desc.hs;
+  pso_desc.DS = desc.ds;
+  pso_desc.PS = desc.ps;
+  pso_desc.AS = desc.as;
+  pso_desc.MS = desc.ms;
+  pso_desc.CS = desc.cs;
+  pso_desc.BlendState = desc.blend_state;
+  pso_desc.DepthStencilState = desc.depth_stencil_state;
+  pso_desc.DSVFormat = desc.ds_format;
+  pso_desc.RasterizerState = desc.rasterizer_state;
+  pso_desc.RTVFormats = desc.rt_formats;
+  pso_desc.SampleDesc = desc.sample_desc;
+  pso_desc.SampleMask = desc.sample_mask;
+  pso_desc.ViewInstancingDesc = desc.view_instancing_desc;
+
+  D3D12_PIPELINE_STATE_STREAM_DESC const stream_desc{sizeof(pso_desc), &pso_desc};
+
+  if (FAILED(device_->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&pipeline_state)))) {
     return SharedDeviceChildHandle<PipelineState>{nullptr, details::DeviceChildDeleter<PipelineState>{*this}};
   }
 
   return SharedDeviceChildHandle<PipelineState>{
-    new PipelineState{std::move(root_signature), std::move(pipeline_state), num_32_bit_params, is_compute},
+    new PipelineState{
+      std::move(root_signature), std::move(pipeline_state), num_32_bit_params, desc.cs.BytecodeLength != 0
+    },
     details::DeviceChildDeleter<PipelineState>{*this}
   };
 }
