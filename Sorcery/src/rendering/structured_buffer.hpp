@@ -54,8 +54,6 @@ auto StructuredBuffer<T>::GetData() const noexcept -> std::span<T> {
 
 template<typename T>
 auto StructuredBuffer<T>::Resize(UINT const new_size) -> void {
-  assert(!mapped_ptr_);
-
   auto new_capacity = capacity_;
 
   while (new_capacity < new_size) {
@@ -85,6 +83,6 @@ auto StructuredBuffer<T>::RecreateBuffer() -> void {
   buffer_ = device_->CreateBuffer(graphics::BufferDesc{
     static_cast<UINT>(capacity_ * sizeof(T)), sizeof(T), false, true, false
   }, cpu_accessible_ ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT);
-  mapped_ptr_ = static_cast<T*>(buffer_->Map());
+  mapped_ptr_ = static_cast<T*>(cpu_accessible_ ? buffer_->Map() : nullptr);
 }
 }
