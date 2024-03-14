@@ -4,20 +4,21 @@
 #ifdef __cplusplus
 #include "Math.hpp"
 #include <cstdint>
+#define row_major
 using float4x4 = sorcery::Matrix4;
-using float4 = sorcery::Vector4;
 using float2 = sorcery::Vector2;
 using uint = std::uint32_t;
 #endif
 
+// This should match ImDrawVert
 struct VertexData {
   float2 pos_os;
   float2 uv;
-  float4 col;
+  uint col;
 };
 
 struct ImGuiDrawParams {
-  float4x4 proj_mtx;
+  row_major float4x4 proj_mtx;
   uint vb_idx;
   uint tex_idx;
   uint samp_idx;

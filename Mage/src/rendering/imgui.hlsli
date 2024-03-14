@@ -19,7 +19,8 @@ VertexOut VsMain(const uint vertex_id : SV_VertexID) {
 
   VertexOut vertex_out;
   vertex_out.pos_cs = mul(float4(vertex_data.pos_os, 0, 1), g_draw_params.proj_mtx);
-  vertex_out.color = vertex_data.col;
+  vertex_out.color = float4(vertex_data.col & 0xFF, vertex_data.col >> 8 & 0xFF, vertex_data.col >> 16 & 0xFF,
+                       vertex_data.col >> 24 & 0xFF) / 255;
   vertex_out.uv = vertex_data.uv;
   return vertex_out;
 }

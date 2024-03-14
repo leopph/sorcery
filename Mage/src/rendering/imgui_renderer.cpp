@@ -124,6 +124,13 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, Window const& win
 
   std::ignore = cmd.UpdateSubresources(*fonts_tex_, *fonts_upload_buf, 0, 0, 1, &fonts_upload_data);
 
+  cmd.Barrier({}, {}, std::array{
+    graphics::TextureBarrier{
+      D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
+      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, fonts_tex_.get(), {0, 1, 0, 1, 0, 1},
+      D3D12_TEXTURE_BARRIER_FLAG_DISCARD
+    }
+  });
 
   if (!cmd.End()) {
     throw std::runtime_error{"Failed to end command list for font texture upload."};
@@ -155,10 +162,10 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
   auto& vb{vtx_buffers_[frame_idx]};
   auto& vb_ptr{(vb_ptrs_[frame_idx])};
 
-  if (!vb || vb->GetDesc().Width < draw_data->TotalVtxCount) {
+  if (auto const vtx_data_byte_size{draw_data->TotalVtxCount * sizeof(ImDrawVert)};
+    !vb || vb->GetDesc().Width < vtx_data_byte_size) {
     vb = device_->CreateBuffer(graphics::BufferDesc{
-      static_cast<UINT>(draw_data->TotalVtxCount * sizeof(VertexData)), static_cast<UINT>(sizeof(VertexData)), false,
-      true, false
+      vtx_data_byte_size, static_cast<UINT>(sizeof(ImDrawVert)), false, true, false
     }, D3D12_HEAP_TYPE_UPLOAD);
     vb_ptr = vb->Map();
   }
@@ -166,11 +173,10 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
   auto& ib{idx_buffers_[frame_idx]};
   auto& ib_ptr{ib_ptrs_[frame_idx]};
 
-  if (!ib || ib->GetDesc().Width < draw_data->TotalIdxCount) {
-    ib = device_->CreateBuffer(graphics::BufferDesc{
-      static_cast<UINT>(draw_data->TotalIdxCount * sizeof(ImDrawIdx)), static_cast<UINT>(sizeof(ImDrawIdx)), false,
-      false, false
-    }, D3D12_HEAP_TYPE_UPLOAD);
+  if (auto const idx_data_byte_size{draw_data->TotalIdxCount * sizeof(ImDrawIdx)};
+    !ib || ib->GetDesc().Width < idx_data_byte_size) {
+    ib = device_->CreateBuffer(graphics::BufferDesc{idx_data_byte_size, 0, false, false, false},
+      D3D12_HEAP_TYPE_UPLOAD);
     ib_ptr = ib->Map();
   }
 
@@ -183,6 +189,17 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
       }
     }()
   };
+
+  auto vtx_dst{static_cast<ImDrawVert*>(vb_ptr)};
+  auto idx_dst{static_cast<ImDrawIdx*>(ib_ptr)};
+
+  for (auto i{0}; i < draw_data->CmdListsCount; i++) {
+    auto const imgui_cmd{draw_data->CmdLists[i]};
+    std::memcpy(vtx_dst, imgui_cmd->VtxBuffer.Data, imgui_cmd->VtxBuffer.Size * sizeof(ImDrawVert));
+    std::memcpy(idx_dst, imgui_cmd->IdxBuffer.Data, imgui_cmd->IdxBuffer.Size * sizeof(ImDrawIdx));
+    vtx_dst += imgui_cmd->VtxBuffer.Size;
+    idx_dst += imgui_cmd->IdxBuffer.Size;
+  }
 
   auto& cmd{render_manager_->AcquireCommandList()};
 
@@ -214,16 +231,7 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
     CD3DX12_VIEWPORT{0.0f, 0.0f, draw_data->DisplaySize.x, draw_data->DisplaySize.y}
   });
 
-  auto vtx_dst{static_cast<VertexData*>(vb_ptr)};
-  auto idx_dst{static_cast<ImDrawIdx*>(ib_ptr)};
-
-  for (auto i{0}; i < draw_data->CmdListsCount; i++) {
-    auto const imgui_cmd{draw_data->CmdLists[i]};
-    std::memcpy(vtx_dst, imgui_cmd->VtxBuffer.Data, imgui_cmd->VtxBuffer.Size * sizeof(VertexData));
-    std::memcpy(idx_dst, imgui_cmd->IdxBuffer.Data, imgui_cmd->IdxBuffer.Size * sizeof(ImDrawIdx));
-    vtx_dst += imgui_cmd->VtxBuffer.Size;
-    idx_dst += imgui_cmd->IdxBuffer.Size;
-  }
+  cmd.ClearRenderTarget(rt, std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
 
   // Render command lists
   // (Because we merged all buffers into a single one, we maintain our own offset into them)
