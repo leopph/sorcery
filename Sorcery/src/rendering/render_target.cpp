@@ -38,7 +38,7 @@ auto RenderTarget::New(graphics::GraphicsDevice& device, Desc const& desc) -> st
       graphics::TextureDimension::k2D, desc.width, desc.height, 1, 1, *desc.depth_stencil_format,
       DXGI_SAMPLE_DESC{desc.sample_count, 0}, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL, true, false, true,
       desc.enable_unordered_access
-    }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_RENDER_TARGET, &clear_value);
+    }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, &clear_value);
 
     std::ignore = depth_stencil_tex->SetDebugName(desc.debug_name + L" - Depth-Stencil Texture");
   }
