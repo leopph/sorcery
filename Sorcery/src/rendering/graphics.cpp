@@ -1148,7 +1148,7 @@ auto CommandList::Barrier(std::span<GlobalBarrier const> const global_barriers,
     });
   }
 
-  if (!buffers.empty()) {
+  if (!buffer_barriers.empty()) {
     std::ranges::transform(buffer_barriers, std::back_inserter(buffers), [](BufferBarrier const& barrier) {
       return D3D12_BUFFER_BARRIER{
         barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after,
@@ -1161,7 +1161,7 @@ auto CommandList::Barrier(std::span<GlobalBarrier const> const global_barriers,
     });
   }
 
-  if (!textures.empty()) {
+  if (!texture_barriers.empty()) {
     std::ranges::transform(texture_barriers, std::back_inserter(textures), [](TextureBarrier const& barrier) {
       return D3D12_TEXTURE_BARRIER{
         barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after, barrier.layout_before,
