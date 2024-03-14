@@ -1,18 +1,26 @@
 #include "render_manager.hpp"
 
 #include "../MemoryAllocation.hpp"
+#include "../Util.hpp"
 
 
 namespace sorcery::rendering {
 RenderManager::RenderManager(graphics::GraphicsDevice& device) :
-  device_{&device} {}
+  device_{&device},
+  in_flight_frames_fence_{device_->CreateFence(0)} {}
 
 
 auto RenderManager::BeginNewFrame() -> void {
+  ++frame_count_;
   frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
   next_cmd_list_idx_ = 0;
 
   ReleaseTempRenderTargets();
+}
+
+
+auto RenderManager::GetCurrentFrameCount() const -> UINT64 {
+  return frame_count_;
 }
 
 
@@ -188,6 +196,14 @@ auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byt
   }
 
   return true;
+}
+
+
+auto RenderManager::WaitForInFlightFrames() const -> bool {
+  if (!device_->SignalFence(*in_flight_frames_fence_, frame_count_)) {
+    return false;
+  }
+  return in_flight_frames_fence_->Wait(SatSub<UINT64>(frame_count_, max_gpu_queued_frames_));
 }
 
 

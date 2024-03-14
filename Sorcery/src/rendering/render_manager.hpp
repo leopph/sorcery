@@ -29,7 +29,9 @@ public:
 
   LEOPPHAPI auto BeginNewFrame() -> void;
 
+  [[nodiscard]] constexpr static auto GetMaxGpuQueuedFrames() -> UINT;
   [[nodiscard]] constexpr static auto GetMaxFramesInFlight() -> UINT;
+  [[nodiscard]] LEOPPHAPI auto GetCurrentFrameCount() const -> UINT64;
   [[nodiscard]] LEOPPHAPI auto GetCurrentFrameIndex() const -> UINT;
 
   [[nodiscard]] LEOPPHAPI auto AcquireCommandList() -> graphics::CommandList&;
@@ -39,6 +41,8 @@ public:
   [[nodiscard]] LEOPPHAPI auto LoadReadonlyTexture(
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
   [[nodiscard]] LEOPPHAPI auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> data) -> bool;
+
+  LEOPPHAPI auto WaitForInFlightFrames() const -> bool;
 
 private:
   struct TempRenderTargetRecord {
@@ -51,16 +55,25 @@ private:
   auto ReleaseTempRenderTargets() noexcept -> void;
 
   static UINT constexpr max_tmp_rt_age_{10};
-  static UINT constexpr max_frames_in_flight_{2};
+  static UINT constexpr max_gpu_queued_frames_{1};
+  static UINT constexpr max_frames_in_flight_{max_gpu_queued_frames_ + 1};
 
   ObserverPtr<graphics::GraphicsDevice> device_;
 
+  UINT64 frame_count_{0};
   UINT frame_idx_{0};
   UINT next_cmd_list_idx_{0};
 
   std::vector<std::array<graphics::SharedDeviceChildHandle<graphics::CommandList>, max_frames_in_flight_>> cmd_lists_;
   std::vector<TempRenderTargetRecord> tmp_render_targets_;
+
+  graphics::SharedDeviceChildHandle<graphics::Fence> in_flight_frames_fence_;
 };
+
+
+constexpr auto RenderManager::GetMaxGpuQueuedFrames() -> UINT {
+  return max_gpu_queued_frames_;
+}
 
 
 constexpr auto RenderManager::GetMaxFramesInFlight() -> UINT {

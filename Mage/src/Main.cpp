@@ -200,6 +200,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
         throw std::runtime_error{"Failed to present."};
       }
 
+      if (!render_manager->WaitForInFlightFrames()) {
+        throw std::runtime_error{"Failed to wait for in flight frames."};
+      }
+
       sorcery::GetTmpMemRes().Clear();
 
       sorcery::timing::OnFrameEnd();
