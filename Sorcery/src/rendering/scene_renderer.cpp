@@ -59,6 +59,7 @@ auto SceneRenderer::ExtractCurrentState(FramePacket& packet) const -> void {
   packet.light_data.clear();
   packet.mesh_data.clear();
   packet.submesh_data.clear();
+  packet.instance_data.clear();
   packet.cam_data.clear();
 
   packet.light_data.reserve(lights_.size());
@@ -1541,16 +1542,19 @@ auto SceneRenderer::Render() -> void {
         D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
         hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
       },
-      GetMultisamplingMode() == MultisamplingMode::kOff ?
-      graphics::TextureBarrier{
-        D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
-        D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE,
-        hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-      } : graphics::TextureBarrier{
-        D3D12_BARRIER_SYNC_COMPUTE_SHADING, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
-        D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE,
-        hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-      }
+      GetMultisamplingMode() == MultisamplingMode::kOff
+        ? graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
+          D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+          D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, hdr_rt->GetDepthStencilTex().get(), {0, 0},
+          D3D12_TEXTURE_BARRIER_FLAG_NONE
+        }
+        : graphics::TextureBarrier{
+          D3D12_BARRIER_SYNC_COMPUTE_SHADING, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
+          D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+          D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, hdr_rt->GetDepthStencilTex().get(), {0, 0},
+          D3D12_TEXTURE_BARRIER_FLAG_NONE
+        }
     });
 
     // TODO disable depth write if pre pass is enabled
@@ -1791,8 +1795,8 @@ auto SceneRenderer::SetNormalizedShadowCascadeSplit(int const idx, float const s
   float const clampMin{idx == 0 ? 0.0f : shadow_params_.normalized_cascade_splits[idx - 1]};
   float const clampMax{idx == splitCount - 1 ? 1.0f : shadow_params_.normalized_cascade_splits[idx + 1]};
 
-    shadow_params_.normalized_cascade_splits[idx] = std::clamp(split, clampMin, clampMax);
-  }
+  shadow_params_.normalized_cascade_splits[idx] = std::clamp(split, clampMin, clampMax);
+}
 
 
 auto SceneRenderer::IsVisualizingShadowCascades() const noexcept -> bool {
