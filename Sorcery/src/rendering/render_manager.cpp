@@ -198,7 +198,7 @@ auto RenderManager::CreateCommandLists(UINT const count) -> void {
     auto& arr{cmd_lists_.emplace_back()};
 
     for (UINT j{0}; j < max_frames_in_flight_; j++) {
-      arr[i] = device_->CreateCommandList();
+      arr[j] = device_->CreateCommandList();
     }
   }
 }

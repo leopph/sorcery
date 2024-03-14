@@ -899,7 +899,7 @@ auto SceneRenderer::CreatePerViewConstantBuffers(UINT const count) -> void {
 
     for (UINT j{0}; j < RenderManager::GetMaxFramesInFlight(); j++) {
       if (auto opt{ConstantBuffer<ShaderPerViewConstants>::New(*device_, true)}) {
-        arr[i] = std::move(*opt);
+        arr[j] = std::move(*opt);
       }
     }
   }
@@ -914,7 +914,7 @@ auto SceneRenderer::CreatePerDrawConstantBuffers(UINT const count) -> void {
 
     for (UINT j{0}; j < RenderManager::GetMaxFramesInFlight(); j++) {
       if (auto opt{ConstantBuffer<ShaderPerDrawConstants>::New(*device_, true)}) {
-        arr[i] = std::move(*opt);
+        arr[j] = std::move(*opt);
       }
     }
   }
