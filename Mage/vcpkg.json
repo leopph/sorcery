@@ -13,7 +13,7 @@
     {
       "name": "imgui",
       "features": [ "docking-experimental", "win32-binding" ],
-      "version>=": "1.89.9"
+      "version>=": "1.90.2"
     },
     {
       "name": "nativefiledialog",
