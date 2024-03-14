@@ -589,7 +589,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
         shadow_view_proj_matrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
 
         cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
-        cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, rt_idx), cascadeIdx);
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), cascadeIdx);
 
         D3D12_VIEWPORT const shadowViewport{
           0, 0, static_cast<float>(shadowMapSize), static_cast<float>(shadowMapSize), 0, 1
@@ -599,7 +599,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
         SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, ShadowCascadeBoundaries{}, Vector3{});
-        cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_view_cb_idx),
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx),
           per_view_cb.GetBuffer()->GetConstantBuffer());
 
         Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
@@ -617,12 +617,12 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
           SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
-          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, pos_buf_idx),
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
             frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
-          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, uv_buf_idx),
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
             frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
-          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
-          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_draw_cb_idx),
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
             per_draw_cb.GetBuffer()->GetConstantBuffer());
           cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
         }
@@ -638,8 +638,8 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
                                            SceneRenderer::FramePacket const& frame_packet,
                                            graphics::CommandList& cmd) -> void {
   cmd.SetPipelineState(*depth_only_pso_);
-  cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, rt_idx), 0);
-  cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
 
   cmd.SetRenderTargets({}, atlas.GetTex().get());
   cmd.ClearDepthStencil(*atlas.GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
@@ -664,7 +664,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
         SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, ShadowCascadeBoundaries{},
           Vector3{});
-        cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_view_cb_idx),
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx),
           per_view_cb.GetBuffer()->GetConstantBuffer());
 
         Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
@@ -682,12 +682,12 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
           auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
           SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
-          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, pos_buf_idx),
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
             frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
-          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, uv_buf_idx),
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
             frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
-          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
-          cmd.SetPipelineParameter(offsetof(DepthOnlyDrawParams, per_draw_cb_idx),
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
             per_draw_cb.GetBuffer()->GetConstantBuffer());
           cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
         }
@@ -705,10 +705,10 @@ auto SceneRenderer::DrawSkybox(graphics::CommandList& cmd) noexcept -> void {
   }
 
   cmd.SetPipelineState(*skybox_pso_);
-  cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, pos_buf_idx),
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, pos_buf_idx),
     g_engine_context.resource_manager->GetCubeMesh()->GetPositionBuffer()->GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, cubemap_idx), cubemap->GetTex()->GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, cubemap_idx), cubemap->GetTex()->GetShaderResource());
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
   // TODO set per view cb
   cmd.DrawIndexedInstanced(static_cast<UINT>(g_engine_context.resource_manager->GetCubeMesh()->GetIndexCount()), 1, 0,
     0, 0);
@@ -718,8 +718,8 @@ auto SceneRenderer::DrawSkybox(graphics::CommandList& cmd) noexcept -> void {
 auto SceneRenderer::PostProcess(graphics::Texture const& src, graphics::Texture const& dst,
                                 graphics::CommandList& cmd) const noexcept -> void {
   cmd.SetPipelineState(*post_process_pso_);
-  cmd.SetPipelineParameter(offsetof(PostProcessDrawParams, in_tex_idx), src.GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(PostProcessDrawParams, inv_gamma), *std::bit_cast<UINT*>(&inv_gamma_));
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx), src.GetShaderResource());
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, inv_gamma), *std::bit_cast<UINT*>(&inv_gamma_));
   cmd.SetRenderTargets(std::array{dst}, nullptr);
   cmd.DrawInstanced(3, 1, 0, 0);
 }
@@ -1205,22 +1205,22 @@ auto SceneRenderer::Render() -> void {
         auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
         SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
-        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, pos_buf_idx),
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, pos_buf_idx),
           frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
-        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, norm_buf_idx),
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, norm_buf_idx),
           frame_packet.buffers[mesh.norm_buf_local_idx]->GetShaderResource());
-        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, tan_buf_idx),
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, tan_buf_idx),
           frame_packet.buffers[mesh.tan_buf_local_idx]->GetShaderResource());
-        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, uv_buf_idx),
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, uv_buf_idx),
           frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
-        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
-        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, samp_idx), samp_af16_wrap_.Get());
-        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, rt_idx), 0);
-        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_draw_cb_idx),
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, samp_idx), samp_af16_wrap_.Get());
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, rt_idx), 0);
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_draw_cb_idx),
           per_draw_cb.GetBuffer()->GetConstantBuffer());
-        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_view_cb_idx),
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_view_cb_idx),
           cam_per_view_cb.GetBuffer()->GetConstantBuffer());
-        cmd.SetPipelineParameter(offsetof(DepthNormalDrawParams, per_frame_cb_idx),
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_frame_cb_idx),
           per_frame_cb.GetBuffer()->GetConstantBuffer());
       }
 
@@ -1255,9 +1255,9 @@ auto SceneRenderer::Render() -> void {
           auto const ssao_depth_rt{render_manager_->GetTemporaryRenderTarget(ssao_depth_rt_desc)};
 
           cmd.SetPipelineState(*depth_resolve_pso_);
-          cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, in_tex_idx),
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthResolveDrawParams, in_tex_idx),
             ssao_depth_rt->GetColorTex()->GetUnorderedAccess());
-          cmd.SetPipelineParameter(offsetof(DepthResolveDrawParams, out_tex_idx),
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthResolveDrawParams, out_tex_idx),
             hdr_rt->GetColorTex()->GetUnorderedAccess());
           cmd.Dispatch(
             static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.width) / DEPTH_RESOLVE_CS_THREADS_X)),
@@ -1269,20 +1269,20 @@ auto SceneRenderer::Render() -> void {
       };
 
       cmd.SetPipelineState(*ssao_pso_);
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, noise_tex_idx), ssao_noise_tex_->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, depth_tex_idx), ssao_depth_tex->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, normal_tex_idx), normal_rt->GetColorTex()->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, samp_buf_idx),
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx), ssao_noise_tex_->GetShaderResource());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, depth_tex_idx), ssao_depth_tex->GetShaderResource());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, normal_tex_idx), normal_rt->GetColorTex()->GetShaderResource());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx),
         ssao_samples_buffer_.GetBuffer()->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, point_wrap_samp_idx), samp_point_wrap_.Get());
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, radius), *std::bit_cast<UINT*>(&ssao_params_.radius));
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, bias), *std::bit_cast<UINT*>(&ssao_params_.bias));
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, power), *std::bit_cast<UINT*>(&ssao_params_.power));
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, sample_count), ssao_params_.sample_count);
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_view_cb_idx),
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_wrap_samp_idx), samp_point_wrap_.Get());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, radius), *std::bit_cast<UINT*>(&ssao_params_.radius));
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, bias), *std::bit_cast<UINT*>(&ssao_params_.bias));
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, power), *std::bit_cast<UINT*>(&ssao_params_.power));
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, sample_count), ssao_params_.sample_count);
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_view_cb_idx),
         cam_per_view_cb.GetBuffer()->GetConstantBuffer());
-      cmd.SetPipelineParameter(offsetof(SsaoDrawParams, per_frame_cb_idx),
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx),
         per_frame_cb.GetBuffer()->GetConstantBuffer());
       cmd.SetRenderTargets(std::span{ssao_rt->GetColorTex().get(), 1}, nullptr);
       cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
@@ -1297,9 +1297,9 @@ auto SceneRenderer::Render() -> void {
       };
 
       cmd.SetPipelineState(*ssao_blur_pso_);
-      cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, in_tex_idx),
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, in_tex_idx),
         ssao_blur_rt->GetColorTex()->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(SsaoBlurDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
       cmd.SetRenderTargets(std::span{ssao_blur_rt->GetColorTex().get(), 1}, nullptr);
       cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
       cmd.DrawInstanced(3, 1, 0, 0);
@@ -1353,18 +1353,18 @@ auto SceneRenderer::Render() -> void {
     punctual_shadow_atlas_->SetLookUpInfo(light_buffer_data);
 
     cmd.SetPipelineState(*object_pso_);
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, ssao_tex_idx), ssao_tex->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, light_buf_idx), light_buffer.GetBuffer()->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, dir_shadow_arr_idx),
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, ssao_tex_idx), ssao_tex->GetShaderResource());
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, light_buf_idx), light_buffer.GetBuffer()->GetShaderResource());
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, dir_shadow_arr_idx),
       dir_shadow_map_arr_->GetTex()->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, punc_shadow_atlas_idx),
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, punc_shadow_atlas_idx),
       punctual_shadow_atlas_->GetTex()->GetShaderResource());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_view_cb_idx),
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_view_cb_idx),
       cam_per_view_cb.GetBuffer()->GetConstantBuffer());
-    cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_frame_cb_idx),
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_frame_cb_idx),
       per_frame_cb.GetBuffer()->GetConstantBuffer());
     cmd.SetRenderTargets(std::span{hdr_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
 
@@ -1377,16 +1377,16 @@ auto SceneRenderer::Render() -> void {
       auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
       SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
-      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, pos_buf_idx),
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, pos_buf_idx),
         frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, norm_buf_idx),
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, norm_buf_idx),
         frame_packet.buffers[mesh.norm_buf_local_idx]->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, tan_buf_idx),
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, tan_buf_idx),
         frame_packet.buffers[mesh.tan_buf_local_idx]->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, uv_buf_idx),
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, uv_buf_idx),
         frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
-      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
-      cmd.SetPipelineParameter(offsetof(ObjectDrawParams, per_draw_cb_idx),
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_draw_cb_idx),
         per_draw_cb.GetBuffer()->GetConstantBuffer());
     }
 
@@ -1435,9 +1435,9 @@ auto SceneRenderer::DrawGizmos(RenderTarget const* const rt) -> void {
 
   auto& cmd{render_manager_->AcquireCommandList()};
   cmd.SetPipelineState(*line_gizmo_pso_);
-  cmd.SetPipelineParameter(offsetof(GizmoDrawParams, vertex_buf_idx),
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, vertex_buf_idx),
     line_gizmo_vertex_data_buffer_.GetBuffer()->GetShaderResource());
-  cmd.SetPipelineParameter(offsetof(GizmoDrawParams, color_buf_idx),
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, color_buf_idx),
     gizmo_color_buffer_.GetBuffer()->GetShaderResource());
   // TODO set per view cb
 

@@ -21,6 +21,9 @@
 #include <unordered_map>
 #include <vector>
 
+// Returns the index of the member if all the pipeline parameters are considered a single buffer of the specified type.
+#define PIPELINE_PARAM_INDEX(BufferType, MemberName) offsetof(BufferType, MemberName) / 4
+
 
 namespace sorcery::graphics {
 class GraphicsDevice;
@@ -203,21 +206,24 @@ class GraphicsDevice {
 public:
   [[nodiscard]] LEOPPHAPI static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
 
-  [[nodiscard]] LEOPPHAPI auto CreateBuffer(BufferDesc const& desc, D3D12_HEAP_TYPE heap_type) -> SharedDeviceChildHandle<Buffer>;
+  [[nodiscard]] LEOPPHAPI auto CreateBuffer(BufferDesc const& desc,
+                                            D3D12_HEAP_TYPE heap_type) -> SharedDeviceChildHandle<Buffer>;
   [[nodiscard]] LEOPPHAPI auto CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE heap_type,
-                                   D3D12_BARRIER_LAYOUT initial_layout,
-                                   D3D12_CLEAR_VALUE const* clear_value) -> SharedDeviceChildHandle<Texture>;
+                                             D3D12_BARRIER_LAYOUT initial_layout,
+                                             D3D12_CLEAR_VALUE const* clear_value) -> SharedDeviceChildHandle<Texture>;
   [[nodiscard]] LEOPPHAPI auto CreatePipelineState(PipelineDesc const& desc,
-                                         std::uint8_t num_32_bit_params) -> SharedDeviceChildHandle<PipelineState>;
+                                                   std::uint8_t num_32_bit_params) -> SharedDeviceChildHandle<
+    PipelineState>;
   [[nodiscard]] LEOPPHAPI auto CreateCommandList() -> SharedDeviceChildHandle<CommandList>;
   [[nodiscard]] LEOPPHAPI auto CreateFence(UINT64 initial_value) -> SharedDeviceChildHandle<Fence>;
   [[nodiscard]] LEOPPHAPI auto CreateSwapChain(SwapChainDesc const& desc,
-                                     HWND window_handle) -> SharedDeviceChildHandle<SwapChain>;
+                                               HWND window_handle) -> SharedDeviceChildHandle<SwapChain>;
   [[nodiscard]] LEOPPHAPI auto CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle;
   LEOPPHAPI auto CreateAliasingResources(std::span<BufferDesc const> buffer_descs,
-                               std::span<AliasedTextureCreateInfo const> texture_infos, D3D12_HEAP_TYPE heap_type,
-                               std::pmr::vector<SharedDeviceChildHandle<Buffer>>* buffers,
-                               std::pmr::vector<SharedDeviceChildHandle<Texture>>* textures) -> void;
+                                         std::span<AliasedTextureCreateInfo const> texture_infos,
+                                         D3D12_HEAP_TYPE heap_type,
+                                         std::pmr::vector<SharedDeviceChildHandle<Buffer>>* buffers,
+                                         std::pmr::vector<SharedDeviceChildHandle<Texture>>* textures) -> void;
 
   LEOPPHAPI auto DestroyBuffer(Buffer const* buffer) -> void;
   LEOPPHAPI auto DestroyTexture(Texture const* texture) -> void;
@@ -355,25 +361,29 @@ public:
   [[nodiscard]] LEOPPHAPI auto Begin(PipelineState const* pipeline_state) -> bool;
   [[nodiscard]] LEOPPHAPI auto End() const -> bool;
   LEOPPHAPI auto Barrier(std::span<GlobalBarrier const> global_barriers, std::span<BufferBarrier const> buffer_barriers,
-               std::span<TextureBarrier const> texture_barriers) const -> void;
+                         std::span<TextureBarrier const> texture_barriers) const -> void;
   LEOPPHAPI auto ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth, UINT8 stencil,
-                         std::span<D3D12_RECT const> rects) const -> void;
+                                   std::span<D3D12_RECT const> rects) const -> void;
   LEOPPHAPI auto ClearRenderTarget(Texture const& tex, std::span<FLOAT const, 4> color_rgba,
-                         std::span<D3D12_RECT const> rects) const -> void;
+                                   std::span<D3D12_RECT const> rects) const -> void;
   LEOPPHAPI auto CopyBuffer(Buffer const& dst, Buffer const& src) const -> void;
   LEOPPHAPI auto CopyBufferRegion(Buffer const& dst, UINT64 dst_offset, Buffer const& src, UINT64 src_offset,
-                        UINT64 num_bytes) const -> void;
+                                  UINT64 num_bytes) const -> void;
   LEOPPHAPI auto CopyTexture(Texture const& dst, Texture const& src) const -> void;
   LEOPPHAPI auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
-                         Texture const& src, UINT src_subresource_index, D3D12_BOX const* src_box) const -> void;
+                                   Texture const& src, UINT src_subresource_index,
+                                   D3D12_BOX const* src_box) const -> void;
   LEOPPHAPI auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
-                         Buffer const& src, D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void;
-  LEOPPHAPI auto Dispatch(UINT thread_group_count_x, UINT thread_group_count_y, UINT thread_group_count_z) const -> void;
-  LEOPPHAPI auto DispatchMesh(UINT thread_group_count_x, UINT thread_group_count_y, UINT thread_group_count_z) const -> void;
+                                   Buffer const& src,
+                                   D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void;
+  LEOPPHAPI auto Dispatch(UINT thread_group_count_x, UINT thread_group_count_y,
+                          UINT thread_group_count_z) const -> void;
+  LEOPPHAPI auto DispatchMesh(UINT thread_group_count_x, UINT thread_group_count_y,
+                              UINT thread_group_count_z) const -> void;
   LEOPPHAPI auto DrawIndexedInstanced(UINT index_count_per_instance, UINT instance_count, UINT start_index_location,
-                            INT base_vertex_location, UINT start_instance_location) const -> void;
+                                      INT base_vertex_location, UINT start_instance_location) const -> void;
   LEOPPHAPI auto DrawInstanced(UINT vertex_count_per_instance, UINT instance_count, UINT start_vertex_location,
-                     UINT start_instance_location) const -> void;
+                               UINT start_instance_location) const -> void;
   LEOPPHAPI auto Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT format) const -> void;
   LEOPPHAPI auto SetBlendFactor(std::span<FLOAT const, 4> blend_factor) const -> void;
   LEOPPHAPI auto SetIndexBuffer(Buffer const& buf, DXGI_FORMAT index_format) const -> void;
@@ -385,9 +395,11 @@ public:
   LEOPPHAPI auto SetPipelineParameter(UINT index, UINT value) const -> void;
   LEOPPHAPI auto SetPipelineParameters(UINT index, std::span<UINT const> values) const -> void;
   LEOPPHAPI auto SetPipelineState(PipelineState const& pipeline_state) -> void;
-  LEOPPHAPI auto SetStreamOutputTargets(UINT start_slot, std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
-  LEOPPHAPI auto UpdateSubresources(Resource const& dst, Buffer const& upload_buf, UINT64 buf_offset, UINT first_subresource,
-                          UINT num_subresources, D3D12_SUBRESOURCE_DATA const* src_data) const -> UINT64;
+  LEOPPHAPI auto SetStreamOutputTargets(UINT start_slot,
+                                        std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
+  LEOPPHAPI auto UpdateSubresources(Resource const& dst, Buffer const& upload_buf, UINT64 buf_offset,
+                                    UINT first_subresource, UINT num_subresources,
+                                    D3D12_SUBRESOURCE_DATA const* src_data) const -> UINT64;
 
 private:
   auto SetRootSignature(std::uint8_t num_params) const -> void;
