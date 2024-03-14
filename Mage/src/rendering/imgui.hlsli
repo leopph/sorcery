@@ -13,7 +13,9 @@ struct VertexOut {
 };
 
 
-VertexOut VsMain(const uint vertex_id : SV_VertexID) {
+VertexOut VsMain(uint vertex_id : SV_VertexID) {
+  vertex_id += g_draw_params.base_vertex;
+
   const StructuredBuffer<VertexData> vertex_data_buf = ResourceDescriptorHeap[g_draw_params.vb_idx];
   const VertexData vertex_data = vertex_data_buf[vertex_id];
 

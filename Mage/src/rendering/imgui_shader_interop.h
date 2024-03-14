@@ -22,6 +22,7 @@ struct ImGuiDrawParams {
   uint vb_idx;
   uint tex_idx;
   uint samp_idx;
+  uint base_vertex;
 };
 
 #endif
