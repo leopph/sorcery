@@ -10,14 +10,9 @@
 namespace sorcery {
 class CameraComponent : public Component, public rendering::Camera {
   RTTR_ENABLE(Component)
-  NormalizedViewport mViewport{{0, 0}, {1, 1}};
   Vector4 mBackgroundColor{0, 0, 0, 1};
 
 public:
-  // Viewport extents are normalized between 0 and 1.
-  [[nodiscard]] LEOPPHAPI auto GetViewport() const -> NormalizedViewport const&;
-  LEOPPHAPI auto SetViewport(NormalizedViewport const& viewport) -> void;
-
   [[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const -> Vector4 const&;
   LEOPPHAPI auto SetBackgroundColor(Vector4 const& color) -> void;
 

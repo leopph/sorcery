@@ -157,7 +157,7 @@ auto SceneRenderer::ExtractCurrentState(FramePacket& packet) const -> void {
   for (auto const cam : game_render_cameras_) {
     packet.cam_data.emplace_back(cam->GetPosition(), cam->GetRightAxis(), cam->GetUpAxis(), cam->GetForwardAxis(),
       cam->GetNearClipPlane(), cam->GetFarClipPlane(), cam->GetType(), cam->GetVerticalPerspectiveFov(),
-      cam->GetVerticalOrthographicSize(), cam->GetRenderTarget());
+      cam->GetVerticalOrthographicSize(), cam->GetViewport(), cam->GetRenderTarget());
   }
 }
 
@@ -1213,7 +1213,22 @@ auto SceneRenderer::Render() -> void {
 
     auto const rt_width{target_rt_desc.width};
     auto const rt_height{target_rt_desc.height};
-    auto const rt_aspect{static_cast<float>(rt_width) / static_cast<float>(rt_height)};
+
+    CD3DX12_VIEWPORT const cam_viewport{
+      cam_data.viewport.left * static_cast<FLOAT>(rt_width),
+      cam_data.viewport.top * static_cast<float>(rt_height),
+      cam_data.viewport.right * static_cast<float>(rt_width) - cam_data.viewport.left * static_cast<FLOAT>(rt_width),
+      cam_data.viewport.bottom * static_cast<float>(rt_height) - cam_data.viewport.top * static_cast<float>(rt_height),
+    };
+
+    CD3DX12_RECT const cam_scissor{
+      static_cast<LONG>(cam_data.viewport.left * static_cast<FLOAT>(rt_width)),
+      static_cast<LONG>(cam_data.viewport.top * static_cast<FLOAT>(rt_height)),
+      static_cast<LONG>(cam_data.viewport.right * static_cast<FLOAT>(rt_width)),
+      static_cast<LONG>(cam_data.viewport.bottom * static_cast<FLOAT>(rt_height)),
+    };
+
+    auto const viewport_aspect{cam_viewport.Width / cam_viewport.Height};
 
     RenderTarget::Desc const hdr_rt_desc{
       rt_width, rt_height, color_buffer_format_, depth_format_, static_cast<UINT>(GetMultisamplingMode()),
@@ -1230,7 +1245,7 @@ auto SceneRenderer::Render() -> void {
     };
     auto const cam_proj_mtx{
       TransformProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(cam_data.type, cam_data.fov_vert_deg,
-        cam_data.size_vert, rt_aspect, cam_data.near_plane, cam_data.far_plane))
+        cam_data.size_vert, viewport_aspect, cam_data.near_plane, cam_data.far_plane))
     };
     auto const cam_view_proj_mtx{cam_view_mtx * cam_proj_mtx};
     Frustum const cam_frust_ws{cam_view_proj_mtx};
@@ -1243,7 +1258,7 @@ auto SceneRenderer::Render() -> void {
     // Shadow pass
     std::array<Matrix4, MAX_CASCADE_COUNT> shadow_view_proj_matrices;
     auto const shadow_cascade_boundaries{CalculateCameraShadowCascadeBoundaries(cam_data)};
-    DrawDirectionalShadowMaps(frame_packet, visible_light_indices, cam_data, rt_aspect, shadow_cascade_boundaries,
+    DrawDirectionalShadowMaps(frame_packet, visible_light_indices, cam_data, viewport_aspect, shadow_cascade_boundaries,
       shadow_view_proj_matrices, cmd);
 
     UpdatePunctualShadowAtlas(*punctual_shadow_atlas_, frame_packet.light_data, visible_light_indices, cam_data,
@@ -1268,11 +1283,8 @@ auto SceneRenderer::Render() -> void {
 
     cmd.ClearDepthStencil(*hdr_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
-    D3D12_VIEWPORT const viewport{0, 0, static_cast<FLOAT>(rt_width), static_cast<FLOAT>(rt_height), 0, 1};
-    D3D12_RECT const scissor{0, 0, static_cast<LONG>(rt_width), static_cast<LONG>(rt_height)};
-
-    cmd.SetViewports(std::array{viewport});
-    cmd.SetScissorRects(std::array{scissor});
+    cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&cam_viewport), 1});
+    cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
 
     auto const normal_rt{
       render_manager_->GetTemporaryRenderTarget(RenderTarget::Desc{
@@ -1716,8 +1728,8 @@ auto SceneRenderer::Render() -> void {
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx),
         cam_per_view_cb.GetBuffer()->GetConstantBuffer());
       cmd.SetRenderTargets(std::span{target_rt.GetColorTex().get(), 1}, nullptr);
-      cmd.SetViewports(std::span{&viewport, 1});
-      cmd.SetScissorRects(std::span{&scissor, 1});
+      cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&cam_viewport), 1});
+      cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
       cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
       cmd.DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);
     }

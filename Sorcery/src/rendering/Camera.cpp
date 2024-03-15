@@ -1,43 +1,45 @@
 #include "Camera.hpp"
 
+#include <algorithm>
+
 
 namespace sorcery::rendering {
 auto Camera::GetNearClipPlane() const noexcept -> float {
-  return mNear;
+  return near_;
 }
 
 
 auto Camera::SetNearClipPlane(float const near_clip_plane) noexcept -> void {
   if (GetType() == Type::Perspective) {
-    mNear = std::max(near_clip_plane, MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE);
+    near_ = std::max(near_clip_plane, MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE);
     SetFarClipPlane(GetFarClipPlane());
   } else {
-    mNear = near_clip_plane;
+    near_ = near_clip_plane;
   }
 }
 
 
 auto Camera::GetFarClipPlane() const noexcept -> float {
-  return mFar;
+  return far_;
 }
 
 
 auto Camera::SetFarClipPlane(float const far_clip_plane) noexcept -> void {
   if (GetType() == Type::Perspective) {
-    mFar = std::max(far_clip_plane, mNear + MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET);
+    far_ = std::max(far_clip_plane, near_ + MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET);
   } else {
-    mFar = far_clip_plane;
+    far_ = far_clip_plane;
   }
 }
 
 
 auto Camera::GetType() const noexcept -> Type {
-  return mType;
+  return type_;
 }
 
 
 auto Camera::SetType(Type const type) noexcept -> void {
-  mType = type;
+  type_ = type;
 
   if (type == Type::Perspective) {
     SetNearClipPlane(GetNearClipPlane());
@@ -46,24 +48,24 @@ auto Camera::SetType(Type const type) noexcept -> void {
 
 
 auto Camera::GetVerticalPerspectiveFov() const -> float {
-  return mVertPerspFovDeg;
+  return vert_persp_fov_deg_;
 }
 
 
 auto Camera::SetVerticalPerspectiveFov(float degrees) -> void {
   degrees = std::max(degrees, MINIMUM_PERSPECTIVE_VERTICAL_FOV);
-  mVertPerspFovDeg = degrees;
+  vert_persp_fov_deg_ = degrees;
 }
 
 
 auto Camera::GetVerticalOrthographicSize() const -> float {
-  return mVertOrhoSize;
+  return vert_orho_size_;
 }
 
 
 auto Camera::SetVerticalOrthographicSize(float size) -> void {
   size = std::max(size, MINIMUM_ORTHOGRAPHIC_VERTICAL_SIZE);
-  mVertOrhoSize = size;
+  vert_orho_size_ = size;
 }
 
 
@@ -74,6 +76,19 @@ auto Camera::GetRenderTarget() const -> std::shared_ptr<RenderTarget> const& {
 
 auto Camera::SetRenderTarget(std::shared_ptr<RenderTarget> rt) -> void {
   render_target_ = std::move(rt);
+}
+
+
+auto Camera::GetViewport() const -> NormalizedViewport const& {
+  return viewport_;
+}
+
+
+auto Camera::SetViewport(NormalizedViewport const& viewport) -> void {
+  viewport_.left = std::clamp(viewport.left, 0.0f, 1.0f);
+  viewport_.top = std::clamp(viewport.top, 0.0f, 1.0f);
+  viewport_.right = std::clamp(viewport.right, 0.0f, 1.0f);
+  viewport_.bottom = std::clamp(viewport.bottom, 0.0f, 1.0f);
 }
 
 

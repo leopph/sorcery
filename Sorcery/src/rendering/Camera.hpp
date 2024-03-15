@@ -1,8 +1,9 @@
 #pragma once
 
+#include "render_target.hpp"
 #include "../Core.hpp"
 #include "../Math.hpp"
-#include "render_target.hpp"
+#include "../Util.hpp"
 
 #include <cstdint>
 
@@ -15,20 +16,17 @@ public:
     Orthographic = 1
   };
 
-private:
-  constexpr static float MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{0.01f};
-  constexpr static float MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET{0.1f};
-  constexpr static float MINIMUM_PERSPECTIVE_VERTICAL_FOV{5.0f};
-  constexpr static float MINIMUM_ORTHOGRAPHIC_VERTICAL_SIZE{0.1f};
 
-  float mNear{MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE};
-  float mFar{100.f};
-  float mVertOrhoSize{10};
-  float mVertPerspFovDeg{60};
-  Type mType{Type::Perspective};
-  std::shared_ptr<RenderTarget> render_target_{nullptr};
+  Camera() = default;
+  Camera(Camera const& other) = default;
+  Camera(Camera&& other) noexcept = default;
 
-public:
+  virtual ~Camera() = default;
+
+  auto operator=(Camera const& other) -> Camera& = default;
+  auto operator=(Camera&& other) noexcept -> Camera& = default;
+
+
   [[nodiscard]] virtual auto GetPosition() const noexcept -> Vector3 = 0;
   [[nodiscard]] virtual auto GetRightAxis() const noexcept -> Vector3 = 0;
   [[nodiscard]] virtual auto GetUpAxis() const noexcept -> Vector3 = 0;
@@ -52,6 +50,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetRenderTarget() const -> std::shared_ptr<RenderTarget> const&;
   LEOPPHAPI auto SetRenderTarget(std::shared_ptr<RenderTarget> rt) -> void;
 
+  [[nodiscard]] LEOPPHAPI auto GetViewport() const -> NormalizedViewport const&;
+  LEOPPHAPI auto SetViewport(NormalizedViewport const& viewport) -> void;
+
   [[nodiscard]] LEOPPHAPI auto CalculateViewMatrix() const noexcept -> Matrix4;
   [[nodiscard]] LEOPPHAPI auto CalculateProjectionMatrix(float aspect_ratio) const noexcept -> Matrix4;
 
@@ -66,13 +67,18 @@ public:
                                                                 float aspect_ratio, float near_plane,
                                                                 float far_plane) -> Matrix4;
 
-  Camera() = default;
-  Camera(Camera const& other) = default;
-  Camera(Camera&& other) noexcept = default;
+private:
+  constexpr static float MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{0.01f};
+  constexpr static float MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET{0.1f};
+  constexpr static float MINIMUM_PERSPECTIVE_VERTICAL_FOV{5.0f};
+  constexpr static float MINIMUM_ORTHOGRAPHIC_VERTICAL_SIZE{0.1f};
 
-  auto operator=(Camera const& other) -> Camera& = default;
-  auto operator=(Camera&& other) noexcept -> Camera& = default;
-
-  virtual ~Camera() = default;
+  float near_{MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE};
+  float far_{100.f};
+  float vert_orho_size_{10};
+  float vert_persp_fov_deg_{60};
+  Type type_{Type::Perspective};
+  std::shared_ptr<RenderTarget> render_target_{nullptr};
+  NormalizedViewport viewport_{0, 0, 1, 1};
 };
 }

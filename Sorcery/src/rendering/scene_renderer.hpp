@@ -192,6 +192,8 @@ private:
     float fov_vert_deg;
     float size_vert;
 
+    NormalizedViewport viewport;
+
     std::shared_ptr<RenderTarget> render_target;
   };
 

@@ -1,8 +1,18 @@
 #include "Util.hpp"
 
+#include "Reflection.hpp"
+
 #include <cctype>
 #include <format>
 #include <stdexcept>
+
+
+RTTR_REGISTRATION {
+  rttr::registration::class_<sorcery::NormalizedViewport>{"NormalizedViewport"}.
+    constructor()(rttr::policy::ctor::as_object).property("left", &sorcery::NormalizedViewport::left).
+    property("top", &sorcery::NormalizedViewport::top).property("right", &sorcery::NormalizedViewport::right).property(
+      "bottom", &sorcery::NormalizedViewport::bottom);
+}
 
 
 namespace sorcery {
@@ -33,9 +43,14 @@ auto Contains(std::string_view const src, std::string_view const target) -> bool
 }
 
 
-auto CalculateNormals(std::span<Vector3 const> const positions, std::span<unsigned const> const indices, std::vector<Vector3>& out) -> std::vector<Vector3>& {
+auto CalculateNormals(std::span<Vector3 const> const positions, std::span<unsigned const> const indices,
+                      std::vector<Vector3>& out) -> std::vector<Vector3>& {
   if (indices.size() % 3 != 0) {
-    throw std::runtime_error{std::format("Cannot calculate normals because the number of indices ({}) is not divisible by 3. The calculation is only supported over triangle lists.", indices.size())};
+    throw std::runtime_error{
+      std::format(
+        "Cannot calculate normals because the number of indices ({}) is not divisible by 3. The calculation is only supported over triangle lists.",
+        indices.size())
+    };
   }
 
   out.resize(positions.size());
@@ -58,9 +73,14 @@ auto CalculateNormals(std::span<Vector3 const> const positions, std::span<unsign
 }
 
 
-auto CalculateTangents(std::span<Vector3 const> const positions, std::span<Vector2 const> const uvs, std::span<unsigned const> const indices, std::vector<Vector3>& out) -> void {
+auto CalculateTangents(std::span<Vector3 const> const positions, std::span<Vector2 const> const uvs,
+                       std::span<unsigned const> const indices, std::vector<Vector3>& out) -> void {
   if (indices.size() % 3 != 0) {
-    throw std::runtime_error{std::format("Cannot calculate tangents because the number of indices ({}) is not divisible by 3. The calculation is only supported over triangle lists.", indices.size())};
+    throw std::runtime_error{
+      std::format(
+        "Cannot calculate tangents because the number of indices ({}) is not divisible by 3. The calculation is only supported over triangle lists.",
+        indices.size())
+    };
   }
 
   out.resize(positions.size());
@@ -135,10 +155,13 @@ auto ToLower(std::string_view const str) -> std::string {
 }
 
 
-bool IsSubpath(std::filesystem::path const& path, std::filesystem::path const& base) {
+auto IsSubpath(std::filesystem::path const& path, std::filesystem::path const& base) -> bool {
   auto const canonicalPath{weakly_canonical(path)};
   auto const canonicalBase{weakly_canonical(base)};
-  auto const [pathIt, baseIt]{std::mismatch(std::begin(canonicalPath), std::end(canonicalPath), std::begin(canonicalBase), std::end(canonicalBase))};
+  auto const [pathIt, baseIt]{
+    std::mismatch(std::begin(canonicalPath), std::end(canonicalPath), std::begin(canonicalBase),
+      std::end(canonicalBase))
+  };
   return baseIt == std::end(canonicalBase);
 }
 }

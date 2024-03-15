@@ -37,8 +37,10 @@ struct Viewport {
 
 
 struct NormalizedViewport {
-  Point2D<float> position;
-  Extent2D<float> extent;
+  float left;
+  float top;
+  float right;
+  float bottom;
 };
 
 
