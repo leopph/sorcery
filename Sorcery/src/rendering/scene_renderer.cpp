@@ -1455,7 +1455,7 @@ auto SceneRenderer::Render() -> void {
 
       cmd.SetPipelineState(*ssao_blur_pso_);
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, in_tex_idx),
-        ssao_blur_rt->GetColorTex()->GetShaderResource());
+        ssao_rt->GetColorTex()->GetShaderResource());
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
       cmd.SetRenderTargets(std::span{ssao_blur_rt->GetColorTex().get(), 1}, nullptr);
       cmd.Barrier({}, {}, std::array{
