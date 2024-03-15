@@ -783,8 +783,13 @@ auto SceneRenderer::RecreatePipelines() -> bool {
     return false;
   }
 
-  CD3DX12_DEPTH_STENCIL_DESC1 const reverse_z_depth_stencil{
+  CD3DX12_DEPTH_STENCIL_DESC1 const reverse_z_depth_stencil_write{
     TRUE, D3D12_DEPTH_WRITE_MASK_ALL, D3D12_COMPARISON_FUNC_GREATER, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+    FALSE
+  };
+
+  CD3DX12_DEPTH_STENCIL_DESC1 const reverse_z_depth_stencil_read{
+    TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     FALSE
   };
 
@@ -800,7 +805,7 @@ auto SceneRenderer::RecreatePipelines() -> bool {
   graphics::PipelineDesc const depth_normal_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{g_depth_normal_vs_bytes, ARRAYSIZE(g_depth_normal_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_depth_normal_ps_bytes, ARRAYSIZE(g_depth_normal_ps_bytes)},
-    .depth_stencil_state = reverse_z_depth_stencil, .ds_format = depth_format_,
+    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_,
     .rt_formats = CD3DX12_RT_FORMAT_ARRAY{D3D12_RT_FORMAT_ARRAY{{normal_buffer_format_}, 1}},
     .sample_desc = msaa_sample_desc
   };
@@ -810,7 +815,7 @@ auto SceneRenderer::RecreatePipelines() -> bool {
   graphics::PipelineDesc const depth_only_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{g_depth_only_vs_bytes, ARRAYSIZE(g_depth_only_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
-    .depth_stencil_state = reverse_z_depth_stencil, .ds_format = depth_format_, .sample_desc = msaa_sample_desc
+    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_, .sample_desc = msaa_sample_desc
   };
 
   depth_only_pso_ = device_->CreatePipelineState(depth_only_pso_desc, sizeof(DepthOnlyDrawParams) / 4);
@@ -829,14 +834,23 @@ auto SceneRenderer::RecreatePipelines() -> bool {
 
   line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
 
-  graphics::PipelineDesc const object_pso_desc{
+  graphics::PipelineDesc const object_pso_depth_write_desc{
     .vs = CD3DX12_SHADER_BYTECODE{g_object_pbr_vs_bytes, ARRAYSIZE(g_object_pbr_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_object_pbr_ps_bytes, ARRAYSIZE(g_object_pbr_ps_bytes)},
-    .depth_stencil_state = reverse_z_depth_stencil, .ds_format = depth_format_, .rt_formats = color_format,
+    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_, .rt_formats = color_format,
     .sample_desc = msaa_sample_desc,
   };
 
-  object_pso_ = device_->CreatePipelineState(object_pso_desc, sizeof(ObjectDrawParams) / 4);
+  object_pso_depth_write_ = device_->CreatePipelineState(object_pso_depth_write_desc, sizeof(ObjectDrawParams) / 4);
+
+  graphics::PipelineDesc const object_pso_depth_read_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{g_object_pbr_vs_bytes, ARRAYSIZE(g_object_pbr_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{g_object_pbr_ps_bytes, ARRAYSIZE(g_object_pbr_ps_bytes)},
+    .depth_stencil_state = reverse_z_depth_stencil_read, .ds_format = depth_format_, .rt_formats = color_format,
+    .sample_desc = msaa_sample_desc,
+  };
+
+  object_pso_depth_read_ = device_->CreatePipelineState(object_pso_depth_read_desc, sizeof(ObjectDrawParams) / 4);
 
   graphics::PipelineDesc const post_process_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_post_process_vs_bytes, ARRAYSIZE(g_post_process_vs_bytes)},
@@ -1029,9 +1043,8 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   });
 
   samp_bi_clamp_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
-    D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
-    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0,
-    std::numeric_limits<float>::max()
+    D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+    D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0, 1, D3D12_COMPARISON_FUNC_ALWAYS, {}, 0, std::numeric_limits<float>::max()
   });
 
   samp_point_clamp_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
@@ -1529,7 +1542,7 @@ auto SceneRenderer::Render() -> void {
       }
     });
 
-    cmd.SetPipelineState(*object_pso_);
+    cmd.SetPipelineState(depth_normal_pre_pass_enabled_ ? *object_pso_depth_read_ : *object_pso_depth_write_);
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
@@ -1546,6 +1559,17 @@ auto SceneRenderer::Render() -> void {
       per_frame_cb.GetBuffer()->GetConstantBuffer());
     cmd.SetRenderTargets(std::span{hdr_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
 
+    auto const forward_pass_depth_tex_access{
+      depth_normal_pre_pass_enabled_
+        ? D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ
+        : D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE
+    };
+    auto const forward_pass_depth_tex_layout{
+      depth_normal_pre_pass_enabled_
+        ? D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ
+        : D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE
+    };
+
     cmd.Barrier({}, {}, std::array{
       graphics::TextureBarrier{
         D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
@@ -1555,19 +1579,15 @@ auto SceneRenderer::Render() -> void {
       GetMultisamplingMode() == MultisamplingMode::kOff
         ? graphics::TextureBarrier{
           D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
-          D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
-          D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, hdr_rt->GetDepthStencilTex().get(), {0, 0},
-          D3D12_TEXTURE_BARRIER_FLAG_NONE
+          forward_pass_depth_tex_access, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, forward_pass_depth_tex_layout,
+          hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
         }
         : graphics::TextureBarrier{
           D3D12_BARRIER_SYNC_COMPUTE_SHADING, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
-          D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
-          D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, hdr_rt->GetDepthStencilTex().get(), {0, 0},
-          D3D12_TEXTURE_BARRIER_FLAG_NONE
+          forward_pass_depth_tex_access, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, forward_pass_depth_tex_layout,
+          hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
         }
     });
-
-    // TODO disable depth write if pre pass is enabled
 
     cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), clear_color, {});
 

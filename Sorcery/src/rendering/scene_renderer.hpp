@@ -255,6 +255,7 @@ private:
   auto RecreateSsaoSamples(int sample_count) noexcept -> void;
 
   [[nodiscard]] auto RecreatePipelines() -> bool;
+
   auto CreatePerViewConstantBuffers(UINT count) -> void;
   auto CreatePerDrawConstantBuffers(UINT count) -> void;
 
@@ -289,7 +290,8 @@ private:
   graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_normal_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_resolve_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> line_gizmo_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> object_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> object_pso_depth_write_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> object_pso_depth_read_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> post_process_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso_;
