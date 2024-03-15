@@ -143,7 +143,7 @@ auto RenderManager::LoadReadonlyTexture(
 
 
 auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> const data) -> bool {
-  if (buf.GetRequiredIntermediateSize() != data.size()) {
+  if (buf.GetRequiredIntermediateSize() < data.size()) {
     return false;
   }
 
@@ -170,7 +170,7 @@ auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byt
     return false;
   }
 
-  cmd.CopyBuffer(buf, *upload_buf);
+  cmd.CopyBufferRegion(buf, 0, *upload_buf, 0, data.size());
 
   if (!cmd.End()) {
     return false;
