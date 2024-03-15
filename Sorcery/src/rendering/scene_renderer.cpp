@@ -634,7 +634,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
             frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
             frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
             per_draw_cb.GetBuffer()->GetConstantBuffer());
           cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
@@ -681,7 +681,10 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
         };
 
         D3D12_VIEWPORT const viewport{subcell_offset[0], subcell_offset[1], subcell_size, subcell_size, 0, 1};
-        D3D12_RECT const scissor{0, 0, static_cast<LONG>(subcell_size), static_cast<LONG>(subcell_size)};
+        D3D12_RECT const scissor{
+          static_cast<LONG>(subcell_offset[0]), static_cast<LONG>(subcell_offset[1]), static_cast<LONG>(subcell_offset[0] + subcell_size),
+          static_cast<LONG>(subcell_offset[1] + subcell_size)
+        };
 
         cmd.SetViewports(std::span{&viewport, 1});
         cmd.SetScissorRects(std::array{scissor});
@@ -711,7 +714,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
             frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
             frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetShaderResource());
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
             per_draw_cb.GetBuffer()->GetConstantBuffer());
           cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
