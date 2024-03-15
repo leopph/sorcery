@@ -246,7 +246,6 @@ private:
   auto DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, FramePacket const& frame_packet,
                               graphics::CommandList& cmd) -> void;
 
-  auto DrawSkybox(graphics::CommandList& cmd) noexcept -> void;
   auto PostProcess(graphics::Texture const& src, graphics::Texture const& dst,
                    graphics::CommandList& cmd) const noexcept -> void;
 

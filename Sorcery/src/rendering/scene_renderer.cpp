@@ -723,24 +723,6 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 }
 
 
-auto SceneRenderer::DrawSkybox(graphics::CommandList& cmd) noexcept -> void {
-  auto const cubemap{Scene::GetActiveScene()->GetSkybox()};
-
-  if (!cubemap) {
-    return;
-  }
-
-  cmd.SetPipelineState(*skybox_pso_);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, pos_buf_idx),
-    g_engine_context.resource_manager->GetCubeMesh()->GetPositionBuffer()->GetShaderResource());
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, cubemap_idx), cubemap->GetTex()->GetShaderResource());
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
-  // TODO set per view cb and barrier
-  cmd.DrawIndexedInstanced(static_cast<UINT>(g_engine_context.resource_manager->GetCubeMesh()->GetIndexCount()), 1, 0,
-    0, 0);
-}
-
-
 auto SceneRenderer::PostProcess(graphics::Texture const& src, graphics::Texture const& dst,
                                 graphics::CommandList& cmd) const noexcept -> void {
   cmd.SetPipelineState(*post_process_pso_);
@@ -1617,9 +1599,21 @@ auto SceneRenderer::Render() -> void {
       cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
     }
 
-    if (auto const& active_scene{Scene::GetActiveScene()};
-      active_scene->GetSkyMode() == SkyMode::Skybox && active_scene->GetSkybox()) {
-      DrawSkybox(cmd);
+    if (auto const& active_scene{Scene::GetActiveScene()}; active_scene->GetSkyMode() == SkyMode::Skybox) {
+      if (auto const cubemap{active_scene->GetSkybox()}) {
+        auto const cube_mesh{g_engine_context.resource_manager->GetCubeMesh()};
+        cmd.SetPipelineState(*skybox_pso_);
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, pos_buf_idx),
+          cube_mesh->GetPositionBuffer()->GetShaderResource());
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, per_view_cb_idx),
+          cam_per_view_cb.GetBuffer()->GetConstantBuffer());
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, cubemap_idx),
+          cubemap->GetTex()->GetShaderResource());
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
+        cmd.SetIndexBuffer(*cube_mesh->GetIndexBuffer(), cube_mesh->GetIndexFormat());
+        cmd.DrawIndexedInstanced(static_cast<UINT>(g_engine_context.resource_manager->GetCubeMesh()->GetIndexCount()),
+          1, 0, 0, 0);
+      }
     }
 
     RenderTarget const* post_process_rt;
