@@ -15,9 +15,10 @@ Some screenshots from Sorcery's editor, Mage!
 
 ## Features
 ### Implemented
-* DX11 renderer
+* DX12 Renderer
+  * Built using Shader Model 6.6, Resource Binding Tier 3, HLSL Dynamic Resources, Enhanced Barriers, and other modern features
   * Hybrid Forward rendering
-    * Forward rendering with thin G-buffers for some effects
+    * Forward rendering with a thin G-buffers for screen space effects
   * PBR material system using Cook-Torrance BRDF
     * Albedo, metallic, roughness, ao, and normal values/maps, alpha clipping support
   * Directional, spot, and pointlights
@@ -33,6 +34,7 @@ Some screenshots from Sorcery's editor, Mage!
   * Mipmapping
   * Frustum culling for cameras and shadows
   * Screen Space Ambient Occlusion (SSAO)
+  * Multi-camera support with custom viewports and render targets
 * Entity-Component model
   * Camera, Static Mesh, Light, Skybox, and Transform components
   * Transform hierarchy
@@ -66,7 +68,7 @@ Some screenshots from Sorcery's editor, Mage!
   * Screen Space Reflections (SSR)
   * Screen Space Subsurface Scattering
   * Screen Space Global Illumination (SSGI)
-  * DX12 and Vulkan backends (possible but very time-consuming)
+  * Vulkan backend
 * Nvidia PhysX integration for physics
 * Support for custom script compilation
 * Audio playback
@@ -75,7 +77,7 @@ Some screenshots from Sorcery's editor, Mage!
 ## Used technologies and third-party libraries
 Non-exhaustive list of core components:
 - Win32 for window and event handling
-- Direct3D 11 for rendering
+- Direct3D 12 for rendering
 - RTTR for runtime reflection
 - Dear ImGui for tool interfaces
 - Assimp for model asset importing
