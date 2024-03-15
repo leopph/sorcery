@@ -6,6 +6,7 @@
 
 
 DECLARE_PARAMS(GizmoDrawParams);
+DECLARE_DRAW_CALL_PARAMS(g_draw_call_params);
 
 
 struct VertexOut {
@@ -14,7 +15,10 @@ struct VertexOut {
 };
 
 
-VertexOut VsMainLine(const uint vertex_id : SV_VertexID, const uint instance_id : SV_InstanceID) {
+VertexOut VsMainLine(uint vertex_id : SV_VertexID, uint instance_id : SV_InstanceID) {
+  vertex_id += g_draw_call_params.base_vertex;
+  instance_id += g_draw_call_params.base_instance;
+
   const StructuredBuffer<ShaderLineGizmoVertexData> vertices = ResourceDescriptorHeap[g_params.vertex_buf_idx];
   const ShaderLineGizmoVertexData data = vertices[instance_id];
 

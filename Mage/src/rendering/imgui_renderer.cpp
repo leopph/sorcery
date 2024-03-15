@@ -234,9 +234,9 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
 
         cmd.SetPipelineParameter(offsetof(ImGuiDrawParams, tex_idx) / 4,
           static_cast<graphics::Texture*>(draw_cmd.GetTexID())->GetShaderResource());
-        cmd.SetPipelineParameter(offsetof(ImGuiDrawParams, base_vertex) / 4, draw_cmd.VtxOffset + global_vtx_offset);
 
-        cmd.DrawIndexedInstanced(draw_cmd.ElemCount, 1, draw_cmd.IdxOffset + global_idx_offset, 0, 0);
+        cmd.DrawIndexedInstanced(draw_cmd.ElemCount, 1, draw_cmd.IdxOffset + global_idx_offset,
+          draw_cmd.VtxOffset + global_vtx_offset, 0);
       }
     }
     global_idx_offset += imgui_cmd->IdxBuffer.Size;

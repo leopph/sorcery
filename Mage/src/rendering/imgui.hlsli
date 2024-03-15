@@ -3,7 +3,14 @@
 
 #include "imgui_shader_interop.h"
 
+
+struct SorceryDrawCallParams {
+  int base_vertex;
+};
+
+
 ConstantBuffer<ImGuiDrawParams> g_draw_params : register(b0, space0);
+ConstantBuffer<SorceryDrawCallParams> g_draw_call_params : register(b1, space0);
 
 
 struct VertexOut {
@@ -14,7 +21,7 @@ struct VertexOut {
 
 
 VertexOut VsMain(uint vertex_id : SV_VertexID) {
-  vertex_id += g_draw_params.base_vertex;
+  vertex_id += g_draw_call_params.base_vertex;
 
   const StructuredBuffer<VertexData> vertex_data_buf = ResourceDescriptorHeap[g_draw_params.vb_idx];
   const VertexData vertex_data = vertex_data_buf[vertex_id];

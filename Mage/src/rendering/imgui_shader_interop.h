@@ -17,12 +17,12 @@ struct VertexData {
   uint col;
 };
 
+
 struct ImGuiDrawParams {
   row_major float4x4 proj_mtx;
   uint vb_idx;
   uint tex_idx;
   uint samp_idx;
-  uint base_vertex;
 };
 
 #endif

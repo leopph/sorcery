@@ -6,6 +6,7 @@
 
 
 DECLARE_PARAMS(DepthOnlyDrawParams);
+DECLARE_DRAW_CALL_PARAMS(g_draw_call_params);
 
 
 struct VertexOut {
@@ -15,7 +16,9 @@ struct VertexOut {
 };
 
 
-VertexOut VsMain(const uint vertex_id : SV_VertexID) {
+VertexOut VsMain(uint vertex_id : SV_VertexID) {
+  vertex_id += g_draw_call_params.base_vertex;
+
   const StructuredBuffer<float4> positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
   const float4 pos_os = positions[vertex_id];
 

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <iterator>
 #include <utility>
 #include <vector>
@@ -323,13 +324,14 @@ auto GraphicsDevice::CreatePipelineState(PipelineDesc const& desc,
   if (auto rs{root_signatures_.Get(num_32_bit_params)}) {
     root_signature = std::move(rs);
   } else {
-    CD3DX12_ROOT_PARAMETER1 root_param;
-    root_param.InitAsConstants(num_32_bit_params, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
+    std::array<CD3DX12_ROOT_PARAMETER1, 2> root_params;
+    root_params[0].InitAsConstants(num_32_bit_params, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
+    root_params[1].InitAsConstants(num_32_bit_params, 1, 0, D3D12_SHADER_VISIBILITY_VERTEX);
 
     D3D12_VERSIONED_ROOT_SIGNATURE_DESC const root_signature_desc{
       .Version = D3D_ROOT_SIGNATURE_VERSION_1_1,
       .Desc_1_1 = {
-        1, &root_param, 0, nullptr,
+        static_cast<UINT>(root_params.size()), root_params.data(), 0, nullptr,
         D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED |
         D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED
       }
@@ -1266,6 +1268,8 @@ auto CommandList::DispatchMesh(UINT const thread_group_count_x, UINT const threa
 auto CommandList::DrawIndexedInstanced(UINT const index_count_per_instance, UINT const instance_count,
                                        UINT const start_index_location, INT const base_vertex_location,
                                        UINT const start_instance_location) const -> void {
+  std::array const offsets{*std::bit_cast<UINT const*>(&base_vertex_location), start_instance_location};
+  cmd_list_->SetGraphicsRoot32BitConstants(1, static_cast<UINT>(offsets.size()), offsets.data(), 0);
   cmd_list_->DrawIndexedInstanced(index_count_per_instance, instance_count, start_index_location, base_vertex_location,
     start_instance_location);
 }
