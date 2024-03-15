@@ -291,14 +291,14 @@ float4 PsMain(const VertexOut vs_out) : SV_Target {
     ao *= ao_map.Sample(mtl_samp, vs_out.uv).r;
   }
 
-  float3 normal = normalize(vs_out.norm_ws);
+  float3 norm_ws = normalize(vs_out.norm_ws);
 
   if (mtl.normal_map_idx != INVALID_RES_IDX) {
     const Texture2D<float3> normal_map = ResourceDescriptorHeap[mtl.normal_map_idx];
-    normal = normal_map.Sample(mtl_samp, vs_out.uv).rgb;
-    normal *= 2.0;
-    normal -= 1.0;
-    normal = normalize(mul(normalize(normal), vs_out.tbn_mtx_ws));
+    norm_ws = normal_map.Sample(mtl_samp, vs_out.uv).rgb;
+    norm_ws *= 2.0;
+    norm_ws -= 1.0;
+    norm_ws = normalize(mul(normalize(norm_ws), vs_out.tbn_mtx_ws));
   }
 
   const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
@@ -317,14 +317,14 @@ float4 PsMain(const VertexOut vs_out) : SV_Target {
 
   for (uint i = 0; i < light_count; i++) {
     if (lights[i].type == 0) {
-      out_color += CalculateDirLight(lights[i], vs_out.pos_ws, vs_out.norm_ws, dir_to_cam_ws, vs_out.pos_vs.z, albedo,
+      out_color += CalculateDirLight(lights[i], vs_out.pos_ws, norm_ws, dir_to_cam_ws, vs_out.pos_vs.z, albedo,
         metallic, roughness, dir_light_shadow_map_arr, shadow_samp, per_frame_cb.shadowFilteringMode,
         per_view_cb.shadowCascadeSplitDistances, per_frame_cb.shadowCascadeCount, per_frame_cb.visualizeShadowCascades);
     } else if (lights[i].type == 1) {
-      out_color += CalculateSpotLight(lights[i], vs_out.pos_ws, vs_out.norm_ws, dir_to_cam_ws, albedo, metallic,
+      out_color += CalculateSpotLight(lights[i], vs_out.pos_ws, norm_ws, dir_to_cam_ws, albedo, metallic,
         roughness, punc_light_shadow_atlas, shadow_samp, per_frame_cb.shadowFilteringMode);
     } else if (lights[i].type == 2) {
-      out_color += CalculatePointLight(lights[i], vs_out.pos_ws, vs_out.norm_ws, dir_to_cam_ws, albedo, metallic,
+      out_color += CalculatePointLight(lights[i], vs_out.pos_ws, norm_ws, dir_to_cam_ws, albedo, metallic,
         roughness, punc_light_shadow_atlas, shadow_samp, per_frame_cb.shadowFilteringMode);
     }
   }
