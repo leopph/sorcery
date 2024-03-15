@@ -204,6 +204,7 @@ private:
     std::vector<SubmeshData> submesh_data;
     std::vector<InstanceData> instance_data;
     std::vector<CameraData> cam_data;
+    std::shared_ptr<RenderTarget> global_rt;
   };
 
 
@@ -352,7 +353,7 @@ private:
   std::mutex game_camera_mutex_;
   std::vector<Camera const*> game_render_cameras_;
 
-  std::unique_ptr<RenderTarget> main_rt_;
+  std::shared_ptr<RenderTarget> main_rt_;
   std::shared_ptr<RenderTarget> rt_override_;
 };
 

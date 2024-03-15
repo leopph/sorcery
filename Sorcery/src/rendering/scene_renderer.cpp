@@ -45,7 +45,9 @@
 #include "shaders/generated/Release/ssao_vs.h"
 #endif
 
+#include <algorithm>
 #include <cstring>
+#include <iterator>
 #include <random>
 
 
@@ -61,6 +63,8 @@ auto SceneRenderer::ExtractCurrentState(FramePacket& packet) const -> void {
   packet.submesh_data.clear();
   packet.instance_data.clear();
   packet.cam_data.clear();
+
+  packet.global_rt = rt_override_ ? rt_override_ : main_rt_;
 
   packet.light_data.reserve(lights_.size());
 
@@ -1152,39 +1156,64 @@ auto SceneRenderer::Render() -> void {
   line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
   std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
+  std::pmr::vector<RenderTarget*> used_rts{&GetTmpMemRes()};
+  std::ranges::for_each(frame_packet.cam_data, [&used_rts, this, &frame_packet](CameraData const& cam_data) {
+    if (cam_data.render_target && std::ranges::find(used_rts, cam_data.render_target.get()) ==
+        std::ranges::end(used_rts)) {
+      used_rts.emplace_back(cam_data.render_target.get());
+    } else if (!cam_data.render_target) {
+      if (std::ranges::find(used_rts, frame_packet.global_rt.get()) == std::ranges::end(used_rts)) {
+        used_rts.emplace_back(frame_packet.global_rt.get());
+      }
+    }
+  });
+
+  auto const clear_color{
+    [] {
+      std::array<float, 4> ret;
+      if (Scene::GetActiveScene()->GetSkyMode() == SkyMode::Color) {
+        auto const sky_color{Scene::GetActiveScene()->GetSkyColor()};
+        ret[0] = sky_color[0];
+        ret[1] = sky_color[1];
+        ret[2] = sky_color[2];
+        ret[3] = 1.0f;
+      } else {
+        ret = {0, 0, 0, 1};
+      }
+      return ret;
+    }()
+  };
+
   auto& cmd{render_manager_->AcquireCommandList()};
 
   if (!cmd.Begin(nullptr)) {
     return;
   }
 
-  cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  std::pmr::vector<graphics::TextureBarrier> cam_rt_barriers{&GetTmpMemRes()};
+  cam_rt_barriers.reserve(used_rts.size());
 
-  auto& global_rt{rt_override_ ? *rt_override_ : *main_rt_};
+  std::ranges::transform(used_rts, std::back_inserter(cam_rt_barriers), [](RenderTarget const* const rt) {
+    return graphics::TextureBarrier{
+      D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
+      D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+      rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+    };
+  });
+
+  cmd.Barrier({}, {}, cam_rt_barriers);
+
+  std::ranges::for_each(used_rts, [&cmd, &clear_color](RenderTarget const* const rt) {
+    cmd.ClearRenderTarget(*rt->GetColorTex(), clear_color, {});
+  });
 
   for (auto const& cam_data : frame_packet.cam_data) {
-    auto& target_rt{cam_data.render_target ? *cam_data.render_target : global_rt};
+    auto& target_rt{cam_data.render_target ? *cam_data.render_target : *frame_packet.global_rt};
     auto const& target_rt_desc{target_rt.GetDesc()};
 
     auto const rt_width{target_rt_desc.width};
     auto const rt_height{target_rt_desc.height};
     auto const rt_aspect{static_cast<float>(rt_width) / static_cast<float>(rt_height)};
-
-    auto const clear_color{
-      [] {
-        std::array<float, 4> ret;
-        if (Scene::GetActiveScene()->GetSkyMode() == SkyMode::Color) {
-          auto const sky_color{Scene::GetActiveScene()->GetSkyColor()};
-          ret[0] = sky_color[0];
-          ret[1] = sky_color[1];
-          ret[2] = sky_color[2];
-          ret[3] = 1.0f;
-        } else {
-          ret = {0, 0, 0, 1};
-        }
-        return ret;
-      }()
-    };
 
     RenderTarget::Desc const hdr_rt_desc{
       rt_width, rt_height, color_buffer_format_, depth_format_, static_cast<UINT>(GetMultisamplingMode()),
@@ -1208,6 +1237,8 @@ auto SceneRenderer::Render() -> void {
 
     std::pmr::vector<unsigned> visible_light_indices{&GetTmpMemRes()};
     CullLights(cam_frust_ws, frame_packet.light_data, visible_light_indices);
+
+    cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // Shadow pass
     std::array<Matrix4, MAX_CASCADE_COUNT> shadow_view_proj_matrices;
@@ -1674,40 +1705,35 @@ auto SceneRenderer::Render() -> void {
       post_process_rt = resolve_hdr_rt.get();
     }
 
-    cmd.Barrier({}, {}, std::array{
-      graphics::TextureBarrier{
-        D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
-        D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-        target_rt.GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-      }
-    });
-
     PostProcess(*post_process_rt->GetColorTex(), *target_rt.GetColorTex(), cmd);
 
     if (!line_gizmo_vertex_data_.empty()) {
       cmd.SetPipelineState(*line_gizmo_pso_);
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, vertex_buf_idx),
-      line_gizmo_vertex_data_buffer_.GetBuffer()->GetShaderResource());
+        line_gizmo_vertex_data_buffer_.GetBuffer()->GetShaderResource());
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, color_buf_idx),
-      gizmo_color_buffer_.GetBuffer()->GetShaderResource());
-      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx), cam_per_view_cb.GetBuffer()->GetConstantBuffer());
+        gizmo_color_buffer_.GetBuffer()->GetShaderResource());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx),
+        cam_per_view_cb.GetBuffer()->GetConstantBuffer());
       cmd.SetRenderTargets(std::span{target_rt.GetColorTex().get(), 1}, nullptr);
       cmd.SetViewports(std::span{&viewport, 1});
       cmd.SetScissorRects(std::span{&scissor, 1});
       cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
       cmd.DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);
     }
-
-    cmd.Barrier({}, {}, std::array{
-      graphics::TextureBarrier{
-        D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
-        D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_LAYOUT_RENDER_TARGET, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
-        target_rt.GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-      }
-    });
-
-    // TODO ensure multiple cameras in same RT don't discard each other
   }
+
+  cam_rt_barriers.clear();
+
+  std::ranges::transform(used_rts, std::back_inserter(cam_rt_barriers), [](RenderTarget const* const rt) {
+    return graphics::TextureBarrier{
+      D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+      D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_LAYOUT_RENDER_TARGET, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+      rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+    };
+  });
+
+  cmd.Barrier({}, {}, cam_rt_barriers);
 
   if (!cmd.End()) {
     return;
