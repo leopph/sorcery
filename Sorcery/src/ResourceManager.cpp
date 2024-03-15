@@ -134,9 +134,11 @@ auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexce
   Resource* ret;
 
   if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
-    ret = new Texture2D{std::move(tex)};
-  } else if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE3D && meta.IsCubemap()) {
-    ret = new Cubemap{std::move(tex)};
+    if (meta.IsCubemap()) {
+      ret = new Cubemap{std::move(tex)};
+    } else {
+      ret = new Texture2D{std::move(tex)};
+    }
   } else {
     return nullptr;
   }

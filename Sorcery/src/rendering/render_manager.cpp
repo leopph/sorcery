@@ -72,19 +72,17 @@ auto RenderManager::LoadReadonlyTexture(
     desc.height = 1;
     desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
   } else if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
-    desc.dimension = graphics::TextureDimension::k2D;
+    if (meta.IsCubemap()) {
+      desc.dimension = graphics::TextureDimension::kCube;
+    } else {
+      desc.dimension = graphics::TextureDimension::k2D;
+    }
     desc.height = static_cast<UINT>(meta.height);
     desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
   } else if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE3D) {
-    if (meta.IsCubemap()) {
-      desc.dimension = graphics::TextureDimension::kCube;
-      desc.height = static_cast<UINT>(meta.height);
-      desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
-    } else {
-      desc.dimension = graphics::TextureDimension::k3D;
-      desc.height = static_cast<UINT>(meta.height);
-      desc.depth_or_array_size = static_cast<UINT16>(meta.depth);
-    }
+    desc.dimension = graphics::TextureDimension::k3D;
+    desc.height = static_cast<UINT>(meta.height);
+    desc.depth_or_array_size = static_cast<UINT16>(meta.depth);
   }
 
   auto tex{device_->CreateTexture(desc, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr)};

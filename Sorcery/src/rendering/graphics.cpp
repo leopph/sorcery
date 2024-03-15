@@ -280,13 +280,13 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
         desc.flags);
       break;
     }
-    case TextureDimension::k2D: {
+    case TextureDimension::k2D: [[fallthrough]];
+    case TextureDimension::kCube: {
       res_desc = CD3DX12_RESOURCE_DESC1::Tex2D(tex_format, desc.width, desc.height, desc.depth_or_array_size,
         desc.mip_levels, desc.sample_desc.Count, desc.sample_desc.Quality, desc.flags);
       break;
     }
-    case TextureDimension::k3D: [[fallthrough]];
-    case TextureDimension::kCube: {
+    case TextureDimension::k3D: {
       res_desc = CD3DX12_RESOURCE_DESC1::Tex3D(tex_format, desc.width, desc.height, desc.depth_or_array_size,
         desc.mip_levels, desc.flags);
       break;
