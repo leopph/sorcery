@@ -15,7 +15,7 @@ auto PropertiesWindow::Draw() -> void {
       selectedObj->OnDrawProperties(changed);
 
       if (changed) {
-        if (auto const nativeRes{rttr::rttr_cast<ObserverPtr<NativeResource>>(selectedObj)}; nativeRes && mApp->GetResourceDatabase().IsSavedResource(*nativeRes)) {
+        if (auto const nativeRes{rttr::rttr_cast<NativeResource*>(selectedObj)}; nativeRes && mApp->GetResourceDatabase().IsSavedResource(*nativeRes)) {
           mApp->GetResourceDatabase().SaveResource(*nativeRes);
         }
       }

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Renderer.hpp>
+#include "rendering/Camera.hpp"
 
 
 namespace sorcery::mage {
-class StandaloneCamera : public Camera {
+class StandaloneCamera : public rendering::Camera {
 public:
   [[nodiscard]] auto GetPosition() const noexcept -> Vector3 override;
   [[nodiscard]] auto GetRightAxis() const noexcept -> Vector3 override;

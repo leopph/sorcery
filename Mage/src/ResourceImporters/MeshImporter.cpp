@@ -71,10 +71,10 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Collect all info from aiMaterials
 
-  meshData.materialSlots.resize(scene->mNumMaterials);
+  meshData.material_slots.resize(scene->mNumMaterials);
 
   for (unsigned i{0}; i < scene->mNumMaterials; i++) {
-    meshData.materialSlots[i].name = scene->mMaterials[i]->GetName().C_Str();
+    meshData.material_slots[i].name = scene->mMaterials[i]->GetName().C_Str();
   }
 
   // Collect all info from aiMeshes
@@ -176,11 +176,11 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Store geometry data and create submeshes
 
-  meshData.subMeshes.reserve(std::size(meshesTransformed));
+  meshData.sub_meshes.reserve(std::size(meshesTransformed));
   meshData.indices.emplace<std::vector<std::uint32_t>>();
 
   for (auto const& [vertices, normals, uvs, tangents, indices, mtlIdx] : meshesTransformed) {
-    meshData.subMeshes.emplace_back(static_cast<int>(std::ssize(meshData.positions)), std::visit([]<typename T>(std::vector<T> const& indices) { return static_cast<int>(std::ssize(indices)); }, meshData.indices), static_cast<int>(std::ssize(indices)), static_cast<int>(mtlIdx), AABB{});
+    meshData.sub_meshes.emplace_back(static_cast<int>(std::ssize(meshData.positions)), std::visit([]<typename T>(std::vector<T> const& indices) { return static_cast<int>(std::ssize(indices)); }, meshData.indices), static_cast<int>(std::ssize(indices)), static_cast<int>(mtlIdx), AABB{});
 
     std::ranges::copy(vertices, std::back_inserter(meshData.positions));
     std::ranges::copy(normals, std::back_inserter(meshData.normals));
@@ -206,8 +206,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   std::visit([&bytes]<typename T>(std::vector<T> const& indices) {
     SerializeToBinary(std::size(indices), bytes);
   }, meshData.indices);
-  SerializeToBinary(std::ssize(meshData.materialSlots), bytes);
-  SerializeToBinary(std::size(meshData.subMeshes), bytes);
+  SerializeToBinary(std::ssize(meshData.material_slots), bytes);
+  SerializeToBinary(std::size(meshData.sub_meshes), bytes);
   SerializeToBinary(static_cast<std::int32_t>(std::holds_alternative<std::vector<std::uint32_t>>(meshData.indices)), bytes);
 
   auto const posBytes{as_bytes(std::span{meshData.positions})};
@@ -228,11 +228,11 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   std::ranges::copy(tanBytes, std::back_inserter(bytes));
   std::ranges::copy(idxBytes, std::back_inserter(bytes));
 
-  for (auto const& mtlSlot : meshData.materialSlots) {
+  for (auto const& mtlSlot : meshData.material_slots) {
     SerializeToBinary(mtlSlot.name, bytes);
   }
 
-  for (auto const& [baseVertex, firstIndex, indexCount, mtlSlotIdx, bounds] : meshData.subMeshes) {
+  for (auto const& [baseVertex, firstIndex, indexCount, mtlSlotIdx, bounds] : meshData.sub_meshes) {
     SerializeToBinary(baseVertex, bytes);
     SerializeToBinary(firstIndex, bytes);
     SerializeToBinary(indexCount, bytes);

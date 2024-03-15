@@ -18,13 +18,10 @@
     <ClCompile Include="src\Timing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\Entity.cpp">
+    <ClCompile Include="src\scene_objects\Entity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Color.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\rendering\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform.cpp">
@@ -51,19 +48,19 @@
     <ClCompile Include="src\Resources\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\Component.cpp">
+    <ClCompile Include="src\scene_objects\Component.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\TransformComponent.cpp">
+    <ClCompile Include="src\scene_objects\TransformComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\CameraComponent.cpp">
+    <ClCompile Include="src\scene_objects\CameraComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\StaticMeshComponent.cpp">
+    <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\LightComponents.cpp">
+    <ClCompile Include="src\scene_objects\LightComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Resources\Texture2D.cpp">
@@ -78,25 +75,19 @@
     <ClCompile Include="src\Serialization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\ShadowAtlas.cpp">
+    <ClCompile Include="src\rendering\shadow_atlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\GridLike.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\DirectionalShadowAtlas.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\rendering\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\PunctualShadowAtlas.cpp">
+    <ClCompile Include="src\rendering\punctual_shadow_atlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\RenderTarget.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\rendering\SwapChain.cpp">
+    <ClCompile Include="src\rendering\render_target.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ResourceManager.cpp">
@@ -105,7 +96,7 @@
     <ClCompile Include="src\Resources\Resource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneObjects\SceneObject.cpp">
+    <ClCompile Include="src\scene_objects\SceneObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Math.cpp">
@@ -114,7 +105,7 @@
     <ClCompile Include="src\GUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\DirectionalShadowMapArray.cpp">
+    <ClCompile Include="src\rendering\directional_shadow_map_array.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ExternalResource.cpp">
@@ -126,7 +117,7 @@
     <ClCompile Include="src\MemoryAllocation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\RendererImpl.cpp">
+    <ClCompile Include="src\rendering\scene_renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Window.cpp">
@@ -135,9 +126,21 @@
     <ClCompile Include="src\WindowImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\vendor\d3d12_memory_allocator\D3D12MemAlloc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rendering\graphics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rendering\render_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine_context.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\SceneObjects\Entity.hpp">
+    <ClInclude Include="src\scene_objects\Entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Core.hpp">
@@ -156,9 +159,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Event.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\rendering\Renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Util.hpp">
@@ -185,64 +185,52 @@
     <ClInclude Include="src\Resources\Mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\Component.hpp">
+    <ClInclude Include="src\scene_objects\Component.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\TransformComponent.hpp">
+    <ClInclude Include="src\scene_objects\TransformComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\CameraComponent.hpp">
+    <ClInclude Include="src\scene_objects\CameraComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\StaticMeshComponent.hpp">
+    <ClInclude Include="src\scene_objects\StaticMeshComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\LightComponents.hpp">
+    <ClInclude Include="src\scene_objects\LightComponents.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Resources\Texture2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneObjects\SceneObject.hpp">
+    <ClInclude Include="src\scene_objects\SceneObject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Resources\Cubemap.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\shaders\ShadowFilteringModes.h">
+    <ClInclude Include="src\rendering\shaders\shadow_filtering_modes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\ShadowAtlas.hpp">
+    <ClInclude Include="src\rendering\shadow_atlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\GridLike.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\DirectionalShadowAtlas.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\rendering\Camera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\PunctualShadowAtlas.hpp">
+    <ClInclude Include="src\rendering\punctual_shadow_atlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\RenderTarget.hpp">
+    <ClInclude Include="src\rendering\render_target.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\StructuredBuffer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\rendering\SwapChain.hpp">
+    <ClInclude Include="src\rendering\structured_buffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\rendering\Graphics.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\rendering\Visibility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ResourceManager.hpp">
@@ -263,7 +251,7 @@
     <ClInclude Include="src\Serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\DirectionalShadowMapArray.hpp">
+    <ClInclude Include="src\rendering\directional_shadow_map_array.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ExternalResource.hpp">
@@ -281,9 +269,6 @@
     <ClInclude Include="src\PoolAllocator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\RendererImpl.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -293,36 +278,57 @@
     <ClInclude Include="src\SkyMode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\rendering\graphics.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\constant_buffer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\render_manager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\observer_ptr.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\scene_renderer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine_context.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
-    <None Include="src\rendering\shaders\ShaderInterop.h" />
-    <None Include="src\rendering\shaders\MeshVSOut.hlsli" />
-    <None Include="src\rendering\shaders\SkyboxVSOut.hlsli" />
-    <None Include="src\rendering\shaders\BRDF.hlsli" />
-    <None Include="src\rendering\shaders\GizmoVsOut.hlsli" />
-    <None Include="src\rendering\shaders\Samplers.hlsli" />
-    <None Include="src\rendering\shaders\ShadowSampling.hlsli" />
-    <None Include="src\rendering\shaders\DepthNormalVsOut.hlsli" />
-    <None Include="src\rendering\shaders\DepthOnlyVsOut.hlsli" />
-    <None Include="src\rendering\shaders\ScreenVSOut.hlsli" />
-    <None Include="src\rendering\shaders\Util.hlsli" />
+    <None Include="src\rendering\shaders\shader_interop.h" />
+    <None Include="src\rendering\shaders\brdf.hlsli" />
+    <None Include="src\rendering\shaders\shadow_sampling.hlsli" />
+    <None Include="src\rendering\shaders\utility.hlsli" />
+    <None Include="src\rendering\shaders\skybox.hlsli" />
+    <None Include="src\rendering\shaders\object_pbr.hlsli" />
+    <None Include="src\rendering\shaders\gizmos.hlsli" />
+    <None Include="src\rendering\shaders\post_process.hlsli" />
+    <None Include="src\rendering\shaders\ssao.hlsli" />
+    <None Include="src\rendering\shaders\common.hlsli" />
+    <None Include="src\rendering\shaders\depth_normal.hlsli" />
+    <None Include="src\rendering\shaders\depth_only.hlsli" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\rendering\shaders\MeshPbrPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\MeshVS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\PostProcessPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\SkyboxVS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\SkyboxPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\DepthOnlyVS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\ScreenVS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\LineGizmoVS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\GizmoPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\DepthOnlyPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\DepthNormalPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\DepthNormalVS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\SsaoBlurPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\SsaoPS.hlsl" />
-    <FxCompile Include="src\rendering\shaders\DepthResolveCS.hlsl" />
+    <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\skybox_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\skybox_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\depth_only_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\post_process_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\gizmos_line_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\gizmos_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\depth_only_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\depth_normal_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\depth_normal_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ssao_blur_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ssao_main_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\depth_resolve_cs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\object_pbr_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\object_pbr_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ssao_vs.hlsl" />
   </ItemGroup>
 </Project>

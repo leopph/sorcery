@@ -1,7 +1,7 @@
 #include "MainMenuBar.hpp"
 
 #include "SettingsWindow.hpp"
-#include "ResourceManager.hpp"
+#include "engine_context.hpp"
 
 #include <nfd.h>
 
@@ -9,7 +9,7 @@
 namespace sorcery::mage {
 MainMenuBar::MainMenuBar(Application& app, SettingsWindow& editorSettingsWindow) :
   mApp{&app},
-  mEditorSettingsWindow{&editorSettingsWindow} { }
+  mEditorSettingsWindow{&editorSettingsWindow} {}
 
 
 auto MainMenuBar::Draw() -> void {
@@ -27,9 +27,16 @@ auto MainMenuBar::Draw() -> void {
       }
 
       if (ImGui::MenuItem("Open Scene")) {
-        if (nfdchar_t* dstPathAbs{nullptr}; NFD_OpenDialog(ResourceManager::SCENE_RESOURCE_EXT.substr(1).data(), mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath().string().c_str(), &dstPathAbs) == NFD_OKAY) {
-          if (auto const dstPathResDirRel{relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())}; !dstPathResDirRel.empty()) {
-            auto const scene{gResourceManager.GetOrLoad<Scene>(mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel))};
+        if (nfdchar_t* dstPathAbs{nullptr}; NFD_OpenDialog(ResourceManager::SCENE_RESOURCE_EXT.substr(1).data(),
+                                              mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath().string().
+                                                    c_str(), &dstPathAbs) == NFD_OKAY) {
+          if (auto const dstPathResDirRel{
+            relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())
+          }; !dstPathResDirRel.empty()) {
+            auto const scene{
+              g_engine_context.resource_manager->GetOrLoad<Scene>(
+                mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel))
+            };
             assert(scene);
             mApp->OpenScene(*scene);
 

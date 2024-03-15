@@ -3,10 +3,10 @@
 #include "Reflection.hpp"
 #include "ExternalResource.hpp"
 #include "FileIo.hpp"
-#include "Rendering/Renderer.hpp"
+#include "engine_context.hpp"
 #include "Resources/Scene.hpp"
 
-#include <directxtk/DDSTextureLoader.h>
+#include <DirectXTex.h>
 #include <wrl/client.h>
 
 #include <cassert>
@@ -16,26 +16,60 @@ using Microsoft::WRL::ComPtr;
 
 
 namespace sorcery {
-ResourceManager gResourceManager;
+namespace {
+namespace {
+std::vector const kQuadPositions{Vector3{-1, 1, 0}, Vector3{-1, -1, 0}, Vector3{1, -1, 0}, Vector3{1, 1, 0}};
+std::vector const kQuadUvs{Vector2{0, 0}, Vector2{0, 1}, Vector2{1, 1}, Vector2{1, 0}};
+std::vector<std::uint32_t> const kQuadIndices{2, 1, 0, 0, 3, 2};
+std::vector const kCubePositions{
+  Vector3{0.5f, 0.5f, 0.5f}, Vector3{0.5f, 0.5f, 0.5f}, Vector3{0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f},
+  Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, 0.5f}, Vector3{-0.5f, 0.5f, -0.5f}, Vector3{-0.5f, 0.5f, -0.5f},
+  Vector3{-0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f}, Vector3{0.5f, 0.5f, -0.5f},
+  Vector3{0.5f, -0.5f, 0.5f}, Vector3{0.5f, -0.5f, 0.5f}, Vector3{0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, 0.5f},
+  Vector3{-0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, 0.5f}, Vector3{-0.5f, -0.5f, -0.5f}, Vector3{-0.5f, -0.5f, -0.5f},
+  Vector3{-0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f}, Vector3{0.5f, -0.5f, -0.5f},
+};
+std::vector const kCubeUvs{
+  Vector2{1, 0}, Vector2{1, 0}, Vector2{0, 0}, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 0}, Vector2{1, 0},
+  Vector2{0, 1}, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 1}, Vector2{1, 0}, Vector2{1, 1}, Vector2{1, 1},
+  Vector2{0, 1}, Vector2{0, 1}, Vector2{0, 1}, Vector2{1, 1}, Vector2{1, 1}, Vector2{0, 0}, Vector2{0, 1},
+  Vector2{0, 1}, Vector2{1, 0}, Vector2{1, 1}
+};
+std::vector<std::uint32_t> const kCubeIndices{
+  // Top face
+  7, 4, 1, 1, 10, 7,
+  // Bottom face
+  16, 19, 22, 22, 13, 16,
+  // Front face
+  23, 20, 8, 8, 11, 23,
+  // Back face
+  17, 14, 2, 2, 5, 17,
+  // Right face
+  21, 9, 0, 0, 12, 21,
+  // Left face
+  15, 3, 6, 6, 18, 15
+};
+}
+}
 
 
-auto ResourceManager::ResourceGuidLess::operator()(ObserverPtr<Resource> const lhs, ObserverPtr<Resource> const rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(Resource* const lhs, Resource* const rhs) const noexcept -> bool {
   return lhs->GetGuid() < rhs->GetGuid();
 }
 
 
-auto ResourceManager::ResourceGuidLess::operator()(ObserverPtr<Resource> const lhs, Guid const& rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(Resource* const lhs, Guid const& rhs) const noexcept -> bool {
   return lhs->GetGuid() < rhs;
 }
 
 
-auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, ObserverPtr<Resource> const rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, Resource* const rhs) const noexcept -> bool {
   return lhs < rhs->GetGuid();
 }
 
 
-auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> ObserverPtr<Resource> {
-  ObserverPtr<Resource> res{nullptr};
+auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> Resource* {
+  Resource* res{nullptr};
 
   if (desc.pathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
     std::vector<std::uint8_t> fileBytes;
@@ -84,42 +118,37 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
 }
 
 
-auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexcept -> MaybeNull<ObserverPtr<Resource>> {
-  ComPtr<ID3D11Resource> res;
-  ComPtr<ID3D11ShaderResourceView> srv;
-
-  if (FAILED(DirectX::CreateDDSTextureFromMemoryEx(gRenderer.GetDevice(), reinterpret_cast<std::uint8_t const*>(bytes.data()), std::size(bytes), 0, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE, 0, 0, DirectX::DDS_LOADER_DEFAULT, res.GetAddressOf(), srv.GetAddressOf()))) {
+auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexcept -> MaybeNull<Resource*> {
+  DirectX::TexMetadata meta;
+  DirectX::ScratchImage img;
+  if (FAILED(LoadFromDDSMemory(bytes.data(), bytes.size(), DirectX::DDS_FLAGS_NONE, &meta, img))) {
     return nullptr;
   }
 
-  D3D11_RESOURCE_DIMENSION resDim;
-  res->GetType(&resDim);
+  auto tex{g_engine_context.render_manager->LoadReadonlyTexture(img)};
 
-  if (resDim == D3D11_RESOURCE_DIMENSION_TEXTURE2D) {
-    ComPtr<ID3D11Texture2D> tex2D;
-    if (FAILED(res.As(&tex2D))) {
-      return nullptr;
-    }
-
-    D3D11_TEXTURE2D_DESC desc;
-    tex2D->GetDesc(&desc);
-
-    if (desc.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) {
-      auto const ret{new Cubemap{*tex2D.Get(), *srv.Get()}};
-      ret->OnInit();
-      return ret;
-    }
-
-    auto const ret{new Texture2D{*tex2D.Get(), *srv.Get()}};
-    ret->OnInit();
-    return ret;
+  if (!tex) {
+    return nullptr;
   }
 
-  return nullptr;
+  Resource* ret;
+
+  if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
+    if (meta.IsCubemap()) {
+      ret = new Cubemap{std::move(tex)};
+    } else {
+      ret = new Texture2D{std::move(tex)};
+    }
+  } else {
+    return nullptr;
+  }
+
+  ret->OnInit();
+  return ret;
 }
 
 
-auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeNull<ObserverPtr<Resource>> {
+auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeNull<Resource*> {
   if constexpr (std::endian::native != std::endian::little) {
     return nullptr; // TODO
   } else {
@@ -188,38 +217,38 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
       curBytes = curBytes.subspan(idxCount * sizeof(T));
     }, meshData.indices);
 
-    meshData.materialSlots.resize(mtlCount);
+    meshData.material_slots.resize(mtlCount);
 
     for (auto i{0ull}; i < mtlCount; i++) {
-      if (!DeserializeFromBinary(curBytes, meshData.materialSlots[i].name)) {
+      if (!DeserializeFromBinary(curBytes, meshData.material_slots[i].name)) {
         return nullptr;
       }
 
-      curBytes = curBytes.subspan(meshData.materialSlots[i].name.size() + 8);
+      curBytes = curBytes.subspan(meshData.material_slots[i].name.size() + 8);
     }
 
-    meshData.subMeshes.resize(submeshCount);
+    meshData.sub_meshes.resize(submeshCount);
 
     for (auto i{0ull}; i < submeshCount; i++) {
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].baseVertex)) {
+      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].base_vertex)) {
         return nullptr;
       }
 
       curBytes = curBytes.subspan(sizeof(int));
 
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].firstIndex)) {
+      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].first_index)) {
         return nullptr;
       }
 
       curBytes = curBytes.subspan(sizeof(int));
 
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].indexCount)) {
+      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].index_count)) {
         return nullptr;
       }
 
       curBytes = curBytes.subspan(sizeof(int));
 
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].materialIndex)) {
+      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].material_index)) {
         return nullptr;
       }
 
@@ -230,6 +259,79 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
     ret->OnInit();
     return ret;
   }
+}
+
+
+ResourceManager::ResourceManager() {
+  default_mtl_.Reset(CreateAndInitialize<Material>());
+  default_mtl_->SetGuid(default_material_guid_);
+  default_mtl_->SetName("Default Material");
+  Add(default_mtl_.Get());
+
+  std::vector<Vector3> cubeNormals;
+  CalculateNormals(kCubePositions, kCubeIndices, cubeNormals);
+
+  std::vector<Vector3> cubeTangents;
+  CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cubeTangents);
+
+  std::vector<Vector3> quadNormals;
+  CalculateNormals(kQuadPositions, kQuadIndices, quadNormals);
+
+  std::vector<Vector3> quadTangents;
+  CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, quadTangents);
+
+  cube_mesh_.Reset(CreateAndInitialize<Mesh>());
+  cube_mesh_->SetGuid(cube_mesh_guid_);
+  cube_mesh_->SetName("Cube");
+  cube_mesh_->SetPositions(kCubePositions);
+  cube_mesh_->SetNormals(std::move(cubeNormals));
+  cube_mesh_->SetUVs(kCubeUvs);
+  cube_mesh_->SetTangents(std::move(cubeTangents));
+  cube_mesh_->SetIndices(kCubeIndices);
+  cube_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  cube_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kCubeIndices.size()), 0, AABB{}}});
+  if (!cube_mesh_->ValidateAndUpdate(false)) {
+    throw std::runtime_error{"Failed to validate and update default cube mesh."};
+  }
+  Add(cube_mesh_.Get());
+
+  plane_mesh_.Reset(CreateAndInitialize<Mesh>());
+  plane_mesh_->SetGuid(plane_mesh_guid_);
+  plane_mesh_->SetName("Plane");
+  plane_mesh_->SetPositions(kQuadPositions);
+  plane_mesh_->SetNormals(std::move(quadNormals));
+  plane_mesh_->SetUVs(kQuadUvs);
+  plane_mesh_->SetTangents(std::move(quadTangents));
+  plane_mesh_->SetIndices(kQuadIndices);
+  plane_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  plane_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kQuadIndices.size()), 0, AABB{}}});
+  if (!plane_mesh_->ValidateAndUpdate(false)) {
+    throw std::runtime_error{"Failed to validate and update default plane mesh."};
+  }
+  Add(plane_mesh_.Get());
+
+  sphere_mesh_.Reset(CreateAndInitialize<Mesh>());
+  sphere_mesh_->SetGuid(sphere_mesh_guid_);
+  sphere_mesh_->SetName("Sphere");
+  std::vector<Vector3> spherePositions;
+  std::vector<Vector3> sphereNormals;
+  std::vector<Vector3> sphereTangents;
+  std::vector<Vector2> sphereUvs;
+  std::vector<std::uint32_t> sphereIndices;
+  rendering::GenerateSphereMesh(1, 50, 50, spherePositions, sphereNormals, sphereUvs, sphereIndices);
+  auto const sphereIdxCount{std::size(sphereIndices)};
+  CalculateTangents(spherePositions, sphereUvs, sphereIndices, sphereTangents);
+  sphere_mesh_->SetPositions(std::move(spherePositions));
+  sphere_mesh_->SetNormals(std::move(sphereNormals));
+  sphere_mesh_->SetUVs(std::move(sphereUvs));
+  sphere_mesh_->SetTangents(std::move(sphereTangents));
+  sphere_mesh_->SetIndices(std::move(sphereIndices));
+  sphere_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  sphere_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
+  if (!sphere_mesh_->ValidateAndUpdate(false)) {
+    throw std::runtime_error{"Failed to validate and update default sphere mesh."};
+  }
+  Add(sphere_mesh_.Get());
 }
 
 
@@ -251,7 +353,8 @@ auto ResourceManager::UpdateMappings(std::map<Guid, ResourceDescription> mapping
 }
 
 
-auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) const noexcept -> void {
+auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type,
+                                                 std::vector<Guid>& out) const noexcept -> void {
   for (auto const& [guid, desc] : mMappings) {
     if (desc.type.is_derived_from(type)) {
       out.emplace_back(guid);
@@ -272,5 +375,25 @@ auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type, std::ve
       out.emplace_back(res->GetGuid());
     }
   }
+}
+
+
+auto ResourceManager::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
+  return default_mtl_;
+}
+
+
+auto ResourceManager::GetCubeMesh() const noexcept -> ObserverPtr<Mesh> {
+  return cube_mesh_;
+}
+
+
+auto ResourceManager::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
+  return plane_mesh_;
+}
+
+
+auto ResourceManager::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
+  return sphere_mesh_;
 }
 }

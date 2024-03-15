@@ -17,7 +17,7 @@ class ResourceDB {
   std::map<Guid, std::filesystem::path> mGuidToSrcAbsPath; // Maps resource Guids to the source file of the resource
   std::map<Guid, std::filesystem::path> mGuidToResAbsPath; // Maps resource Guids to the loadable file of the resource
   std::map<std::filesystem::path, Guid> mSrcAbsPathToGuid; // Maps resource source files to the guid of the resource
-  ObserverPtr<ObserverPtr<Object>> mSelectedObjectPtr;
+  Object** mSelectedObjectPtr;
 
 public:
   constexpr static std::string_view RESOURCE_META_FILE_EXT{".mojo"};
@@ -38,7 +38,7 @@ private:
   [[nodiscard]] auto WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory categ, std::span<std::byte const> resBytes) const noexcept -> bool;
 
 public:
-  explicit ResourceDB(ObserverPtr<Object>& selectedObjectPtr);
+  explicit ResourceDB(Object*& selectedObjectPtr);
 
   auto Refresh() -> void;
   auto ChangeProjectDir(std::filesystem::path const& projDirAbs) -> void;
@@ -46,7 +46,7 @@ public:
 
   auto CreateResource(NativeResource& res, std::filesystem::path const& targetPathResDirRel) -> bool;
   auto SaveResource(NativeResource const& res) -> void;
-  [[nodiscard]] auto ImportResource(std::filesystem::path const& resPathResDirRel, ObserverPtr<ResourceImporter> importer = nullptr) -> bool;
+  [[nodiscard]] auto ImportResource(std::filesystem::path const& resPathResDirRel, ResourceImporter* importer = nullptr) -> bool;
   // Returns whether the move was successful.
   [[nodiscard]] auto MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> bool;
   // Returns whether the move was successful.
@@ -66,7 +66,7 @@ public:
   // If the meta file successfully loads, guid and importer will be set to the read values.
   // Nullptrs can be passed to skip loading certain pieces of information.
   // The arguments won't be changed if the meta file failes to load.
-  [[nodiscard]] static auto LoadMeta(std::filesystem::path const& resPathAbs, ObserverPtr<Guid> guid, ObserverPtr<std::unique_ptr<ResourceImporter>> importer) noexcept -> bool;
+  [[nodiscard]] static auto LoadMeta(std::filesystem::path const& resPathAbs, Guid* guid, std::unique_ptr<ResourceImporter>* importer) noexcept -> bool;
   [[nodiscard]] static auto WriteMeta(std::filesystem::path const& resPathAbs, Guid const& guid, ResourceImporter const& importer) noexcept -> bool;
 
   [[nodiscard]] static auto GetNewImporterForResourceFile(std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter>;

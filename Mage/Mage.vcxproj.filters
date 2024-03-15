@@ -72,9 +72,14 @@
     <ClCompile Include="src\ResourceImporters\TextureImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\rendering\imgui_renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
+    <None Include="packages.config" />
+    <None Include="src\rendering\imgui.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Widgets.hpp">
@@ -134,5 +139,15 @@
     <ClInclude Include="src\ResourceImporters\TextureImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\rendering\imgui_renderer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\imgui_shader_interop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\rendering\imgui_vs.hlsl" />
+    <FxCompile Include="src\rendering\imgui_ps.hlsl" />
   </ItemGroup>
 </Project>
