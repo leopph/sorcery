@@ -194,7 +194,7 @@ private:
 
     NormalizedViewport viewport;
 
-    std::shared_ptr<RenderTarget> render_target;
+    unsigned rt_local_idx;
   };
 
 
@@ -206,7 +206,7 @@ private:
     std::vector<SubmeshData> submesh_data;
     std::vector<InstanceData> instance_data;
     std::vector<CameraData> cam_data;
-    std::shared_ptr<RenderTarget> global_rt;
+    std::vector<std::shared_ptr<RenderTarget>> render_targets;
   };
 
 
@@ -247,9 +247,6 @@ private:
                                  graphics::CommandList& cmd) -> void;
   auto DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, FramePacket const& frame_packet,
                               graphics::CommandList& cmd) -> void;
-
-  auto PostProcess(graphics::Texture const& src, graphics::Texture const& dst,
-                   graphics::CommandList& cmd) const noexcept -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
 
@@ -353,7 +350,7 @@ private:
   std::vector<LightComponent const*> lights_;
 
   std::mutex game_camera_mutex_;
-  std::vector<Camera const*> game_render_cameras_;
+  std::vector<Camera const*> cameras_;
 
   std::shared_ptr<RenderTarget> main_rt_;
   std::shared_ptr<RenderTarget> rt_override_;

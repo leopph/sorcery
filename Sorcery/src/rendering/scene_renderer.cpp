@@ -63,8 +63,7 @@ auto SceneRenderer::ExtractCurrentState(FramePacket& packet) const -> void {
   packet.submesh_data.clear();
   packet.instance_data.clear();
   packet.cam_data.clear();
-
-  packet.global_rt = rt_override_ ? rt_override_ : main_rt_;
+  packet.render_targets.clear();
 
   packet.light_data.reserve(lights_.size());
 
@@ -152,12 +151,37 @@ auto SceneRenderer::ExtractCurrentState(FramePacket& packet) const -> void {
     }
   }
 
-  packet.cam_data.reserve(game_render_cameras_.size());
+  auto const find_or_emplace_back_rt{
+    [&packet](std::shared_ptr<RenderTarget> const& rt) -> unsigned {
+      unsigned idx;
 
-  for (auto const cam : game_render_cameras_) {
+      if (auto const it{std::ranges::find(packet.render_targets, rt)}; it != std::ranges::end(packet.render_targets)) {
+        idx = static_cast<unsigned>(it - packet.render_targets.begin());
+      } else {
+        idx = static_cast<unsigned>(packet.render_targets.size());
+        packet.render_targets.emplace_back(rt);
+      }
+
+      return idx;
+    }
+  };
+
+  packet.render_targets.emplace_back(rt_override_ ? rt_override_ : main_rt_); // The global RT is always at index 0!
+
+  packet.cam_data.reserve(cameras_.size());
+
+  for (auto const cam : cameras_) {
+    unsigned rt_local_idx;
+
+    if (auto const rt{cam->GetRenderTarget()}) {
+      rt_local_idx = find_or_emplace_back_rt(rt);
+    } else {
+      rt_local_idx = 0; // The global RT is always at index 0!
+    }
+
     packet.cam_data.emplace_back(cam->GetPosition(), cam->GetRightAxis(), cam->GetUpAxis(), cam->GetForwardAxis(),
       cam->GetNearClipPlane(), cam->GetFarClipPlane(), cam->GetType(), cam->GetVerticalPerspectiveFov(),
-      cam->GetVerticalOrthographicSize(), cam->GetViewport(), cam->GetRenderTarget());
+      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx);
   }
 }
 
@@ -1146,20 +1170,6 @@ auto SceneRenderer::Render() -> void {
   line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
   std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
-  auto const used_rts{
-    [&frame_packet] {
-      std::pmr::vector<RenderTarget*> ret{&GetTmpMemRes()};
-      ret.emplace_back(frame_packet.global_rt.get());
-      std::ranges::for_each(frame_packet.cam_data, [&ret](CameraData const& cam_data) {
-        if (cam_data.render_target) {
-          ret.emplace_back(cam_data.render_target.get());
-        }
-      });
-      ret.erase(std::ranges::unique(ret).begin(), ret.end());
-      return ret;
-    }()
-  };
-
   auto const clear_color{
     [] {
       std::array<float, 4> ret;
@@ -1183,24 +1193,25 @@ auto SceneRenderer::Render() -> void {
   }
 
   std::pmr::vector<graphics::TextureBarrier> cam_rt_barriers{&GetTmpMemRes()};
-  cam_rt_barriers.reserve(used_rts.size());
+  cam_rt_barriers.reserve(frame_packet.render_targets.size());
 
-  std::ranges::transform(used_rts, std::back_inserter(cam_rt_barriers), [](RenderTarget const* const rt) {
-    return graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-      rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-    };
-  });
+  std::ranges::transform(frame_packet.render_targets, std::back_inserter(cam_rt_barriers),
+    [](std::shared_ptr<RenderTarget> const& rt) {
+      return graphics::TextureBarrier{
+        D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
+        D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+        rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+      };
+    });
 
   cmd.Barrier({}, {}, cam_rt_barriers);
 
-  std::ranges::for_each(used_rts, [&cmd, &clear_color](RenderTarget const* const rt) {
+  std::ranges::for_each(frame_packet.render_targets, [&cmd, &clear_color](std::shared_ptr<RenderTarget> const& rt) {
     cmd.ClearRenderTarget(*rt->GetColorTex(), clear_color, {});
   });
 
   for (auto const& cam_data : frame_packet.cam_data) {
-    auto& target_rt{cam_data.render_target ? *cam_data.render_target : *frame_packet.global_rt};
+    auto& target_rt{*frame_packet.render_targets[cam_data.rt_local_idx]};
     auto const& target_rt_desc{target_rt.GetDesc()};
 
     auto const target_rt_width{target_rt_desc.width};
@@ -1753,13 +1764,14 @@ auto SceneRenderer::Render() -> void {
 
   cam_rt_barriers.clear();
 
-  std::ranges::transform(used_rts, std::back_inserter(cam_rt_barriers), [](RenderTarget const* const rt) {
-    return graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
-      D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_LAYOUT_RENDER_TARGET, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
-      rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-    };
-  });
+  std::ranges::transform(frame_packet.render_targets, std::back_inserter(cam_rt_barriers),
+    [](std::shared_ptr<RenderTarget> const& rt) {
+      return graphics::TextureBarrier{
+        D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+        D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_LAYOUT_RENDER_TARGET, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+        rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
+      };
+    });
 
   cmd.Barrier({}, {}, cam_rt_barriers);
 
@@ -1969,12 +1981,12 @@ auto SceneRenderer::Unregister(LightComponent const& light_component) noexcept -
 
 auto SceneRenderer::Register(Camera const& cam) noexcept -> void {
   std::unique_lock const lock{game_camera_mutex_};
-  game_render_cameras_.emplace_back(&cam);
+  cameras_.emplace_back(&cam);
 }
 
 
 auto SceneRenderer::Unregister(Camera const& cam) noexcept -> void {
   std::unique_lock const lock{game_camera_mutex_};
-  std::erase(game_render_cameras_, &cam);
+  std::erase(cameras_, &cam);
 }
 }
