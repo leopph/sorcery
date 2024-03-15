@@ -87,8 +87,8 @@ auto Camera::GetViewport() const -> NormalizedViewport const& {
 auto Camera::SetViewport(NormalizedViewport const& viewport) -> void {
   viewport_.left = std::clamp(viewport.left, 0.0f, 1.0f);
   viewport_.top = std::clamp(viewport.top, 0.0f, 1.0f);
-  viewport_.right = std::clamp(viewport.right, 0.0f, 1.0f);
-  viewport_.bottom = std::clamp(viewport.bottom, 0.0f, 1.0f);
+  viewport_.right = std::clamp(viewport.right, viewport_.left, 1.0f);
+  viewport_.bottom = std::clamp(viewport.bottom, viewport_.top, 1.0f);
 }
 
 
