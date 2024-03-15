@@ -185,7 +185,7 @@ auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(
 
 
 auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData const> const lights,
-                               std::pmr::vector<unsigned> visible_light_indices) -> void {
+                               std::pmr::vector<unsigned>& visible_light_indices) -> void {
   visible_light_indices.clear();
 
   for (unsigned light_idx = 0; light_idx < static_cast<unsigned>(lights.size()); light_idx++) {

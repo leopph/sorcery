@@ -216,7 +216,7 @@ private:
   // Culling
 
   static auto CullLights(Frustum const& frustum_ws, std::span<LightData const> lights,
-                         std::pmr::vector<unsigned> visible_light_indices) -> void;
+                         std::pmr::vector<unsigned>& visible_light_indices) -> void;
   static auto CullStaticSubmeshInstances(Frustum const& frustum_ws, std::span<MeshData const> meshes,
                                          std::span<SubmeshData const> submeshes,
                                          std::span<InstanceData const> instances,
