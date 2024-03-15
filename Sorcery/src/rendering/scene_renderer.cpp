@@ -459,7 +459,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
                                               ShadowCascadeBoundaries const& shadow_cascade_boundaries,
                                               std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
                                               graphics::CommandList& cmd) -> void {
-  cmd.SetPipelineState(*depth_only_pso_);
+  cmd.SetPipelineState(*shadow_pso_);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
   cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
   cmd.Barrier({}, {}, std::array{
@@ -651,7 +651,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
                                            SceneRenderer::FramePacket const& frame_packet,
                                            graphics::CommandList& cmd) -> void {
-  cmd.SetPipelineState(*depth_only_pso_);
+  cmd.SetPipelineState(*shadow_pso_);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
   cmd.SetRenderTargets({}, atlas.GetTex().get());
@@ -682,8 +682,8 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 
         D3D12_VIEWPORT const viewport{subcell_offset[0], subcell_offset[1], subcell_size, subcell_size, 0, 1};
         D3D12_RECT const scissor{
-          static_cast<LONG>(subcell_offset[0]), static_cast<LONG>(subcell_offset[1]), static_cast<LONG>(subcell_offset[0] + subcell_size),
-          static_cast<LONG>(subcell_offset[1] + subcell_size)
+          static_cast<LONG>(subcell_offset[0]), static_cast<LONG>(subcell_offset[1]),
+          static_cast<LONG>(subcell_offset[0] + subcell_size), static_cast<LONG>(subcell_offset[1] + subcell_size)
         };
 
         cmd.SetViewports(std::span{&viewport, 1});
@@ -782,6 +782,11 @@ auto SceneRenderer::RecreatePipelines() -> bool {
     FALSE, D3D12_DEPTH_WRITE_MASK_ZERO, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, FALSE
   };
 
+  CD3DX12_RASTERIZER_DESC const shadow_rasterizer_desc{
+    D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, FALSE, -1, 0.f, -2.5f, TRUE, FALSE, FALSE, 0,
+    D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF
+  };
+
   DXGI_SAMPLE_DESC const msaa_sample_desc{static_cast<UINT>(msaa_mode_), 0};
   CD3DX12_RT_FORMAT_ARRAY const render_target_format{D3D12_RT_FORMAT_ARRAY{{render_target_format_}, 1}};
   CD3DX12_RT_FORMAT_ARRAY const color_format{D3D12_RT_FORMAT_ARRAY{{color_buffer_format_}, 1}};
@@ -797,13 +802,14 @@ auto SceneRenderer::RecreatePipelines() -> bool {
 
   depth_normal_pso_ = device_->CreatePipelineState(depth_normal_pso_desc, sizeof(DepthNormalDrawParams) / 4);
 
-  graphics::PipelineDesc const depth_only_pso_desc{
+  graphics::PipelineDesc const shadow_pso_desc_{
     .vs = CD3DX12_SHADER_BYTECODE{g_depth_only_vs_bytes, ARRAYSIZE(g_depth_only_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
-    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_
+    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_,
+    .rasterizer_state = shadow_rasterizer_desc
   };
 
-  depth_only_pso_ = device_->CreatePipelineState(depth_only_pso_desc, sizeof(DepthOnlyDrawParams) / 4);
+  shadow_pso_ = device_->CreatePipelineState(shadow_pso_desc_, sizeof(DepthOnlyDrawParams) / 4);
 
   graphics::PipelineDesc const depth_resolve_pso_desc{
     .cs = CD3DX12_SHADER_BYTECODE{g_depth_resolve_cs_bytes, ARRAYSIZE(g_depth_resolve_cs_bytes)}

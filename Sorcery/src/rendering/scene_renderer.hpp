@@ -285,7 +285,7 @@ private:
   graphics::SharedDeviceChildHandle<graphics::Texture> white_tex_;
   graphics::SharedDeviceChildHandle<graphics::Texture> ssao_noise_tex_;
 
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_only_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> shadow_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_normal_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_resolve_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> line_gizmo_pso_;
