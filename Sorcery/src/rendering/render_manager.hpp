@@ -31,12 +31,13 @@ public:
 
   [[nodiscard]] constexpr static auto GetMaxGpuQueuedFrames() -> UINT;
   [[nodiscard]] constexpr static auto GetMaxFramesInFlight() -> UINT;
+
   [[nodiscard]] LEOPPHAPI auto GetCurrentFrameCount() const -> UINT64;
   [[nodiscard]] LEOPPHAPI auto GetCurrentFrameIndex() const -> UINT;
 
   [[nodiscard]] LEOPPHAPI auto AcquireCommandList() -> graphics::CommandList&;
-  [[nodiscard]] LEOPPHAPI auto
-  GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget>;
+  [[nodiscard]] LEOPPHAPI auto AcquireTemporaryRenderTarget(
+    RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget>;
 
   [[nodiscard]] LEOPPHAPI auto LoadReadonlyTexture(
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
@@ -47,16 +48,21 @@ public:
 private:
   struct TempRenderTargetRecord {
     std::shared_ptr<RenderTarget> rt;
-    int age_in_frames;
+    UINT age_in_frames;
   };
 
 
   auto CreateCommandLists(UINT count) -> void;
-  auto ReleaseTempRenderTargets() noexcept -> void;
+  auto AgeTempRenderTargets() -> void;
+  auto ReleaseOldTempRenderTargets() -> void;
 
   static UINT constexpr max_tmp_rt_age_{10};
   static UINT constexpr max_gpu_queued_frames_{1};
   static UINT constexpr max_frames_in_flight_{max_gpu_queued_frames_ + 1};
+
+  static_assert(
+    max_tmp_rt_age_ > max_gpu_queued_frames_ &&
+    "Temporary render targets must live long enough to let any work possibly queued on them finish!");
 
   ObserverPtr<graphics::GraphicsDevice> device_;
 

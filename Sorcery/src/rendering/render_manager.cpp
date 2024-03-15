@@ -15,7 +15,8 @@ auto RenderManager::BeginNewFrame() -> void {
   frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
   next_cmd_list_idx_ = 0;
 
-  ReleaseTempRenderTargets();
+  AgeTempRenderTargets();
+  ReleaseOldTempRenderTargets();
 }
 
 
@@ -37,10 +38,11 @@ auto RenderManager::AcquireCommandList() -> graphics::CommandList& {
 }
 
 
-auto RenderManager::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget> {
-  for (auto& [rt, lastUseInFrames] : tmp_render_targets_) {
-    if (rt->GetDesc() == desc && lastUseInFrames != 0 /*The RT wasn't already handed out this frame*/) {
-      lastUseInFrames = 0;
+auto RenderManager::AcquireTemporaryRenderTarget(RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget> {
+  for (auto& [rt, age_in_frames] : tmp_render_targets_) {
+    // An age of 0 means the render target was acquired this frame and is considered in use
+    if (age_in_frames > 0 && rt->GetDesc() == desc) {
+      age_in_frames = 0;
       return rt;
     }
   }
@@ -218,11 +220,17 @@ auto RenderManager::CreateCommandLists(UINT const count) -> void {
 }
 
 
-auto RenderManager::ReleaseTempRenderTargets() noexcept -> void {
-  std::erase_if(tmp_render_targets_, [](TempRenderTargetRecord& tmpRtRecord) {
-    tmpRtRecord.age_in_frames += 1;
-    return tmpRtRecord.age_in_frames >= max_tmp_rt_age_;
+auto RenderManager::AgeTempRenderTargets() -> void {
+  std::ranges::for_each(tmp_render_targets_, [](TempRenderTargetRecord& record) {
+    ++record.age_in_frames;
   });
+}
+
+
+auto RenderManager::ReleaseOldTempRenderTargets() -> void {
+  tmp_render_targets_.erase(std::ranges::remove_if(tmp_render_targets_, [](TempRenderTargetRecord const& record) {
+    return record.age_in_frames >= max_tmp_rt_age_;
+  }).begin(), tmp_render_targets_.end());
 }
 
 

@@ -11,6 +11,20 @@
 
 namespace sorcery::mage {
 class SceneViewWindow {
+public:
+  SceneViewWindow();
+  SceneViewWindow(SceneViewWindow const&) = delete;
+  SceneViewWindow(SceneViewWindow&&) = delete;
+
+  ~SceneViewWindow();
+
+  auto operator=(SceneViewWindow const&) -> void = delete;
+  auto operator=(SceneViewWindow&&) -> void = delete;
+
+  auto Draw(Application& context) -> void;
+  [[nodiscard]] auto GetCamera() noexcept -> StandaloneCamera&;
+
+private:
   struct FocusMoveInfo {
     Vector3 source;
     Vector3 target;
@@ -30,35 +44,20 @@ class SceneViewWindow {
   };
 
 
-  static std::array constexpr GIZMO_OP_OPTIONS{
-    GizmoOpOption{ImGuizmo::OPERATION::TRANSLATE, "Translate"},
-    GizmoOpOption{ImGuizmo::OPERATION::ROTATE, "Rotate"},
+  static std::array constexpr gizmo_op_options_{
+    GizmoOpOption{ImGuizmo::OPERATION::TRANSLATE, "Translate"}, GizmoOpOption{ImGuizmo::OPERATION::ROTATE, "Rotate"},
     GizmoOpOption{ImGuizmo::OPERATION::SCALE, "Scale"}
   };
 
-  static std::array constexpr GIZMO_MODE_OPTIONS{
-    GizmoModeOption{ImGuizmo::MODE::LOCAL, "Local"},
-    GizmoModeOption{ImGuizmo::MODE::WORLD, "World"}
+  static std::array constexpr gizmo_mode_options_{
+    GizmoModeOption{ImGuizmo::MODE::LOCAL, "Local"}, GizmoModeOption{ImGuizmo::MODE::WORLD, "World"}
   };
 
-  StandaloneCamera mCam{Vector3{}, Quaternion{}, 5.0f, 0.1f, 1000.0f, 60};
-  std::optional<FocusMoveInfo> mFocusTarget;
-  int mGizmoOpIdx{0};
-  int mGizmoModeIdx{0};
-  bool mCamMoving{false};
-  bool mShowGrid{false};
-
-public:
-  SceneViewWindow();
-  SceneViewWindow(SceneViewWindow const&) = delete;
-  SceneViewWindow(SceneViewWindow&&) = delete;
-
-  ~SceneViewWindow();
-
-  void operator=(SceneViewWindow const&) = delete;
-  void operator=(SceneViewWindow&&) = delete;
-
-  auto Draw(Application& context) -> void;
-  [[nodiscard]] auto GetCamera() noexcept -> StandaloneCamera&;
+  StandaloneCamera cam_{Vector3{}, Quaternion{}, 5.0f, 0.1f, 1000.0f, 60};
+  std::optional<FocusMoveInfo> focus_target_;
+  int gizmo_op_idx_{0};
+  int gizmo_mode_idx_{0};
+  bool cam_moving_{false};
+  bool show_grid_{false};
 };
 }

@@ -1253,7 +1253,7 @@ auto SceneRenderer::Render() -> void {
       static_cast<UINT>(GetMultisamplingMode()), L"Camera HDR RenderTarget", false, clear_color, 0.0f
     };
 
-    auto const hdr_rt{render_manager_->GetTemporaryRenderTarget(hdr_rt_desc)};
+    auto const hdr_rt{render_manager_->AcquireTemporaryRenderTarget(hdr_rt_desc)};
 
     auto& per_frame_cb{per_frame_cbs_[frame_idx]};
     SetPerFrameConstants(per_frame_cb, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
@@ -1305,7 +1305,7 @@ auto SceneRenderer::Render() -> void {
     cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
 
     auto const normal_rt{
-      render_manager_->GetTemporaryRenderTarget(RenderTarget::Desc{
+      render_manager_->AcquireTemporaryRenderTarget(RenderTarget::Desc{
         transient_rt_width, transient_rt_height, normal_buffer_format_, std::nullopt, 1, L"Camera Normal RT"
       })
     };
@@ -1321,7 +1321,7 @@ auto SceneRenderer::Render() -> void {
 
           auto actual_normal_rt_desc{normal_rt->GetDesc()};
           actual_normal_rt_desc.sample_count = static_cast<int>(GetMultisamplingMode());
-          return render_manager_->GetTemporaryRenderTarget(actual_normal_rt_desc);
+          return render_manager_->AcquireTemporaryRenderTarget(actual_normal_rt_desc);
         }()
       };
 
@@ -1407,7 +1407,7 @@ auto SceneRenderer::Render() -> void {
     // SSAO pass
     if (ssao_enabled_) {
       auto const ssao_rt{
-        render_manager_->GetTemporaryRenderTarget(RenderTarget::Desc{
+        render_manager_->AcquireTemporaryRenderTarget(RenderTarget::Desc{
           transient_rt_width, transient_rt_height, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"
         })
       };
@@ -1432,7 +1432,7 @@ auto SceneRenderer::Render() -> void {
           ssao_depth_rt_desc.sample_count = 1;
           ssao_depth_rt_desc.depth_stencil_format = std::nullopt;
           ssao_depth_rt_desc.enable_unordered_access = true;
-          auto const ssao_depth_rt{render_manager_->GetTemporaryRenderTarget(ssao_depth_rt_desc)};
+          auto const ssao_depth_rt{render_manager_->AcquireTemporaryRenderTarget(ssao_depth_rt_desc)};
 
           cmd.Barrier({}, {}, std::array{
             graphics::TextureBarrier{
@@ -1505,7 +1505,7 @@ auto SceneRenderer::Render() -> void {
       cmd.DrawInstanced(3, 1, 0, 0);
 
       auto const ssao_blur_rt{
-        render_manager_->GetTemporaryRenderTarget([&ssao_rt] {
+        render_manager_->AcquireTemporaryRenderTarget([&ssao_rt] {
           auto ret{ssao_rt->GetDesc()};
           ret.debug_name = L"SSAO Blur RT";
           return ret;
@@ -1707,7 +1707,7 @@ auto SceneRenderer::Render() -> void {
     } else {
       auto resolved_hdr_rt_desc{hdr_rt_desc};
       resolved_hdr_rt_desc.sample_count = 1;
-      auto const resolve_hdr_rt{render_manager_->GetTemporaryRenderTarget(resolved_hdr_rt_desc)};
+      auto const resolve_hdr_rt{render_manager_->AcquireTemporaryRenderTarget(resolved_hdr_rt_desc)};
 
       cmd.Barrier({}, {}, std::array{
         graphics::TextureBarrier{

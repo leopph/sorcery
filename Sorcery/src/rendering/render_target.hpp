@@ -34,7 +34,7 @@ public:
   };
 
 
-  [[nodiscard]] static auto New(graphics::GraphicsDevice& device, Desc const& desc) -> std::unique_ptr<RenderTarget>;
+  [[nodiscard]] LEOPPHAPI static auto New(graphics::GraphicsDevice& device, Desc const& desc) -> std::unique_ptr<RenderTarget>;
 
   RenderTarget(RenderTarget const&) = delete;
   RenderTarget(RenderTarget&&) = delete;
