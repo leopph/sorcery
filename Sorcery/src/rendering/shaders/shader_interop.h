@@ -233,6 +233,7 @@ struct ObjectDrawParams {
 struct PostProcessDrawParams {
   uint in_tex_idx;
   float inv_gamma;
+  uint bi_clamp_samp_idx;
 };
 
 

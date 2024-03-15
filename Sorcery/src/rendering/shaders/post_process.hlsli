@@ -23,9 +23,10 @@ ScreenVsOut VsMain(const uint vertex_id : SV_VertexID) {
 }
 
 
-float4 PsMain(const float4 pixel_coord : SV_POSITION) : SV_TARGET {
+float4 PsMain(const ScreenVsOut vs_out) : SV_TARGET {
   const Texture2D in_tex = ResourceDescriptorHeap[g_params.in_tex_idx];
-  float3 pixel_color = in_tex.Load(int3(pixel_coord.xy, 0)).rgb;
+  const SamplerState bi_clamp_samp = SamplerDescriptorHeap[g_params.bi_clamp_samp_idx];
+  float3 pixel_color = in_tex.Sample(bi_clamp_samp, vs_out.uv).rgb;
 
   // Tone mapping
   pixel_color = pixel_color / (pixel_color + 1.0);

@@ -730,16 +730,6 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 }
 
 
-auto SceneRenderer::PostProcess(graphics::Texture const& src, graphics::Texture const& dst,
-                                graphics::CommandList& cmd) const noexcept -> void {
-  cmd.SetPipelineState(*post_process_pso_);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx), src.GetShaderResource());
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, inv_gamma), *std::bit_cast<UINT*>(&inv_gamma_));
-  cmd.SetRenderTargets(std::array{dst}, nullptr);
-  cmd.DrawInstanced(3, 1, 0, 0);
-}
-
-
 auto SceneRenderer::ClearGizmoDrawQueue() noexcept -> void {
   gizmo_colors_.clear();
   line_gizmo_vertex_data_.clear();
@@ -1211,34 +1201,45 @@ auto SceneRenderer::Render() -> void {
     auto& target_rt{cam_data.render_target ? *cam_data.render_target : *frame_packet.global_rt};
     auto const& target_rt_desc{target_rt.GetDesc()};
 
-    auto const rt_width{target_rt_desc.width};
-    auto const rt_height{target_rt_desc.height};
+    auto const target_rt_width{target_rt_desc.width};
+    auto const target_rt_height{target_rt_desc.height};
 
     CD3DX12_VIEWPORT const cam_viewport{
-      cam_data.viewport.left * static_cast<FLOAT>(rt_width),
-      cam_data.viewport.top * static_cast<float>(rt_height),
-      cam_data.viewport.right * static_cast<float>(rt_width) - cam_data.viewport.left * static_cast<FLOAT>(rt_width),
-      cam_data.viewport.bottom * static_cast<float>(rt_height) - cam_data.viewport.top * static_cast<float>(rt_height),
+      cam_data.viewport.left * static_cast<FLOAT>(target_rt_width),
+      cam_data.viewport.top * static_cast<float>(target_rt_height),
+      cam_data.viewport.right * static_cast<float>(target_rt_width) - cam_data.viewport.left * static_cast<FLOAT>(target_rt_width),
+      cam_data.viewport.bottom * static_cast<float>(target_rt_height) - cam_data.viewport.top * static_cast<float>(target_rt_height),
     };
 
     CD3DX12_RECT const cam_scissor{
-      static_cast<LONG>(cam_data.viewport.left * static_cast<FLOAT>(rt_width)),
-      static_cast<LONG>(cam_data.viewport.top * static_cast<FLOAT>(rt_height)),
-      static_cast<LONG>(cam_data.viewport.right * static_cast<FLOAT>(rt_width)),
-      static_cast<LONG>(cam_data.viewport.bottom * static_cast<FLOAT>(rt_height)),
+      static_cast<LONG>(cam_data.viewport.left * static_cast<FLOAT>(target_rt_width)),
+      static_cast<LONG>(cam_data.viewport.top * static_cast<FLOAT>(target_rt_height)),
+      static_cast<LONG>(cam_data.viewport.right * static_cast<FLOAT>(target_rt_width)),
+      static_cast<LONG>(cam_data.viewport.bottom * static_cast<FLOAT>(target_rt_height)),
     };
 
     auto const viewport_aspect{cam_viewport.Width / cam_viewport.Height};
 
+    auto const transient_rt_width{static_cast<UINT>(cam_viewport.Width)};
+    auto const transient_rt_height{static_cast<UINT>(cam_viewport.Height)};
+
+    CD3DX12_VIEWPORT const transient_viewport{
+      0.0f, 0.0f, static_cast<FLOAT>(transient_rt_width), static_cast<FLOAT>(transient_rt_height)
+    };
+
+    CD3DX12_RECT const  transient_scissor{
+      0, 0, static_cast<LONG>(transient_rt_width), static_cast<LONG>(transient_rt_height)
+    };
+
     RenderTarget::Desc const hdr_rt_desc{
-      rt_width, rt_height, color_buffer_format_, depth_format_, static_cast<UINT>(GetMultisamplingMode()),
+      transient_rt_width, transient_rt_height, color_buffer_format_, depth_format_, static_cast<UINT>(GetMultisamplingMode()),
       L"Camera HDR RenderTarget", false, clear_color, 0.0f
     };
 
     auto const hdr_rt{render_manager_->GetTemporaryRenderTarget(hdr_rt_desc)};
 
     auto& per_frame_cb{per_frame_cbs_[frame_idx]};
-    SetPerFrameConstants(per_frame_cb, static_cast<int>(rt_width), static_cast<int>(rt_height));
+    SetPerFrameConstants(per_frame_cb, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
 
     auto const cam_view_mtx{
       Camera::CalculateViewMatrix(cam_data.position, cam_data.right, cam_data.up, cam_data.forward)
@@ -1283,12 +1284,12 @@ auto SceneRenderer::Render() -> void {
 
     cmd.ClearDepthStencil(*hdr_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
-    cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&cam_viewport), 1});
-    cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
+    cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
+    cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
 
     auto const normal_rt{
       render_manager_->GetTemporaryRenderTarget(RenderTarget::Desc{
-        rt_width, rt_height, normal_buffer_format_, std::nullopt, 1, L"Camera Normal RT"
+        transient_rt_width, transient_rt_height, normal_buffer_format_, std::nullopt, 1, L"Camera Normal RT"
       })
     };
 
@@ -1390,7 +1391,7 @@ auto SceneRenderer::Render() -> void {
     if (ssao_enabled_) {
       auto const ssao_rt{
         render_manager_->GetTemporaryRenderTarget(RenderTarget::Desc{
-          rt_width, rt_height, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"
+          transient_rt_width, transient_rt_height, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"
         })
       };
 
@@ -1675,10 +1676,10 @@ auto SceneRenderer::Render() -> void {
       }
     }
 
-    RenderTarget const* post_process_rt;
+    RenderTarget const* post_process_input_rt;
 
     if (GetMultisamplingMode() == MultisamplingMode::kOff) {
-      post_process_rt = hdr_rt.get();
+      post_process_input_rt = hdr_rt.get();
       cmd.Barrier({}, {}, std::array{
         graphics::TextureBarrier{
           D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RENDER_TARGET,
@@ -1687,9 +1688,9 @@ auto SceneRenderer::Render() -> void {
         }
       });
     } else {
-      auto resolve_hdr_rt_desc{hdr_rt_desc};
-      resolve_hdr_rt_desc.sample_count = 1;
-      auto const resolve_hdr_rt{render_manager_->GetTemporaryRenderTarget(resolve_hdr_rt_desc)};
+      auto resolved_hdr_rt_desc{hdr_rt_desc};
+      resolved_hdr_rt_desc.sample_count = 1;
+      auto const resolve_hdr_rt{render_manager_->GetTemporaryRenderTarget(resolved_hdr_rt_desc)};
 
       cmd.Barrier({}, {}, std::array{
         graphics::TextureBarrier{
@@ -1714,10 +1715,18 @@ auto SceneRenderer::Render() -> void {
         }
       });
 
-      post_process_rt = resolve_hdr_rt.get();
+      post_process_input_rt = resolve_hdr_rt.get();
     }
 
-    PostProcess(*post_process_rt->GetColorTex(), *target_rt.GetColorTex(), cmd);
+    cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&cam_viewport), 1});
+    cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
+    
+    cmd.SetPipelineState(*post_process_pso_);
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx), post_process_input_rt->GetColorTex()->GetShaderResource());
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, inv_gamma), *std::bit_cast<UINT*>(&inv_gamma_));
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, bi_clamp_samp_idx), samp_bi_clamp_.Get());
+    cmd.SetRenderTargets(std::span{target_rt.GetColorTex().get(), 1}, nullptr);
+    cmd.DrawInstanced(3, 1, 0, 0);
 
     if (!line_gizmo_vertex_data_.empty()) {
       cmd.SetPipelineState(*line_gizmo_pso_);
@@ -1728,7 +1737,6 @@ auto SceneRenderer::Render() -> void {
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx),
         cam_per_view_cb.GetBuffer()->GetConstantBuffer());
       cmd.SetRenderTargets(std::span{target_rt.GetColorTex().get(), 1}, nullptr);
-      cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&cam_viewport), 1});
       cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
       cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
       cmd.DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);
