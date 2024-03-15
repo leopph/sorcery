@@ -789,8 +789,8 @@ auto SceneRenderer::RecreatePipelines() -> bool {
   };
 
   CD3DX12_DEPTH_STENCIL_DESC1 const reverse_z_depth_stencil_read{
-    TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-    FALSE
+    TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {},
+    {}, FALSE
   };
 
   CD3DX12_DEPTH_STENCIL_DESC1 const disabled_depth_stencil{
@@ -1303,6 +1303,8 @@ auto SceneRenderer::Render() -> void {
           cam_per_view_cb.GetBuffer()->GetConstantBuffer());
         cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_frame_cb_idx),
           per_frame_cb.GetBuffer()->GetConstantBuffer());
+        cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
+        cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
       }
 
       // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
