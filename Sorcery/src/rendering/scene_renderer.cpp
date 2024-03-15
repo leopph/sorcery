@@ -460,6 +460,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
                                               std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
                                               graphics::CommandList& cmd) -> void {
   cmd.SetPipelineState(*depth_only_pso_);
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
   cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
   cmd.Barrier({}, {}, std::array{
     graphics::TextureBarrier{
@@ -598,7 +599,6 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
         shadow_view_proj_matrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
 
-        cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
         cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), cascadeIdx);
 
         D3D12_VIEWPORT const shadowViewport{
@@ -797,7 +797,7 @@ auto SceneRenderer::RecreatePipelines() -> bool {
   graphics::PipelineDesc const depth_only_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{g_depth_only_vs_bytes, ARRAYSIZE(g_depth_only_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
-    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_, .sample_desc = msaa_sample_desc
+    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_
   };
 
   depth_only_pso_ = device_->CreatePipelineState(depth_only_pso_desc, sizeof(DepthOnlyDrawParams) / 4);
