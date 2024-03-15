@@ -1146,17 +1146,19 @@ auto SceneRenderer::Render() -> void {
   line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
   std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
-  std::pmr::vector<RenderTarget*> used_rts{&GetTmpMemRes()};
-  std::ranges::for_each(frame_packet.cam_data, [&used_rts, this, &frame_packet](CameraData const& cam_data) {
-    if (cam_data.render_target && std::ranges::find(used_rts, cam_data.render_target.get()) ==
-        std::ranges::end(used_rts)) {
-      used_rts.emplace_back(cam_data.render_target.get());
-    } else if (!cam_data.render_target) {
-      if (std::ranges::find(used_rts, frame_packet.global_rt.get()) == std::ranges::end(used_rts)) {
-        used_rts.emplace_back(frame_packet.global_rt.get());
-      }
-    }
-  });
+  auto const used_rts{
+    [&frame_packet] {
+      std::pmr::vector<RenderTarget*> ret{&GetTmpMemRes()};
+      ret.emplace_back(frame_packet.global_rt.get());
+      std::ranges::for_each(frame_packet.cam_data, [&ret](CameraData const& cam_data) {
+        if (cam_data.render_target) {
+          ret.emplace_back(cam_data.render_target.get());
+        }
+      });
+      ret.erase(std::ranges::unique(ret).begin(), ret.end());
+      return ret;
+    }()
+  };
 
   auto const clear_color{
     [] {
@@ -1207,8 +1209,12 @@ auto SceneRenderer::Render() -> void {
     CD3DX12_VIEWPORT const cam_viewport{
       cam_data.viewport.left * static_cast<FLOAT>(target_rt_width),
       cam_data.viewport.top * static_cast<float>(target_rt_height),
-      std::max(cam_data.viewport.right * static_cast<float>(target_rt_width) - cam_data.viewport.left * static_cast<FLOAT>(target_rt_width), 1.0f),
-      std::max(cam_data.viewport.bottom * static_cast<float>(target_rt_height) - cam_data.viewport.top * static_cast<float>(target_rt_height), 1.0f),
+      std::max(
+        cam_data.viewport.right * static_cast<float>(target_rt_width) - cam_data.viewport.left * static_cast<FLOAT>(
+          target_rt_width), 1.0f),
+      std::max(
+        cam_data.viewport.bottom * static_cast<float>(target_rt_height) - cam_data.viewport.top * static_cast<float>(
+          target_rt_height), 1.0f),
     };
 
     CD3DX12_RECT const cam_scissor{
@@ -1227,13 +1233,13 @@ auto SceneRenderer::Render() -> void {
       0.0f, 0.0f, static_cast<FLOAT>(transient_rt_width), static_cast<FLOAT>(transient_rt_height)
     };
 
-    CD3DX12_RECT const  transient_scissor{
+    CD3DX12_RECT const transient_scissor{
       0, 0, static_cast<LONG>(transient_rt_width), static_cast<LONG>(transient_rt_height)
     };
 
     RenderTarget::Desc const hdr_rt_desc{
-      transient_rt_width, transient_rt_height, color_buffer_format_, depth_format_, static_cast<UINT>(GetMultisamplingMode()),
-      L"Camera HDR RenderTarget", false, clear_color, 0.0f
+      transient_rt_width, transient_rt_height, color_buffer_format_, depth_format_,
+      static_cast<UINT>(GetMultisamplingMode()), L"Camera HDR RenderTarget", false, clear_color, 0.0f
     };
 
     auto const hdr_rt{render_manager_->GetTemporaryRenderTarget(hdr_rt_desc)};
@@ -1720,10 +1726,12 @@ auto SceneRenderer::Render() -> void {
 
     cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&cam_viewport), 1});
     cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
-    
+
     cmd.SetPipelineState(*post_process_pso_);
-    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx), post_process_input_rt->GetColorTex()->GetShaderResource());
-    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, inv_gamma), *std::bit_cast<UINT*>(&inv_gamma_));
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx),
+      post_process_input_rt->GetColorTex()->GetShaderResource());
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, inv_gamma),
+      *std::bit_cast<UINT*>(&inv_gamma_));
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, bi_clamp_samp_idx), samp_bi_clamp_.Get());
     cmd.SetRenderTargets(std::span{target_rt.GetColorTex().get(), 1}, nullptr);
     cmd.DrawInstanced(3, 1, 0, 0);
