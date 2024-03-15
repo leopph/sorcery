@@ -1170,7 +1170,7 @@ auto SceneRenderer::Render() -> void {
   line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
   std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
-  auto const clear_color{
+  auto const background_color{
     [] {
       std::array<float, 4> ret;
       if (Scene::GetActiveScene()->GetSkyMode() == SkyMode::Color) {
@@ -1206,8 +1206,8 @@ auto SceneRenderer::Render() -> void {
 
   cmd.Barrier({}, {}, cam_rt_barriers);
 
-  std::ranges::for_each(frame_packet.render_targets, [&cmd, &clear_color](std::shared_ptr<RenderTarget> const& rt) {
-    cmd.ClearRenderTarget(*rt->GetColorTex(), clear_color, {});
+  std::ranges::for_each(frame_packet.render_targets, [&cmd](std::shared_ptr<RenderTarget> const& rt) {
+    cmd.ClearRenderTarget(*rt->GetColorTex(), rt->GetDesc().color_clear_value, {});
   });
 
   for (auto const& cam_data : frame_packet.cam_data) {
@@ -1250,7 +1250,7 @@ auto SceneRenderer::Render() -> void {
 
     RenderTarget::Desc const hdr_rt_desc{
       transient_rt_width, transient_rt_height, color_buffer_format_, depth_format_,
-      static_cast<UINT>(GetMultisamplingMode()), L"Camera HDR RenderTarget", false, clear_color, 0.0f
+      static_cast<UINT>(GetMultisamplingMode()), L"Camera HDR RenderTarget", false, background_color, 0.0f
     };
 
     auto const hdr_rt{render_manager_->AcquireTemporaryRenderTarget(hdr_rt_desc)};
@@ -1650,7 +1650,7 @@ auto SceneRenderer::Render() -> void {
         }
     });
 
-    cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), clear_color, {});
+    cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), background_color, {});
 
     for (auto const instance_idx : visible_static_submesh_instance_indices) {
       auto const& instance{frame_packet.instance_data[instance_idx]};
