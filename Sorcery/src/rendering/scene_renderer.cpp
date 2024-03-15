@@ -1207,15 +1207,15 @@ auto SceneRenderer::Render() -> void {
     CD3DX12_VIEWPORT const cam_viewport{
       cam_data.viewport.left * static_cast<FLOAT>(target_rt_width),
       cam_data.viewport.top * static_cast<float>(target_rt_height),
-      cam_data.viewport.right * static_cast<float>(target_rt_width) - cam_data.viewport.left * static_cast<FLOAT>(target_rt_width),
-      cam_data.viewport.bottom * static_cast<float>(target_rt_height) - cam_data.viewport.top * static_cast<float>(target_rt_height),
+      std::max(cam_data.viewport.right * static_cast<float>(target_rt_width) - cam_data.viewport.left * static_cast<FLOAT>(target_rt_width), 1.0f),
+      std::max(cam_data.viewport.bottom * static_cast<float>(target_rt_height) - cam_data.viewport.top * static_cast<float>(target_rt_height), 1.0f),
     };
 
     CD3DX12_RECT const cam_scissor{
       static_cast<LONG>(cam_data.viewport.left * static_cast<FLOAT>(target_rt_width)),
       static_cast<LONG>(cam_data.viewport.top * static_cast<FLOAT>(target_rt_height)),
-      static_cast<LONG>(cam_data.viewport.right * static_cast<FLOAT>(target_rt_width)),
-      static_cast<LONG>(cam_data.viewport.bottom * static_cast<FLOAT>(target_rt_height)),
+      std::max(static_cast<LONG>(cam_data.viewport.right * static_cast<FLOAT>(target_rt_width)), 1l),
+      std::max(static_cast<LONG>(cam_data.viewport.bottom * static_cast<FLOAT>(target_rt_height)), 1l),
     };
 
     auto const viewport_aspect{cam_viewport.Width / cam_viewport.Height};
