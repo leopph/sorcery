@@ -120,9 +120,6 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
     SetFarClipPlane(farValue);
   }
 
-  ImGui::TableNextColumn();
-  ImGui::Text("Viewport");
-  ImGui::TableNextColumn();
 
   auto viewport{GetViewport()};
   auto constexpr viewport_drag_speed{0.01f};
@@ -130,20 +127,39 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   auto constexpr viewport_drag_max{1.0f};
   auto constexpr viewport_drag_format{"%.2f"};
 
-  if (ImGui::DragFloat("Viewport Left", &viewport.left, viewport_drag_speed, viewport_drag_min, viewport_drag_max,
+  ImGui::TableNextColumn();
+  ImGui::Text("Viewport Left");
+  ImGui::TableNextColumn();
+
+  if (ImGui::DragFloat("##ViewportLeftDrag", &viewport.left, viewport_drag_speed, viewport_drag_min, viewport_drag_max,
     viewport_drag_format)) {
     SetViewport(viewport);
   }
-  if (ImGui::DragFloat("Viewport Top", &viewport.top, viewport_drag_speed, viewport_drag_min, viewport_drag_max,
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Viewport Top");
+  ImGui::TableNextColumn();
+
+  if (ImGui::DragFloat("##ViewportTopDrag", &viewport.top, viewport_drag_speed, viewport_drag_min, viewport_drag_max,
     viewport_drag_format)) {
     SetViewport(viewport);
   }
-  if (ImGui::DragFloat("Viewport Right", &viewport.right, viewport_drag_speed, viewport_drag_min, viewport_drag_max,
-    viewport_drag_format)) {
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Viewport Right");
+  ImGui::TableNextColumn();
+
+  if (ImGui::DragFloat("##ViewportRightDrag", &viewport.right, viewport_drag_speed, viewport_drag_min,
+    viewport_drag_max, viewport_drag_format)) {
     SetViewport(viewport);
   }
-  if (ImGui::DragFloat("Viewport Bottom", &viewport.bottom, viewport_drag_speed, viewport_drag_min, viewport_drag_max,
-    viewport_drag_format)) {
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Viewport Bottom");
+  ImGui::TableNextColumn();
+
+  if (ImGui::DragFloat("##ViewportBottomDrag", &viewport.bottom, viewport_drag_speed, viewport_drag_min,
+    viewport_drag_max, viewport_drag_format)) {
     SetViewport(viewport);
   }
 
