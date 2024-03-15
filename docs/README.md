@@ -1,6 +1,6 @@
 # 🪄 Sorcery 🪄
 
-Sorcery is my homemade game engine that I started developing during my second BSc year as a way to learn about the technologies behind video games. I have used it as my BSc thesis and planning to use it as my MSc thesis too. Generally it lacks quite a few features, mainly because I can work on it only in my free time and I also keep reworking systems forever and ever as I learn new things. Basically I use it to implement, integrate, and play with ideas I come across as well my own.
+Sorcery is my hobby game engine that I started developing during the second year of my BSc to learn about the technologies behind video games. I have used it as my BSc and MSc theses. Generally it lacks quite a few features, mainly because I can work on it only in my free time and I also keep reworking systems forever and ever as I learn new things. Basically I use it to implement, integrate, and play with ideas I come across as well my own.
 
 ## Gallery 
 Some screenshots from Sorcery's editor, Mage!
@@ -16,7 +16,7 @@ Some screenshots from Sorcery's editor, Mage!
 ## Features
 ### Implemented
 * DX12 Renderer
-  * Built using Shader Model 6.6, Resource Binding Tier 3, HLSL Dynamic Resources, Enhanced Barriers, and other modern features
+  * Built using HLSL Dynamic Resources, Enhanced Barriers, and other modern features
   * Hybrid Forward rendering
     * Forward rendering with a thin G-buffers for screen space effects
   * PBR material system using Cook-Torrance BRDF
@@ -89,9 +89,17 @@ Non-exhaustive list of core components:
 - MSBuild
 - MSVC v143 toolset
 ### Runtime requirements
-- Windows 11
-- Feature level 11_0 capable GPU
-- AVX2 capable CPU
+- OS
+  - Windows 11
+- CPU
+  - AVX2
+- GPU
+  - Feature Level 11_0
+  - Shader Model 6.6
+  - Resource Binding Tier 3
+  - Enhanced Barriers
+  - Root Signature 1.1
+
 ### Building
 - Run **setup.bat** from the root directory
 - Build the solution in the root directory
