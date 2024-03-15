@@ -1277,6 +1277,8 @@ auto CommandList::DrawIndexedInstanced(UINT const index_count_per_instance, UINT
 
 auto CommandList::DrawInstanced(UINT const vertex_count_per_instance, UINT const instance_count,
                                 UINT const start_vertex_location, UINT const start_instance_location) const -> void {
+  std::array const offsets{0u, start_instance_location};
+  cmd_list_->SetGraphicsRoot32BitConstants(1, static_cast<UINT>(offsets.size()), offsets.data(), 0);
   cmd_list_->DrawInstanced(vertex_count_per_instance, instance_count, start_vertex_location, start_instance_location);
 }
 

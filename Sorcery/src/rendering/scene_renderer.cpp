@@ -818,9 +818,10 @@ auto SceneRenderer::RecreatePipelines() -> bool {
   depth_resolve_pso_ = device_->CreatePipelineState(depth_resolve_pso_desc, sizeof(DepthResolveDrawParams) / 4);
 
   graphics::PipelineDesc const line_gizmo_pso_desc{
+    .primitive_topology_type = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
     .vs = CD3DX12_SHADER_BYTECODE{g_gizmos_line_vs_bytes, ARRAYSIZE(g_gizmos_line_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_gizmos_ps_bytes, ARRAYSIZE(g_gizmos_ps_bytes)},
-    .depth_stencil_state = disabled_depth_stencil, .rt_formats = render_target_format, .sample_desc = msaa_sample_desc
+    .depth_stencil_state = disabled_depth_stencil, .rt_formats = render_target_format
   };
 
   line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
@@ -1144,6 +1145,12 @@ auto SceneRenderer::Render() -> void {
 
   auto& frame_packet{frame_packets_[frame_idx]};
   ExtractCurrentState(frame_packet);
+
+  gizmo_color_buffer_.Resize(static_cast<int>(std::ssize(gizmo_colors_)));
+  std::ranges::copy(gizmo_colors_, std::begin(gizmo_color_buffer_.GetData()));
+
+  line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
+  std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
   auto& cmd{render_manager_->AcquireCommandList()};
 
@@ -1677,6 +1684,20 @@ auto SceneRenderer::Render() -> void {
 
     PostProcess(*post_process_rt->GetColorTex(), *target_rt.GetColorTex(), cmd);
 
+    if (!line_gizmo_vertex_data_.empty()) {
+      cmd.SetPipelineState(*line_gizmo_pso_);
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, vertex_buf_idx),
+      line_gizmo_vertex_data_buffer_.GetBuffer()->GetShaderResource());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, color_buf_idx),
+      gizmo_color_buffer_.GetBuffer()->GetShaderResource());
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx), cam_per_view_cb.GetBuffer()->GetConstantBuffer());
+      cmd.SetRenderTargets(std::span{target_rt.GetColorTex().get(), 1}, nullptr);
+      cmd.SetViewports(std::span{&viewport, 1});
+      cmd.SetScissorRects(std::span{&scissor, 1});
+      cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+      cmd.DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);
+    }
+
     cmd.Barrier({}, {}, std::array{
       graphics::TextureBarrier{
         D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
@@ -1701,30 +1722,6 @@ auto SceneRenderer::Render() -> void {
 auto SceneRenderer::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void {
   gizmo_colors_.emplace_back(color);
   line_gizmo_vertex_data_.emplace_back(from, static_cast<std::uint32_t>(gizmo_colors_.size() - 1), to, 0.0f);
-}
-
-
-auto SceneRenderer::DrawGizmos(RenderTarget const* const rt) -> void {
-  gizmo_color_buffer_.Resize(static_cast<int>(std::ssize(gizmo_colors_)));
-  std::ranges::copy(gizmo_colors_, std::begin(gizmo_color_buffer_.GetData()));
-
-  line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(line_gizmo_vertex_data_)));
-  std::ranges::copy(line_gizmo_vertex_data_, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
-
-  auto& cmd{render_manager_->AcquireCommandList()};
-  cmd.SetPipelineState(*line_gizmo_pso_);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, vertex_buf_idx),
-    line_gizmo_vertex_data_buffer_.GetBuffer()->GetShaderResource());
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, color_buf_idx),
-    gizmo_color_buffer_.GetBuffer()->GetShaderResource());
-  // TODO set per view cb
-
-  auto& actual_rt{rt ? *rt : rt_override_ ? *rt_override_ : *main_rt_};
-  cmd.SetRenderTargets(std::span{actual_rt.GetColorTex().get(), 1}, nullptr);
-
-  if (!line_gizmo_vertex_data_.empty()) {
-    cmd.DrawInstanced(2, static_cast<UINT>(line_gizmo_vertex_data_.size()), 0, 0);
-  }
 }
 
 

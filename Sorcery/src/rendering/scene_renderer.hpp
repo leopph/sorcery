@@ -75,7 +75,6 @@ public:
   LEOPPHAPI auto Render() -> void;
 
   LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
-  LEOPPHAPI auto DrawGizmos(RenderTarget const* rt = nullptr) -> void;
 
   // If a render target override is set, all cameras not targeting a specific render target
   // will render into the override RT.
