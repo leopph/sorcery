@@ -125,7 +125,7 @@ auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexce
     return nullptr;
   }
 
-  auto tex{g_engine_context.render_manager->LoadReadonlyTexture(img)};
+  auto tex{g_engine_context.render_manager->CreateReadOnlyTexture(img)};
 
   if (!tex) {
     return nullptr;

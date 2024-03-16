@@ -236,7 +236,7 @@ GraphicsDevice::GraphicsDevice(bool const enable_debug) {
     present_flags_ |= DXGI_PRESENT_ALLOW_TEARING;
   }
 
-  idle_fence_ = CreateFence(1);
+  idle_fence_ = CreateFence(0);
 }
 
 
@@ -658,9 +658,10 @@ auto GraphicsDevice::WaitFence(Fence const& fence, UINT64 const wait_value) cons
 }
 
 
-auto GraphicsDevice::SignalFence(Fence& fence, UINT64 const signal_value) const -> void {
-  ThrowIfFailed(queue_->Signal(fence.fence_.Get(), signal_value), "Failed to signal fence from GPU queue.");
-  fence.next_val_.fetch_add(signal_value);
+auto GraphicsDevice::SignalFence(Fence& fence) const -> void {
+  auto const new_fence_val{fence.next_val_.load()};
+  ThrowIfFailed(queue_->Signal(fence.fence_.Get(), new_fence_val), "Failed to signal fence from GPU queue.");
+  fence.next_val_ = new_fence_val + 1;
 }
 
 
@@ -676,7 +677,7 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
 
 auto GraphicsDevice::WaitIdle() const -> void {
   auto const fence_val{idle_fence_->GetNextValue()};
-  SignalFence(*idle_fence_, fence_val);
+  SignalFence(*idle_fence_);
   idle_fence_->Wait(fence_val);
 }
 
@@ -702,6 +703,15 @@ auto GraphicsDevice::SwapChainResize(SwapChain& swap_chain, UINT const width, UI
   ThrowIfFailed(swap_chain.swap_chain_->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, swap_chain_flags_),
     "Failed to resize swap chain buffers.");
   SwapChainCreateTextures(swap_chain);
+}
+
+
+auto GraphicsDevice::GetCopyableFootprints(D3D12_RESOURCE_DESC1 const& desc, UINT const first_subresource,
+                                           UINT const subresource_count, UINT64 const base_offset,
+                                           D3D12_PLACED_SUBRESOURCE_FOOTPRINT* const layouts, UINT* const row_counts,
+                                           UINT64* const row_sizes, UINT64* const total_size) const -> void {
+  return device_->GetCopyableFootprints1(&desc, first_subresource, subresource_count, base_offset, layouts, row_counts,
+    row_sizes, total_size);
 }
 
 
@@ -1001,6 +1011,11 @@ auto Resource::Map() const -> void* {
 }
 
 
+auto Resource::Unmap() const -> void {
+  InternalUnmap(0, nullptr);
+}
+
+
 auto Resource::GetShaderResource() const -> UINT {
   return srv_;
 }
@@ -1008,12 +1023,6 @@ auto Resource::GetShaderResource() const -> UINT {
 
 auto Resource::GetUnorderedAccess() const -> UINT {
   return uav_;
-}
-
-
-auto Resource::GetRequiredIntermediateSize() const -> UINT64 {
-  auto const desc{GetDesc()};
-  return ::GetRequiredIntermediateSize(resource_.Get(), 0, desc.MipLevels * desc.DepthOrArraySize);
 }
 
 
@@ -1032,6 +1041,11 @@ auto Resource::InternalMap(UINT const subresource, D3D12_RANGE const* read_range
 }
 
 
+auto Resource::InternalUnmap(UINT const subresource, D3D12_RANGE const* written_range) const -> void {
+  resource_->Unmap(subresource, written_range);
+}
+
+
 auto Buffer::GetConstantBuffer() const -> UINT {
   return cbv_;
 }
@@ -1045,6 +1059,11 @@ Buffer::Buffer(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> r
 
 auto Texture::Map(UINT const subresource) const -> void* {
   return InternalMap(subresource, nullptr);
+}
+
+
+auto Texture::Unmap(UINT const subresource) const -> void {
+  return InternalUnmap(subresource, nullptr);
 }
 
 
@@ -1306,14 +1325,6 @@ auto CommandList::SetStreamOutputTargets(UINT const start_slot,
 }
 
 
-auto CommandList::UpdateSubresources(Resource const& dst, Buffer const& upload_buf, UINT64 const buf_offset,
-                                     UINT const first_subresource, UINT const num_subresources,
-                                     D3D12_SUBRESOURCE_DATA const* const src_data) const -> UINT64 {
-  return ::UpdateSubresources(cmd_list_.Get(), dst.resource_.Get(), upload_buf.resource_.Get(), buf_offset,
-    first_subresource, num_subresources, src_data);
-}
-
-
 auto CommandList::SetRootSignature(std::uint8_t const num_params) const -> void {
   if (compute_pipeline_set_) {
     cmd_list_->SetComputeRootSignature(root_signatures_->Get(num_params).Get());
@@ -1346,14 +1357,15 @@ auto Fence::GetCompletedValue() const -> UINT64 {
 }
 
 
-auto Fence::Signal(UINT64 const value) -> void {
-  ThrowIfFailed(fence_->Signal(value), "Failed to signal fence from the CPU.");
-  next_val_ = value;
+auto Fence::Wait(UINT64 const wait_value) const -> void {
+  ThrowIfFailed(fence_->SetEventOnCompletion(wait_value, nullptr), "Failed to wait fence from CPU.");
 }
 
 
-auto Fence::Wait(UINT64 const value) const -> void {
-  ThrowIfFailed(fence_->SetEventOnCompletion(value, nullptr), "Failed to wait fence from CPU.");
+auto Fence::Signal() -> void {
+  auto const new_fence_val{next_val_.load()};
+  ThrowIfFailed(fence_->Signal(new_fence_val), "Failed to signal fence from the CPU.");
+  next_val_ = new_fence_val + 1;
 }
 
 

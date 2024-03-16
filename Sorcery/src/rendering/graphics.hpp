@@ -242,7 +242,7 @@ public:
   LEOPPHAPI auto DestroySampler(UINT sampler) const -> void;
 
   LEOPPHAPI auto WaitFence(Fence const& fence, UINT64 wait_value) const -> void;
-  LEOPPHAPI auto SignalFence(Fence& fence, UINT64 signal_value) const -> void;
+  LEOPPHAPI auto SignalFence(Fence& fence) const -> void;
   LEOPPHAPI auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) const -> void;
   LEOPPHAPI auto WaitIdle() const -> void;
 
@@ -251,6 +251,10 @@ public:
   [[nodiscard]] LEOPPHAPI auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
   LEOPPHAPI auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> void;
   LEOPPHAPI auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> void;
+
+  LEOPPHAPI auto GetCopyableFootprints(D3D12_RESOURCE_DESC1 const& desc, UINT first_subresource, UINT subresource_count,
+                                       UINT64 base_offset, D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layouts,
+                                       UINT* row_counts, UINT64* row_sizes, UINT64* total_size) const -> void;
 
 private:
   auto SwapChainCreateTextures(SwapChain& swap_chain) -> void;
@@ -290,15 +294,16 @@ public:
   LEOPPHAPI auto SetDebugName(std::wstring_view name) const -> void;
   [[nodiscard]] LEOPPHAPI auto GetDesc() const -> D3D12_RESOURCE_DESC1;
   [[nodiscard]] LEOPPHAPI auto Map() const -> void*;
+  LEOPPHAPI auto Unmap() const -> void;
   [[nodiscard]] LEOPPHAPI auto GetShaderResource() const -> UINT;
   [[nodiscard]] LEOPPHAPI auto GetUnorderedAccess() const -> UINT;
-  [[nodiscard]] LEOPPHAPI auto GetRequiredIntermediateSize() const -> UINT64;
 
 protected:
   Resource(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
            UINT srv, UINT uav);
 
   [[nodiscard]] auto InternalMap(UINT subresource, D3D12_RANGE const* read_range) const -> void*;
+  auto InternalUnmap(UINT subresource, D3D12_RANGE const* written_range) const -> void;
 
 private:
   Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation_;
@@ -330,6 +335,7 @@ private:
 class Texture : public Resource {
 public:
   [[nodiscard]] LEOPPHAPI auto Map(UINT subresource) const -> void*;
+  LEOPPHAPI auto Unmap(UINT subresource) const -> void;
 
 private:
   Texture(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
@@ -398,9 +404,6 @@ public:
   LEOPPHAPI auto SetPipelineState(PipelineState const& pipeline_state) -> void;
   LEOPPHAPI auto SetStreamOutputTargets(UINT start_slot,
                                         std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
-  LEOPPHAPI auto UpdateSubresources(Resource const& dst, Buffer const& upload_buf, UINT64 buf_offset,
-                                    UINT first_subresource, UINT num_subresources,
-                                    D3D12_SUBRESOURCE_DATA const* src_data) const -> UINT64;
 
 private:
   auto SetRootSignature(std::uint8_t num_params) const -> void;
@@ -427,8 +430,8 @@ class Fence {
 public:
   [[nodiscard]] LEOPPHAPI auto GetNextValue() const -> UINT64;
   [[nodiscard]] LEOPPHAPI auto GetCompletedValue() const -> UINT64;
-  LEOPPHAPI auto Signal(UINT64 value) -> void;
-  LEOPPHAPI auto Wait(UINT64 value) const -> void;
+  LEOPPHAPI auto Wait(UINT64 wait_value) const -> void;
+  LEOPPHAPI auto Signal() -> void;
 
 private:
   explicit Fence(Microsoft::WRL::ComPtr<ID3D12Fence> fence, UINT64 next_value);

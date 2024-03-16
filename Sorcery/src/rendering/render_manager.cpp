@@ -9,7 +9,10 @@
 namespace sorcery::rendering {
 RenderManager::RenderManager(graphics::GraphicsDevice& device) :
   device_{&device},
-  in_flight_frames_fence_{device_->CreateFence(0)} {}
+  in_flight_frames_fence_{device_->CreateFence(0)},
+  upload_fence_{device_->CreateFence(0)} {
+  RecreateUploadBuffer(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
+}
 
 
 auto RenderManager::BeginNewFrame() -> void {
@@ -53,7 +56,87 @@ auto RenderManager::AcquireTemporaryRenderTarget(RenderTarget::Desc const& desc)
 }
 
 
-auto RenderManager::LoadReadonlyTexture(
+auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, UINT const byte_offset,
+                                 std::span<std::byte const> const data) -> void {
+  if (buf.GetDesc().Width - byte_offset < data.size()) {
+    throw std::runtime_error{"Failed to update buffer: the provided data does not fit in the destination buffer."};
+  }
+
+  if (auto const upload_buf_size{upload_buf_->GetDesc().Width};
+    upload_buf_size - upload_buf_current_offset_ < data.size()) {
+    WaitForAllUploads();
+
+    if (upload_buf_size < data.size()) {
+      RecreateUploadBuffer(data.size());
+    }
+  }
+
+  std::memcpy(upload_ptr_ + upload_buf_current_offset_, data.data(), data.size());
+
+  auto& cmd{AcquireCommandList()};
+  cmd.Begin(nullptr);
+  cmd.CopyBufferRegion(buf, byte_offset, *upload_buf_, upload_buf_current_offset_, data.size());
+  cmd.End();
+
+  device_->ExecuteCommandLists(std::span{&cmd, 1});
+  device_->SignalFence(*upload_fence_);
+
+  upload_buf_current_offset_ += data.size();
+}
+
+
+auto RenderManager::UpdateTexture(graphics::Texture const& tex, UINT const subresource_offset,
+                                  std::span<D3D12_SUBRESOURCE_DATA const> const data) -> void {
+  UINT64 tex_size;
+  device_->GetCopyableFootprints(tex.GetDesc(), subresource_offset, static_cast<UINT>(data.size()), 0, nullptr, nullptr,
+    nullptr, &tex_size);
+
+  if (auto const upload_buf_size{upload_buf_->GetDesc().Width};
+    upload_buf_size - upload_buf_current_offset_ < tex_size) {
+    WaitForAllUploads();
+
+    if (upload_buf_size < tex_size) {
+      RecreateUploadBuffer(tex_size);
+    }
+  }
+
+  std::pmr::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts{&GetTmpMemRes()};
+  layouts.resize(data.size());
+
+  std::pmr::vector<UINT> row_counts{&GetTmpMemRes()};
+  row_counts.resize(data.size());
+
+  std::pmr::vector<UINT64> row_sizes{&GetTmpMemRes()};
+  row_sizes.resize(data.size());
+
+  device_->GetCopyableFootprints(tex.GetDesc(), subresource_offset, static_cast<UINT>(data.size()),
+    upload_buf_current_offset_, layouts.data(), row_counts.data(), row_sizes.data(), nullptr);
+
+  for (std::size_t i{0}; i < data.size(); i++) {
+    D3D12_MEMCPY_DEST const dst{
+      upload_ptr_ + layouts[i].Offset, layouts[i].Footprint.RowPitch,
+      static_cast<std::size_t>(layouts[i].Footprint.RowPitch) * static_cast<std::size_t>(row_counts[i])
+    };
+    MemcpySubresource(&dst, &data[i], row_sizes[i], row_counts[i], layouts[i].Footprint.Depth);
+  }
+
+  auto& cmd{AcquireCommandList()};
+  cmd.Begin(nullptr);
+
+  for (UINT i{0}; i < static_cast<UINT>(data.size()); i++) {
+    cmd.CopyTextureRegion(tex, subresource_offset + i, 0, 0, 0, *upload_buf_, layouts[i]);
+  }
+
+  cmd.End();
+
+  device_->ExecuteCommandLists(std::span{&cmd, 1});
+  device_->SignalFence(*upload_fence_);
+
+  upload_buf_current_offset_ += tex_size;
+}
+
+
+auto RenderManager::CreateReadOnlyTexture(
   DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture> {
   auto const& meta{img.GetMetadata()};
 
@@ -89,79 +172,24 @@ auto RenderManager::LoadReadonlyTexture(
 
   auto tex{device_->CreateTexture(desc, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr)};
 
-  auto const upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{
-      static_cast<UINT>(tex->GetRequiredIntermediateSize()), 0, false, false, false
-    }, D3D12_HEAP_TYPE_UPLOAD)
-  };
-
   std::pmr::vector<D3D12_SUBRESOURCE_DATA> subresource_data{&GetTmpMemRes()};
   subresource_data.reserve(img.GetImageCount());
 
   for (std::size_t i{0}; i < img.GetImageCount(); i++) {
     auto const subimg{img.GetImages()[i]};
-    subresource_data.emplace_back(subimg.pixels, subimg.rowPitch, subimg.slicePitch);
+    subresource_data.emplace_back(subimg.pixels, static_cast<LONG_PTR>(subimg.rowPitch),
+      static_cast<LONG_PTR>(subimg.slicePitch));
   }
 
-  auto& cmd{AcquireCommandList()};
-  cmd.Begin(nullptr);
-  cmd.UpdateSubresources(*tex, *upload_buf, 0, 0, static_cast<UINT>(img.GetImageCount()), subresource_data.data());
-  cmd.Barrier({}, {}, std::array{
-    graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, tex.get(),
-      D3D12_BARRIER_SUBRESOURCE_RANGE{
-        0, static_cast<UINT>(meta.mipLevels), 0, static_cast<UINT>(std::max(meta.depth, meta.arraySize)), 0, 1
-      },
-      D3D12_TEXTURE_BARRIER_FLAG_NONE
-    }
-  });
-  cmd.End();
-
-  auto constexpr init_fence_val{0};
-  auto constexpr completed_fence_val{1};
-  auto const fence{device_->CreateFence(init_fence_val)};
-
-  device_->ExecuteCommandLists(std::span{&cmd, 1});
-  device_->SignalFence(*fence, completed_fence_val);
-  fence->Wait(completed_fence_val);
-
+  UpdateTexture(*tex, 0, subresource_data);
   return tex;
 }
 
 
-auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> const data) -> void {
-  if (buf.GetRequiredIntermediateSize() < data.size()) {
-    throw std::runtime_error{"Failed to update buffer: the provided data does not fit in the destination buffer."};
-  }
-
-  auto const upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{static_cast<UINT>(data.size()), 0, false, false, false},
-      D3D12_HEAP_TYPE_UPLOAD)
-  };
-
-  auto const ptr{upload_buf->Map()};
-  std::memcpy(ptr, data.data(), data.size());
-
-  auto& cmd{AcquireCommandList()};
-  cmd.Begin(nullptr);
-  cmd.CopyBufferRegion(buf, 0, *upload_buf, 0, data.size());
-  cmd.End();
-
-  device_->ExecuteCommandLists(std::span{&cmd, 1});
-
-  auto constexpr init_fence_val{0};
-  auto constexpr final_fence_val{1};
-
-  auto const fence{device_->CreateFence(init_fence_val)};
-  device_->SignalFence(*fence, final_fence_val);
-  fence->Wait(final_fence_val);
-}
-
-
 auto RenderManager::WaitForInFlightFrames() const -> void {
-  device_->SignalFence(*in_flight_frames_fence_, frame_count_);
-  in_flight_frames_fence_->Wait(SatSub<UINT64>(frame_count_, max_gpu_queued_frames_));
+  auto const fence_val{in_flight_frames_fence_->GetNextValue()};
+  device_->SignalFence(*in_flight_frames_fence_);
+  in_flight_frames_fence_->Wait(SatSub<UINT64>(fence_val, max_gpu_queued_frames_));
 }
 
 
@@ -189,6 +217,19 @@ auto RenderManager::ReleaseOldTempRenderTargets() -> void {
   tmp_render_targets_.erase(std::ranges::remove_if(tmp_render_targets_, [](TempRenderTargetRecord const& record) {
     return record.age_in_frames >= max_tmp_rt_age_;
   }).begin(), tmp_render_targets_.end());
+}
+
+
+auto RenderManager::RecreateUploadBuffer(UINT64 const size) -> void {
+  upload_buf_ = device_->CreateBuffer(graphics::BufferDesc{size, 0, false, false, false}, D3D12_HEAP_TYPE_UPLOAD);
+  upload_buf_->SetDebugName(L"Render Manager Upload Buffer");
+  upload_ptr_ = static_cast<std::byte*>(upload_buf_->Map());
+}
+
+
+auto RenderManager::WaitForAllUploads() -> void {
+  upload_buf_current_offset_ = 0;
+  upload_fence_->Wait(upload_fence_->GetNextValue() - 1);
 }
 
 

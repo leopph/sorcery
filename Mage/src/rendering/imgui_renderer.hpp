@@ -26,8 +26,10 @@ private:
   graphics::UniqueSamplerHandle samp_;
   graphics::SharedDeviceChildHandle<graphics::Texture> fonts_tex_;
 
-  std::array<graphics::SharedDeviceChildHandle<graphics::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()> vtx_buffers_;
-  std::array<graphics::SharedDeviceChildHandle<graphics::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()> idx_buffers_;
+  std::array<graphics::SharedDeviceChildHandle<graphics::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
+  vtx_buffers_;
+  std::array<graphics::SharedDeviceChildHandle<graphics::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
+  idx_buffers_;
 
   std::array<void*, rendering::RenderManager::GetMaxFramesInFlight()> vb_ptrs_{};
   std::array<void*, rendering::RenderManager::GetMaxFramesInFlight()> ib_ptrs_{};

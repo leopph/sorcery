@@ -39,9 +39,12 @@ public:
   [[nodiscard]] LEOPPHAPI auto AcquireTemporaryRenderTarget(
     RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget>;
 
-  [[nodiscard]] LEOPPHAPI auto LoadReadonlyTexture(
+  LEOPPHAPI auto UpdateBuffer(graphics::Buffer const& buf, UINT byte_offset, std::span<std::byte const> data) -> void;
+  LEOPPHAPI auto UpdateTexture(graphics::Texture const& tex, UINT subresource_offset,
+                               std::span<D3D12_SUBRESOURCE_DATA const> data) -> void;
+
+  [[nodiscard]] LEOPPHAPI auto CreateReadOnlyTexture(
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
-  LEOPPHAPI auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> data) -> void;
 
   LEOPPHAPI auto WaitForInFlightFrames() const -> void;
 
@@ -55,6 +58,8 @@ private:
   auto CreateCommandLists(UINT count) -> void;
   auto AgeTempRenderTargets() -> void;
   auto ReleaseOldTempRenderTargets() -> void;
+  auto RecreateUploadBuffer(UINT64 size) -> void;
+  auto WaitForAllUploads() -> void;
 
   static UINT constexpr max_tmp_rt_age_{10};
   static UINT constexpr max_gpu_queued_frames_{1};
@@ -74,6 +79,11 @@ private:
   std::vector<TempRenderTargetRecord> tmp_render_targets_;
 
   graphics::SharedDeviceChildHandle<graphics::Fence> in_flight_frames_fence_;
+
+  graphics::SharedDeviceChildHandle<graphics::Buffer> upload_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Fence> upload_fence_;
+  std::byte* upload_ptr_{nullptr};
+  UINT64 upload_buf_current_offset_{0};
 };
 
 

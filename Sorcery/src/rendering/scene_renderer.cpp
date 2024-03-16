@@ -1104,12 +1104,6 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
   ssao_noise_tex_->SetDebugName(L"SSAO Noise");
 
-  auto const ssao_noise_upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{
-      static_cast<UINT>(ssao_noise_tex_->GetRequiredIntermediateSize()), 0, false, false, false
-    }, D3D12_HEAP_TYPE_UPLOAD)
-  };
-
   std::vector<Vector4> ssao_noise;
   std::uniform_real_distribution dist{0.0f, 1.0f};
   std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
@@ -1118,34 +1112,23 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
     ssao_noise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
   }
 
-  D3D12_SUBRESOURCE_DATA const ssao_noise_upload_data{
-    ssao_noise.data(), SSAO_NOISE_TEX_DIM * sizeof(Vector4), SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM * sizeof(Vector4)
-  };
+  render_manager_->UpdateTexture(*ssao_noise_tex_, 0, std::array{
+    D3D12_SUBRESOURCE_DATA{
+      ssao_noise.data(), SSAO_NOISE_TEX_DIM * sizeof(Vector4), SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM * sizeof(Vector4)
+    }
+  });
+
 
   white_tex_ = device_->CreateTexture(graphics::TextureDesc{
     graphics::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, {1, 0}, D3D12_RESOURCE_FLAG_NONE, false,
     false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
 
-  auto const white_tex_upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{
-      static_cast<UINT>(white_tex_->GetRequiredIntermediateSize()), 0, false, false, false
-    }, D3D12_HEAP_TYPE_UPLOAD)
-  };
-
   std::array<std::uint8_t, 4> constexpr white_tex_data{255, 255, 255, 255};
 
-  D3D12_SUBRESOURCE_DATA const white_tex_upload_data{
-    white_tex_data.data(), sizeof(white_tex_data), sizeof(white_tex_data)
-  };
-
-  auto& cmd{render_manager_->AcquireCommandList()};
-  cmd.Begin(nullptr);
-  cmd.UpdateSubresources(*ssao_noise_tex_, *ssao_noise_upload_buf, 0, 0, 1, &ssao_noise_upload_data);
-  cmd.UpdateSubresources(*white_tex_, *white_tex_upload_buf, 0, 0, 1, &white_tex_upload_data);
-  cmd.End();
-  device_->ExecuteCommandLists(std::span{&cmd, 1});
-  device_->WaitIdle();
+  render_manager_->UpdateTexture(*white_tex_, 0, std::array{
+    D3D12_SUBRESOURCE_DATA{white_tex_data.data(), sizeof(white_tex_data), sizeof(white_tex_data)}
+  });
 }
 
 

@@ -16,7 +16,6 @@
 
 #include <bit>
 #include <limits>
-#include <stdexcept>
 
 
 namespace sorcery::mage {
@@ -64,38 +63,18 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, Window const& win
   int fonts_tex_height;
   ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&fonts_tex_pixel_data, &fonts_tex_width, &fonts_tex_height);
 
-  D3D12_SUBRESOURCE_DATA const fonts_upload_data{
-    fonts_tex_pixel_data, static_cast<LONG_PTR>(fonts_tex_width) * 4,
-    static_cast<LONG_PTR>(fonts_tex_height) * static_cast<LONG_PTR>(fonts_tex_width) * 4
-  };
-
   fonts_tex_ = device_->CreateTexture(graphics::TextureDesc{
     graphics::TextureDimension::k2D, static_cast<UINT>(fonts_tex_width), static_cast<UINT>(fonts_tex_height), 1, 1,
     DXGI_FORMAT_R8G8B8A8_UNORM, {1, 0}, D3D12_RESOURCE_FLAG_NONE, false, false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
 
-  auto const fonts_upload_buf{
-    device_->CreateBuffer(graphics::BufferDesc{
-      static_cast<UINT>(fonts_tex_->GetRequiredIntermediateSize()), 0, false, false, false
-    }, D3D12_HEAP_TYPE_UPLOAD)
-  };
 
-  auto& cmd{render_manager_->AcquireCommandList()};
-
-  cmd.Begin(nullptr);
-  cmd.UpdateSubresources(*fonts_tex_, *fonts_upload_buf, 0, 0, 1, &fonts_upload_data);
-
-  cmd.Barrier({}, {}, std::array{
-    graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, fonts_tex_.get(), {0, 1, 0, 1, 0, 1},
-      D3D12_TEXTURE_BARRIER_FLAG_DISCARD
+  render_manager_->UpdateTexture(*fonts_tex_, 0, std::array{
+    D3D12_SUBRESOURCE_DATA{
+      fonts_tex_pixel_data, static_cast<LONG_PTR>(fonts_tex_width) * 4,
+      static_cast<LONG_PTR>(fonts_tex_height) * static_cast<LONG_PTR>(fonts_tex_width) * 4
     }
   });
-
-  cmd.End();
-  device_->ExecuteCommandLists(std::span{&cmd, 1});
-  device_->WaitIdle();
 
   io.Fonts->SetTexID(fonts_tex_.get());
 }
