@@ -82,11 +82,8 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, Window const& win
 
   auto& cmd{render_manager_->AcquireCommandList()};
 
-  if (!cmd.Begin(nullptr)) {
-    throw std::runtime_error{"Failed to begin command list for font texture upload."};
-  }
-
-  std::ignore = cmd.UpdateSubresources(*fonts_tex_, *fonts_upload_buf, 0, 0, 1, &fonts_upload_data);
+  cmd.Begin(nullptr);
+  cmd.UpdateSubresources(*fonts_tex_, *fonts_upload_buf, 0, 0, 1, &fonts_upload_data);
 
   cmd.Barrier({}, {}, std::array{
     graphics::TextureBarrier{
@@ -96,15 +93,9 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, Window const& win
     }
   });
 
-  if (!cmd.End()) {
-    throw std::runtime_error{"Failed to end command list for font texture upload."};
-  }
-
+  cmd.End();
   device_->ExecuteCommandLists(std::span{&cmd, 1});
-
-  if (!device_->WaitIdle()) {
-    throw std::runtime_error{"Failed to wait for font texture upload."};
-  }
+  device_->WaitIdle();
 
   io.Fonts->SetTexID(fonts_tex_.get());
 }
@@ -165,16 +156,13 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
     idx_dst += imgui_cmd->IdxBuffer.Size;
   }
 
-  auto& cmd{render_manager_->AcquireCommandList()};
-
-  if (!cmd.Begin(pso_.get())) {
-    throw std::runtime_error{"Failed to begin command buffer for ImGui rendering."};
-  }
-
   auto const& rt{
     *device_->SwapChainGetBuffers(*window_->GetSwapChain())[device_->SwapChainGetCurrentBufferIndex(
       *window_->GetSwapChain())]
   };
+
+  auto& cmd{render_manager_->AcquireCommandList()};
+  cmd.Begin(pso_.get());
 
   cmd.Barrier({}, {}, std::array{
     graphics::TextureBarrier{
@@ -251,10 +239,7 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
     }
   });
 
-  if (!cmd.End()) {
-    throw std::runtime_error{"Failed to end command buffer for ImGui rendering."};
-  }
-
+  cmd.End();
   device_->ExecuteCommandLists(std::span{&cmd, 1});
 }
 }

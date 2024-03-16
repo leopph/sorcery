@@ -781,10 +781,8 @@ auto SceneRenderer::RecreateSsaoSamples(int const sample_count) noexcept -> void
 }
 
 
-auto SceneRenderer::RecreatePipelines() -> bool {
-  if (!device_->WaitIdle()) {
-    return false;
-  }
+auto SceneRenderer::RecreatePipelines() -> void {
+  device_->WaitIdle();
 
   CD3DX12_DEPTH_STENCIL_DESC1 const reverse_z_depth_stencil_write{
     TRUE, D3D12_DEPTH_WRITE_MASK_ALL, D3D12_COMPARISON_FUNC_GREATER, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
@@ -902,8 +900,6 @@ auto SceneRenderer::RecreatePipelines() -> bool {
   };
 
   ssao_blur_pso_ = device_->CreatePipelineState(ssao_blur_pso_desc, sizeof(SsaoBlurDrawParams) / 4);
-
-  return true;
 }
 
 
@@ -990,12 +986,12 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   });
 
   dir_shadow_map_arr_ = std::make_unique<DirectionalShadowMapArray>(device_.Get(), depth_format_, 4096);
-  std::ignore = dir_shadow_map_arr_->GetTex()->SetDebugName(L"Directional Shadow Map Array");
+  dir_shadow_map_arr_->GetTex()->SetDebugName(L"Directional Shadow Map Array");
 
   punctual_shadow_atlas_ = std::make_unique<PunctualShadowAtlas>(device_.Get(), depth_format_, 4096);
-  std::ignore = punctual_shadow_atlas_->GetTex()->SetDebugName(L"Punctual Shadow Atlas");
+  punctual_shadow_atlas_->GetTex()->SetDebugName(L"Punctual Shadow Atlas");
 
-  std::ignore = RecreatePipelines();
+  RecreatePipelines();
 
   for (auto& cb : per_frame_cbs_) {
     if (auto opt{ConstantBuffer<ShaderPerFrameConstants>::New(*device_, true)}) {
@@ -1106,7 +1102,7 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
     graphics::TextureDimension::k2D, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT,
     {1, 0}, D3D12_RESOURCE_FLAG_NONE, false, false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
-  std::ignore = ssao_noise_tex_->SetDebugName(L"SSAO Noise");
+  ssao_noise_tex_->SetDebugName(L"SSAO Noise");
 
   auto const ssao_noise_upload_buf{
     device_->CreateBuffer(graphics::BufferDesc{
@@ -1144,12 +1140,12 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   };
 
   auto& cmd{render_manager_->AcquireCommandList()};
-  std::ignore = cmd.Begin(nullptr);
-  std::ignore = cmd.UpdateSubresources(*ssao_noise_tex_, *ssao_noise_upload_buf, 0, 0, 1, &ssao_noise_upload_data);
-  std::ignore = cmd.UpdateSubresources(*white_tex_, *white_tex_upload_buf, 0, 0, 1, &white_tex_upload_data);
-  std::ignore = cmd.End();
+  cmd.Begin(nullptr);
+  cmd.UpdateSubresources(*ssao_noise_tex_, *ssao_noise_upload_buf, 0, 0, 1, &ssao_noise_upload_data);
+  cmd.UpdateSubresources(*white_tex_, *white_tex_upload_buf, 0, 0, 1, &white_tex_upload_data);
+  cmd.End();
   device_->ExecuteCommandLists(std::span{&cmd, 1});
-  std::ignore = device_->WaitIdle();
+  device_->WaitIdle();
 }
 
 
@@ -1187,10 +1183,7 @@ auto SceneRenderer::Render() -> void {
   };
 
   auto& cmd{render_manager_->AcquireCommandList()};
-
-  if (!cmd.Begin(nullptr)) {
-    return;
-  }
+  cmd.Begin(nullptr);
 
   std::pmr::vector<graphics::TextureBarrier> cam_rt_barriers{&GetTmpMemRes()};
   cam_rt_barriers.reserve(frame_packet.render_targets.size());
@@ -1774,11 +1767,7 @@ auto SceneRenderer::Render() -> void {
     });
 
   cmd.Barrier({}, {}, cam_rt_barriers);
-
-  if (!cmd.End()) {
-    return;
-  }
-
+  cmd.End();
   device_->ExecuteCommandLists(std::span{&cmd, 1});
 
   EndFrame();

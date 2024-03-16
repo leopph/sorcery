@@ -252,7 +252,7 @@ private:
 
   auto RecreateSsaoSamples(int sample_count) noexcept -> void;
 
-  [[nodiscard]] auto RecreatePipelines() -> bool;
+  auto RecreatePipelines() -> void;
 
   auto CreatePerViewConstantBuffers(UINT count) -> void;
   auto CreatePerDrawConstantBuffers(UINT count) -> void;

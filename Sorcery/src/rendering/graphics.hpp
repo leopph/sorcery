@@ -186,7 +186,8 @@ private:
   std::vector<UINT> free_indices_;
   std::mutex mutex_;
   UINT increment_size_;
-  UINT reserved_idx_count_{0};
+  UINT reserved_idx_count_;
+  UINT heap_size_;
 };
 
 
@@ -204,7 +205,14 @@ private:
 
 class GraphicsDevice {
 public:
-  [[nodiscard]] LEOPPHAPI static auto New(bool enable_debug) -> std::unique_ptr<GraphicsDevice>;
+  LEOPPHAPI explicit GraphicsDevice(bool enable_debug);
+  GraphicsDevice(GraphicsDevice const&) = delete;
+  GraphicsDevice(GraphicsDevice&&) = delete;
+
+  ~GraphicsDevice() = default;
+
+  auto operator=(GraphicsDevice const&) -> void = delete;
+  auto operator=(GraphicsDevice&&) -> void = delete;
 
   [[nodiscard]] LEOPPHAPI auto CreateBuffer(BufferDesc const& desc,
                                             D3D12_HEAP_TYPE heap_type) -> SharedDeviceChildHandle<Buffer>;
@@ -225,39 +233,32 @@ public:
                                          std::pmr::vector<SharedDeviceChildHandle<Buffer>>* buffers,
                                          std::pmr::vector<SharedDeviceChildHandle<Texture>>* textures) -> void;
 
-  LEOPPHAPI auto DestroyBuffer(Buffer const* buffer) -> void;
-  LEOPPHAPI auto DestroyTexture(Texture const* texture) -> void;
-  LEOPPHAPI auto DestroyPipelineState(PipelineState const* pipeline_state) -> void;
-  LEOPPHAPI auto DestroyCommandList(CommandList const* command_list) -> void;
-  LEOPPHAPI auto DestroyFence(Fence const* fence) -> void;
-  LEOPPHAPI auto DestroySwapChain(SwapChain const* swap_chain) -> void;
-  LEOPPHAPI auto DestroySampler(UINT sampler) -> void;
+  LEOPPHAPI auto DestroyBuffer(Buffer const* buffer) const -> void;
+  LEOPPHAPI auto DestroyTexture(Texture const* texture) const -> void;
+  LEOPPHAPI auto DestroyPipelineState(PipelineState const* pipeline_state) const -> void;
+  LEOPPHAPI auto DestroyCommandList(CommandList const* command_list) const -> void;
+  LEOPPHAPI auto DestroyFence(Fence const* fence) const -> void;
+  LEOPPHAPI auto DestroySwapChain(SwapChain const* swap_chain) const -> void;
+  LEOPPHAPI auto DestroySampler(UINT sampler) const -> void;
 
-  [[nodiscard]] LEOPPHAPI auto WaitFence(Fence const& fence, UINT64 wait_value) const -> bool;
-  [[nodiscard]] LEOPPHAPI auto SignalFence(Fence& fence, UINT64 signal_value) const -> bool;
+  LEOPPHAPI auto WaitFence(Fence const& fence, UINT64 wait_value) const -> void;
+  LEOPPHAPI auto SignalFence(Fence& fence, UINT64 signal_value) const -> void;
   LEOPPHAPI auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) const -> void;
-  [[nodiscard]] LEOPPHAPI auto WaitIdle() const -> bool;
+  LEOPPHAPI auto WaitIdle() const -> void;
 
   [[nodiscard]] LEOPPHAPI auto SwapChainGetBuffers(
     SwapChain const& swap_chain) const -> std::span<SharedDeviceChildHandle<Texture> const>;
   [[nodiscard]] LEOPPHAPI auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
-  [[nodiscard]] LEOPPHAPI auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> bool;
-  [[nodiscard]] LEOPPHAPI auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> bool;
+  LEOPPHAPI auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> void;
+  LEOPPHAPI auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> void;
 
 private:
-  GraphicsDevice(Microsoft::WRL::ComPtr<IDXGIFactory7> factory, Microsoft::WRL::ComPtr<ID3D12Device10> device,
-                 Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator,
-                 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtv_heap,
-                 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsv_heap,
-                 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> res_desc_heap,
-                 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> sampler_heap,
-                 Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue);
+  auto SwapChainCreateTextures(SwapChain& swap_chain) -> void;
 
-  auto SwapChainCreateTextures(SwapChain& swap_chain) -> bool;
-
-  auto CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const& desc, UINT& cbv, UINT& srv, UINT& uav) -> void;
+  auto CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const& desc, UINT& cbv, UINT& srv,
+                         UINT& uav) const -> void;
   auto CreateTextureViews(ID3D12Resource2& texture, TextureDesc const& desc, UINT& dsv, UINT& rtv, UINT& srv,
-                          UINT& uav) -> void;
+                          UINT& uav) const -> void;
 
   static UINT const rtv_heap_size_;
   static UINT const dsv_heap_size_;
@@ -268,10 +269,10 @@ private:
   Microsoft::WRL::ComPtr<ID3D12Device10> device_;
   Microsoft::WRL::ComPtr<D3D12MA::Allocator> allocator_;
 
-  details::DescriptorHeap rtv_heap_;
-  details::DescriptorHeap dsv_heap_;
-  details::DescriptorHeap res_desc_heap_;
-  details::DescriptorHeap sampler_heap_;
+  std::unique_ptr<details::DescriptorHeap> rtv_heap_;
+  std::unique_ptr<details::DescriptorHeap> dsv_heap_;
+  std::unique_ptr<details::DescriptorHeap> res_desc_heap_;
+  std::unique_ptr<details::DescriptorHeap> sampler_heap_;
 
   Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue_;
 
@@ -286,7 +287,7 @@ private:
 
 class Resource {
 public:
-  [[nodiscard]] LEOPPHAPI auto SetDebugName(std::wstring_view name) const -> bool;
+  LEOPPHAPI auto SetDebugName(std::wstring_view name) const -> void;
   [[nodiscard]] LEOPPHAPI auto GetDesc() const -> D3D12_RESOURCE_DESC1;
   [[nodiscard]] LEOPPHAPI auto Map() const -> void*;
   [[nodiscard]] LEOPPHAPI auto GetShaderResource() const -> UINT;
@@ -358,8 +359,8 @@ class PipelineState {
 
 class CommandList {
 public:
-  [[nodiscard]] LEOPPHAPI auto Begin(PipelineState const* pipeline_state) -> bool;
-  [[nodiscard]] LEOPPHAPI auto End() const -> bool;
+  LEOPPHAPI auto Begin(PipelineState const* pipeline_state) -> void;
+  LEOPPHAPI auto End() const -> void;
   LEOPPHAPI auto Barrier(std::span<GlobalBarrier const> global_barriers, std::span<BufferBarrier const> buffer_barriers,
                          std::span<TextureBarrier const> texture_barriers) const -> void;
   LEOPPHAPI auto ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth, UINT8 stencil,
@@ -426,8 +427,8 @@ class Fence {
 public:
   [[nodiscard]] LEOPPHAPI auto GetNextValue() const -> UINT64;
   [[nodiscard]] LEOPPHAPI auto GetCompletedValue() const -> UINT64;
-  [[nodiscard]] LEOPPHAPI auto Signal(UINT64 value) -> bool;
-  [[nodiscard]] LEOPPHAPI auto Wait(UINT64 value) const -> bool;
+  LEOPPHAPI auto Signal(UINT64 value) -> void;
+  LEOPPHAPI auto Wait(UINT64 value) const -> void;
 
 private:
   explicit Fence(Microsoft::WRL::ComPtr<ID3D12Fence> fence, UINT64 next_value);

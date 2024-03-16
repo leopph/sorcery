@@ -35,7 +35,7 @@ auto RenderTarget::New(graphics::GraphicsDevice& device, Desc const& desc) -> st
       DXGI_SAMPLE_DESC{desc.sample_count, 0}, flags, false, true, true, desc.enable_unordered_access
     }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_RENDER_TARGET, &clear_value);
 
-    std::ignore = color_tex->SetDebugName(desc.debug_name + L" - Color Texture");
+    color_tex->SetDebugName(desc.debug_name + L" - Color Texture");
   }
 
   if (desc.depth_stencil_format) {
@@ -52,7 +52,7 @@ auto RenderTarget::New(graphics::GraphicsDevice& device, Desc const& desc) -> st
       DXGI_SAMPLE_DESC{desc.sample_count, 0}, flags, true, false, true, desc.enable_unordered_access
     }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, &clear_value);
 
-    std::ignore = depth_stencil_tex->SetDebugName(desc.debug_name + L" - Depth-Stencil Texture");
+    depth_stencil_tex->SetDebugName(desc.debug_name + L" - Depth-Stencil Texture");
   }
 
   return std::unique_ptr<RenderTarget>{new RenderTarget{desc, std::move(color_tex), std::move(depth_stencil_tex)}};

@@ -3,6 +3,8 @@
 #include "../MemoryAllocation.hpp"
 #include "../Util.hpp"
 
+#include <stdexcept>
+
 
 namespace sorcery::rendering {
 RenderManager::RenderManager(graphics::GraphicsDevice& device) :
@@ -53,8 +55,6 @@ auto RenderManager::AcquireTemporaryRenderTarget(RenderTarget::Desc const& desc)
 
 auto RenderManager::LoadReadonlyTexture(
   DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture> {
-  auto& cmd{AcquireCommandList()};
-
   auto const& meta{img.GetMetadata()};
 
   graphics::TextureDesc desc;
@@ -95,10 +95,6 @@ auto RenderManager::LoadReadonlyTexture(
     }, D3D12_HEAP_TYPE_UPLOAD)
   };
 
-  if (!cmd.Begin(nullptr)) {
-    return nullptr;
-  }
-
   std::pmr::vector<D3D12_SUBRESOURCE_DATA> subresource_data{&GetTmpMemRes()};
   subresource_data.reserve(img.GetImageCount());
 
@@ -107,8 +103,9 @@ auto RenderManager::LoadReadonlyTexture(
     subresource_data.emplace_back(subimg.pixels, subimg.rowPitch, subimg.slicePitch);
   }
 
+  auto& cmd{AcquireCommandList()};
+  cmd.Begin(nullptr);
   cmd.UpdateSubresources(*tex, *upload_buf, 0, 0, static_cast<UINT>(img.GetImageCount()), subresource_data.data());
-
   cmd.Barrier({}, {}, std::array{
     graphics::TextureBarrier{
       D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_COPY_DEST, D3D12_BARRIER_ACCESS_NO_ACCESS,
@@ -119,32 +116,23 @@ auto RenderManager::LoadReadonlyTexture(
       D3D12_TEXTURE_BARRIER_FLAG_NONE
     }
   });
-
-  if (!cmd.End()) {
-    return nullptr;
-  }
+  cmd.End();
 
   auto constexpr init_fence_val{0};
   auto constexpr completed_fence_val{1};
   auto const fence{device_->CreateFence(init_fence_val)};
 
   device_->ExecuteCommandLists(std::span{&cmd, 1});
-
-  if (!device_->SignalFence(*fence, completed_fence_val)) {
-    return nullptr;
-  }
-
-  if (!fence->Wait(completed_fence_val)) {
-    return nullptr;
-  }
+  device_->SignalFence(*fence, completed_fence_val);
+  fence->Wait(completed_fence_val);
 
   return tex;
 }
 
 
-auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> const data) -> bool {
+auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> const data) -> void {
   if (buf.GetRequiredIntermediateSize() < data.size()) {
-    return false;
+    throw std::runtime_error{"Failed to update buffer: the provided data does not fit in the destination buffer."};
   }
 
   auto const upload_buf{
@@ -152,29 +140,13 @@ auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byt
       D3D12_HEAP_TYPE_UPLOAD)
   };
 
-  if (!upload_buf) {
-    return false;
-  }
-
   auto const ptr{upload_buf->Map()};
-
-  if (!ptr) {
-    return false;
-  }
-
   std::memcpy(ptr, data.data(), data.size());
 
   auto& cmd{AcquireCommandList()};
-
-  if (!cmd.Begin(nullptr)) {
-    return false;
-  }
-
+  cmd.Begin(nullptr);
   cmd.CopyBufferRegion(buf, 0, *upload_buf, 0, data.size());
-
-  if (!cmd.End()) {
-    return false;
-  }
+  cmd.End();
 
   device_->ExecuteCommandLists(std::span{&cmd, 1});
 
@@ -182,28 +154,14 @@ auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, std::span<std::byt
   auto constexpr final_fence_val{1};
 
   auto const fence{device_->CreateFence(init_fence_val)};
-
-  if (!fence) {
-    return false;
-  }
-
-  if (!device_->SignalFence(*fence, final_fence_val)) {
-    return false;
-  }
-
-  if (!fence->Wait(final_fence_val)) {
-    return false;
-  }
-
-  return true;
+  device_->SignalFence(*fence, final_fence_val);
+  fence->Wait(final_fence_val);
 }
 
 
-auto RenderManager::WaitForInFlightFrames() const -> bool {
-  if (!device_->SignalFence(*in_flight_frames_fence_, frame_count_)) {
-    return false;
-  }
-  return in_flight_frames_fence_->Wait(SatSub<UINT64>(frame_count_, max_gpu_queued_frames_));
+auto RenderManager::WaitForInFlightFrames() const -> void {
+  device_->SignalFence(*in_flight_frames_fence_, frame_count_);
+  in_flight_frames_fence_->Wait(SatSub<UINT64>(frame_count_, max_gpu_queued_frames_));
 }
 
 

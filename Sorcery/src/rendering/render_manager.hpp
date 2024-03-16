@@ -41,9 +41,9 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto LoadReadonlyTexture(
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
-  [[nodiscard]] LEOPPHAPI auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> data) -> bool;
+  LEOPPHAPI auto UpdateBuffer(graphics::Buffer const& buf, std::span<std::byte const> data) -> void;
 
-  LEOPPHAPI auto WaitForInFlightFrames() const -> bool;
+  LEOPPHAPI auto WaitForInFlightFrames() const -> void;
 
 private:
   struct TempRenderTargetRecord {

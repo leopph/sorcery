@@ -189,7 +189,7 @@ auto Material::SetOpacityMask(Texture2D* const opacityMask) noexcept -> void {
 
 
 auto Material::Update() const -> void {
-  std::ignore = g_engine_context.render_manager->UpdateBuffer(*cb_.GetBuffer(), std::span{
+  g_engine_context.render_manager->UpdateBuffer(*cb_.GetBuffer(), std::span{
     std::bit_cast<std::byte const*>(&mShaderMtl), sizeof(mShaderMtl)
   });
 }

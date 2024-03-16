@@ -18,17 +18,16 @@
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
-
 #include <ImGuizmo.h>
 #include <implot.h>
-
 #include <shellapi.h>
 
-#include <filesystem>
-#include <string>
 #include <cwchar>
-#include <stdexcept>
 #include <exception>
+#include <filesystem>
+#include <memory>
+#include <stdexcept>
+#include <string>
 
 
 extern "C" {
@@ -46,42 +45,22 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto constexpr debug_graphics_device{false};
 #endif
 
-    auto const graphics_device{sorcery::graphics::GraphicsDevice::New(debug_graphics_device)};
+    auto const graphics_device{std::make_unique<sorcery::graphics::GraphicsDevice>(debug_graphics_device)};
     sorcery::g_engine_context.graphics_device.Reset(graphics_device.get());
-
-    if (!graphics_device) {
-      throw std::runtime_error{"Failed to create graphics device."};
-    }
 
     auto const window{std::make_unique<sorcery::Window>(*graphics_device)};
     sorcery::g_engine_context.window.Reset(window.get());
 
-    if (!window) {
-      throw std::runtime_error{"Failed to create window."};
-    }
-
     auto const render_manager{std::make_unique<sorcery::rendering::RenderManager>(*graphics_device)};
     sorcery::g_engine_context.render_manager.Reset(render_manager.get());
-
-    if (!render_manager) {
-      throw std::runtime_error{"Failed to create render manager."};
-    }
 
     auto const scene_renderer{
       std::make_unique<sorcery::rendering::SceneRenderer>(*window, *graphics_device, *render_manager)
     };
     sorcery::g_engine_context.scene_renderer.Reset(scene_renderer.get());
 
-    if (!scene_renderer) {
-      throw std::runtime_error{"Failed to create scene renderer."};
-    }
-
     auto const resource_manager{std::make_unique<sorcery::ResourceManager>()};
     sorcery::g_engine_context.resource_manager.Reset(resource_manager.get());
-
-    if (!resource_manager) {
-      throw std::runtime_error{"Failed to create resource manager."};
-    }
 
     sorcery::timing::SetTargetFrameRate(sorcery::mage::SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
 
@@ -106,11 +85,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     sorcery::mage::Application app{imGuiIo};
 
-    auto const imgui_renderer{std::make_unique<sorcery::mage::ImGuiRenderer>(*graphics_device, *window, *render_manager)};
-
-    if (!imgui_renderer) {
-      throw std::runtime_error{"Failed to create ImGui renderer."};
-    }
+    auto const imgui_renderer{
+      std::make_unique<sorcery::mage::ImGuiRenderer>(*graphics_device, *window, *render_manager)
+    };
 
     bool runGame{false};
 
@@ -202,23 +179,15 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
       scene_renderer->Render();
       imgui_renderer->Render(ImGui::GetDrawData());
-
-      if (!graphics_device->SwapChainPresent(*window->GetSwapChain(), scene_renderer->GetSyncInterval())) {
-        throw std::runtime_error{"Failed to present."};
-      }
-
-      if (!render_manager->WaitForInFlightFrames()) {
-        throw std::runtime_error{"Failed to wait for in flight frames."};
-      }
+      graphics_device->SwapChainPresent(*window->GetSwapChain(), scene_renderer->GetSyncInterval());
+      render_manager->WaitForInFlightFrames();
 
       sorcery::GetTmpMemRes().Clear();
 
       sorcery::timing::OnFrameEnd();
     }
 
-    if (!graphics_device->WaitIdle()) {
-      throw std::runtime_error{"Failed to wait for graphics device idle."};
-    }
+    graphics_device->WaitIdle();
 
     ImGui_ImplWin32_Shutdown();
     ImPlot::DestroyContext();

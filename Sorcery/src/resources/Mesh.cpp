@@ -27,10 +27,7 @@ auto Mesh::UploadToGpu() noexcept -> void {
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(pos_buf_);
 
-  [[maybe_unused]] auto success{
-    g_engine_context.render_manager->UpdateBuffer(*pos_buf_, as_bytes(std::span{positions4}))
-  };
-  assert(success);
+  g_engine_context.render_manager->UpdateBuffer(*pos_buf_, as_bytes(std::span{positions4}));
 
   std::vector<Vector4> normals4{m_cpu_data_->normals.size()};
   std::ranges::transform(m_cpu_data_->normals, normals4.begin(), [](Vector3 const& n) {
@@ -42,8 +39,7 @@ auto Mesh::UploadToGpu() noexcept -> void {
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(norm_buf_);
 
-  success = g_engine_context.render_manager->UpdateBuffer(*norm_buf_, as_bytes(std::span{normals4}));
-  assert(success);
+  g_engine_context.render_manager->UpdateBuffer(*norm_buf_, as_bytes(std::span{normals4}));
 
   std::vector<Vector4> tangents4{m_cpu_data_->tangents.size()};
   std::ranges::transform(m_cpu_data_->tangents, tangents4.begin(), [](Vector3 const& t) {
@@ -55,16 +51,14 @@ auto Mesh::UploadToGpu() noexcept -> void {
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(norm_buf_);
 
-  success = g_engine_context.render_manager->UpdateBuffer(*tan_buf_, as_bytes(std::span{tangents4}));
-  assert(success);
+  g_engine_context.render_manager->UpdateBuffer(*tan_buf_, as_bytes(std::span{tangents4}));
 
   uv_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{
     static_cast<UINT>(m_cpu_data_->uvs.size() * sizeof(Vector2)), sizeof(Vector2), false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(uv_buf_);
 
-  success = g_engine_context.render_manager->UpdateBuffer(*uv_buf_, as_bytes(std::span{m_cpu_data_->uvs}));
-  assert(success);
+  g_engine_context.render_manager->UpdateBuffer(*uv_buf_, as_bytes(std::span{m_cpu_data_->uvs}));
 
   struct IdxBufInfo {
     UINT size;
@@ -93,10 +87,9 @@ auto Mesh::UploadToGpu() noexcept -> void {
     D3D12_HEAP_TYPE_DEFAULT);
   assert(idx_buf_);
 
-  success = g_engine_context.render_manager->UpdateBuffer(*idx_buf_, std::span{
+  g_engine_context.render_manager->UpdateBuffer(*idx_buf_, std::span{
     std::bit_cast<std::byte const*>(idxBufDataPtr), idxBufSize
   });
-  assert(success);
 }
 
 

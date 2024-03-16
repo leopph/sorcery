@@ -8,6 +8,8 @@
 #include <array>
 #include <bit>
 #include <iterator>
+#include <stdexcept>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -21,13 +23,28 @@ UINT const GraphicsDevice::res_desc_heap_size_{1'000'000};
 UINT const GraphicsDevice::sampler_heap_size_{2048};
 
 
+namespace {
+auto ThrowIfFailed(HRESULT const hr, std::string_view const msg) -> void {
+  if (FAILED(hr)) {
+    throw std::runtime_error{msg.data()};
+  }
+}
+}
+
+
 namespace details {
 auto DescriptorHeap::Allocate() -> UINT {
   std::scoped_lock const lock{mutex_};
 
   if (free_indices_.empty()) {
     auto const old_reserve_count{reserved_idx_count_};
-    reserved_idx_count_ += 100;
+    reserved_idx_count_ = std::min(heap_size_, reserved_idx_count_ * 2);
+
+    if (old_reserve_count == reserved_idx_count_) {
+      throw std::runtime_error{"Failed to allocate descriptor heap indices: the heap is full."};
+    }
+
+    free_indices_.reserve(reserved_idx_count_ - old_reserve_count);
 
     for (UINT idx{old_reserve_count}; idx < reserved_idx_count_; idx++) {
       free_indices_.emplace_back(idx);
@@ -54,6 +71,10 @@ auto DescriptorHeap::Release(UINT const index) -> void {
 
 
 auto DescriptorHeap::GetDescriptorCpuHandle(UINT const descriptor_index) const -> D3D12_CPU_DESCRIPTOR_HANDLE {
+  if (descriptor_index >= reserved_idx_count_) {
+    throw std::runtime_error{"Failed to convert descriptor index to CPU handle: descriptor index is out of range."};
+  }
+
   return CD3DX12_CPU_DESCRIPTOR_HANDLE{
     heap_->GetCPUDescriptorHandleForHeapStart(), static_cast<INT>(descriptor_index), increment_size_
   };
@@ -61,6 +82,10 @@ auto DescriptorHeap::GetDescriptorCpuHandle(UINT const descriptor_index) const -
 
 
 auto DescriptorHeap::GetDescriptorGpuHandle(UINT const descriptor_index) const -> D3D12_GPU_DESCRIPTOR_HANDLE {
+  if (descriptor_index >= reserved_idx_count_) {
+    throw std::runtime_error{"Failed to convert descriptor index to GPU handle: descriptor index is out of range."};
+  }
+
   return CD3DX12_GPU_DESCRIPTOR_HANDLE{
     heap_->GetGPUDescriptorHandleForHeapStart(), static_cast<INT>(descriptor_index), increment_size_
   };
@@ -74,7 +99,14 @@ auto DescriptorHeap::GetInternalPtr() const -> ID3D12DescriptorHeap* {
 
 DescriptorHeap::DescriptorHeap(ComPtr<ID3D12DescriptorHeap> heap, ID3D12Device& device) :
   heap_{std::move(heap)},
-  increment_size_{device.GetDescriptorHandleIncrementSize(heap_->GetDesc().Type)} {}
+  increment_size_{device.GetDescriptorHandleIncrementSize(heap_->GetDesc().Type)},
+  reserved_idx_count_{1},
+  heap_size_{heap_->GetDesc().NumDescriptors} {
+  free_indices_.reserve(reserved_idx_count_);
+  for (UINT idx{0}; idx < reserved_idx_count_; idx++) {
+    free_indices_.emplace_back(idx);
+  }
+}
 
 
 auto RootSignatureCache::Add(std::uint8_t const num_params, ComPtr<ID3D12RootSignature> root_signature) -> void {
@@ -95,28 +127,19 @@ auto RootSignatureCache::Get(std::uint8_t const num_params) -> ComPtr<ID3D12Root
 }
 
 
-auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDevice> {
+GraphicsDevice::GraphicsDevice(bool const enable_debug) {
   if (enable_debug) {
     ComPtr<ID3D12Debug6> debug;
-    if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug)))) {
-      return nullptr;
-    }
-
+    ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debug)), "Failed to get D3D12 debug interface.");
     debug->EnableDebugLayer();
 
     ComPtr<IDXGIInfoQueue> dxgi_info_queue;
-    if FAILED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgi_info_queue))) {
-      return nullptr;
-    }
-
-    if (FAILED(dxgi_info_queue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, TRUE))) {
-      return nullptr;
-    }
-
-    if (FAILED(
-      dxgi_info_queue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, TRUE))) {
-      return nullptr;
-    }
+    ThrowIfFailed(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgi_info_queue)), "Failed to get DXGI debug interface.");
+    ThrowIfFailed(dxgi_info_queue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, TRUE),
+      "Failed to set debug break on DXGI error.");
+    ThrowIfFailed(
+      dxgi_info_queue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, TRUE),
+      "Failed to set debug break on DXGI corruption.");
   }
 
   UINT factory_create_flags{0};
@@ -125,100 +148,95 @@ auto GraphicsDevice::New(bool const enable_debug) -> std::unique_ptr<GraphicsDev
     factory_create_flags |= DXGI_CREATE_FACTORY_DEBUG;
   }
 
-  ComPtr<IDXGIFactory7> factory;
-  if (FAILED(CreateDXGIFactory2(factory_create_flags, IID_PPV_ARGS(&factory)))) {
-    return nullptr;
-  }
+  ThrowIfFailed(CreateDXGIFactory2(factory_create_flags, IID_PPV_ARGS(&factory_)), "Failed to create DXGI factory.");
 
   ComPtr<IDXGIAdapter4> adapter;
-  if (FAILED(factory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)))) {
-    return nullptr;
-  }
+  ThrowIfFailed(factory_->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)),
+    "Failed to get high performance adapter.");
 
-  ComPtr<ID3D12Device10> device;
-  if (FAILED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)))) {
-    return nullptr;
-  }
+  ThrowIfFailed(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device_)),
+    "Failed to create D3D12 device.");
 
   if (enable_debug) {
     ComPtr<ID3D12InfoQueue> d3d12_info_queue;
-    if FAILED(device.As(&d3d12_info_queue)) {
-      return nullptr;
-    }
-
-    if (FAILED(d3d12_info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE))) {
-      return nullptr;
-    }
-
-    if (FAILED(d3d12_info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE))) {
-      return nullptr;
-    }
+    ThrowIfFailed(device_.As(&d3d12_info_queue), "Failed to get D3D12 info queue.");
+    ThrowIfFailed(d3d12_info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE),
+      "Failed to set debug break on D3D12 error.");
+    ThrowIfFailed(d3d12_info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE),
+      "Failed to set debug break on D3D12 corruption.");
   }
 
   CD3DX12FeatureSupport features;
-  if (FAILED(features.Init(device.Get()))) {
-    return nullptr;
+  ThrowIfFailed(features.Init(device_.Get()), "Failed to query D3D12 features.");
+
+  if (features.ResourceBindingTier() < D3D12_RESOURCE_BINDING_TIER_3) {
+    throw std::runtime_error{"Resource Bindig Tier 3 is required but not supported."};
   }
 
-  if (features.ResourceBindingTier() < D3D12_RESOURCE_BINDING_TIER_3 || features.HighestShaderModel() <
-      D3D_SHADER_MODEL_6_6 || !features.EnhancedBarriersSupported() || features.HighestRootSignatureVersion() <
-      D3D_ROOT_SIGNATURE_VERSION_1_1 || !features.
-      VPAndRTArrayIndexFromAnyShaderFeedingRasterizerSupportedWithoutGSEmulation()) {
-    return nullptr;
+  if (features.HighestShaderModel() < D3D_SHADER_MODEL_6_6) {
+    throw std::runtime_error{"Shader Model 6.6 is required but not supported."};
   }
 
-  D3D12MA::ALLOCATOR_DESC const allocator_desc{D3D12MA::ALLOCATOR_FLAG_NONE, device.Get(), 0, nullptr, adapter.Get()};
-  ComPtr<D3D12MA::Allocator> allocator;
-  if (FAILED(CreateAllocator(&allocator_desc, &allocator))) {
-    return nullptr;
+  if (!features.EnhancedBarriersSupported()) {
+    throw std::runtime_error{"Enhanced barriers is required but not supported."};
   }
+
+  if (features.HighestRootSignatureVersion() < D3D_ROOT_SIGNATURE_VERSION_1_1) {
+    throw std::runtime_error{"Root Signature 1.1 is required but no supported."};
+  }
+
+  if (!features.VPAndRTArrayIndexFromAnyShaderFeedingRasterizerSupportedWithoutGSEmulation()) {
+    throw std::runtime_error{
+      "Viewport and render target array index outside of geometry shaders is required but no supported."
+    };
+  }
+
+  D3D12MA::ALLOCATOR_DESC const allocator_desc{D3D12MA::ALLOCATOR_FLAG_NONE, device_.Get(), 0, nullptr, adapter.Get()};
+  ThrowIfFailed(CreateAllocator(&allocator_desc, &allocator_), "Failed to create D3D12 memory allocator.");
 
   D3D12_DESCRIPTOR_HEAP_DESC constexpr rtv_heap_desc{
     D3D12_DESCRIPTOR_HEAP_TYPE_RTV, rtv_heap_size_, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0
   };
   ComPtr<ID3D12DescriptorHeap> rtv_heap;
-  if (FAILED(device->CreateDescriptorHeap(&rtv_heap_desc, IID_PPV_ARGS(&rtv_heap)))) {
-    return nullptr;
-  }
+  ThrowIfFailed(device_->CreateDescriptorHeap(&rtv_heap_desc, IID_PPV_ARGS(&rtv_heap)), "Failed to create RTV heap.");
+  rtv_heap_ = std::make_unique<details::DescriptorHeap>(std::move(rtv_heap), *device_.Get());
 
   D3D12_DESCRIPTOR_HEAP_DESC constexpr dsv_heap_desc{
     D3D12_DESCRIPTOR_HEAP_TYPE_DSV, dsv_heap_size_, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0
   };
   ComPtr<ID3D12DescriptorHeap> dsv_heap;
-  if (FAILED(device->CreateDescriptorHeap(&dsv_heap_desc, IID_PPV_ARGS(&dsv_heap)))) {
-    return nullptr;
-  }
+  ThrowIfFailed(device_->CreateDescriptorHeap(&dsv_heap_desc, IID_PPV_ARGS(&dsv_heap)), "Failed to create DSV heap.");
+  dsv_heap_ = std::make_unique<details::DescriptorHeap>(std::move(dsv_heap), *device_.Get());
 
   D3D12_DESCRIPTOR_HEAP_DESC constexpr res_desc_heap_desc{
     D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, res_desc_heap_size_, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0
   };
   ComPtr<ID3D12DescriptorHeap> res_desc_heap;
-  if (FAILED(device->CreateDescriptorHeap(&res_desc_heap_desc, IID_PPV_ARGS(&res_desc_heap)))) {
-    return nullptr;
-  }
+  ThrowIfFailed(device_->CreateDescriptorHeap(&res_desc_heap_desc, IID_PPV_ARGS(&res_desc_heap)),
+    "Failed to create resource descriptor heap.");
+  res_desc_heap_ = std::make_unique<details::DescriptorHeap>(std::move(res_desc_heap), *device_.Get());
 
   D3D12_DESCRIPTOR_HEAP_DESC constexpr sampler_heap_desc{
     D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, sampler_heap_size_, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0
   };
   ComPtr<ID3D12DescriptorHeap> sampler_heap;
-  if (FAILED(device->CreateDescriptorHeap(&sampler_heap_desc, IID_PPV_ARGS(&sampler_heap)))) {
-    return nullptr;
-  }
+  ThrowIfFailed(device_->CreateDescriptorHeap(&sampler_heap_desc, IID_PPV_ARGS(&sampler_heap)),
+    "Failed to create sampler heap.");
+  sampler_heap_ = std::make_unique<details::DescriptorHeap>(std::move(sampler_heap), *device_.Get());
 
   D3D12_COMMAND_QUEUE_DESC constexpr queue_desc{
     D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, D3D12_COMMAND_QUEUE_FLAG_NONE, 0
   };
-  ComPtr<ID3D12CommandQueue> queue;
-  if (FAILED(device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&queue)))) {
-    return nullptr;
+  ThrowIfFailed(device_->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&queue_)), "Failed to create command queue.");
+
+  if (BOOL allow_tearing; SUCCEEDED(
+    factory_->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allow_tearing, sizeof(allow_tearing)
+    )) && allow_tearing) {
+    swap_chain_flags_ |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+    present_flags_ |= DXGI_PRESENT_ALLOW_TEARING;
   }
 
-  return std::unique_ptr<GraphicsDevice>{
-    new GraphicsDevice{
-      std::move(factory), std::move(device), std::move(allocator), std::move(rtv_heap), std::move(dsv_heap),
-      std::move(res_desc_heap), std::move(sampler_heap), std::move(queue)
-    }
-  };
+  idle_fence_ = CreateFence(1);
 }
 
 
@@ -233,11 +251,8 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc,
 
   auto const res_desc{CD3DX12_RESOURCE_DESC1::Buffer(desc.size)};
 
-  if (FAILED(
-    allocator_->CreateResource3(&alloc_desc, &res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr, &allocation
-      , IID_PPV_ARGS(&resource)))) {
-    return SharedDeviceChildHandle<Buffer>{nullptr, details::DeviceChildDeleter<Buffer>{*this}};
-  }
+  ThrowIfFailed(allocator_->CreateResource3(&alloc_desc, &res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr,
+    &allocation, IID_PPV_ARGS(&resource)), "Failed to create buffer.");
 
   UINT cbv;
   UINT srv;
@@ -297,11 +312,8 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
     D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_NONE, nullptr, nullptr
   };
 
-  if (FAILED(
-    allocator_->CreateResource3(&alloc_desc, &res_desc, initial_layout, clear_value, 0, nullptr, &allocation,
-      IID_PPV_ARGS(&resource)))) {
-    return SharedDeviceChildHandle<Texture>{nullptr, details::DeviceChildDeleter<Texture>{*this}};
-  }
+  ThrowIfFailed(allocator_->CreateResource3(&alloc_desc, &res_desc, initial_layout, clear_value, 0, nullptr,
+    &allocation, IID_PPV_ARGS(&resource)), "Failed to create texture.");
 
   UINT dsv;
   UINT rtv;
@@ -318,12 +330,11 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
 
 
 auto GraphicsDevice::CreatePipelineState(PipelineDesc const& desc,
-                                         std::uint8_t num_32_bit_params) -> SharedDeviceChildHandle<PipelineState> {
-  ComPtr<ID3D12RootSignature> root_signature;
+                                         std::uint8_t const num_32_bit_params) -> SharedDeviceChildHandle<
+  PipelineState> {
+  auto root_signature{root_signatures_.Get(num_32_bit_params)};
 
-  if (auto rs{root_signatures_.Get(num_32_bit_params)}) {
-    root_signature = std::move(rs);
-  } else {
+  if (!root_signature) {
     std::array<CD3DX12_ROOT_PARAMETER1, 2> root_params;
     root_params[0].InitAsConstants(num_32_bit_params, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
     root_params[1].InitAsConstants(num_32_bit_params, 1, 0, D3D12_SHADER_VISIBILITY_VERTEX);
@@ -340,15 +351,10 @@ auto GraphicsDevice::CreatePipelineState(PipelineDesc const& desc,
     ComPtr<ID3DBlob> root_signature_blob;
     ComPtr<ID3DBlob> error_blob;
 
-    if (FAILED(D3D12SerializeVersionedRootSignature(&root_signature_desc, &root_signature_blob, &error_blob))) {
-      return SharedDeviceChildHandle<PipelineState>{nullptr, details::DeviceChildDeleter<PipelineState>{*this}};
-    }
-
-    if (FAILED(
-      device_->CreateRootSignature(0, root_signature_blob->GetBufferPointer(), root_signature_blob->GetBufferSize(),
-        IID_PPV_ARGS(&root_signature)))) {
-      return SharedDeviceChildHandle<PipelineState>{nullptr, details::DeviceChildDeleter<PipelineState>{*this}};
-    }
+    ThrowIfFailed(D3D12SerializeVersionedRootSignature(&root_signature_desc, &root_signature_blob, &error_blob),
+      "Failed to serialize root signature.");
+    ThrowIfFailed(device_->CreateRootSignature(0, root_signature_blob->GetBufferPointer(),
+      root_signature_blob->GetBufferSize(), IID_PPV_ARGS(&root_signature)), "Failed to create root signature.");
 
     root_signatures_.Add(num_32_bit_params, root_signature);
   }
@@ -379,10 +385,8 @@ auto GraphicsDevice::CreatePipelineState(PipelineDesc const& desc,
   pso_desc.ViewInstancingDesc = desc.view_instancing_desc;
 
   D3D12_PIPELINE_STATE_STREAM_DESC const stream_desc{sizeof(pso_desc), &pso_desc};
-
-  if (FAILED(device_->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&pipeline_state)))) {
-    return SharedDeviceChildHandle<PipelineState>{nullptr, details::DeviceChildDeleter<PipelineState>{*this}};
-  }
+  ThrowIfFailed(device_->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&pipeline_state)),
+    "Failed to create pipeline state.");
 
   return SharedDeviceChildHandle<PipelineState>{
     new PipelineState{
@@ -395,21 +399,18 @@ auto GraphicsDevice::CreatePipelineState(PipelineDesc const& desc,
 
 auto GraphicsDevice::CreateCommandList() -> SharedDeviceChildHandle<CommandList> {
   ComPtr<ID3D12CommandAllocator> allocator;
-  if (FAILED(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)))) {
-    return SharedDeviceChildHandle<CommandList>{nullptr, details::DeviceChildDeleter<CommandList>{*this}};
-  }
+  ThrowIfFailed(device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)),
+    "Failed to create command allocator.");
 
   ComPtr<ID3D12GraphicsCommandList7> cmd_list;
-  if (FAILED(
-    device_->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmd_list)
-    ))) {
-    return SharedDeviceChildHandle<CommandList>{nullptr, details::DeviceChildDeleter<CommandList>{*this}};
-  }
+  ThrowIfFailed(
+    device_->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE,
+      IID_PPV_ARGS(&cmd_list)), "Failed to create command list.");
 
   return SharedDeviceChildHandle<CommandList>{
     new CommandList{
-      std::move(allocator), std::move(cmd_list), &dsv_heap_, &rtv_heap_, &res_desc_heap_, &sampler_heap_,
-      &root_signatures_
+      std::move(allocator), std::move(cmd_list), dsv_heap_.get(), rtv_heap_.get(), res_desc_heap_.get(),
+      sampler_heap_.get(), &root_signatures_
     },
     details::DeviceChildDeleter<CommandList>{*this}
   };
@@ -418,11 +419,8 @@ auto GraphicsDevice::CreateCommandList() -> SharedDeviceChildHandle<CommandList>
 
 auto GraphicsDevice::CreateFence(UINT64 const initial_value) -> SharedDeviceChildHandle<Fence> {
   ComPtr<ID3D12Fence1> fence;
-
-  if (FAILED(device_->CreateFence(initial_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))) {
-    return nullptr;
-  }
-
+  ThrowIfFailed(device_->CreateFence(initial_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)),
+    "Failed to create fence.");
   return SharedDeviceChildHandle<Fence>{
     new Fence{std::move(fence), initial_value + 1}, details::DeviceChildDeleter<Fence>{*this}
   };
@@ -437,19 +435,14 @@ auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc,
   };
 
   ComPtr<IDXGISwapChain1> swap_chain1;
-  if (FAILED(
-    factory_->CreateSwapChainForHwnd(queue_.Get(), window_handle, &dxgi_desc, nullptr, nullptr, &swap_chain1))) {
-    return SharedDeviceChildHandle<SwapChain>{nullptr, details::DeviceChildDeleter<SwapChain>{*this}};
-  }
+  ThrowIfFailed(
+    factory_->CreateSwapChainForHwnd(queue_.Get(), window_handle, &dxgi_desc, nullptr, nullptr, &swap_chain1),
+    "Failed to create swap chain.");
 
   ComPtr<IDXGISwapChain4> swap_chain4;
-  if (FAILED(swap_chain1.As(&swap_chain4))) {
-    return SharedDeviceChildHandle<SwapChain>{nullptr, details::DeviceChildDeleter<SwapChain>{*this}};
-  }
-
-  if (FAILED(factory_->MakeWindowAssociation(window_handle, DXGI_MWA_NO_ALT_ENTER))) {
-    return SharedDeviceChildHandle<SwapChain>{nullptr, details::DeviceChildDeleter<SwapChain>{*this}};
-  }
+  ThrowIfFailed(swap_chain1.As(&swap_chain4), "Failed to query IDXGISwapChain4 interface.");
+  ThrowIfFailed(factory_->MakeWindowAssociation(window_handle, DXGI_MWA_NO_ALT_ENTER),
+    "Failed to disable swap chain ALT+ENTER behavior.");
 
   auto const swap_chain{new SwapChain{std::move(swap_chain4)}};
   SwapChainCreateTextures(*swap_chain);
@@ -459,8 +452,8 @@ auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc,
 
 
 auto GraphicsDevice::CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle {
-  auto const sampler{sampler_heap_.Allocate()};
-  device_->CreateSampler(&desc, sampler_heap_.GetDescriptorCpuHandle(sampler));
+  auto const sampler{sampler_heap_->Allocate()};
+  device_->CreateSampler(&desc, sampler_heap_->GetDescriptorCpuHandle(sampler));
   return UniqueSamplerHandle{sampler, *this};
 }
 
@@ -528,9 +521,8 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       std::max(std::max(buf_alloc_info.Alignment, rt_ds_alloc_info.Alignment), non_rt_ds_alloc_info.Alignment)
     };
 
-    if (FAILED(allocator_->AllocateMemory(&alloc_desc, &alloc_info, &buf_alloc))) {
-      return;
-    }
+    ThrowIfFailed(allocator_->AllocateMemory(&alloc_desc, &alloc_info, &buf_alloc),
+      "Failed to allocate memory for aliasing resources.");
 
     rt_ds_alloc = buf_alloc;
     non_rt_ds_alloc = buf_alloc;
@@ -540,9 +532,8 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
         D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS, nullptr, nullptr
       };
 
-      if (FAILED(allocator_->AllocateMemory(&buf_alloc_desc, &buf_alloc_info, &buf_alloc))) {
-        return;
-      }
+      ThrowIfFailed(allocator_->AllocateMemory(&buf_alloc_desc, &buf_alloc_info, &buf_alloc),
+        "Failed to allocate memory for aliasing buffers.");
     }
 
     if (rt_ds_alloc_info.SizeInBytes > 0) {
@@ -550,9 +541,8 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
         D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES, nullptr, nullptr
       };
 
-      if (FAILED(allocator_->AllocateMemory(&rt_ds_alloc_desc, &rt_ds_alloc_info, &rt_ds_alloc))) {
-        return;
-      }
+      ThrowIfFailed(allocator_->AllocateMemory(&rt_ds_alloc_desc, &rt_ds_alloc_info, &rt_ds_alloc),
+        "Failed to allocate memory for aliasing RT/DS textures.");
     }
 
     if (non_rt_ds_alloc_info.SizeInBytes > 0) {
@@ -560,9 +550,8 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
         D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES, nullptr, nullptr
       };
 
-      if (FAILED(allocator_->AllocateMemory(&non_rt_ds_alloc_desc, &non_rt_ds_alloc_info, &non_rt_ds_alloc))) {
-        return;
-      }
+      ThrowIfFailed(allocator_->AllocateMemory(&non_rt_ds_alloc_desc, &non_rt_ds_alloc_info, &non_rt_ds_alloc),
+        "Failed to allocate memory for aliasing non-RT/DS textures.");
     }
   }
 
@@ -571,12 +560,8 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       auto const desc{CD3DX12_RESOURCE_DESC1::Buffer(buf_desc.size)};
       ComPtr<ID3D12Resource2> resource;
 
-      if (FAILED(
-        allocator_->CreateAliasingResource2(buf_alloc.Get(), 0, &desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0,
-          nullptr, IID_PPV_ARGS(&resource)))) {
-        buffers->emplace_back(nullptr, details::DeviceChildDeleter<Buffer>{*this});
-        continue;
-      }
+      ThrowIfFailed(allocator_->CreateAliasingResource2(buf_alloc.Get(), 0, &desc, D3D12_BARRIER_LAYOUT_UNDEFINED,
+        nullptr, 0, nullptr, IID_PPV_ARGS(&resource)), "Failed to create aliasing buffer.");
 
       UINT cbv;
       UINT srv;
@@ -605,12 +590,8 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       auto& alloc{info.desc.render_target || info.desc.depth_stencil ? rt_ds_alloc : non_rt_ds_alloc};
 
       ComPtr<ID3D12Resource2> resource;
-      if (FAILED(
-        allocator_->CreateAliasingResource2(alloc.Get(), 0, &desc, info.initial_layout, info.clear_value, 0, nullptr,
-          IID_PPV_ARGS(&resource)))) {
-        textures->emplace_back(nullptr, details::DeviceChildDeleter<Texture>{*this});
-        continue;
-      }
+      ThrowIfFailed(allocator_->CreateAliasingResource2(alloc.Get(), 0, &desc, info.initial_layout, info.clear_value, 0,
+        nullptr, IID_PPV_ARGS(&resource)), "Failed to create aliasing texture.");
 
       UINT dsv;
       UINT rtv;
@@ -624,65 +605,62 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
 }
 
 
-auto GraphicsDevice::DestroyBuffer(Buffer const* const buffer) -> void {
+auto GraphicsDevice::DestroyBuffer(Buffer const* const buffer) const -> void {
   if (buffer) {
-    res_desc_heap_.Release(buffer->cbv_);
-    res_desc_heap_.Release(buffer->srv_);
-    res_desc_heap_.Release(buffer->uav_);
+    res_desc_heap_->Release(buffer->cbv_);
+    res_desc_heap_->Release(buffer->srv_);
+    res_desc_heap_->Release(buffer->uav_);
 
     delete buffer;
   }
 }
 
 
-auto GraphicsDevice::DestroyTexture(Texture const* const texture) -> void {
+auto GraphicsDevice::DestroyTexture(Texture const* const texture) const -> void {
   if (texture) {
-    dsv_heap_.Release(texture->dsv_);
-    rtv_heap_.Release(texture->rtv_);
-    res_desc_heap_.Release(texture->srv_);
-    res_desc_heap_.Release(texture->uav_);
+    dsv_heap_->Release(texture->dsv_);
+    rtv_heap_->Release(texture->rtv_);
+    res_desc_heap_->Release(texture->srv_);
+    res_desc_heap_->Release(texture->uav_);
 
     delete texture;
   }
 }
 
 
-auto GraphicsDevice::DestroyPipelineState(PipelineState const* const pipeline_state) -> void {
+auto GraphicsDevice::DestroyPipelineState(PipelineState const* const pipeline_state) const -> void {
   delete pipeline_state;
 }
 
 
-auto GraphicsDevice::DestroyCommandList(CommandList const* const command_list) -> void {
+auto GraphicsDevice::DestroyCommandList(CommandList const* const command_list) const -> void {
   delete command_list;
 }
 
 
-auto GraphicsDevice::DestroyFence(Fence const* const fence) -> void {
+auto GraphicsDevice::DestroyFence(Fence const* const fence) const -> void {
   delete fence;
 }
 
 
-auto GraphicsDevice::DestroySwapChain(SwapChain const* const swap_chain) -> void {
+auto GraphicsDevice::DestroySwapChain(SwapChain const* const swap_chain) const -> void {
   delete swap_chain;
 }
 
 
-auto GraphicsDevice::DestroySampler(UINT const sampler) -> void {
-  sampler_heap_.Release(sampler);
+auto GraphicsDevice::DestroySampler(UINT const sampler) const -> void {
+  sampler_heap_->Release(sampler);
 }
 
 
-auto GraphicsDevice::WaitFence(Fence const& fence, UINT64 const wait_value) const -> bool {
-  return SUCCEEDED(queue_->Wait(fence.fence_.Get(), wait_value));
+auto GraphicsDevice::WaitFence(Fence const& fence, UINT64 const wait_value) const -> void {
+  ThrowIfFailed(queue_->Wait(fence.fence_.Get(), wait_value), "Failed to wait fence from GPU queue.");
 }
 
 
-auto GraphicsDevice::SignalFence(Fence& fence, UINT64 const signal_value) const -> bool {
-  if (SUCCEEDED(queue_->Signal(fence.fence_.Get(), signal_value))) {
-    fence.next_val_.fetch_add(signal_value);
-    return true;
-  }
-  return false;
+auto GraphicsDevice::SignalFence(Fence& fence, UINT64 const signal_value) const -> void {
+  ThrowIfFailed(queue_->Signal(fence.fence_.Get(), signal_value), "Failed to signal fence from GPU queue.");
+  fence.next_val_.fetch_add(signal_value);
 }
 
 
@@ -696,12 +674,10 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
 }
 
 
-auto GraphicsDevice::WaitIdle() const -> bool {
+auto GraphicsDevice::WaitIdle() const -> void {
   auto const fence_val{idle_fence_->GetNextValue()};
-  if (!SignalFence(*idle_fence_, fence_val)) {
-    return false;
-  }
-  return idle_fence_->Wait(fence_val);
+  SignalFence(*idle_fence_, fence_val);
+  idle_fence_->Wait(fence_val);
 }
 
 
@@ -716,56 +692,26 @@ auto GraphicsDevice::SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain)
 }
 
 
-auto GraphicsDevice::SwapChainPresent(SwapChain const& swap_chain, UINT const sync_interval) const -> bool {
-  return SUCCEEDED(swap_chain.swap_chain_->Present(sync_interval, present_flags_));
+auto GraphicsDevice::SwapChainPresent(SwapChain const& swap_chain, UINT const sync_interval) const -> void {
+  ThrowIfFailed(swap_chain.swap_chain_->Present(sync_interval, present_flags_), "Failed to present swap chain.");
 }
 
 
-auto GraphicsDevice::SwapChainResize(SwapChain& swap_chain, UINT const width, UINT const height) -> bool {
+auto GraphicsDevice::SwapChainResize(SwapChain& swap_chain, UINT const width, UINT const height) -> void {
   swap_chain.textures_.clear();
-
-  if (FAILED(swap_chain.swap_chain_->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, swap_chain_flags_))) {
-    return false;
-  }
-
-  return SwapChainCreateTextures(swap_chain);
+  ThrowIfFailed(swap_chain.swap_chain_->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, swap_chain_flags_),
+    "Failed to resize swap chain buffers.");
+  SwapChainCreateTextures(swap_chain);
 }
 
 
-GraphicsDevice::GraphicsDevice(ComPtr<IDXGIFactory7> factory, ComPtr<ID3D12Device10> device,
-                               ComPtr<D3D12MA::Allocator> allocator, ComPtr<ID3D12DescriptorHeap> rtv_heap,
-                               ComPtr<ID3D12DescriptorHeap> dsv_heap, ComPtr<ID3D12DescriptorHeap> res_desc_heap,
-                               ComPtr<ID3D12DescriptorHeap> sampler_heap, ComPtr<ID3D12CommandQueue> queue) :
-  factory_{std::move(factory)},
-  device_{std::move(device)},
-  allocator_{std::move(allocator)},
-  rtv_heap_{std::move(rtv_heap), *device_.Get()},
-  dsv_heap_{std::move(dsv_heap), *device_.Get()},
-  res_desc_heap_{std::move(res_desc_heap), *device_.Get()},
-  sampler_heap_{std::move(sampler_heap), *device_.Get()},
-  queue_{std::move(queue)} {
-  if (BOOL allow_tearing; SUCCEEDED(
-    factory_->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allow_tearing, sizeof(allow_tearing)
-    )) && allow_tearing) {
-    swap_chain_flags_ |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-    present_flags_ |= DXGI_PRESENT_ALLOW_TEARING;
-  }
-
-  idle_fence_ = CreateFence(1);
-}
-
-
-auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> bool {
+auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> void {
   DXGI_SWAP_CHAIN_DESC1 desc;
-  if (FAILED(swap_chain.swap_chain_->GetDesc1(&desc))) {
-    return false;
-  }
+  ThrowIfFailed(swap_chain.swap_chain_->GetDesc1(&desc), "Failed to retrieve swap chain desc.");
 
   for (UINT i{0}; i < desc.BufferCount; i++) {
     ComPtr<ID3D12Resource2> buf;
-    if (FAILED(swap_chain.swap_chain_->GetBuffer(i, IID_PPV_ARGS(&buf)))) {
-      return false;
-    }
+    ThrowIfFailed(swap_chain.swap_chain_->GetBuffer(i, IID_PPV_ARGS(&buf)), "Failed to retrieve swap chain buffer.");
 
     UINT dsv;
     UINT rtv;
@@ -782,35 +728,33 @@ auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> bool {
       nullptr, std::move(buf), details::kInvalidResourceIndex, rtv, srv, details::kInvalidResourceIndex
     }, details::DeviceChildDeleter<Texture>{*this});
   }
-
-  return true;
 }
 
 
 auto GraphicsDevice::CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const& desc, UINT& cbv, UINT& srv,
-                                       UINT& uav) -> void {
+                                       UINT& uav) const -> void {
   if (desc.constant_buffer) {
-    cbv = res_desc_heap_.Allocate();
+    cbv = res_desc_heap_->Allocate();
     D3D12_CONSTANT_BUFFER_VIEW_DESC const cbv_desc{buffer.GetGPUVirtualAddress(), static_cast<UINT>(desc.size)};
-    device_->CreateConstantBufferView(&cbv_desc, res_desc_heap_.GetDescriptorCpuHandle(cbv));
+    device_->CreateConstantBufferView(&cbv_desc, res_desc_heap_->GetDescriptorCpuHandle(cbv));
   } else {
     cbv = details::kInvalidResourceIndex;
   }
 
   if (desc.shader_resource) {
-    srv = res_desc_heap_.Allocate();
+    srv = res_desc_heap_->Allocate();
     D3D12_SHADER_RESOURCE_VIEW_DESC const srv_desc{
       .Format = DXGI_FORMAT_UNKNOWN, .ViewDimension = D3D12_SRV_DIMENSION_BUFFER,
       .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
       .Buffer = {0, static_cast<UINT>(desc.size / desc.stride), desc.stride, D3D12_BUFFER_SRV_FLAG_NONE}
     };
-    device_->CreateShaderResourceView(&buffer, &srv_desc, res_desc_heap_.GetDescriptorCpuHandle(srv));
+    device_->CreateShaderResourceView(&buffer, &srv_desc, res_desc_heap_->GetDescriptorCpuHandle(srv));
   } else {
     srv = details::kInvalidResourceIndex;
   }
 
   if (desc.unordered_access) {
-    uav = res_desc_heap_.Allocate();
+    uav = res_desc_heap_->Allocate();
     D3D12_UNORDERED_ACCESS_VIEW_DESC const uav_desc{
       .Format = DXGI_FORMAT_UNKNOWN, .ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
       .Buffer = {
@@ -818,7 +762,7 @@ auto GraphicsDevice::CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const
         .StructureByteStride = desc.stride, .CounterOffsetInBytes = 0, .Flags = D3D12_BUFFER_UAV_FLAG_NONE
       }
     };
-    device_->CreateUnorderedAccessView(&buffer, nullptr, &uav_desc, res_desc_heap_.GetDescriptorCpuHandle(uav));
+    device_->CreateUnorderedAccessView(&buffer, nullptr, &uav_desc, res_desc_heap_->GetDescriptorCpuHandle(uav));
   } else {
     uav = details::kInvalidResourceIndex;
   }
@@ -826,7 +770,7 @@ auto GraphicsDevice::CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const
 
 
 auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc const& desc, UINT& dsv, UINT& rtv,
-                                        UINT& srv, UINT& uav) -> void {
+                                        UINT& srv, UINT& uav) const -> void {
   DXGI_FORMAT dsv_format;
   DXGI_FORMAT rtv_srv_uav_format;
 
@@ -881,8 +825,8 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
         }
       }
     }
-    dsv = dsv_heap_.Allocate();
-    device_->CreateDepthStencilView(&texture, &dsv_desc, dsv_heap_.GetDescriptorCpuHandle(dsv));
+    dsv = dsv_heap_->Allocate();
+    device_->CreateDepthStencilView(&texture, &dsv_desc, dsv_heap_->GetDescriptorCpuHandle(dsv));
   } else {
     dsv = details::kInvalidResourceIndex;
   }
@@ -927,8 +871,8 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
       rtv_desc.Texture3D.FirstWSlice = 0;
       rtv_desc.Texture3D.WSize = static_cast<UINT>(-1);
     }
-    rtv = rtv_heap_.Allocate();
-    device_->CreateRenderTargetView(&texture, &rtv_desc, rtv_heap_.GetDescriptorCpuHandle(rtv));
+    rtv = rtv_heap_->Allocate();
+    device_->CreateRenderTargetView(&texture, &rtv_desc, rtv_heap_->GetDescriptorCpuHandle(rtv));
   } else {
     rtv = details::kInvalidResourceIndex;
   }
@@ -988,8 +932,8 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
       srv_desc.TextureCube.MipLevels = static_cast<UINT>(-1);
       srv_desc.TextureCube.ResourceMinLODClamp = 0.0f;
     }
-    srv = res_desc_heap_.Allocate();
-    device_->CreateShaderResourceView(&texture, &srv_desc, res_desc_heap_.GetDescriptorCpuHandle(srv));
+    srv = res_desc_heap_->Allocate();
+    device_->CreateShaderResourceView(&texture, &srv_desc, res_desc_heap_->GetDescriptorCpuHandle(srv));
   } else {
     srv = details::kInvalidResourceIndex;
   }
@@ -1034,16 +978,16 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
       uav_desc.Texture3D.FirstWSlice = 0;
       uav_desc.Texture3D.WSize = static_cast<UINT>(-1);
     }
-    uav = res_desc_heap_.Allocate();
-    device_->CreateUnorderedAccessView(&texture, nullptr, &uav_desc, res_desc_heap_.GetDescriptorCpuHandle(uav));
+    uav = res_desc_heap_->Allocate();
+    device_->CreateUnorderedAccessView(&texture, nullptr, &uav_desc, res_desc_heap_->GetDescriptorCpuHandle(uav));
   } else {
     uav = details::kInvalidResourceIndex;
   }
 }
 
 
-auto Resource::SetDebugName(std::wstring_view const name) const -> bool {
-  return SUCCEEDED(resource_->SetName(name.data()));
+auto Resource::SetDebugName(std::wstring_view const name) const -> void {
+  ThrowIfFailed(resource_->SetName(name.data()), "Failed to set D3D12 resource debug name.");
 }
 
 
@@ -1082,10 +1026,9 @@ Resource::Resource(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource
 
 
 auto Resource::InternalMap(UINT const subresource, D3D12_RANGE const* read_range) const -> void* {
-  if (void* mapped; SUCCEEDED(resource_->Map(subresource, read_range, &mapped))) {
-    return mapped;
-  }
-  return nullptr;
+  void* mapped;
+  ThrowIfFailed(resource_->Map(subresource, read_range, &mapped), "Failed to map D3D12 resource.");
+  return mapped;
 }
 
 
@@ -1120,22 +1063,19 @@ PipelineState::PipelineState(ComPtr<ID3D12RootSignature> root_signature, ComPtr<
   is_compute_{is_compute} {}
 
 
-auto CommandList::Begin(PipelineState const* pipeline_state) -> bool {
-  if (FAILED(allocator_->Reset()) || FAILED(
-        cmd_list_->Reset(allocator_.Get(), pipeline_state ? pipeline_state->pipeline_state_.Get() : nullptr))) {
-    return false;
-  }
-
+auto CommandList::Begin(PipelineState const* pipeline_state) -> void {
+  ThrowIfFailed(allocator_->Reset(), "Failed to reset command allocator.");
+  ThrowIfFailed(cmd_list_->Reset(allocator_.Get(), pipeline_state ? pipeline_state->pipeline_state_.Get() : nullptr),
+    "Failed to reset command list.");
   cmd_list_->SetDescriptorHeaps(2,
     std::array{res_desc_heap_->GetInternalPtr(), sampler_heap_->GetInternalPtr()}.data());
   compute_pipeline_set_ = pipeline_state && pipeline_state->is_compute_;
   SetRootSignature(pipeline_state ? pipeline_state->num_params_ : 0);
-  return true;
 }
 
 
-auto CommandList::End() const -> bool {
-  return SUCCEEDED(cmd_list_->Close());
+auto CommandList::End() const -> void {
+  ThrowIfFailed(cmd_list_->Close(), "Failed to close command list.");
 }
 
 
@@ -1406,17 +1346,14 @@ auto Fence::GetCompletedValue() const -> UINT64 {
 }
 
 
-auto Fence::Signal(UINT64 const value) -> bool {
-  if (SUCCEEDED(fence_->Signal(value))) {
-    next_val_ = value;
-    return true;
-  }
-  return false;
+auto Fence::Signal(UINT64 const value) -> void {
+  ThrowIfFailed(fence_->Signal(value), "Failed to signal fence from the CPU.");
+  next_val_ = value;
 }
 
 
-auto Fence::Wait(UINT64 const value) const -> bool {
-  return SUCCEEDED(fence_->SetEventOnCompletion(value, nullptr));
+auto Fence::Wait(UINT64 const value) const -> void {
+  ThrowIfFailed(fence_->SetEventOnCompletion(value, nullptr), "Failed to wait fence from CPU.");
 }
 
 

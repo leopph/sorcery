@@ -194,8 +194,8 @@ auto CALLBACK WindowImpl::WindowProc(HWND const hwnd, UINT const msg, WPARAM con
       }
 
       case WM_SIZE: {
-        std::ignore = self->graphics_device_->WaitIdle();
-        std::ignore = self->graphics_device_->SwapChainResize(*self->swap_chain_, 0, 0);
+        self->graphics_device_->WaitIdle();
+        self->graphics_device_->SwapChainResize(*self->swap_chain_, 0, 0);
         self->on_size_event_.invoke({LOWORD(lparam), HIWORD(lparam)});
         return 0;
       }
