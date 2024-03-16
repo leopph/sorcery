@@ -149,116 +149,112 @@ auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexce
 
 
 auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeNull<Resource*> {
-  if constexpr (std::endian::native != std::endian::little) {
-    return nullptr; // TODO
-  } else {
-    auto curBytes{as_bytes(std::span{bytes})};
-    std::uint64_t vertexCount;
+  auto curBytes{as_bytes(std::span{bytes})};
+  std::uint64_t vertexCount;
 
-    if (!DeserializeFromBinary(curBytes, vertexCount)) {
-      return nullptr;
-    }
-
-    curBytes = curBytes.subspan(sizeof vertexCount);
-    std::uint64_t idxCount;
-
-    if (!DeserializeFromBinary(curBytes, idxCount)) {
-      return nullptr;
-    }
-
-    curBytes = curBytes.subspan(sizeof idxCount);
-    std::uint64_t mtlCount;
-
-    if (!DeserializeFromBinary(curBytes, mtlCount)) {
-      return nullptr;
-    }
-
-    curBytes = curBytes.subspan(sizeof mtlCount);
-    std::uint64_t submeshCount;
-
-    if (!DeserializeFromBinary(curBytes, submeshCount)) {
-      return nullptr;
-    }
-
-    curBytes = curBytes.subspan(sizeof submeshCount);
-    std::int32_t idx32;
-
-    if (!DeserializeFromBinary(curBytes, idx32)) {
-      return nullptr;
-    }
-
-    curBytes = curBytes.subspan(sizeof idx32);
-
-    Mesh::Data meshData;
-
-    meshData.positions.resize(vertexCount);
-    std::memcpy(meshData.positions.data(), curBytes.data(), vertexCount * sizeof(Vector3));
-    curBytes = curBytes.subspan(vertexCount * sizeof(Vector3));
-
-    meshData.normals.resize(vertexCount);
-    std::memcpy(meshData.normals.data(), curBytes.data(), vertexCount * sizeof(Vector3));
-    curBytes = curBytes.subspan(vertexCount * sizeof(Vector3));
-
-    meshData.uvs.resize(vertexCount);
-    std::memcpy(meshData.uvs.data(), curBytes.data(), vertexCount * sizeof(Vector2));
-    curBytes = curBytes.subspan(vertexCount * sizeof(Vector2));
-
-    meshData.tangents.resize(vertexCount);
-    std::memcpy(meshData.tangents.data(), curBytes.data(), vertexCount * sizeof(Vector3));
-    curBytes = curBytes.subspan(vertexCount * sizeof(Vector3));
-
-    if (idx32) {
-      meshData.indices.emplace<std::vector<std::uint32_t>>();
-    }
-
-    std::visit([idxCount, &curBytes]<typename T>(std::vector<T>& indices) {
-      indices.resize(idxCount);
-      std::memcpy(indices.data(), curBytes.data(), idxCount * sizeof(T));
-      curBytes = curBytes.subspan(idxCount * sizeof(T));
-    }, meshData.indices);
-
-    meshData.material_slots.resize(mtlCount);
-
-    for (auto i{0ull}; i < mtlCount; i++) {
-      if (!DeserializeFromBinary(curBytes, meshData.material_slots[i].name)) {
-        return nullptr;
-      }
-
-      curBytes = curBytes.subspan(meshData.material_slots[i].name.size() + 8);
-    }
-
-    meshData.sub_meshes.resize(submeshCount);
-
-    for (auto i{0ull}; i < submeshCount; i++) {
-      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].base_vertex)) {
-        return nullptr;
-      }
-
-      curBytes = curBytes.subspan(sizeof(int));
-
-      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].first_index)) {
-        return nullptr;
-      }
-
-      curBytes = curBytes.subspan(sizeof(int));
-
-      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].index_count)) {
-        return nullptr;
-      }
-
-      curBytes = curBytes.subspan(sizeof(int));
-
-      if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].material_index)) {
-        return nullptr;
-      }
-
-      curBytes = curBytes.subspan(sizeof(int));
-    }
-
-    auto const ret{new Mesh{std::move(meshData)}};
-    ret->OnInit();
-    return ret;
+  if (!DeserializeFromBinary(curBytes, vertexCount)) {
+    return nullptr;
   }
+
+  curBytes = curBytes.subspan(sizeof vertexCount);
+  std::uint64_t idxCount;
+
+  if (!DeserializeFromBinary(curBytes, idxCount)) {
+    return nullptr;
+  }
+
+  curBytes = curBytes.subspan(sizeof idxCount);
+  std::uint64_t mtlCount;
+
+  if (!DeserializeFromBinary(curBytes, mtlCount)) {
+    return nullptr;
+  }
+
+  curBytes = curBytes.subspan(sizeof mtlCount);
+  std::uint64_t submeshCount;
+
+  if (!DeserializeFromBinary(curBytes, submeshCount)) {
+    return nullptr;
+  }
+
+  curBytes = curBytes.subspan(sizeof submeshCount);
+  std::int32_t idx32;
+
+  if (!DeserializeFromBinary(curBytes, idx32)) {
+    return nullptr;
+  }
+
+  curBytes = curBytes.subspan(sizeof idx32);
+
+  Mesh::Data meshData;
+
+  meshData.positions.resize(vertexCount);
+  std::memcpy(meshData.positions.data(), curBytes.data(), vertexCount * sizeof(Vector3));
+  curBytes = curBytes.subspan(vertexCount * sizeof(Vector3));
+
+  meshData.normals.resize(vertexCount);
+  std::memcpy(meshData.normals.data(), curBytes.data(), vertexCount * sizeof(Vector3));
+  curBytes = curBytes.subspan(vertexCount * sizeof(Vector3));
+
+  meshData.uvs.resize(vertexCount);
+  std::memcpy(meshData.uvs.data(), curBytes.data(), vertexCount * sizeof(Vector2));
+  curBytes = curBytes.subspan(vertexCount * sizeof(Vector2));
+
+  meshData.tangents.resize(vertexCount);
+  std::memcpy(meshData.tangents.data(), curBytes.data(), vertexCount * sizeof(Vector3));
+  curBytes = curBytes.subspan(vertexCount * sizeof(Vector3));
+
+  if (idx32) {
+    meshData.indices.emplace<std::vector<std::uint32_t>>();
+  }
+
+  std::visit([idxCount, &curBytes]<typename T>(std::vector<T>& indices) {
+    indices.resize(idxCount);
+    std::memcpy(indices.data(), curBytes.data(), idxCount * sizeof(T));
+    curBytes = curBytes.subspan(idxCount * sizeof(T));
+  }, meshData.indices);
+
+  meshData.material_slots.resize(mtlCount);
+
+  for (auto i{0ull}; i < mtlCount; i++) {
+    if (!DeserializeFromBinary(curBytes, meshData.material_slots[i].name)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(meshData.material_slots[i].name.size() + 8);
+  }
+
+  meshData.sub_meshes.resize(submeshCount);
+
+  for (auto i{0ull}; i < submeshCount; i++) {
+    if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].base_vertex)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(sizeof(int));
+
+    if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].first_index)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(sizeof(int));
+
+    if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].index_count)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(sizeof(int));
+
+    if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].material_index)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(sizeof(int));
+  }
+
+  auto const ret{new Mesh{std::move(meshData)}};
+  ret->OnInit();
+  return ret;
 }
 
 

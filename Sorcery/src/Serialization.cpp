@@ -5,6 +5,10 @@
 
 #include <cassert>
 
+static_assert(
+  std::endian::native == std::endian::little &&
+  "Serialization and deserialization is only supported on little endian architectures!");
+
 
 namespace YAML {
 auto convert<sorcery::Quaternion>::encode(sorcery::Quaternion const& q) -> Node {
@@ -46,7 +50,9 @@ auto convert<sorcery::Guid>::decode(Node const& node, sorcery::Guid& guid) -> bo
 
 
 namespace sorcery {
-auto ReflectionSerializeToYaml(Object const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) noexcept -> YAML::Node {
+auto ReflectionSerializeToYaml(Object const& obj,
+                               std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) noexcept ->
+  YAML::Node {
   YAML::Node ret;
   for (auto const& prop : rttr::type::get(obj).get_properties()) {
     ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(obj), extensionFunc);
@@ -55,7 +61,9 @@ auto ReflectionSerializeToYaml(Object const& obj, std::function<YAML::Node(rttr:
 }
 
 
-auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) noexcept -> YAML::Node {
+auto ReflectionSerializeToYaml(rttr::variant const& v,
+                               std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) noexcept ->
+  YAML::Node {
   if (v.get_type() == rttr::type::get<bool>()) {
     return YAML::Node{v.get_value<bool>()};
   }
@@ -184,7 +192,9 @@ auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(
 }
 
 
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept -> void {
+auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj,
+                                   std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept
+  -> void {
   for (auto const& prop : rttr::type::get(obj).get_properties()) {
     auto value{prop.get_value(obj)};
     assert(value.is_valid());
@@ -196,7 +206,9 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::fun
 }
 
 
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept -> void {
+auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
+                                   std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept
+  -> void {
   if (!node.IsDefined() || node.IsNull() || !v.get_type().is_valid()) {
     return;
   }
@@ -211,105 +223,105 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
   if (v.get_type() == rttr::type::get<char>()) {
     try {
       v = node.as<char>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<signed char>()) {
     try {
       v = node.as<signed char>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<unsigned char>()) {
     try {
       v = node.as<unsigned char>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<short>()) {
     try {
       v = node.as<short>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<unsigned short>()) {
     try {
       v = node.as<unsigned short>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<int>()) {
     try {
       v = node.as<int>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<unsigned>()) {
     try {
       v = node.as<unsigned>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<long>()) {
     try {
       v = node.as<long>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<unsigned long>()) {
     try {
       v = node.as<unsigned long>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<long long>()) {
     try {
       v = node.as<long long>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<unsigned long long>()) {
     try {
       v = node.as<unsigned long long>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<float>()) {
     try {
       v = node.as<float>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<double>()) {
     try {
       v = node.as<double>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<long double>()) {
     try {
       v = node.as<long double>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
   if (v.get_type() == rttr::type::get<std::string>()) {
     try {
       v = node.as<std::string>();
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
@@ -337,7 +349,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
           v = resVar;
         }
       }
-    } catch (...) { }
+    } catch (...) {}
     return;
   }
 
@@ -398,20 +410,18 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
 }
 
 
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept -> void {
+auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v,
+                                   std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept
+  -> void {
   ReflectionDeserializeFromYaml(node, v, extensionFunc);
 }
 
 
 auto SerializeToBinary(std::string_view const sv, std::vector<std::byte>& bytes) noexcept -> void {
-  if constexpr (std::endian::native == std::endian::little) {
-    SerializeToBinary(std::size(sv), bytes);
-    auto const sizeBeforeChars{std::size(bytes)};
-    bytes.resize(sizeBeforeChars + std::size(sv));
-    std::memcpy(&bytes[sizeBeforeChars], sv.data(), std::size(sv));
-  } else {
-    // TODO
-  }
+  SerializeToBinary(std::size(sv), bytes);
+  auto const sizeBeforeChars{std::size(bytes)};
+  bytes.resize(sizeBeforeChars + std::size(sv));
+  std::memcpy(&bytes[sizeBeforeChars], sv.data(), std::size(sv));
 }
 
 
@@ -420,22 +430,18 @@ auto DeserializeFromBinary(std::span<std::byte const> const bytes, std::string& 
     return false;
   }
 
-  if constexpr (std::endian::native == std::endian::little) {
-    std::uint64_t len;
-    if (!DeserializeFromBinary(bytes, len)) {
-      return false;
-    }
-
-    if (std::size(bytes) - 8 < len) {
-      return false;
-    }
-
-    str.resize(len);
-
-    std::memcpy(str.data(), bytes.subspan(8).data(), len);
-    return true;
-  } else {
+  std::uint64_t len;
+  if (!DeserializeFromBinary(bytes, len)) {
     return false;
   }
+
+  if (std::size(bytes) - 8 < len) {
+    return false;
+  }
+
+  str.resize(len);
+
+  std::memcpy(str.data(), bytes.subspan(8).data(), len);
+  return true;
 }
 }
