@@ -24,15 +24,9 @@ auto RenderTarget::New(graphics::GraphicsDevice& device, Desc const& desc) -> st
   if (desc.color_format) {
     CD3DX12_CLEAR_VALUE const clear_value{*desc.color_format, desc.color_clear_value.data()};
 
-    auto flags{D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET};
-
-    if (desc.enable_unordered_access) {
-      flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    }
-
     color_tex = device.CreateTexture(graphics::TextureDesc{
-      graphics::TextureDimension::k2D, desc.width, desc.height, 1, 1, *desc.color_format,
-      DXGI_SAMPLE_DESC{desc.sample_count, 0}, flags, false, true, true, desc.enable_unordered_access
+      graphics::TextureDimension::k2D, desc.width, desc.height, 1, 1, *desc.color_format, desc.sample_count, false,
+      true, true, desc.enable_unordered_access
     }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_RENDER_TARGET, &clear_value);
 
     color_tex->SetDebugName(desc.debug_name + L" - Color Texture");
@@ -41,15 +35,9 @@ auto RenderTarget::New(graphics::GraphicsDevice& device, Desc const& desc) -> st
   if (desc.depth_stencil_format) {
     CD3DX12_CLEAR_VALUE const clear_value{*desc.depth_stencil_format, desc.depth_clear_value, desc.stencil_clear_value};
 
-    auto flags{D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL};
-
-    if (desc.enable_unordered_access) {
-      flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    }
-
     depth_stencil_tex = device.CreateTexture(graphics::TextureDesc{
-      graphics::TextureDimension::k2D, desc.width, desc.height, 1, 1, *desc.depth_stencil_format,
-      DXGI_SAMPLE_DESC{desc.sample_count, 0}, flags, true, false, true, desc.enable_unordered_access
+      graphics::TextureDimension::k2D, desc.width, desc.height, 1, 1, *desc.depth_stencil_format, desc.sample_count,
+      true, false, true, desc.enable_unordered_access
     }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, &clear_value);
 
     depth_stencil_tex->SetDebugName(desc.debug_name + L" - Depth-Stencil Texture");

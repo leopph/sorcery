@@ -65,7 +65,7 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, Window const& win
 
   fonts_tex_ = device_->CreateTexture(graphics::TextureDesc{
     graphics::TextureDimension::k2D, static_cast<UINT>(fonts_tex_width), static_cast<UINT>(fonts_tex_height), 1, 1,
-    DXGI_FORMAT_R8G8B8A8_UNORM, {1, 0}, D3D12_RESOURCE_FLAG_NONE, false, false, true, false
+    DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
 
 
@@ -97,7 +97,7 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
   auto& vb_ptr{(vb_ptrs_[frame_idx])};
 
   if (auto const vtx_data_byte_size{draw_data->TotalVtxCount * sizeof(ImDrawVert)};
-    !vb || vb->GetDesc().Width < vtx_data_byte_size) {
+    !vb || vb->GetDesc().size < vtx_data_byte_size) {
     vb = device_->CreateBuffer(graphics::BufferDesc{
       vtx_data_byte_size, static_cast<UINT>(sizeof(ImDrawVert)), false, true, false
     }, D3D12_HEAP_TYPE_UPLOAD);
@@ -108,7 +108,7 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
   auto& ib_ptr{ib_ptrs_[frame_idx]};
 
   if (auto const idx_data_byte_size{draw_data->TotalIdxCount * sizeof(ImDrawIdx)};
-    !ib || ib->GetDesc().Width < idx_data_byte_size) {
+    !ib || ib->GetDesc().size < idx_data_byte_size) {
     ib = device_->CreateBuffer(graphics::BufferDesc{idx_data_byte_size, 0, false, false, false},
       D3D12_HEAP_TYPE_UPLOAD);
     ib_ptr = ib->Map();

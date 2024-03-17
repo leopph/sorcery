@@ -1099,8 +1099,8 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   RecreateSsaoSamples(ssao_params_.sample_count);
 
   ssao_noise_tex_ = device_->CreateTexture(graphics::TextureDesc{
-    graphics::TextureDimension::k2D, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT,
-    {1, 0}, D3D12_RESOURCE_FLAG_NONE, false, false, true, false
+    graphics::TextureDimension::k2D, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,
+    false, false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
   ssao_noise_tex_->SetDebugName(L"SSAO Noise");
 
@@ -1120,8 +1120,7 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
 
 
   white_tex_ = device_->CreateTexture(graphics::TextureDesc{
-    graphics::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, {1, 0}, D3D12_RESOURCE_FLAG_NONE, false,
-    false, true, false
+    graphics::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
 
   std::array<std::uint8_t, 4> constexpr white_tex_data{255, 255, 255, 255};

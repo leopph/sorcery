@@ -80,8 +80,7 @@ struct TextureDesc {
   UINT16 depth_or_array_size;
   UINT16 mip_levels;
   DXGI_FORMAT format;
-  DXGI_SAMPLE_DESC sample_desc;
-  D3D12_RESOURCE_FLAGS flags;
+  UINT sample_count;
 
   bool depth_stencil;
   bool render_target;
@@ -252,7 +251,7 @@ public:
   LEOPPHAPI auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> void;
   LEOPPHAPI auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> void;
 
-  LEOPPHAPI auto GetCopyableFootprints(D3D12_RESOURCE_DESC1 const& desc, UINT first_subresource, UINT subresource_count,
+  LEOPPHAPI auto GetCopyableFootprints(TextureDesc const& desc, UINT first_subresource, UINT subresource_count,
                                        UINT64 base_offset, D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layouts,
                                        UINT* row_counts, UINT64* row_sizes, UINT64* total_size) const -> void;
 
@@ -292,7 +291,6 @@ private:
 class Resource {
 public:
   LEOPPHAPI auto SetDebugName(std::wstring_view name) const -> void;
-  [[nodiscard]] LEOPPHAPI auto GetDesc() const -> D3D12_RESOURCE_DESC1;
   [[nodiscard]] LEOPPHAPI auto Map() const -> void*;
   LEOPPHAPI auto Unmap() const -> void;
   [[nodiscard]] LEOPPHAPI auto GetShaderResource() const -> UINT;
@@ -319,12 +317,14 @@ private:
 
 class Buffer : public Resource {
 public:
+  [[nodiscard]] LEOPPHAPI auto GetDesc() const -> BufferDesc const&;
   [[nodiscard]] LEOPPHAPI auto GetConstantBuffer() const -> UINT;
 
 private:
   Buffer(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
-         UINT cbv, UINT srv, UINT uav);
+         UINT cbv, UINT srv, UINT uav, BufferDesc const& desc);
 
+  BufferDesc desc_;
   UINT cbv_;
 
   friend GraphicsDevice;
@@ -334,13 +334,15 @@ private:
 
 class Texture : public Resource {
 public:
+  [[nodiscard]] LEOPPHAPI auto GetDesc() const -> TextureDesc const&;
   [[nodiscard]] LEOPPHAPI auto Map(UINT subresource) const -> void*;
   LEOPPHAPI auto Unmap(UINT subresource) const -> void;
 
 private:
   Texture(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
-          UINT dsv, UINT rtv, UINT srv, UINT uav);
+          UINT dsv, UINT rtv, UINT srv, UINT uav, TextureDesc const& desc);
 
+  TextureDesc desc_;
   UINT dsv_;
   UINT rtv_;
 

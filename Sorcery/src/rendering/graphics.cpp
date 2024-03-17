@@ -29,6 +29,59 @@ auto ThrowIfFailed(HRESULT const hr, std::string_view const msg) -> void {
     throw std::runtime_error{msg.data()};
   }
 }
+
+
+auto AsD3d12Desc(BufferDesc const& desc) -> D3D12_RESOURCE_DESC1 {
+  auto flags{D3D12_RESOURCE_FLAG_NONE};
+
+  if (!desc.shader_resource) {
+    flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+  }
+
+  if (desc.unordered_access) {
+    flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+  }
+
+  return CD3DX12_RESOURCE_DESC1::Buffer(desc.size, flags);
+}
+
+
+auto AsD3d12Desc(TextureDesc const& desc) -> D3D12_RESOURCE_DESC1 {
+  auto flags{D3D12_RESOURCE_FLAG_NONE};
+
+  if (desc.depth_stencil) {
+    flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+  }
+
+  if (desc.render_target) {
+    flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+  }
+
+  if (!desc.shader_resource) {
+    flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+  }
+
+  if (desc.unordered_access) {
+    flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+  }
+
+  switch (desc.dimension) {
+    case TextureDimension::k1D: {
+      return CD3DX12_RESOURCE_DESC1::Tex1D(desc.format, desc.width, desc.depth_or_array_size, desc.mip_levels, flags);
+    }
+    case TextureDimension::k2D: [[fallthrough]];
+    case TextureDimension::kCube: {
+      return CD3DX12_RESOURCE_DESC1::Tex2D(desc.format, desc.width, desc.height, desc.depth_or_array_size,
+        desc.mip_levels, desc.sample_count, 0, flags);
+    }
+    case TextureDimension::k3D: {
+      return CD3DX12_RESOURCE_DESC1::Tex3D(desc.format, desc.width, desc.height, desc.depth_or_array_size,
+        desc.mip_levels, flags);
+    }
+  }
+
+  throw std::runtime_error{"Trying to convert invalid an TextureDesc to D3D12_RESOURCE_DESC1."};
+}
 }
 
 
@@ -249,7 +302,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc,
     D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_NONE, nullptr, nullptr
   };
 
-  auto const res_desc{CD3DX12_RESOURCE_DESC1::Buffer(desc.size)};
+  auto const res_desc{AsD3d12Desc(desc)};
 
   ThrowIfFailed(allocator_->CreateResource3(&alloc_desc, &res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr,
     &allocation, IID_PPV_ARGS(&resource)), "Failed to create buffer.");
@@ -261,7 +314,8 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc,
   CreateBufferViews(*resource.Get(), desc, cbv, srv, uav);
 
   return SharedDeviceChildHandle<Buffer>{
-    new Buffer{std::move(allocation), std::move(resource), cbv, srv, uav}, details::DeviceChildDeleter<Buffer>{*this}
+    new Buffer{std::move(allocation), std::move(resource), cbv, srv, uav, desc},
+    details::DeviceChildDeleter<Buffer>{*this}
   };
 }
 
@@ -272,40 +326,19 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
   ComPtr<D3D12MA::Allocation> allocation;
   ComPtr<ID3D12Resource2> resource;
 
-  D3D12_RESOURCE_DESC1 res_desc;
-
-  DXGI_FORMAT tex_format;
+  auto res_desc{AsD3d12Desc(desc)};
 
   // If a depth format is specified, we have to determine the typeless resource format.
   if (desc.format == DXGI_FORMAT_D32_FLOAT_S8X24_UINT) {
-    tex_format = DXGI_FORMAT_R32G8X24_TYPELESS;
+    res_desc.Format = DXGI_FORMAT_R32G8X24_TYPELESS;
   } else if (desc.format == DXGI_FORMAT_D32_FLOAT) {
-    tex_format = DXGI_FORMAT_R32_TYPELESS;
+    res_desc.Format = DXGI_FORMAT_R32_TYPELESS;
   } else if (desc.format == DXGI_FORMAT_D24_UNORM_S8_UINT) {
-    tex_format = DXGI_FORMAT_R24G8_TYPELESS;
+    res_desc.Format = DXGI_FORMAT_R24G8_TYPELESS;
   } else if (desc.format == DXGI_FORMAT_D16_UNORM) {
-    tex_format = DXGI_FORMAT_R16_TYPELESS;
+    res_desc.Format = DXGI_FORMAT_R16_TYPELESS;
   } else {
-    tex_format = desc.format;
-  }
-
-  switch (desc.dimension) {
-    case TextureDimension::k1D: {
-      res_desc = CD3DX12_RESOURCE_DESC1::Tex1D(tex_format, desc.width, desc.depth_or_array_size, desc.mip_levels,
-        desc.flags);
-      break;
-    }
-    case TextureDimension::k2D: [[fallthrough]];
-    case TextureDimension::kCube: {
-      res_desc = CD3DX12_RESOURCE_DESC1::Tex2D(tex_format, desc.width, desc.height, desc.depth_or_array_size,
-        desc.mip_levels, desc.sample_desc.Count, desc.sample_desc.Quality, desc.flags);
-      break;
-    }
-    case TextureDimension::k3D: {
-      res_desc = CD3DX12_RESOURCE_DESC1::Tex3D(tex_format, desc.width, desc.height, desc.depth_or_array_size,
-        desc.mip_levels, desc.flags);
-      break;
-    }
+    res_desc.Format = desc.format;
   }
 
   D3D12MA::ALLOCATION_DESC const alloc_desc{
@@ -323,7 +356,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
   CreateTextureViews(*resource.Get(), desc, dsv, rtv, srv, uav);
 
   return SharedDeviceChildHandle<Texture>{
-    new Texture{std::move(allocation), std::move(resource), dsv, rtv, srv, uav},
+    new Texture{std::move(allocation), std::move(resource), dsv, rtv, srv, uav, desc},
     details::DeviceChildDeleter<Texture>{*this}
   };
 }
@@ -468,27 +501,15 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
   D3D12_RESOURCE_ALLOCATION_INFO non_rt_ds_alloc_info{0, 0};
 
   for (auto const& buffer_desc : buffer_descs) {
-    auto const desc{CD3DX12_RESOURCE_DESC::Buffer(buffer_desc.size)};
-    auto const alloc_info{device_->GetResourceAllocationInfo(0, 1, &desc)};
+    auto const desc{AsD3d12Desc(buffer_desc)};
+    auto const alloc_info{device_->GetResourceAllocationInfo2(0, 1, &desc, nullptr)};
     buf_alloc_info.Alignment = std::max(buf_alloc_info.Alignment, alloc_info.Alignment);
     buf_alloc_info.SizeInBytes = std::max(buf_alloc_info.SizeInBytes, alloc_info.SizeInBytes);
   }
 
   for (auto const& info : texture_infos) {
-    D3D12_RESOURCE_DESC desc;
-    if (info.desc.dimension == TextureDimension::k1D) {
-      desc = CD3DX12_RESOURCE_DESC::Tex1D(info.desc.format, info.desc.width, info.desc.depth_or_array_size,
-        info.desc.mip_levels, info.desc.flags);
-    } else if (info.desc.dimension == TextureDimension::k2D) {
-      desc = CD3DX12_RESOURCE_DESC::Tex2D(info.desc.format, info.desc.width, info.desc.height,
-        info.desc.depth_or_array_size, info.desc.mip_levels, info.desc.sample_desc.Count, info.desc.sample_desc.Quality,
-        info.desc.flags);
-    } else if (info.desc.dimension == TextureDimension::k3D || info.desc.dimension == TextureDimension::kCube) {
-      desc = CD3DX12_RESOURCE_DESC::Tex3D(info.desc.format, info.desc.width, info.desc.height, info.desc.depth_stencil,
-        info.desc.mip_levels, info.desc.flags);
-    }
-    auto const alloc_info{device_->GetResourceAllocationInfo(0, 1, &desc)};
-
+    auto const& desc{AsD3d12Desc(info.desc)};
+    auto const alloc_info{device_->GetResourceAllocationInfo2(0, 1, &desc, nullptr)};
     auto& tex_alloc_info{info.desc.render_target || info.desc.depth_stencil ? rt_ds_alloc_info : non_rt_ds_alloc_info};
 
     tex_alloc_info.Alignment = std::max(tex_alloc_info.Alignment, alloc_info.Alignment);
@@ -557,7 +578,7 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
 
   if (buffers) {
     for (auto const& buf_desc : buffer_descs) {
-      auto const desc{CD3DX12_RESOURCE_DESC1::Buffer(buf_desc.size)};
+      auto const desc{AsD3d12Desc(buf_desc)};
       ComPtr<ID3D12Resource2> resource;
 
       ThrowIfFailed(allocator_->CreateAliasingResource2(buf_alloc.Get(), 0, &desc, D3D12_BARRIER_LAYOUT_UNDEFINED,
@@ -567,25 +588,14 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       UINT srv;
       UINT uav;
       CreateBufferViews(*resource.Get(), buf_desc, cbv, srv, uav);
-      buffers->emplace_back(new Buffer{buf_alloc, std::move(resource), cbv, srv, uav},
+      buffers->emplace_back(new Buffer{buf_alloc, std::move(resource), cbv, srv, uav, buf_desc},
         details::DeviceChildDeleter<Buffer>{*this});
     }
   }
 
   if (textures) {
     for (auto const& info : texture_infos) {
-      D3D12_RESOURCE_DESC1 desc;
-      if (info.desc.dimension == TextureDimension::k1D) {
-        desc = CD3DX12_RESOURCE_DESC1::Tex1D(info.desc.format, info.desc.width, info.desc.depth_or_array_size,
-          info.desc.mip_levels, info.desc.flags);
-      } else if (info.desc.dimension == TextureDimension::k2D) {
-        desc = CD3DX12_RESOURCE_DESC1::Tex2D(info.desc.format, info.desc.width, info.desc.height,
-          info.desc.depth_or_array_size, info.desc.mip_levels, info.desc.sample_desc.Count,
-          info.desc.sample_desc.Quality, info.desc.flags);
-      } else if (info.desc.dimension == TextureDimension::k3D || info.desc.dimension == TextureDimension::kCube) {
-        desc = CD3DX12_RESOURCE_DESC1::Tex3D(info.desc.format, info.desc.width, info.desc.height,
-          info.desc.depth_stencil, info.desc.mip_levels, info.desc.flags);
-      }
+      auto const desc{AsD3d12Desc(info.desc)};
 
       auto& alloc{info.desc.render_target || info.desc.depth_stencil ? rt_ds_alloc : non_rt_ds_alloc};
 
@@ -598,7 +608,7 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       UINT srv;
       UINT uav;
       CreateTextureViews(*resource.Get(), info.desc, dsv, rtv, srv, uav);
-      textures->emplace_back(new Texture{alloc, std::move(resource), dsv, rtv, srv, uav},
+      textures->emplace_back(new Texture{alloc, std::move(resource), dsv, rtv, srv, uav, info.desc},
         details::DeviceChildDeleter<Texture>{*this});
     }
   }
@@ -706,18 +716,24 @@ auto GraphicsDevice::SwapChainResize(SwapChain& swap_chain, UINT const width, UI
 }
 
 
-auto GraphicsDevice::GetCopyableFootprints(D3D12_RESOURCE_DESC1 const& desc, UINT const first_subresource,
+auto GraphicsDevice::GetCopyableFootprints(TextureDesc const& desc, UINT const first_subresource,
                                            UINT const subresource_count, UINT64 const base_offset,
                                            D3D12_PLACED_SUBRESOURCE_FOOTPRINT* const layouts, UINT* const row_counts,
                                            UINT64* const row_sizes, UINT64* const total_size) const -> void {
-  return device_->GetCopyableFootprints1(&desc, first_subresource, subresource_count, base_offset, layouts, row_counts,
-    row_sizes, total_size);
+  auto const tex_desc{AsD3d12Desc(desc)};
+  return device_->GetCopyableFootprints1(&tex_desc, first_subresource, subresource_count, base_offset, layouts,
+    row_counts, row_sizes, total_size);
 }
 
 
 auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> void {
   DXGI_SWAP_CHAIN_DESC1 desc;
   ThrowIfFailed(swap_chain.swap_chain_->GetDesc1(&desc), "Failed to retrieve swap chain desc.");
+
+  TextureDesc const tex_desc{
+    TextureDimension::k2D, desc.Width, desc.Height, 1, 1, desc.Format, 1, false,
+    (desc.BufferUsage & DXGI_USAGE_RENDER_TARGET_OUTPUT) != 0, (desc.BufferUsage & DXGI_USAGE_SHADER_INPUT) != 0, false
+  };
 
   for (UINT i{0}; i < desc.BufferCount; i++) {
     ComPtr<ID3D12Resource2> buf;
@@ -728,14 +744,10 @@ auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> void {
     UINT srv;
     UINT uav;
 
-    CreateTextureViews(*buf.Get(), TextureDesc{
-      TextureDimension::k2D, desc.Width, desc.Height, 1, 1, desc.Format, {1, 0}, D3D12_RESOURCE_FLAG_NONE, false,
-      static_cast<bool>(desc.BufferUsage & DXGI_USAGE_RENDER_TARGET_OUTPUT),
-      static_cast<bool>(desc.BufferUsage & DXGI_USAGE_SHADER_INPUT), false
-    }, dsv, rtv, srv, uav);
+    CreateTextureViews(*buf.Get(), tex_desc, dsv, rtv, srv, uav);
 
     swap_chain.textures_.emplace_back(new Texture{
-      nullptr, std::move(buf), details::kInvalidResourceIndex, rtv, srv, details::kInvalidResourceIndex
+      nullptr, std::move(buf), details::kInvalidResourceIndex, rtv, srv, details::kInvalidResourceIndex, tex_desc
     }, details::DeviceChildDeleter<Texture>{*this});
   }
 }
@@ -816,14 +828,14 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
       }
     } else if (desc.dimension == TextureDimension::k2D) {
       if (desc.depth_or_array_size == 1) {
-        if (desc.sample_desc.Count == 1) {
+        if (desc.sample_count == 1) {
           dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
           dsv_desc.Texture2D.MipSlice = 0;
         } else {
           dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
         }
       } else {
-        if (desc.sample_desc.Count == 1) {
+        if (desc.sample_count == 1) {
           dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
           dsv_desc.Texture2DArray.MipSlice = 0;
           dsv_desc.Texture2DArray.FirstArraySlice = 0;
@@ -855,7 +867,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
       }
     } else if (desc.dimension == TextureDimension::k2D) {
       if (desc.depth_or_array_size == 1) {
-        if (desc.sample_desc.Count == 1) {
+        if (desc.sample_count == 1) {
           rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
           rtv_desc.Texture2D.MipSlice = 0;
           rtv_desc.Texture2D.PlaneSlice = 0;
@@ -863,7 +875,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
           rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
         }
       } else {
-        if (desc.sample_desc.Count == 1) {
+        if (desc.sample_count == 1) {
           rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
           rtv_desc.Texture2DArray.MipSlice = 0;
           rtv_desc.Texture2DArray.FirstArraySlice = 0;
@@ -907,7 +919,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
       }
     } else if (desc.dimension == TextureDimension::k2D) {
       if (desc.depth_or_array_size == 1) {
-        if (desc.sample_desc.Count == 1) {
+        if (desc.sample_count == 1) {
           srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
           srv_desc.Texture2D.MostDetailedMip = 0;
           srv_desc.Texture2D.MipLevels = static_cast<UINT>(-1);
@@ -917,7 +929,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
           srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
         }
       } else {
-        if (desc.sample_desc.Count == 1) {
+        if (desc.sample_count == 1) {
           srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
           srv_desc.Texture2DArray.MostDetailedMip = 0;
           srv_desc.Texture2DArray.MipLevels = static_cast<UINT>(-1);
@@ -962,7 +974,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
       }
     } else if (desc.dimension == TextureDimension::k2D) {
       if (desc.depth_or_array_size == 1) {
-        if (desc.sample_desc.Count == 1) {
+        if (desc.sample_count == 1) {
           uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
           uav_desc.Texture2D.MipSlice = 0;
           uav_desc.Texture2D.PlaneSlice = 0;
@@ -970,7 +982,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
           uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DMS;
         }
       } else {
-        if (desc.sample_desc.Count == 1) {
+        if (desc.sample_count == 1) {
           uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
           uav_desc.Texture2DArray.MipSlice = 0;
           uav_desc.Texture2DArray.FirstArraySlice = 0;
@@ -998,11 +1010,6 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
 
 auto Resource::SetDebugName(std::wstring_view const name) const -> void {
   ThrowIfFailed(resource_->SetName(name.data()), "Failed to set D3D12 resource debug name.");
-}
-
-
-auto Resource::GetDesc() const -> D3D12_RESOURCE_DESC1 {
-  return resource_->GetDesc1();
 }
 
 
@@ -1046,15 +1053,26 @@ auto Resource::InternalUnmap(UINT const subresource, D3D12_RANGE const* written_
 }
 
 
+auto Buffer::GetDesc() const -> BufferDesc const& {
+  return desc_;
+}
+
+
 auto Buffer::GetConstantBuffer() const -> UINT {
   return cbv_;
 }
 
 
 Buffer::Buffer(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, UINT const cbv, UINT const srv,
-               UINT const uav) :
+               UINT const uav, BufferDesc const& desc) :
   Resource{std::move(allocation), std::move(resource), srv, uav},
+  desc_{desc},
   cbv_{cbv} {}
+
+
+auto Texture::GetDesc() const -> TextureDesc const& {
+  return desc_;
+}
 
 
 auto Texture::Map(UINT const subresource) const -> void* {
@@ -1068,8 +1086,9 @@ auto Texture::Unmap(UINT const subresource) const -> void {
 
 
 Texture::Texture(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, UINT const dsv,
-                 UINT const rtv, UINT const srv, UINT const uav) :
+                 UINT const rtv, UINT const srv, UINT const uav, TextureDesc const& desc) :
   Resource{std::move(allocation), std::move(resource), srv, uav},
+  desc_{desc},
   dsv_{dsv},
   rtv_{rtv} {}
 

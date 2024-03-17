@@ -58,11 +58,11 @@ auto RenderManager::AcquireTemporaryRenderTarget(RenderTarget::Desc const& desc)
 
 auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, UINT const byte_offset,
                                  std::span<std::byte const> const data) -> void {
-  if (buf.GetDesc().Width - byte_offset < data.size()) {
+  if (buf.GetDesc().size - byte_offset < data.size()) {
     throw std::runtime_error{"Failed to update buffer: the provided data does not fit in the destination buffer."};
   }
 
-  if (auto const upload_buf_size{upload_buf_->GetDesc().Width};
+  if (auto const upload_buf_size{upload_buf_->GetDesc().size};
     upload_buf_size - upload_buf_current_offset_ < data.size()) {
     WaitForAllUploads();
 
@@ -91,7 +91,7 @@ auto RenderManager::UpdateTexture(graphics::Texture const& tex, UINT const subre
   device_->GetCopyableFootprints(tex.GetDesc(), subresource_offset, static_cast<UINT>(data.size()), 0, nullptr, nullptr,
     nullptr, &tex_size);
 
-  if (auto const upload_buf_size{upload_buf_->GetDesc().Width};
+  if (auto const upload_buf_size{upload_buf_->GetDesc().size};
     upload_buf_size - upload_buf_current_offset_ < tex_size) {
     WaitForAllUploads();
 
@@ -144,9 +144,7 @@ auto RenderManager::CreateReadOnlyTexture(
   desc.width = static_cast<UINT>(meta.width);
   desc.mip_levels = static_cast<UINT16>(meta.mipLevels);
   desc.format = meta.format;
-  desc.sample_desc.Count = 1;
-  desc.sample_desc.Quality = 0;
-  desc.flags = D3D12_RESOURCE_FLAG_NONE;
+  desc.sample_count = 1;
   desc.depth_stencil = false;
   desc.render_target = false;
   desc.shader_resource = true;

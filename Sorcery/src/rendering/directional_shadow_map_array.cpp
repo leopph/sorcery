@@ -9,8 +9,7 @@ DirectionalShadowMapArray::DirectionalShadowMapArray(graphics::GraphicsDevice* c
   tex_{
     device->CreateTexture(
       graphics::TextureDesc{
-        graphics::TextureDimension::k2D, size, size, MAX_CASCADE_COUNT, 1, depth_format, {1, 0},
-        D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL, true, false, true, false
+        graphics::TextureDimension::k2D, size, size, MAX_CASCADE_COUNT, 1, depth_format, 1, true, false, true, false
       }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COMMON, std::array{
         D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {0.0f, 0}}
       }.data())
