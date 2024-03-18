@@ -280,7 +280,7 @@ private:
   auto AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>&;
   auto AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>&;
 
-  static auto OnWindowSize(SceneRenderer* self, Extent2D<std::uint32_t> size) -> void;
+  auto OnWindowSize(Extent2D<std::uint32_t> size) -> void;
 
   static DXGI_FORMAT constexpr imprecise_color_buffer_format_{DXGI_FORMAT_R11G11B10_FLOAT};
   static DXGI_FORMAT constexpr precise_color_buffer_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
@@ -365,6 +365,8 @@ private:
 
   std::shared_ptr<RenderTarget> main_rt_;
   std::shared_ptr<RenderTarget> rt_override_;
+
+  EventListenerHandle<Extent2D<unsigned>> window_size_event_listener_{};
 };
 
 

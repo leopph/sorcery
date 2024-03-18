@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 
+#include "Event.hpp"
 #include "ResourceDB.hpp"
 #include "Scene.hpp"
 
@@ -23,9 +24,11 @@ class Application {
   std::atomic<bool> mBusy;
   bool mIsInDarkMode{true};
 
+  EventListenerHandle<void> window_focus_gain_listener_{};
+
   static std::string_view const WINDOW_TITLE_BASE;
 
-  static auto OnWindowFocusGain(Application* self) -> void;
+  auto OnWindowFocusGain() -> void;
   static auto HandleBackgroundThreadException(std::exception const& ex) -> void;
   static auto HandleUnknownBackgroundThreadException() -> void;
 

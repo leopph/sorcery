@@ -816,12 +816,12 @@ auto SceneRenderer::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDr
 }
 
 
-auto SceneRenderer::OnWindowSize(SceneRenderer* const self, Extent2D<std::uint32_t> const size) -> void {
+auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
   if (size.width != 0 && size.height != 0) {
-    RenderTarget::Desc desc{self->main_rt_->GetDesc()};
+    RenderTarget::Desc desc{main_rt_->GetDesc()};
     desc.width = size.width;
     desc.height = size.height;
-    self->main_rt_ = RenderTarget::New(*self->device_, desc);
+    main_rt_ = RenderTarget::New(*device_, desc);
   }
 }
 
@@ -951,7 +951,9 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
     D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 1, D3D12_COMPARISON_FUNC_NEVER, {}, 0, std::numeric_limits<float>::max()
   });
 
-  window_->OnWindowSize.add_handler(this, &OnWindowSize);
+  window_size_event_listener_ = window_->OnWindowSize.add_listener([this](Extent2D<unsigned> const size) {
+    OnWindowSize(size);
+  });
 
   ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_, true);
   RecreateSsaoSamples(ssao_params_.sample_count);
@@ -990,7 +992,7 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
 
 
 SceneRenderer::~SceneRenderer() {
-  window_->OnWindowSize.remove_handler(this, &OnWindowSize);
+  window_->OnWindowSize.remove_listener(window_size_event_listener_);
 }
 
 
@@ -1591,16 +1593,14 @@ auto SceneRenderer::Render() -> void {
 
     auto const forward_pass_depth_tex_sync_before{
       frame_packet.ssao_enabled
-      ? frame_packet.msaa_mode != MultisamplingMode::kOff
-        ? D3D12_BARRIER_SYNC_COMPUTE_SHADING
-        : D3D12_BARRIER_SYNC_PIXEL_SHADING
-      : D3D12_BARRIER_SYNC_DEPTH_STENCIL
+        ? frame_packet.msaa_mode != MultisamplingMode::kOff
+            ? D3D12_BARRIER_SYNC_COMPUTE_SHADING
+            : D3D12_BARRIER_SYNC_PIXEL_SHADING
+        : D3D12_BARRIER_SYNC_DEPTH_STENCIL
     };
 
     auto const forward_pass_depth_tex_access_before{
-      frame_packet.ssao_enabled
-      ? D3D12_BARRIER_ACCESS_SHADER_RESOURCE
-      : D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE
+      frame_packet.ssao_enabled ? D3D12_BARRIER_ACCESS_SHADER_RESOURCE : D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE
     };
 
     auto const forward_pass_depth_tex_access_after{
@@ -1610,9 +1610,7 @@ auto SceneRenderer::Render() -> void {
     };
 
     auto const forward_pass_depth_tex_layout_before{
-      frame_packet.ssao_enabled
-      ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE
-      : D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE
+      frame_packet.ssao_enabled ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE
     };
 
     auto const forward_pass_depth_tex_layout_after{

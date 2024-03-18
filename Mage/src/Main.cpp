@@ -98,19 +98,11 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     };
 
     bool game_is_running{false};
+    bool window_resized{false};
 
-    struct WindowResizeHandler {
-      bool window_resized{false};
-
-
-      static auto OnWindowResize(WindowResizeHandler* const self, sorcery::Extent2D<unsigned>) {
-        self->window_resized = true;
-      }
-    };
-
-    WindowResizeHandler window_resize_handler;
-
-    window->OnWindowSize.add_handler<WindowResizeHandler>(&window_resize_handler, &WindowResizeHandler::OnWindowResize);
+    window->OnWindowSize.add_listener([&window_resized](sorcery::Extent2D<unsigned>) {
+      window_resized = true;
+    });
 
     auto const projectWindow{std::make_unique<sorcery::mage::ProjectWindow>(app)};
     auto const sceneViewWindow{std::make_unique<sorcery::mage::SceneViewWindow>()};
@@ -122,9 +114,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     std::barrier sync_point1{
       2, [&]() noexcept {
-        if (window_resize_handler.window_resized) {
+        if (window_resized) {
           graphics_device->WaitIdle();
           graphics_device->ResizeSwapChain(*swap_chain, 0, 0);
+          window_resized = false;
         }
         sorcery::GetSingleFrameLinearMemory().Clear();
       }

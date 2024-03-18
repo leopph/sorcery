@@ -12,9 +12,9 @@ namespace sorcery::mage {
 std::string_view const Application::WINDOW_TITLE_BASE{"Mage"};
 
 
-auto Application::OnWindowFocusGain(Application* const self) -> void {
-  if (!self->mProjDirAbs.empty()) {
-    self->mResourceDB.Refresh();
+auto Application::OnWindowFocusGain() -> void {
+  if (!mProjDirAbs.empty()) {
+    mResourceDB.Refresh();
   }
 }
 
@@ -30,9 +30,11 @@ auto Application::HandleUnknownBackgroundThreadException() -> void {
 
 
 Application::Application(ImGuiIO& imGuiIO) :
-  mImGuiIo{imGuiIO} {
-  g_engine_context.window->SetTitle(std::string{WINDOW_TITLE_BASE});
-  g_engine_context.window->OnWindowFocusGain.add_handler(this, &OnWindowFocusGain);
+  mImGuiIo{imGuiIO},
+  window_focus_gain_listener_{
+    g_engine_context.window->OnWindowFocusGain.add_listener([this] { OnWindowFocusGain(); })
+  } {
+  g_engine_context.window->SetTitle(std::string{WINDOW_TITLE_BASE});;
   SetImGuiContext(*ImGui::GetCurrentContext());
   SetGuiDarkMode(mIsInDarkMode);
 
@@ -41,7 +43,7 @@ Application::Application(ImGuiIO& imGuiIO) :
 
 
 Application::~Application() {
-  g_engine_context.window->OnWindowFocusGain.remove_handler(this, &OnWindowFocusGain);
+  g_engine_context.window->OnWindowFocusGain.remove_listener(window_focus_gain_listener_);
 }
 
 
@@ -90,8 +92,12 @@ auto Application::SaveCurrentSceneToFile() -> void {
   if (mResourceDB.IsSavedResource(*mScene)) {
     mResourceDB.SaveResource(*mScene);
   } else {
-    if (nfdchar_t* dst; NFD_SaveDialog(ResourceManager::SCENE_RESOURCE_EXT.substr(1).data(), mResourceDB.GetResourceDirectoryAbsolutePath().string().c_str(), &dst) == NFD_OKAY) {
-      if (auto const dstResDirRel{relative(std::filesystem::path{dst}, mResourceDB.GetResourceDirectoryAbsolutePath()) += ResourceManager::SCENE_RESOURCE_EXT}; !dstResDirRel.empty()) {
+    if (nfdchar_t* dst; NFD_SaveDialog(ResourceManager::SCENE_RESOURCE_EXT.substr(1).data(),
+                          mResourceDB.GetResourceDirectoryAbsolutePath().string().c_str(), &dst) == NFD_OKAY) {
+      if (auto const dstResDirRel{
+        relative(std::filesystem::path{dst}, mResourceDB.GetResourceDirectoryAbsolutePath()) +=
+        ResourceManager::SCENE_RESOURCE_EXT
+      }; !dstResDirRel.empty()) {
         mResourceDB.CreateResource(*mScene, dstResDirRel);
       }
       std::free(dst);
@@ -221,9 +227,7 @@ auto Application::OnEnterBusyExecution() -> BusyExecutionContext {
   bool isBusy{false};
   while (!mBusy.compare_exchange_weak(isBusy, true)) {}
 
-  BusyExecutionContext const ret{
-    .imGuiConfigFlagsBackup = mImGuiIo.ConfigFlags
-  };
+  BusyExecutionContext const ret{.imGuiConfigFlagsBackup = mImGuiIo.ConfigFlags};
 
   mImGuiIo.ConfigFlags |= ImGuiConfigFlags_NoMouse;
   mImGuiIo.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
