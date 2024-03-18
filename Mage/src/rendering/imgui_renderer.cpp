@@ -19,10 +19,10 @@
 
 
 namespace sorcery::mage {
-ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, Window const& window,
+ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, graphics::SwapChain const& swap_chain,
                              rendering::RenderManager& render_manager) :
   device_{&device},
-  window_{&window},
+  swap_chain_{&swap_chain},
   render_manager_{&render_manager} {
   auto& io{ImGui::GetIO()};
   io.BackendRendererName = "Sorcery ImGui Renderer";
@@ -80,13 +80,48 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, Window const& win
 }
 
 
-auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
+auto ImGuiRenderer::ExtractDrawData() -> void {
+  auto const& src_draw_data{*ImGui::GetDrawData()};
+  auto& dst_draw_data{draw_data_[render_manager_->GetCurrentFrameIndex()]};
+
+  dst_draw_data.Valid = src_draw_data.Valid;
+  dst_draw_data.CmdListsCount = src_draw_data.CmdListsCount;
+  dst_draw_data.TotalIdxCount = src_draw_data.TotalIdxCount;
+  dst_draw_data.TotalVtxCount = src_draw_data.TotalVtxCount;
+  dst_draw_data.DisplayPos = src_draw_data.DisplayPos;
+  dst_draw_data.DisplaySize = src_draw_data.DisplaySize;
+  dst_draw_data.FramebufferScale = src_draw_data.FramebufferScale;
+
+  dst_draw_data.CmdLists.clear();
+
+  // We never shrink the CmdLists vector to keep the vectors inside the CmdLists alive and prevent unnecessary
+  // allocations. TODO we could just flatten the whole thing into arrays in DrawData and store only indices in DrawLists
+  if (dst_draw_data.CmdListsCount > dst_draw_data.CmdLists.size()) {
+    dst_draw_data.CmdLists.resize(dst_draw_data.CmdListsCount);
+  }
+
+  for (auto i{0}; i < src_draw_data.CmdListsCount; i++) {
+    auto const& draw_list{*src_draw_data.CmdLists[i]};
+    auto& cmd_list{dst_draw_data.CmdLists[i]};
+
+    cmd_list.CmdBuffer.assign(draw_list.CmdBuffer.begin(), draw_list.CmdBuffer.end());
+    cmd_list.IdxBuffer.assign(draw_list.IdxBuffer.begin(), draw_list.IdxBuffer.end());
+    cmd_list.VtxBuffer.assign(draw_list.VtxBuffer.begin(), draw_list.VtxBuffer.end());
+    cmd_list.Flags = draw_list.Flags;
+  }
+}
+
+
+auto ImGuiRenderer::Render() -> void {
+  auto const frame_idx{render_manager_->GetCurrentFrameIndex()};
+
+  auto const draw_data{&draw_data_[frame_idx]};
+
   // Avoid rendering when minimized
   if (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f) {
     return;
   }
 
-  auto const frame_idx{render_manager_->GetCurrentFrameIndex()};
 
   auto const proj_mtx{
     Matrix4::OrthographicOffCenter(draw_data->DisplayPos.x, draw_data->DisplayPos.x + draw_data->DisplaySize.x,
@@ -129,16 +164,13 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
 
   for (auto i{0}; i < draw_data->CmdListsCount; i++) {
     auto const imgui_cmd{draw_data->CmdLists[i]};
-    std::memcpy(vtx_dst, imgui_cmd->VtxBuffer.Data, imgui_cmd->VtxBuffer.Size * sizeof(ImDrawVert));
-    std::memcpy(idx_dst, imgui_cmd->IdxBuffer.Data, imgui_cmd->IdxBuffer.Size * sizeof(ImDrawIdx));
-    vtx_dst += imgui_cmd->VtxBuffer.Size;
-    idx_dst += imgui_cmd->IdxBuffer.Size;
+    std::memcpy(vtx_dst, imgui_cmd.VtxBuffer.data(), imgui_cmd.VtxBuffer.size() * sizeof(ImDrawVert));
+    std::memcpy(idx_dst, imgui_cmd.IdxBuffer.data(), imgui_cmd.IdxBuffer.size() * sizeof(ImDrawIdx));
+    vtx_dst += imgui_cmd.VtxBuffer.size();
+    idx_dst += imgui_cmd.IdxBuffer.size();
   }
 
-  auto const& rt{
-    *device_->SwapChainGetBuffers(*window_->GetSwapChain())[device_->SwapChainGetCurrentBufferIndex(
-      *window_->GetSwapChain())]
-  };
+  auto const& rt{swap_chain_->GetCurrentTexture()};
 
   auto& cmd{render_manager_->AcquireCommandList()};
   cmd.Begin(pso_.get());
@@ -171,19 +203,20 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
 
   auto const& clip_off{draw_data->DisplayPos};
   for (auto i{0}; i < draw_data->CmdListsCount; i++) {
-    ImDrawList const* imgui_cmd{draw_data->CmdLists[i]};
+    auto const& imgui_cmd{draw_data->CmdLists[i]};
 
-    for (auto j{0}; j < imgui_cmd->CmdBuffer.Size; j++) {
-      auto const& draw_cmd{imgui_cmd->CmdBuffer[j]};
+    for (auto j{0}; j < imgui_cmd.CmdBuffer.size(); j++) {
+      auto const& draw_cmd{imgui_cmd.CmdBuffer[j]};
 
       if (draw_cmd.UserCallback != nullptr) {
+        // TODO honor user callback
         // User callback, registered via ImDrawList::AddCallback()
         // (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
-        if (draw_cmd.UserCallback == ImDrawCallback_ResetRenderState) {
+        /*if (draw_cmd.UserCallback == ImDrawCallback_ResetRenderState) {
           // TODO reset render state - ImGui_ImplDX12_SetupRenderState(draw_data, ctx, fr);
         } else {
           draw_cmd.UserCallback(imgui_cmd, &draw_cmd);
-        }
+        }*/
       } else {
         // Project scissor/clipping rectangles into framebuffer space
         Vector2 const clip_min{draw_cmd.ClipRect.x - clip_off.x, draw_cmd.ClipRect.y - clip_off.y};
@@ -206,8 +239,8 @@ auto ImGuiRenderer::Render(ImDrawData* draw_data) -> void {
           draw_cmd.VtxOffset + global_vtx_offset, 0);
       }
     }
-    global_idx_offset += imgui_cmd->IdxBuffer.Size;
-    global_vtx_offset += imgui_cmd->VtxBuffer.Size;
+    global_idx_offset += static_cast<int>(imgui_cmd.IdxBuffer.size());
+    global_vtx_offset += static_cast<int>(imgui_cmd.VtxBuffer.size());
   }
 
   cmd.Barrier({}, {}, std::array{

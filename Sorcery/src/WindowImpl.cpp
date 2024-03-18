@@ -9,8 +9,7 @@
 
 
 namespace sorcery {
-WindowImpl::WindowImpl(graphics::GraphicsDevice& graphics_device) :
-  graphics_device_{&graphics_device} {
+WindowImpl::WindowImpl() {
   WNDCLASSEXW const wx{
     .cbSize = sizeof(WNDCLASSEXW), .lpfnWndProc = &WindowProc, .hInstance = GetModuleHandleW(nullptr),
     .lpszClassName = L"SorceryWindowClass"
@@ -34,10 +33,6 @@ WindowImpl::WindowImpl(graphics::GraphicsDevice& graphics_device) :
   if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
     throw std::runtime_error{"Failed to register raw input devices."};
   }
-
-  swap_chain_ = graphics_device_->CreateSwapChain(graphics::SwapChainDesc{
-    0, 0, 2, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_USAGE_RENDER_TARGET_OUTPUT, DXGI_SCALING_NONE
-  }, hwnd_);
 
   SetWindowLongPtrW(hwnd_, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
   ShowWindow(hwnd_, SW_SHOWNORMAL);
@@ -175,11 +170,6 @@ auto WindowImpl::UseImmersiveDarkMode(bool const value) noexcept -> void {
 }
 
 
-auto WindowImpl::GetSwapChain() const -> graphics::SharedDeviceChildHandle<graphics::SwapChain> const& {
-  return swap_chain_;
-}
-
-
 auto CALLBACK WindowImpl::WindowProc(HWND const hwnd, UINT const msg, WPARAM const wparam,
                                      LPARAM const lparam) noexcept -> LRESULT {
   if (auto const self{reinterpret_cast<WindowImpl*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA))}) {
@@ -194,8 +184,6 @@ auto CALLBACK WindowImpl::WindowProc(HWND const hwnd, UINT const msg, WPARAM con
       }
 
       case WM_SIZE: {
-        self->graphics_device_->WaitIdle();
-        self->graphics_device_->SwapChainResize(*self->swap_chain_, 0, 0);
         self->on_size_event_.invoke({LOWORD(lparam), HIWORD(lparam)});
         return 0;
       }

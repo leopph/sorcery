@@ -11,6 +11,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <mutex>
 #include <span>
 #include <vector>
 
@@ -26,8 +27,6 @@ public:
 
   auto operator=(RenderManager const&) -> void = delete;
   auto operator=(RenderManager&&) -> void = delete;
-
-  LEOPPHAPI auto BeginNewFrame() -> void;
 
   [[nodiscard]] constexpr static auto GetMaxGpuQueuedFrames() -> UINT;
   [[nodiscard]] constexpr static auto GetMaxFramesInFlight() -> UINT;
@@ -46,7 +45,8 @@ public:
   [[nodiscard]] LEOPPHAPI auto CreateReadOnlyTexture(
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
 
-  LEOPPHAPI auto WaitForInFlightFrames() const -> void;
+  // At the end of a frame this must be called!
+  LEOPPHAPI auto EndFrame() -> void;
 
 private:
   struct TempRenderTargetRecord {
@@ -60,6 +60,8 @@ private:
   auto ReleaseOldTempRenderTargets() -> void;
   auto RecreateUploadBuffer(UINT64 size) -> void;
   auto WaitForAllUploads() -> void;
+  auto WaitForInFlightFrames() const -> void;
+  auto UpdateCounters() -> void;
 
   static UINT constexpr max_tmp_rt_age_{10};
   static UINT constexpr max_gpu_queued_frames_{1};
@@ -76,7 +78,10 @@ private:
   UINT next_cmd_list_idx_{0};
 
   std::vector<std::array<graphics::SharedDeviceChildHandle<graphics::CommandList>, max_frames_in_flight_>> cmd_lists_;
+  std::mutex cmd_list_mutex_;
+
   std::vector<TempRenderTargetRecord> tmp_render_targets_;
+  std::mutex tmp_render_targets_mutex_;
 
   graphics::SharedDeviceChildHandle<graphics::Fence> in_flight_frames_fence_;
 
@@ -84,6 +89,7 @@ private:
   graphics::SharedDeviceChildHandle<graphics::Fence> upload_fence_;
   std::byte* upload_ptr_{nullptr};
   UINT64 upload_buf_current_offset_{0};
+  std::mutex upload_mutex_;
 };
 
 

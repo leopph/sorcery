@@ -20,7 +20,7 @@ auto SettingsWindow::Draw() -> void {
     std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
   });
 
-  if (std::pmr::string windowName{&GetTmpMemRes()}; !
+  if (std::pmr::string windowName{&GetSingleFrameLinearMemory()}; !
     ImGui::Begin(windowName.append(TITLE).append("##Window").c_str())) {
     ImGui::End();
     return;

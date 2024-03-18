@@ -20,7 +20,6 @@
 #include <array>
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <vector>
 
 
@@ -72,6 +71,7 @@ public:
   auto operator=(SceneRenderer const&) -> void = delete;
   auto operator=(SceneRenderer&&) -> void = delete;
 
+  LEOPPHAPI auto ExtractCurrentState() -> void;
   LEOPPHAPI auto Render() -> void;
 
   LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
@@ -82,9 +82,6 @@ public:
   LEOPPHAPI auto SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetCurrentRenderTarget() const -> RenderTarget const&;
-
-  [[nodiscard]] LEOPPHAPI auto GetSyncInterval() const noexcept -> UINT;
-  LEOPPHAPI auto SetSyncInterval(UINT interval) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetMultisamplingMode() const noexcept -> MultisamplingMode;
   LEOPPHAPI auto SetMultisamplingMode(MultisamplingMode mode) noexcept -> void;
@@ -207,15 +204,40 @@ private:
     std::vector<InstanceData> instance_data;
     std::vector<CameraData> cam_data;
     std::vector<std::shared_ptr<RenderTarget>> render_targets;
+
+    std::vector<Vector4> gizmo_colors;
+    std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data;
+
+    MultisamplingMode msaa_mode;
+    SsaoParams ssao_params;
+    ShadowParams shadow_params;
+    float inv_gamma;
+    bool depth_normal_pre_pass_enabled;
+    bool ssao_enabled;
+    DXGI_FORMAT color_buffer_format;
+    std::array<float, 4> background_color;
+
+    graphics::SharedDeviceChildHandle<graphics::Texture> skybox_cubemap;
+
+    Vector3 ambient_light;
+
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> shadow_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_normal_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_resolve_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> line_gizmo_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> object_pso_depth_write;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> object_pso_depth_read;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> post_process_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso;
   };
 
 
-  auto ExtractCurrentState(FramePacket& packet) const -> void;
+  [[nodiscard]] static auto CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,
+                                                                   ShadowParams const& shadow_params) ->
+    ShadowCascadeBoundaries;
 
-  [[nodiscard]] auto
-  CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data) const -> ShadowCascadeBoundaries;
-
-  // Culling
 
   static auto CullLights(Frustum const& frustum_ws, std::span<LightData const> lights,
                          std::pmr::vector<unsigned>& visible_light_indices) -> void;
@@ -224,24 +246,22 @@ private:
                                          std::span<InstanceData const> instances,
                                          std::pmr::vector<unsigned>& visible_static_submesh_instance_indices) -> void;
 
-  // Constant buffers
 
-  auto SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int rt_width,
-                            int rt_height) const noexcept -> void;
+  static auto SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int rt_width, int rt_height,
+                                   Vector3 const& ambient_light, ShadowParams const& shadow_params) -> void;
   static auto SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
                                   Matrix4 const& proj_mtx, ShadowCascadeBoundaries const& cascade_bounds,
                                   Vector3 const& view_pos) -> void;
   static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx) -> void;
 
-  // Shadow map preparation
+
   auto UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas, std::span<LightData const> lights,
                                  std::span<unsigned const> visible_light_indices, CameraData const& cam_data,
                                  Matrix4 const& cam_view_proj_mtx, float shadow_distance) -> void;
 
-  // Shadow map rendering
 
   auto DrawDirectionalShadowMaps(FramePacket const& frame_packet, std::span<unsigned const> visible_light_indices,
-                                 CameraData const& cam_data, float rt_aspect,
+                                 CameraData const& cam_data, float rt_aspect, int cascade_count,
                                  ShadowCascadeBoundaries const& shadow_cascade_boundaries,
                                  std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
                                  graphics::CommandList& cmd) -> void;
@@ -259,8 +279,6 @@ private:
 
   auto AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>&;
   auto AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>&;
-
-  auto EndFrame() -> void;
 
   static auto OnWindowSize(SceneRenderer* self, Extent2D<std::uint32_t> size) -> void;
 
@@ -339,17 +357,10 @@ private:
   bool depth_normal_pre_pass_enabled_{true};
   bool ssao_enabled_{true};
 
-  UINT sync_interval_{0};
-
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
-  std::mutex static_mesh_mutex_;
   std::vector<StaticMeshComponent const*> static_mesh_components_;
-
-  std::mutex light_mutex_;
   std::vector<LightComponent const*> lights_;
-
-  std::mutex game_camera_mutex_;
   std::vector<Camera const*> cameras_;
 
   std::shared_ptr<RenderTarget> main_rt_;

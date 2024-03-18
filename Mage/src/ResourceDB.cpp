@@ -526,7 +526,7 @@ auto ResourceDB::GetNewImporterForResourceFile(std::filesystem::path const& path
     auto importerVariant{importerType.create()};
     std::unique_ptr<ResourceImporter> importer{importerVariant.get_value<ResourceImporter*>()};
 
-    std::pmr::vector<std::string> supportedExtensions{&GetTmpMemRes()};
+    std::pmr::vector<std::string> supportedExtensions{&GetSingleFrameLinearMemory()};
     importer->GetSupportedFileExtensions(supportedExtensions);
 
     for (auto const& ext : supportedExtensions) {

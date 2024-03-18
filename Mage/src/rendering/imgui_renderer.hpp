@@ -3,23 +3,45 @@
 #include "observer_ptr.hpp"
 #include "rendering/graphics.hpp"
 #include "rendering/render_manager.hpp"
-#include "Window.hpp"
 
 #include <imgui.h>
 
 #include <array>
+#include <vector>
 
 
 namespace sorcery::mage {
 class ImGuiRenderer {
 public:
-  ImGuiRenderer(graphics::GraphicsDevice& device, Window const& window, rendering::RenderManager& render_manager);
+  ImGuiRenderer(graphics::GraphicsDevice& device, graphics::SwapChain const& swap_chain,
+                rendering::RenderManager& render_manager);
 
-  auto Render(ImDrawData* draw_data) -> void;
+  auto ExtractDrawData() -> void;
+  auto Render() -> void;
 
 private:
+  struct CmdList {
+    std::vector<ImDrawCmd> CmdBuffer;
+    std::vector<ImDrawIdx> IdxBuffer;
+    std::vector<ImDrawVert> VtxBuffer;
+    ImDrawListFlags Flags;
+  };
+
+
+  struct DrawData {
+    bool Valid;
+    int CmdListsCount;
+    int TotalIdxCount;
+    int TotalVtxCount;
+    std::vector<CmdList> CmdLists;
+    ImVec2 DisplayPos;
+    ImVec2 DisplaySize;
+    ImVec2 FramebufferScale;
+  };
+
+
   ObserverPtr<graphics::GraphicsDevice> device_;
-  ObserverPtr<Window const> window_;
+  ObserverPtr<graphics::SwapChain const> swap_chain_;
   ObserverPtr<rendering::RenderManager> render_manager_;
 
   graphics::SharedDeviceChildHandle<graphics::PipelineState> pso_;
@@ -33,5 +55,7 @@ private:
 
   std::array<void*, rendering::RenderManager::GetMaxFramesInFlight()> vb_ptrs_{};
   std::array<void*, rendering::RenderManager::GetMaxFramesInFlight()> ib_ptrs_{};
+
+  std::array<DrawData, rendering::RenderManager::GetMaxFramesInFlight()> draw_data_{};
 };
 }

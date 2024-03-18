@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Window.hpp"
-#include "observer_ptr.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -15,7 +14,7 @@ class WindowImpl {
   Event<> on_focus_loss_event_;
 
 public:
-  explicit WindowImpl(graphics::GraphicsDevice& graphics_device);
+  explicit WindowImpl();
   WindowImpl(WindowImpl const&) = delete;
   WindowImpl(WindowImpl&&) = delete;
 
@@ -60,8 +59,6 @@ public:
 
   auto UseImmersiveDarkMode(bool value) noexcept -> void;
 
-  [[nodiscard]] auto GetSwapChain() const -> graphics::SharedDeviceChildHandle<graphics::SwapChain> const&;
-
 private:
   using WindowProcType = LRESULT(*)(HWND, UINT, WPARAM, LPARAM);
 
@@ -77,7 +74,5 @@ private:
   bool is_in_focus_{true};
   std::string title_{"Sorcery"};
   std::optional<Point2D<int>> locked_cursor_pos_;
-  ObserverPtr<graphics::GraphicsDevice> graphics_device_;
-  graphics::SharedDeviceChildHandle<graphics::SwapChain> swap_chain_;
 };
 }

@@ -3,7 +3,6 @@
 #include "Core.hpp"
 #include "Event.hpp"
 #include "Util.hpp"
-#include "rendering/graphics.hpp"
 
 
 namespace sorcery {
@@ -14,7 +13,7 @@ class Window {
   WindowImpl* mImpl;
 
 public:
-  LEOPPHAPI explicit Window(graphics::GraphicsDevice& graphics_device);
+  LEOPPHAPI explicit Window();
   Window(Window const&) = delete;
   Window(Window&&) = delete;
 
@@ -59,7 +58,5 @@ public:
   LEOPPHAPI auto SetEventHandler(void const* handler) noexcept -> void;
 
   LEOPPHAPI auto UseImmersiveDarkMode(bool value) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetSwapChain() const -> graphics::SharedDeviceChildHandle<graphics::SwapChain> const&;
 };
 }

@@ -18,6 +18,7 @@
 #include <mutex>
 #include <span>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -40,9 +41,12 @@ using Sampler = UINT;
 namespace details {
 UINT constexpr kInvalidResourceIndex{static_cast<UINT>(-1)};
 
-template<typename T>concept DeviceChild = std::same_as<T, Buffer> || std::same_as<T, Texture> || std::same_as<
-                                            T, PipelineState> || std::same_as<T, CommandList> || std::same_as<T, Fence>
-                                          || std::same_as<T, SwapChain>;
+template<typename T>concept DeviceChild = std::same_as<std::remove_const_t<T>, Buffer> || std::same_as<
+                                            std::remove_const_t<T>, Texture> || std::same_as<
+                                            std::remove_const_t<T>, PipelineState> || std::same_as<
+                                            std::remove_const_t<T>, CommandList> || std::same_as<
+                                            std::remove_const_t<T>, Fence> || std::same_as<
+                                            std::remove_const_t<T>, SwapChain>;
 
 template<DeviceChild T>
 class DeviceChildDeleter;
@@ -192,7 +196,8 @@ private:
 
 class RootSignatureCache {
 public:
-  auto Add(std::uint8_t num_params, Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature) -> void;
+  auto Add(std::uint8_t num_params, Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature) -> Microsoft::WRL::
+    ComPtr<ID3D12RootSignature>;
   [[nodiscard]] auto Get(std::uint8_t num_params) -> Microsoft::WRL::ComPtr<ID3D12RootSignature>;
 
 private:
@@ -245,11 +250,7 @@ public:
   LEOPPHAPI auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) const -> void;
   LEOPPHAPI auto WaitIdle() const -> void;
 
-  [[nodiscard]] LEOPPHAPI auto SwapChainGetBuffers(
-    SwapChain const& swap_chain) const -> std::span<SharedDeviceChildHandle<Texture> const>;
-  [[nodiscard]] LEOPPHAPI auto SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT;
-  LEOPPHAPI auto SwapChainPresent(SwapChain const& swap_chain, UINT sync_interval) const -> void;
-  LEOPPHAPI auto SwapChainResize(SwapChain& swap_chain, UINT width, UINT height) -> void;
+  LEOPPHAPI auto ResizeSwapChain(SwapChain& swap_chain, UINT width, UINT height) -> void;
 
   LEOPPHAPI auto GetCopyableFootprints(TextureDesc const& desc, UINT first_subresource, UINT subresource_count,
                                        UINT64 base_offset, D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layouts,
@@ -446,10 +447,23 @@ private:
 
 
 class SwapChain {
-  explicit SwapChain(Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain);
+public:
+  [[nodiscard]] LEOPPHAPI auto GetTextures() const -> std::span<SharedDeviceChildHandle<Texture const> const>;
+  [[nodiscard]] LEOPPHAPI auto GetCurrentTextureIndex() const -> UINT;
+  [[nodiscard]] LEOPPHAPI auto GetCurrentTexture() const -> Texture const&;
+
+  LEOPPHAPI auto Present() const -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetSyncInterval() const -> UINT;
+  LEOPPHAPI auto SetSyncInterval(UINT sync_interval) -> void;
+
+private:
+  explicit SwapChain(Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain, UINT present_flags);
 
   Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain_;
   std::vector<SharedDeviceChildHandle<Texture>> textures_;
+  std::atomic<UINT> sync_interval_{0};
+  UINT present_flags_;
 
   friend GraphicsDevice;
 };

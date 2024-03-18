@@ -15,16 +15,6 @@ RenderManager::RenderManager(graphics::GraphicsDevice& device) :
 }
 
 
-auto RenderManager::BeginNewFrame() -> void {
-  ++frame_count_;
-  frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
-  next_cmd_list_idx_ = 0;
-
-  AgeTempRenderTargets();
-  ReleaseOldTempRenderTargets();
-}
-
-
 auto RenderManager::GetCurrentFrameCount() const -> UINT64 {
   return frame_count_;
 }
@@ -36,6 +26,7 @@ auto RenderManager::GetCurrentFrameIndex() const -> UINT {
 
 
 auto RenderManager::AcquireCommandList() -> graphics::CommandList& {
+  std::scoped_lock const lck{cmd_list_mutex_};
   if (next_cmd_list_idx_ >= cmd_lists_.size()) {
     CreateCommandLists(1);
   }
@@ -44,6 +35,7 @@ auto RenderManager::AcquireCommandList() -> graphics::CommandList& {
 
 
 auto RenderManager::AcquireTemporaryRenderTarget(RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget> {
+  std::scoped_lock const lck{tmp_render_targets_mutex_};
   for (auto& [rt, age_in_frames] : tmp_render_targets_) {
     // An age of 0 means the render target was acquired this frame and is considered in use
     if (age_in_frames > 0 && rt->GetDesc() == desc) {
@@ -61,6 +53,8 @@ auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, UINT const byte_of
   if (buf.GetDesc().size - byte_offset < data.size()) {
     throw std::runtime_error{"Failed to update buffer: the provided data does not fit in the destination buffer."};
   }
+
+  std::scoped_lock const lck{upload_mutex_};
 
   if (auto const upload_buf_size{upload_buf_->GetDesc().size};
     upload_buf_size - upload_buf_current_offset_ < data.size()) {
@@ -91,6 +85,8 @@ auto RenderManager::UpdateTexture(graphics::Texture const& tex, UINT const subre
   device_->GetCopyableFootprints(tex.GetDesc(), subresource_offset, static_cast<UINT>(data.size()), 0, nullptr, nullptr,
     nullptr, &tex_size);
 
+  std::scoped_lock const lck{upload_mutex_};
+
   if (auto const upload_buf_size{upload_buf_->GetDesc().size};
     upload_buf_size - upload_buf_current_offset_ < tex_size) {
     WaitForAllUploads();
@@ -100,13 +96,13 @@ auto RenderManager::UpdateTexture(graphics::Texture const& tex, UINT const subre
     }
   }
 
-  std::pmr::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts{&GetTmpMemRes()};
+  std::pmr::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts{&GetSingleFrameLinearMemory()};
   layouts.resize(data.size());
 
-  std::pmr::vector<UINT> row_counts{&GetTmpMemRes()};
+  std::pmr::vector<UINT> row_counts{&GetSingleFrameLinearMemory()};
   row_counts.resize(data.size());
 
-  std::pmr::vector<UINT64> row_sizes{&GetTmpMemRes()};
+  std::pmr::vector<UINT64> row_sizes{&GetSingleFrameLinearMemory()};
   row_sizes.resize(data.size());
 
   device_->GetCopyableFootprints(tex.GetDesc(), subresource_offset, static_cast<UINT>(data.size()),
@@ -170,7 +166,7 @@ auto RenderManager::CreateReadOnlyTexture(
 
   auto tex{device_->CreateTexture(desc, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr)};
 
-  std::pmr::vector<D3D12_SUBRESOURCE_DATA> subresource_data{&GetTmpMemRes()};
+  std::pmr::vector<D3D12_SUBRESOURCE_DATA> subresource_data{&GetSingleFrameLinearMemory()};
   subresource_data.reserve(img.GetImageCount());
 
   for (std::size_t i{0}; i < img.GetImageCount(); i++) {
@@ -184,10 +180,11 @@ auto RenderManager::CreateReadOnlyTexture(
 }
 
 
-auto RenderManager::WaitForInFlightFrames() const -> void {
-  auto const fence_val{in_flight_frames_fence_->GetNextValue()};
-  device_->SignalFence(*in_flight_frames_fence_);
-  in_flight_frames_fence_->Wait(SatSub<UINT64>(fence_val, max_gpu_queued_frames_));
+auto RenderManager::EndFrame() -> void {
+  WaitForInFlightFrames();
+  UpdateCounters();
+  AgeTempRenderTargets();
+  ReleaseOldTempRenderTargets();
 }
 
 
@@ -228,6 +225,20 @@ auto RenderManager::RecreateUploadBuffer(UINT64 const size) -> void {
 auto RenderManager::WaitForAllUploads() -> void {
   upload_buf_current_offset_ = 0;
   upload_fence_->Wait(upload_fence_->GetNextValue() - 1);
+}
+
+
+auto RenderManager::WaitForInFlightFrames() const -> void {
+  auto const fence_val{in_flight_frames_fence_->GetNextValue()};
+  device_->SignalFence(*in_flight_frames_fence_);
+  in_flight_frames_fence_->Wait(SatSub<UINT64>(fence_val, max_gpu_queued_frames_));
+}
+
+
+auto RenderManager::UpdateCounters() -> void {
+  ++frame_count_;
+  frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
+  next_cmd_list_idx_ = 0;
 }
 
 

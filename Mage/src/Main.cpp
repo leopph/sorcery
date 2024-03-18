@@ -22,6 +22,8 @@
 #include <implot.h>
 #include <shellapi.h>
 
+#include <atomic>
+#include <barrier>
 #include <cwchar>
 #include <exception>
 #include <filesystem>
@@ -48,8 +50,14 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto const graphics_device{std::make_unique<sorcery::graphics::GraphicsDevice>(debug_graphics_device)};
     sorcery::g_engine_context.graphics_device.Reset(graphics_device.get());
 
-    auto const window{std::make_unique<sorcery::Window>(*graphics_device)};
+    auto const window{std::make_unique<sorcery::Window>()};
     sorcery::g_engine_context.window.Reset(window.get());
+
+    auto const swap_chain{
+      graphics_device->CreateSwapChain(sorcery::graphics::SwapChainDesc{
+        0, 0, 2, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_USAGE_RENDER_TARGET_OUTPUT, DXGI_SCALING_STRETCH
+      }, static_cast<HWND>(window->GetNativeHandle()))
+    };
 
     auto const render_manager{std::make_unique<sorcery::rendering::RenderManager>(*graphics_device)};
     sorcery::g_engine_context.render_manager.Reset(render_manager.get());
@@ -86,12 +94,61 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     sorcery::mage::Application app{imGuiIo};
 
     auto const imgui_renderer{
-      std::make_unique<sorcery::mage::ImGuiRenderer>(*graphics_device, *window, *render_manager)
+      std::make_unique<sorcery::mage::ImGuiRenderer>(*graphics_device, *swap_chain, *render_manager)
     };
 
-    bool runGame{false};
+    bool game_is_running{false};
 
-    sorcery::timing::OnApplicationStart();
+    struct WindowResizeHandler {
+      bool window_resized{false};
+
+
+      static auto OnWindowResize(WindowResizeHandler* const self, sorcery::Extent2D<unsigned>) {
+        self->window_resized = true;
+      }
+    };
+
+    WindowResizeHandler window_resize_handler;
+
+    window->OnWindowSize.add_handler<WindowResizeHandler>(&window_resize_handler, &WindowResizeHandler::OnWindowResize);
+
+    auto const projectWindow{std::make_unique<sorcery::mage::ProjectWindow>(app)};
+    auto const sceneViewWindow{std::make_unique<sorcery::mage::SceneViewWindow>()};
+    auto const gameViewWindow{std::make_unique<sorcery::mage::GameViewWindow>()};
+    auto const propertiesWindow{std::make_unique<sorcery::mage::PropertiesWindow>(app)};
+    auto const editorSettingsWindow{std::make_unique<sorcery::mage::SettingsWindow>(app, sceneViewWindow->GetCamera())};
+    auto const mainMenuBar{std::make_unique<sorcery::mage::MainMenuBar>(app, *editorSettingsWindow)};
+    auto const entityHierarchyWindow{std::make_unique<sorcery::mage::EntityHierarchyWindow>(app)};
+
+    std::barrier sync_point1{
+      2, [&]() noexcept {
+        if (window_resize_handler.window_resized) {
+          graphics_device->WaitIdle();
+          graphics_device->ResizeSwapChain(*swap_chain, 0, 0);
+        }
+        sorcery::GetSingleFrameLinearMemory().Clear();
+      }
+    };
+    std::barrier sync_point2{2, []() noexcept {}};
+    std::atomic_flag quit_flag;
+
+    auto const render_thread_func{
+      [&] {
+        while (!quit_flag.test()) {
+          sync_point1.arrive_and_wait();
+          scene_renderer->ExtractCurrentState();
+          imgui_renderer->ExtractDrawData();
+
+          sync_point2.arrive_and_wait();
+          scene_renderer->Render();
+          imgui_renderer->Render();
+          swap_chain->Present();
+          render_manager->EndFrame();
+        }
+      }
+    };
+
+    std::thread render_thread{render_thread_func};
 
     if (std::wcscmp(lpCmdLine, L"") != 0) {
       int argc;
@@ -114,17 +171,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       LocalFree(argv);
     }
 
-    auto const projectWindow{std::make_unique<sorcery::mage::ProjectWindow>(app)};
-    auto const sceneViewWindow{std::make_unique<sorcery::mage::SceneViewWindow>()};
-    auto const gameViewWindow{std::make_unique<sorcery::mage::GameViewWindow>()};
-    auto const propertiesWindow{std::make_unique<sorcery::mage::PropertiesWindow>(app)};
-    auto const editorSettingsWindow{std::make_unique<sorcery::mage::SettingsWindow>(app, sceneViewWindow->GetCamera())};
-    auto const mainMenuBar{std::make_unique<sorcery::mage::MainMenuBar>(app, *editorSettingsWindow)};
-    auto const entityHierarchyWindow{std::make_unique<sorcery::mage::EntityHierarchyWindow>(app)};
+    sorcery::timing::OnApplicationStart();
 
     while (!sorcery::IsQuitSignaled()) {
       sorcery::ProcessEvents();
-      render_manager->BeginNewFrame();
       ImGui_ImplWin32_NewFrame();
       ImGui::NewFrame();
       ImGuizmo::BeginFrame();
@@ -135,9 +185,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
         } else {
           int static targetFrameRate{sorcery::timing::GetTargetFrameRate()};
 
-          if (runGame) {
+          if (game_is_running) {
             if (GetKeyDown(sorcery::Key::Escape)) {
-              runGame = false;
+              game_is_running = false;
               window->SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
               window->SetCursorLock(std::nullopt);
               window->SetCursorHiding(false);
@@ -147,7 +197,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
             }
           } else {
             if (GetKeyDown(sorcery::Key::F5)) {
-              runGame = true;
+              game_is_running = true;
               window->SetEventHandler(nullptr);
               sorcery::timing::SetTargetFrameRate(-1);
               app.GetScene().Save();
@@ -162,7 +212,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
           }
 
           entityHierarchyWindow->Draw();
-          gameViewWindow->Draw(runGame);
+          gameViewWindow->Draw(game_is_running);
           sceneViewWindow->Draw(app);
 
           mainMenuBar->Draw();
@@ -177,15 +227,14 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
       ImGui::Render();
 
-      scene_renderer->Render();
-      imgui_renderer->Render(ImGui::GetDrawData());
-      graphics_device->SwapChainPresent(*window->GetSwapChain(), scene_renderer->GetSyncInterval());
-      render_manager->WaitForInFlightFrames();
-
-      sorcery::GetTmpMemRes().Clear();
+      sync_point1.arrive_and_wait();
+      sync_point2.arrive_and_wait();
 
       sorcery::timing::OnFrameEnd();
     }
+
+    quit_flag.test_and_set();
+    render_thread.join();
 
     graphics_device->WaitIdle();
 

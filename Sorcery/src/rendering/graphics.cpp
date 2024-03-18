@@ -162,9 +162,10 @@ DescriptorHeap::DescriptorHeap(ComPtr<ID3D12DescriptorHeap> heap, ID3D12Device& 
 }
 
 
-auto RootSignatureCache::Add(std::uint8_t const num_params, ComPtr<ID3D12RootSignature> root_signature) -> void {
+auto RootSignatureCache::Add(std::uint8_t const num_params, ComPtr<ID3D12RootSignature> root_signature) -> ComPtr<
+  ID3D12RootSignature> {
   std::scoped_lock const lock{mutex_};
-  root_signatures_.try_emplace(num_params, std::move(root_signature));
+  return root_signatures_.try_emplace(num_params, std::move(root_signature)).first->second;
 }
 
 
@@ -389,7 +390,7 @@ auto GraphicsDevice::CreatePipelineState(PipelineDesc const& desc,
     ThrowIfFailed(device_->CreateRootSignature(0, root_signature_blob->GetBufferPointer(),
       root_signature_blob->GetBufferSize(), IID_PPV_ARGS(&root_signature)), "Failed to create root signature.");
 
-    root_signatures_.Add(num_32_bit_params, root_signature);
+    root_signature = root_signatures_.Add(num_32_bit_params, std::move(root_signature));
   }
 
   ComPtr<ID3D12PipelineState> pipeline_state;
@@ -477,7 +478,7 @@ auto GraphicsDevice::CreateSwapChain(SwapChainDesc const& desc,
   ThrowIfFailed(factory_->MakeWindowAssociation(window_handle, DXGI_MWA_NO_ALT_ENTER),
     "Failed to disable swap chain ALT+ENTER behavior.");
 
-  auto const swap_chain{new SwapChain{std::move(swap_chain4)}};
+  auto const swap_chain{new SwapChain{std::move(swap_chain4), present_flags_}};
   SwapChainCreateTextures(*swap_chain);
 
   return SharedDeviceChildHandle<SwapChain>{swap_chain, details::DeviceChildDeleter<SwapChain>{*this}};
@@ -676,7 +677,7 @@ auto GraphicsDevice::SignalFence(Fence& fence) const -> void {
 
 
 auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) const -> void {
-  std::pmr::vector<ID3D12CommandList*> submit_list{&GetTmpMemRes()};
+  std::pmr::vector<ID3D12CommandList*> submit_list{&GetSingleFrameLinearMemory()};
   submit_list.reserve(cmd_lists.size());
   std::ranges::transform(cmd_lists, std::back_inserter(submit_list), [](CommandList const& cmd_list) {
     return cmd_list.cmd_list_.Get();
@@ -692,23 +693,7 @@ auto GraphicsDevice::WaitIdle() const -> void {
 }
 
 
-auto GraphicsDevice::SwapChainGetBuffers(
-  SwapChain const& swap_chain) const -> std::span<SharedDeviceChildHandle<Texture> const> {
-  return swap_chain.textures_;
-}
-
-
-auto GraphicsDevice::SwapChainGetCurrentBufferIndex(SwapChain const& swap_chain) const -> UINT {
-  return swap_chain.swap_chain_->GetCurrentBackBufferIndex();
-}
-
-
-auto GraphicsDevice::SwapChainPresent(SwapChain const& swap_chain, UINT const sync_interval) const -> void {
-  ThrowIfFailed(swap_chain.swap_chain_->Present(sync_interval, present_flags_), "Failed to present swap chain.");
-}
-
-
-auto GraphicsDevice::SwapChainResize(SwapChain& swap_chain, UINT const width, UINT const height) -> void {
+auto GraphicsDevice::ResizeSwapChain(SwapChain& swap_chain, UINT const width, UINT const height) -> void {
   swap_chain.textures_.clear();
   ThrowIfFailed(swap_chain.swap_chain_->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, swap_chain_flags_),
     "Failed to resize swap chain buffers.");
@@ -1120,13 +1105,13 @@ auto CommandList::End() const -> void {
 auto CommandList::Barrier(std::span<GlobalBarrier const> const global_barriers,
                           std::span<BufferBarrier const> const buffer_barriers,
                           std::span<TextureBarrier const> const texture_barriers) const -> void {
-  std::pmr::vector<D3D12_GLOBAL_BARRIER> globals{&GetTmpMemRes()};
+  std::pmr::vector<D3D12_GLOBAL_BARRIER> globals{&GetSingleFrameLinearMemory()};
   globals.reserve(global_barriers.size());
-  std::pmr::vector<D3D12_BUFFER_BARRIER> buffers{&GetTmpMemRes()};
+  std::pmr::vector<D3D12_BUFFER_BARRIER> buffers{&GetSingleFrameLinearMemory()};
   buffers.reserve(buffer_barriers.size());
-  std::pmr::vector<D3D12_TEXTURE_BARRIER> textures{&GetTmpMemRes()};
+  std::pmr::vector<D3D12_TEXTURE_BARRIER> textures{&GetSingleFrameLinearMemory()};
   textures.reserve(texture_barriers.size());
-  std::pmr::vector<D3D12_BARRIER_GROUP> groups{&GetTmpMemRes()};
+  std::pmr::vector<D3D12_BARRIER_GROUP> groups{&GetSingleFrameLinearMemory()};
 
   if (!global_barriers.empty()) {
     std::ranges::transform(global_barriers, std::back_inserter(globals), [](GlobalBarrier const& barrier) {
@@ -1286,7 +1271,7 @@ auto CommandList::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY const primitive_
 
 auto CommandList::SetRenderTargets(std::span<Texture const> render_targets,
                                    Texture const* depth_stencil) const -> void {
-  std::pmr::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt{&GetTmpMemRes()};
+  std::pmr::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt{&GetSingleFrameLinearMemory()};
   rt.reserve(render_targets.size());
   std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const& tex) {
     return rtv_heap_->GetDescriptorCpuHandle(tex.rtv_);
@@ -1393,8 +1378,39 @@ Fence::Fence(ComPtr<ID3D12Fence> fence, UINT64 const next_value) :
   next_val_{next_value} {}
 
 
-SwapChain::SwapChain(ComPtr<IDXGISwapChain4> swap_chain) :
-  swap_chain_{std::move(swap_chain)} {}
+auto SwapChain::GetTextures() const -> std::span<SharedDeviceChildHandle<Texture const> const> {
+  return *std::bit_cast<std::span<SharedDeviceChildHandle<Texture const>>*>(&textures_);
+}
+
+
+auto SwapChain::GetCurrentTextureIndex() const -> UINT {
+  return swap_chain_->GetCurrentBackBufferIndex();
+}
+
+
+auto SwapChain::GetCurrentTexture() const -> Texture const& {
+  return *textures_[GetCurrentTextureIndex()];
+}
+
+
+auto SwapChain::Present() const -> void {
+  ThrowIfFailed(swap_chain_->Present(sync_interval_, present_flags_), "Failed to present swap chain.");
+}
+
+
+auto SwapChain::GetSyncInterval() const -> UINT {
+  return sync_interval_;
+}
+
+
+auto SwapChain::SetSyncInterval(UINT const sync_interval) -> void {
+  sync_interval_ = sync_interval;
+}
+
+
+SwapChain::SwapChain(ComPtr<IDXGISwapChain4> swap_chain, UINT const present_flags) :
+  swap_chain_{std::move(swap_chain)},
+  present_flags_{present_flags} {}
 
 
 UniqueSamplerHandle::UniqueSamplerHandle(UINT const resource, GraphicsDevice& device) :
