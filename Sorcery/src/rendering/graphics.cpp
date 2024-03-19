@@ -162,8 +162,8 @@ DescriptorHeap::DescriptorHeap(ComPtr<ID3D12DescriptorHeap> heap, ID3D12Device& 
 }
 
 
-auto RootSignatureCache::Add(std::uint8_t const num_params, ComPtr<ID3D12RootSignature> root_signature) -> ComPtr<
-  ID3D12RootSignature> {
+auto RootSignatureCache::Add(std::uint8_t const num_params,
+                             ComPtr<ID3D12RootSignature> root_signature) -> ComPtr<ID3D12RootSignature> {
   std::scoped_lock const lock{mutex_};
   return root_signatures_.try_emplace(num_params, std::move(root_signature)).first->second;
 }
@@ -811,26 +811,27 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
         dsv_desc.Texture1DArray.FirstArraySlice = 0;
         dsv_desc.Texture1DArray.ArraySize = desc.depth_or_array_size;
       }
-    } else if (desc.dimension == TextureDimension::k2D) {
-      if (desc.depth_or_array_size == 1) {
-        if (desc.sample_count == 1) {
-          dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-          dsv_desc.Texture2D.MipSlice = 0;
-        } else {
-          dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
-        }
+    } else if (desc.dimension == TextureDimension::k2D && desc.depth_or_array_size == 1) {
+      if (desc.sample_count == 1) {
+        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+        dsv_desc.Texture2D.MipSlice = 0;
       } else {
-        if (desc.sample_count == 1) {
-          dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
-          dsv_desc.Texture2DArray.MipSlice = 0;
-          dsv_desc.Texture2DArray.FirstArraySlice = 0;
-          dsv_desc.Texture2DArray.ArraySize = desc.depth_or_array_size;
-        } else {
-          dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY;
-          dsv_desc.Texture2DMSArray.FirstArraySlice = 0;
-          dsv_desc.Texture2DMSArray.ArraySize = desc.depth_or_array_size;
-        }
+        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
       }
+    } else if ((desc.dimension == TextureDimension::k2D && desc.depth_or_array_size > 1) || desc.dimension ==
+               TextureDimension::kCube) {
+      if (desc.sample_count == 1) {
+        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+        dsv_desc.Texture2DArray.MipSlice = 0;
+        dsv_desc.Texture2DArray.FirstArraySlice = 0;
+        dsv_desc.Texture2DArray.ArraySize = desc.depth_or_array_size;
+      } else {
+        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY;
+        dsv_desc.Texture2DMSArray.FirstArraySlice = 0;
+        dsv_desc.Texture2DMSArray.ArraySize = desc.depth_or_array_size;
+      }
+    } else {
+      throw std::runtime_error{"Cannot create depth stencil view for texture."};
     }
     dsv = dsv_heap_->Allocate();
     device_->CreateDepthStencilView(&texture, &dsv_desc, dsv_heap_->GetDescriptorCpuHandle(dsv));
@@ -850,33 +851,34 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
         rtv_desc.Texture1DArray.FirstArraySlice = 0;
         rtv_desc.Texture1DArray.ArraySize = desc.depth_or_array_size;
       }
-    } else if (desc.dimension == TextureDimension::k2D) {
-      if (desc.depth_or_array_size == 1) {
-        if (desc.sample_count == 1) {
-          rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-          rtv_desc.Texture2D.MipSlice = 0;
-          rtv_desc.Texture2D.PlaneSlice = 0;
-        } else {
-          rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
-        }
+    } else if (desc.dimension == TextureDimension::k2D && desc.depth_or_array_size == 1) {
+      if (desc.sample_count == 1) {
+        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+        rtv_desc.Texture2D.MipSlice = 0;
+        rtv_desc.Texture2D.PlaneSlice = 0;
       } else {
-        if (desc.sample_count == 1) {
-          rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
-          rtv_desc.Texture2DArray.MipSlice = 0;
-          rtv_desc.Texture2DArray.FirstArraySlice = 0;
-          rtv_desc.Texture2DArray.ArraySize = desc.depth_or_array_size;
-          rtv_desc.Texture2DArray.PlaneSlice = 0;
-        } else {
-          rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
-          rtv_desc.Texture2DMSArray.FirstArraySlice = 0;
-          rtv_desc.Texture2DMSArray.ArraySize = desc.depth_or_array_size;
-        }
+        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
       }
-    } else if (desc.dimension == TextureDimension::k3D || desc.dimension == TextureDimension::kCube) {
+    } else if ((desc.dimension == TextureDimension::k2D && desc.depth_or_array_size > 1) || desc.dimension ==
+               TextureDimension::kCube) {
+      if (desc.sample_count == 1) {
+        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+        rtv_desc.Texture2DArray.MipSlice = 0;
+        rtv_desc.Texture2DArray.FirstArraySlice = 0;
+        rtv_desc.Texture2DArray.ArraySize = desc.depth_or_array_size;
+        rtv_desc.Texture2DArray.PlaneSlice = 0;
+      } else {
+        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
+        rtv_desc.Texture2DMSArray.FirstArraySlice = 0;
+        rtv_desc.Texture2DMSArray.ArraySize = desc.depth_or_array_size;
+      }
+    } else if (desc.dimension == TextureDimension::k3D) {
       rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
       rtv_desc.Texture3D.MipSlice = 0;
       rtv_desc.Texture3D.FirstWSlice = 0;
       rtv_desc.Texture3D.WSize = static_cast<UINT>(-1);
+    } else {
+      throw std::runtime_error{"Cannot create render target view for texture."};
     }
     rtv = rtv_heap_->Allocate();
     device_->CreateRenderTargetView(&texture, &rtv_desc, rtv_heap_->GetDescriptorCpuHandle(rtv));
@@ -934,10 +936,21 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
       srv_desc.Texture3D.MipLevels = static_cast<UINT>(-1);
       srv_desc.Texture3D.ResourceMinLODClamp = 0.0f;
     } else if (desc.dimension == TextureDimension::kCube) {
-      srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-      srv_desc.TextureCube.MostDetailedMip = 0;
-      srv_desc.TextureCube.MipLevels = static_cast<UINT>(-1);
-      srv_desc.TextureCube.ResourceMinLODClamp = 0.0f;
+      if (desc.depth_or_array_size == 6) {
+        srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+        srv_desc.TextureCube.MostDetailedMip = 0;
+        srv_desc.TextureCube.MipLevels = static_cast<UINT>(-1);
+        srv_desc.TextureCube.ResourceMinLODClamp = 0.0f;
+      } else {
+        srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+        srv_desc.TextureCubeArray.MostDetailedMip = 0;
+        srv_desc.TextureCubeArray.MipLevels = static_cast<UINT>(-1);
+        srv_desc.TextureCubeArray.First2DArrayFace = 0;
+        srv_desc.TextureCubeArray.NumCubes = desc.depth_or_array_size / 6;
+        srv_desc.TextureCubeArray.ResourceMinLODClamp = 0.0f;
+      }
+    } else {
+      throw std::runtime_error{"Cannot create shader resource view for texture."};
     }
     srv = res_desc_heap_->Allocate();
     device_->CreateShaderResourceView(&texture, &srv_desc, res_desc_heap_->GetDescriptorCpuHandle(srv));
@@ -957,33 +970,34 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
         uav_desc.Texture1DArray.FirstArraySlice = 0;
         uav_desc.Texture1DArray.ArraySize = desc.depth_or_array_size;
       }
-    } else if (desc.dimension == TextureDimension::k2D) {
-      if (desc.depth_or_array_size == 1) {
-        if (desc.sample_count == 1) {
-          uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-          uav_desc.Texture2D.MipSlice = 0;
-          uav_desc.Texture2D.PlaneSlice = 0;
-        } else {
-          uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DMS;
-        }
+    } else if (desc.dimension == TextureDimension::k2D && desc.depth_or_array_size == 1) {
+      if (desc.sample_count == 1) {
+        uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+        uav_desc.Texture2D.MipSlice = 0;
+        uav_desc.Texture2D.PlaneSlice = 0;
       } else {
-        if (desc.sample_count == 1) {
-          uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
-          uav_desc.Texture2DArray.MipSlice = 0;
-          uav_desc.Texture2DArray.FirstArraySlice = 0;
-          uav_desc.Texture2DArray.ArraySize = desc.depth_or_array_size;
-          uav_desc.Texture2DArray.PlaneSlice = 0;
-        } else {
-          uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DMSARRAY;
-          uav_desc.Texture2DMSArray.FirstArraySlice = 0;
-          uav_desc.Texture2DMSArray.ArraySize = desc.depth_or_array_size;
-        }
+        uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DMS;
       }
-    } else if (desc.dimension == TextureDimension::k3D || desc.dimension == TextureDimension::kCube) {
+    } else if ((desc.dimension == TextureDimension::k2D && desc.depth_or_array_size > 1) || desc.dimension ==
+               TextureDimension::k3D) {
+      if (desc.sample_count == 1) {
+        uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+        uav_desc.Texture2DArray.MipSlice = 0;
+        uav_desc.Texture2DArray.FirstArraySlice = 0;
+        uav_desc.Texture2DArray.ArraySize = desc.depth_or_array_size;
+        uav_desc.Texture2DArray.PlaneSlice = 0;
+      } else {
+        uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DMSARRAY;
+        uav_desc.Texture2DMSArray.FirstArraySlice = 0;
+        uav_desc.Texture2DMSArray.ArraySize = desc.depth_or_array_size;
+      }
+    } else if (desc.dimension == TextureDimension::k3D) {
       uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
       uav_desc.Texture3D.MipSlice = 0;
       uav_desc.Texture3D.FirstWSlice = 0;
       uav_desc.Texture3D.WSize = static_cast<UINT>(-1);
+    } else {
+      throw std::runtime_error{"Cannot create unordered access view for texture."};
     }
     uav = res_desc_heap_->Allocate();
     device_->CreateUnorderedAccessView(&texture, nullptr, &uav_desc, res_desc_heap_->GetDescriptorCpuHandle(uav));
