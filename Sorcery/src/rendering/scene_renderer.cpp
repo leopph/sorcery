@@ -484,7 +484,8 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
         cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
         cascadeCenterWS[1] = std::floor(cascadeCenterWS[1]);
         cascadeCenterWS *= worldUnitsPerTexel;
-        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Inverse()};
+        // shadowViewMtx is only rotation, transpose is its inverse
+        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Transpose()};
 
         shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light.direction, Vector3::Up());
         auto const shadowProjMtx{
