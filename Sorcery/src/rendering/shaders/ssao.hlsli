@@ -59,13 +59,11 @@ float PsMain(const VertexOut vs_out) : SV_Target {
   const float3 bitangent_vs = cross(normal_vs, tangent_vs);
   const float3x3 tbn_mtx_vs = float3x3(tangent_vs, bitangent_vs, normal_vs);
 
-  float occlusion = 0.0;
-  uint sample_count, stride;
-
   const StructuredBuffer<float4> samples = ResourceDescriptorHeap[g_params.samp_buf_idx];
-  samples.GetDimensions(sample_count, stride);
 
-  for (uint i = 0; i < sample_count; i++) {
+  float occlusion = 0.0;
+
+  for (uint i = 0; i < g_params.sample_count; i++) {
     const float3 samplePos = mul(samples[i].xyz, tbn_mtx_vs) * g_params.radius + hemisphere_origin_vs;
 
     float4 sampleOffset = mul(float4(samplePos, 1), per_view_cb.projMtx);
@@ -78,7 +76,7 @@ float PsMain(const VertexOut vs_out) : SV_Target {
     occlusion += step(sampleDepth, samplePos.z - g_params.bias) * rangeCheck;
   }
 
-  return pow(1 - occlusion / sample_count, g_params.power);
+  return pow(1 - occlusion / g_params.sample_count, g_params.power);
 }
 
 
