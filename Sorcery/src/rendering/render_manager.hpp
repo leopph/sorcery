@@ -45,6 +45,8 @@ public:
   [[nodiscard]] LEOPPHAPI auto CreateReadOnlyTexture(
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
 
+  LEOPPHAPI auto KeepAliveWhileInUse(graphics::SharedDeviceChildHandle<graphics::Buffer> buf) -> void;
+
   // At the end of a frame this must be called!
   LEOPPHAPI auto EndFrame() -> void;
 
@@ -55,9 +57,17 @@ private:
   };
 
 
+  struct KeepAliveBufferRecord {
+    graphics::SharedDeviceChildHandle<graphics::Buffer> buf;
+    UINT age;
+  };
+
+
   auto CreateCommandLists(UINT count) -> void;
   auto AgeTempRenderTargets() -> void;
+  auto AgeKeepAliveBuffers() -> void;
   auto ReleaseOldTempRenderTargets() -> void;
+  auto ReleaseUnusedBuffers() -> void;
   auto RecreateUploadBuffer(UINT64 size) -> void;
   auto WaitForAllUploads() -> void;
   auto WaitForInFlightFrames() const -> void;
@@ -90,6 +100,9 @@ private:
   std::byte* upload_ptr_{nullptr};
   UINT64 upload_buf_current_offset_{0};
   std::mutex upload_mutex_;
+
+  std::vector<KeepAliveBufferRecord> buffers_to_keep_alive_;
+  std::mutex keep_alive_buffers_mutex_;
 };
 
 

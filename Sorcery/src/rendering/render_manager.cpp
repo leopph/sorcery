@@ -4,6 +4,7 @@
 #include "../Util.hpp"
 
 #include <stdexcept>
+#include <utility>
 
 
 namespace sorcery::rendering {
@@ -180,11 +181,19 @@ auto RenderManager::CreateReadOnlyTexture(
 }
 
 
+auto RenderManager::KeepAliveWhileInUse(graphics::SharedDeviceChildHandle<graphics::Buffer> buf) -> void {
+  std::scoped_lock const lock{keep_alive_buffers_mutex_};
+  buffers_to_keep_alive_.emplace_back(std::move(buf), 0);
+}
+
+
 auto RenderManager::EndFrame() -> void {
   WaitForInFlightFrames();
   UpdateCounters();
   AgeTempRenderTargets();
+  AgeKeepAliveBuffers();
   ReleaseOldTempRenderTargets();
+  ReleaseUnusedBuffers();
 }
 
 
@@ -208,10 +217,28 @@ auto RenderManager::AgeTempRenderTargets() -> void {
 }
 
 
+auto RenderManager::AgeKeepAliveBuffers() -> void {
+  std::scoped_lock const lock{keep_alive_buffers_mutex_};
+  std::ranges::for_each(buffers_to_keep_alive_, [](KeepAliveBufferRecord& record) {
+    ++record.age;
+  });
+}
+
+
 auto RenderManager::ReleaseOldTempRenderTargets() -> void {
   tmp_render_targets_.erase(std::ranges::remove_if(tmp_render_targets_, [](TempRenderTargetRecord const& record) {
     return record.age_in_frames >= max_tmp_rt_age_;
   }).begin(), tmp_render_targets_.end());
+}
+
+
+auto RenderManager::ReleaseUnusedBuffers() -> void {
+  std::scoped_lock const lock{keep_alive_buffers_mutex_};
+  buffers_to_keep_alive_.erase(std::ranges::remove_if(buffers_to_keep_alive_, [](KeepAliveBufferRecord const& record) {
+    // Work could have still been dispatched during the frame the buffers was passed to keep alive.
+    // This is why we wait for all gpu queued frames to complete as well as the one we received the buffer in.
+    return record.age > max_frames_in_flight_;
+  }).begin(), buffers_to_keep_alive_.end());
 }
 
 
