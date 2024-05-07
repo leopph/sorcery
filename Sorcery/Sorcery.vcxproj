@@ -222,6 +222,7 @@
     <None Include="src\rendering\shaders\skybox.hlsli" />
     <None Include="src\rendering\shaders\ssao.hlsli" />
     <None Include="src\rendering\shaders\utility.hlsli" />
+    <None Include="src\rendering\structured_buffer.inl" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>

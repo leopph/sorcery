@@ -832,12 +832,12 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   window_{&window},
   device_{&device} {
   for (auto& buf : light_buffers_) {
-    buf = StructuredBuffer<ShaderLight>::New(*device_, true);
+    buf = StructuredBuffer<ShaderLight>::New(*device_, *render_manager_, true);
   }
 
-  gizmo_color_buffer_ = StructuredBuffer<Vector4>::New(*device_, true);
+  gizmo_color_buffer_ = StructuredBuffer<Vector4>::New(*device_, *render_manager_, true);
 
-  line_gizmo_vertex_data_buffer_ = StructuredBuffer<ShaderLineGizmoVertexData>::New(*device_, true);
+  line_gizmo_vertex_data_buffer_ = StructuredBuffer<ShaderLineGizmoVertexData>::New(*device_, *render_manager_, true);
 
   main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
     static_cast<UINT>(window_->GetClientAreaSize().width), static_cast<UINT>(window_->GetClientAreaSize().height),
@@ -956,7 +956,7 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
     OnWindowSize(size);
   });
 
-  ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_, true);
+  ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_, *render_manager_, true);
   RecreateSsaoSamples(ssao_params_.sample_count);
 
   ssao_noise_tex_ = device_->CreateTexture(graphics::TextureDesc{
