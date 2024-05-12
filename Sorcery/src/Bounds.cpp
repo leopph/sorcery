@@ -119,20 +119,40 @@ auto Frustum::Intersects(BoundingSphere const& boundingSphere) const noexcept ->
 
 
 auto Frustum::Intersects(AABB const& aabb) const noexcept -> bool {
-  auto intersects{true};
+  // This is the proper frustum culling algorithm, the other one only tests if there is a vertex in the positive
+  // half space of each plane. This is not correct. The proper solution is added here, but disabled due to producing
+  // too many false negatives to be practical to use.
+  // TODO improve frustum culling algorithm to eliminate false negatives
+  if constexpr (false) {
+    for (auto const& vertex : aabb.CalculateVertices()) {
+      auto intersects{true};
 
-  auto const aabbVertices{aabb.CalculateVertices()};
+      for (auto const& plane : mPlanes) {
+        intersects = intersects && plane.DistanceToPoint(vertex) >= 0;
+      }
 
-  for (auto const& plane : mPlanes) {
-    auto distance{std::numeric_limits<float>::lowest()};
-
-    for (auto const& vertex : aabbVertices) {
-      distance = std::max(distance, plane.DistanceToPoint(vertex));
+      if (intersects) {
+        return true;
+      }
     }
 
-    intersects = intersects && distance >= 0;
-  }
+    return false;
+  } else {
+    auto intersects{true};
 
-  return intersects;
+    auto const aabbVertices{aabb.CalculateVertices()};
+
+    for (auto const& plane : mPlanes) {
+      auto distance{std::numeric_limits<float>::lowest()};
+
+      for (auto const& vertex : aabbVertices) {
+        distance = std::max(distance, plane.DistanceToPoint(vertex));
+      }
+
+      intersects = intersects && distance >= 0;
+    }
+
+    return intersects;
+  }
 }
 }
