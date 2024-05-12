@@ -30,5 +30,6 @@ public:
   LEOPPHAPI auto OnInit() -> void override;
   LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+  LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 };
 }

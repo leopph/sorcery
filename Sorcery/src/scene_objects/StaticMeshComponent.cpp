@@ -121,4 +121,53 @@ auto StaticMeshComponent::OnDrawProperties(bool& changed) -> void {
     }
   }
 }
+
+
+auto StaticMeshComponent::OnDrawGizmosSelected() -> void {
+  Component::OnDrawGizmosSelected();
+
+  if constexpr (false) {
+    if (mMesh) {
+      auto const draw_aabb_edges{
+        [](AABB const& aabb, Color const& line_color) {
+          auto const& [min, max]{aabb};
+
+          // Near face
+          g_engine_context.scene_renderer->DrawLineAtNextRender(min, Vector3{max[0], min[1], min[2]}, line_color);
+          g_engine_context.scene_renderer->DrawLineAtNextRender(min, Vector3{min[0], max[1], min[2]}, line_color);
+          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{max[0], max[1], min[2]},
+            Vector3{max[0], min[1], min[2]}, line_color);
+          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{max[0], max[1], min[2]},
+            Vector3{min[0], max[1], min[2]}, line_color);
+
+          // Far face
+          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{min[0], min[1], max[2]},
+            Vector3{max[0], min[1], max[2]}, line_color);
+          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{min[0], min[1], max[2]},
+            Vector3{min[0], max[1], max[2]}, line_color);
+          g_engine_context.scene_renderer->DrawLineAtNextRender(max, Vector3{max[0], min[1], max[2]}, line_color);
+          g_engine_context.scene_renderer->DrawLineAtNextRender(max, Vector3{min[0], max[1], max[2]}, line_color);
+
+          // Edges along Z
+          g_engine_context.scene_renderer->DrawLineAtNextRender(min, Vector3{min[0], min[1], max[2]}, line_color);
+          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{max[0], min[1], min[2]},
+            Vector3{max[0], min[1], max[2]}, line_color);
+          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{min[0], max[1], min[2]},
+            Vector3{min[0], max[1], max[2]}, line_color);
+          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{max[0], max[1], min[2]}, max, line_color);
+        }
+      };
+
+      auto const& local_to_world_mtx{GetEntity().GetTransform().GetLocalToWorldMatrix()};
+      draw_aabb_edges(mMesh->GetBounds().Transform(local_to_world_mtx), Color::Red());
+
+      if (auto const drawable_submesh_count{std::max(mMesh->GetSubmeshCount(), static_cast<int>(mMaterials.size()))};
+        drawable_submesh_count > 1) {
+        for (auto i{0}; i < drawable_submesh_count; i++) {
+          draw_aabb_edges(mMesh->GetSubMeshes()[i].bounds.Transform(local_to_world_mtx), Color{255, 165, 0, 255});
+        }
+      }
+    }
+  }
+}
 }
