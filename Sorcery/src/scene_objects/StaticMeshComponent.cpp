@@ -147,7 +147,6 @@ auto StaticMeshComponent::OnDrawGizmosSelected() -> void {
       };
 
       auto const& local_to_world_mtx{GetEntity().GetTransform().GetLocalToWorldMatrix()};
-      draw_aabb_edges(mesh_->GetBounds().Transform(local_to_world_mtx), Color::Red());
 
       if (auto const drawable_submesh_count{std::max(mesh_->GetSubmeshCount(), static_cast<int>(materials_.size()))};
         drawable_submesh_count > 1) {
@@ -155,6 +154,8 @@ auto StaticMeshComponent::OnDrawGizmosSelected() -> void {
           draw_aabb_edges(mesh_->GetSubMeshes()[i].bounds.Transform(local_to_world_mtx), Color{255, 165, 0, 255});
         }
       }
+
+      draw_aabb_edges(mesh_->GetBounds().Transform(local_to_world_mtx), Color::Red());
     }
   }
 }
