@@ -8,13 +8,9 @@
 
 
 namespace sorcery {
-class StaticMeshComponent : public Component {
+class StaticMeshComponent final : public Component {
   RTTR_ENABLE(Component)
   RTTR_REGISTRATION_FRIEND
-  std::vector<Material*> mMaterials;
-  Mesh* mMesh;
-
-  auto ResizeMaterialListToSubmeshCount() -> void;
 
 public:
   LEOPPHAPI StaticMeshComponent();
@@ -31,5 +27,13 @@ public:
   LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
+
+private:
+  auto ResizeMaterialListToSubmeshCount() -> void;
+
+  std::vector<Material*> materials_;
+  Mesh* mesh_;
+
+  static bool show_bounding_boxes_; // TODO this should be stripped when not compiling for Mage
 };
 }
