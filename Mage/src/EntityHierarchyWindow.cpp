@@ -9,7 +9,9 @@ EntityHierarchyWindow::EntityHierarchyWindow(Application& app) :
 
 
 auto EntityHierarchyWindow::Draw() -> void {
-  ImGui::SetNextWindowSizeConstraints(ImVec2{150, 150}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
+  ImGui::SetNextWindowSizeConstraints(ImVec2{150, 150}, ImVec2{
+    std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
+  });
 
   if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
     auto const contextId{"EntityHierarchyContextId"};
@@ -78,6 +80,13 @@ auto EntityHierarchyWindow::Draw() -> void {
 
       if (ImGui::BeginPopupContextItem()) {
         mApp->SetSelectedObject(&entity);
+
+        if (ImGui::MenuItem("Duplicate")) {
+          auto const clone{entity.Clone()};
+          mApp->SetSelectedObject(clone);
+          entities = mApp->GetScene().GetEntities();
+          ImGui::CloseCurrentPopup();
+        }
 
         if (ImGui::MenuItem("Delete")) {
           Destroy(entity);
