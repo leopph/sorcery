@@ -14,6 +14,7 @@
 #include <format>
 #include <optional>
 #include <string>
+#include <type_traits>
 
 
 namespace sorcery {
@@ -32,8 +33,9 @@ protected:
 
 template<std::derived_from<Object> T>
 class ObjectPicker : detail::ObjectPickerBase {
-  std::vector<Guid> mGuids;
-  std::vector<T*> mObjects;
+  using StoredType = std::conditional_t<std::derived_from<T, Resource>, ResourceManager::ResourceInfo, T*>;
+
+  std::vector<StoredType> mObjects;
   std::string mFilter;
   int const mInstanceId{GetNextInstanceId()};
   std::string const mPopupId{std::format("PopupObjectPicker{}", mInstanceId)};
@@ -58,30 +60,37 @@ struct ObjectDragDropData {
 
 template<std::derived_from<Object> T>
 auto ObjectPicker<T>::QueryObjects(bool const insertNull) noexcept -> void {
-  if constexpr (std::derived_from<T, Resource>) {
-    mGuids.clear();
-    g_engine_context.resource_manager->GetGuidsForResourcesOfType<T>(mGuids);
+  mObjects.clear();
 
-    mObjects.clear();
-    mObjects.reserve(mGuids.size());
-    for (auto const& guid : mGuids) {
-      mObjects.emplace_back(g_engine_context.resource_manager->GetOrLoad<T>(guid));
+  if constexpr (std::derived_from<T, Resource>) {
+    g_engine_context.resource_manager->GetInfoForResourcesOfType<T>(mObjects);
+
+    std::erase_if(mObjects, [this](auto const& res_info) {
+      return !Contains(res_info.name, mFilter);
+    });
+
+    std::ranges::sort(mObjects, [](auto const& lhs, auto const& rhs) {
+      return lhs.name < rhs.name;
+    });
+
+    if (insertNull) {
+      mObjects.insert(std::begin(mObjects),
+        ResourceManager::ResourceInfo{Guid::Invalid(), std::string{}, rttr::type::get<T>()});
     }
   } else {
-    mObjects.clear();
     Object::FindObjectsOfType(mObjects);
-  }
 
-  std::erase_if(mObjects, [this](auto const res) {
-    return res && !Contains(res->GetName(), mFilter);
-  });
+    std::erase_if(mObjects, [this](auto const obj) {
+      return obj && !Contains(obj->GetName(), mFilter);
+    });
 
-  std::ranges::sort(mObjects, [](auto const lhs, auto const rhs) {
-    return !lhs || (rhs && lhs->GetName() < rhs->GetName());
-  });
+    std::ranges::sort(mObjects, [](auto const lhs, auto const rhs) {
+      return !lhs || (rhs && lhs->GetName() < rhs->GetName());
+    });
 
-  if (insertNull) {
-    mObjects.insert(std::begin(mObjects), nullptr);
+    if (insertNull) {
+      mObjects.insert(std::begin(mObjects), nullptr);
+    }
   }
 }
 
@@ -100,9 +109,20 @@ auto ObjectPicker<T>::Draw(T*& targetObj, bool const allowNull) noexcept -> bool
     }
 
     for (auto const obj : mObjects) {
-      if (ImGui::Selectable(std::format("{}##SelectableObjectPicker{}", obj ? obj->GetName() : NULL_DISPLAY_NAME, mPopupId).c_str())) {
-        targetObj = obj;
-        ret = true;
+      auto constexpr fmt{"{}##SelectableObjectPicker{}"};
+
+      if constexpr (std::derived_from<T, Resource>) {
+        if (ImGui::Selectable(std::format(fmt, obj.guid.IsValid() ? obj.name : NULL_DISPLAY_NAME,
+          mPopupId).c_str())) {
+          targetObj = g_engine_context.resource_manager->GetOrLoad<T>(obj.guid);
+          ret = true;
+        }
+      } else {
+        if (ImGui::Selectable(std::format(fmt, obj ? obj->GetName() : NULL_DISPLAY_NAME,
+          mPopupId).c_str())) {
+          targetObj = obj;
+          ret = true;
+        }
       }
     }
 
@@ -122,7 +142,9 @@ auto ObjectPicker<T>::Draw(T*& targetObj, bool const allowNull) noexcept -> bool
 
   if (ImGui::BeginDragDropTarget()) {
     if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropData::TYPE_STR.data())}) {
-      if (auto const dragDropData{static_cast<ObjectDragDropData*>(payload->Data)}; dragDropData && dragDropData->ptr && rttr::type::get(*dragDropData->ptr).is_derived_from(rttr::type::get<T>())) {
+      if (auto const dragDropData{static_cast<ObjectDragDropData*>(payload->Data)};
+        dragDropData && dragDropData->ptr && rttr::type::get(*dragDropData->ptr).
+        is_derived_from(rttr::type::get<T>())) {
         targetObj = static_cast<T*>(dragDropData->ptr);
         ret = true;
       }
