@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cassert>
 #include <format>
+#include <utility>
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -37,6 +38,34 @@ auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
 
 Entity::Entity() :
   mScene{Scene::GetActiveScene()} {}
+
+
+Entity::Entity(Entity const& other) :
+  SceneObject{other},
+  mScene{other.mScene} {}
+
+
+Entity::Entity(Entity&& other) noexcept :
+  SceneObject{std::move(other)},
+  mScene{other.mScene} {}
+
+
+auto Entity::Clone() -> Entity* {
+  auto const clone{new Entity{*this}};
+  clone->mTransform = nullptr;
+  clone->OnInit();
+
+  clone->mComponents.clear();
+  clone->mComponents.reserve(mComponents.size());
+
+  for (auto const comp : mComponents) {
+    auto const comp_clone{comp->Clone()};
+    comp_clone->OnInit();
+    clone->AddComponent(*comp_clone);
+  }
+
+  return clone;
+}
 
 
 auto Entity::GetScene() const -> Scene& {
@@ -127,7 +156,9 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
   }
 
   for (std::size_t i{0}; i < std::size(mComponents); i++) {
-    auto const treeNodeId{std::format("{}##{}", rttr::type::get(*mComponents[i]).get_name().to_string(), std::to_string(i))};
+    auto const treeNodeId{
+      std::format("{}##{}", rttr::type::get(*mComponents[i]).get_name().to_string(), std::to_string(i))
+    };
 
     if (ImGui::TreeNodeEx(treeNodeId.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Separator();

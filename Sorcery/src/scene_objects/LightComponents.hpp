@@ -7,10 +7,12 @@
 
 
 namespace sorcery {
-class LightComponent : public Component {
+class LightComponent final : public Component {
   RTTR_ENABLE(Component)
 
 public:
+  [[nodiscard]] LEOPPHAPI auto Clone() -> LightComponent* override;
+
   [[nodiscard]] LEOPPHAPI auto GetColor() const -> Vector3 const&;
   LEOPPHAPI auto SetColor(Vector3 const& color) -> void;
 

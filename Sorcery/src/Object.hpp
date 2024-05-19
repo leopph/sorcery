@@ -13,16 +13,13 @@ namespace sorcery {
 class Object {
   RTTR_ENABLE()
   RTTR_REGISTRATION_FRIEND
-  LEOPPHAPI static std::vector<Object*> sAllObjects;
-  LEOPPHAPI static std::recursive_mutex sAllObjectsMutex;
 
-  std::string mName{"New Object"};
+protected:
+  Object() = default;
+  Object(Object const& other) = default;
+  Object(Object&& other) noexcept = default;
 
 public:
-  Object() = default;
-  Object(Object const& other) = delete;
-  Object(Object&& other) = delete;
-
   virtual ~Object() = default;
 
   auto operator=(Object const& other) -> void = delete;
@@ -46,6 +43,12 @@ public:
   [[nodiscard]] auto FindObjectsOfType() -> std::vector<T*>;
 
   LEOPPHAPI static auto DestroyAll() -> void;
+
+private:
+  LEOPPHAPI static std::vector<Object*> sAllObjects;
+  LEOPPHAPI static std::recursive_mutex sAllObjectsMutex;
+
+  std::string mName{"New Object"};
 };
 
 

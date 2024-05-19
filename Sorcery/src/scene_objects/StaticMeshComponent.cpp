@@ -18,6 +18,11 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
+auto StaticMeshComponent::Clone() -> StaticMeshComponent* {
+  return new StaticMeshComponent{*this};
+}
+
+
 StaticMeshComponent::StaticMeshComponent() :
   mesh_{g_engine_context.resource_manager->GetCubeMesh()} {
   ResizeMaterialListToSubmeshCount();

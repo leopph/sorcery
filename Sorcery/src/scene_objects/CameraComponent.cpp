@@ -28,6 +28,11 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
+auto CameraComponent::Clone() -> CameraComponent* {
+  return new CameraComponent{*this};
+}
+
+
 auto CameraComponent::GetBackgroundColor() const -> Vector4 const& {
   return mBackgroundColor;
 }

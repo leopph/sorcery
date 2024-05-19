@@ -17,12 +17,17 @@ class Entity final : public SceneObject {
   RTTR_ENABLE(SceneObject)
   RTTR_REGISTRATION_FRIEND
 
-  Scene* mScene{nullptr};
-  mutable TransformComponent* mTransform{nullptr};
-  std::vector<Component*> mComponents;
-
 public:
   LEOPPHAPI Entity();
+  LEOPPHAPI Entity(Entity const& other);
+  LEOPPHAPI Entity(Entity&& other) noexcept;
+
+  ~Entity() override = default;
+
+  auto operator=(Entity const& other) -> void = delete;
+  auto operator=(Entity&& other) -> void = delete;
+
+  [[nodiscard]] LEOPPHAPI auto Clone() -> Entity* override;
 
   [[nodiscard]] LEOPPHAPI auto GetTransform() const -> TransformComponent&;
 
@@ -46,6 +51,11 @@ public:
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 
   [[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
+
+private:
+  Scene* mScene{nullptr};
+  mutable TransformComponent* mTransform{nullptr};
+  std::vector<Component*> mComponents;
 };
 
 

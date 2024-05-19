@@ -50,6 +50,16 @@ auto TransformComponent::UpdateWorldDataRecursive() -> void {
 }
 
 
+auto TransformComponent::Clone() -> TransformComponent* {
+  auto const clone{new TransformComponent{*this}};
+  clone->mChildren.clear();
+  clone->mParent = nullptr;
+  clone->SetParent(mParent);
+
+  return clone;
+}
+
+
 auto TransformComponent::GetWorldPosition() const -> Vector3 const& {
   return mWorldPosition;
 }

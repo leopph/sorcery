@@ -15,30 +15,9 @@ class TransformComponent : public Component {
   RTTR_ENABLE(Component)
   RTTR_REGISTRATION_FRIEND
 
-private:
-  auto UpdateWorldDataRecursive() -> void;
-
-  Vector3 mLocalPosition{0, 0, 0};
-  Quaternion mLocalRotation{1, 0, 0, 0};
-  Vector3 mLocalEulerAnglesHelp{0, 0, 0};
-  Vector3 mLocalScale{1, 1, 1};
-
-  Vector3 mWorldPosition{mLocalPosition};
-  Quaternion mWorldRotation{mLocalRotation};
-  Vector3 mWorldScale{mLocalScale};
-
-  Vector3 mForward{Vector3::Forward()};
-  Vector3 mRight{Vector3::Right()};
-  Vector3 mUp{Vector3::Up()};
-
-  TransformComponent* mParent{nullptr};
-  std::vector<TransformComponent*> mChildren;
-
-  Matrix4 mLocalToWorldMtx{Matrix4::Identity()};
-
-  bool mChanged{false};
-
 public:
+  [[nodiscard]] LEOPPHAPI auto Clone() -> TransformComponent* override;
+
   [[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
   LEOPPHAPI auto SetWorldPosition(Vector3 const& newPos) -> void;
 
@@ -86,5 +65,28 @@ public:
 
   LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+
+private:
+  auto UpdateWorldDataRecursive() -> void;
+
+  Vector3 mLocalPosition{0, 0, 0};
+  Quaternion mLocalRotation{1, 0, 0, 0};
+  Vector3 mLocalEulerAnglesHelp{0, 0, 0};
+  Vector3 mLocalScale{1, 1, 1};
+
+  Vector3 mWorldPosition{mLocalPosition};
+  Quaternion mWorldRotation{mLocalRotation};
+  Vector3 mWorldScale{mLocalScale};
+
+  Vector3 mForward{Vector3::Forward()};
+  Vector3 mRight{Vector3::Right()};
+  Vector3 mUp{Vector3::Up()};
+
+  TransformComponent* mParent{nullptr};
+  std::vector<TransformComponent*> mChildren;
+
+  Matrix4 mLocalToWorldMtx{Matrix4::Identity()};
+
+  bool mChanged{false};
 };
 }

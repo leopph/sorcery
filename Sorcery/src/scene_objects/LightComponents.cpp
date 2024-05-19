@@ -35,6 +35,11 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
+auto LightComponent::Clone() -> LightComponent* {
+  return new LightComponent{*this};
+}
+
+
 auto LightComponent::GetColor() const -> Vector3 const& {
   return mColor;
 }

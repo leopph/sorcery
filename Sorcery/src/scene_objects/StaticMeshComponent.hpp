@@ -13,6 +13,8 @@ class StaticMeshComponent final : public Component {
   RTTR_REGISTRATION_FRIEND
 
 public:
+  [[nodiscard]] LEOPPHAPI auto Clone() -> StaticMeshComponent* override;
+
   LEOPPHAPI StaticMeshComponent();
 
   [[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> Mesh*;

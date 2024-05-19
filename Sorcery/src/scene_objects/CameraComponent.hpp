@@ -8,11 +8,12 @@
 
 
 namespace sorcery {
-class CameraComponent : public Component, public rendering::Camera {
+class CameraComponent final : public Component, public rendering::Camera {
   RTTR_ENABLE(Component)
-  Vector4 mBackgroundColor{0, 0, 0, 1};
 
 public:
+  [[nodiscard]] LEOPPHAPI auto Clone() -> CameraComponent* override;
+
   [[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const -> Vector4 const&;
   LEOPPHAPI auto SetBackgroundColor(Vector4 const& color) -> void;
 
@@ -24,5 +25,8 @@ public:
   LEOPPHAPI auto OnInit() -> void override;
   LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+
+private:
+  Vector4 mBackgroundColor{0, 0, 0, 1};
 };
 }
