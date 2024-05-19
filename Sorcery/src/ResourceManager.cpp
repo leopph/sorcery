@@ -374,6 +374,30 @@ auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type,
 }
 
 
+auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) const -> void {
+  for (auto const& [guid, desc] : mMappings) {
+    if (desc.type.is_derived_from(type)) {
+      out.emplace_back(guid, desc.name, desc.type);
+    }
+  }
+
+  // Resources that don't come from files
+  for (auto const res : mResources) {
+    auto contains{false};
+    for (auto const& res_info : out) {
+      if (res_info.guid <=> res->GetGuid() == std::strong_ordering::equal) {
+        contains = true;
+        break;
+      }
+    }
+
+    if (!contains && rttr::type::get(*res).is_derived_from(type)) {
+      out.emplace_back(res->GetGuid(), res->GetName(), res->get_type());
+    }
+  }
+}
+
+
 auto ResourceManager::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
   return default_mtl_;
 }

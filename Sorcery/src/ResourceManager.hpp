@@ -24,6 +24,13 @@ public:
   };
 
 
+  struct ResourceInfo {
+    Guid guid;
+    std::string name;
+    rttr::type type;
+  };
+
+
   LEOPPHAPI ResourceManager();
 
   template<std::derived_from<Resource> ResType = Resource>
@@ -41,6 +48,10 @@ public:
   template<std::derived_from<Resource> T>
   auto GetGuidsForResourcesOfType(std::vector<Guid>& out) const noexcept -> void;
   auto LEOPPHAPI GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) const noexcept -> void;
+
+  template<std::derived_from<Resource> T>
+  auto GetInfoForResourcesOfType(std::vector<ResourceInfo>& out) const -> void;
+  auto LEOPPHAPI GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) const -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
   [[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
@@ -118,5 +129,11 @@ auto ResourceManager::Add(ResType* resource) -> void {
 template<std::derived_from<Resource> T>
 auto ResourceManager::GetGuidsForResourcesOfType(std::vector<Guid>& out) const noexcept -> void {
   GetGuidsForResourcesOfType(rttr::type::get<T>(), out);
+}
+
+
+template<std::derived_from<Resource> T>
+auto ResourceManager::GetInfoForResourcesOfType(std::vector<ResourceInfo>& out) const -> void {
+  GetInfoForResourcesOfType(rttr::type::get<T>(), out);
 }
 }
