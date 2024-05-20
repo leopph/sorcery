@@ -13,6 +13,11 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
+Component::~Component() {
+  mEntity->RemoveComponent(*this);
+}
+
+
 auto Component::GetEntity() const -> Entity& {
   assert(mEntity);
   return *mEntity;
@@ -24,13 +29,7 @@ auto Component::SetEntity(Entity& entity) -> void {
 }
 
 
-void Component::OnDrawProperties([[maybe_unused]] bool& changed) {
+auto Component::OnDrawProperties([[maybe_unused]] bool& changed) -> void {
   // We explicitly do not call SceneObject::OnDrawProperties here to avoid displaying the name and type
-}
-
-
-auto Component::OnDestroy() -> void {
-  mEntity->RemoveComponent(*this);
-  SceneObject::OnDestroy();
 }
 }

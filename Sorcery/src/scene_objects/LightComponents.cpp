@@ -35,6 +35,11 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
+LightComponent::~LightComponent() {
+  g_engine_context.scene_renderer->Unregister(*this);
+}
+
+
 auto LightComponent::Clone() -> LightComponent* {
   return new LightComponent{*this};
 }
@@ -155,15 +160,9 @@ auto LightComponent::SetShadowExtension(float const shadowExtension) noexcept ->
 }
 
 
-auto LightComponent::OnInit() -> void {
-  Component::OnInit();
+auto LightComponent::Initialize() -> void {
+  Component::Initialize();
   g_engine_context.scene_renderer->Register(*this);
-}
-
-
-auto LightComponent::OnDestroy() -> void {
-  g_engine_context.scene_renderer->Unregister(*this);
-  Component::OnDestroy();
 }
 
 

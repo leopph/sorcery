@@ -180,7 +180,7 @@ auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexce
     return nullptr;
   }
 
-  ret->OnInit();
+  ret->Initialize();
   return ret;
 }
 
@@ -290,7 +290,7 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
   }
 
   auto const ret{new Mesh{std::move(meshData)}};
-  ret->OnInit();
+  ret->Initialize();
   return ret;
 }
 
@@ -373,7 +373,7 @@ auto ResourceManager::Unload(Guid const& guid) -> void {
   auto resources{resources_.Lock()};
 
   if (auto const it{resources->find(guid)}; it != std::end(*resources)) {
-    Destroy(**it);
+    delete *it;
     resources->erase(it);
   }
 }

@@ -22,7 +22,7 @@ public:
   LEOPPHAPI Entity(Entity const& other);
   LEOPPHAPI Entity(Entity&& other) noexcept;
 
-  ~Entity() override = default;
+  LEOPPHAPI ~Entity() override;
 
   auto operator=(Entity const& other) -> void = delete;
   auto operator=(Entity&& other) -> void = delete;
@@ -45,8 +45,7 @@ public:
   template<std::derived_from<Component> T>
   auto GetComponents() const -> std::vector<T*>;
 
-  LEOPPHAPI auto OnInit() -> void override;
-  LEOPPHAPI auto OnDestroy() -> void override;
+  LEOPPHAPI auto Initialize() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 

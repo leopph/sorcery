@@ -89,7 +89,7 @@ auto EntityHierarchyWindow::Draw() -> void {
         }
 
         if (ImGui::MenuItem("Delete")) {
-          Destroy(entity);
+          delete &entity;
           entities = mApp->GetScene().GetEntities();
           mApp->SetSelectedObject(nullptr);
           deleted = true;

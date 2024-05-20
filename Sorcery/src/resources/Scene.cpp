@@ -9,7 +9,8 @@
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Scene>{"Scene"}.property("skybox", &sorcery::Scene::GetSkybox, &sorcery::Scene::SetSkybox);
+  rttr::registration::class_<sorcery::Scene>{"Scene"}.property("skybox", &sorcery::Scene::GetSkybox,
+    &sorcery::Scene::SetSkybox);
 }
 
 
@@ -41,14 +42,11 @@ Scene::Scene() {
 Scene::~Scene() {
   std::erase(sAllScenes, this);
 
-  // Strange loop needed because Entity dtor calls Scene::RemoveEntity
-  while (!mEntities.empty()) {
-    Destroy(*mEntities.back());
-  }
-
   if (sActiveScene == this) {
     sActiveScene = sAllScenes.empty() ? nullptr : sAllScenes.back();
   }
+
+  Clear();
 }
 
 
@@ -138,7 +136,9 @@ auto Scene::Load() -> void {
   Clear();
 
   if (auto const version{mYamlData["version"]}; !version || !version.IsScalar() || version.as<int>(1) != 1) {
-    throw std::runtime_error{std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName())};
+    throw std::runtime_error{
+      std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName())
+    };
   }
 
   if (auto const node{mYamlData["ambientLight"]}) {
@@ -164,7 +164,7 @@ auto Scene::Load() -> void {
     auto const type{rttr::type::get_by_name(typeNode.as<std::string>())};
     auto const sceneObjectVariant{type.create()};
     auto const sceneObj{sceneObjectVariant.get_value<SceneObject*>()};
-    sceneObj->OnInit();
+    sceneObj->Initialize();
     ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObj;
   }
 
@@ -197,7 +197,7 @@ auto Scene::SetActive() -> void {
 auto Scene::Clear() -> void {
   // Entity destructor modifies this collection, hence the strange loop
   while (!mEntities.empty()) {
-    Destroy(*mEntities.back());
+    delete mEntities.back();
   }
 }
 

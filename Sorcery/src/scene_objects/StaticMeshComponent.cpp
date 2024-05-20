@@ -29,6 +29,11 @@ StaticMeshComponent::StaticMeshComponent() :
 }
 
 
+StaticMeshComponent::~StaticMeshComponent() {
+  g_engine_context.scene_renderer->Unregister(*this);
+}
+
+
 auto StaticMeshComponent::GetMesh() const noexcept -> Mesh* {
   return mesh_;
 }
@@ -62,15 +67,9 @@ auto StaticMeshComponent::SetMaterial(int const idx, Material* const mtl) -> voi
 }
 
 
-auto StaticMeshComponent::OnInit() -> void {
-  Component::OnInit();
+auto StaticMeshComponent::Initialize() -> void {
+  Component::Initialize();
   g_engine_context.scene_renderer->Register(*this);
-}
-
-
-auto StaticMeshComponent::OnDestroy() -> void {
-  g_engine_context.scene_renderer->Unregister(*this);
-  Component::OnDestroy();
 }
 
 

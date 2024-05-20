@@ -17,7 +17,7 @@ protected:
   Component(Component&& other) noexcept = default;
 
 public:
-  ~Component() override = default;
+  LEOPPHAPI ~Component() override;
 
   auto operator=(Component const& other) -> void = delete;
   auto operator=(Component&& other) -> void = delete;
@@ -28,7 +28,6 @@ public:
   LEOPPHAPI auto SetEntity(Entity& entity) -> void;
 
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
-  LEOPPHAPI auto OnDestroy() -> void override;
 
 private:
   Entity* mEntity{nullptr};

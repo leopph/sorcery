@@ -20,7 +20,7 @@ protected:
   Object(Object&& other) noexcept = default;
 
 public:
-  virtual ~Object() = default;
+  LEOPPHAPI virtual ~Object();
 
   auto operator=(Object const& other) -> void = delete;
   auto operator=(Object&& other) -> void = delete;
@@ -28,8 +28,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetName() const noexcept -> std::string const&;
   LEOPPHAPI auto SetName(std::string const& name) -> void;
 
-  LEOPPHAPI virtual auto OnInit() -> void;
-  LEOPPHAPI virtual auto OnDestroy() -> void;
+  LEOPPHAPI virtual auto Initialize() -> void;
   LEOPPHAPI virtual auto OnDrawProperties(bool& changed) -> void;
   virtual auto OnDrawGizmosSelected() -> void {}
 
@@ -54,8 +53,6 @@ private:
 
 template<std::derived_from<Object> T>
 [[nodiscard]] auto CreateAndInitialize() -> T*;
-
-LEOPPHAPI auto Destroy(Object& obj) -> void;
 
 
 template<std::derived_from<Object> T>
@@ -107,7 +104,7 @@ auto Object::FindObjectsOfType() -> std::vector<T*> {
 template<std::derived_from<Object> T>
 auto CreateAndInitialize() -> T* {
   auto const obj{new T{}};
-  obj->OnInit();
+  obj->Initialize();
   return obj;
 }
 }

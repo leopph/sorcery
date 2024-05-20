@@ -16,6 +16,15 @@ class TransformComponent : public Component {
   RTTR_REGISTRATION_FRIEND
 
 public:
+  TransformComponent() = default;
+  TransformComponent(TransformComponent const& other) = default;
+  TransformComponent(TransformComponent&& other) noexcept = default;
+
+  LEOPPHAPI ~TransformComponent() override;
+
+  auto operator=(TransformComponent const& other) -> TransformComponent& = delete;
+  auto operator=(TransformComponent&& other) -> TransformComponent& = delete;
+
   [[nodiscard]] LEOPPHAPI auto Clone() -> TransformComponent* override;
 
   [[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
@@ -63,7 +72,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto HasChanged() const noexcept -> bool;
   LEOPPHAPI auto SetChanged(bool changed) noexcept -> void;
 
-  LEOPPHAPI auto OnDestroy() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 
 private:

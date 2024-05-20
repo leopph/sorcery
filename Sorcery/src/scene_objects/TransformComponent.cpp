@@ -50,6 +50,16 @@ auto TransformComponent::UpdateWorldDataRecursive() -> void {
 }
 
 
+TransformComponent::~TransformComponent() {
+  // SetParent(nullptr) on child removes it from this->mChildren so we cannot iterate
+  while (!mChildren.empty()) {
+    mChildren.back()->SetParent(nullptr);
+  }
+
+  SetParent(nullptr);
+}
+
+
 auto TransformComponent::Clone() -> TransformComponent* {
   auto const clone{new TransformComponent{*this}};
   clone->mChildren.clear();
@@ -254,18 +264,6 @@ auto TransformComponent::HasChanged() const noexcept -> bool {
 
 auto TransformComponent::SetChanged(bool const changed) noexcept -> void {
   mChanged = changed;
-}
-
-
-auto TransformComponent::OnDestroy() -> void {
-  // SetParent(nullptr) on child removes it from this->mChildren so we cannot iterate
-  while (!mChildren.empty()) {
-    mChildren.back()->SetParent(nullptr);
-  }
-
-  SetParent(nullptr);
-
-  Component::OnDestroy();
 }
 
 

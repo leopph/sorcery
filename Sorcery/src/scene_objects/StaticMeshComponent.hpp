@@ -13,9 +13,16 @@ class StaticMeshComponent final : public Component {
   RTTR_REGISTRATION_FRIEND
 
 public:
-  [[nodiscard]] LEOPPHAPI auto Clone() -> StaticMeshComponent* override;
-
   LEOPPHAPI StaticMeshComponent();
+  StaticMeshComponent(StaticMeshComponent const& other) = default;
+  StaticMeshComponent(StaticMeshComponent&& other) noexcept = default;
+
+  LEOPPHAPI ~StaticMeshComponent() override;
+
+  auto operator=(StaticMeshComponent const& other) -> StaticMeshComponent& = delete;
+  auto operator=(StaticMeshComponent*& other) -> StaticMeshComponent& = delete;
+
+  [[nodiscard]] LEOPPHAPI auto Clone() -> StaticMeshComponent* override;
 
   [[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> Mesh*;
   LEOPPHAPI auto SetMesh(Mesh* mesh) noexcept -> void;
@@ -25,8 +32,7 @@ public:
   LEOPPHAPI auto SetMaterials(std::vector<Material*> const& materials) -> void;
   LEOPPHAPI auto SetMaterial(int idx, Material* mtl) -> void;
 
-  LEOPPHAPI auto OnInit() -> void override;
-  LEOPPHAPI auto OnDestroy() -> void override;
+  LEOPPHAPI auto Initialize() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 

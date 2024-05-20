@@ -50,17 +50,27 @@ Entity::Entity(Entity&& other) noexcept :
   mScene{other.mScene} {}
 
 
+Entity::~Entity() {
+  mScene->RemoveEntity(*this);
+
+  // Component destructor modifies this collection, hence the strange loop
+  while (!mComponents.empty()) {
+    delete mComponents.back();
+  }
+}
+
+
 auto Entity::Clone() -> Entity* {
   auto const clone{new Entity{*this}};
   clone->mTransform = nullptr;
-  clone->OnInit();
+  clone->Initialize();
 
   clone->mComponents.clear();
   clone->mComponents.reserve(mComponents.size());
 
   for (auto const comp : mComponents) {
     auto const comp_clone{comp->Clone()};
-    comp_clone->OnInit();
+    comp_clone->Initialize();
     clone->AddComponent(*comp_clone);
   }
 
@@ -96,8 +106,8 @@ auto Entity::RemoveComponent(Component& component) -> void {
 }
 
 
-auto Entity::OnInit() -> void {
-  SceneObject::OnInit();
+auto Entity::Initialize() -> void {
+  SceneObject::Initialize();
 
   auto constexpr defaultEntityName{"New Entity"};
   SetName(defaultEntityName);
@@ -118,18 +128,6 @@ auto Entity::OnInit() -> void {
   }
 
   mScene->AddEntity(*this);
-}
-
-
-auto Entity::OnDestroy() -> void {
-  mScene->RemoveEntity(*this);
-
-  // Entity destructor modifies this collection, hence the strange loop
-  while (!mComponents.empty()) {
-    Destroy(*mComponents.back());
-  }
-
-  SceneObject::OnDestroy();
 }
 
 
@@ -181,7 +179,7 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
       if (ImGui::MenuItem("Delete")) {
         auto const component{mComponents[i]};
         mComponents.erase(std::begin(mComponents) + i);
-        Destroy(*component);
+        delete component;
         ImGui::EndPopup();
         break;
       }
@@ -198,7 +196,7 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
     for (auto const& componentClass : rttr::type::get<Component>().get_derived_classes()) {
       if (ImGui::MenuItem(componentClass.get_name().data())) {
         auto const component{componentClass.create().get_value<Component*>()};
-        component->OnInit();
+        component->Initialize();
         AddComponent(*component);
         ImGui::CloseCurrentPopup();
       }

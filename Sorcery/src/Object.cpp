@@ -16,23 +16,7 @@ std::vector<Object*> Object::sAllObjects;
 std::recursive_mutex Object::sAllObjectsMutex;
 
 
-auto Object::GetName() const noexcept -> std::string const& {
-  return mName;
-}
-
-
-auto Object::SetName(std::string const& name) -> void {
-  mName = name;
-}
-
-
-auto Object::OnInit() -> void {
-  std::unique_lock const lock{sAllObjectsMutex};
-  sAllObjects.emplace_back(this);
-}
-
-
-auto Object::OnDestroy() -> void {
+Object::~Object() {
   std::unique_lock const lock{sAllObjectsMutex};
 
   std::erase(sAllObjects, this);
@@ -50,6 +34,22 @@ auto Object::OnDestroy() -> void {
 }
 
 
+auto Object::GetName() const noexcept -> std::string const& {
+  return mName;
+}
+
+
+auto Object::SetName(std::string const& name) -> void {
+  mName = name;
+}
+
+
+auto Object::Initialize() -> void {
+  std::unique_lock const lock{sAllObjectsMutex};
+  sAllObjects.emplace_back(this);
+}
+
+
 auto Object::OnDrawProperties([[maybe_unused]] bool& changed) -> void {
   ImGui::SeparatorText(std::format("{} ({})", GetName(), rttr::type::get(*this).get_name().data()).c_str());
 }
@@ -59,13 +59,7 @@ auto Object::DestroyAll() -> void {
   std::unique_lock const lock{sAllObjectsMutex};
 
   while (!sAllObjects.empty()) {
-    Destroy(*sAllObjects.back());
+    delete sAllObjects.back();
   }
-}
-
-
-auto Destroy(Object& obj) -> void {
-  obj.OnDestroy();
-  delete std::addressof(obj);
 }
 }

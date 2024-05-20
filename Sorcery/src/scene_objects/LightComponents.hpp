@@ -11,6 +11,15 @@ class LightComponent final : public Component {
   RTTR_ENABLE(Component)
 
 public:
+  LightComponent() = default;
+  LightComponent(LightComponent const& other) = default;
+  LightComponent(LightComponent&& other) noexcept = default;
+
+  LEOPPHAPI ~LightComponent() override;
+
+  auto operator=(LightComponent const& other) -> LightComponent& = delete;
+  auto operator=(LightComponent&& other) noexcept -> LightComponent& = delete;
+
   [[nodiscard]] LEOPPHAPI auto Clone() -> LightComponent* override;
 
   [[nodiscard]] LEOPPHAPI auto GetColor() const -> Vector3 const&;
@@ -56,8 +65,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetShadowExtension() const noexcept -> float;
   LEOPPHAPI auto SetShadowExtension(float shadowExtension) noexcept -> void;
 
-  LEOPPHAPI auto OnInit() -> void override;
-  LEOPPHAPI auto OnDestroy() -> void override;
+  LEOPPHAPI auto Initialize() -> void override;
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 

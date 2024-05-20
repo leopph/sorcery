@@ -28,6 +28,11 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
+CameraComponent::~CameraComponent() {
+  g_engine_context.scene_renderer->Unregister(*this);
+}
+
+
 auto CameraComponent::Clone() -> CameraComponent* {
   return new CameraComponent{*this};
 }
@@ -65,15 +70,9 @@ auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
 }
 
 
-auto CameraComponent::OnInit() -> void {
-  Component::OnInit();
+auto CameraComponent::Initialize() -> void {
+  Component::Initialize();
   g_engine_context.scene_renderer->Register(*this);
-}
-
-
-auto CameraComponent::OnDestroy() -> void {
-  g_engine_context.scene_renderer->Unregister(*this);
-  Component::OnDestroy();
 }
 
 
