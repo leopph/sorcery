@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core.hpp"
+
 #include <array>
 #include <atomic>
 #include <memory>
@@ -28,12 +30,12 @@ static_assert(sizeof(Job) == 64);
 
 class JobSystem {
 public:
-  JobSystem();
+  LEOPPHAPI JobSystem();
 
   JobSystem(JobSystem const&) = delete;
   JobSystem(JobSystem&&) = delete;
 
-  ~JobSystem();
+  LEOPPHAPI ~JobSystem();
 
   auto operator=(JobSystem const&) -> void = delete;
   auto operator=(JobSystem&&) -> void = delete;
@@ -41,14 +43,14 @@ public:
   template<typename T> requires(sizeof(T) <= kMaxJobDataSize && std::is_trivially_copy_constructible_v<T> &&
                                 std::is_trivially_destructible_v<T>)
   [[nodiscard]] auto CreateJob(JobFuncType func, T const& data) -> Job*;
-  [[nodiscard]] auto CreateJob(JobFuncType func) -> Job*;
+  [[nodiscard]] LEOPPHAPI auto CreateJob(JobFuncType func) -> Job*;
 
   template<typename T>
   [[nodiscard]] auto CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> Job*;
 
-  auto Run(Job* job) -> void;
+  LEOPPHAPI auto Run(Job* job) -> void;
 
-  auto Wait(Job const* job) -> void;
+  LEOPPHAPI auto Wait(Job const* job) -> void;
 
 private:
   struct JobQueue {

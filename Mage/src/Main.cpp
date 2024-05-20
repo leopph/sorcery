@@ -15,6 +15,7 @@
 #include "Platform.hpp"
 #include "Window.hpp"
 #include "rendering/imgui_renderer.hpp"
+#include "job_system.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
@@ -67,7 +68,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     };
     sorcery::g_engine_context.scene_renderer.Reset(scene_renderer.get());
 
-    auto const resource_manager{std::make_unique<sorcery::ResourceManager>()};
+    sorcery::JobSystem job_system;
+    sorcery::g_engine_context.job_system.Reset(&job_system);
+
     sorcery::g_engine_context.resource_manager.Reset(resource_manager.get());
 
     sorcery::timing::SetTargetFrameRate(sorcery::mage::SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
