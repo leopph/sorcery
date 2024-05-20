@@ -71,6 +71,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     sorcery::JobSystem job_system;
     sorcery::g_engine_context.job_system.Reset(&job_system);
 
+    auto const resource_manager{std::make_unique<sorcery::ResourceManager>(job_system)};
     sorcery::g_engine_context.resource_manager.Reset(resource_manager.get());
 
     sorcery::timing::SetTargetFrameRate(sorcery::mage::SettingsWindow::DEFAULT_TARGET_FRAME_RATE);

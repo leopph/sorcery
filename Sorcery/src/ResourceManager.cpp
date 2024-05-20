@@ -4,12 +4,14 @@
 #include "ExternalResource.hpp"
 #include "FileIo.hpp"
 #include "engine_context.hpp"
+#include "job_system.hpp"
 #include "Resources/Scene.hpp"
 
 #include <DirectXTex.h>
 #include <wrl/client.h>
 
 #include <cassert>
+#include <iostream>
 #include <ranges>
 
 using Microsoft::WRL::ComPtr;
@@ -69,52 +71,87 @@ auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, Resource* co
 
 
 auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> Resource* {
-  Resource* res{nullptr};
+  Job* loader_job;
 
-  if (desc.pathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
-    std::vector<std::uint8_t> fileBytes;
+  std::cout << "loading " << desc.name << '\n';
 
-    if (!ReadFileBinary(desc.pathAbs, fileBytes)) {
-      return nullptr;
+  {
+    auto loader_jobs{loader_jobs_.Lock()};
+
+    if (auto const it{loader_jobs->find(guid)}; it != loader_jobs->end()) {
+      loader_job = it->second;
+    } else {
+      struct LoaderJobData {
+        Guid const* guid;
+        ResourceDescription const* desc;
+        decltype(resources_)* resources;
+      };
+
+      loader_job = job_system_->CreateJob([](void const* const data_ptr) {
+        auto const& job_data{*static_cast<LoaderJobData const*>(data_ptr)};
+
+        Resource* res{nullptr};
+
+        if (job_data.desc->pathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
+          std::vector<std::uint8_t> fileBytes;
+
+          if (!ReadFileBinary(job_data.desc->pathAbs, fileBytes)) {
+            return;
+          }
+
+          ExternalResourceCategory resCat;
+          std::vector<std::byte> resBytes;
+
+          if (!UnpackExternalResource(as_bytes(std::span{fileBytes}), resCat, resBytes)) {
+            return;
+          }
+
+          switch (resCat) {
+            case ExternalResourceCategory::Texture: {
+              res = LoadTexture(resBytes);
+              break;
+            }
+
+            case ExternalResourceCategory::Mesh: {
+              res = LoadMesh(resBytes);
+              break;
+            }
+          }
+        } else if (job_data.desc->pathAbs.extension() == SCENE_RESOURCE_EXT) {
+          auto const scene{CreateAndInitialize<Scene>()};
+          scene->Deserialize(YAML::LoadFile(job_data.desc->pathAbs.string()));
+          res = scene;
+        } else if (job_data.desc->pathAbs.extension() == MATERIAL_RESOURCE_EXT) {
+          auto const mtl{CreateAndInitialize<Material>()};
+          mtl->Deserialize(YAML::LoadFile(job_data.desc->pathAbs.string()));
+          res = mtl;
+        }
+
+        if (res) {
+          res->SetGuid(*job_data.guid);
+          res->SetName(job_data.desc->name);
+
+          auto const [it, inserted]{job_data.resources->Lock()->emplace(res)};
+          assert(inserted);
+        }
+      }, LoaderJobData{&guid, &desc, &resources_});
+      job_system_->Run(loader_job);
+      loader_jobs->emplace(guid, loader_job);
     }
-
-    ExternalResourceCategory resCat;
-    std::vector<std::byte> resBytes;
-
-    if (!UnpackExternalResource(as_bytes(std::span{fileBytes}), resCat, resBytes)) {
-      return nullptr;
-    }
-
-    switch (resCat) {
-      case ExternalResourceCategory::Texture: {
-        res = LoadTexture(resBytes);
-        break;
-      }
-
-      case ExternalResourceCategory::Mesh: {
-        res = LoadMesh(resBytes);
-        break;
-      }
-    }
-  } else if (desc.pathAbs.extension() == SCENE_RESOURCE_EXT) {
-    auto const scene{CreateAndInitialize<Scene>()};
-    scene->Deserialize(YAML::LoadFile(desc.pathAbs.string()));
-    res = scene;
-  } else if (desc.pathAbs.extension() == MATERIAL_RESOURCE_EXT) {
-    auto const mtl{CreateAndInitialize<Material>()};
-    mtl->Deserialize(YAML::LoadFile(desc.pathAbs.string()));
-    res = mtl;
   }
 
-  if (res) {
-    res->SetGuid(guid);
-    res->SetName(desc.name);
+  assert(loader_job);
+  job_system_->Wait(loader_job);
 
-    auto const [it, inserted]{mResources.emplace(res)};
-    assert(inserted);
+  {
+    loader_jobs_.Lock()->erase(guid);
   }
 
-  return res;
+  {
+    auto const resources{resources_.LockShared()};
+    auto const it{resources->find(guid)};
+    return it != resources->end() ? *it : nullptr;
+  }
 }
 
 
@@ -258,7 +295,8 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 }
 
 
-ResourceManager::ResourceManager() {
+ResourceManager::ResourceManager(JobSystem& job_system) :
+  job_system_{&job_system} {
   default_mtl_.Reset(CreateAndInitialize<Material>());
   default_mtl_->SetGuid(default_material_guid_);
   default_mtl_->SetName("Default Material");
@@ -332,33 +370,35 @@ ResourceManager::ResourceManager() {
 
 
 auto ResourceManager::Unload(Guid const& guid) -> void {
-  if (auto const it{mResources.find(guid)}; it != std::end(mResources)) {
+  auto resources{resources_.Lock()};
+
+  if (auto const it{resources->find(guid)}; it != std::end(*resources)) {
     Destroy(**it);
-    mResources.erase(it);
+    resources->erase(it);
   }
 }
 
 
-auto ResourceManager::IsLoaded(Guid const& guid) const -> bool {
-  return mResources.contains(guid);
+auto ResourceManager::IsLoaded(Guid const& guid) -> bool {
+  return resources_.LockShared()->contains(guid);
 }
 
 
 auto ResourceManager::UpdateMappings(std::map<Guid, ResourceDescription> mappings) -> void {
-  mMappings = std::move(mappings);
+  *mappings_.Lock() = std::move(mappings);
 }
 
 
 auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type,
-                                                 std::vector<Guid>& out) const noexcept -> void {
-  for (auto const& [guid, desc] : mMappings) {
+                                                 std::vector<Guid>& out) noexcept -> void {
+  for (auto const& [guid, desc] : *mappings_.LockShared()) {
     if (desc.type.is_derived_from(type)) {
       out.emplace_back(guid);
     }
   }
 
   // Resources that don't come from files
-  for (auto const res : mResources) {
+  for (auto const res : *resources_.LockShared()) {
     auto contains{false};
     for (auto const& guid : out) {
       if (guid <=> res->GetGuid() == std::strong_ordering::equal) {
@@ -374,15 +414,15 @@ auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type,
 }
 
 
-auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) const -> void {
-  for (auto const& [guid, desc] : mMappings) {
+auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) -> void {
+  for (auto const& [guid, desc] : *mappings_.LockShared()) {
     if (desc.type.is_derived_from(type)) {
       out.emplace_back(guid, desc.name, desc.type);
     }
   }
 
   // Resources that don't come from files
-  for (auto const res : mResources) {
+  for (auto const res : *resources_.LockShared()) {
     auto contains{false};
     for (auto const& res_info : out) {
       if (res_info.guid <=> res->GetGuid() == std::strong_ordering::equal) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
+#include "mutex.hpp"
 #include "observer_ptr.hpp"
 #include "Serialization.hpp"
 #include "Resources/Resource.hpp"
@@ -15,6 +16,10 @@
 
 
 namespace sorcery {
+class JobSystem;
+struct Job;
+
+
 class ResourceManager {
 public:
   struct ResourceDescription {
@@ -31,14 +36,14 @@ public:
   };
 
 
-  LEOPPHAPI ResourceManager();
+  LEOPPHAPI ResourceManager(JobSystem& job_system);
 
   template<std::derived_from<Resource> ResType = Resource>
   auto GetOrLoad(Guid const& guid) -> ResType*;
 
   LEOPPHAPI auto Unload(Guid const& guid) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto IsLoaded(Guid const& guid) const -> bool;
+  [[nodiscard]] LEOPPHAPI auto IsLoaded(Guid const& guid) -> bool;
 
   template<std::derived_from<Resource> ResType>
   auto Add(ResType* resource) -> void;
@@ -46,12 +51,12 @@ public:
   LEOPPHAPI auto UpdateMappings(std::map<Guid, ResourceDescription> mappings) -> void;
 
   template<std::derived_from<Resource> T>
-  auto GetGuidsForResourcesOfType(std::vector<Guid>& out) const noexcept -> void;
-  auto LEOPPHAPI GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) const noexcept -> void;
+  auto GetGuidsForResourcesOfType(std::vector<Guid>& out) noexcept -> void;
+  auto LEOPPHAPI GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) noexcept -> void;
 
   template<std::derived_from<Resource> T>
-  auto GetInfoForResourcesOfType(std::vector<ResourceInfo>& out) const -> void;
-  auto LEOPPHAPI GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) const -> void;
+  auto GetInfoForResourcesOfType(std::vector<ResourceInfo>& out) -> void;
+  auto LEOPPHAPI GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
   [[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
@@ -80,36 +85,48 @@ private:
   inline static Guid const plane_mesh_guid_{3, 0};
   inline static Guid const sphere_mesh_guid_{4, 0};
 
-  std::set<Resource*, ResourceGuidLess> mResources;
-  std::map<Guid, ResourceDescription> mMappings;
+  Mutex<std::set<Resource*, ResourceGuidLess>, true> resources_;
+  Mutex<std::map<Guid, ResourceDescription>, true> mappings_;
+
+  Mutex<std::map<Guid, Job*>, true> loader_jobs_;
 
   ObserverPtr<Material> default_mtl_;
   ObserverPtr<Mesh> cube_mesh_;
   ObserverPtr<Mesh> plane_mesh_;
   ObserverPtr<Mesh> sphere_mesh_;
+
+  ObserverPtr<JobSystem> job_system_;
 };
 
 
 template<std::derived_from<Resource> ResType>
 auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
-  if (auto const it{mResources.find(guid)}; it != std::end(mResources)) {
-    if constexpr (!std::is_same_v<ResType, Resource>) {
-      if (rttr::rttr_cast<ResType*>(*it)) {
-        return static_cast<ResType*>(*it);
+  {
+    auto const resources{resources_.LockShared()};
+
+    if (auto const it{resources->find(guid)}; it != std::end(*resources)) {
+      if constexpr (!std::is_same_v<ResType, Resource>) {
+        if (rttr::rttr_cast<ResType*>(*it)) {
+          return static_cast<ResType*>(*it);
+        }
+      } else {
+        return *it;
       }
-    } else {
-      return *it;
     }
   }
 
-  if (auto const it{mMappings.find(guid)}; it != std::end(mMappings)) {
-    if (auto const res{InternalLoadResource(guid, it->second)}) {
-      if constexpr (!std::is_same_v<ResType, Resource>) {
-        if (rttr::rttr_cast<ResType*>(res)) {
-          return static_cast<ResType*>(res);
+  {
+    auto const mappings{mappings_.LockShared()};
+
+    if (auto const it{mappings->find(guid)}; it != std::end(*mappings)) {
+      if (auto const res{InternalLoadResource(guid, it->second)}) {
+        if constexpr (!std::is_same_v<ResType, Resource>) {
+          if (rttr::rttr_cast<ResType*>(res)) {
+            return static_cast<ResType*>(res);
+          }
+        } else {
+          return res;
         }
-      } else {
-        return res;
       }
     }
   }
@@ -121,19 +138,19 @@ auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
 template<std::derived_from<Resource> ResType>
 auto ResourceManager::Add(ResType* resource) -> void {
   if (resource && resource->GetGuid().IsValid()) {
-    mResources.emplace(resource);
+    resources_.Lock()->emplace(resource);
   }
 }
 
 
 template<std::derived_from<Resource> T>
-auto ResourceManager::GetGuidsForResourcesOfType(std::vector<Guid>& out) const noexcept -> void {
+auto ResourceManager::GetGuidsForResourcesOfType(std::vector<Guid>& out) noexcept -> void {
   GetGuidsForResourcesOfType(rttr::type::get<T>(), out);
 }
 
 
 template<std::derived_from<Resource> T>
-auto ResourceManager::GetInfoForResourcesOfType(std::vector<ResourceInfo>& out) const -> void {
+auto ResourceManager::GetInfoForResourcesOfType(std::vector<ResourceInfo>& out) -> void {
   GetInfoForResourcesOfType(rttr::type::get<T>(), out);
 }
 }
