@@ -23,14 +23,10 @@
 #include <implot.h>
 #include <shellapi.h>
 
-#include <atomic>
-#include <barrier>
 #include <cwchar>
 #include <exception>
 #include <filesystem>
 #include <memory>
-#include <stdexcept>
-#include <string>
 
 
 extern "C" {
@@ -116,36 +112,14 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto const mainMenuBar{std::make_unique<sorcery::mage::MainMenuBar>(app, *editorSettingsWindow)};
     auto const entityHierarchyWindow{std::make_unique<sorcery::mage::EntityHierarchyWindow>(app)};
 
-    std::barrier sync_point1{
-      2, [&]() noexcept {
-        if (window_resized) {
-          graphics_device->WaitIdle();
-          graphics_device->ResizeSwapChain(*swap_chain, 0, 0);
-          window_resized = false;
-        }
-        sorcery::GetSingleFrameLinearMemory().Clear();
-      }
-    };
-    std::barrier sync_point2{2, []() noexcept {}};
-    std::atomic_flag quit_flag;
-
-    auto const render_thread_func{
-      [&] {
-        while (!quit_flag.test()) {
-          sync_point1.arrive_and_wait();
-          scene_renderer->ExtractCurrentState();
-          imgui_renderer->ExtractDrawData();
-
-          sync_point2.arrive_and_wait();
-          scene_renderer->Render();
-          imgui_renderer->Render();
-          swap_chain->Present();
-          render_manager->EndFrame();
-        }
-      }
+    struct RenderJobData {
+      sorcery::graphics::SwapChain* swap_chain;
+      sorcery::rendering::RenderManager* render_manager;
+      sorcery::rendering::SceneRenderer* scene_renderer;
+      sorcery::mage::ImGuiRenderer* imgui_renderer;
     };
 
-    std::thread render_thread{render_thread_func};
+    sorcery::Job* render_job{nullptr};
 
     if (std::wcscmp(lpCmdLine, L"") != 0) {
       int argc;
@@ -224,14 +198,37 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
       ImGui::Render();
 
-      sync_point1.arrive_and_wait();
-      sync_point2.arrive_and_wait();
+      if (render_job) {
+        job_system.Wait(render_job);
+      }
+
+      if (window_resized) {
+        graphics_device->WaitIdle();
+        graphics_device->ResizeSwapChain(*swap_chain, 0, 0);
+        window_resized = false;
+      }
+
+      sorcery::GetSingleFrameLinearMemory().Clear();
+
+      scene_renderer->ExtractCurrentState();
+      imgui_renderer->ExtractDrawData();
+
+      render_job = job_system.CreateJob([](void const* const data) {
+        auto const& job_data{*static_cast<RenderJobData const*>(data)};
+        job_data.scene_renderer->Render();
+        job_data.imgui_renderer->Render();
+        job_data.swap_chain->Present();
+        job_data.render_manager->EndFrame();
+      }, RenderJobData{swap_chain.get(), render_manager.get(), scene_renderer.get(), imgui_renderer.get()});
+
+      job_system.Run(render_job);
 
       sorcery::timing::OnFrameEnd();
     }
 
-    quit_flag.test_and_set();
-    render_thread.join();
+    if (render_job) {
+      job_system.Wait(render_job);
+    }
 
     graphics_device->WaitIdle();
 
