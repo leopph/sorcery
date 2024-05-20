@@ -117,6 +117,7 @@
     <ClCompile Include="src\engine_context.cpp" />
     <ClCompile Include="src\ExternalResource.cpp" />
     <ClCompile Include="src\FileIo.cpp" />
+    <ClCompile Include="src\job_system.cpp" />
     <ClCompile Include="src\rendering\graphics.cpp" />
     <ClCompile Include="src\MemoryAllocation.cpp" />
     <ClCompile Include="src\rendering\Camera.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="src\engine_context.hpp" />
     <ClInclude Include="src\ExternalResource.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
+    <ClInclude Include="src\job_system.hpp" />
     <ClInclude Include="src\observer_ptr.hpp" />
     <ClInclude Include="src\rendering\graphics.hpp" />
     <ClInclude Include="src\MemoryAllocation.hpp" />
@@ -210,6 +212,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="src\job_system.inl" />
     <None Include="src\rendering\shaders\brdf.hlsli" />
     <None Include="src\rendering\shaders\common.hlsli" />
     <None Include="src\rendering\shaders\depth_normal.hlsli" />

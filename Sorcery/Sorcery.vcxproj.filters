@@ -138,6 +138,9 @@
     <ClCompile Include="src\engine_context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\job_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\scene_objects\Entity.hpp">
@@ -296,6 +299,9 @@
     <ClInclude Include="src\engine_context.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\job_system.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
@@ -313,6 +319,9 @@
     <None Include="src\rendering\shaders\depth_only.hlsli" />
     <None Include="packages.config" />
     <None Include="src\rendering\structured_buffer.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="src\job_system.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>
