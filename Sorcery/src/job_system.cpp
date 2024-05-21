@@ -1,9 +1,5 @@
 #include "job_system.hpp"
 
-#include "random.hpp"
-
-#include <emmintrin.h>
-
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -103,19 +99,14 @@ auto JobSystem::FindJobToExecute() -> Job* {
     return job;
   }
 
-  thread_local Xorshift64 xorshift{};
-  auto const steal_thread_idx{xorshift() % thread_count_};
-
-  if (steal_thread_idx == this_thread_idx) {
-    _mm_pause();
-    return nullptr;
+  for (unsigned i{0}; i < thread_count_; i++) {
+    if (i != this_thread_idx) {
+      if (auto const job{try_get_job_from_queue_at_idx(i)}) {
+        return job;
+      }
+    }
   }
 
-  if (auto const job{try_get_job_from_queue_at_idx(steal_thread_idx)}) {
-    return job;
-  }
-
-  _mm_pause();
   return nullptr;
 }
 }
