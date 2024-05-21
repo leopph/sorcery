@@ -1,18 +1,22 @@
 #include "job_system.hpp"
 
+#include "random.hpp"
+
 #include <emmintrin.h>
 
+#include <algorithm>
 #include <cstddef>
+#include <cstdint>
 
 thread_local unsigned this_thread_idx;
 
 
 namespace sorcery {
-JobSystem::JobSystem() {
-  auto const thread_count{std::jthread::hardware_concurrency()};
-  job_queues_.resize(thread_count);
+JobSystem::JobSystem() :
+  thread_count_{std::max(std::jthread::hardware_concurrency(), 2u)} {
+  auto const worker_count{thread_count_ - 1};
 
-  auto const worker_count{thread_count - 1};
+  job_queues_.resize(thread_count_);
   workers_.reserve(worker_count);
 
   for (unsigned i{0}; i < worker_count; i++) {
@@ -72,7 +76,7 @@ auto JobSystem::FindJobToExecute() -> Job* {
   Job* job{nullptr};
 
   auto const try_get_job_from_queue_at_idx{
-    [this, &job](unsigned const queue_idx) {
+    [this, &job](std::uint64_t const queue_idx) {
       auto& [jobs, mutex]{job_queues_[queue_idx]};
       std::scoped_lock lock{*mutex};
 
@@ -86,12 +90,10 @@ auto JobSystem::FindJobToExecute() -> Job* {
     }
   };
 
+
   if (!try_get_job_from_queue_at_idx(this_thread_idx)) {
-    for (unsigned j{0}; j < workers_.size() + 1; j++) {
-      if (j != this_thread_idx && try_get_job_from_queue_at_idx(j)) {
-        break;
-      }
-    }
+    thread_local Xorshift64 xorshift{};
+    try_get_job_from_queue_at_idx(xorshift() % thread_count_);
   }
 
   return job;

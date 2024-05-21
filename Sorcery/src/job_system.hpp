@@ -63,6 +63,7 @@ private:
 
   [[nodiscard]] auto FindJobToExecute() -> Job*;
 
+  unsigned thread_count_;
   std::vector<JobQueue> job_queues_;
   std::vector<std::jthread> workers_;
 };
