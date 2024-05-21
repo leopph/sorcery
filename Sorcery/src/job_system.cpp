@@ -2,6 +2,8 @@
 
 #include <emmintrin.h>
 
+#include <cstddef>
+
 thread_local unsigned this_thread_idx;
 
 
@@ -29,16 +31,15 @@ JobSystem::JobSystem() {
 }
 
 
-JobSystem::~JobSystem() {
-  for (auto& worker : workers_) {
-    worker.request_stop();
-  }
-}
+auto JobSystem::CreateJob(JobFuncType const func) -> Job* {
+  constexpr auto max_job_count{4096};
+  thread_local std::size_t allocated_job_count{0};
+  thread_local std::array<Job, max_job_count> jobs{};
 
+  // TODO assert when overflowing jobs ring buffer
+  // Also this method of modulus only works when max_job_count is power of two
 
-auto JobSystem::CreateJob(JobFuncType func) -> Job* {
-  auto const job_idx{(next_job_idx_++) % jobs_.size()};
-  auto const job{&jobs_[job_idx]};
+  auto const job{&jobs[allocated_job_count++ & max_job_count - 1]};
   job->func = func;
   job->is_complete = false;
   return job;

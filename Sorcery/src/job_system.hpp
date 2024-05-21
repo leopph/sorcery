@@ -35,15 +35,15 @@ public:
   JobSystem(JobSystem const&) = delete;
   JobSystem(JobSystem&&) = delete;
 
-  LEOPPHAPI ~JobSystem();
+  ~JobSystem() = default;
 
   auto operator=(JobSystem const&) -> void = delete;
   auto operator=(JobSystem&&) -> void = delete;
 
   template<typename T> requires(sizeof(T) <= kMaxJobDataSize && std::is_trivially_copy_constructible_v<T> &&
                                 std::is_trivially_destructible_v<T>)
-  [[nodiscard]] auto CreateJob(JobFuncType func, T const& data) -> Job*;
-  [[nodiscard]] LEOPPHAPI auto CreateJob(JobFuncType func) -> Job*;
+  [[nodiscard]] static auto CreateJob(JobFuncType func, T const& data) -> Job*;
+  [[nodiscard]] LEOPPHAPI static auto CreateJob(JobFuncType func) -> Job*;
 
   template<typename T>
   [[nodiscard]] auto CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> Job*;
@@ -63,8 +63,6 @@ private:
 
   [[nodiscard]] auto FindJobToExecute() -> Job*;
 
-  std::atomic_uintmax_t next_job_idx_{0};
-  std::array<Job, 4096> jobs_{};
   std::vector<JobQueue> job_queues_;
   std::vector<std::jthread> workers_;
 };
