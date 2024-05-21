@@ -26,10 +26,22 @@ JobSystem::JobSystem() :
       while (!stop_token.stop_requested()) {
         if (auto const job{FindJobToExecute()}) {
           Execute(*job);
+        } else {
+          std::unique_lock lock{wake_threads_mutex_};
+          wake_threads_cond_var_.wait(lock);
         }
       }
     }, i + 1);
   }
+}
+
+
+JobSystem::~JobSystem() {
+  for (auto& worker : workers_) {
+    worker.request_stop();
+  }
+
+  wake_threads_cond_var_.notify_all();
 }
 
 
@@ -52,6 +64,7 @@ auto JobSystem::Run(Job* const job) -> void {
   auto& [jobs, mutex]{job_queues_[this_thread_idx]};
   std::scoped_lock lock{*mutex};
   jobs.push(job);
+  wake_threads_cond_var_.notify_all();
 }
 
 

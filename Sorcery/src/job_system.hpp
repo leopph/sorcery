@@ -4,6 +4,7 @@
 
 #include <array>
 #include <atomic>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -35,7 +36,7 @@ public:
   JobSystem(JobSystem const&) = delete;
   JobSystem(JobSystem&&) = delete;
 
-  ~JobSystem() = default;
+  LEOPPHAPI ~JobSystem();
 
   auto operator=(JobSystem const&) -> void = delete;
   auto operator=(JobSystem&&) -> void = delete;
@@ -66,6 +67,8 @@ private:
   unsigned thread_count_;
   std::vector<JobQueue> job_queues_;
   std::vector<std::jthread> workers_;
+  std::mutex wake_threads_mutex_;
+  std::condition_variable wake_threads_cond_var_;
 };
 }
 
