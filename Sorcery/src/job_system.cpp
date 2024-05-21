@@ -26,8 +26,6 @@ JobSystem::JobSystem() :
       while (!stop_token.stop_requested()) {
         if (auto const job{FindJobToExecute()}) {
           Execute(*job);
-        } else {
-          _mm_pause();
         }
       }
     }, i + 1);
@@ -73,29 +71,38 @@ auto JobSystem::Execute(Job& job) -> void {
 
 
 auto JobSystem::FindJobToExecute() -> Job* {
-  Job* job{nullptr};
-
   auto const try_get_job_from_queue_at_idx{
-    [this, &job](std::uint64_t const queue_idx) {
+    [this](std::uint64_t const queue_idx) -> Job* {
       auto& [jobs, mutex]{job_queues_[queue_idx]};
       std::scoped_lock lock{*mutex};
 
-      if (!jobs.empty()) {
-        job = jobs.front();
-        jobs.pop();
-        return true;
+      if (jobs.empty()) {
+        return nullptr;
       }
 
-      return false;
+      auto const job{jobs.front()};
+      jobs.pop();
+      return job;
     }
   };
 
-
-  if (!try_get_job_from_queue_at_idx(this_thread_idx)) {
-    thread_local Xorshift64 xorshift{};
-    try_get_job_from_queue_at_idx(xorshift() % thread_count_);
+  if (auto const job{try_get_job_from_queue_at_idx(this_thread_idx)}) {
+    return job;
   }
 
-  return job;
+  thread_local Xorshift64 xorshift{};
+  auto const steal_thread_idx{xorshift() % thread_count_};
+
+  if (steal_thread_idx == this_thread_idx) {
+    _mm_pause();
+    return nullptr;
+  }
+
+  if (auto const job{try_get_job_from_queue_at_idx(steal_thread_idx)}) {
+    return job;
+  }
+
+  _mm_pause();
+  return nullptr;
 }
 }
