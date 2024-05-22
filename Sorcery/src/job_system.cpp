@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 
 thread_local unsigned this_thread_idx;
 
@@ -46,10 +47,13 @@ auto JobSystem::CreateJob(JobFuncType const func) -> Job* {
   thread_local std::size_t allocated_job_count{0};
   thread_local std::array<Job, max_job_count> jobs{};
 
-  // TODO assert when overflowing jobs ring buffer
-  // Also this method of modulus only works when max_job_count is power of two
-
+  // This method of modulus only works when max_job_count is power of two
   auto const job{&jobs[allocated_job_count++ & max_job_count - 1]};
+
+  if (!job->is_complete) {
+    throw std::runtime_error{"Too many jobs allocated to create new!"};
+  }
+
   job->func = func;
   job->is_complete = false;
   return job;

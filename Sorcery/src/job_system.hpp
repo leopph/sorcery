@@ -20,9 +20,9 @@ constexpr auto kMaxJobDataSize{55};
 
 
 struct Job {
-  JobFuncType func;
-  std::array<char, kMaxJobDataSize> data;
-  std::atomic_bool is_complete;
+  JobFuncType func{nullptr};
+  std::array<char, kMaxJobDataSize> data{};
+  std::atomic_bool is_complete{true};
 };
 
 
