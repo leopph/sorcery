@@ -8,6 +8,7 @@
 #include "../job_system.hpp"
 #include "../ResourceManager.hpp"
 
+#include <algorithm>
 #include <ranges>
 
 
@@ -59,7 +60,7 @@ auto Scene::Serialize() const noexcept -> YAML::Node {
 
 
 auto Scene::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
-  mYamlData = yamlNode;
+  mYamlData = Clone(yamlNode);
 }
 
 
@@ -166,13 +167,51 @@ auto Scene::Load() -> void {
   if (auto const node{mYamlData["skybox"]}) {
     if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
       skybox_job_data.guid = guid;
+
       skybox_job = g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
         auto& job_data{**static_cast<SkyboxJobData* const*>(data_ptr)};
         job_data.cubemap = g_engine_context.resource_manager->GetOrLoad<Cubemap>(job_data.guid);
       }, &skybox_job_data);
+
       g_engine_context.job_system->Run(skybox_job);
     }
   }
+
+  std::function<void(YAML::Node const&, rttr::type const&, std::vector<Guid>&)> discover_resource_references;
+  discover_resource_references =
+    [&discover_resource_references](YAML::Node const& node, rttr::type const& type, std::vector<Guid>& guids) -> void {
+      if (!node.IsDefined()) {
+        return;
+      }
+
+      auto const actual_type{type.is_wrapper() ? type.get_wrapped_type() : type};
+
+      if (node.IsScalar() && actual_type.is_pointer() && actual_type.get_raw_type().is_derived_from(
+            rttr::type::get<Resource>())) {
+        if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
+          guids.emplace_back(guid);
+          return;
+        }
+      }
+
+      if (node.IsSequence() && actual_type.is_sequential_container()) {
+        if (auto const template_args{actual_type.get_template_arguments()}; !template_args.empty()) {
+          for (auto const& elem : node) {
+            discover_resource_references(elem, *template_args.begin(), guids);
+          }
+        }
+
+        return;
+      }
+
+      if (node.IsMap() && actual_type.is_class()) {
+        for (auto const& prop : actual_type.get_properties()) {
+          discover_resource_references(node[prop.get_name().to_string()], prop.get_type(), guids);
+        }
+      }
+    };
+
+  std::vector<Guid> resource_guids;
 
   for (auto const& sceneObjectNode : mYamlData["sceneObjects"]) {
     auto const typeNode{sceneObjectNode["type"]};
@@ -180,6 +219,37 @@ auto Scene::Load() -> void {
     auto const sceneObjectVariant{type.create()};
     auto const sceneObj{sceneObjectVariant.get_value<SceneObject*>()};
     ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObj;
+    discover_resource_references(sceneObjectNode["properties"], type, resource_guids);
+  }
+
+  std::ranges::sort(resource_guids, [](Guid const& lhs, Guid const& rhs) {
+    return lhs < rhs;
+  });
+
+  resource_guids.erase(std::ranges::unique(resource_guids, [](Guid const& lhs, Guid const& rhs) {
+    return lhs <=> rhs == std::strong_ordering::equal;
+  }).begin(), resource_guids.end());
+
+  struct ResourceJobData {
+    Guid guid;
+    Resource* resource;
+  };
+
+  std::vector<ResourceJobData> resource_job_data;
+  resource_job_data.reserve(resource_guids.size());
+
+  std::vector<Job*> resource_jobs;
+  resource_jobs.reserve(resource_guids.size());
+
+  for (auto const& guid : resource_guids) {
+    resource_job_data.emplace_back(guid);
+
+    resource_jobs.emplace_back(g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
+      auto& job_data{**static_cast<ResourceJobData* const*>(data_ptr)};
+      job_data.resource = g_engine_context.resource_manager->GetOrLoad<Resource>(job_data.guid);
+    }, &resource_job_data.back()));
+
+    g_engine_context.job_system->Run(resource_jobs.back());
   }
 
   auto const extensionFunc{
