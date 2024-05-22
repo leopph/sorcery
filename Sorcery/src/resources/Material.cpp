@@ -242,14 +242,14 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   SetAlphaThreshold(yamlNode["alphaThresh"].as<float>(GetAlphaThreshold()));
 
   struct JobData {
-    Guid const* guid;
+    Guid guid;
     Texture2D* tex;
   };
 
   auto const loader_job_func{
     [](void const* const data_ptr) {
       auto& [guid, tex]{**static_cast<JobData* const*>(data_ptr)};
-      tex = g_engine_context.resource_manager->GetOrLoad<Texture2D>(*guid);
+      tex = g_engine_context.resource_manager->GetOrLoad<Texture2D>(guid);
     }
   };
 
@@ -272,37 +272,37 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   JobData opacity_mask_job_data{};
 
   if (auto const guid{yamlNode["albedoMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    albedo_map_job_data.guid = &guid;
+    albedo_map_job_data.guid = guid;
     albedo_map_job = g_engine_context.job_system->CreateJob(loader_job_func, &albedo_map_job_data);
     g_engine_context.job_system->Run(albedo_map_job);
   }
 
   if (auto const guid{yamlNode["metallicMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    metallic_map_job_data.guid = &guid;
+    metallic_map_job_data.guid = guid;
     metallic_map_job = g_engine_context.job_system->CreateJob(loader_job_func, &metallic_map_job_data);
     g_engine_context.job_system->Run(metallic_map_job);
   }
 
   if (auto const guid{yamlNode["roughnessMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    roughness_map_job_data.guid = &guid;
+    roughness_map_job_data.guid = guid;
     roughness_map_job = g_engine_context.job_system->CreateJob(loader_job_func, &roughness_map_job_data);
     g_engine_context.job_system->Run(roughness_map_job);
   }
 
   if (auto const guid{yamlNode["aoMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    ao_map_job_data.guid = &guid;
+    ao_map_job_data.guid = guid;
     ao_map_job = g_engine_context.job_system->CreateJob(loader_job_func, &ao_map_job_data);
     g_engine_context.job_system->Run(ao_map_job);
   }
 
   if (auto const guid{yamlNode["normalMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    normal_map_job_data.guid = &guid;
+    normal_map_job_data.guid = guid;
     normal_map_job = g_engine_context.job_system->CreateJob(loader_job_func, &normal_map_job_data);
     g_engine_context.job_system->Run(normal_map_job);
   }
 
   if (auto const guid{yamlNode["opacityMask"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    opacity_mask_job_data.guid = &guid;
+    opacity_mask_job_data.guid = guid;
     opacity_mask_job = g_engine_context.job_system->CreateJob(loader_job_func, &opacity_mask_job_data);
     g_engine_context.job_system->Run(opacity_mask_job);
   }
