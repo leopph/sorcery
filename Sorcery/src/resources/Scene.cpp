@@ -156,9 +156,21 @@ auto Scene::Load() -> void {
     mSkyColor = node.as<Vector3>(mSkyColor);
   }
 
+  struct SkyboxJobData {
+    Guid guid;
+    Cubemap* cubemap;
+  } skybox_job_data;
+
+  Job* skybox_job{nullptr};
+
   if (auto const node{mYamlData["skybox"]}) {
     if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-      mSkybox = g_engine_context.resource_manager->GetOrLoad<Cubemap>(guid);
+      skybox_job_data.guid = guid;
+      skybox_job = g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
+        auto& job_data{**static_cast<SkyboxJobData* const*>(data_ptr)};
+        job_data.cubemap = g_engine_context.resource_manager->GetOrLoad<Cubemap>(job_data.guid);
+      }, &skybox_job_data);
+      g_engine_context.job_system->Run(skybox_job);
     }
   }
 
@@ -183,13 +195,13 @@ auto Scene::Load() -> void {
     }
   };
 
-  struct JobData {
+  struct SceneObjectJobData {
     YAML::Node prop_node;
     Object* obj;
     decltype(extensionFunc) ext_func;
   };
 
-  std::vector<JobData> job_data;
+  std::vector<SceneObjectJobData> job_data;
   job_data.reserve(ptrFixUp.size());
 
   std::vector<Job*> loader_jobs;
@@ -199,7 +211,7 @@ auto Scene::Load() -> void {
     job_data.emplace_back(mYamlData["sceneObjects"][fileId - 1]["properties"], obj, extensionFunc);
 
     loader_jobs.emplace_back(g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
-      auto const& job_data{**static_cast<JobData const* const*>(data_ptr)};
+      auto const& job_data{**static_cast<SceneObjectJobData const* const*>(data_ptr)};
       ReflectionDeserializeFromYaml(job_data.prop_node, *job_data.obj, job_data.ext_func);
     }, &job_data.back()));
 
@@ -212,6 +224,11 @@ auto Scene::Load() -> void {
 
   for (auto* const obj : ptrFixUp | std::views::values) {
     obj->Initialize();
+  }
+
+  if (skybox_job) {
+    g_engine_context.job_system->Wait(skybox_job);
+    mSkybox = skybox_job_data.cubemap;
   }
 
   sActiveScene = lastActiveScene;
