@@ -8,14 +8,12 @@
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::TransformComponent>{"Transform Component"}
     .constructor<>()(rttr::policy::ctor::as_raw_ptr)
-    .property("localPosition", &sorcery::TransformComponent::GetLocalPosition,
-      &sorcery::TransformComponent::SetLocalPosition)
-    .property("localRotation", &sorcery::TransformComponent::GetLocalRotation,
-      &sorcery::TransformComponent::SetLocalRotation)
-    .property("localScale", &sorcery::TransformComponent::GetLocalScale,
-      &sorcery::TransformComponent::SetLocalScale)
-    .property("parent", &sorcery::TransformComponent::GetParent,
-      &sorcery::TransformComponent::SetParent);
+    .property("localPosition", &sorcery::TransformComponent::mLocalPosition)
+    .property("localRotation", &sorcery::TransformComponent::mLocalRotation)
+    .property("localScale", &sorcery::TransformComponent::mLocalScale)
+    .property("parent", &sorcery::TransformComponent::mParent)
+    .property("children", &sorcery::TransformComponent::mChildren)
+    .property("localEulerHelper", &sorcery::TransformComponent::mLocalEulerAnglesHelp);
 }
 
 
@@ -57,6 +55,12 @@ TransformComponent::~TransformComponent() {
   }
 
   SetParent(nullptr);
+}
+
+
+void TransformComponent::Initialize() {
+  Component::Initialize();
+  UpdateWorldDataRecursive();
 }
 
 

@@ -37,7 +37,9 @@ auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
 
 
 Entity::Entity() :
-  mScene{Scene::GetActiveScene()} {}
+  mScene{Scene::GetActiveScene()} {
+  SetName("New Entity");
+}
 
 
 Entity::Entity(Entity const& other) :
@@ -109,24 +111,28 @@ auto Entity::RemoveComponent(Component& component) -> void {
 auto Entity::Initialize() -> void {
   SceneObject::Initialize();
 
-  auto constexpr defaultEntityName{"New Entity"};
-  SetName(defaultEntityName);
   FindObjectsOfType(gEntityCache);
 
-  bool isNameUnique{false};
-  std::size_t index{1};
-  while (!isNameUnique) {
-    isNameUnique = true;
-    for (auto const entity : gEntityCache) {
-      if (entity != this && entity->GetName() == GetName()) {
-        SetName(std::format("{} ({})", defaultEntityName, index));
-        ++index;
-        isNameUnique = false;
+  auto name{GetName()};
+
+  for (std::size_t i{2}; true; i++) {
+    auto name_is_unique{true};
+
+    for (auto const* const entity : gEntityCache) {
+      if (entity != this && entity->GetName() == name) {
+        name_is_unique = false;
         break;
       }
     }
+
+    if (name_is_unique) {
+      break;
+    }
+
+    name = std::format("{} ({})", GetName(), i);
   }
 
+  SetName(name);
   mScene->AddEntity(*this);
 }
 

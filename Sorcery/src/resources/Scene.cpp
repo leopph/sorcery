@@ -5,7 +5,10 @@
 #include "../Platform.hpp"
 #include "../Serialization.hpp"
 #undef FindResource
+#include "../job_system.hpp"
 #include "../ResourceManager.hpp"
+
+#include <ranges>
 
 
 RTTR_REGISTRATION {
@@ -164,7 +167,6 @@ auto Scene::Load() -> void {
     auto const type{rttr::type::get_by_name(typeNode.as<std::string>())};
     auto const sceneObjectVariant{type.create()};
     auto const sceneObj{sceneObjectVariant.get_value<SceneObject*>()};
-    sceneObj->Initialize();
     ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObj;
   }
 
@@ -181,8 +183,35 @@ auto Scene::Load() -> void {
     }
   };
 
+  struct JobData {
+    YAML::Node prop_node;
+    Object* obj;
+    decltype(extensionFunc) ext_func;
+  };
+
+  std::vector<JobData> job_data;
+  job_data.reserve(ptrFixUp.size());
+
+  std::vector<Job*> loader_jobs;
+  loader_jobs.reserve(ptrFixUp.size());
+
   for (auto const& [fileId, obj] : ptrFixUp) {
-    ReflectionDeserializeFromYaml(mYamlData["sceneObjects"][fileId - 1]["properties"], *obj, extensionFunc);
+    job_data.emplace_back(mYamlData["sceneObjects"][fileId - 1]["properties"], obj, extensionFunc);
+
+    loader_jobs.emplace_back(g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
+      auto const& job_data{**static_cast<JobData const* const*>(data_ptr)};
+      ReflectionDeserializeFromYaml(job_data.prop_node, *job_data.obj, job_data.ext_func);
+    }, &job_data.back()));
+
+    g_engine_context.job_system->Run(loader_jobs.back());
+  }
+
+  for (auto const* const job : loader_jobs) {
+    g_engine_context.job_system->Wait(job);
+  }
+
+  for (auto* const obj : ptrFixUp | std::views::values) {
+    obj->Initialize();
   }
 
   sActiveScene = lastActiveScene;

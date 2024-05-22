@@ -25,6 +25,8 @@ public:
   auto operator=(TransformComponent const& other) -> TransformComponent& = delete;
   auto operator=(TransformComponent&& other) -> TransformComponent& = delete;
 
+  LEOPPHAPI auto Initialize() -> void override;
+
   [[nodiscard]] LEOPPHAPI auto Clone() -> TransformComponent* override;
 
   [[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
