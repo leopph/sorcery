@@ -2,6 +2,7 @@
 
 #include <bit>
 #include <new>
+#include <vector>
 
 
 namespace sorcery {
@@ -50,6 +51,6 @@ auto JobSystem::CreateParallelForJob(void (*func)(T& data), std::span<T> data) -
     for (auto const* const sub_job : sub_jobs) {
       job_data.system->Wait(sub_job);
     }
-  }, JobData{func, this, data, static_cast<unsigned>(workers_.size()) + 1});
+  }, JobData{func, this, data, worker_count_ + 1});
 }
 }

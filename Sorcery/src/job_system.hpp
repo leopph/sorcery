@@ -1,17 +1,16 @@
 #pragma once
 
 #include "Core.hpp"
+#include "wsq.hpp"
 
 #include <array>
 #include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <span>
 #include <thread>
 #include <type_traits>
-#include <vector>
 
 
 namespace sorcery {
@@ -54,19 +53,16 @@ public:
   LEOPPHAPI auto Wait(Job const* job) -> void;
 
 private:
-  struct JobQueue {
-    std::queue<Job*> jobs;
-    std::unique_ptr<std::mutex> mutex{std::make_unique<std::mutex>()};
-  };
-
+  constexpr static auto max_job_count_{4096};
 
   static auto Execute(Job& job) -> void;
 
   [[nodiscard]] auto FindJobToExecute() -> Job*;
 
   unsigned thread_count_;
-  std::vector<JobQueue> job_queues_;
-  std::vector<std::jthread> workers_;
+  unsigned worker_count_;
+  std::unique_ptr<WorkStealingQueue<Job*>[]> job_queues_;
+  std::unique_ptr<std::jthread[]> workers_;
   std::mutex wake_threads_mutex_;
   std::condition_variable wake_threads_cond_var_;
 };

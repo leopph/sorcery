@@ -186,6 +186,7 @@
     <ClInclude Include="src\SkyMode.hpp" />
     <ClInclude Include="src\Window.hpp" />
     <ClInclude Include="src\WindowImpl.hpp" />
+    <ClInclude Include="src\wsq.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Bounds.hpp" />

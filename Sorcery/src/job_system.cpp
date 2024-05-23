@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <stdexcept>
 
 thread_local unsigned this_thread_idx;
@@ -10,32 +9,34 @@ thread_local unsigned this_thread_idx;
 
 namespace sorcery {
 JobSystem::JobSystem() :
-  thread_count_{std::max(std::jthread::hardware_concurrency(), 2u)} {
-  auto const worker_count{thread_count_ - 1};
+  thread_count_{std::max(std::jthread::hardware_concurrency(), 2u)},
+  worker_count_{thread_count_ - 1} {
+  job_queues_ = std::make_unique<WorkStealingQueue<Job*>[]>(thread_count_);
+  workers_ = std::make_unique<std::jthread[]>(worker_count_);
 
-  job_queues_.resize(thread_count_);
-  workers_.reserve(worker_count);
+  for (unsigned i{0}; i < worker_count_; i++) {
+    workers_[i] = std::jthread{
+      [this](std::stop_token const& stop_token, unsigned const thread_idx) {
+        this_thread_idx = thread_idx;
 
-  for (unsigned i{0}; i < worker_count; i++) {
-    workers_.emplace_back([this](std::stop_token const& stop_token, unsigned const thread_idx) {
-      this_thread_idx = thread_idx;
-
-      while (!stop_token.stop_requested()) {
-        if (auto const job{FindJobToExecute()}) {
-          Execute(*job);
-        } else {
-          std::unique_lock lock{wake_threads_mutex_};
-          wake_threads_cond_var_.wait(lock);
+        while (!stop_token.stop_requested()) {
+          if (auto const job{FindJobToExecute()}) {
+            Execute(*job);
+          } else {
+            std::unique_lock lock{wake_threads_mutex_};
+            wake_threads_cond_var_.wait(lock);
+          }
         }
-      }
-    }, i + 1);
+      },
+      i + 1
+    };
   }
 }
 
 
 JobSystem::~JobSystem() {
-  for (auto& worker : workers_) {
-    worker.request_stop();
+  for (unsigned i{0}; i < worker_count_; i++) {
+    workers_[i].request_stop();
   }
 
   wake_threads_cond_var_.notify_all();
@@ -43,12 +44,11 @@ JobSystem::~JobSystem() {
 
 
 auto JobSystem::CreateJob(JobFuncType const func) -> Job* {
-  constexpr auto max_job_count{4096};
   thread_local std::size_t allocated_job_count{0};
-  thread_local std::array<Job, max_job_count> jobs{};
+  thread_local std::array<Job, max_job_count_> jobs{};
 
-  // This method of modulus only works when max_job_count is power of two
-  auto const job{&jobs[allocated_job_count++ & max_job_count - 1]};
+  // This method of modulus only works when max_job_count_ is power of two
+  auto const job{&jobs[allocated_job_count++ & max_job_count_ - 1]};
 
   if (!job->is_complete) {
     throw std::runtime_error{"Too many jobs allocated to create new!"};
@@ -61,9 +61,8 @@ auto JobSystem::CreateJob(JobFuncType const func) -> Job* {
 
 
 auto JobSystem::Run(Job* const job) -> void {
-  auto& [jobs, mutex]{job_queues_[this_thread_idx]};
-  std::scoped_lock lock{*mutex};
-  jobs.push(job);
+  auto& queue{job_queues_[this_thread_idx]};
+  queue.push(job);
   wake_threads_cond_var_.notify_all();
 }
 
@@ -84,29 +83,14 @@ auto JobSystem::Execute(Job& job) -> void {
 
 
 auto JobSystem::FindJobToExecute() -> Job* {
-  auto const try_get_job_from_queue_at_idx{
-    [this](std::uint64_t const queue_idx) -> Job* {
-      auto& [jobs, mutex]{job_queues_[queue_idx]};
-      std::scoped_lock lock{*mutex};
-
-      if (jobs.empty()) {
-        return nullptr;
-      }
-
-      auto const job{jobs.front()};
-      jobs.pop();
-      return job;
-    }
-  };
-
-  if (auto const job{try_get_job_from_queue_at_idx(this_thread_idx)}) {
-    return job;
+  if (auto const job{job_queues_[this_thread_idx].pop()}) {
+    return *job;
   }
 
   for (unsigned i{0}; i < thread_count_; i++) {
     if (i != this_thread_idx) {
-      if (auto const job{try_get_job_from_queue_at_idx(i)}) {
-        return job;
+      if (auto const job{job_queues_[i].steal()}) {
+        return *job;
       }
     }
   }
