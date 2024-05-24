@@ -385,7 +385,12 @@ auto ResourceManager::IsLoaded(Guid const& guid) -> bool {
 
 
 auto ResourceManager::UpdateMappings(std::map<Guid, ResourceDescription> mappings) -> void {
-  *mappings_.Lock() = std::move(mappings);
+  while (true) {
+    if (auto self_mappings{mappings_.TryLock()}) {
+      **self_mappings = std::move(mappings);
+      break;
+    }
+  }
 }
 
 
