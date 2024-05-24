@@ -3,12 +3,15 @@
 #include <imgui.h>
 
 #include "Event.hpp"
+#include "job_system.hpp"
+#include "engine_context.hpp"
 #include "ResourceDB.hpp"
 #include "Scene.hpp"
 
 #include <atomic>
 #include <filesystem>
 #include <memory>
+#include <type_traits>
 #include <variant>
 
 
@@ -64,11 +67,10 @@ public:
   [[nodiscard]] auto IsGuiDarkMode() const noexcept -> bool;
   auto SetGuiDarkMode(bool darkMode) noexcept -> void;
 
-private:
   template<typename Callable>
-  auto ExecuteInBusyEditor(Callable&& callable) -> void;
+  auto ExecuteInBusyEditor(Callable const& callable) -> void;
 
-
+private:
   struct BusyExecutionContext {
     ImGuiConfigFlags imGuiConfigFlagsBackup;
   };
@@ -80,8 +82,8 @@ private:
 
 
 template<typename Callable>
-auto Application::ExecuteInBusyEditor(Callable&& callable) -> void {
-  std::thread{
+auto Application::ExecuteInBusyEditor(Callable const& callable) -> void {
+  auto const job_func{
     [this, callable] {
       BusyExecutionContext const execContext{OnEnterBusyExecution()};
 
@@ -95,6 +97,10 @@ auto Application::ExecuteInBusyEditor(Callable&& callable) -> void {
 
       OnFinishBusyExecution(execContext);
     }
-  }.detach();
+  };
+
+  g_engine_context.job_system->Run(g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
+    (*static_cast<decltype(job_func)* const>(data_ptr))();
+  }, job_func));
 }
 }
