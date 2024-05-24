@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <concepts>
 #include <filesystem>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -115,18 +116,23 @@ auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
     }
   }
 
+  std::optional<ResourceDescription> desc;
+
   {
     auto const mappings{mappings_.LockShared()};
-
     if (auto const it{mappings->find(guid)}; it != std::end(*mappings)) {
-      if (auto const res{InternalLoadResource(guid, it->second)}) {
-        if constexpr (!std::is_same_v<ResType, Resource>) {
-          if (rttr::rttr_cast<ResType*>(res)) {
-            return static_cast<ResType*>(res);
-          }
-        } else {
-          return res;
+      desc = it->second;
+    }
+  }
+
+  if (desc) {
+    if (auto const res{InternalLoadResource(guid, *desc)}) {
+      if constexpr (!std::is_same_v<ResType, Resource>) {
+        if (rttr::rttr_cast<ResType*>(res)) {
+          return static_cast<ResType*>(res);
         }
+      } else {
+        return res;
       }
     }
   }
