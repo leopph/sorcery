@@ -193,6 +193,13 @@ Entity::Entity() {
 Entity::Entity(Entity const& other) :
   SceneObject{other} {
   SetName(other.GetName());
+
+  for (auto const& component : other.components_) {
+    AddComponent(std::unique_ptr<Component>{static_cast<Component*>(component->Clone().release())});
+  }
+
+  auto const transform{GetComponent<TransformComponent>()};
+  transform->SetParent(other.GetComponent<TransformComponent>()->GetParent());
 }
 
 
@@ -203,6 +210,8 @@ Entity::Entity(Entity&& other) noexcept :
   while (!other.components_.empty()) {
     AddComponent(other.RemoveComponent(*other.components_.back()));
   }
+
+  other.AddComponent(Create<TransformComponent>());
 }
 
 
