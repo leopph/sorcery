@@ -294,10 +294,10 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 
 ResourceManager::ResourceManager(JobSystem& job_system) :
   job_system_{&job_system} {
-  default_mtl_.Reset(Create<Material>().release());
+  default_mtl_ = Add(Create<Material>());
   default_mtl_->SetGuid(default_material_guid_);
   default_mtl_->SetName("Default Material");
-  Add(default_mtl_.Get());
+
 
   std::vector<Vector3> cubeNormals;
   CalculateNormals(kCubePositions, kCubeIndices, cubeNormals);
@@ -311,7 +311,7 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   std::vector<Vector3> quadTangents;
   CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, quadTangents);
 
-  cube_mesh_.Reset(Create<Mesh>().release());
+  cube_mesh_ = Add(Create<Mesh>());
   cube_mesh_->SetGuid(cube_mesh_guid_);
   cube_mesh_->SetName("Cube");
   cube_mesh_->SetPositions(kCubePositions);
@@ -324,9 +324,8 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   if (!cube_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default cube mesh."};
   }
-  Add(cube_mesh_.Get());
 
-  plane_mesh_.Reset(Create<Mesh>().release());
+  plane_mesh_ = Add(Create<Mesh>());
   plane_mesh_->SetGuid(plane_mesh_guid_);
   plane_mesh_->SetName("Plane");
   plane_mesh_->SetPositions(kQuadPositions);
@@ -339,9 +338,8 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   if (!plane_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default plane mesh."};
   }
-  Add(plane_mesh_.Get());
 
-  sphere_mesh_.Reset(Create<Mesh>().release());
+  sphere_mesh_ = Add(Create<Mesh>());
   sphere_mesh_->SetGuid(sphere_mesh_guid_);
   sphere_mesh_->SetName("Sphere");
   std::vector<Vector3> spherePositions;
@@ -362,7 +360,6 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   if (!sphere_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default sphere mesh."};
   }
-  Add(sphere_mesh_.Get());
 }
 
 
@@ -372,6 +369,11 @@ auto ResourceManager::Unload(Guid const& guid) -> void {
   if (auto const it{resources->find(guid)}; it != std::end(*resources)) {
     resources->erase(it);
   }
+}
+
+
+auto ResourceManager::UnloadAll() -> void {
+  loaded_resources_.Lock()->clear();
 }
 
 

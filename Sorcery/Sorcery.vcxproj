@@ -232,6 +232,7 @@
     <None Include="src\rendering\shaders\utility.hlsli" />
     <None Include="src\rendering\structured_buffer.inl" />
     <None Include="src\resources\native_resource.inl" />
+    <None Include="src\resource_manager.inl" />
     <None Include="src\scene_objects\entity.inl" />
     <None Include="vcpkg.json" />
   </ItemGroup>

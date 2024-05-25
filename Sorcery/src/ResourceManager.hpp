@@ -12,7 +12,6 @@
 #include <concepts>
 #include <filesystem>
 #include <memory>
-#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -44,11 +43,12 @@ public:
   auto GetOrLoad(Guid const& guid) -> ResType*;
 
   LEOPPHAPI auto Unload(Guid const& guid) -> void;
+  LEOPPHAPI auto UnloadAll() -> void;
 
   [[nodiscard]] LEOPPHAPI auto IsLoaded(Guid const& guid) -> bool;
 
   template<std::derived_from<Resource> ResType>
-  auto Add(ResType* resource) -> void;
+  auto Add(std::unique_ptr<ResType> resource) -> ObserverPtr<ResType>;
 
   LEOPPHAPI auto UpdateMappings(std::map<Guid, ResourceDescription> mappings) -> void;
 
@@ -84,10 +84,10 @@ private:
   };
 
 
-  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> ObserverPtr<
-    Resource>;
-  [[nodiscard]] static auto LoadTexture(std::span<std::byte const> bytes) noexcept -> MaybeNull<std::unique_ptr<Resource
-  >>;
+  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(Guid const& guid,
+                                                    ResourceDescription const& desc) -> ObserverPtr<Resource>;
+  [[nodiscard]] static auto LoadTexture(
+    std::span<std::byte const> bytes) noexcept -> MaybeNull<std::unique_ptr<Resource>>;
   [[nodiscard]] static auto LoadMesh(std::span<std::byte const> bytes) -> MaybeNull<std::unique_ptr<Resource>>;
 
   inline static Guid const default_material_guid_{1, 0};
@@ -107,65 +107,7 @@ private:
 
   ObserverPtr<JobSystem> job_system_;
 };
-
-
-template<std::derived_from<Resource> ResType>
-auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
-  {
-    auto const resources{loaded_resources_.LockShared()};
-
-    if (auto const it{resources->find(guid)}; it != std::end(*resources)) {
-      if constexpr (!std::is_same_v<ResType, Resource>) {
-        if (rttr::rttr_cast<ResType*>(it->get())) {
-          return static_cast<ResType*>(it->get());
-        }
-      } else {
-        return it->get();
-      }
-    }
-  }
-
-  std::optional<ResourceDescription> desc;
-
-  {
-    auto const mappings{mappings_.LockShared()};
-    if (auto const it{mappings->find(guid)}; it != std::end(*mappings)) {
-      desc = it->second;
-    }
-  }
-
-  if (desc) {
-    if (auto const res{InternalLoadResource(guid, *desc)}) {
-      if constexpr (!std::is_same_v<ResType, Resource>) {
-        if (rttr::rttr_cast<ResType*>(res.Get())) {
-          return static_cast<ResType*>(res.Get());
-        }
-      } else {
-        return res.Get();
-      }
-    }
-  }
-
-  return nullptr;
 }
 
 
-template<std::derived_from<Resource> ResType>
-auto ResourceManager::Add(ResType* resource) -> void {
-  if (resource && resource->GetGuid().IsValid()) {
-    loaded_resources_.Lock()->emplace(resource);
-  }
-}
-
-
-template<std::derived_from<Resource> T>
-auto ResourceManager::GetGuidsForResourcesOfType(std::vector<Guid>& out) noexcept -> void {
-  GetGuidsForResourcesOfType(rttr::type::get<T>(), out);
-}
-
-
-template<std::derived_from<Resource> T>
-auto ResourceManager::GetInfoForResourcesOfType(std::vector<ResourceInfo>& out) -> void {
-  GetInfoForResourcesOfType(rttr::type::get<T>(), out);
-}
-}
+#include "resource_manager.inl"
