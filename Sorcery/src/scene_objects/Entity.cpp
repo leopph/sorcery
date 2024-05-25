@@ -186,6 +186,7 @@ auto Entity::SetComponentFromDeserialization(std::vector<Component*> components)
 
 Entity::Entity() {
   SetName("New Entity");
+  AddComponent(Create<TransformComponent>());
 }
 
 

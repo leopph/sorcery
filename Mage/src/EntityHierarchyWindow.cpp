@@ -22,11 +22,7 @@ auto EntityHierarchyWindow::Draw() -> void {
 
     if (ImGui::BeginPopup(contextId)) {
       if (ImGui::MenuItem("Create New Entity")) {
-        mApp->GetScene().SetActive();
-        auto entity{Create<Entity>()};
-        auto transform{Create<TransformComponent>()};
-        entity->AddComponent(std::move(transform));
-        mApp->GetScene().AddEntity(std::move(entity));
+        mApp->GetScene().AddEntity(Create<Entity>());
       }
 
       ImGui::EndPopup();
