@@ -4,6 +4,7 @@
 
 #include <imgui.h>
 #include <iostream>
+#include <utility>
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::TransformComponent>{"Transform Component"}
@@ -88,6 +89,28 @@ auto TransformComponent::OnBeforeDetachedFromEntity(Entity& entity) -> void {
 
   SetParent(nullptr);
   Component::OnBeforeDetachedFromEntity(entity);
+}
+
+
+TransformComponent::TransformComponent(TransformComponent const& other) :
+  Component{other},
+  mLocalPosition{other.mLocalPosition},
+  mLocalRotation{other.mLocalRotation},
+  mLocalEulerAnglesHelp{other.mLocalEulerAnglesHelp},
+  mLocalScale{other.mLocalScale} {
+  UpdateWorldDataRecursive();
+  // Explicitly not copying parent and children
+}
+
+
+TransformComponent::TransformComponent(TransformComponent&& other) noexcept :
+  Component{std::move(other)},
+  mLocalPosition{std::move(other.mLocalPosition)},
+  mLocalRotation{std::move(other.mLocalRotation)},
+  mLocalEulerAnglesHelp{std::move(other.mLocalEulerAnglesHelp)},
+  mLocalScale{std::move(other.mLocalScale)} {
+  UpdateWorldDataRecursive();
+  // Explicitly not copying parent and children
 }
 
 

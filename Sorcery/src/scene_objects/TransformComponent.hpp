@@ -23,6 +23,15 @@ public:
   LEOPPHAPI auto OnAfterAttachedToEntity(Entity& entity) -> void override;
   LEOPPHAPI auto OnBeforeDetachedFromEntity(Entity& entity) -> void override;
 
+  TransformComponent() = default;
+  LEOPPHAPI TransformComponent(TransformComponent const& other);
+  LEOPPHAPI TransformComponent(TransformComponent&& other) noexcept;
+
+  ~TransformComponent() override = default;
+
+  auto operator=(TransformComponent const& other) -> void = delete;
+  auto operator=(TransformComponent&& other) -> void = delete;
+
   [[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
   LEOPPHAPI auto SetWorldPosition(Vector3 const& newPos) -> void;
 
