@@ -4,13 +4,15 @@
 #include "Event.hpp"
 #include "Util.hpp"
 
+#include <memory>
+
 
 namespace sorcery {
 class WindowImpl;
 
 
 class Window {
-  WindowImpl* mImpl;
+  std::unique_ptr<WindowImpl> mImpl;
 
 public:
   LEOPPHAPI explicit Window();

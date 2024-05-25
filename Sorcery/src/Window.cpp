@@ -7,16 +7,13 @@
 
 namespace sorcery {
 Window::Window() :
-  mImpl{new WindowImpl{}},
+  mImpl{std::make_unique<WindowImpl>()},
   OnWindowSize{mImpl->OnWindowSize},
   OnWindowFocusGain{mImpl->OnWindowFocusGain},
   OnWindowFocusLoss{mImpl->OnWindowFocusLoss} {}
 
 
-Window::~Window() {
-  delete mImpl;
-  mImpl = nullptr;
-}
+Window::~Window() = default;
 
 
 auto Window::GetNativeHandle() const noexcept -> void* {
