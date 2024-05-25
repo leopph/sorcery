@@ -17,24 +17,6 @@
 
 namespace sorcery::mage {
 class Application {
-  ImGuiIO& mImGuiIo;
-  Scene* mScene{Create<Scene>().release()};
-  Object* mSelectedObject{nullptr};
-  ResourceDB mResourceDB{mSelectedObject};
-
-  std::filesystem::path mProjDirAbs;
-
-  std::atomic<bool> mBusy;
-  bool mIsInDarkMode{true};
-
-  EventListenerHandle<void> window_focus_gain_listener_{};
-
-  static std::string_view const WINDOW_TITLE_BASE;
-
-  auto OnWindowFocusGain() -> void;
-  static auto HandleBackgroundThreadException(std::exception const& ex) -> void;
-  static auto HandleUnknownBackgroundThreadException() -> void;
-
 public:
   explicit Application(ImGuiIO& imGuiIO);
   Application(Application const&) = delete;
@@ -51,9 +33,11 @@ public:
   [[nodiscard]] auto GetResourceDatabase() const noexcept -> ResourceDB const&;
   [[nodiscard]] auto GetResourceDatabase() noexcept -> ResourceDB&;
 
-  [[nodiscard]] auto GetScene() const noexcept -> Scene&;
-  auto OpenScene(Scene& scene) -> void;
+  auto OpenScene(Guid const& guid) -> void;
+  auto OpenNewScene() -> void;
   auto SaveCurrentSceneToFile() -> void;
+  auto CloseScene() -> void;
+  [[nodiscard]] auto GetScene() const noexcept -> Scene&;
 
   [[nodiscard]] auto GetSelectedObject() const noexcept -> Object*;
   auto SetSelectedObject(Object* obj) noexcept -> void;
@@ -78,6 +62,25 @@ private:
 
   auto OnEnterBusyExecution() -> BusyExecutionContext;
   auto OnFinishBusyExecution(BusyExecutionContext const& busyExecutionContext) -> void;
+
+  auto OnWindowFocusGain() -> void;
+  static auto HandleBackgroundThreadException(std::exception const& ex) -> void;
+  static auto HandleUnknownBackgroundThreadException() -> void;
+
+  ImGuiIO& imgui_io_;
+  std::unique_ptr<Scene> temp_scene_owner_;
+  Scene* scene_{nullptr};
+  Object* selected_object_{nullptr};
+  ResourceDB resource_db_{selected_object_};
+
+  std::filesystem::path proj_dir_abs_;
+
+  std::atomic<bool> busy_;
+  bool dark_mode_{true};
+
+  EventListenerHandle<void> window_focus_gain_listener_{};
+
+  static std::string_view const WINDOW_TITLE_BASE;
 };
 
 

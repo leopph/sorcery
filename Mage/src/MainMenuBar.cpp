@@ -22,8 +22,7 @@ auto MainMenuBar::Draw() -> void {
   if (ImGui::BeginMainMenuBar()) {
     if (ImGui::BeginMenu("File")) {
       if (ImGui::MenuItem("New Scene")) {
-        auto const scene{Create<Scene>()};
-        mApp->OpenScene(*scene);
+        mApp->OpenNewScene();
       }
 
       if (ImGui::MenuItem("Open Scene")) {
@@ -33,12 +32,7 @@ auto MainMenuBar::Draw() -> void {
           if (auto const dstPathResDirRel{
             relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())
           }; !dstPathResDirRel.empty()) {
-            auto const scene{
-              g_engine_context.resource_manager->GetOrLoad<Scene>(
-                mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel))
-            };
-            assert(scene);
-            mApp->OpenScene(*scene);
+            mApp->OpenScene(mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel));
 
             std::free(dstPathAbs);
           }

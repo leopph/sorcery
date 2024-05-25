@@ -7,14 +7,16 @@
 
 #include <nfd.h>
 
+#include <utility>
+
 
 namespace sorcery::mage {
 std::string_view const Application::WINDOW_TITLE_BASE{"Mage"};
 
 
 auto Application::OnWindowFocusGain() -> void {
-  if (!mProjDirAbs.empty()) {
-    mResourceDB.Refresh();
+  if (!proj_dir_abs_.empty()) {
+    resource_db_.Refresh();
   }
 }
 
@@ -30,13 +32,13 @@ auto Application::HandleUnknownBackgroundThreadException() -> void {
 
 
 Application::Application(ImGuiIO& imGuiIO) :
-  mImGuiIo{imGuiIO},
+  imgui_io_{imGuiIO},
   window_focus_gain_listener_{
     g_engine_context.window->OnWindowFocusGain.add_listener([this] { OnWindowFocusGain(); })
   } {
   g_engine_context.window->SetTitle(std::string{WINDOW_TITLE_BASE});;
   SetImGuiContext(*ImGui::GetCurrentContext());
-  SetGuiDarkMode(mIsInDarkMode);
+  SetGuiDarkMode(dark_mode_);
 
   imGuiIO.FontDefault = imGuiIO.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 14);
 }
@@ -48,57 +50,75 @@ Application::~Application() {
 
 
 auto Application::GetImGuiIo() const noexcept -> ImGuiIO const& {
-  return mImGuiIo;
+  return imgui_io_;
 }
 
 
 auto Application::GetImGuiIo() noexcept -> ImGuiIO& {
-  return mImGuiIo;
+  return imgui_io_;
 }
 
 
 auto Application::GetResourceDatabase() const noexcept -> ResourceDB const& {
-  return mResourceDB;
+  return resource_db_;
 }
 
 
 auto Application::GetResourceDatabase() noexcept -> ResourceDB& {
-  return mResourceDB;
+  return resource_db_;
 }
 
 
-auto Application::GetScene() const noexcept -> Scene& {
-  assert(mScene);
-  return *mScene;
-}
+auto Application::OpenScene(Guid const& guid) -> void {
+  if (!guid.IsValid() || (scene_ && scene_->GetGuid() <=> guid == std::strong_ordering::equal)) {
+    return;
+  }
 
+  if (auto const new_scene{g_engine_context.resource_manager->GetOrLoad<Scene>(guid)}) {
+    new_scene->Load();
 
-auto Application::OpenScene(Scene& scene) -> void {
-  mSelectedObject = nullptr;
+    if (scene_) {
+      // Unlod old scene if it was saved
+      g_engine_context.resource_manager->Unload(scene_->GetGuid());
+      // Unload old scene if it was temporary
+      temp_scene_owner_.reset();
+    }
 
-  if (std::addressof(scene) != mScene) {
-    scene.Load();
-    assert(mScene);
-    mScene->Clear();
-    mScene = std::addressof(scene);
-    mScene->SetActive();
+    scene_ = new_scene;
+    scene_->SetActive();
+    selected_object_ = nullptr;
   }
 }
 
 
+auto Application::OpenNewScene() -> void {
+  if (scene_) {
+    // Unload old scene if it was saved
+    g_engine_context.resource_manager->Unload(scene_->GetGuid());
+  }
+
+  temp_scene_owner_ = Create<Scene>();
+  scene_ = temp_scene_owner_.get();
+
+  scene_->Load();
+  scene_->SetActive();
+  selected_object_ = nullptr;
+}
+
+
 auto Application::SaveCurrentSceneToFile() -> void {
-  assert(mScene);
-  mScene->Save();
-  if (mResourceDB.IsSavedResource(*mScene)) {
-    mResourceDB.SaveResource(*mScene);
+  assert(scene_);
+  scene_->Save();
+  if (resource_db_.IsSavedResource(*scene_)) {
+    resource_db_.SaveResource(*scene_);
   } else {
     if (nfdchar_t* dst; NFD_SaveDialog(ResourceManager::SCENE_RESOURCE_EXT.substr(1).data(),
-                          mResourceDB.GetResourceDirectoryAbsolutePath().string().c_str(), &dst) == NFD_OKAY) {
+                          resource_db_.GetResourceDirectoryAbsolutePath().string().c_str(), &dst) == NFD_OKAY) {
       if (auto const dstResDirRel{
-        relative(std::filesystem::path{dst}, mResourceDB.GetResourceDirectoryAbsolutePath()) +=
+        relative(std::filesystem::path{dst}, resource_db_.GetResourceDirectoryAbsolutePath()) +=
         ResourceManager::SCENE_RESOURCE_EXT
       }; !dstResDirRel.empty()) {
-        mResourceDB.CreateResource(*mScene, dstResDirRel);
+        resource_db_.CreateResource(std::move(temp_scene_owner_), dstResDirRel);
       }
       std::free(dst);
     }
@@ -106,37 +126,56 @@ auto Application::SaveCurrentSceneToFile() -> void {
 }
 
 
+auto Application::CloseScene() -> void {
+  if (scene_) {
+    // Unlod old scene if it was saved
+    g_engine_context.resource_manager->Unload(scene_->GetGuid());
+    // Unload old scene if it was temporary
+    temp_scene_owner_.reset();
+  }
+
+  scene_ = nullptr;
+  selected_object_ = nullptr;
+}
+
+
+auto Application::GetScene() const noexcept -> Scene& {
+  assert(scene_);
+  return *scene_;
+}
+
+
 auto Application::GetSelectedObject() const noexcept -> Object* {
-  return mSelectedObject;
+  return selected_object_;
 }
 
 
 auto Application::SetSelectedObject(Object* const obj) noexcept -> void {
-  mSelectedObject = obj;
+  selected_object_ = obj;
 }
 
 
 auto Application::GetProjectDirectoryAbsolute() const noexcept -> std::filesystem::path const& {
-  return mProjDirAbs;
+  return proj_dir_abs_;
 }
 
 
 auto Application::OpenProject(std::filesystem::path const& targetPath) -> void {
-  mSelectedObject = nullptr;
-  mScene = Create<Scene>().release();
-  mProjDirAbs = absolute(targetPath);
-  mResourceDB.ChangeProjectDir(mProjDirAbs);
+  proj_dir_abs_ = absolute(targetPath);
+  resource_db_.ChangeProjectDir(proj_dir_abs_);
   g_engine_context.window->SetTitle(std::string{WINDOW_TITLE_BASE} + " - " + targetPath.stem().string());
+
+  OpenNewScene();
 }
 
 
 auto Application::IsEditorBusy() const noexcept -> bool {
-  return mBusy;
+  return busy_;
 }
 
 
 auto Application::IsGuiDarkMode() const noexcept -> bool {
-  return mIsInDarkMode;
+  return dark_mode_;
 }
 
 
@@ -219,25 +258,25 @@ auto Application::SetGuiDarkMode(bool const darkMode) noexcept -> void {
   style.WindowRounding = 4;
 
   g_engine_context.window->UseImmersiveDarkMode(darkMode);
-  mIsInDarkMode = darkMode;
+  dark_mode_ = darkMode;
 }
 
 
 auto Application::OnEnterBusyExecution() -> BusyExecutionContext {
   bool isBusy{false};
-  while (!mBusy.compare_exchange_weak(isBusy, true)) {}
+  while (!busy_.compare_exchange_weak(isBusy, true)) {}
 
-  BusyExecutionContext const ret{.imGuiConfigFlagsBackup = mImGuiIo.ConfigFlags};
+  BusyExecutionContext const ret{.imGuiConfigFlagsBackup = imgui_io_.ConfigFlags};
 
-  mImGuiIo.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-  mImGuiIo.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
+  imgui_io_.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+  imgui_io_.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
 
   return ret;
 }
 
 
 auto Application::OnFinishBusyExecution(BusyExecutionContext const& busyExecutionContext) -> void {
-  mImGuiIo.ConfigFlags = busyExecutionContext.imGuiConfigFlagsBackup;
-  mBusy = false;
+  imgui_io_.ConfigFlags = busyExecutionContext.imGuiConfigFlagsBackup;
+  busy_ = false;
 }
 }

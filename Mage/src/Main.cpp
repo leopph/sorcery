@@ -132,11 +132,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       }
 
       if (argc > 1) {
-        if (auto const scene{
-          resource_manager->GetOrLoad<sorcery::Scene>(app.GetResourceDatabase().PathToGuid(argv[1]))
-        }) {
-          app.OpenScene(*scene);
-        }
+        app.OpenScene(app.GetResourceDatabase().PathToGuid(argv[1]));
       }
 
       LocalFree(argv);
@@ -232,10 +228,12 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     graphics_device->WaitIdle();
 
+    app.CloseScene();
+    resource_manager->UnloadAll();
+
     ImGui_ImplWin32_Shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
-    // sorcery::Object::DestroyAll(); TODO resource manager clear?
   } catch (std::exception const& ex) {
     sorcery::DisplayError(ex.what());
   }
