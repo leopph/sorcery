@@ -103,6 +103,12 @@ LEOPPHAPI auto CalculateTangents(std::span<Vector3 const> positions, std::span<V
 [[nodiscard]] LEOPPHAPI auto IsSubpath(std::filesystem::path const& path, std::filesystem::path const& base) -> bool;
 
 
+template<typename To, typename From>
+[[nodiscard]] auto static_unique_ptr_cast(std::unique_ptr<From> ptr) -> std::unique_ptr<To> {
+  return std::unique_ptr<To>{static_cast<From*>(ptr.release())};
+}
+
+
 template<std::unsigned_integral T>
 [[nodiscard]] constexpr auto SatSub(T const lhs, T const rhs) -> T {
   T ret{lhs - rhs};
