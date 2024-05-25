@@ -148,16 +148,15 @@ auto Scene::Save() -> void {
 
 
 auto Scene::Load() -> void {
-  static std::unordered_map<int, SceneObject*> ptrFixUp;
-  ptrFixUp.clear();
-
-  Clear();
-
   if (auto const version{yaml_data_["version"]}; !version || !version.IsScalar() || version.as<int>(1) != 1) {
     throw std::runtime_error{
       std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName())
     };
   }
+
+  Clear();
+
+  // Load scene settings
 
   if (auto const node{yaml_data_["ambientLight"]}) {
     ambient_light_ = node.as<Vector3>(ambient_light_);
@@ -170,6 +169,8 @@ auto Scene::Load() -> void {
   if (auto const node{yaml_data_["skyColor"]}) {
     sky_color_ = node.as<Vector3>(sky_color_);
   }
+
+  // Start a job to load the skybox
 
   struct SkyboxJobData {
     Guid guid;
@@ -191,10 +192,13 @@ auto Scene::Load() -> void {
     }
   }
 
-  std::function<void(YAML::Node const&, rttr::type const&, std::vector<Guid>&)> discover_resource_references;
-  discover_resource_references =
-    [&discover_resource_references](YAML::Node const& node, rttr::type const& type,
-                                    std::vector<Guid>& guids) -> void {
+  // Discover all resource references in the scene objects and preload them
+
+  std::vector<Guid> required_resource_guids;
+
+  std::function<void(YAML::Node const&, rttr::type const&)> discover_resource_references;
+  discover_resource_references = [&discover_resource_references, &required_resource_guids](
+    YAML::Node const& node, rttr::type const& type) -> void {
       if (!node.IsDefined()) {
         return;
       }
@@ -204,7 +208,7 @@ auto Scene::Load() -> void {
       if (node.IsScalar() && actual_type.is_pointer() && actual_type.get_raw_type().is_derived_from(
             rttr::type::get<Resource>())) {
         if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-          guids.emplace_back(guid);
+          required_resource_guids.emplace_back(guid);
           return;
         }
       }
@@ -212,7 +216,7 @@ auto Scene::Load() -> void {
       if (node.IsSequence() && actual_type.is_sequential_container()) {
         if (auto const template_args{actual_type.get_template_arguments()}; !template_args.empty()) {
           for (auto const& elem : node) {
-            discover_resource_references(elem, *template_args.begin(), guids);
+            discover_resource_references(elem, *template_args.begin());
           }
         }
 
@@ -221,61 +225,53 @@ auto Scene::Load() -> void {
 
       if (node.IsMap() && actual_type.is_class()) {
         for (auto const& prop : actual_type.get_properties()) {
-          discover_resource_references(node[prop.get_name().to_string()], prop.get_type(), guids);
+          discover_resource_references(node[prop.get_name().to_string()], prop.get_type());
         }
       }
     };
 
-  std::vector<Guid> resource_guids;
 
   // These pointers OWN the objects. A scene consists of entities and components.
   // Components will be taken ownership of by the entities during deserialization.
   // The scene will take ownership of the entities at the end of the process.
   std::vector<SceneObject*> scene_objects;
 
+  static std::unordered_map<int, SceneObject*> ptr_fix_up;
+  ptr_fix_up.clear();
+
   for (auto const& scene_obj_node : yaml_data_["sceneObjects"]) {
     auto const type_node{scene_obj_node["type"]};
     auto const type{rttr::type::get_by_name(type_node.as<std::string>())};
     auto const scene_obj{static_cast<SceneObject*>(Create(type).release())};
     scene_objects.emplace_back(scene_obj);
-    ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = scene_obj;
-    discover_resource_references(scene_obj_node["properties"], type, resource_guids);
+    ptr_fix_up[static_cast<int>(std::ssize(ptr_fix_up)) + 1] = scene_obj;
+    discover_resource_references(scene_obj_node["properties"], type);
   }
 
-  std::ranges::sort(resource_guids, [](Guid const& lhs, Guid const& rhs) {
+  // Preload all resources used by the new scene objects
+
+  std::ranges::sort(required_resource_guids, [](Guid const& lhs, Guid const& rhs) {
     return lhs < rhs;
   });
 
-  resource_guids.erase(std::ranges::unique(resource_guids, [](Guid const& lhs, Guid const& rhs) {
+  required_resource_guids.erase(std::ranges::unique(required_resource_guids, [](Guid const& lhs, Guid const& rhs) {
     return lhs <=> rhs == std::strong_ordering::equal;
-  }).begin(), resource_guids.end());
+  }).begin(), required_resource_guids.end());
 
-  struct ResourceJobData {
-    Guid guid;
-    Resource* resource;
-  };
 
-  std::vector<ResourceJobData> resource_job_data;
-  resource_job_data.reserve(resource_guids.size());
-
-  std::vector<Job*> resource_jobs;
-  resource_jobs.reserve(resource_guids.size());
-
-  for (auto const& guid : resource_guids) {
-    resource_job_data.emplace_back(guid);
-
-    resource_jobs.emplace_back(g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
-      auto& job_data{**static_cast<ResourceJobData* const*>(data_ptr)};
-      job_data.resource = g_engine_context.resource_manager->GetOrLoad<Resource>(job_data.guid);
-    }, &resource_job_data.back()));
-
-    g_engine_context.job_system->Run(resource_jobs.back());
+  for (auto const& guid : required_resource_guids) {
+    g_engine_context.job_system->Run(g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
+      auto const& target_guid{*static_cast<Guid const*>(data_ptr)};
+      g_engine_context.resource_manager->GetOrLoad<Resource>(target_guid);
+    }, guid));
   }
 
-  auto const extensionFunc{
+  // Deserialize the scene objects
+
+  auto const deserialize_scene_obj_ptr{
     [](YAML::Node const& objNode, rttr::variant& v) -> void {
       if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
-        if (auto const it{ptrFixUp.find(objNode.as<int>(0))}; it != std::end(ptrFixUp)) {
+        if (auto const it{ptr_fix_up.find(objNode.as<int>(0))}; it != std::end(ptr_fix_up)) {
           auto const type{v.get_type()};
           v = it->second;
           [[maybe_unused]] auto const success{v.convert(type)};
@@ -285,37 +281,17 @@ auto Scene::Load() -> void {
     }
   };
 
-  struct SceneObjectJobData {
-    YAML::Node prop_node;
-    Object* obj;
-    decltype(extensionFunc) ext_func;
-  };
-
-  std::vector<SceneObjectJobData> job_data;
-  job_data.reserve(ptrFixUp.size());
-
-  std::vector<Job*> loader_jobs;
-  loader_jobs.reserve(ptrFixUp.size());
-
-  for (auto const& [fileId, obj] : ptrFixUp) {
-    job_data.emplace_back(yaml_data_["sceneObjects"][fileId - 1]["properties"], obj, extensionFunc);
-
-    loader_jobs.emplace_back(g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
-      auto const& job_data{**static_cast<SceneObjectJobData const* const*>(data_ptr)};
-      ReflectionDeserializeFromYaml(job_data.prop_node, *job_data.obj, job_data.ext_func);
-    }, &job_data.back()));
-
-    g_engine_context.job_system->Run(loader_jobs.back());
-  }
-
-  for (auto const* const job : loader_jobs) {
-    g_engine_context.job_system->Wait(job);
+  for (auto const& [fileId, obj] : ptr_fix_up) {
+    ReflectionDeserializeFromYaml(yaml_data_["sceneObjects"][fileId - 1]["properties"], *obj,
+      deserialize_scene_obj_ptr);
   }
 
   if (skybox_job) {
     g_engine_context.job_system->Wait(skybox_job);
     skybox_ = skybox_job_data.cubemap;
   }
+
+  // Add the new scene objects to the scene
 
   for (auto* const scene_obj : scene_objects) {
     if (auto* const entity{rttr::rttr_cast<Entity*>(scene_obj)}) {
