@@ -329,7 +329,6 @@
     <None Include="src\rendering\shaders\common.hlsli" />
     <None Include="src\rendering\shaders\depth_normal.hlsli" />
     <None Include="src\rendering\shaders\depth_only.hlsli" />
-    <None Include="packages.config" />
     <None Include="src\rendering\structured_buffer.inl">
       <Filter>Header Files</Filter>
     </None>
@@ -348,6 +347,7 @@
     <None Include="src\resource_manager.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />
