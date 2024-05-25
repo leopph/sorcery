@@ -25,10 +25,6 @@ std::vector<Scene*> Scene::all_scenes_;
 
 
 auto Scene::GetActiveScene() noexcept -> Scene* {
-  if (!active_scene_) {
-    active_scene_ = Create<Scene>().release();
-  }
-
   return active_scene_;
 }
 

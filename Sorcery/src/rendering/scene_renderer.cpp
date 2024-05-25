@@ -1147,19 +1147,21 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
   packet.color_buffer_format = color_buffer_format_;
 
-  auto const& active_scene{*Scene::GetActiveScene()};
   packet.background_color = {0, 0, 0, 1};
   packet.skybox_cubemap = nullptr;
-  packet.ambient_light = active_scene.GetAmbientLightVector();
 
-  if (active_scene.GetSkyMode() == SkyMode::Color) {
-    auto const sky_color{active_scene.GetSkyColor()};
-    packet.background_color = {sky_color[0], sky_color[1], sky_color[2], 1.0f};
-  }
+  if (auto const active_scene{Scene::GetActiveScene()}) {
+    packet.ambient_light = active_scene->GetAmbientLightVector();
 
-  if (active_scene.GetSkyMode() == SkyMode::Skybox) {
-    if (auto const cubemap{active_scene.GetSkybox()}) {
-      packet.skybox_cubemap = cubemap->GetTex();
+    if (active_scene->GetSkyMode() == SkyMode::Color) {
+      auto const sky_color{active_scene->GetSkyColor()};
+      packet.background_color = {sky_color[0], sky_color[1], sky_color[2], 1.0f};
+    }
+
+    if (active_scene->GetSkyMode() == SkyMode::Skybox) {
+      if (auto const cubemap{active_scene->GetSkybox()}) {
+        packet.skybox_cubemap = cubemap->GetTex();
+      }
     }
   }
 
