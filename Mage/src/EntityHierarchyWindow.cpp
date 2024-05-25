@@ -79,7 +79,7 @@ auto EntityHierarchyWindow::Draw() -> void {
         mApp->SetSelectedObject(&entity);
 
         if (ImGui::MenuItem("Duplicate")) {
-          std::unique_ptr<Entity> clone{static_cast<Entity*>(entity.Clone().release())};
+          auto clone{static_unique_ptr_cast<Entity>(entity.Clone())};
           mApp->SetSelectedObject(clone.get());
           mApp->GetScene().AddEntity(std::move(clone));
           entities = mApp->GetScene().GetEntities();

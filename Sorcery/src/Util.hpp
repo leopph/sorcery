@@ -105,7 +105,7 @@ LEOPPHAPI auto CalculateTangents(std::span<Vector3 const> positions, std::span<V
 
 template<typename To, typename From>
 [[nodiscard]] auto static_unique_ptr_cast(std::unique_ptr<From> ptr) -> std::unique_ptr<To> {
-  return std::unique_ptr<To>{static_cast<From*>(ptr.release())};
+  return std::unique_ptr<To>{static_cast<To*>(ptr.release())};
 }
 
 

@@ -44,8 +44,7 @@ auto RenderManager::AcquireTemporaryRenderTarget(RenderTarget::Desc const& desc)
       return rt;
     }
   }
-  return tmp_render_targets_.emplace_back(std::shared_ptr<RenderTarget>{RenderTarget::New(*device_, desc).release()}, 0)
-                            .rt;
+  return tmp_render_targets_.emplace_back(std::shared_ptr{RenderTarget::New(*device_, desc)}, 0).rt;
 }
 
 
