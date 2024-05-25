@@ -177,6 +177,19 @@ auto RenderManager::CreateReadOnlyTexture(
   }
 
   UpdateTexture(*tex, 0, subresource_data);
+
+  auto& cmd{AcquireCommandList()};
+  cmd.Begin(nullptr);
+  cmd.Barrier({}, {}, std::array{
+    graphics::TextureBarrier{
+      D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_COPY_DEST,
+      D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_COPY_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+      tex.get(), {0xffffffff}
+    }
+  });
+  cmd.End();
+  device_->ExecuteCommandLists(std::span{&cmd, 1});
+
   return tex;
 }
 
