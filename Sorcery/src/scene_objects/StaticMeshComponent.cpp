@@ -12,7 +12,7 @@
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::StaticMeshComponent>{"Static Mesh Component"}
     .REFLECT_REGISTER_COMPONENT_CTOR
-    .property("mesh", &sorcery::StaticMeshComponent::mesh_)
+    .property("mesh", &sorcery::StaticMeshComponent::GetMesh, &sorcery::StaticMeshComponent::SetMesh)
     .property("materials", &sorcery::StaticMeshComponent::GetMaterials, &sorcery::StaticMeshComponent::SetMaterials);
 }
 
