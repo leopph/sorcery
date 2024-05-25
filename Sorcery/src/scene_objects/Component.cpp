@@ -7,8 +7,7 @@
 #include "TransformComponent.hpp"
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Component>{"Component"}
-    .property("entity", &sorcery::Component::entity_);
+  rttr::registration::class_<sorcery::Component>{"Component"};
 }
 
 
