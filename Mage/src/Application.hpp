@@ -36,7 +36,6 @@ public:
   auto OpenScene(Guid const& guid) -> void;
   auto OpenNewScene() -> void;
   auto SaveCurrentSceneToFile() -> void;
-  auto CloseScene() -> void;
   [[nodiscard]] auto GetScene() const noexcept -> Scene&;
 
   [[nodiscard]] auto GetSelectedObject() const noexcept -> Object*;

@@ -126,19 +126,6 @@ auto Application::SaveCurrentSceneToFile() -> void {
 }
 
 
-auto Application::CloseScene() -> void {
-  if (scene_) {
-    // Unlod old scene if it was saved
-    g_engine_context.resource_manager->Unload(scene_->GetGuid());
-    // Unload old scene if it was temporary
-    temp_scene_owner_.reset();
-  }
-
-  scene_ = nullptr;
-  selected_object_ = nullptr;
-}
-
-
 auto Application::GetScene() const noexcept -> Scene& {
   assert(scene_);
   return *scene_;
@@ -162,6 +149,7 @@ auto Application::GetProjectDirectoryAbsolute() const noexcept -> std::filesyste
 
 auto Application::OpenProject(std::filesystem::path const& targetPath) -> void {
   proj_dir_abs_ = absolute(targetPath);
+  g_engine_context.resource_manager->UnloadAll();
   resource_db_.ChangeProjectDir(proj_dir_abs_);
   g_engine_context.window->SetTitle(std::string{WINDOW_TITLE_BASE} + " - " + targetPath.stem().string());
 

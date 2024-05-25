@@ -228,9 +228,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     graphics_device->WaitIdle();
 
-    app.CloseScene();
-    resource_manager->UnloadAll();
-
     ImGui_ImplWin32_Shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
