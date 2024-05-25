@@ -7,7 +7,7 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::TransformComponent>{"Transform Component"}
-    .constructor<>()(rttr::policy::ctor::as_raw_ptr)
+    .REFLECT_REGISTER_SCENE_OBJECT_CTOR
     .property("localPosition", &sorcery::TransformComponent::mLocalPosition)
     .property("localRotation", &sorcery::TransformComponent::mLocalRotation)
     .property("localScale", &sorcery::TransformComponent::mLocalScale)
@@ -65,7 +65,7 @@ void TransformComponent::Initialize() {
 
 
 auto TransformComponent::Clone() -> TransformComponent* {
-  auto const clone{new TransformComponent{*this}};
+  auto const clone{Create<TransformComponent>(*this).release()};
   clone->mChildren.clear();
   clone->mParent = nullptr;
   clone->SetParent(mParent);

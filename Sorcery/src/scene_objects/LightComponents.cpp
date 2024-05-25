@@ -41,7 +41,7 @@ LightComponent::~LightComponent() {
 
 
 auto LightComponent::Clone() -> LightComponent* {
-  return new LightComponent{*this};
+  return Create<LightComponent>(*this).release();
 }
 
 

@@ -118,11 +118,11 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
             }
           }
         } else if (job_data.desc->pathAbs.extension() == SCENE_RESOURCE_EXT) {
-          auto const scene{CreateAndInitialize<Scene>()};
+          auto const scene{CreateInit<Scene>().release()};
           scene->Deserialize(YAML::LoadFile(job_data.desc->pathAbs.string()));
           res = scene;
         } else if (job_data.desc->pathAbs.extension() == MATERIAL_RESOURCE_EXT) {
-          auto const mtl{CreateAndInitialize<Material>()};
+          auto const mtl{CreateInit<Material>().release()};
           mtl->Deserialize(YAML::LoadFile(job_data.desc->pathAbs.string()));
           res = mtl;
         }
@@ -172,9 +172,9 @@ auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexce
 
   if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
     if (meta.IsCubemap()) {
-      ret = new Cubemap{std::move(tex)};
+      ret = Create<Cubemap>(std::move(tex)).release();
     } else {
-      ret = new Texture2D{std::move(tex)};
+      ret = Create<Texture2D>(std::move(tex)).release();
     }
   } else {
     return nullptr;
@@ -289,7 +289,7 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
     curBytes = curBytes.subspan(sizeof(int));
   }
 
-  auto const ret{new Mesh{std::move(meshData)}};
+  auto const ret{Create<Mesh>(std::move(meshData)).release()};
   ret->Initialize();
   return ret;
 }
@@ -297,7 +297,7 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 
 ResourceManager::ResourceManager(JobSystem& job_system) :
   job_system_{&job_system} {
-  default_mtl_.Reset(CreateAndInitialize<Material>());
+  default_mtl_.Reset(CreateInit<Material>().release());
   default_mtl_->SetGuid(default_material_guid_);
   default_mtl_->SetName("Default Material");
   Add(default_mtl_.Get());
@@ -314,7 +314,7 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   std::vector<Vector3> quadTangents;
   CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, quadTangents);
 
-  cube_mesh_.Reset(CreateAndInitialize<Mesh>());
+  cube_mesh_.Reset(CreateInit<Mesh>().release());
   cube_mesh_->SetGuid(cube_mesh_guid_);
   cube_mesh_->SetName("Cube");
   cube_mesh_->SetPositions(kCubePositions);
@@ -329,7 +329,7 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   }
   Add(cube_mesh_.Get());
 
-  plane_mesh_.Reset(CreateAndInitialize<Mesh>());
+  plane_mesh_.Reset(CreateInit<Mesh>().release());
   plane_mesh_->SetGuid(plane_mesh_guid_);
   plane_mesh_->SetName("Plane");
   plane_mesh_->SetPositions(kQuadPositions);
@@ -344,7 +344,7 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   }
   Add(plane_mesh_.Get());
 
-  sphere_mesh_.Reset(CreateAndInitialize<Mesh>());
+  sphere_mesh_.Reset(CreateInit<Mesh>().release());
   sphere_mesh_->SetGuid(sphere_mesh_guid_);
   sphere_mesh_->SetName("Sphere");
   std::vector<Vector3> spherePositions;

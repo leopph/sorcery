@@ -25,7 +25,7 @@ std::vector<Scene*> Scene::sAllScenes;
 
 auto Scene::GetActiveScene() noexcept -> Scene* {
   if (!sActiveScene) {
-    sActiveScene = CreateAndInitialize<Scene>();
+    sActiveScene = CreateInit<Scene>().release();
   }
 
   return sActiveScene;

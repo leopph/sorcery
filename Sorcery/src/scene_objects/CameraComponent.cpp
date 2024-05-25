@@ -34,7 +34,7 @@ CameraComponent::~CameraComponent() {
 
 
 auto CameraComponent::Clone() -> CameraComponent* {
-  return new CameraComponent{*this};
+  return Create<CameraComponent>(*this).release();
 }
 
 

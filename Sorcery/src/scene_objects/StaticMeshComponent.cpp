@@ -19,7 +19,7 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 auto StaticMeshComponent::Clone() -> StaticMeshComponent* {
-  return new StaticMeshComponent{*this};
+  return Create<StaticMeshComponent>(*this).release();
 }
 
 

@@ -4,6 +4,7 @@
 #include "Reflection.hpp"
 
 #include <concepts>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -51,60 +52,12 @@ private:
 };
 
 
-template<std::derived_from<Object> T>
-[[nodiscard]] auto CreateAndInitialize() -> T*;
+template<std::derived_from<Object> ObjectType, typename... Args>
+[[nodiscard]] auto Create(Args&&... args) -> std::unique_ptr<ObjectType>;
 
-
-template<std::derived_from<Object> T>
-auto Object::FindObjectOfType() -> T* {
-  std::unique_lock const lock{sAllObjectsMutex};
-
-  if constexpr (std::same_as<Object, T>) {
-    return sAllObjects.empty() ? nullptr : sAllObjects.front();
-  } else {
-    for (auto const obj : sAllObjects) {
-      if (auto const castObj{rttr::rttr_cast<T*>(obj)}) {
-        return castObj;
-      }
-    }
-
-    return nullptr;
-  }
+template<std::derived_from<Object> ObjectType, typename... Args>
+[[nodiscard]] auto CreateInit(Args&&... args) -> std::unique_ptr<ObjectType>;
 }
 
 
-template<std::derived_from<Object> T>
-auto Object::FindObjectsOfType(std::vector<T*>& out) -> std::vector<T*>& {
-  std::unique_lock const lock{sAllObjectsMutex};
-
-  if constexpr (std::same_as<Object, T>) {
-    out = sAllObjects;
-  } else {
-    out.clear();
-
-    for (auto const obj : sAllObjects) {
-      if (auto const castObj{rttr::rttr_cast<T*>(obj)}) {
-        out.emplace_back(castObj);
-      }
-    }
-  }
-
-  return out;
-}
-
-
-template<std::derived_from<Object> T>
-auto Object::FindObjectsOfType() -> std::vector<T*> {
-  std::vector<T*> ret;
-  FindObjectsOfType<T>(ret);
-  return ret;
-}
-
-
-template<std::derived_from<Object> T>
-auto CreateAndInitialize() -> T* {
-  auto const obj{new T{}};
-  obj->Initialize();
-  return obj;
-}
-}
+#include "object.inl"

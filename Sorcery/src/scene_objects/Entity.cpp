@@ -63,7 +63,7 @@ Entity::~Entity() {
 
 
 auto Entity::Clone() -> Entity* {
-  auto const clone{new Entity{*this}};
+  auto const clone{Create<Entity>(*this).release()};
   clone->mTransform = nullptr;
   clone->Initialize();
 

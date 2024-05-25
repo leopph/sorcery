@@ -23,8 +23,8 @@ auto EntityHierarchyWindow::Draw() -> void {
     if (ImGui::BeginPopup(contextId)) {
       if (ImGui::MenuItem("Create New Entity")) {
         mApp->GetScene().SetActive();
-        auto const entity{CreateAndInitialize<Entity>()};
-        auto const transform{CreateAndInitialize<TransformComponent>()};
+        auto const entity{CreateInit<Entity>()};
+        auto const transform{CreateInit<TransformComponent>()};
         entity->AddComponent(*transform);
       }
 

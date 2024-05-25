@@ -22,7 +22,7 @@ auto MainMenuBar::Draw() -> void {
   if (ImGui::BeginMainMenuBar()) {
     if (ImGui::BeginMenu("File")) {
       if (ImGui::MenuItem("New Scene")) {
-        auto const scene{CreateAndInitialize<Scene>()};
+        auto const scene{CreateInit<Scene>()};
         mApp->OpenScene(*scene);
       }
 

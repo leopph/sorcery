@@ -3,6 +3,8 @@
 #include "Resource.hpp"
 #include "../Serialization.hpp"
 
+#include <memory>
+
 
 namespace sorcery {
 class NativeResource : public Resource {
@@ -14,15 +16,9 @@ public:
 };
 
 
-template<std::derived_from<NativeResource> T>
-[[nodiscard]] auto CreateDeserializeInit(YAML::Node const& node) -> T*;
+template<std::derived_from<NativeResource> NativeResourceType>
+[[nodiscard]] auto CreateDeserializeInit(YAML::Node const& node) -> std::unique_ptr<NativeResourceType>;
+}
 
 
-template<std::derived_from<NativeResource> T>
-auto CreateDeserializeInit(YAML::Node const& node) -> T* {
-  auto const res{new T{}};
-  res->Deserialize(node);
-  res->OnInit();
-  return res;
-}
-}
+#include "native_resource.inl"

@@ -217,6 +217,7 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="src\job_system.inl" />
+    <None Include="src\object.inl" />
     <None Include="src\rendering\shaders\brdf.hlsli" />
     <None Include="src\rendering\shaders\common.hlsli" />
     <None Include="src\rendering\shaders\depth_normal.hlsli" />
@@ -230,6 +231,7 @@
     <None Include="src\rendering\shaders\ssao.hlsli" />
     <None Include="src\rendering\shaders\utility.hlsli" />
     <None Include="src\rendering\structured_buffer.inl" />
+    <None Include="src\resources\native_resource.inl" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
