@@ -295,10 +295,10 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 
 ResourceManager::ResourceManager(JobSystem& job_system) :
   job_system_{&job_system} {
-  auto default_mtl{Create<Material>()};
-  default_mtl->SetGuid(default_material_guid_);
-  default_mtl->SetName("Default Material");
-  default_mtl_ = Add(std::move(default_mtl));
+  default_mtl_ = Create<Material>();
+  default_mtl_->SetGuid(default_mtl_guid_);
+  default_mtl_->SetName("Default Material");
+  default_resources_.emplace_back(default_mtl_.get());
 
   std::vector<Vector3> cubeNormals;
   CalculateNormals(kCubePositions, kCubeIndices, cubeNormals);
@@ -312,39 +312,39 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   std::vector<Vector3> quadTangents;
   CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, quadTangents);
 
-  auto cube_mesh{Create<Mesh>()};
-  cube_mesh->SetGuid(cube_mesh_guid_);
-  cube_mesh->SetName("Cube");
-  cube_mesh->SetPositions(kCubePositions);
-  cube_mesh->SetNormals(std::move(cubeNormals));
-  cube_mesh->SetUVs(kCubeUvs);
-  cube_mesh->SetTangents(std::move(cubeTangents));
-  cube_mesh->SetIndices(kCubeIndices);
-  cube_mesh->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  cube_mesh->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kCubeIndices.size()), 0, AABB{}}});
-  if (!cube_mesh->ValidateAndUpdate(false)) {
+  cube_mesh_ = Create<Mesh>();
+  cube_mesh_->SetGuid(cube_mesh_guid_);
+  cube_mesh_->SetName("Cube");
+  cube_mesh_->SetPositions(kCubePositions);
+  cube_mesh_->SetNormals(std::move(cubeNormals));
+  cube_mesh_->SetUVs(kCubeUvs);
+  cube_mesh_->SetTangents(std::move(cubeTangents));
+  cube_mesh_->SetIndices(kCubeIndices);
+  cube_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  cube_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kCubeIndices.size()), 0, AABB{}}});
+  if (!cube_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default cube mesh."};
   }
-  cube_mesh_ = Add(std::move(cube_mesh));
+  default_resources_.emplace_back(cube_mesh_.get());
 
-  auto plane_mesh{Create<Mesh>()};
-  plane_mesh->SetGuid(plane_mesh_guid_);
-  plane_mesh->SetName("Plane");
-  plane_mesh->SetPositions(kQuadPositions);
-  plane_mesh->SetNormals(std::move(quadNormals));
-  plane_mesh->SetUVs(kQuadUvs);
-  plane_mesh->SetTangents(std::move(quadTangents));
-  plane_mesh->SetIndices(kQuadIndices);
-  plane_mesh->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  plane_mesh->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kQuadIndices.size()), 0, AABB{}}});
-  if (!plane_mesh->ValidateAndUpdate(false)) {
+  plane_mesh_ = Create<Mesh>();
+  plane_mesh_->SetGuid(plane_mesh_guid_);
+  plane_mesh_->SetName("Plane");
+  plane_mesh_->SetPositions(kQuadPositions);
+  plane_mesh_->SetNormals(std::move(quadNormals));
+  plane_mesh_->SetUVs(kQuadUvs);
+  plane_mesh_->SetTangents(std::move(quadTangents));
+  plane_mesh_->SetIndices(kQuadIndices);
+  plane_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  plane_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kQuadIndices.size()), 0, AABB{}}});
+  if (!plane_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default plane mesh."};
   }
-  plane_mesh_ = Add(std::move(plane_mesh));
+  default_resources_.emplace_back(plane_mesh_.get());
 
-  auto sphere_mesh{Create<Mesh>()};
-  sphere_mesh->SetGuid(sphere_mesh_guid_);
-  sphere_mesh->SetName("Sphere");
+  sphere_mesh_ = Create<Mesh>();
+  sphere_mesh_->SetGuid(sphere_mesh_guid_);
+  sphere_mesh_->SetName("Sphere");
   std::vector<Vector3> spherePositions;
   std::vector<Vector3> sphereNormals;
   std::vector<Vector3> sphereTangents;
@@ -353,17 +353,17 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   rendering::GenerateSphereMesh(1, 50, 50, spherePositions, sphereNormals, sphereUvs, sphereIndices);
   auto const sphereIdxCount{std::size(sphereIndices)};
   CalculateTangents(spherePositions, sphereUvs, sphereIndices, sphereTangents);
-  sphere_mesh->SetPositions(std::move(spherePositions));
-  sphere_mesh->SetNormals(std::move(sphereNormals));
-  sphere_mesh->SetUVs(std::move(sphereUvs));
-  sphere_mesh->SetTangents(std::move(sphereTangents));
-  sphere_mesh->SetIndices(std::move(sphereIndices));
-  sphere_mesh->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  sphere_mesh->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
-  if (!sphere_mesh->ValidateAndUpdate(false)) {
+  sphere_mesh_->SetPositions(std::move(spherePositions));
+  sphere_mesh_->SetNormals(std::move(sphereNormals));
+  sphere_mesh_->SetUVs(std::move(sphereUvs));
+  sphere_mesh_->SetTangents(std::move(sphereTangents));
+  sphere_mesh_->SetIndices(std::move(sphereIndices));
+  sphere_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+  sphere_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
+  if (!sphere_mesh_->ValidateAndUpdate(false)) {
     throw std::runtime_error{"Failed to validate and update default sphere mesh."};
   }
-  sphere_mesh_ = Add(std::move(sphere_mesh));
+  default_resources_.emplace_back(sphere_mesh_.get());
 }
 
 
@@ -382,6 +382,12 @@ auto ResourceManager::UnloadAll() -> void {
 
 
 auto ResourceManager::IsLoaded(Guid const& guid) -> bool {
+  for (auto const& res : default_resources_) {
+    if (res->GetGuid() <=> guid == std::strong_ordering::equal) {
+      return true;
+    }
+  }
+
   return loaded_resources_.LockShared()->contains(guid);
 }
 
@@ -398,13 +404,21 @@ auto ResourceManager::UpdateMappings(std::map<Guid, ResourceDescription> mapping
 
 auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type,
                                                  std::vector<Guid>& out) noexcept -> void {
+  // Default resources
+  for (auto const& res : default_resources_) {
+    if (rttr::type::get(*res).is_derived_from(type)) {
+      out.emplace_back(res->GetGuid());
+    }
+  }
+
+  // File mappings
   for (auto const& [guid, desc] : *mappings_.LockShared()) {
     if (desc.type.is_derived_from(type)) {
       out.emplace_back(guid);
     }
   }
 
-  // Resources that don't come from files
+  // Other, loaded resources that don't come from files
   for (auto const& res : *loaded_resources_.LockShared()) {
     auto contains{false};
     for (auto const& guid : out) {
@@ -422,13 +436,21 @@ auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type,
 
 
 auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) -> void {
+  // Default resources
+  for (auto const& res : default_resources_) {
+    if (auto const res_type{rttr::type::get(*res)}; res_type.is_derived_from(type)) {
+      out.emplace_back(res->GetGuid(), res->GetName(), res_type);
+    }
+  }
+
+  // File mappings
   for (auto const& [guid, desc] : *mappings_.LockShared()) {
     if (desc.type.is_derived_from(type)) {
       out.emplace_back(guid, desc.name, desc.type);
     }
   }
 
-  // Resources that don't come from files
+  // Other, loaded resources that don't come from files
   for (auto const& res : *loaded_resources_.LockShared()) {
     auto contains{false};
     for (auto const& res_info : out) {
@@ -446,21 +468,21 @@ auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vec
 
 
 auto ResourceManager::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
-  return default_mtl_;
+  return ObserverPtr{default_mtl_.get()};
 }
 
 
 auto ResourceManager::GetCubeMesh() const noexcept -> ObserverPtr<Mesh> {
-  return cube_mesh_;
+  return ObserverPtr{cube_mesh_.get()};
 }
 
 
 auto ResourceManager::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
-  return plane_mesh_;
+  return ObserverPtr{plane_mesh_.get()};
 }
 
 
 auto ResourceManager::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
-  return sphere_mesh_;
+  return ObserverPtr{sphere_mesh_.get()};
 }
 }

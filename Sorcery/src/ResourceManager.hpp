@@ -37,7 +37,7 @@ public:
   };
 
 
-  LEOPPHAPI ResourceManager(JobSystem& job_system);
+  LEOPPHAPI explicit ResourceManager(JobSystem& job_system);
 
   template<std::derived_from<Resource> ResType = Resource>
   auto GetOrLoad(Guid const& guid) -> ResType*;
@@ -90,20 +90,21 @@ private:
     std::span<std::byte const> bytes) noexcept -> MaybeNull<std::unique_ptr<Resource>>;
   [[nodiscard]] static auto LoadMesh(std::span<std::byte const> bytes) -> MaybeNull<std::unique_ptr<Resource>>;
 
-  inline static Guid const default_material_guid_{1, 0};
+  inline static Guid const default_mtl_guid_{1, 0};
   inline static Guid const cube_mesh_guid_{2, 0};
   inline static Guid const plane_mesh_guid_{3, 0};
   inline static Guid const sphere_mesh_guid_{4, 0};
 
   Mutex<std::set<std::unique_ptr<Resource>, ResourceGuidLess>, true> loaded_resources_;
+  std::vector<ObserverPtr<Resource>> default_resources_;
   Mutex<std::map<Guid, ResourceDescription>, true> mappings_;
 
   Mutex<std::map<Guid, Job*>, true> loader_jobs_;
 
-  ObserverPtr<Material> default_mtl_;
-  ObserverPtr<Mesh> cube_mesh_;
-  ObserverPtr<Mesh> plane_mesh_;
-  ObserverPtr<Mesh> sphere_mesh_;
+  std::unique_ptr<Material> default_mtl_;
+  std::unique_ptr<Mesh> cube_mesh_;
+  std::unique_ptr<Mesh> plane_mesh_;
+  std::unique_ptr<Mesh> sphere_mesh_;
 
   ObserverPtr<JobSystem> job_system_;
 };
