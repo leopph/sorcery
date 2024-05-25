@@ -8,16 +8,89 @@
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::TransformComponent>{"Transform Component"}
     .REFLECT_REGISTER_SCENE_OBJECT_CTOR
-    .property("localPosition", &sorcery::TransformComponent::mLocalPosition)
-    .property("localRotation", &sorcery::TransformComponent::mLocalRotation)
-    .property("localScale", &sorcery::TransformComponent::mLocalScale)
-    .property("parent", &sorcery::TransformComponent::mParent)
-    .property("children", &sorcery::TransformComponent::mChildren)
+    .property("localPosition", &sorcery::TransformComponent::GetLocalPosition,
+      &sorcery::TransformComponent::SetLocalPosition)
+    .property("localRotation", &sorcery::TransformComponent::GetLocalRotation,
+      &sorcery::TransformComponent::SetLocalRotation)
+    .property("localScale", &sorcery::TransformComponent::GetLocalScale, &sorcery::TransformComponent::SetLocalScale)
+    .property("parent", &sorcery::TransformComponent::GetParent, &sorcery::TransformComponent::SetParent)
     .property("localEulerHelper", &sorcery::TransformComponent::mLocalEulerAnglesHelp);
 }
 
 
 namespace sorcery {
+auto TransformComponent::OnDrawProperties(bool& changed) -> void {
+  Component::OnDrawProperties(changed);
+
+  ImGui::Text("Local Position");
+  ImGui::TableNextColumn();
+
+  Vector3 localPos{GetLocalPosition()};
+  if (ImGui::DragFloat3("###transformPos", localPos.GetData(), 0.1f)) {
+    SetLocalPosition(localPos);
+  }
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Local Rotation");
+  ImGui::TableNextColumn();
+
+  if (auto euler{GetLocalEulerAngles()}; ImGui::DragFloat3("###transformRot", euler.GetData(), 1.0f)) {
+    SetLocalEulerAngles(euler);
+  }
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Local Scale");
+  ImGui::TableNextColumn();
+
+  bool static uniformScale{true};
+  auto constexpr scaleSpeed{0.01f};
+
+  ImGui::Text("%s", "Uniform");
+  ImGui::SameLine();
+  ImGui::Checkbox("##UniformScaleCheck", &uniformScale);
+  ImGui::SameLine();
+
+  if (uniformScale) {
+    f32 scale{GetLocalScale()[0]};
+    if (ImGui::DragFloat("###transformScale", &scale, scaleSpeed)) {
+      SetLocalScale(Vector3{scale});
+    }
+  } else {
+    Vector3 localScale{GetLocalScale()};
+    if (ImGui::DragFloat3("###transformScale", localScale.GetData(), scaleSpeed)) {
+      SetLocalScale(localScale);
+    }
+  }
+}
+
+
+auto TransformComponent::Clone() -> std::unique_ptr<SceneObject> {
+  auto clone{Create<TransformComponent>(*this)};
+  clone->mChildren.clear();
+  clone->mParent = nullptr;
+  clone->SetParent(mParent);
+
+  return clone;
+}
+
+
+auto TransformComponent::OnAfterAttachedToEntity(Entity& entity) -> void {
+  Component::OnAfterAttachedToEntity(entity);
+  UpdateWorldDataRecursive();
+}
+
+
+auto TransformComponent::OnBeforeDetachedFromEntity(Entity& entity) -> void {
+  // SetParent(nullptr) on child removes it from this->mChildren so we cannot iterate
+  while (!mChildren.empty()) {
+    mChildren.back()->SetParent(nullptr);
+  }
+
+  SetParent(nullptr);
+  Component::OnBeforeDetachedFromEntity(entity);
+}
+
+
 auto TransformComponent::UpdateWorldDataRecursive() -> void {
   SetChanged(true);
 
@@ -45,32 +118,6 @@ auto TransformComponent::UpdateWorldDataRecursive() -> void {
   for (auto* const child : mChildren) {
     child->UpdateWorldDataRecursive();
   }
-}
-
-
-TransformComponent::~TransformComponent() {
-  // SetParent(nullptr) on child removes it from this->mChildren so we cannot iterate
-  while (!mChildren.empty()) {
-    mChildren.back()->SetParent(nullptr);
-  }
-
-  SetParent(nullptr);
-}
-
-
-void TransformComponent::Initialize() {
-  Component::Initialize();
-  UpdateWorldDataRecursive();
-}
-
-
-auto TransformComponent::Clone() -> TransformComponent* {
-  auto const clone{Create<TransformComponent>(*this).release()};
-  clone->mChildren.clear();
-  clone->mParent = nullptr;
-  clone->SetParent(mParent);
-
-  return clone;
 }
 
 
@@ -268,50 +315,5 @@ auto TransformComponent::HasChanged() const noexcept -> bool {
 
 auto TransformComponent::SetChanged(bool const changed) noexcept -> void {
   mChanged = changed;
-}
-
-
-auto TransformComponent::OnDrawProperties(bool& changed) -> void {
-  Component::OnDrawProperties(changed);
-
-  ImGui::Text("Local Position");
-  ImGui::TableNextColumn();
-
-  Vector3 localPos{GetLocalPosition()};
-  if (ImGui::DragFloat3("###transformPos", localPos.GetData(), 0.1f)) {
-    SetLocalPosition(localPos);
-  }
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Local Rotation");
-  ImGui::TableNextColumn();
-
-  if (auto euler{GetLocalEulerAngles()}; ImGui::DragFloat3("###transformRot", euler.GetData(), 1.0f)) {
-    SetLocalEulerAngles(euler);
-  }
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Local Scale");
-  ImGui::TableNextColumn();
-
-  bool static uniformScale{true};
-  auto constexpr scaleSpeed{0.01f};
-
-  ImGui::Text("%s", "Uniform");
-  ImGui::SameLine();
-  ImGui::Checkbox("##UniformScaleCheck", &uniformScale);
-  ImGui::SameLine();
-
-  if (uniformScale) {
-    f32 scale{GetLocalScale()[0]};
-    if (ImGui::DragFloat("###transformScale", &scale, scaleSpeed)) {
-      SetLocalScale(Vector3{scale});
-    }
-  } else {
-    Vector3 localScale{GetLocalScale()};
-    if (ImGui::DragFloat3("###transformScale", localScale.GetData(), scaleSpeed)) {
-      SetLocalScale(localScale);
-    }
-  }
 }
 }

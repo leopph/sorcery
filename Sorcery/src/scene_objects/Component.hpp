@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SceneObject.hpp"
+#include "../observer_ptr.hpp"
 
 
 namespace sorcery {
@@ -11,25 +12,26 @@ class Component : public SceneObject {
   RTTR_REGISTRATION_FRIEND
   RTTR_ENABLE(SceneObject)
 
+public:
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+
+  LEOPPHAPI virtual auto OnAfterAttachedToEntity(Entity& entity) -> void;
+  LEOPPHAPI virtual auto OnBeforeDetachedFromEntity(Entity& entity) -> void;
+
 protected:
   Component() = default;
   Component(Component const& other) = default;
   Component(Component&& other) noexcept = default;
 
 public:
-  LEOPPHAPI ~Component() override;
+  ~Component() override = default;
 
   auto operator=(Component const& other) -> void = delete;
   auto operator=(Component&& other) -> void = delete;
 
-  [[nodiscard]] LEOPPHAPI auto Clone() -> Component* override = 0;
-
-  [[nodiscard]] LEOPPHAPI auto GetEntity() const -> Entity&;
-  LEOPPHAPI auto SetEntity(Entity& entity) -> void;
-
-  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+  [[nodiscard]] LEOPPHAPI auto GetEntity() const -> ObserverPtr<Entity>;
 
 private:
-  Entity* mEntity{nullptr};
+  ObserverPtr<Entity> entity_{nullptr};
 };
 }

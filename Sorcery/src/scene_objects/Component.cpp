@@ -8,28 +8,27 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Component>{"Component"}
-    .property("entity", &sorcery::Component::mEntity);
+    .property("entity", &sorcery::Component::entity_);
 }
 
 
 namespace sorcery {
-Component::~Component() {
-  mEntity->RemoveComponent(*this);
-}
-
-
-auto Component::GetEntity() const -> Entity& {
-  assert(mEntity);
-  return *mEntity;
-}
-
-
-auto Component::SetEntity(Entity& entity) -> void {
-  mEntity = std::addressof(entity);
-}
-
-
 auto Component::OnDrawProperties([[maybe_unused]] bool& changed) -> void {
   // We explicitly do not call SceneObject::OnDrawProperties here to avoid displaying the name and type
+}
+
+
+auto Component::OnAfterAttachedToEntity(Entity& entity) -> void {
+  entity_.Reset(std::addressof(entity));
+}
+
+
+auto Component::OnBeforeDetachedFromEntity(Entity& entity) -> void {
+  entity_.Reset();
+}
+
+
+auto Component::GetEntity() const -> ObserverPtr<Entity> {
+  return entity_;
 }
 }

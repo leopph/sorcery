@@ -28,54 +28,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-CameraComponent::~CameraComponent() {
-  g_engine_context.scene_renderer->Unregister(*this);
-}
-
-
-auto CameraComponent::Clone() -> CameraComponent* {
-  return Create<CameraComponent>(*this).release();
-}
-
-
-auto CameraComponent::GetBackgroundColor() const -> Vector4 const& {
-  return mBackgroundColor;
-}
-
-
-auto CameraComponent::SetBackgroundColor(Vector4 const& color) -> void {
-  for (auto i = 0; i < 4; i++) {
-    mBackgroundColor[i] = std::clamp(color[i], 0.f, 1.f);
-  }
-}
-
-
-auto CameraComponent::GetPosition() const noexcept -> Vector3 {
-  return GetEntity().GetTransform().GetWorldPosition();
-}
-
-
-auto CameraComponent::GetRightAxis() const noexcept -> Vector3 {
-  return GetEntity().GetTransform().GetRightAxis();
-}
-
-
-auto CameraComponent::GetUpAxis() const noexcept -> Vector3 {
-  return GetEntity().GetTransform().GetUpAxis();
-}
-
-
-auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
-  return GetEntity().GetTransform().GetForwardAxis();
-}
-
-
-auto CameraComponent::Initialize() -> void {
-  Component::Initialize();
-  g_engine_context.scene_renderer->Register(*this);
-}
-
-
 auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   Component::OnDrawProperties(changed);
 
@@ -175,5 +127,54 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   if (ImGui::ColorEdit4("###backgroundColor", color.GetData())) {
     SetBackgroundColor(color);
   }
+}
+
+
+auto CameraComponent::Clone() -> std::unique_ptr<SceneObject> {
+  return Create<CameraComponent>(*this);
+}
+
+
+auto CameraComponent::OnAfterEnteringScene(Scene const& scene) -> void {
+  Component::OnAfterEnteringScene(scene);
+  g_engine_context.scene_renderer->Register(*this);
+}
+
+
+auto CameraComponent::OnBeforeExitingScene(Scene const& scene) -> void {
+  g_engine_context.scene_renderer->Unregister(*this);
+  Component::OnBeforeExitingScene(scene);
+}
+
+
+auto CameraComponent::GetBackgroundColor() const -> Vector4 const& {
+  return background_color_;
+}
+
+
+auto CameraComponent::SetBackgroundColor(Vector4 const& color) -> void {
+  for (auto i = 0; i < 4; i++) {
+    background_color_[i] = std::clamp(color[i], 0.f, 1.f);
+  }
+}
+
+
+auto CameraComponent::GetPosition() const noexcept -> Vector3 {
+  return GetEntity()->GetTransform().GetWorldPosition();
+}
+
+
+auto CameraComponent::GetRightAxis() const noexcept -> Vector3 {
+  return GetEntity()->GetTransform().GetRightAxis();
+}
+
+
+auto CameraComponent::GetUpAxis() const noexcept -> Vector3 {
+  return GetEntity()->GetTransform().GetUpAxis();
+}
+
+
+auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
+  return GetEntity()->GetTransform().GetForwardAxis();
 }
 }

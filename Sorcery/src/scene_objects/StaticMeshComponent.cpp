@@ -18,61 +18,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto StaticMeshComponent::Clone() -> StaticMeshComponent* {
-  return Create<StaticMeshComponent>(*this).release();
-}
-
-
-StaticMeshComponent::StaticMeshComponent() :
-  mesh_{g_engine_context.resource_manager->GetCubeMesh()} {
-  ResizeMaterialListToSubmeshCount();
-}
-
-
-StaticMeshComponent::~StaticMeshComponent() {
-  g_engine_context.scene_renderer->Unregister(*this);
-}
-
-
-auto StaticMeshComponent::GetMesh() const noexcept -> Mesh* {
-  return mesh_;
-}
-
-
-auto StaticMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
-  mesh_ = mesh;
-  ResizeMaterialListToSubmeshCount();
-}
-
-
-auto StaticMeshComponent::GetMaterials() const noexcept -> std::vector<Material*> const& {
-  return materials_;
-}
-
-
-auto StaticMeshComponent::SetMaterials(std::vector<Material*> const& materials) -> void {
-  materials_ = materials;
-  ResizeMaterialListToSubmeshCount();
-}
-
-
-auto StaticMeshComponent::SetMaterial(int const idx, Material* const mtl) -> void {
-  if (idx >= std::ssize(materials_)) {
-    throw std::runtime_error{
-      std::format("Invalid index {} while attempting to replace material on StaticMeshComponent.", idx)
-    };
-  }
-
-  materials_[idx] = mtl;
-}
-
-
-auto StaticMeshComponent::Initialize() -> void {
-  Component::Initialize();
-  g_engine_context.scene_renderer->Register(*this);
-}
-
-
 auto StaticMeshComponent::OnDrawProperties(bool& changed) -> void {
   Component::OnDrawProperties(changed);
 
@@ -150,7 +95,7 @@ auto StaticMeshComponent::OnDrawGizmosSelected() -> void {
         }
       };
 
-      auto const& local_to_world_mtx{GetEntity().GetTransform().GetLocalToWorldMatrix()};
+      auto const& local_to_world_mtx{GetEntity()->GetTransform().GetLocalToWorldMatrix()};
 
       if (auto const drawable_submesh_count{std::max(mesh_->GetSubmeshCount(), static_cast<int>(materials_.size()))};
         drawable_submesh_count > 1) {
@@ -162,6 +107,62 @@ auto StaticMeshComponent::OnDrawGizmosSelected() -> void {
       draw_aabb_edges(mesh_->GetBounds().Transform(local_to_world_mtx), Color::Red());
     }
   }
+}
+
+
+auto StaticMeshComponent::Clone() -> std::unique_ptr<SceneObject> {
+  return Create<StaticMeshComponent>(*this);
+}
+
+
+auto StaticMeshComponent::OnAfterEnteringScene(Scene const& scene) -> void {
+  Component::OnAfterEnteringScene(scene);
+  g_engine_context.scene_renderer->Register(*this);
+}
+
+
+auto StaticMeshComponent::OnBeforeExitingScene(Scene const& scene) -> void {
+  g_engine_context.scene_renderer->Unregister(*this);
+  Component::OnBeforeExitingScene(scene);
+}
+
+
+StaticMeshComponent::StaticMeshComponent() :
+  mesh_{g_engine_context.resource_manager->GetCubeMesh()} {
+  ResizeMaterialListToSubmeshCount();
+}
+
+
+auto StaticMeshComponent::GetMesh() const noexcept -> Mesh* {
+  return mesh_;
+}
+
+
+auto StaticMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
+  mesh_ = mesh;
+  ResizeMaterialListToSubmeshCount();
+}
+
+
+auto StaticMeshComponent::GetMaterials() const noexcept -> std::vector<Material*> const& {
+  return materials_;
+}
+
+
+auto StaticMeshComponent::SetMaterials(std::vector<Material*> const& materials) -> void {
+  materials_ = materials;
+  ResizeMaterialListToSubmeshCount();
+}
+
+
+auto StaticMeshComponent::SetMaterial(int const idx, Material* const mtl) -> void {
+  if (idx >= std::ssize(materials_)) {
+    throw std::runtime_error{
+      std::format("Invalid index {} while attempting to replace material on StaticMeshComponent.", idx)
+    };
+  }
+
+  materials_[idx] = mtl;
 }
 
 

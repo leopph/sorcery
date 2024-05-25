@@ -50,16 +50,18 @@ auto Object::FindObjectsOfType() -> std::vector<T*> {
 }
 
 
-template<std::derived_from<Object> ObjectType, typename... Args>
-auto Create(Args&&... args) -> std::unique_ptr<ObjectType> {
-  return std::make_unique<ObjectType>(std::forward<Args>(args)...);
+template<typename... Args>
+auto Create(rttr::type const& type, Args&&... args) -> std::unique_ptr<Object> {
+  if (type.is_derived_from(rttr::type::get<Object>())) {
+    return std::unique_ptr<Object>{type.create(std::forward<Args>(args)...).template get_value<Object*>()};
+  }
+
+  return nullptr;
 }
 
 
 template<std::derived_from<Object> ObjectType, typename... Args>
-auto CreateInit(Args&&... args) -> std::unique_ptr<ObjectType> {
-  auto obj{Create<ObjectType>(std::forward<Args>(args)...)};
-  obj->Initialize();
-  return obj;
+auto Create(Args&&... args) -> std::unique_ptr<ObjectType> {
+  return std::make_unique<ObjectType>(std::forward<Args>(args)...);
 }
 }

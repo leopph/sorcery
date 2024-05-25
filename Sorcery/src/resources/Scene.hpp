@@ -12,20 +12,9 @@
 namespace sorcery {
 class Scene final : public NativeResource {
   RTTR_ENABLE(NativeResource)
-  static Scene* sActiveScene;
-  static std::vector<Scene*> sAllScenes;
-
-  std::vector<Entity*> mEntities;
-
-  YAML::Node mYamlData;
-
-  Vector3 mAmbientLight{20.0f / 255.0f};
-
-  Cubemap* mSkybox{nullptr};
-  SkyMode mSkyMode{SkyMode::Color};
-  Vector3 mSkyColor{10.0f / 255.0f};
 
 public:
+  // The active scene is the one that other systems take global information (such as sky settings) from.
   [[nodiscard]] LEOPPHAPI static auto GetActiveScene() noexcept -> Scene*;
 
   LEOPPHAPI Scene();
@@ -37,9 +26,9 @@ public:
   auto operator=(Scene const& other) -> void = delete;
   auto operator=(Scene&& other) -> void = delete;
 
-  LEOPPHAPI auto AddEntity(Entity& entity) -> void;
-  LEOPPHAPI auto RemoveEntity(Entity const& entity) -> void;
-  [[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::vector<Entity*> const&;
+  LEOPPHAPI auto AddEntity(std::unique_ptr<Entity> entity) -> void;
+  LEOPPHAPI auto RemoveEntity(Entity const& entity) -> std::unique_ptr<Entity>;
+  [[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const>;
 
   LEOPPHAPI auto Save() -> void;
   LEOPPHAPI auto Load() -> void;
@@ -63,5 +52,19 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetSkybox() const noexcept -> Cubemap*;
   LEOPPHAPI auto SetSkybox(Cubemap* skybox) noexcept -> void;
+
+private:
+  static Scene* active_scene_;
+  static std::vector<Scene*> all_scenes_;
+
+  std::vector<std::unique_ptr<Entity>> entities_;
+
+  YAML::Node yaml_data_;
+
+  Vector3 ambient_light_{20.0f / 255.0f};
+
+  Cubemap* skybox_{nullptr};
+  SkyMode sky_mode_{SkyMode::Color};
+  Vector3 sky_color_{10.0f / 255.0f};
 };
 }

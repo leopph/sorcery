@@ -6,6 +6,7 @@
 #include "../Serialization.hpp"
 #undef FindResource
 #include "../job_system.hpp"
+#include "../Reflection.hpp"
 #include "../ResourceManager.hpp"
 
 #include <algorithm>
@@ -13,30 +14,30 @@
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Scene>{"Scene"}.property("skybox", &sorcery::Scene::GetSkybox,
-    &sorcery::Scene::SetSkybox);
+  rttr::registration::class_<sorcery::Scene>{"Scene"}
+    .property("skybox", &sorcery::Scene::GetSkybox, &sorcery::Scene::SetSkybox);
 }
 
 
 namespace sorcery {
-Scene* Scene::sActiveScene{nullptr};
-std::vector<Scene*> Scene::sAllScenes;
+Scene* Scene::active_scene_{nullptr};
+std::vector<Scene*> Scene::all_scenes_;
 
 
 auto Scene::GetActiveScene() noexcept -> Scene* {
-  if (!sActiveScene) {
-    sActiveScene = CreateInit<Scene>().release();
+  if (!active_scene_) {
+    active_scene_ = Create<Scene>().release();
   }
 
-  return sActiveScene;
+  return active_scene_;
 }
 
 
 Scene::Scene() {
-  sAllScenes.emplace_back(this);
+  all_scenes_.emplace_back(this);
 
-  if (!sActiveScene) {
-    sActiveScene = this;
+  if (!active_scene_) {
+    active_scene_ = this;
   }
 
   Save();
@@ -44,38 +45,54 @@ Scene::Scene() {
 
 
 Scene::~Scene() {
-  std::erase(sAllScenes, this);
-
-  if (sActiveScene == this) {
-    sActiveScene = sAllScenes.empty() ? nullptr : sAllScenes.back();
+  for (auto const& entity : entities_) {
+    entity->OnBeforeExitingScene(*this);
   }
 
-  Clear();
+  if (active_scene_ == this) {
+    active_scene_ = all_scenes_.empty() ? nullptr : all_scenes_.back();
+  }
+
+  std::erase(all_scenes_, this);
 }
 
 
 auto Scene::Serialize() const noexcept -> YAML::Node {
-  return mYamlData;
+  return yaml_data_;
 }
 
 
 auto Scene::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
-  mYamlData = Clone(yamlNode);
+  yaml_data_ = Clone(yamlNode);
 }
 
 
-auto Scene::AddEntity(Entity& entity) -> void {
-  mEntities.push_back(std::addressof(entity));
+auto Scene::AddEntity(std::unique_ptr<Entity> entity) -> void {
+  if (entity) {
+    entities_.emplace_back(std::move(entity));
+    entities_.back()->OnAfterEnteringScene(*this);
+  }
 }
 
 
-auto Scene::RemoveEntity(Entity const& entity) -> void {
-  std::erase(mEntities, std::addressof(entity));
+auto Scene::RemoveEntity(Entity const& entity) -> std::unique_ptr<Entity> {
+  if (auto const it{
+    std::ranges::find_if(entities_, [&entity](std::unique_ptr<Entity> const& owned_entity) {
+      return owned_entity.get() == std::addressof(entity);
+    })
+  }; it != std::end(entities_)) {
+    (*it)->OnBeforeExitingScene(*this);
+    auto ret{std::move(*it)};
+    entities_.erase(it);
+    return ret;
+  }
+
+  return nullptr;
 }
 
 
-auto Scene::GetEntities() const noexcept -> std::vector<Entity*> const& {
-  return mEntities;
+auto Scene::GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const> {
+  return entities_;
 }
 
 
@@ -89,15 +106,15 @@ auto Scene::Save() -> void {
   static std::unordered_map<void const*, int> ptrFixUp;
   ptrFixUp.clear();
 
-  mYamlData.reset();
-  mYamlData["version"] = 1;
-  mYamlData["ambientLight"] = mAmbientLight;
-  mYamlData["skyMode"] = static_cast<int>(mSkyMode);
-  mYamlData["skyColor"] = mSkyColor;
-  mYamlData["skybox"] = mSkybox ? mSkybox->GetGuid() : Guid::Invalid();
+  yaml_data_.reset();
+  yaml_data_["version"] = 1;
+  yaml_data_["ambientLight"] = ambient_light_;
+  yaml_data_["skyMode"] = static_cast<int>(sky_mode_);
+  yaml_data_["skyColor"] = sky_color_;
+  yaml_data_["skybox"] = skybox_ ? skybox_->GetGuid() : Guid::Invalid();
 
-  for (auto const entity : mEntities) {
-    tmpThisSceneObjects.emplace_back(entity);
+  for (auto const& entity : entities_) {
+    tmpThisSceneObjects.emplace_back(entity.get());
 
     for (auto const component : entity->GetComponents(tmpComponents)) {
       tmpThisSceneObjects.emplace_back(component);
@@ -125,7 +142,7 @@ auto Scene::Save() -> void {
     YAML::Node sceneObjNode;
     sceneObjNode["type"] = rttr::type::get(*sceneObj).get_name().to_string();
     sceneObjNode["properties"] = ReflectionSerializeToYaml(*sceneObj, extensionFunc);
-    mYamlData["sceneObjects"].push_back(sceneObjNode);
+    yaml_data_["sceneObjects"].push_back(sceneObjNode);
   }
 }
 
@@ -134,27 +151,24 @@ auto Scene::Load() -> void {
   static std::unordered_map<int, SceneObject*> ptrFixUp;
   ptrFixUp.clear();
 
-  auto const lastActiveScene{sActiveScene};
-  sActiveScene = this;
-
   Clear();
 
-  if (auto const version{mYamlData["version"]}; !version || !version.IsScalar() || version.as<int>(1) != 1) {
+  if (auto const version{yaml_data_["version"]}; !version || !version.IsScalar() || version.as<int>(1) != 1) {
     throw std::runtime_error{
       std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName())
     };
   }
 
-  if (auto const node{mYamlData["ambientLight"]}) {
-    mAmbientLight = node.as<Vector3>(mAmbientLight);
+  if (auto const node{yaml_data_["ambientLight"]}) {
+    ambient_light_ = node.as<Vector3>(ambient_light_);
   }
 
-  if (auto const node{mYamlData["skyMode"]}) {
-    mSkyMode = static_cast<SkyMode>(node.as<int>(static_cast<int>(mSkyMode)));
+  if (auto const node{yaml_data_["skyMode"]}) {
+    sky_mode_ = static_cast<SkyMode>(node.as<int>(static_cast<int>(sky_mode_)));
   }
 
-  if (auto const node{mYamlData["skyColor"]}) {
-    mSkyColor = node.as<Vector3>(mSkyColor);
+  if (auto const node{yaml_data_["skyColor"]}) {
+    sky_color_ = node.as<Vector3>(sky_color_);
   }
 
   struct SkyboxJobData {
@@ -164,7 +178,7 @@ auto Scene::Load() -> void {
 
   Job* skybox_job{nullptr};
 
-  if (auto const node{mYamlData["skybox"]}) {
+  if (auto const node{yaml_data_["skybox"]}) {
     if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
       skybox_job_data.guid = guid;
 
@@ -179,7 +193,8 @@ auto Scene::Load() -> void {
 
   std::function<void(YAML::Node const&, rttr::type const&, std::vector<Guid>&)> discover_resource_references;
   discover_resource_references =
-    [&discover_resource_references](YAML::Node const& node, rttr::type const& type, std::vector<Guid>& guids) -> void {
+    [&discover_resource_references](YAML::Node const& node, rttr::type const& type,
+                                    std::vector<Guid>& guids) -> void {
       if (!node.IsDefined()) {
         return;
       }
@@ -213,13 +228,18 @@ auto Scene::Load() -> void {
 
   std::vector<Guid> resource_guids;
 
-  for (auto const& sceneObjectNode : mYamlData["sceneObjects"]) {
-    auto const typeNode{sceneObjectNode["type"]};
-    auto const type{rttr::type::get_by_name(typeNode.as<std::string>())};
-    auto const sceneObjectVariant{type.create()};
-    auto const sceneObj{sceneObjectVariant.get_value<SceneObject*>()};
-    ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObj;
-    discover_resource_references(sceneObjectNode["properties"], type, resource_guids);
+  // These pointers OWN the objects. A scene consists of entities and components.
+  // Components will be taken ownership of by the entities during deserialization.
+  // The scene will take ownership of the entities at the end of the process.
+  std::vector<SceneObject*> scene_objects;
+
+  for (auto const& scene_obj_node : yaml_data_["sceneObjects"]) {
+    auto const type_node{scene_obj_node["type"]};
+    auto const type{rttr::type::get_by_name(type_node.as<std::string>())};
+    auto const scene_obj{static_cast<SceneObject*>(Create(type).release())};
+    scene_objects.emplace_back(scene_obj);
+    ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = scene_obj;
+    discover_resource_references(scene_obj_node["properties"], type, resource_guids);
   }
 
   std::ranges::sort(resource_guids, [](Guid const& lhs, Guid const& rhs) {
@@ -278,7 +298,7 @@ auto Scene::Load() -> void {
   loader_jobs.reserve(ptrFixUp.size());
 
   for (auto const& [fileId, obj] : ptrFixUp) {
-    job_data.emplace_back(mYamlData["sceneObjects"][fileId - 1]["properties"], obj, extensionFunc);
+    job_data.emplace_back(yaml_data_["sceneObjects"][fileId - 1]["properties"], obj, extensionFunc);
 
     loader_jobs.emplace_back(g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
       auto const& job_data{**static_cast<SceneObjectJobData const* const*>(data_ptr)};
@@ -292,78 +312,79 @@ auto Scene::Load() -> void {
     g_engine_context.job_system->Wait(job);
   }
 
-  for (auto* const obj : ptrFixUp | std::views::values) {
-    obj->Initialize();
-  }
-
   if (skybox_job) {
     g_engine_context.job_system->Wait(skybox_job);
-    mSkybox = skybox_job_data.cubemap;
+    skybox_ = skybox_job_data.cubemap;
   }
 
-  sActiveScene = lastActiveScene;
+  for (auto* const scene_obj : scene_objects) {
+    if (auto* const entity{rttr::rttr_cast<Entity*>(scene_obj)}) {
+      AddEntity(std::unique_ptr<Entity>{entity});
+    }
+  }
 }
 
 
 auto Scene::SetActive() -> void {
-  sActiveScene = this;
+  active_scene_ = this;
 }
 
 
 auto Scene::Clear() -> void {
-  // Entity destructor modifies this collection, hence the strange loop
-  while (!mEntities.empty()) {
-    delete mEntities.back();
+  for (auto const& entity : entities_) {
+    entity->OnBeforeExitingScene(*this);
   }
+
+  entities_.clear();
 }
 
 
 auto Scene::GetAmbientLightVector() const noexcept -> Vector3 const& {
-  return mAmbientLight;
+  return ambient_light_;
 }
 
 
 auto Scene::SetAmbientLightVector(Vector3 const& vector) noexcept -> void {
-  mAmbientLight = vector;
+  ambient_light_ = vector;
 }
 
 
 auto Scene::GetAmbientLight() const noexcept -> Color {
-  return Color{Vector4{mAmbientLight, 1}};
+  return Color{Vector4{ambient_light_, 1}};
 }
 
 
 auto Scene::SetAmbientLight(Color const& color) noexcept -> void {
-  mAmbientLight = Vector3{static_cast<Vector4>(color)};
+  ambient_light_ = Vector3{static_cast<Vector4>(color)};
 }
 
 
 auto Scene::GetSkyMode() const noexcept -> SkyMode {
-  return mSkyMode;
+  return sky_mode_;
 }
 
 
 auto Scene::SetSkyMode(SkyMode const skyMode) noexcept -> void {
-  mSkyMode = skyMode;
+  sky_mode_ = skyMode;
 }
 
 
 auto Scene::GetSkyColor() const noexcept -> Vector3 const& {
-  return mSkyColor;
+  return sky_color_;
 }
 
 
 auto Scene::SetSkyColor(Vector3 const& skyColor) noexcept -> void {
-  mSkyColor = skyColor;
+  sky_color_ = skyColor;
 }
 
 
 auto Scene::GetSkybox() const noexcept -> Cubemap* {
-  return mSkybox;
+  return skybox_;
 }
 
 
 auto Scene::SetSkybox(Cubemap* const skybox) noexcept -> void {
-  mSkybox = skybox;
+  skybox_ = skybox;
 }
 }

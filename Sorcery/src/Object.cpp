@@ -7,13 +7,19 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Object>{"Object"}
-    .property("name", &sorcery::Object::mName);
+    .property("name", &sorcery::Object::name_);
 }
 
 
 namespace sorcery {
 std::vector<Object*> Object::sAllObjects;
 std::recursive_mutex Object::sAllObjectsMutex;
+
+
+Object::Object() {
+  std::unique_lock const lock{sAllObjectsMutex};
+  sAllObjects.emplace_back(this);
+}
 
 
 Object::~Object() {
@@ -35,31 +41,16 @@ Object::~Object() {
 
 
 auto Object::GetName() const noexcept -> std::string const& {
-  return mName;
+  return name_;
 }
 
 
 auto Object::SetName(std::string const& name) -> void {
-  mName = name;
-}
-
-
-auto Object::Initialize() -> void {
-  std::unique_lock const lock{sAllObjectsMutex};
-  sAllObjects.emplace_back(this);
+  name_ = name;
 }
 
 
 auto Object::OnDrawProperties([[maybe_unused]] bool& changed) -> void {
   ImGui::SeparatorText(std::format("{} ({})", GetName(), rttr::type::get(*this).get_name().data()).c_str());
-}
-
-
-auto Object::DestroyAll() -> void {
-  std::unique_lock const lock{sAllObjectsMutex};
-
-  while (!sAllObjects.empty()) {
-    delete sAllObjects.back();
-  }
 }
 }

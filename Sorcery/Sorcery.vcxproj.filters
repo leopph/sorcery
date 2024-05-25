@@ -342,6 +342,9 @@
     <None Include="src\resources\native_resource.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="src\scene_objects\entity.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />

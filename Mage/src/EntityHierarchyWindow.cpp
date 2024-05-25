@@ -23,9 +23,10 @@ auto EntityHierarchyWindow::Draw() -> void {
     if (ImGui::BeginPopup(contextId)) {
       if (ImGui::MenuItem("Create New Entity")) {
         mApp->GetScene().SetActive();
-        auto const entity{CreateInit<Entity>()};
-        auto const transform{CreateInit<TransformComponent>()};
-        entity->AddComponent(*transform);
+        auto entity{Create<Entity>()};
+        auto transform{Create<TransformComponent>()};
+        entity->AddComponent(std::move(transform));
+        mApp->GetScene().AddEntity(std::move(entity));
       }
 
       ImGui::EndPopup();
@@ -82,16 +83,17 @@ auto EntityHierarchyWindow::Draw() -> void {
         mApp->SetSelectedObject(&entity);
 
         if (ImGui::MenuItem("Duplicate")) {
-          auto const clone{entity.Clone()};
-          mApp->SetSelectedObject(clone);
+          std::unique_ptr<Entity> clone{static_cast<Entity*>(entity.Clone().release())};
+          mApp->SetSelectedObject(clone.get());
+          mApp->GetScene().AddEntity(std::move(clone));
           entities = mApp->GetScene().GetEntities();
           ImGui::CloseCurrentPopup();
         }
 
         if (ImGui::MenuItem("Delete")) {
-          delete &entity;
-          entities = mApp->GetScene().GetEntities();
           mApp->SetSelectedObject(nullptr);
+          mApp->GetScene().RemoveEntity(entity);
+          entities = mApp->GetScene().GetEntities();
           deleted = true;
           ImGui::CloseCurrentPopup();
         }
@@ -104,7 +106,7 @@ auto EntityHierarchyWindow::Draw() -> void {
         if (!deleted) {
           for (std::size_t childIndex{0}; childIndex < entity.GetTransform().GetChildren().size(); childIndex++) {
             ImGui::PushID(static_cast<int>(childIndex));
-            displayEntityRecursive(entity.GetTransform().GetChildren()[childIndex]->GetEntity());
+            displayEntityRecursive(*entity.GetTransform().GetChildren()[childIndex]->GetEntity());
             ImGui::PopID();
           }
         }

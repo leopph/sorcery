@@ -2,8 +2,10 @@
 
 #include "../Resources/Scene.hpp"
 
+#include <algorithm>
 #include <functional>
 #include <iostream>
+#include <iterator>
 #include <cassert>
 #include <format>
 #include <utility>
@@ -15,128 +17,12 @@
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Entity>{"Entity"}
     .REFLECT_REGISTER_ENTITY_CTOR
-    .property("components", &sorcery::Entity::mComponents);
+    .property("components", &sorcery::Entity::GetComponentsForSerialization,
+      &sorcery::Entity::SetComponentFromDeserialization);
 }
 
 
 namespace sorcery {
-namespace {
-std::vector<Entity*> gEntityCache;
-}
-
-
-auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
-  FindObjectsOfType(gEntityCache);
-  for (auto* const entity : gEntityCache) {
-    if (entity->GetName() == name) {
-      return entity;
-    }
-  }
-  return nullptr;
-}
-
-
-Entity::Entity() :
-  mScene{Scene::GetActiveScene()} {
-  SetName("New Entity");
-}
-
-
-Entity::Entity(Entity const& other) :
-  SceneObject{other},
-  mScene{other.mScene} {}
-
-
-Entity::Entity(Entity&& other) noexcept :
-  SceneObject{std::move(other)},
-  mScene{other.mScene} {}
-
-
-Entity::~Entity() {
-  mScene->RemoveEntity(*this);
-
-  // Component destructor modifies this collection, hence the strange loop
-  while (!mComponents.empty()) {
-    delete mComponents.back();
-  }
-}
-
-
-auto Entity::Clone() -> Entity* {
-  auto const clone{Create<Entity>(*this).release()};
-  clone->mTransform = nullptr;
-  clone->Initialize();
-
-  clone->mComponents.clear();
-  clone->mComponents.reserve(mComponents.size());
-
-  for (auto const comp : mComponents) {
-    auto const comp_clone{comp->Clone()};
-    comp_clone->Initialize();
-    clone->AddComponent(*comp_clone);
-  }
-
-  return clone;
-}
-
-
-auto Entity::GetScene() const -> Scene& {
-  assert(mScene);
-  return *mScene;
-}
-
-
-auto Entity::GetTransform() const -> TransformComponent& {
-  if (!mTransform) {
-    mTransform = GetComponent<TransformComponent>();
-    assert(mTransform);
-  }
-  return *mTransform;
-}
-
-
-auto Entity::AddComponent(Component& component) -> void {
-  component.SetEntity(*this);
-  mComponents.emplace_back(&component);
-}
-
-
-auto Entity::RemoveComponent(Component& component) -> void {
-  std::erase_if(mComponents, [&component](auto const storedComponent) {
-    return storedComponent == &component;
-  });
-}
-
-
-auto Entity::Initialize() -> void {
-  SceneObject::Initialize();
-
-  FindObjectsOfType(gEntityCache);
-
-  auto name{GetName()};
-
-  for (std::size_t i{2}; true; i++) {
-    auto name_is_unique{true};
-
-    for (auto const* const entity : gEntityCache) {
-      if (entity != this && entity->GetName() == name) {
-        name_is_unique = false;
-        break;
-      }
-    }
-
-    if (name_is_unique) {
-      break;
-    }
-
-    name = std::format("{} ({})", GetName(), i);
-  }
-
-  SetName(name);
-  mScene->AddEntity(*this);
-}
-
-
 auto Entity::OnDrawProperties(bool& changed) -> void {
   SceneObject::OnDrawProperties(changed);
 
@@ -159,9 +45,9 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
     ImGui::EndTable();
   }
 
-  for (std::size_t i{0}; i < std::size(mComponents); i++) {
+  for (std::size_t i{0}; i < std::size(components_); i++) {
     auto const treeNodeId{
-      std::format("{}##{}", rttr::type::get(*mComponents[i]).get_name().to_string(), std::to_string(i))
+      std::format("{}##{}", rttr::type::get(*components_[i]).get_name().to_string(), std::to_string(i))
     };
 
     if (ImGui::TreeNodeEx(treeNodeId.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -174,7 +60,7 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
         ImGui::PushItemWidth(-FLT_MIN);
         ImGui::TableSetColumnIndex(0);
 
-        mComponents[i]->OnDrawProperties(changed);
+        components_[i]->OnDrawProperties(changed);
         ImGui::EndTable();
       }
 
@@ -183,9 +69,7 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
 
     if (ImGui::BeginPopupContextItem(treeNodeId.c_str())) {
       if (ImGui::MenuItem("Delete")) {
-        auto const component{mComponents[i]};
-        mComponents.erase(std::begin(mComponents) + i);
-        delete component;
+        RemoveComponent(*components_[i]);
         ImGui::EndPopup();
         break;
       }
@@ -199,11 +83,10 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
   ImGui::Button(addNewComponentLabel);
 
   if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-    for (auto const& componentClass : rttr::type::get<Component>().get_derived_classes()) {
-      if (ImGui::MenuItem(componentClass.get_name().data())) {
-        auto const component{componentClass.create().get_value<Component*>()};
-        component->Initialize();
-        AddComponent(*component);
+    for (auto const& component_class : rttr::type::get<Component>().get_derived_classes()) {
+      if (ImGui::MenuItem(component_class.get_name().data())) {
+        auto component{Create(component_class)};
+        AddComponent(std::unique_ptr<Component>{rttr::rttr_cast<Component*>(component.release())});
         ImGui::CloseCurrentPopup();
       }
     }
@@ -216,8 +99,154 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
 auto Entity::OnDrawGizmosSelected() -> void {
   SceneObject::OnDrawGizmosSelected();
 
-  for (auto const component : mComponents) {
+  for (auto const& component : components_) {
     component->OnDrawGizmosSelected();
   }
+}
+
+
+auto Entity::Clone() -> std::unique_ptr<SceneObject> {
+  return Create<Entity>(*this);
+}
+
+
+auto Entity::OnAfterEnteringScene(Scene const& scene) -> void {
+  scene_.Reset(&scene);
+
+  auto const entities{scene.GetEntities()};
+
+  auto name{GetName()};
+
+  for (std::size_t i{2}; true; i++) {
+    auto name_is_unique{true};
+
+    for (auto const& entity : entities) {
+      if (entity.get() != this && entity->GetName() == name) {
+        name_is_unique = false;
+        break;
+      }
+    }
+
+    if (name_is_unique) {
+      break;
+    }
+
+    name = std::format("{} ({})", GetName(), i);
+  }
+
+  SetName(name);
+
+  for (auto const& component : components_) {
+    component->OnAfterEnteringScene(scene);
+  }
+}
+
+
+auto Entity::OnBeforeExitingScene(Scene const& scene) -> void {
+  for (auto const& component : components_) {
+    component->OnBeforeExitingScene(scene);
+  }
+
+  scene_.Reset();
+}
+
+
+auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
+  static std::vector<Entity*> entities;
+  FindObjectsOfType(entities);
+
+  for (auto* const entity : entities) {
+    if (entity->GetName() == name) {
+      return entity;
+    }
+  }
+  return nullptr;
+}
+
+
+auto Entity::GetComponentsForSerialization() const -> std::vector<Component*> {
+  std::vector<Component*> ret;
+  std::ranges::transform(components_, std::back_inserter(ret), [](auto const& component) {
+    return component.get();
+  });
+  return ret;
+}
+
+
+auto Entity::SetComponentFromDeserialization(std::vector<Component*> components) -> void {
+  while (!components_.empty()) {
+    RemoveComponent(*components_.back());
+  }
+
+  for (auto* const component : components) {
+    AddComponent(std::unique_ptr<Component>{component}); // Taking ownership
+  }
+}
+
+
+Entity::Entity() {
+  SetName("New Entity");
+}
+
+
+Entity::Entity(Entity const& other) :
+  SceneObject{other} {
+  SetName(other.GetName());
+}
+
+
+Entity::Entity(Entity&& other) noexcept :
+  SceneObject{std::move(other)} {
+  SetName(other.GetName());
+
+  while (!other.components_.empty()) {
+    AddComponent(other.RemoveComponent(*other.components_.back()));
+  }
+}
+
+
+auto Entity::GetScene() const -> ObserverPtr<Scene const> {
+  return scene_;
+}
+
+
+auto Entity::GetTransform() const -> TransformComponent& {
+  if (!transform_) {
+    transform_ = GetComponent<TransformComponent>();
+  }
+  return *transform_;
+}
+
+
+auto Entity::AddComponent(std::unique_ptr<Component> component) -> void {
+  if (component) {
+    components_.emplace_back(std::move(component));
+    components_.back()->OnAfterAttachedToEntity(*this);
+
+    if (scene_) {
+      components_.back()->OnAfterEnteringScene(*scene_);
+    }
+  }
+}
+
+
+auto Entity::RemoveComponent(Component& component) -> std::unique_ptr<Component> {
+  if (auto const it{
+    std::ranges::find_if(components_, [&component](std::unique_ptr<Component> const& owned_component) {
+      return owned_component.get() == std::addressof(component);
+    })
+  }; it != std::end(components_)) {
+    if (scene_) {
+      (*it)->OnBeforeExitingScene(*scene_);
+    }
+
+    (*it)->OnBeforeDetachedFromEntity(*this);
+
+    auto ret{std::move(*it)};
+    components_.erase(it);
+    return ret;
+  }
+
+  return nullptr;
 }
 }

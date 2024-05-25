@@ -4,6 +4,9 @@
 
 
 namespace sorcery {
+class Scene;
+
+
 class SceneObject : public Object {
   RTTR_ENABLE(Object)
 
@@ -18,6 +21,8 @@ public:
   auto operator=(SceneObject const& other) -> void = delete;
   auto operator=(SceneObject&& other) -> void = delete;
 
-  [[nodiscard]] LEOPPHAPI virtual auto Clone() -> SceneObject* = 0;
+  [[nodiscard]] LEOPPHAPI virtual auto Clone() -> std::unique_ptr<SceneObject> = 0;
+  LEOPPHAPI virtual auto OnAfterEnteringScene(Scene const& scene) -> void {}
+  LEOPPHAPI virtual auto OnBeforeExitingScene(Scene const& scene) -> void {}
 };
 }

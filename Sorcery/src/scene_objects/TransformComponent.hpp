@@ -16,18 +16,12 @@ class TransformComponent : public Component {
   RTTR_REGISTRATION_FRIEND
 
 public:
-  TransformComponent() = default;
-  TransformComponent(TransformComponent const& other) = default;
-  TransformComponent(TransformComponent&& other) noexcept = default;
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 
-  LEOPPHAPI ~TransformComponent() override;
+  [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
 
-  auto operator=(TransformComponent const& other) -> TransformComponent& = delete;
-  auto operator=(TransformComponent&& other) -> TransformComponent& = delete;
-
-  LEOPPHAPI auto Initialize() -> void override;
-
-  [[nodiscard]] LEOPPHAPI auto Clone() -> TransformComponent* override;
+  LEOPPHAPI auto OnAfterAttachedToEntity(Entity& entity) -> void override;
+  LEOPPHAPI auto OnBeforeDetachedFromEntity(Entity& entity) -> void override;
 
   [[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
   LEOPPHAPI auto SetWorldPosition(Vector3 const& newPos) -> void;
@@ -73,8 +67,6 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto HasChanged() const noexcept -> bool;
   LEOPPHAPI auto SetChanged(bool changed) noexcept -> void;
-
-  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 
 private:
   auto UpdateWorldDataRecursive() -> void;

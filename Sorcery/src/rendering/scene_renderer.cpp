@@ -1013,10 +1013,11 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
   for (auto const light : lights_) {
     packet.light_data.emplace_back(light->GetColor(), light->GetIntensity(), light->GetDirection(),
-      light->GetEntity().GetTransform().GetWorldPosition(), light->GetType(), light->GetRange(), light->GetInnerAngle(),
+      light->GetEntity()->GetTransform().GetWorldPosition(), light->GetType(), light->GetRange(),
+      light->GetInnerAngle(),
       light->GetOuterAngle(), light->IsCastingShadow(), light->GetShadowNearPlane(), light->GetShadowNormalBias(),
       light->GetShadowDepthBias(), light->GetShadowExtension(),
-      light->GetEntity().GetTransform().CalculateLocalToWorldMatrixWithoutScale());
+      light->GetEntity()->GetTransform().CalculateLocalToWorldMatrixWithoutScale());
   }
 
   packet.mesh_data.reserve(static_mesh_components_.size());
@@ -1091,7 +1092,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
         submesh.first_index, submesh.index_count, mtl_buf_local_idx, submesh.bounds);
 
       packet.instance_data.emplace_back(static_cast<unsigned>(packet.submesh_data.size() - 1),
-        comp->GetEntity().GetTransform().GetLocalToWorldMatrix());
+        comp->GetEntity()->GetTransform().GetLocalToWorldMatrix());
     }
   }
 

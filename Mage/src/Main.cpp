@@ -235,7 +235,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     ImGui_ImplWin32_Shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
-    sorcery::Object::DestroyAll();
+    // sorcery::Object::DestroyAll(); TODO resource manager clear?
   } catch (std::exception const& ex) {
     sorcery::DisplayError(ex.what());
   }

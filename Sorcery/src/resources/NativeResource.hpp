@@ -17,7 +17,7 @@ public:
 
 
 template<std::derived_from<NativeResource> NativeResourceType>
-[[nodiscard]] auto CreateDeserializeInit(YAML::Node const& node) -> std::unique_ptr<NativeResourceType>;
+[[nodiscard]] auto CreateDeserialize(YAML::Node const& node) -> std::unique_ptr<NativeResourceType>;
 }
 
 

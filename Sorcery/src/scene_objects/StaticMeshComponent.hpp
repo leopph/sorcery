@@ -13,16 +13,14 @@ class StaticMeshComponent final : public Component {
   RTTR_REGISTRATION_FRIEND
 
 public:
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+  LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
+
+  [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
+  LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
+  LEOPPHAPI auto OnBeforeExitingScene(Scene const& scene) -> void override;
+
   LEOPPHAPI StaticMeshComponent();
-  StaticMeshComponent(StaticMeshComponent const& other) = default;
-  StaticMeshComponent(StaticMeshComponent&& other) noexcept = default;
-
-  LEOPPHAPI ~StaticMeshComponent() override;
-
-  auto operator=(StaticMeshComponent const& other) -> StaticMeshComponent& = delete;
-  auto operator=(StaticMeshComponent*& other) -> StaticMeshComponent& = delete;
-
-  [[nodiscard]] LEOPPHAPI auto Clone() -> StaticMeshComponent* override;
 
   [[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> Mesh*;
   LEOPPHAPI auto SetMesh(Mesh* mesh) noexcept -> void;
@@ -31,10 +29,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetMaterials() const noexcept -> std::vector<Material*> const&;
   LEOPPHAPI auto SetMaterials(std::vector<Material*> const& materials) -> void;
   LEOPPHAPI auto SetMaterial(int idx, Material* mtl) -> void;
-
-  LEOPPHAPI auto Initialize() -> void override;
-  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
-  LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 
 private:
   auto ResizeMaterialListToSubmeshCount() -> void;

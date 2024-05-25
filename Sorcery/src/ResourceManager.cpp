@@ -55,22 +55,25 @@ std::vector<std::uint32_t> const kCubeIndices{
 }
 
 
-auto ResourceManager::ResourceGuidLess::operator()(Resource* const lhs, Resource* const rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(std::unique_ptr<Resource> const& lhs,
+                                                   std::unique_ptr<Resource> const& rhs) const noexcept -> bool {
   return lhs->GetGuid() < rhs->GetGuid();
 }
 
 
-auto ResourceManager::ResourceGuidLess::operator()(Resource* const lhs, Guid const& rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(std::unique_ptr<Resource> const& lhs,
+                                                   Guid const& rhs) const noexcept -> bool {
   return lhs->GetGuid() < rhs;
 }
 
 
-auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, Resource* const rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs,
+                                                   std::unique_ptr<Resource> const& rhs) const noexcept -> bool {
   return lhs < rhs->GetGuid();
 }
 
 
-auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> Resource* {
+auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> ObserverPtr<Resource> {
   Job* loader_job;
 
   std::cout << "loading " << desc.name << '\n';
@@ -84,13 +87,13 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
       struct LoaderJobData {
         Guid const* guid;
         ResourceDescription const* desc;
-        decltype(resources_)* resources;
+        decltype(loaded_resources_)* resources;
       };
 
       loader_job = job_system_->CreateJob([](void const* const data_ptr) {
         auto const& job_data{*static_cast<LoaderJobData const*>(data_ptr)};
 
-        Resource* res{nullptr};
+        std::unique_ptr<Resource> res;
 
         if (job_data.desc->pathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
           std::vector<std::uint8_t> fileBytes;
@@ -118,23 +121,19 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
             }
           }
         } else if (job_data.desc->pathAbs.extension() == SCENE_RESOURCE_EXT) {
-          auto const scene{CreateInit<Scene>().release()};
-          scene->Deserialize(YAML::LoadFile(job_data.desc->pathAbs.string()));
-          res = scene;
+          res = CreateDeserialize<Scene>(YAML::LoadFile(job_data.desc->pathAbs.string()));
         } else if (job_data.desc->pathAbs.extension() == MATERIAL_RESOURCE_EXT) {
-          auto const mtl{CreateInit<Material>().release()};
-          mtl->Deserialize(YAML::LoadFile(job_data.desc->pathAbs.string()));
-          res = mtl;
+          res = CreateDeserialize<Material>(YAML::LoadFile(job_data.desc->pathAbs.string()));
         }
 
         if (res) {
           res->SetGuid(*job_data.guid);
           res->SetName(job_data.desc->name);
 
-          auto const [it, inserted]{job_data.resources->Lock()->emplace(res)};
+          auto const [it, inserted]{job_data.resources->Lock()->emplace(std::move(res))};
           assert(inserted);
         }
-      }, LoaderJobData{&guid, &desc, &resources_});
+      }, LoaderJobData{&guid, &desc, &loaded_resources_});
       job_system_->Run(loader_job);
       loader_jobs->emplace(guid, loader_job);
     }
@@ -148,14 +147,15 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
   }
 
   {
-    auto const resources{resources_.LockShared()};
+    auto const resources{loaded_resources_.LockShared()};
     auto const it{resources->find(guid)};
-    return it != resources->end() ? *it : nullptr;
+    return ObserverPtr{it != resources->end() ? it->get() : nullptr};
   }
 }
 
 
-auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexcept -> MaybeNull<Resource*> {
+auto ResourceManager::LoadTexture(
+  std::span<std::byte const> const bytes) noexcept -> MaybeNull<std::unique_ptr<Resource>> {
   DirectX::TexMetadata meta;
   DirectX::ScratchImage img;
   if (FAILED(LoadFromDDSMemory(bytes.data(), bytes.size(), DirectX::DDS_FLAGS_NONE, &meta, img))) {
@@ -168,24 +168,23 @@ auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) noexce
     return nullptr;
   }
 
-  Resource* ret;
+  std::unique_ptr<Resource> ret;
 
   if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
     if (meta.IsCubemap()) {
-      ret = Create<Cubemap>(std::move(tex)).release();
+      ret = Create<Cubemap>(std::move(tex));
     } else {
-      ret = Create<Texture2D>(std::move(tex)).release();
+      ret = Create<Texture2D>(std::move(tex));
     }
   } else {
     return nullptr;
   }
 
-  ret->Initialize();
   return ret;
 }
 
 
-auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeNull<Resource*> {
+auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeNull<std::unique_ptr<Resource>> {
   auto curBytes{as_bytes(std::span{bytes})};
   std::uint64_t vertexCount;
 
@@ -289,15 +288,13 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
     curBytes = curBytes.subspan(sizeof(int));
   }
 
-  auto const ret{Create<Mesh>(std::move(meshData)).release()};
-  ret->Initialize();
-  return ret;
+  return Create<Mesh>(std::move(meshData));
 }
 
 
 ResourceManager::ResourceManager(JobSystem& job_system) :
   job_system_{&job_system} {
-  default_mtl_.Reset(CreateInit<Material>().release());
+  default_mtl_.Reset(Create<Material>().release());
   default_mtl_->SetGuid(default_material_guid_);
   default_mtl_->SetName("Default Material");
   Add(default_mtl_.Get());
@@ -314,7 +311,7 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   std::vector<Vector3> quadTangents;
   CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, quadTangents);
 
-  cube_mesh_.Reset(CreateInit<Mesh>().release());
+  cube_mesh_.Reset(Create<Mesh>().release());
   cube_mesh_->SetGuid(cube_mesh_guid_);
   cube_mesh_->SetName("Cube");
   cube_mesh_->SetPositions(kCubePositions);
@@ -329,7 +326,7 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   }
   Add(cube_mesh_.Get());
 
-  plane_mesh_.Reset(CreateInit<Mesh>().release());
+  plane_mesh_.Reset(Create<Mesh>().release());
   plane_mesh_->SetGuid(plane_mesh_guid_);
   plane_mesh_->SetName("Plane");
   plane_mesh_->SetPositions(kQuadPositions);
@@ -344,7 +341,7 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
   }
   Add(plane_mesh_.Get());
 
-  sphere_mesh_.Reset(CreateInit<Mesh>().release());
+  sphere_mesh_.Reset(Create<Mesh>().release());
   sphere_mesh_->SetGuid(sphere_mesh_guid_);
   sphere_mesh_->SetName("Sphere");
   std::vector<Vector3> spherePositions;
@@ -370,17 +367,16 @@ ResourceManager::ResourceManager(JobSystem& job_system) :
 
 
 auto ResourceManager::Unload(Guid const& guid) -> void {
-  auto resources{resources_.Lock()};
+  auto resources{loaded_resources_.Lock()};
 
   if (auto const it{resources->find(guid)}; it != std::end(*resources)) {
-    delete *it;
     resources->erase(it);
   }
 }
 
 
 auto ResourceManager::IsLoaded(Guid const& guid) -> bool {
-  return resources_.LockShared()->contains(guid);
+  return loaded_resources_.LockShared()->contains(guid);
 }
 
 
@@ -403,7 +399,7 @@ auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type,
   }
 
   // Resources that don't come from files
-  for (auto const res : *resources_.LockShared()) {
+  for (auto const& res : *loaded_resources_.LockShared()) {
     auto contains{false};
     for (auto const& guid : out) {
       if (guid <=> res->GetGuid() == std::strong_ordering::equal) {
@@ -427,7 +423,7 @@ auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vec
   }
 
   // Resources that don't come from files
-  for (auto const res : *resources_.LockShared()) {
+  for (auto const& res : *loaded_resources_.LockShared()) {
     auto contains{false};
     for (auto const& res_info : out) {
       if (res_info.guid <=> res->GetGuid() == std::strong_ordering::equal) {

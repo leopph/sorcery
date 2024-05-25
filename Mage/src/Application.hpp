@@ -18,7 +18,7 @@
 namespace sorcery::mage {
 class Application {
   ImGuiIO& mImGuiIo;
-  Scene* mScene{CreateInit<Scene>().release()};
+  Scene* mScene{Create<Scene>().release()};
   Object* mSelectedObject{nullptr};
   ResourceDB mResourceDB{mSelectedObject};
 

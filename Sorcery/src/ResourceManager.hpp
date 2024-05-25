@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <concepts>
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -71,22 +72,30 @@ public:
 private:
   struct ResourceGuidLess {
     using is_transparent = void;
-    [[nodiscard]] LEOPPHAPI auto operator()(Resource* lhs, Resource* rhs) const noexcept -> bool;
-    [[nodiscard]] LEOPPHAPI auto operator()(Resource* lhs, Guid const& rhs) const noexcept -> bool;
-    [[nodiscard]] LEOPPHAPI auto operator()(Guid const& lhs, Resource* rhs) const noexcept -> bool;
+
+    [[nodiscard]] LEOPPHAPI auto operator()(std::unique_ptr<Resource> const& lhs,
+                                            std::unique_ptr<Resource> const& rhs) const noexcept -> bool;
+
+    [[nodiscard]] LEOPPHAPI auto operator()(std::unique_ptr<Resource> const& lhs,
+                                            Guid const& rhs) const noexcept -> bool;
+
+    [[nodiscard]] LEOPPHAPI auto operator()(Guid const& lhs,
+                                            std::unique_ptr<Resource> const& rhs) const noexcept -> bool;
   };
 
 
-  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> Resource*;
-  [[nodiscard]] static auto LoadTexture(std::span<std::byte const> bytes) noexcept -> MaybeNull<Resource*>;
-  [[nodiscard]] static auto LoadMesh(std::span<std::byte const> bytes) -> MaybeNull<Resource*>;
+  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> ObserverPtr<
+    Resource>;
+  [[nodiscard]] static auto LoadTexture(std::span<std::byte const> bytes) noexcept -> MaybeNull<std::unique_ptr<Resource
+  >>;
+  [[nodiscard]] static auto LoadMesh(std::span<std::byte const> bytes) -> MaybeNull<std::unique_ptr<Resource>>;
 
   inline static Guid const default_material_guid_{1, 0};
   inline static Guid const cube_mesh_guid_{2, 0};
   inline static Guid const plane_mesh_guid_{3, 0};
   inline static Guid const sphere_mesh_guid_{4, 0};
 
-  Mutex<std::set<Resource*, ResourceGuidLess>, true> resources_;
+  Mutex<std::set<std::unique_ptr<Resource>, ResourceGuidLess>, true> loaded_resources_;
   Mutex<std::map<Guid, ResourceDescription>, true> mappings_;
 
   Mutex<std::map<Guid, Job*>, true> loader_jobs_;
@@ -103,15 +112,15 @@ private:
 template<std::derived_from<Resource> ResType>
 auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
   {
-    auto const resources{resources_.LockShared()};
+    auto const resources{loaded_resources_.LockShared()};
 
     if (auto const it{resources->find(guid)}; it != std::end(*resources)) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
-        if (rttr::rttr_cast<ResType*>(*it)) {
-          return static_cast<ResType*>(*it);
+        if (rttr::rttr_cast<ResType*>(it->get())) {
+          return static_cast<ResType*>(it->get());
         }
       } else {
-        return *it;
+        return it->get();
       }
     }
   }
@@ -128,11 +137,11 @@ auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
   if (desc) {
     if (auto const res{InternalLoadResource(guid, *desc)}) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
-        if (rttr::rttr_cast<ResType*>(res)) {
-          return static_cast<ResType*>(res);
+        if (rttr::rttr_cast<ResType*>(res.Get())) {
+          return static_cast<ResType*>(res.Get());
         }
       } else {
-        return res;
+        return res.Get();
       }
     }
   }
@@ -144,7 +153,7 @@ auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
 template<std::derived_from<Resource> ResType>
 auto ResourceManager::Add(ResType* resource) -> void {
   if (resource && resource->GetGuid().IsValid()) {
-    resources_.Lock()->emplace(resource);
+    loaded_resources_.Lock()->emplace(resource);
   }
 }
 
