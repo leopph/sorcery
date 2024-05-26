@@ -23,6 +23,7 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto ToString() const -> std::string;
   [[nodiscard]] LEOPPHAPI auto operator<=>(Guid const& other) const noexcept -> std::strong_ordering;
+  [[nodiscard]] auto operator==(Guid const& other) const noexcept -> bool = default;
 
   [[nodiscard]] LEOPPHAPI auto IsValid() const noexcept -> bool;
 

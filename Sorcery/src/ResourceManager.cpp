@@ -383,7 +383,7 @@ auto ResourceManager::UnloadAll() -> void {
 
 auto ResourceManager::IsLoaded(Guid const& guid) -> bool {
   for (auto const& res : default_resources_) {
-    if (res->GetGuid() <=> guid == std::strong_ordering::equal) {
+    if (res->GetGuid() == guid) {
       return true;
     }
   }
@@ -422,7 +422,7 @@ auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type,
   for (auto const& res : *loaded_resources_.LockShared()) {
     auto contains{false};
     for (auto const& guid : out) {
-      if (guid <=> res->GetGuid() == std::strong_ordering::equal) {
+      if (guid == res->GetGuid()) {
         contains = true;
         break;
       }
@@ -454,7 +454,7 @@ auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vec
   for (auto const& res : *loaded_resources_.LockShared()) {
     auto contains{false};
     for (auto const& res_info : out) {
-      if (res_info.guid <=> res->GetGuid() == std::strong_ordering::equal) {
+      if (res_info.guid == res->GetGuid()) {
         contains = true;
         break;
       }

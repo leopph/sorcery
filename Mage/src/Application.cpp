@@ -70,7 +70,7 @@ auto Application::GetResourceDatabase() noexcept -> ResourceDB& {
 
 
 auto Application::OpenScene(Guid const& guid) -> void {
-  if (!guid.IsValid() || (scene_ && scene_->GetGuid() <=> guid == std::strong_ordering::equal)) {
+  if (!guid.IsValid() || (scene_ && scene_->GetGuid() == guid)) {
     return;
   }
 

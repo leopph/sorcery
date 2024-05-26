@@ -8,7 +8,7 @@ template<std::derived_from<Resource> ResType>
 auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
   // Check default resources
   for (auto const& def_res : default_resources_) {
-    if (def_res->GetGuid() <=> guid == std::strong_ordering::equal) {
+    if (def_res->GetGuid() == guid) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
         return rttr::rttr_cast<ResType*>(def_res.Get());
       } else {

@@ -251,7 +251,7 @@ auto Scene::Load() -> void {
   });
 
   required_resource_guids.erase(std::ranges::unique(required_resource_guids, [](Guid const& lhs, Guid const& rhs) {
-    return lhs <=> rhs == std::strong_ordering::equal;
+    return lhs == rhs;
   }).begin(), required_resource_guids.end());
 
 
