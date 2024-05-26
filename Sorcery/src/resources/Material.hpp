@@ -37,7 +37,19 @@ private:
   Texture2D* opacity_mask_{nullptr};
 
 public:
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+
+  [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
+  LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;
+
   LEOPPHAPI Material();
+  Material(Material const&) = delete;
+  Material(Material&&) noexcept = delete;
+
+  LEOPPHAPI ~Material() override;
+
+  auto operator=(Material const&) -> void = delete;
+  auto operator=(Material&&) noexcept -> void = delete;
 
   [[nodiscard]] LEOPPHAPI auto GetAlbedoVector() const noexcept -> Vector3 const&;
   LEOPPHAPI auto SetAlbedoVector(Vector3 const& albedoVector) noexcept -> void;
@@ -81,10 +93,5 @@ public:
   LEOPPHAPI auto Update() const -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-
-  [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
-  LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;
-
-  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 };
 }

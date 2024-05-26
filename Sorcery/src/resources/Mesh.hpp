@@ -71,8 +71,17 @@ private:
   auto Set16BitIndicesFrom32BitBuffer(std::span<std::uint32_t const> indices) noexcept -> void;
 
 public:
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+
   Mesh() = default;
   LEOPPHAPI explicit Mesh(Data data, bool keep_data_in_cpu_memory = false) noexcept;
+  Mesh(Mesh const&) = delete;
+  Mesh(Mesh&& other) noexcept = delete;
+
+  LEOPPHAPI ~Mesh() override;
+
+  auto operator=(Mesh const&) -> void = delete;
+  auto operator=(Mesh&& other) noexcept -> void = delete;
 
   [[nodiscard]] LEOPPHAPI auto GetPositions() const noexcept -> std::span<Vector3 const>;
   LEOPPHAPI auto SetPositions(std::span<Vector3 const> positions) noexcept -> void;
@@ -129,7 +138,5 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetSubmeshCount() const noexcept -> int;
 
   [[nodiscard]] LEOPPHAPI auto GetIndexFormat() const noexcept -> DXGI_FORMAT;
-
-  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 };
 }

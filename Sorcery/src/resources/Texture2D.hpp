@@ -15,6 +15,13 @@ class Texture2D final : public Resource {
 
 public:
   LEOPPHAPI explicit Texture2D(graphics::SharedDeviceChildHandle<graphics::Texture> tex) noexcept;
+  Texture2D(Texture2D const&) = delete;
+  Texture2D(Texture2D&&) noexcept = default;
+
+  LEOPPHAPI ~Texture2D() override;
+
+  auto operator=(Texture2D const&) -> void = delete;
+  auto operator=(Texture2D&&) noexcept -> void = delete;
 
   [[nodiscard]] LEOPPHAPI auto GetTex() const -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
 

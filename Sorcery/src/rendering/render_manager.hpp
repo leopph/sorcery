@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <mutex>
 #include <span>
+#include <variant>
 #include <vector>
 
 
@@ -23,7 +24,7 @@ public:
   RenderManager(RenderManager const&) = delete;
   RenderManager(RenderManager&&) = delete;
 
-  ~RenderManager() = default;
+  LEOPPHAPI ~RenderManager();
 
   auto operator=(RenderManager const&) -> void = delete;
   auto operator=(RenderManager&&) -> void = delete;
@@ -46,6 +47,7 @@ public:
     DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
 
   LEOPPHAPI auto KeepAliveWhileInUse(graphics::SharedDeviceChildHandle<graphics::Buffer> buf) -> void;
+  LEOPPHAPI auto KeepAliveWhileInUse(graphics::SharedDeviceChildHandle<graphics::Texture> tex) -> void;
 
   // At the end of a frame this must be called!
   LEOPPHAPI auto EndFrame() -> void;
@@ -57,8 +59,9 @@ private:
   };
 
 
-  struct KeepAliveBufferRecord {
-    graphics::SharedDeviceChildHandle<graphics::Buffer> buf;
+  struct KeepAliveRecord {
+    std::variant<graphics::SharedDeviceChildHandle<graphics::Buffer>, graphics::SharedDeviceChildHandle<
+                   graphics::Texture>> res;
     UINT age;
   };
 
@@ -101,8 +104,8 @@ private:
   UINT64 upload_buf_current_offset_{0};
   std::mutex upload_mutex_;
 
-  std::vector<KeepAliveBufferRecord> buffers_to_keep_alive_;
-  std::mutex keep_alive_buffers_mutex_;
+  std::vector<KeepAliveRecord> resources_to_keep_alive_;
+  std::mutex keep_alive_resources_mutex_;
 };
 
 

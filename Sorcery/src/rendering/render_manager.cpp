@@ -16,6 +16,11 @@ RenderManager::RenderManager(graphics::GraphicsDevice& device) :
 }
 
 
+RenderManager::~RenderManager() {
+  device_->WaitIdle();
+}
+
+
 auto RenderManager::GetCurrentFrameCount() const -> UINT64 {
   return frame_count_;
 }
@@ -193,8 +198,14 @@ auto RenderManager::CreateReadOnlyTexture(
 
 
 auto RenderManager::KeepAliveWhileInUse(graphics::SharedDeviceChildHandle<graphics::Buffer> buf) -> void {
-  std::scoped_lock const lock{keep_alive_buffers_mutex_};
-  buffers_to_keep_alive_.emplace_back(std::move(buf), 0);
+  std::scoped_lock const lock{keep_alive_resources_mutex_};
+  resources_to_keep_alive_.emplace_back(std::move(buf), 0);
+}
+
+
+auto RenderManager::KeepAliveWhileInUse(graphics::SharedDeviceChildHandle<graphics::Texture> tex) -> void {
+  std::scoped_lock const lock{keep_alive_resources_mutex_};
+  resources_to_keep_alive_.emplace_back(std::move(tex), 0);
 }
 
 
@@ -229,8 +240,8 @@ auto RenderManager::AgeTempRenderTargets() -> void {
 
 
 auto RenderManager::AgeKeepAliveBuffers() -> void {
-  std::scoped_lock const lock{keep_alive_buffers_mutex_};
-  std::ranges::for_each(buffers_to_keep_alive_, [](KeepAliveBufferRecord& record) {
+  std::scoped_lock const lock{keep_alive_resources_mutex_};
+  std::ranges::for_each(resources_to_keep_alive_, [](KeepAliveRecord& record) {
     ++record.age;
   });
 }
@@ -244,12 +255,13 @@ auto RenderManager::ReleaseOldTempRenderTargets() -> void {
 
 
 auto RenderManager::ReleaseUnusedBuffers() -> void {
-  std::scoped_lock const lock{keep_alive_buffers_mutex_};
-  buffers_to_keep_alive_.erase(std::ranges::remove_if(buffers_to_keep_alive_, [](KeepAliveBufferRecord const& record) {
-    // Work could have still been dispatched during the frame the buffers was passed to keep alive.
-    // This is why we wait for all gpu queued frames to complete as well as the one we received the buffer in.
-    return record.age > max_frames_in_flight_;
-  }).begin(), buffers_to_keep_alive_.end());
+  std::scoped_lock const lock{keep_alive_resources_mutex_};
+  resources_to_keep_alive_.erase(std::ranges::remove_if(resources_to_keep_alive_,
+    [](KeepAliveRecord const& record) {
+      // Work could have still been dispatched during the frame the buffers was passed to keep alive.
+      // This is why we wait for all gpu queued frames to complete as well as the one we received the buffer in.
+      return record.age > max_frames_in_flight_;
+    }).begin(), resources_to_keep_alive_.end());
 }
 
 

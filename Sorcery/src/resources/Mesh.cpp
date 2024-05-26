@@ -147,6 +147,15 @@ Mesh::Mesh(Data data, bool const keep_data_in_cpu_memory) noexcept {
 }
 
 
+Mesh::~Mesh() {
+  g_engine_context.render_manager->KeepAliveWhileInUse(pos_buf_);
+  g_engine_context.render_manager->KeepAliveWhileInUse(norm_buf_);
+  g_engine_context.render_manager->KeepAliveWhileInUse(tan_buf_);
+  g_engine_context.render_manager->KeepAliveWhileInUse(uv_buf_);
+  g_engine_context.render_manager->KeepAliveWhileInUse(idx_buf_);
+}
+
+
 auto Mesh::GetPositions() const noexcept -> std::span<Vector3 const> {
   return m_cpu_data_ ? m_cpu_data_->positions : std::span<Vector3 const>{};
 }

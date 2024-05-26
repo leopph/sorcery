@@ -1,5 +1,7 @@
 #include "Texture2D.hpp"
 
+#include "../engine_context.hpp"
+
 #include <imgui.h>
 #include <DirectXTex.h>
 
@@ -19,6 +21,11 @@ Texture2D::Texture2D(graphics::SharedDeviceChildHandle<graphics::Texture> tex) n
   m_width_ = static_cast<int>(desc.width);
   m_height_ = static_cast<int>(desc.height);
   m_channel_count_ = static_cast<unsigned>(DirectX::BitsPerPixel(desc.format) / DirectX::BitsPerColor(desc.format));
+}
+
+
+Texture2D::~Texture2D() {
+  g_engine_context.render_manager->KeepAliveWhileInUse(tex_);
 }
 
 

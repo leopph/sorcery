@@ -35,6 +35,11 @@ Material::Material() :
 }
 
 
+Material::~Material() {
+  g_engine_context.render_manager->KeepAliveWhileInUse(cb_.GetBuffer());
+}
+
+
 auto Material::GetAlbedoVector() const noexcept -> Vector3 const& {
   return mShaderMtl.albedo;
 }
