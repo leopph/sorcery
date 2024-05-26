@@ -62,13 +62,13 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
       auto const newPathAbs{
         mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension()
       };
-      auto const newPathResDirRel{newPathAbs.lexically_relative(resDirAbs)};
+      auto const newPathResDirRel{relative(newPathAbs, resDirAbs)};
 
       if (isDirectory
-            ? resDb.MoveDirectory(mRenameInfo->nodePathAbs.lexically_relative(resDirAbs), newPathResDirRel)
+            ? resDb.MoveDirectory(relative(mRenameInfo->nodePathAbs, resDirAbs), newPathResDirRel)
             : resDb.MoveResource(resDb.PathToGuid(thisPathResDirRel), newPathResDirRel)) {
         thisPathAbs = newPathAbs;
-        thisPathResDirRel = thisPathAbs.lexically_relative(resDirAbs);
+        thisPathResDirRel = relative(thisPathAbs, resDirAbs);
         mSelectedPathResDirRel = thisPathResDirRel;
         selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
         ret = true;
@@ -171,7 +171,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
         auto const newFolderPathAbs{GenerateUniquePath(workingDirAbs / "New Folder")};
         create_directory(newFolderPathAbs);
 
-        mSelectedPathResDirRel = newFolderPathAbs.lexically_relative(
+        mSelectedPathResDirRel = relative(newFolderPathAbs,
           mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath());
         mApp->SetSelectedObject(nullptr);
       }
@@ -180,8 +180,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
         auto mtl{Create<Material>()};
         auto const mtlPathAbs{GenerateUniquePath(workingDirAbs / "New Material.mtl")};
         auto const selection{mApp->GetResourceDatabase().CreateResource(std::move(mtl), mtlPathAbs)};
-        mSelectedPathResDirRel = mtlPathAbs.lexically_relative(
-          mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath());
+        mSelectedPathResDirRel = relative(mtlPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath());
         mApp->SetSelectedObject(selection.Get());
       }
 
@@ -329,8 +328,7 @@ auto ProjectWindow::Draw() -> void {
           }
 
           if (!mApp->GetResourceDatabase().ImportResource(
-            dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()),
-            importer.get())) {
+            relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), importer.get())) {
             remove(dstPathAbs);
             ImGui::CloseCurrentPopup();
             ImGui::EndPopup();

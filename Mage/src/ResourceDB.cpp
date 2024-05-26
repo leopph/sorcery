@@ -142,7 +142,7 @@ auto ResourceDB::Refresh() -> void {
         if (!exists(cacheFilePathAbs) || last_write_time(resPathAbs) > last_write_time(cacheFilePathAbs) ||
             last_write_time(entry.path()) > last_write_time(cacheFilePathAbs)) {
           // If we fail, we just remove the the files
-          if (!InternalImportResource(resPathAbs.lexically_relative(mResDirAbs), newGuidToSrcAbsPath,
+          if (!InternalImportResource(relative(resPathAbs, mResDirAbs), newGuidToSrcAbsPath,
             newGuidToResAbsPath, newSrcAbsPathToGuid, newGuidToType, *importer, guid)) {
             remove(resPathAbs);
             remove(entry.path());
@@ -167,7 +167,7 @@ auto ResourceDB::Refresh() -> void {
     // If we find a file that is not a meta file, we attempt to import it as a resource
     if (auto const metaPathAbs{GetMetaPath(entry.path())}; !exists(metaPathAbs)) {
       if (auto const importer{GetNewImporterForResourceFile(entry.path())}) {
-        if (auto const guid{Guid::Generate()}; InternalImportResource(entry.path().lexically_relative(mResDirAbs),
+        if (auto const guid{Guid::Generate()}; InternalImportResource(relative(entry.path(), mResDirAbs),
           newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, newGuidToType, *importer, guid)) {
           continue;
         }
@@ -418,7 +418,7 @@ auto ResourceDB::PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid 
 
 auto ResourceDB::GuidToPath(Guid const& guid) -> std::filesystem::path {
   if (auto const it{mGuidToSrcAbsPath.find(guid)}; it != std::end(mGuidToSrcAbsPath)) {
-    return it->second.lexically_relative(GetResourceDirectoryAbsolutePath());
+    return relative(it->second, GetResourceDirectoryAbsolutePath());
   }
 
   return {};
