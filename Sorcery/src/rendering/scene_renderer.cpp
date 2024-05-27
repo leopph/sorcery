@@ -1658,6 +1658,7 @@ auto SceneRenderer::Render() -> void {
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, ssao_tex_idx), ssao_tex->GetShaderResource());
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, light_buf_idx),
       light_buffer.GetBuffer()->GetShaderResource());
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, light_count), static_cast<UINT>(light_count));
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, dir_shadow_arr_idx),
       dir_shadow_map_arr_->GetTex()->GetShaderResource());
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, punc_shadow_atlas_idx),

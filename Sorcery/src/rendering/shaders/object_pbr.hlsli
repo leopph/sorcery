@@ -306,16 +306,13 @@ float4 PsMain(const VertexOut vs_out) : SV_Target {
 
   float3 out_color = per_frame_cb.ambientLightColor * albedo * ao;
 
-  uint light_count;
-  uint _;
   const StructuredBuffer<ShaderLight> lights = ResourceDescriptorHeap[g_params.light_buf_idx];
-  lights.GetDimensions(light_count, _);
 
   const Texture2DArray<float> dir_light_shadow_map_arr = ResourceDescriptorHeap[g_params.dir_shadow_arr_idx];
   const Texture2D<float> punc_light_shadow_atlas = ResourceDescriptorHeap[g_params.punc_shadow_atlas_idx];
   const SamplerComparisonState shadow_samp = SamplerDescriptorHeap[g_params.shadow_samp_idx];
 
-  for (uint i = 0; i < light_count; i++) {
+  for (uint i = 0; i < g_params.light_count; i++) {
     if (lights[i].type == 0) {
       out_color += CalculateDirLight(lights[i], vs_out.pos_ws, norm_ws, dir_to_cam_ws, vs_out.pos_vs.z, albedo,
         metallic, roughness, dir_light_shadow_map_arr, shadow_samp, per_frame_cb.shadowFilteringMode,

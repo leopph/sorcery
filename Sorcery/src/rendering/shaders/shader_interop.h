@@ -221,9 +221,10 @@ struct ObjectDrawParams {
 
   uint ssao_tex_idx;
   uint light_buf_idx;
+  uint light_count;
   uint dir_shadow_arr_idx;
-  uint punc_shadow_atlas_idx;
 
+  uint punc_shadow_atlas_idx;
   uint per_draw_cb_idx;
   uint per_view_cb_idx;
   uint per_frame_cb_idx;
