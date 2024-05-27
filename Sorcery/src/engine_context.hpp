@@ -2,15 +2,23 @@
 
 #include "Core.hpp"
 #include "observer_ptr.hpp"
-#include "rendering/graphics.hpp"
-#include "rendering/render_manager.hpp"
-#include "rendering/scene_renderer.hpp"
-#include "ResourceManager.hpp"
-#include "Window.hpp"
 
 
 namespace sorcery {
+class Window;
 class JobSystem;
+class ResourceManager;
+
+
+namespace graphics {
+class GraphicsDevice;
+}
+
+
+namespace rendering {
+class RenderManager;
+class SceneRenderer;
+}
 
 
 struct EngineContext {

@@ -5,6 +5,7 @@
 #include "FileIo.hpp"
 #include "engine_context.hpp"
 #include "job_system.hpp"
+#include "rendering/render_manager.hpp"
 #include "Resources/Scene.hpp"
 
 #include <DirectXTex.h>

@@ -4,6 +4,7 @@
 #include "TransformComponent.hpp"
 #include "../engine_context.hpp"
 #include "../Reflection.hpp"
+#include "../rendering/scene_renderer.hpp"
 
 #include <imgui.h>
 

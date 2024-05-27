@@ -1,6 +1,7 @@
 #include "Texture2D.hpp"
 
 #include "../engine_context.hpp"
+#include "../rendering/render_manager.hpp"
 
 #include <imgui.h>
 #include <DirectXTex.h>

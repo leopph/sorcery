@@ -3,6 +3,7 @@
 #include "Entity.hpp"
 #include "../Gui.hpp"
 #include "../engine_context.hpp"
+#include "../rendering/scene_renderer.hpp"
 
 #include <imgui.h>
 

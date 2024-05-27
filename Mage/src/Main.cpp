@@ -15,6 +15,7 @@
 #include "Platform.hpp"
 #include "Window.hpp"
 #include "rendering/imgui_renderer.hpp"
+#include "rendering/scene_renderer.hpp"
 #include "job_system.hpp"
 
 #include <imgui.h>

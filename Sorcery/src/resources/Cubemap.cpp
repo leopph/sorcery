@@ -1,6 +1,7 @@
 #include "Cubemap.hpp"
 
 #include "../engine_context.hpp"
+#include "../rendering/render_manager.hpp"
 
 #include <utility>
 

@@ -3,6 +3,7 @@
 #include "MemoryAllocation.hpp"
 #include "Timing.hpp"
 #include "engine_context.hpp"
+#include "scene_renderer.hpp"
 
 #include <imgui.h>
 

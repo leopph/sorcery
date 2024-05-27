@@ -4,6 +4,7 @@
 #include "GUI.hpp"
 #include "ResourceManager.hpp"
 #include "engine_context.hpp"
+#include "Window.hpp"
 
 #include <nfd.h>
 

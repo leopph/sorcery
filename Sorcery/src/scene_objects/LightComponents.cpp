@@ -3,6 +3,8 @@
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
 #include "../engine_context.hpp"
+#include "../Color.hpp"
+#include "../rendering/scene_renderer.hpp"
 
 #include <algorithm>
 #include <cmath>

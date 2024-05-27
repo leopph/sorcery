@@ -6,6 +6,7 @@
 #include "../GUI.hpp"
 #include "../job_system.hpp"
 #include "../ResourceManager.hpp"
+#include "../rendering/render_manager.hpp"
 
 #include <imgui.h>
 

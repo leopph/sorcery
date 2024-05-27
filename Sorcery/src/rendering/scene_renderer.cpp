@@ -8,6 +8,7 @@
 #include "../scene_objects/TransformComponent.hpp"
 #include "../Resources/Scene.hpp"
 #include "../engine_context.hpp"
+#include "../ResourceManager.hpp"
 
 #ifndef NDEBUG
 #include "shaders/generated/Debug/depth_normal_ps.h"

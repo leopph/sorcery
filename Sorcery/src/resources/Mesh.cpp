@@ -2,6 +2,7 @@
 
 #include "../engine_context.hpp"
 #include "../Serialization.hpp"
+#include "../rendering/render_manager.hpp"
 
 #include <imgui.h>
 

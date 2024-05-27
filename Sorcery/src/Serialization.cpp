@@ -1,6 +1,7 @@
 #include "Serialization.hpp"
 
 #include "Resources/Resource.hpp"
+#include "ResourceManager.hpp"
 #include "engine_context.hpp"
 
 #include <cassert>

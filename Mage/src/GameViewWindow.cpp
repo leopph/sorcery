@@ -1,6 +1,7 @@
 #include "GameViewWindow.hpp"
 
 #include "engine_context.hpp"
+#include "scene_renderer.hpp"
 #include "Util.hpp"
 
 #include <imgui.h>

@@ -5,6 +5,7 @@
 #include "Timing.hpp"
 #include "Window.hpp"
 #include "engine_context.hpp"
+#include "scene_renderer.hpp"
 
 
 namespace sorcery::mage {
