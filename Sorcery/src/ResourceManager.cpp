@@ -1,10 +1,10 @@
 #include "ResourceManager.hpp"
-#include "MemoryAllocation.hpp"
-#include "Reflection.hpp"
+#include "app.hpp"
 #include "ExternalResource.hpp"
 #include "FileIo.hpp"
-#include "engine_context.hpp"
 #include "job_system.hpp"
+#include "MemoryAllocation.hpp"
+#include "Reflection.hpp"
 #include "rendering/render_manager.hpp"
 #include "Resources/Scene.hpp"
 
@@ -164,7 +164,7 @@ auto ResourceManager::LoadTexture(
     return nullptr;
   }
 
-  auto tex{g_engine_context.render_manager->CreateReadOnlyTexture(img)};
+  auto tex{App::Instance().GetRenderManager().CreateReadOnlyTexture(img)};
 
   if (!tex) {
     return nullptr;
@@ -295,77 +295,7 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 
 
 ResourceManager::ResourceManager(JobSystem& job_system) :
-  job_system_{&job_system} {
-  default_mtl_ = Create<Material>();
-  default_mtl_->SetGuid(default_mtl_guid_);
-  default_mtl_->SetName("Default Material");
-  default_resources_.emplace_back(default_mtl_.get());
-
-  std::vector<Vector3> cubeNormals;
-  CalculateNormals(kCubePositions, kCubeIndices, cubeNormals);
-
-  std::vector<Vector3> cubeTangents;
-  CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cubeTangents);
-
-  std::vector<Vector3> quadNormals;
-  CalculateNormals(kQuadPositions, kQuadIndices, quadNormals);
-
-  std::vector<Vector3> quadTangents;
-  CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, quadTangents);
-
-  cube_mesh_ = Create<Mesh>();
-  cube_mesh_->SetGuid(cube_mesh_guid_);
-  cube_mesh_->SetName("Cube");
-  cube_mesh_->SetPositions(kCubePositions);
-  cube_mesh_->SetNormals(std::move(cubeNormals));
-  cube_mesh_->SetUVs(kCubeUvs);
-  cube_mesh_->SetTangents(std::move(cubeTangents));
-  cube_mesh_->SetIndices(kCubeIndices);
-  cube_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  cube_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kCubeIndices.size()), 0, AABB{}}});
-  if (!cube_mesh_->ValidateAndUpdate(false)) {
-    throw std::runtime_error{"Failed to validate and update default cube mesh."};
-  }
-  default_resources_.emplace_back(cube_mesh_.get());
-
-  plane_mesh_ = Create<Mesh>();
-  plane_mesh_->SetGuid(plane_mesh_guid_);
-  plane_mesh_->SetName("Plane");
-  plane_mesh_->SetPositions(kQuadPositions);
-  plane_mesh_->SetNormals(std::move(quadNormals));
-  plane_mesh_->SetUVs(kQuadUvs);
-  plane_mesh_->SetTangents(std::move(quadTangents));
-  plane_mesh_->SetIndices(kQuadIndices);
-  plane_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  plane_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kQuadIndices.size()), 0, AABB{}}});
-  if (!plane_mesh_->ValidateAndUpdate(false)) {
-    throw std::runtime_error{"Failed to validate and update default plane mesh."};
-  }
-  default_resources_.emplace_back(plane_mesh_.get());
-
-  sphere_mesh_ = Create<Mesh>();
-  sphere_mesh_->SetGuid(sphere_mesh_guid_);
-  sphere_mesh_->SetName("Sphere");
-  std::vector<Vector3> spherePositions;
-  std::vector<Vector3> sphereNormals;
-  std::vector<Vector3> sphereTangents;
-  std::vector<Vector2> sphereUvs;
-  std::vector<std::uint32_t> sphereIndices;
-  rendering::GenerateSphereMesh(1, 50, 50, spherePositions, sphereNormals, sphereUvs, sphereIndices);
-  auto const sphereIdxCount{std::size(sphereIndices)};
-  CalculateTangents(spherePositions, sphereUvs, sphereIndices, sphereTangents);
-  sphere_mesh_->SetPositions(std::move(spherePositions));
-  sphere_mesh_->SetNormals(std::move(sphereNormals));
-  sphere_mesh_->SetUVs(std::move(sphereUvs));
-  sphere_mesh_->SetTangents(std::move(sphereTangents));
-  sphere_mesh_->SetIndices(std::move(sphereIndices));
-  sphere_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-  sphere_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
-  if (!sphere_mesh_->ValidateAndUpdate(false)) {
-    throw std::runtime_error{"Failed to validate and update default sphere mesh."};
-  }
-  default_resources_.emplace_back(sphere_mesh_.get());
-}
+  job_system_{&job_system} {}
 
 
 auto ResourceManager::Unload(Guid const& guid) -> void {
@@ -485,5 +415,86 @@ auto ResourceManager::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
 
 auto ResourceManager::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
   return ObserverPtr{sphere_mesh_.get()};
+}
+
+
+auto ResourceManager::CreateDefaultResources() -> void {
+  if (!default_mtl_) {
+    default_mtl_ = Create<Material>();
+    default_mtl_->SetGuid(default_mtl_guid_);
+    default_mtl_->SetName("Default Material");
+    default_resources_.emplace_back(default_mtl_.get());
+  }
+
+  if (!cube_mesh_) {
+    std::vector<Vector3> cubeNormals;
+    CalculateNormals(kCubePositions, kCubeIndices, cubeNormals);
+
+    std::vector<Vector3> cubeTangents;
+    CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cubeTangents);
+
+    cube_mesh_ = Create<Mesh>();
+    cube_mesh_->SetGuid(cube_mesh_guid_);
+    cube_mesh_->SetName("Cube");
+    cube_mesh_->SetPositions(kCubePositions);
+    cube_mesh_->SetNormals(std::move(cubeNormals));
+    cube_mesh_->SetUVs(kCubeUvs);
+    cube_mesh_->SetTangents(std::move(cubeTangents));
+    cube_mesh_->SetIndices(kCubeIndices);
+    cube_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+    cube_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kCubeIndices.size()), 0, AABB{}}});
+    if (!cube_mesh_->ValidateAndUpdate(false)) {
+      throw std::runtime_error{"Failed to validate and update default cube mesh."};
+    }
+    default_resources_.emplace_back(cube_mesh_.get());
+  }
+
+  if (!plane_mesh_) {
+    std::vector<Vector3> quadNormals;
+    CalculateNormals(kQuadPositions, kQuadIndices, quadNormals);
+
+    std::vector<Vector3> quadTangents;
+    CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, quadTangents);
+
+    plane_mesh_ = Create<Mesh>();
+    plane_mesh_->SetGuid(plane_mesh_guid_);
+    plane_mesh_->SetName("Plane");
+    plane_mesh_->SetPositions(kQuadPositions);
+    plane_mesh_->SetNormals(std::move(quadNormals));
+    plane_mesh_->SetUVs(kQuadUvs);
+    plane_mesh_->SetTangents(std::move(quadTangents));
+    plane_mesh_->SetIndices(kQuadIndices);
+    plane_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+    plane_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kQuadIndices.size()), 0, AABB{}}});
+    if (!plane_mesh_->ValidateAndUpdate(false)) {
+      throw std::runtime_error{"Failed to validate and update default plane mesh."};
+    }
+    default_resources_.emplace_back(plane_mesh_.get());
+  }
+
+  if (!sphere_mesh_) {
+    sphere_mesh_ = Create<Mesh>();
+    sphere_mesh_->SetGuid(sphere_mesh_guid_);
+    sphere_mesh_->SetName("Sphere");
+    std::vector<Vector3> spherePositions;
+    std::vector<Vector3> sphereNormals;
+    std::vector<Vector3> sphereTangents;
+    std::vector<Vector2> sphereUvs;
+    std::vector<std::uint32_t> sphereIndices;
+    rendering::GenerateSphereMesh(1, 50, 50, spherePositions, sphereNormals, sphereUvs, sphereIndices);
+    auto const sphereIdxCount{std::size(sphereIndices)};
+    CalculateTangents(spherePositions, sphereUvs, sphereIndices, sphereTangents);
+    sphere_mesh_->SetPositions(std::move(spherePositions));
+    sphere_mesh_->SetNormals(std::move(sphereNormals));
+    sphere_mesh_->SetUVs(std::move(sphereUvs));
+    sphere_mesh_->SetTangents(std::move(sphereTangents));
+    sphere_mesh_->SetIndices(std::move(sphereIndices));
+    sphere_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
+    sphere_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
+    if (!sphere_mesh_->ValidateAndUpdate(false)) {
+      throw std::runtime_error{"Failed to validate and update default sphere mesh."};
+    }
+    default_resources_.emplace_back(sphere_mesh_.get());
+  }
 }
 }

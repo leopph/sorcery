@@ -1,15 +1,18 @@
 #pragma once
 
-#include "Application.hpp"
-#include "StandaloneCamera.hpp"
+#include "Cubemap.hpp"
 #include "GUI.hpp"
+#include "StandaloneCamera.hpp"
 
 #include <string_view>
 
 
 namespace sorcery::mage {
+class EditorApp;
+
+
 class SettingsWindow {
-  Application* mApp;
+  EditorApp* mApp;
   StandaloneCamera* mSceneViewCam;
   ObjectPicker<Cubemap> mSkyboxPicker;
 
@@ -17,7 +20,7 @@ public:
   static std::string_view constexpr TITLE{"Settings"};
   static auto constexpr DEFAULT_TARGET_FRAME_RATE{200};
 
-  explicit SettingsWindow(Application& app, StandaloneCamera& sceneViewCam);
+  explicit SettingsWindow(EditorApp& app, StandaloneCamera& sceneViewCam);
   auto Draw() -> void;
 };
 }

@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Application.hpp"
-
-
 namespace sorcery::mage {
+class EditorApp;
+
+
 class PropertiesWindow {
-  Application* mApp;
+  EditorApp* mApp;
 
 public:
-  explicit PropertiesWindow(Application& app);
+  explicit PropertiesWindow(EditorApp& app);
   auto Draw() -> void;
 };
 }

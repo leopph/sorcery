@@ -2,6 +2,7 @@
 // Adapted to Sorcery's GraphicsDevice
 
 #include "imgui_renderer.hpp"
+
 #include "imgui_shader_interop.h"
 
 #ifndef NDEBUG
@@ -11,8 +12,6 @@
 #include "generated/Release/imgui_ps.h"
 #include "generated/Release/imgui_vs.h"
 #endif
-
-#include <imgui.h>
 
 #include <bit>
 #include <limits>
@@ -58,6 +57,11 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, graphics::SwapCha
     std::numeric_limits<float>::max(),
   });
 
+  UpdateFonts();
+}
+
+
+auto ImGuiRenderer::UpdateFonts() -> void {
   unsigned char* fonts_tex_pixel_data;
   int fonts_tex_width;
   int fonts_tex_height;
@@ -76,7 +80,7 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, graphics::SwapCha
     }
   });
 
-  io.Fonts->SetTexID(fonts_tex_.get());
+  ImGui::GetIO().Fonts->SetTexID(fonts_tex_.get());
 }
 
 

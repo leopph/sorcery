@@ -2,7 +2,7 @@
 
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
-#include "../engine_context.hpp"
+#include "../app.hpp"
 #include "../Color.hpp"
 #include "../rendering/scene_renderer.hpp"
 
@@ -172,8 +172,8 @@ auto LightComponent::OnDrawGizmosSelected() -> void {
 
     // This highly depends on the order CalculateSpotLightLocalVertices returns the vertices
     for (int i = 0; i < 4; i++) {
-      g_engine_context.scene_renderer->DrawLineAtNextRender(vertices[4], vertices[i], lineColor);
-      g_engine_context.scene_renderer->DrawLineAtNextRender(vertices[i], vertices[(i + 1) % 4], lineColor);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(vertices[4], vertices[i], lineColor);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(vertices[i], vertices[(i + 1) % 4], lineColor);
     }
   }
 }
@@ -186,12 +186,12 @@ auto LightComponent::Clone() -> std::unique_ptr<SceneObject> {
 
 auto LightComponent::OnAfterEnteringScene(Scene const& scene) -> void {
   Component::OnAfterEnteringScene(scene);
-  g_engine_context.scene_renderer->Register(*this);
+  App::Instance().GetSceneRenderer().Register(*this);
 }
 
 
 auto LightComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  g_engine_context.scene_renderer->Unregister(*this);
+  App::Instance().GetSceneRenderer().Unregister(*this);
   Component::OnBeforeExitingScene(scene);
 }
 

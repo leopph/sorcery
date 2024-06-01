@@ -4,12 +4,12 @@
 #include "mutex.hpp"
 #include "observer_ptr.hpp"
 #include "Serialization.hpp"
-#include "Resources/Resource.hpp"
 #include "resources/Material.hpp"
 #include "resources/Mesh.hpp"
+#include "Resources/Resource.hpp"
 
-#include <cstddef>
 #include <concepts>
+#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <string_view>
@@ -64,6 +64,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
   [[nodiscard]] LEOPPHAPI auto GetPlaneMesh() const noexcept -> ObserverPtr<Mesh>;
   [[nodiscard]] LEOPPHAPI auto GetSphereMesh() const noexcept -> ObserverPtr<Mesh>;
+
+  // Called only internally!
+  auto CreateDefaultResources() -> void;
 
   constexpr static std::string_view EXTERNAL_RESOURCE_EXT{".bin"};
   constexpr static std::string_view SCENE_RESOURCE_EXT{".scene"};

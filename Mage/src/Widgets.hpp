@@ -1,6 +1,6 @@
 #pragma once
 
-#include <imgui.h>
+#include "editor_gui.hpp"
 
 
 namespace sorcery::mage {

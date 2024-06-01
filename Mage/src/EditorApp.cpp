@@ -1,86 +1,199 @@
-#include "Application.hpp"
+#include "EditorApp.hpp"
 
-#include "Platform.hpp"
 #include "GUI.hpp"
+#include "LoadingScreen.hpp"
+#include "PerformanceCounterWindow.hpp"
+#include "Platform.hpp"
 #include "ResourceManager.hpp"
-#include "engine_context.hpp"
+#include "StartupScreen.hpp"
+#include "Timing.hpp"
 #include "Window.hpp"
 
+#include <ImGuizmo.h>
+#include <imgui_impl_win32.h>
+#include <implot.h>
 #include <nfd.h>
 
 #include <utility>
 
+extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
+
 
 namespace sorcery::mage {
-std::string_view const Application::WINDOW_TITLE_BASE{"Mage"};
+std::string_view const EditorApp::window_title_base_{"Mage"};
 
 
-auto Application::OnWindowFocusGain() -> void {
+auto EditorApp::OnWindowFocusGain() -> void {
   if (!proj_dir_abs_.empty()) {
     resource_db_.Refresh();
   }
 }
 
 
-auto Application::HandleBackgroundThreadException(std::exception const& ex) -> void {
+auto EditorApp::HandleBackgroundThreadException(std::exception const& ex) -> void {
   DisplayError(ex.what());
 }
 
 
-auto Application::HandleUnknownBackgroundThreadException() -> void {
+auto EditorApp::HandleUnknownBackgroundThreadException() -> void {
   DisplayError("Unknown error.");
 }
 
 
-Application::Application(ImGuiIO& imGuiIO) :
-  imgui_io_{imGuiIO},
+EditorApp::EditorApp(std::span<std::string_view const> const args) :
+  App{args},
+  imgui_ctx_{ImGui::CreateContext()},
+  imgui_io_{&ImGui::GetIO()},
   window_focus_gain_listener_{
-    g_engine_context.window->OnWindowFocusGain.add_listener([this] { OnWindowFocusGain(); })
+    GetWindow().OnWindowFocusGain.add_listener([this] { OnWindowFocusGain(); })
   } {
-  g_engine_context.window->SetTitle(std::string{WINDOW_TITLE_BASE});;
+  auto const ini_file_path{std::filesystem::path{GetExecutablePath()}.remove_filename() /= "editorconfig.ini"};
+  auto const ini_file_path_str{WideToUtf8(ini_file_path.c_str())};
+
+  imgui_io_->FontDefault = imgui_io_->Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 14);
+  imgui_io_->IniFilename = ini_file_path_str.c_str();
+  imgui_io_->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+  ImGui::StyleColorsDark();
+
+  ImPlot::CreateContext();
+
+  if (!ImGui_ImplWin32_Init(GetWindow().GetNativeHandle())) {
+    throw std::runtime_error{"Failed to initialize Dear ImGui Win32 Implementation."};
+  }
+
+  imgui_renderer_.UpdateFonts();
+
+  GetWindow().SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
+
+  GetWindow().SetTitle(std::string{window_title_base_});;
   SetImGuiContext(*ImGui::GetCurrentContext());
   SetGuiDarkMode(dark_mode_);
 
-  imGuiIO.FontDefault = imGuiIO.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 14);
+  timing::SetTargetFrameRate(SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
+
+  if (args.size() > 0) {
+    std::filesystem::path targetProjPath{args[0]};
+    targetProjPath = absolute(targetProjPath);
+    OpenProject(targetProjPath);
+  }
+
+  if (args.size() > 1) {
+    OpenScene(GetResourceDatabase().PathToGuid(args[1]));
+  }
 }
 
 
-Application::~Application() {
-  g_engine_context.window->OnWindowFocusGain.remove_listener(window_focus_gain_listener_);
+EditorApp::~EditorApp() {
+  WaitRenderJob();
+  GetGraphicsDevice().WaitIdle();
+
+  GetWindow().OnWindowFocusGain.remove_listener(window_focus_gain_listener_);
+
+  ImGui_ImplWin32_Shutdown();
+  ImPlot::DestroyContext();
+  ImGui::DestroyContext();
 }
 
 
-auto Application::GetImGuiIo() const noexcept -> ImGuiIO const& {
-  return imgui_io_;
+auto EditorApp::BeginFrame() -> void {
+  ImGui_ImplWin32_NewFrame();
+  ImGui::NewFrame();
+  ImGuizmo::BeginFrame();
 }
 
 
-auto Application::GetImGuiIo() noexcept -> ImGuiIO& {
-  return imgui_io_;
+auto EditorApp::Update() -> void {
+  if (GetProjectDirectoryAbsolute().empty()) {
+    DrawStartupScreen(*this);
+  } else {
+    int static targetFrameRate{timing::GetTargetFrameRate()};
+
+    if (game_is_running_) {
+      if (GetKeyDown(Key::Escape)) {
+        game_is_running_ = false;
+        GetWindow().SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
+        GetWindow().SetCursorLock(std::nullopt);
+        GetWindow().SetCursorHiding(false);
+        timing::SetTargetFrameRate(targetFrameRate);
+        GetScene().Load();
+        SetSelectedObject(nullptr);
+      }
+    } else {
+      if (GetKeyDown(Key::F5)) {
+        game_is_running_ = true;
+        GetWindow().SetEventHandler(nullptr);
+        timing::SetTargetFrameRate(-1);
+        GetScene().Save();
+        targetFrameRate = timing::GetTargetFrameRate();
+      }
+    }
+
+    ImGui::DockSpaceOverViewport();
+
+    if (IsEditorBusy()) {
+      DrawLoadingScreen(*this);
+    }
+
+    entity_hierarchy_window_.Draw();
+    game_view_window_.Draw(game_is_running_);
+    scene_view_window_.Draw(*this);
+
+    main_menu_bar_.Draw();
+    editor_settings_window_.Draw();
+    properties_window_.Draw();
+    project_window_.Draw();
+    DrawPerformanceCounterWindow();
+  }
 }
 
 
-auto Application::GetResourceDatabase() const noexcept -> ResourceDB const& {
+auto EditorApp::EndFrame() -> void {
+  ImGui::Render();
+}
+
+
+auto EditorApp::PrepareRender() -> void {
+  imgui_renderer_.ExtractDrawData();
+}
+
+
+auto EditorApp::Render() -> void {
+  imgui_renderer_.Render();
+}
+
+
+auto EditorApp::GetImGuiIo() const noexcept -> ImGuiIO const& {
+  return *imgui_io_;
+}
+
+
+auto EditorApp::GetImGuiIo() noexcept -> ImGuiIO& {
+  return *imgui_io_;
+}
+
+
+auto EditorApp::GetResourceDatabase() const noexcept -> ResourceDB const& {
   return resource_db_;
 }
 
 
-auto Application::GetResourceDatabase() noexcept -> ResourceDB& {
+auto EditorApp::GetResourceDatabase() noexcept -> ResourceDB& {
   return resource_db_;
 }
 
 
-auto Application::OpenScene(Guid const& guid) -> void {
+auto EditorApp::OpenScene(Guid const& guid) -> void {
   if (!guid.IsValid() || (scene_ && scene_->GetGuid() == guid)) {
     return;
   }
 
-  if (auto const new_scene{g_engine_context.resource_manager->GetOrLoad<Scene>(guid)}) {
+  if (auto const new_scene{GetResourceManager().GetOrLoad<Scene>(guid)}) {
     new_scene->Load();
 
     if (scene_) {
       // Unlod old scene if it was saved
-      g_engine_context.resource_manager->Unload(scene_->GetGuid());
+      GetResourceManager().Unload(scene_->GetGuid());
       // Unload old scene if it was temporary
       temp_scene_owner_.reset();
     }
@@ -92,10 +205,10 @@ auto Application::OpenScene(Guid const& guid) -> void {
 }
 
 
-auto Application::OpenNewScene() -> void {
+auto EditorApp::OpenNewScene() -> void {
   if (scene_) {
     // Unload old scene if it was saved
-    g_engine_context.resource_manager->Unload(scene_->GetGuid());
+    GetResourceManager().Unload(scene_->GetGuid());
   }
 
   temp_scene_owner_ = Create<Scene>();
@@ -107,7 +220,7 @@ auto Application::OpenNewScene() -> void {
 }
 
 
-auto Application::SaveCurrentSceneToFile() -> void {
+auto EditorApp::SaveCurrentSceneToFile() -> void {
   assert(scene_);
   scene_->Save();
   if (resource_db_.IsSavedResource(*scene_)) {
@@ -127,48 +240,48 @@ auto Application::SaveCurrentSceneToFile() -> void {
 }
 
 
-auto Application::GetScene() const noexcept -> Scene& {
+auto EditorApp::GetScene() const noexcept -> Scene& {
   assert(scene_);
   return *scene_;
 }
 
 
-auto Application::GetSelectedObject() const noexcept -> Object* {
+auto EditorApp::GetSelectedObject() const noexcept -> Object* {
   return selected_object_;
 }
 
 
-auto Application::SetSelectedObject(Object* const obj) noexcept -> void {
+auto EditorApp::SetSelectedObject(Object* const obj) noexcept -> void {
   selected_object_ = obj;
 }
 
 
-auto Application::GetProjectDirectoryAbsolute() const noexcept -> std::filesystem::path const& {
+auto EditorApp::GetProjectDirectoryAbsolute() const noexcept -> std::filesystem::path const& {
   return proj_dir_abs_;
 }
 
 
-auto Application::OpenProject(std::filesystem::path const& targetPath) -> void {
+auto EditorApp::OpenProject(std::filesystem::path const& targetPath) -> void {
   proj_dir_abs_ = absolute(targetPath);
-  g_engine_context.resource_manager->UnloadAll();
+  GetResourceManager().UnloadAll();
   resource_db_.ChangeProjectDir(proj_dir_abs_);
-  g_engine_context.window->SetTitle(std::string{WINDOW_TITLE_BASE} + " - " + targetPath.stem().string());
+  GetWindow().SetTitle(std::string{window_title_base_} + " - " + targetPath.stem().string());
 
   OpenNewScene();
 }
 
 
-auto Application::IsEditorBusy() const noexcept -> bool {
+auto EditorApp::IsEditorBusy() const noexcept -> bool {
   return busy_;
 }
 
 
-auto Application::IsGuiDarkMode() const noexcept -> bool {
+auto EditorApp::IsGuiDarkMode() const noexcept -> bool {
   return dark_mode_;
 }
 
 
-auto Application::SetGuiDarkMode(bool const darkMode) noexcept -> void {
+auto EditorApp::SetGuiDarkMode(bool const darkMode) noexcept -> void {
   auto& style{ImGui::GetStyle()};
 
   if (darkMode) {
@@ -246,26 +359,26 @@ auto Application::SetGuiDarkMode(bool const darkMode) noexcept -> void {
   style.TabRounding = 4;
   style.WindowRounding = 4;
 
-  g_engine_context.window->UseImmersiveDarkMode(darkMode);
+  GetWindow().UseImmersiveDarkMode(darkMode);
   dark_mode_ = darkMode;
 }
 
 
-auto Application::OnEnterBusyExecution() -> BusyExecutionContext {
+auto EditorApp::OnEnterBusyExecution() -> BusyExecutionContext {
   bool isBusy{false};
   while (!busy_.compare_exchange_weak(isBusy, true)) {}
 
-  BusyExecutionContext const ret{.imGuiConfigFlagsBackup = imgui_io_.ConfigFlags};
+  BusyExecutionContext const ret{.imGuiConfigFlagsBackup = imgui_io_->ConfigFlags};
 
-  imgui_io_.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-  imgui_io_.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
+  imgui_io_->ConfigFlags |= ImGuiConfigFlags_NoMouse;
+  imgui_io_->ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
 
   return ret;
 }
 
 
-auto Application::OnFinishBusyExecution(BusyExecutionContext const& busyExecutionContext) -> void {
-  imgui_io_.ConfigFlags = busyExecutionContext.imGuiConfigFlagsBackup;
+auto EditorApp::OnFinishBusyExecution(BusyExecutionContext const& busyExecutionContext) -> void {
+  imgui_io_->ConfigFlags = busyExecutionContext.imGuiConfigFlagsBackup;
   busy_ = false;
 }
 }

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Application.hpp"
+#include "EditorApp.hpp"
 
 
 namespace sorcery::mage {
-auto DrawLoadingScreen(Application& context) -> void;
+auto DrawLoadingScreen(EditorApp& context) -> void;
 }

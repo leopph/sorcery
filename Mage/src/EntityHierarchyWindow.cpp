@@ -1,10 +1,12 @@
 #include "EntityHierarchyWindow.hpp"
 
+#include "EditorApp.hpp"
+
 #include <functional>
 
 
 namespace sorcery::mage {
-EntityHierarchyWindow::EntityHierarchyWindow(Application& app) :
+EntityHierarchyWindow::EntityHierarchyWindow(EditorApp& app) :
   mApp{std::addressof(app)} {}
 
 

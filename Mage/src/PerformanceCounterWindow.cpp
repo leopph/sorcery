@@ -1,15 +1,16 @@
 #include "PerformanceCounterWindow.hpp"
 
-#include <chrono>
-#include <imgui.h>
-#include <implot.h>
-
+#include "editor_gui.hpp"
 #include "Timing.hpp"
+
+#include <chrono>
 
 
 namespace sorcery::mage {
 auto DrawPerformanceCounterWindow() -> void {
-  ImGui::SetNextWindowSizeConstraints(ImVec2{150, 150}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
+  ImGui::SetNextWindowSizeConstraints(ImVec2{150, 150}, ImVec2{
+    std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
+  });
 
   if (ImGui::Begin("Performance")) {
     std::chrono::duration<float, std::ratio<1>> const frameTimeSeconds{timing::GetFrameTime()};
@@ -27,8 +28,10 @@ auto DrawPerformanceCounterWindow() -> void {
     ImGui::Text("%d FPS", static_cast<int>(1.0f / frameTimeSeconds.count()));
     ImGui::Text("%.2f ms", static_cast<double>(frameTimeMillis.count()));
 
-    if (ImPlot::BeginPlot("###frameTimeChart", ImGui::GetContentRegionAvail(), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame)) {
-      ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, static_cast<double>(*std::ranges::max_element(dataPoints)), ImPlotCond_Always);
+    if (ImPlot::BeginPlot("###frameTimeChart", ImGui::GetContentRegionAvail(),
+      ImPlotFlags_NoInputs | ImPlotFlags_NoFrame)) {
+      ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, static_cast<double>(*std::ranges::max_element(dataPoints)),
+        ImPlotCond_Always);
       ImPlot::SetupAxisLimits(ImAxis_X1, 0, static_cast<double>(dataPoints.size()), ImPlotCond_Always);
       ImPlot::SetupAxis(ImAxis_X1, nullptr, ImPlotAxisFlags_NoDecorations);
       ImPlot::SetupAxis(ImAxis_Y1, nullptr, ImPlotAxisFlags_NoTickMarks);

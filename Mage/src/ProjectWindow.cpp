@@ -1,11 +1,11 @@
 #include "ProjectWindow.hpp"
 
+#include "EditorApp.hpp"
 #include "GUI.hpp"
 #include "Material.hpp"
 #include "Platform.hpp"
 #include "ReflectionDisplayProperties.hpp"
 #include "Util.hpp"
-#include "engine_context.hpp"
 
 #include <imgui_stdlib.h>
 #include <nfd.h>
@@ -94,7 +94,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
       ImGui::SetDragDropPayload(DIR_NODE_DRAG_DROP_TYPE_STR.data(), thisPathResDirRelStr.c_str(),
         thisPathResDirRelStr.size() + 1);
     } else {
-      auto const res{g_engine_context.resource_manager->GetOrLoad(resDb.PathToGuid(thisPathResDirRel))};
+      auto const res{App::Instance().GetResourceManager().GetOrLoad(resDb.PathToGuid(thisPathResDirRel))};
       ImGui::SetDragDropPayload(ObjectDragDropData::TYPE_STR.data(), &res, sizeof(decltype(res)));
     }
     ImGui::EndDragDropSource();
@@ -129,7 +129,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
         ImGuiMouseButton_Right)) {
     mSelectedPathResDirRel = thisPathResDirRel;
     selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
-    mApp->SetSelectedObject(g_engine_context.resource_manager->GetOrLoad(resDb.PathToGuid(thisPathResDirRel)));
+    mApp->SetSelectedObject(App::Instance().GetResourceManager().GetOrLoad(resDb.PathToGuid(thisPathResDirRel)));
   }
 
   if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
@@ -257,7 +257,7 @@ auto ProjectWindow::StartRenamingSelected() noexcept -> void {
 }
 
 
-ProjectWindow::ProjectWindow(Application& context) :
+ProjectWindow::ProjectWindow(EditorApp& context) :
   mApp{&context} {}
 
 

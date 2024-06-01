@@ -1,11 +1,11 @@
 #include "ResourceDB.hpp"
 
+#include "app.hpp"
 #include "MemoryAllocation.hpp"
 #include "Reflection.hpp"
 #include "ResourceManager.hpp"
 #include "Util.hpp"
 #include "ResourceImporters/NativeResourceImporter.hpp"
-#include "engine_context.hpp"
 
 #include "ExternalResource.hpp"
 
@@ -181,19 +181,20 @@ auto ResourceDB::Refresh() -> void {
 
   // We unload resources that are no longer present in the current file system directory.
   for (auto const& guid : mGuidToSrcAbsPath | std::views::keys) {
-    if (!newGuidToSrcAbsPath.contains(guid) && g_engine_context.resource_manager->IsLoaded(guid)) {
-      if (*mSelectedObjectPtr == g_engine_context.resource_manager->GetOrLoad(guid)) {
+    if (!newGuidToSrcAbsPath.contains(guid) && App::Instance().GetResourceManager().IsLoaded(guid)) {
+      if (*mSelectedObjectPtr == App::Instance().GetResourceManager().GetOrLoad(guid)) {
         *mSelectedObjectPtr = nullptr;
       }
-      g_engine_context.resource_manager->Unload(guid);
+      App::Instance().GetResourceManager().Unload(guid);
     }
   }
 
   // We rename loaded resources that have been moved in the file system
   for (auto const& [guid, pathAbs] : newGuidToSrcAbsPath) {
     if (auto const it{mGuidToSrcAbsPath.find(guid)};
-      it != std::end(mGuidToSrcAbsPath) && it->second != pathAbs && g_engine_context.resource_manager->IsLoaded(guid)) {
-      g_engine_context.resource_manager->GetOrLoad(guid)->SetName(pathAbs.stem().string());
+      it != std::end(mGuidToSrcAbsPath) && it->second != pathAbs && App::Instance().GetResourceManager().
+      IsLoaded(guid)) {
+      App::Instance().GetResourceManager().GetOrLoad(guid)->SetName(pathAbs.stem().string());
     }
   }
 
@@ -202,7 +203,7 @@ auto ResourceDB::Refresh() -> void {
   mGuidToType = std::move(newGuidToType);
   mSrcAbsPathToGuid = std::move(newSrcAbsPathToGuid);
 
-  g_engine_context.resource_manager->UpdateMappings(CreateMappings());
+  App::Instance().GetResourceManager().UpdateMappings(CreateMappings());
 }
 
 
@@ -219,7 +220,7 @@ auto ResourceDB::ChangeProjectDir(std::filesystem::path const& projDirAbs) -> vo
   }
 
   for (auto const& guid : mGuidToSrcAbsPath | std::views::keys) {
-    g_engine_context.resource_manager->Unload(guid);
+    App::Instance().GetResourceManager().Unload(guid);
   }
 
   mGuidToSrcAbsPath.clear();
@@ -263,8 +264,8 @@ auto ResourceDB::CreateResource(std::unique_ptr<NativeResource>&& res,
   mGuidToResAbsPath.insert_or_assign(res->GetGuid(), resPathAbs);
   mSrcAbsPathToGuid.insert_or_assign(resPathAbs, res->GetGuid());
 
-  auto const ret{g_engine_context.resource_manager->Add(std::move(res))};
-  g_engine_context.resource_manager->UpdateMappings(CreateMappings());
+  auto const ret{App::Instance().GetResourceManager().Add(std::move(res))};
+  App::Instance().GetResourceManager().UpdateMappings(CreateMappings());
   return ret;
 }
 
@@ -296,13 +297,13 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, R
   auto guid{Guid::Invalid()};
 
   // If a meta file already exists for the resource, we attempt to reimport it and keep its Guid.
-  if (LoadMeta(GetResourceDirectoryAbsolutePath() / resPathResDirRel, std::addressof(guid), nullptr) && g_engine_context
-      .resource_manager->IsLoaded(guid)) {
-    if (*mSelectedObjectPtr == g_engine_context.resource_manager->GetOrLoad(guid)) {
+  if (LoadMeta(GetResourceDirectoryAbsolutePath() / resPathResDirRel, std::addressof(guid), nullptr) && App::Instance()
+      .GetResourceManager().IsLoaded(guid)) {
+    if (*mSelectedObjectPtr == App::Instance().GetResourceManager().GetOrLoad(guid)) {
       *mSelectedObjectPtr = nullptr;
     }
 
-    g_engine_context.resource_manager->Unload(guid);
+    App::Instance().GetResourceManager().Unload(guid);
   }
 
   // If there is no meta file, we proceed with a regular import.
@@ -315,7 +316,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, R
     return false;
   }
 
-  g_engine_context.resource_manager->UpdateMappings(CreateMappings());
+  App::Instance().GetResourceManager().UpdateMappings(CreateMappings());
   return true;
 }
 
@@ -362,7 +363,7 @@ auto ResourceDB::MoveDirectory(std::filesystem::path const& srcPathResDirRel,
 
 
 auto ResourceDB::DeleteResource(Guid const& guid) -> void {
-  g_engine_context.resource_manager->Unload(guid);
+  App::Instance().GetResourceManager().Unload(guid);
 
   if (auto const it{mGuidToSrcAbsPath.find(guid)}; it != std::end(mGuidToSrcAbsPath)) {
     std::filesystem::remove(it->second);
@@ -373,7 +374,7 @@ auto ResourceDB::DeleteResource(Guid const& guid) -> void {
 
   mGuidToResAbsPath.erase(guid);
   mGuidToType.erase(guid);
-  g_engine_context.resource_manager->UpdateMappings(CreateMappings());
+  App::Instance().GetResourceManager().UpdateMappings(CreateMappings());
 }
 
 

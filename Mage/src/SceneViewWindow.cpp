@@ -1,25 +1,25 @@
 #include "SceneViewWindow.hpp"
 
-#include "StandaloneCamera.hpp"
+#include "EditorApp.hpp"
 #include "Platform.hpp"
+#include "scene_renderer.hpp"
+#include "StandaloneCamera.hpp"
 #include "Timing.hpp"
 #include "Window.hpp"
-#include "engine_context.hpp"
-#include "scene_renderer.hpp"
 
 
 namespace sorcery::mage {
 SceneViewWindow::SceneViewWindow() {
-  g_engine_context.scene_renderer->Register(cam_);
+  App::Instance().GetSceneRenderer().Register(cam_);
 }
 
 
 SceneViewWindow::~SceneViewWindow() {
-  g_engine_context.scene_renderer->Unregister(cam_);
+  App::Instance().GetSceneRenderer().Unregister(cam_);
 }
 
 
-auto SceneViewWindow::Draw(Application& context) -> void {
+auto SceneViewWindow::Draw(EditorApp& context) -> void {
   ImGui::SetNextWindowSizeConstraints(ImVec2{480, 270}, ImVec2{
     std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
   });
@@ -99,7 +99,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
 
     if (!cam_.GetRenderTarget() || cam_.GetRenderTarget()->GetDesc().width != static_cast<UINT>(contentRegionSize.x) ||
         cam_.GetRenderTarget()->GetDesc().height != static_cast<UINT>(contentRegionSize.y)) {
-      cam_.SetRenderTarget(rendering::RenderTarget::New(*g_engine_context.graphics_device,
+      cam_.SetRenderTarget(rendering::RenderTarget::New(App::Instance().GetGraphicsDevice(),
         rendering::RenderTarget::Desc{
           static_cast<UINT>(contentRegionSize.x), static_cast<UINT>(contentRegionSize.y), DXGI_FORMAT_R8G8B8A8_UNORM,
           std::nullopt, 1, L"Scene View RT"
@@ -112,12 +112,12 @@ auto SceneViewWindow::Draw(Application& context) -> void {
                     : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
     if (!wasCamMoving && cam_moving_) {
-      g_engine_context.window->SetCursorLock(GetCursorPosition());
-      g_engine_context.window->SetCursorHiding(true);
+      App::Instance().GetWindow().SetCursorLock(GetCursorPosition());
+      App::Instance().GetWindow().SetCursorHiding(true);
       ImGuizmo::Enable(false);
     } else if (wasCamMoving && !cam_moving_) {
-      g_engine_context.window->SetCursorLock(std::nullopt);
-      g_engine_context.window->SetCursorHiding(false);
+      App::Instance().GetWindow().SetCursorLock(std::nullopt);
+      App::Instance().GetWindow().SetCursorHiding(false);
       ImGuizmo::Enable(true);
     }
 

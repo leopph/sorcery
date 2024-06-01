@@ -1,11 +1,11 @@
 #pragma once
 
+#include "app.hpp"
 #include "Core.hpp"
-#include "engine_context.hpp"
 #include "Object.hpp"
 #include "ResourceManager.hpp"
-#include "Resources/Resource.hpp"
 #include "Util.hpp"
+#include "Resources/Resource.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -63,7 +63,7 @@ auto ObjectPicker<T>::QueryObjects(bool const insertNull) noexcept -> void {
   mObjects.clear();
 
   if constexpr (std::derived_from<T, Resource>) {
-    g_engine_context.resource_manager->GetInfoForResourcesOfType<T>(mObjects);
+    App::Instance().GetResourceManager().GetInfoForResourcesOfType<T>(mObjects);
 
     std::erase_if(mObjects, [this](auto const& res_info) {
       return !Contains(res_info.name, mFilter);
@@ -114,7 +114,7 @@ auto ObjectPicker<T>::Draw(T*& targetObj, bool const allowNull) noexcept -> bool
       if constexpr (std::derived_from<T, Resource>) {
         if (ImGui::Selectable(std::format(fmt, obj.guid.IsValid() ? obj.name : NULL_DISPLAY_NAME,
           mPopupId).c_str())) {
-          targetObj = g_engine_context.resource_manager->GetOrLoad<T>(obj.guid);
+          targetObj = App::Instance().GetResourceManager().GetOrLoad<T>(obj.guid);
           ret = true;
         }
       } else {

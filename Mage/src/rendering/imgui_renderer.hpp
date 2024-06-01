@@ -1,10 +1,9 @@
 #pragma once
 
 #include "observer_ptr.hpp"
+#include "../editor_gui.hpp"
 #include "rendering/graphics.hpp"
 #include "rendering/render_manager.hpp"
-
-#include <imgui.h>
 
 #include <array>
 #include <vector>
@@ -15,6 +14,8 @@ class ImGuiRenderer {
 public:
   ImGuiRenderer(graphics::GraphicsDevice& device, graphics::SwapChain const& swap_chain,
                 rendering::RenderManager& render_manager);
+
+  auto UpdateFonts() -> void;
 
   auto ExtractDrawData() -> void;
   auto Render() -> void;

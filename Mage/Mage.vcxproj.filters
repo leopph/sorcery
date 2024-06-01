@@ -21,7 +21,7 @@
     <ClCompile Include="src\Widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Application.cpp">
+    <ClCompile Include="src\EditorApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\StandaloneCamera.cpp">
@@ -75,6 +75,9 @@
     <ClCompile Include="src\rendering\imgui_renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\CommandLineProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
@@ -85,7 +88,7 @@
     <ClInclude Include="src\Widgets.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Application.hpp">
+    <ClInclude Include="src\EditorApp.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\StandaloneCamera.hpp">
@@ -143,6 +146,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\imgui_shader_interop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\editor_gui.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\command_line_processor.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,10 +1,10 @@
 #include "Texture2D.hpp"
 
-#include "../engine_context.hpp"
+#include "../app.hpp"
 #include "../rendering/render_manager.hpp"
 
-#include <imgui.h>
 #include <DirectXTex.h>
+#include <imgui.h>
 
 #include <format>
 #include <utility>
@@ -26,7 +26,7 @@ Texture2D::Texture2D(graphics::SharedDeviceChildHandle<graphics::Texture> tex) n
 
 
 Texture2D::~Texture2D() {
-  g_engine_context.render_manager->KeepAliveWhileInUse(tex_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(tex_);
 }
 
 

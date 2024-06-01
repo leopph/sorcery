@@ -1,14 +1,15 @@
 #pragma once
 
-#include "Application.hpp"
-
 
 namespace sorcery::mage {
+class EditorApp;
+
+
 class EntityHierarchyWindow {
-  Application* mApp;
+  EditorApp* mApp;
 
 public:
-  explicit EntityHierarchyWindow(Application& app);
+  explicit EntityHierarchyWindow(EditorApp& app);
 
   auto Draw() -> void;
 };

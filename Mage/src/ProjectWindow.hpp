@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Application.hpp"
 #include "ResourceImporters/ResourceImporter.hpp"
 
 #include <filesystem>
@@ -10,6 +9,9 @@
 
 
 namespace sorcery::mage {
+class EditorApp;
+
+
 class ProjectWindow {
   struct RenameInfo {
     std::string newName;
@@ -24,7 +26,7 @@ class ProjectWindow {
   };
 
 
-  Application* mApp;
+  EditorApp* mApp;
   std::filesystem::path mSelectedPathResDirRel; // empty if not selected
   std::optional<RenameInfo> mRenameInfo; // nullopt if not renaming
   std::vector<FileImportInfo> mFilesToImport;
@@ -35,12 +37,14 @@ class ProjectWindow {
   constexpr static std::string_view DIR_NODE_DRAG_DROP_TYPE_STR{"NodeDragDropTypeStr"};
 
   // Returns whether the drawn subtree was modified.
-  [[nodiscard]] auto DrawFilesystemTree(std::filesystem::path const& nodePathAbs, std::filesystem::path const& nodePathResDirRel, bool isDirectory) noexcept -> bool;
+  [[nodiscard]] auto DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
+                                        std::filesystem::path const& nodePathResDirRel,
+                                        bool isDirectory) noexcept -> bool;
   auto DrawContextMenu() -> void;
   auto StartRenamingSelected() noexcept -> void;
 
 public:
-  explicit ProjectWindow(Application& context);
+  explicit ProjectWindow(EditorApp& context);
 
   auto Draw() -> void;
 };

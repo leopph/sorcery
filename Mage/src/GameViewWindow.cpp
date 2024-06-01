@@ -1,10 +1,9 @@
 #include "GameViewWindow.hpp"
 
-#include "engine_context.hpp"
+#include "app.hpp"
+#include "editor_gui.hpp"
 #include "scene_renderer.hpp"
 #include "Util.hpp"
-
-#include <imgui.h>
 
 
 namespace sorcery::mage {
@@ -25,8 +24,8 @@ auto GameViewWindow::Draw(bool const game_is_running) -> void {
   if (!ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
     ImGui::PopStyleVar();
 
-    if (g_engine_context.scene_renderer->GetRenderTargetOverride() == rt_override_) {
-      g_engine_context.scene_renderer->SetRenderTargetOverride(nullptr);
+    if (App::Instance().GetSceneRenderer().GetRenderTargetOverride() == rt_override_) {
+      App::Instance().GetSceneRenderer().SetRenderTargetOverride(nullptr);
     }
 
     ImGui::End();
@@ -66,14 +65,14 @@ auto GameViewWindow::Draw(bool const game_is_running) -> void {
 
   if (!rt_override_ || resolution_values[resolution_mode_idx_].width != rt_override_->GetDesc().width ||
       resolution_values[resolution_mode_idx_].height != rt_override_->GetDesc().height) {
-    rt_override_ = rendering::RenderTarget::New(*g_engine_context.graphics_device, rendering::RenderTarget::Desc{
+    rt_override_ = rendering::RenderTarget::New(App::Instance().GetGraphicsDevice(), rendering::RenderTarget::Desc{
       resolution_values[resolution_mode_idx_].width, resolution_values[resolution_mode_idx_].height,
       DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Game View RT"
     });
   }
 
-  if (g_engine_context.scene_renderer->GetRenderTargetOverride() != rt_override_) {
-    g_engine_context.scene_renderer->SetRenderTargetOverride(rt_override_);
+  if (App::Instance().GetSceneRenderer().GetRenderTargetOverride() != rt_override_) {
+    App::Instance().GetSceneRenderer().SetRenderTargetOverride(rt_override_);
   }
 
   ImGui::Image(rt_override_->GetColorTex().get(), [content_region_size, this] {

@@ -1,13 +1,13 @@
 #include "MainMenuBar.hpp"
 
+#include "EditorApp.hpp"
 #include "SettingsWindow.hpp"
-#include "engine_context.hpp"
 
 #include <nfd.h>
 
 
 namespace sorcery::mage {
-MainMenuBar::MainMenuBar(Application& app, SettingsWindow& editorSettingsWindow) :
+MainMenuBar::MainMenuBar(EditorApp& app, SettingsWindow& editorSettingsWindow) :
   mApp{&app},
   mEditorSettingsWindow{&editorSettingsWindow} {}
 

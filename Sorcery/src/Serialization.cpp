@@ -1,8 +1,8 @@
 #include "Serialization.hpp"
 
-#include "Resources/Resource.hpp"
+#include "app.hpp"
 #include "ResourceManager.hpp"
-#include "engine_context.hpp"
+#include "Resources/Resource.hpp"
 
 #include <cassert>
 
@@ -343,7 +343,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
 
   if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
     try {
-      if (auto const res{g_engine_context.resource_manager->GetOrLoad(node.as<Guid>())}) {
+      if (auto const res{App::Instance().GetResourceManager().GetOrLoad(node.as<Guid>())}) {
         if (rttr::variant resVar{res}; resVar.can_convert(v.get_type())) {
           [[maybe_unused]] auto const success{resVar.convert(v.get_type())};
           assert(success);

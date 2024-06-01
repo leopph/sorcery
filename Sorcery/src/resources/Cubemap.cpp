@@ -1,6 +1,6 @@
 #include "Cubemap.hpp"
 
-#include "../engine_context.hpp"
+#include "../app.hpp"
 #include "../rendering/render_manager.hpp"
 
 #include <utility>
@@ -17,7 +17,7 @@ Cubemap::Cubemap(graphics::SharedDeviceChildHandle<graphics::Texture> tex) noexc
 
 
 Cubemap::~Cubemap() {
-  g_engine_context.render_manager->KeepAliveWhileInUse(tex_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(tex_);
 }
 
 

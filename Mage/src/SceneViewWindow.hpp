@@ -1,15 +1,16 @@
 #pragma once
 
-#include "Application.hpp"
+#include "editor_gui.hpp"
 #include "StandaloneCamera.hpp"
-
-#include <ImGuizmo.h>
 
 #include <array>
 #include <optional>
 
 
 namespace sorcery::mage {
+class EditorApp;
+
+
 class SceneViewWindow {
 public:
   SceneViewWindow();
@@ -21,7 +22,7 @@ public:
   auto operator=(SceneViewWindow const&) -> void = delete;
   auto operator=(SceneViewWindow&&) -> void = delete;
 
-  auto Draw(Application& context) -> void;
+  auto Draw(EditorApp& context) -> void;
   [[nodiscard]] auto GetCamera() noexcept -> StandaloneCamera&;
 
 private:

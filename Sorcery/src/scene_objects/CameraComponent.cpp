@@ -2,7 +2,7 @@
 
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
-#include "../engine_context.hpp"
+#include "../app.hpp"
 #include "../Reflection.hpp"
 #include "../rendering/scene_renderer.hpp"
 
@@ -138,12 +138,12 @@ auto CameraComponent::Clone() -> std::unique_ptr<SceneObject> {
 
 auto CameraComponent::OnAfterEnteringScene(Scene const& scene) -> void {
   Component::OnAfterEnteringScene(scene);
-  g_engine_context.scene_renderer->Register(*this);
+  App::Instance().GetSceneRenderer().Register(*this);
 }
 
 
 auto CameraComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  g_engine_context.scene_renderer->Unregister(*this);
+  App::Instance().GetSceneRenderer().Register(*this);
   Component::OnBeforeExitingScene(scene);
 }
 

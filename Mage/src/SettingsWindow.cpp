@@ -1,17 +1,17 @@
 #include "SettingsWindow.hpp"
 
+#include "app.hpp"
+#include "EditorApp.hpp"
+#include "editor_gui.hpp"
 #include "MemoryAllocation.hpp"
-#include "Timing.hpp"
-#include "engine_context.hpp"
 #include "scene_renderer.hpp"
-
-#include <imgui.h>
+#include "Timing.hpp"
 
 #include <limits>
 
 
 namespace sorcery::mage {
-SettingsWindow::SettingsWindow(Application& app, StandaloneCamera& sceneViewCam) :
+SettingsWindow::SettingsWindow(EditorApp& app, StandaloneCamera& sceneViewCam) :
   mApp{std::addressof(app)},
   mSceneViewCam{std::addressof(sceneViewCam)} {}
 
@@ -52,19 +52,19 @@ auto SettingsWindow::Draw() -> void {
   }
 
   if (ImGui::TreeNode("Rendering")) {
-    if (auto preciseColor{g_engine_context.scene_renderer->IsUsingPreciseColorFormat()}; ImGui::Checkbox(
+    if (auto preciseColor{App::Instance().GetSceneRenderer().IsUsingPreciseColorFormat()}; ImGui::Checkbox(
       "Use Precise Color Buffer Format", &preciseColor)) {
-      g_engine_context.scene_renderer->SetUsePreciseColorFormat(preciseColor);
+      App::Instance().GetSceneRenderer().SetUsePreciseColorFormat(preciseColor);
     }
 
     constexpr char const* msaaComboLabels[]{"Off", "2x", "4x", "8x"};
 
     if (auto const msaaModeIdx{
-      static_cast<int>(std::log2(static_cast<int>(g_engine_context.scene_renderer->GetMultisamplingMode())))
+      static_cast<int>(std::log2(static_cast<int>(App::Instance().GetSceneRenderer().GetMultisamplingMode())))
     }; ImGui::BeginCombo("MSAA", msaaComboLabels[msaaModeIdx])) {
       for (auto i{0}; i < 4; i++) {
         if (ImGui::Selectable(msaaComboLabels[i], msaaModeIdx == i)) {
-          g_engine_context.scene_renderer->SetMultisamplingMode(
+          App::Instance().GetSceneRenderer().SetMultisamplingMode(
             static_cast<rendering::MultisamplingMode>(static_cast<int>(std::pow(2, i))));
         }
       }
@@ -72,14 +72,14 @@ auto SettingsWindow::Draw() -> void {
       ImGui::EndCombo();
     }
 
-    if (auto gamma{g_engine_context.scene_renderer->GetGamma()}; ImGui::DragFloat("Gamma", &gamma, 0.01f, 0.01f, 5.0f,
+    if (auto gamma{App::Instance().GetSceneRenderer().GetGamma()}; ImGui::DragFloat("Gamma", &gamma, 0.01f, 0.01f, 5.0f,
       "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
-      g_engine_context.scene_renderer->SetGamma(gamma);
+      App::Instance().GetSceneRenderer().SetGamma(gamma);
     }
 
-    if (auto depthPrePassEnabled{g_engine_context.scene_renderer->IsDepthNormalPrePassEnabled()}; ImGui::Checkbox(
+    if (auto depthPrePassEnabled{App::Instance().GetSceneRenderer().IsDepthNormalPrePassEnabled()}; ImGui::Checkbox(
       "Depth-Normal Pre-Pass", &depthPrePassEnabled)) {
-      g_engine_context.scene_renderer->SetDepthNormalPrePassEnabled(depthPrePassEnabled);
+      App::Instance().GetSceneRenderer().SetDepthNormalPrePassEnabled(depthPrePassEnabled);
     }
 
     ImGui::TreePop();
@@ -91,31 +91,31 @@ auto SettingsWindow::Draw() -> void {
       Scene::GetActiveScene()->SetAmbientLightVector(color);
     }
 
-    if (auto ssaoEnabled{g_engine_context.scene_renderer->IsSsaoEnabled()}; ImGui::Checkbox(
+    if (auto ssaoEnabled{App::Instance().GetSceneRenderer().IsSsaoEnabled()}; ImGui::Checkbox(
       "Screen Space Ambient Occlusion", &ssaoEnabled)) {
-      g_engine_context.scene_renderer->SetSsaoEnabled(ssaoEnabled);
+      App::Instance().GetSceneRenderer().SetSsaoEnabled(ssaoEnabled);
     }
 
-    ImGui::BeginDisabled(!g_engine_context.scene_renderer->IsSsaoEnabled());
+    ImGui::BeginDisabled(!App::Instance().GetSceneRenderer().IsSsaoEnabled());
     ImGui::Indent();
 
-    auto ssaoParams{g_engine_context.scene_renderer->GetSsaoParams()};
+    auto ssaoParams{App::Instance().GetSceneRenderer().GetSsaoParams()};
 
     if (ImGui::DragFloat("Radius", &ssaoParams.radius, 0.01f, std::numeric_limits<float>::min(),
       std::numeric_limits<float>::max() / 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
-      g_engine_context.scene_renderer->SetSsaoParams(ssaoParams);
+      App::Instance().GetSceneRenderer().SetSsaoParams(ssaoParams);
     }
     if (ImGui::DragFloat("Bias", &ssaoParams.bias, 0.001f, 0, std::numeric_limits<float>::max() / 2.0f, "%.3f",
       ImGuiSliderFlags_AlwaysClamp)) {
-      g_engine_context.scene_renderer->SetSsaoParams(ssaoParams);
+      App::Instance().GetSceneRenderer().SetSsaoParams(ssaoParams);
     }
     if (ImGui::DragFloat("Power", &ssaoParams.power, 0.01f, std::numeric_limits<float>::min(),
       std::numeric_limits<float>::max() / 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
-      g_engine_context.scene_renderer->SetSsaoParams(ssaoParams);
+      App::Instance().GetSceneRenderer().SetSsaoParams(ssaoParams);
     }
     if (ImGui::DragInt("Sample Count", &ssaoParams.sample_count, 1, 0, std::numeric_limits<int>::max(), "%d",
       ImGuiSliderFlags_AlwaysClamp)) {
-      g_engine_context.scene_renderer->SetSsaoParams(ssaoParams);
+      App::Instance().GetSceneRenderer().SetSsaoParams(ssaoParams);
     }
 
     ImGui::Unindent();
@@ -124,10 +124,10 @@ auto SettingsWindow::Draw() -> void {
   }
 
   if (ImGui::TreeNode("Shadows")) {
-    float shadowDistance{g_engine_context.scene_renderer->GetShadowDistance()};
+    float shadowDistance{App::Instance().GetSceneRenderer().GetShadowDistance()};
     if (ImGui::DragFloat("Shadow Distance", &shadowDistance, 1, 0, std::numeric_limits<float>::max(), "%.0f",
       ImGuiSliderFlags_AlwaysClamp)) {
-      g_engine_context.scene_renderer->SetShadowDistance(shadowDistance);
+      App::Instance().GetSceneRenderer().SetShadowDistance(shadowDistance);
     }
 
     auto constexpr shadowFilteringModeNames{
@@ -142,32 +142,34 @@ auto SettingsWindow::Draw() -> void {
       }()
     };
 
-    if (int currentShadowFilteringModeIdx{static_cast<int>(g_engine_context.scene_renderer->GetShadowFilteringMode())};
+    if (int currentShadowFilteringModeIdx{
+        static_cast<int>(App::Instance().GetSceneRenderer().GetShadowFilteringMode())
+      };
       ImGui::Combo("Shadow Filtering Mode", &currentShadowFilteringModeIdx, shadowFilteringModeNames.data(),
         static_cast<int>(std::ssize(shadowFilteringModeNames)))) {
-      g_engine_context.scene_renderer->SetShadowFilteringMode(
+      App::Instance().GetSceneRenderer().SetShadowFilteringMode(
         static_cast<rendering::ShadowFilteringMode>(currentShadowFilteringModeIdx));
     }
 
-    if (int cascadeCount{g_engine_context.scene_renderer->GetShadowCascadeCount()}; ImGui::SliderInt(
+    if (int cascadeCount{App::Instance().GetSceneRenderer().GetShadowCascadeCount()}; ImGui::SliderInt(
       "Shadow Cascade Count", &cascadeCount, 1, rendering::SceneRenderer::GetMaxShadowCascadeCount(), "%d",
       ImGuiSliderFlags_NoInput)) {
-      g_engine_context.scene_renderer->SetShadowCascadeCount(cascadeCount);
+      App::Instance().GetSceneRenderer().SetShadowCascadeCount(cascadeCount);
     }
 
-    auto const cascadeSplits{g_engine_context.scene_renderer->GetNormalizedShadowCascadeSplits()};
+    auto const cascadeSplits{App::Instance().GetSceneRenderer().GetNormalizedShadowCascadeSplits()};
     auto const splitCount{std::ssize(cascadeSplits)};
 
     for (int i = 0; i < splitCount; i++) {
       if (float cascadeSplit{cascadeSplits[i] * 100.0f}; ImGui::SliderFloat(
         std::format("Split {} (percent)", i + 1).data(), &cascadeSplit, 0, 100, "%.3f", ImGuiSliderFlags_NoInput)) {
-        g_engine_context.scene_renderer->SetNormalizedShadowCascadeSplit(i, cascadeSplit / 100.0f);
+        App::Instance().GetSceneRenderer().SetNormalizedShadowCascadeSplit(i, cascadeSplit / 100.0f);
       }
     }
 
-    if (bool visualizeShadowCascades{g_engine_context.scene_renderer->IsVisualizingShadowCascades()}; ImGui::Checkbox(
+    if (bool visualizeShadowCascades{App::Instance().GetSceneRenderer().IsVisualizingShadowCascades()}; ImGui::Checkbox(
       "Visualize Shadow Cascades", &visualizeShadowCascades)) {
-      g_engine_context.scene_renderer->VisualizeShadowCascades(visualizeShadowCascades);
+      App::Instance().GetSceneRenderer().VisualizeShadowCascades(visualizeShadowCascades);
     }
     ImGui::TreePop();
   }

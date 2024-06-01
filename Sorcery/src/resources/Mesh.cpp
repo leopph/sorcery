@@ -1,6 +1,6 @@
 #include "Mesh.hpp"
 
-#include "../engine_context.hpp"
+#include "../app.hpp"
 #include "../Serialization.hpp"
 #include "../rendering/render_manager.hpp"
 
@@ -23,43 +23,43 @@ auto Mesh::UploadToGpu() noexcept -> void {
     return Vector4{p, 1};
   });
 
-  pos_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{
+  pos_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     static_cast<UINT>(positions4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(pos_buf_);
 
-  g_engine_context.render_manager->UpdateBuffer(*pos_buf_, 0, as_bytes(std::span{positions4}));
+  App::Instance().GetRenderManager().UpdateBuffer(*pos_buf_, 0, as_bytes(std::span{positions4}));
 
   std::vector<Vector4> normals4{m_cpu_data_->normals.size()};
   std::ranges::transform(m_cpu_data_->normals, normals4.begin(), [](Vector3 const& n) {
     return Vector4{n, 0};
   });
 
-  norm_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{
+  norm_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     static_cast<UINT>(normals4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(norm_buf_);
 
-  g_engine_context.render_manager->UpdateBuffer(*norm_buf_, 0, as_bytes(std::span{normals4}));
+  App::Instance().GetRenderManager().UpdateBuffer(*norm_buf_, 0, as_bytes(std::span{normals4}));
 
   std::vector<Vector4> tangents4{m_cpu_data_->tangents.size()};
   std::ranges::transform(m_cpu_data_->tangents, tangents4.begin(), [](Vector3 const& t) {
     return Vector4{t, 0};
   });
 
-  tan_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{
+  tan_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     static_cast<UINT>(tangents4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(norm_buf_);
 
-  g_engine_context.render_manager->UpdateBuffer(*tan_buf_, 0, as_bytes(std::span{tangents4}));
+  App::Instance().GetRenderManager().UpdateBuffer(*tan_buf_, 0, as_bytes(std::span{tangents4}));
 
-  uv_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{
+  uv_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     static_cast<UINT>(m_cpu_data_->uvs.size() * sizeof(Vector2)), sizeof(Vector2), false, true, false
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(uv_buf_);
 
-  g_engine_context.render_manager->UpdateBuffer(*uv_buf_, 0, as_bytes(std::span{m_cpu_data_->uvs}));
+  App::Instance().GetRenderManager().UpdateBuffer(*uv_buf_, 0, as_bytes(std::span{m_cpu_data_->uvs}));
 
   struct IdxBufInfo {
     UINT size;
@@ -84,11 +84,11 @@ auto Mesh::UploadToGpu() noexcept -> void {
     }()
   };
 
-  idx_buf_ = g_engine_context.graphics_device->CreateBuffer(graphics::BufferDesc{idxBufSize, 0, false, false, false},
+  idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{idxBufSize, 0, false, false, false},
     D3D12_HEAP_TYPE_DEFAULT);
   assert(idx_buf_);
 
-  g_engine_context.render_manager->UpdateBuffer(*idx_buf_, 0, std::span{
+  App::Instance().GetRenderManager().UpdateBuffer(*idx_buf_, 0, std::span{
     std::bit_cast<std::byte const*>(idxBufDataPtr), idxBufSize
   });
 }
@@ -149,11 +149,11 @@ Mesh::Mesh(Data data, bool const keep_data_in_cpu_memory) noexcept {
 
 
 Mesh::~Mesh() {
-  g_engine_context.render_manager->KeepAliveWhileInUse(pos_buf_);
-  g_engine_context.render_manager->KeepAliveWhileInUse(norm_buf_);
-  g_engine_context.render_manager->KeepAliveWhileInUse(tan_buf_);
-  g_engine_context.render_manager->KeepAliveWhileInUse(uv_buf_);
-  g_engine_context.render_manager->KeepAliveWhileInUse(idx_buf_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(pos_buf_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(norm_buf_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(tan_buf_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(uv_buf_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(idx_buf_);
 }
 
 

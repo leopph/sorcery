@@ -1,8 +1,8 @@
 #include "StaticMeshComponent.hpp"
 
 #include "Entity.hpp"
+#include "../app.hpp"
 #include "../Gui.hpp"
-#include "../engine_context.hpp"
 #include "../rendering/scene_renderer.hpp"
 
 #include <imgui.h>
@@ -71,28 +71,28 @@ auto StaticMeshComponent::OnDrawGizmosSelected() -> void {
           auto const& [min, max]{aabb};
 
           // Near face
-          g_engine_context.scene_renderer->DrawLineAtNextRender(min, Vector3{max[0], min[1], min[2]}, line_color);
-          g_engine_context.scene_renderer->DrawLineAtNextRender(min, Vector3{min[0], max[1], min[2]}, line_color);
-          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{max[0], max[1], min[2]},
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(min, Vector3{max[0], min[1], min[2]}, line_color);
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(min, Vector3{min[0], max[1], min[2]}, line_color);
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], max[1], min[2]},
             Vector3{max[0], min[1], min[2]}, line_color);
-          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{max[0], max[1], min[2]},
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], max[1], min[2]},
             Vector3{min[0], max[1], min[2]}, line_color);
 
           // Far face
-          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{min[0], min[1], max[2]},
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{min[0], min[1], max[2]},
             Vector3{max[0], min[1], max[2]}, line_color);
-          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{min[0], min[1], max[2]},
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{min[0], min[1], max[2]},
             Vector3{min[0], max[1], max[2]}, line_color);
-          g_engine_context.scene_renderer->DrawLineAtNextRender(max, Vector3{max[0], min[1], max[2]}, line_color);
-          g_engine_context.scene_renderer->DrawLineAtNextRender(max, Vector3{min[0], max[1], max[2]}, line_color);
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(max, Vector3{max[0], min[1], max[2]}, line_color);
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(max, Vector3{min[0], max[1], max[2]}, line_color);
 
           // Edges along Z
-          g_engine_context.scene_renderer->DrawLineAtNextRender(min, Vector3{min[0], min[1], max[2]}, line_color);
-          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{max[0], min[1], min[2]},
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(min, Vector3{min[0], min[1], max[2]}, line_color);
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], min[1], min[2]},
             Vector3{max[0], min[1], max[2]}, line_color);
-          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{min[0], max[1], min[2]},
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{min[0], max[1], min[2]},
             Vector3{min[0], max[1], max[2]}, line_color);
-          g_engine_context.scene_renderer->DrawLineAtNextRender(Vector3{max[0], max[1], min[2]}, max, line_color);
+          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], max[1], min[2]}, max, line_color);
         }
       };
 
@@ -118,18 +118,18 @@ auto StaticMeshComponent::Clone() -> std::unique_ptr<SceneObject> {
 
 auto StaticMeshComponent::OnAfterEnteringScene(Scene const& scene) -> void {
   Component::OnAfterEnteringScene(scene);
-  g_engine_context.scene_renderer->Register(*this);
+  App::Instance().GetSceneRenderer().Register(*this);
 }
 
 
 auto StaticMeshComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  g_engine_context.scene_renderer->Unregister(*this);
+  App::Instance().GetSceneRenderer().Unregister(*this);
   Component::OnBeforeExitingScene(scene);
 }
 
 
 StaticMeshComponent::StaticMeshComponent() :
-  mesh_{g_engine_context.resource_manager->GetCubeMesh()} {
+  mesh_{App::Instance().GetResourceManager().GetCubeMesh()} {
   ResizeMaterialListToSubmeshCount();
 }
 
@@ -178,7 +178,7 @@ auto StaticMeshComponent::ResizeMaterialListToSubmeshCount() -> void {
     materials_.resize(subMeshCount);
 
     for (std::size_t i{mtlCount}; i < subMeshCount; i++) {
-      materials_[i] = g_engine_context.resource_manager->GetDefaultMaterial().Get();
+      materials_[i] = App::Instance().GetResourceManager().GetDefaultMaterial().Get();
     }
   }
 }

@@ -1,14 +1,14 @@
 #include "scene_renderer.hpp"
 
 #include "ShadowCascadeBoundary.hpp"
-#include "shaders/shader_interop.h"
+#include "../app.hpp"
 #include "../MemoryAllocation.hpp"
+#include "../ResourceManager.hpp"
 #include "../Window.hpp"
+#include "../Resources/Scene.hpp"
 #include "../scene_objects/Entity.hpp"
 #include "../scene_objects/TransformComponent.hpp"
-#include "../Resources/Scene.hpp"
-#include "../engine_context.hpp"
-#include "../ResourceManager.hpp"
+#include "shaders/shader_interop.h"
 
 #ifndef NDEBUG
 #include "shaders/generated/Debug/depth_normal_ps.h"
@@ -1695,7 +1695,7 @@ auto SceneRenderer::Render() -> void {
     }
 
     if (frame_packet.skybox_cubemap) {
-      auto const cube_mesh{g_engine_context.resource_manager->GetCubeMesh()};
+      auto const cube_mesh{App::Instance().GetResourceManager().GetCubeMesh()};
       cmd.SetPipelineState(*frame_packet.skybox_pso);
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, pos_buf_idx),
         cube_mesh->GetPositionBuffer()->GetShaderResource());
@@ -1705,8 +1705,8 @@ auto SceneRenderer::Render() -> void {
         frame_packet.skybox_cubemap->GetShaderResource());
       cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
       cmd.SetIndexBuffer(*cube_mesh->GetIndexBuffer(), cube_mesh->GetIndexFormat());
-      cmd.DrawIndexedInstanced(static_cast<UINT>(g_engine_context.resource_manager->GetCubeMesh()->GetIndexCount()), 1,
-        0, 0, 0);
+      cmd.DrawIndexedInstanced(static_cast<UINT>(App::Instance().GetResourceManager().GetCubeMesh()->GetIndexCount()),
+        1, 0, 0, 0);
     }
 
     RenderTarget const* post_process_input_rt;

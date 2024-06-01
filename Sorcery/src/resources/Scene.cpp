@@ -1,9 +1,9 @@
 #include "Scene.hpp"
 
-#include "../engine_context.hpp"
-#include "../scene_objects/SceneObject.hpp"
+#include "../app.hpp"
 #include "../Platform.hpp"
 #include "../Serialization.hpp"
+#include "../scene_objects/SceneObject.hpp"
 #undef FindResource
 #include "../job_system.hpp"
 #include "../Reflection.hpp"
@@ -179,12 +179,12 @@ auto Scene::Load() -> void {
     if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
       skybox_job_data.guid = guid;
 
-      skybox_job = g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
+      skybox_job = App::Instance().GetJobSystem().CreateJob([](void const* const data_ptr) {
         auto& job_data{**static_cast<SkyboxJobData* const*>(data_ptr)};
-        job_data.cubemap = g_engine_context.resource_manager->GetOrLoad<Cubemap>(job_data.guid);
+        job_data.cubemap = App::Instance().GetResourceManager().GetOrLoad<Cubemap>(job_data.guid);
       }, &skybox_job_data);
 
-      g_engine_context.job_system->Run(skybox_job);
+      App::Instance().GetJobSystem().Run(skybox_job);
     }
   }
 
@@ -256,9 +256,9 @@ auto Scene::Load() -> void {
 
 
   for (auto const& guid : required_resource_guids) {
-    g_engine_context.job_system->Run(g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
+    App::Instance().GetJobSystem().Run(App::Instance().GetJobSystem().CreateJob([](void const* const data_ptr) {
       auto const& target_guid{*static_cast<Guid const*>(data_ptr)};
-      g_engine_context.resource_manager->GetOrLoad<Resource>(target_guid);
+      App::Instance().GetResourceManager().GetOrLoad<Resource>(target_guid);
     }, guid));
   }
 
@@ -283,7 +283,7 @@ auto Scene::Load() -> void {
   }
 
   if (skybox_job) {
-    g_engine_context.job_system->Wait(skybox_job);
+    App::Instance().GetJobSystem().Wait(skybox_job);
     skybox_ = skybox_job_data.cubemap;
   }
 

@@ -1,31 +1,44 @@
 #pragma once
 
-#include <imgui.h>
-
+#include "app.hpp"
+#include "editor_gui.hpp"
+#include "EntityHierarchyWindow.hpp"
 #include "Event.hpp"
+#include "GameViewWindow.hpp"
 #include "job_system.hpp"
-#include "engine_context.hpp"
+#include "MainMenuBar.hpp"
+#include "ProjectWindow.hpp"
+#include "PropertiesWindow.hpp"
 #include "ResourceDB.hpp"
 #include "Scene.hpp"
+#include "SceneViewWindow.hpp"
+#include "rendering/imgui_renderer.hpp"
 
 #include <atomic>
 #include <filesystem>
 #include <memory>
+#include <span>
+#include <string_view>
 #include <type_traits>
-#include <variant>
 
 
 namespace sorcery::mage {
-class Application {
+class EditorApp final : public App {
 public:
-  explicit Application(ImGuiIO& imGuiIO);
-  Application(Application const&) = delete;
-  Application(Application&&) = delete;
+  explicit EditorApp(std::span<std::string_view const> args = {});
+  EditorApp(EditorApp const&) = delete;
+  EditorApp(EditorApp&&) = delete;
 
-  ~Application();
+  ~EditorApp() override;
 
-  auto operator=(Application const&) -> void = delete;
-  auto operator=(Application&&) -> void = delete;
+  auto operator=(EditorApp const&) -> void = delete;
+  auto operator=(EditorApp&&) -> void = delete;
+
+  auto BeginFrame() -> void override;
+  auto Update() -> void override;
+  auto EndFrame() -> void override;
+  auto PrepareRender() -> void override;
+  auto Render() -> void override;
 
   [[nodiscard]] auto GetImGuiIo() const noexcept -> ImGuiIO const&;
   [[nodiscard]] auto GetImGuiIo() noexcept -> ImGuiIO&;
@@ -66,7 +79,9 @@ private:
   static auto HandleBackgroundThreadException(std::exception const& ex) -> void;
   static auto HandleUnknownBackgroundThreadException() -> void;
 
-  ImGuiIO& imgui_io_;
+  ObserverPtr<ImGuiContext> imgui_ctx_;
+  ObserverPtr<ImGuiIO> imgui_io_;
+
   std::unique_ptr<Scene> temp_scene_owner_;
   Scene* scene_{nullptr};
   Object* selected_object_{nullptr};
@@ -79,15 +94,27 @@ private:
 
   EventListenerHandle<void> window_focus_gain_listener_{};
 
-  static std::string_view const WINDOW_TITLE_BASE;
+  bool game_is_running_{false};
+
+  ImGuiRenderer imgui_renderer_{GetGraphicsDevice(), GetSwapChain(), GetRenderManager()};
+
+  ProjectWindow project_window_{*this};
+  SceneViewWindow scene_view_window_;
+  GameViewWindow game_view_window_;
+  PropertiesWindow properties_window_{*this};
+  SettingsWindow editor_settings_window_{*this, scene_view_window_.GetCamera()};
+  MainMenuBar main_menu_bar_{*this, editor_settings_window_};
+  EntityHierarchyWindow entity_hierarchy_window_{*this};
+
+  static std::string_view const window_title_base_;
 };
 
 
 template<typename Callable>
-auto Application::ExecuteInBusyEditor(Callable const& callable) -> void {
+auto EditorApp::ExecuteInBusyEditor(Callable const& callable) -> void {
   auto const job_func{
     [this, callable] {
-      BusyExecutionContext const execContext{OnEnterBusyExecution()};
+      BusyExecutionContext const exec_context{OnEnterBusyExecution()};
 
       try {
         std::invoke(callable);
@@ -97,11 +124,11 @@ auto Application::ExecuteInBusyEditor(Callable const& callable) -> void {
         HandleUnknownBackgroundThreadException();
       }
 
-      OnFinishBusyExecution(execContext);
+      OnFinishBusyExecution(exec_context);
     }
   };
 
-  g_engine_context.job_system->Run(g_engine_context.job_system->CreateJob([](void const* const data_ptr) {
+  GetJobSystem().Run(GetJobSystem().CreateJob([](void const* const data_ptr) {
     (*static_cast<decltype(job_func)* const>(data_ptr))();
   }, job_func));
 }
