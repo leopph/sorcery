@@ -7,10 +7,10 @@
 
 
 namespace sorcery {
-template<JobArgument T>
-auto JobSystem::CreateJob(JobFuncType const func, T const& data) -> Job* {
+template<JobArgument Data>
+auto JobSystem::CreateJob(JobFuncType const func, Data&& data) -> Job* {
   auto const job{CreateJob(func)};
-  std::construct_at(std::bit_cast<T*>(job->data.data()), data);
+  std::construct_at(std::bit_cast<std::remove_cvref_t<Data>*>(job->data.data()), std::forward<Data>(data));
   return job;
 }
 

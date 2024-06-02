@@ -49,8 +49,8 @@ public:
   auto operator=(JobSystem&&) -> void = delete;
 
   [[nodiscard]] LEOPPHAPI static auto CreateJob(JobFuncType func) -> Job*;
-  template<JobArgument T>
-  [[nodiscard]] static auto CreateJob(JobFuncType func, T const& data) -> Job*;
+  template<JobArgument Data>
+  [[nodiscard]] static auto CreateJob(JobFuncType func, Data&& data) -> Job*;
   template<JobCallable Callable>
   [[nodiscard]] static auto CreateJob(Callable&& callable) -> Job*;
 
