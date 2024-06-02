@@ -52,7 +52,7 @@ public:
   template<JobArgument T>
   [[nodiscard]] static auto CreateJob(JobFuncType func, T const& data) -> Job*;
   template<JobCallable Callable>
-  [[nodiscard]] auto CreateJob(Callable&& callable) -> Job*;
+  [[nodiscard]] static auto CreateJob(Callable&& callable) -> Job*;
 
   template<typename T>
   [[nodiscard]] auto CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> Job*;

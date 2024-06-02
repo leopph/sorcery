@@ -119,6 +119,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="src\editor_app.inl" />
     <None Include="src\rendering\imgui.hlsli" />
     <None Include="vcpkg.json" />
   </ItemGroup>

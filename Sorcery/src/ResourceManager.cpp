@@ -92,15 +92,13 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
         decltype(loaded_resources_)* resources;
       };
 
-      loader_job = job_system_->CreateJob([](void* const data_ptr) {
-        auto const& job_data{*static_cast<LoaderJobData*>(data_ptr)};
-
+      loader_job = job_system_->CreateJob([this, &guid, &desc] {
         std::unique_ptr<Resource> res;
 
-        if (job_data.desc->pathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
+        if (desc.pathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
           std::vector<std::uint8_t> fileBytes;
 
-          if (!ReadFileBinary(job_data.desc->pathAbs, fileBytes)) {
+          if (!ReadFileBinary(desc.pathAbs, fileBytes)) {
             return;
           }
 
@@ -122,20 +120,20 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
               break;
             }
           }
-        } else if (job_data.desc->pathAbs.extension() == SCENE_RESOURCE_EXT) {
-          res = CreateDeserialize<Scene>(YAML::LoadFile(job_data.desc->pathAbs.string()));
-        } else if (job_data.desc->pathAbs.extension() == MATERIAL_RESOURCE_EXT) {
-          res = CreateDeserialize<Material>(YAML::LoadFile(job_data.desc->pathAbs.string()));
+        } else if (desc.pathAbs.extension() == SCENE_RESOURCE_EXT) {
+          res = CreateDeserialize<Scene>(YAML::LoadFile(desc.pathAbs.string()));
+        } else if (desc.pathAbs.extension() == MATERIAL_RESOURCE_EXT) {
+          res = CreateDeserialize<Material>(YAML::LoadFile(desc.pathAbs.string()));
         }
 
         if (res) {
-          res->SetGuid(*job_data.guid);
-          res->SetName(job_data.desc->name);
+          res->SetGuid(guid);
+          res->SetName(desc.name);
 
-          auto const [it, inserted]{job_data.resources->Lock()->emplace(std::move(res))};
+          auto const [it, inserted]{loaded_resources_.Lock()->emplace(std::move(res))};
           assert(inserted);
         }
-      }, LoaderJobData{&guid, &desc, &loaded_resources_});
+      });
       job_system_->Run(loader_job);
       loader_jobs->emplace(guid, loader_job);
     }

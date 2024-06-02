@@ -5,7 +5,6 @@
 #include "EntityHierarchyWindow.hpp"
 #include "Event.hpp"
 #include "GameViewWindow.hpp"
-#include "job_system.hpp"
 #include "MainMenuBar.hpp"
 #include "ProjectWindow.hpp"
 #include "PropertiesWindow.hpp"
@@ -64,7 +63,7 @@ public:
   auto SetGuiDarkMode(bool darkMode) noexcept -> void;
 
   template<typename Callable>
-  auto ExecuteInBusyEditor(Callable const& callable) -> void;
+  auto ExecuteInBusyEditor(Callable&& callable) -> void;
 
 private:
   struct BusyExecutionContext {
@@ -108,28 +107,7 @@ private:
 
   static std::string_view const window_title_base_;
 };
-
-
-template<typename Callable>
-auto EditorApp::ExecuteInBusyEditor(Callable const& callable) -> void {
-  auto const job_func{
-    [this, callable] {
-      BusyExecutionContext const exec_context{OnEnterBusyExecution()};
-
-      try {
-        std::invoke(callable);
-      } catch (std::exception const& ex) {
-        HandleBackgroundThreadException(ex);
-      } catch (...) {
-        HandleUnknownBackgroundThreadException();
-      }
-
-      OnFinishBusyExecution(exec_context);
-    }
-  };
-
-  GetJobSystem().Run(GetJobSystem().CreateJob([](void const* const data_ptr) {
-    (*static_cast<decltype(job_func)* const>(data_ptr))();
-  }, job_func));
 }
-}
+
+
+#include "editor_app.inl"

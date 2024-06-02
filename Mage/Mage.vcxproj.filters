@@ -83,6 +83,9 @@
     <None Include="vcpkg.json" />
     <None Include="src\rendering\imgui.hlsli" />
     <None Include="packages.config" />
+    <None Include="src\editor_app.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Widgets.hpp">
