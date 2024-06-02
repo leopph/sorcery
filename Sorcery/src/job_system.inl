@@ -23,6 +23,16 @@ auto JobSystem::CreateJob(Callable&& callable) -> Job* {
 }
 
 
+template<JobArgument Callable, JobArgument Data> requires (
+  std::invocable<Callable, Data> && !std::convertible_to<Callable, JobFuncType> && sizeof(Callable) + sizeof(Data) <=
+  kMaxJobDataSize)
+auto JobSystem::CreateJob(Callable&& callable, Data&& data) -> Job* {
+  return CreateJob([job_callable{std::forward<Callable>(callable)}, job_data{std::forward<Data>(data)}] {
+    job_callable(job_data);
+  });
+}
+
+
 template<typename T>
 auto JobSystem::CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> Job* {
   struct JobData {

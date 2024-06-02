@@ -49,10 +49,17 @@ public:
   auto operator=(JobSystem&&) -> void = delete;
 
   [[nodiscard]] LEOPPHAPI static auto CreateJob(JobFuncType func) -> Job*;
+
   template<JobArgument Data>
   [[nodiscard]] static auto CreateJob(JobFuncType func, Data&& data) -> Job*;
+
   template<JobCallable Callable>
   [[nodiscard]] static auto CreateJob(Callable&& callable) -> Job*;
+
+  template<JobArgument Callable, JobArgument Data> requires (
+    std::invocable<Callable, Data> && !std::convertible_to<Callable, JobFuncType> && sizeof(Callable) + sizeof(Data) <=
+    kMaxJobDataSize)
+  [[nodiscard]] static auto CreateJob(Callable&& callable, Data&& data) -> Job*;
 
   template<typename T>
   [[nodiscard]] auto CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> Job*;
