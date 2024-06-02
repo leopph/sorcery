@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
+#include "observer_ptr.hpp"
 #include "wsq.hpp"
 
 #include <array>
@@ -48,36 +49,36 @@ public:
   auto operator=(JobSystem const&) -> void = delete;
   auto operator=(JobSystem&&) -> void = delete;
 
-  [[nodiscard]] LEOPPHAPI static auto CreateJob(JobFuncType func) -> Job*;
+  [[nodiscard]] LEOPPHAPI static auto CreateJob(JobFuncType func) -> ObserverPtr<Job>;
 
   template<JobArgument Data>
-  [[nodiscard]] static auto CreateJob(JobFuncType func, Data&& data) -> Job*;
+  [[nodiscard]] static auto CreateJob(JobFuncType func, Data&& data) -> ObserverPtr<Job>;
 
   template<JobCallable Callable>
-  [[nodiscard]] static auto CreateJob(Callable&& callable) -> Job*;
+  [[nodiscard]] static auto CreateJob(Callable&& callable) -> ObserverPtr<Job>;
 
   template<JobArgument Callable, JobArgument Data> requires (
     std::invocable<Callable, Data> && !std::convertible_to<Callable, JobFuncType> && sizeof(Callable) + sizeof(Data) <=
     kMaxJobDataSize)
-  [[nodiscard]] static auto CreateJob(Callable&& callable, Data&& data) -> Job*;
+  [[nodiscard]] static auto CreateJob(Callable&& callable, Data&& data) -> ObserverPtr<Job>;
 
   template<typename T>
-  [[nodiscard]] auto CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> Job*;
+  [[nodiscard]] auto CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> ObserverPtr<Job>;
 
-  LEOPPHAPI auto Run(Job* job) -> void;
+  LEOPPHAPI auto Run(ObserverPtr<Job> job) -> void;
 
-  LEOPPHAPI auto Wait(Job const* job) -> void;
+  LEOPPHAPI auto Wait(ObserverPtr<Job const> job) -> void;
 
 private:
   constexpr static auto max_job_count_{4096};
 
   static auto Execute(Job& job) -> void;
 
-  [[nodiscard]] auto FindJobToExecute() -> Job*;
+  [[nodiscard]] auto FindJobToExecute() -> ObserverPtr<Job>;
 
   unsigned thread_count_;
   unsigned worker_count_;
-  std::unique_ptr<WorkStealingQueue<Job*>[]> job_queues_;
+  std::unique_ptr<WorkStealingQueue<ObserverPtr<Job>>[]> job_queues_;
   std::unique_ptr<std::jthread[]> workers_;
   std::mutex wake_threads_mutex_;
   std::condition_variable wake_threads_cond_var_;

@@ -11,7 +11,7 @@ namespace sorcery {
 JobSystem::JobSystem() :
   thread_count_{std::max(std::jthread::hardware_concurrency(), 2u)},
   worker_count_{thread_count_ - 1} {
-  job_queues_ = std::make_unique<WorkStealingQueue<Job*>[]>(thread_count_);
+  job_queues_ = std::make_unique<WorkStealingQueue<ObserverPtr<Job>>[]>(thread_count_);
   workers_ = std::make_unique<std::jthread[]>(worker_count_);
 
   for (unsigned i{0}; i < worker_count_; i++) {
@@ -43,12 +43,12 @@ JobSystem::~JobSystem() {
 }
 
 
-auto JobSystem::CreateJob(JobFuncType const func) -> Job* {
+auto JobSystem::CreateJob(JobFuncType const func) -> ObserverPtr<Job> {
   thread_local std::size_t allocated_job_count{0};
   thread_local std::array<Job, max_job_count_> jobs{};
 
   // This method of modulus only works when max_job_count_ is power of two
-  auto const job{&jobs[allocated_job_count++ & max_job_count_ - 1]};
+  ObserverPtr const job{&jobs[allocated_job_count++ & max_job_count_ - 1]};
 
   if (!job->is_complete) {
     throw std::runtime_error{"Too many jobs allocated to create new!"};
@@ -60,14 +60,14 @@ auto JobSystem::CreateJob(JobFuncType const func) -> Job* {
 }
 
 
-auto JobSystem::Run(Job* const job) -> void {
+auto JobSystem::Run(ObserverPtr<Job> job) -> void {
   auto& queue{job_queues_[this_thread_idx]};
   queue.push(job);
   wake_threads_cond_var_.notify_all();
 }
 
 
-auto JobSystem::Wait(Job const* job) -> void {
+auto JobSystem::Wait(ObserverPtr<Job const> job) -> void {
   while (!job->is_complete) {
     if (auto const new_job{FindJobToExecute()}) {
       Execute(*new_job);
@@ -82,7 +82,7 @@ auto JobSystem::Execute(Job& job) -> void {
 }
 
 
-auto JobSystem::FindJobToExecute() -> Job* {
+auto JobSystem::FindJobToExecute() -> ObserverPtr<Job> {
   if (auto const job{job_queues_[this_thread_idx].pop()}) {
     return *job;
   }

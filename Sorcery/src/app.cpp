@@ -95,7 +95,7 @@ auto App::Run() -> void {
     EndFrame();
 
     if (render_job_) {
-      job_system_.Wait(render_job_.Get());
+      job_system_.Wait(render_job_);
     }
 
     if (window_resized_) {
@@ -109,14 +109,14 @@ auto App::Run() -> void {
     scene_renderer_.ExtractCurrentState();
     PrepareRender();
 
-    render_job_.Reset(job_system_.CreateJob([this] {
+    render_job_ = job_system_.CreateJob([this] {
       scene_renderer_.Render();
       Render();
       swap_chain_->Present();
       render_manager_.EndFrame();
-    }));
+    });
 
-    job_system_.Run(render_job_.Get());
+    job_system_.Run(render_job_);
 
     timing::OnFrameEnd();
   }
@@ -134,7 +134,7 @@ auto App::Instance() -> App& {
 
 auto App::WaitRenderJob() -> void {
   if (render_job_) {
-    job_system_.Wait(render_job_.Get());
+    job_system_.Wait(render_job_);
   }
 }
 

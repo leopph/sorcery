@@ -1,5 +1,7 @@
 #pragma once
 
+#include "observer_ptr.hpp"
+
 #include <bit>
 #include <memory>
 #include <utility>
@@ -8,7 +10,7 @@
 
 namespace sorcery {
 template<JobArgument Data>
-auto JobSystem::CreateJob(JobFuncType const func, Data&& data) -> Job* {
+auto JobSystem::CreateJob(JobFuncType const func, Data&& data) -> ObserverPtr<Job> {
   auto const job{CreateJob(func)};
   std::construct_at(std::bit_cast<std::remove_cvref_t<Data>*>(job->data.data()), std::forward<Data>(data));
   return job;
@@ -16,7 +18,7 @@ auto JobSystem::CreateJob(JobFuncType const func, Data&& data) -> Job* {
 
 
 template<JobCallable Callable>
-auto JobSystem::CreateJob(Callable&& callable) -> Job* {
+auto JobSystem::CreateJob(Callable&& callable) -> ObserverPtr<Job> {
   return CreateJob([](void* const data_ptr) {
     (*std::bit_cast<Callable*>(data_ptr))();
   }, std::forward<Callable>(callable));
@@ -26,7 +28,7 @@ auto JobSystem::CreateJob(Callable&& callable) -> Job* {
 template<JobArgument Callable, JobArgument Data> requires (
   std::invocable<Callable, Data> && !std::convertible_to<Callable, JobFuncType> && sizeof(Callable) + sizeof(Data) <=
   kMaxJobDataSize)
-auto JobSystem::CreateJob(Callable&& callable, Data&& data) -> Job* {
+auto JobSystem::CreateJob(Callable&& callable, Data&& data) -> ObserverPtr<Job> {
   return CreateJob([job_callable{std::forward<Callable>(callable)}, job_data{std::forward<Data>(data)}] {
     job_callable(job_data);
   });
@@ -34,7 +36,7 @@ auto JobSystem::CreateJob(Callable&& callable, Data&& data) -> Job* {
 
 
 template<typename T>
-auto JobSystem::CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> Job* {
+auto JobSystem::CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> ObserverPtr<Job> {
   struct JobData {
     void (*func)(T& data);
     JobSystem* system;
@@ -46,7 +48,7 @@ auto JobSystem::CreateParallelForJob(void (*func)(T& data), std::span<T> data) -
     auto const& job_data{*std::bit_cast<JobData*>(data_ptr)};
     auto const elem_count_per_job{job_data.data.size() / job_data.thread_count};
 
-    std::vector<Job*> sub_jobs;
+    std::vector<ObserverPtr<Job>> sub_jobs;
     sub_jobs.reserve(elem_count_per_job);
 
     struct SubJobData {
@@ -66,7 +68,7 @@ auto JobSystem::CreateParallelForJob(void (*func)(T& data), std::span<T> data) -
       job_data.system->Run(sub_jobs.back());
     }
 
-    for (auto const* const sub_job : sub_jobs) {
+    for (auto const sub_job : sub_jobs) {
       job_data.system->Wait(sub_job);
     }
   }, JobData{func, this, data, worker_count_ + 1});

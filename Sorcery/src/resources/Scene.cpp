@@ -173,7 +173,7 @@ auto Scene::Load() -> void {
     Cubemap* cubemap;
   } skybox_job_data;
 
-  Job* skybox_job{nullptr};
+  ObserverPtr<Job> skybox_job;
 
   if (auto const node{yaml_data_["skybox"]}) {
     if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {

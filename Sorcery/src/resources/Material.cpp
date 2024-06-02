@@ -258,22 +258,22 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
     }
   };
 
-  Job* albedo_map_job{};
+  ObserverPtr<Job> albedo_map_job{};
   JobData albedo_map_job_data{};
 
-  Job* metallic_map_job{};
+  ObserverPtr<Job> metallic_map_job{};
   JobData metallic_map_job_data{};
 
-  Job* roughness_map_job{};
+  ObserverPtr<Job> roughness_map_job{};
   JobData roughness_map_job_data{};
 
-  Job* ao_map_job{};
+  ObserverPtr<Job> ao_map_job{};
   JobData ao_map_job_data{};
 
-  Job* normal_map_job{};
+  ObserverPtr<Job> normal_map_job{};
   JobData normal_map_job_data{};
 
-  Job* opacity_mask_job{};
+  ObserverPtr<Job> opacity_mask_job{};
   JobData opacity_mask_job_data{};
 
   if (auto const guid{yamlNode["albedoMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
@@ -312,7 +312,7 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
     App::Instance().GetJobSystem().Run(opacity_mask_job);
   }
 
-  for (auto const* const job : {
+  for (auto const job : {
          albedo_map_job, metallic_map_job, roughness_map_job, ao_map_job, normal_map_job, opacity_mask_job
        }) {
     if (job) {

@@ -76,7 +76,7 @@ auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs,
 
 
 auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> ObserverPtr<Resource> {
-  Job* loader_job;
+  ObserverPtr<Job> loader_job;
 
   std::cout << "loading " << desc.name << '\n';
 

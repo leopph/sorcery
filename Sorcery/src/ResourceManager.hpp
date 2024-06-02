@@ -102,7 +102,7 @@ private:
   std::vector<ObserverPtr<Resource>> default_resources_;
   Mutex<std::map<Guid, ResourceDescription>, true> mappings_;
 
-  Mutex<std::map<Guid, Job*>, true> loader_jobs_;
+  Mutex<std::map<Guid, ObserverPtr<Job>>, true> loader_jobs_;
 
   std::unique_ptr<Material> default_mtl_;
   std::unique_ptr<Mesh> cube_mesh_;
