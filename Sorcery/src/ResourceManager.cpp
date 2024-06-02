@@ -86,12 +86,6 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
     if (auto const it{loader_jobs->find(guid)}; it != loader_jobs->end()) {
       loader_job = it->second;
     } else {
-      struct LoaderJobData {
-        Guid const* guid;
-        ResourceDescription const* desc;
-        decltype(loaded_resources_)* resources;
-      };
-
       loader_job = job_system_->CreateJob([this, &guid, &desc] {
         std::unique_ptr<Resource> res;
 

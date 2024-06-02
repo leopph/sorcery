@@ -179,9 +179,8 @@ auto Scene::Load() -> void {
     if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
       skybox_job_data.guid = guid;
 
-      skybox_job = App::Instance().GetJobSystem().CreateJob([](void* const data_ptr) {
-        auto& job_data{**static_cast<SkyboxJobData**>(data_ptr)};
-        job_data.cubemap = App::Instance().GetResourceManager().GetOrLoad<Cubemap>(job_data.guid);
+      skybox_job = App::Instance().GetJobSystem().CreateJob([](SkyboxJobData* const data) {
+        data->cubemap = App::Instance().GetResourceManager().GetOrLoad<Cubemap>(data->guid);
       }, &skybox_job_data);
 
       App::Instance().GetJobSystem().Run(skybox_job);
@@ -256,8 +255,7 @@ auto Scene::Load() -> void {
 
 
   for (auto const& guid : required_resource_guids) {
-    App::Instance().GetJobSystem().Run(App::Instance().GetJobSystem().CreateJob([](void* const data_ptr) {
-      auto const& target_guid{*static_cast<Guid*>(data_ptr)};
+    App::Instance().GetJobSystem().Run(App::Instance().GetJobSystem().CreateJob([](Guid const& target_guid) {
       App::Instance().GetResourceManager().GetOrLoad<Resource>(target_guid);
     }, guid));
   }
