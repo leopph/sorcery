@@ -118,8 +118,8 @@ auto App::Run() -> void {
       }
     };
 
-    render_job_.Reset(job_system_.CreateJob([](void const* const data) {
-      auto const& callable{*static_cast<decltype(render_func) const*>(data)};
+    render_job_.Reset(job_system_.CreateJob([](void* const data) {
+      auto const& callable{*static_cast<decltype(render_func)*>(data)};
       callable();
     }, render_func));
 

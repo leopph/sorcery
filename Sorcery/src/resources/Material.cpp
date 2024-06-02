@@ -253,8 +253,8 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   };
 
   auto const loader_job_func{
-    [](void const* const data_ptr) {
-      auto& [guid, tex]{**static_cast<JobData* const*>(data_ptr)};
+    [](void* const data_ptr) {
+      auto& [guid, tex]{**static_cast<JobData**>(data_ptr)};
       tex = App::Instance().GetResourceManager().GetOrLoad<Texture2D>(guid);
     }
   };

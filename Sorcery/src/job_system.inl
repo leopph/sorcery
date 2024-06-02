@@ -37,7 +37,7 @@ auto JobSystem::CreateParallelForJob(void (*func)(T& data), std::span<T> data) -
     };
 
     for (unsigned i{0}; i < job_data.thread_count; i++) {
-      sub_jobs.emplace_back(job_data.system->CreateJob([](void const* const sub_data_ptr) {
+      sub_jobs.emplace_back(job_data.system->CreateJob([](void* const sub_data_ptr) {
         auto const& sub_job_data{*std::bit_cast<SubJobData*>(sub_data_ptr)};
 
         for (auto& elem : sub_job_data.data) {

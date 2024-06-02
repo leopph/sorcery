@@ -92,8 +92,8 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription
         decltype(loaded_resources_)* resources;
       };
 
-      loader_job = job_system_->CreateJob([](void const* const data_ptr) {
-        auto const& job_data{*static_cast<LoaderJobData const*>(data_ptr)};
+      loader_job = job_system_->CreateJob([](void* const data_ptr) {
+        auto const& job_data{*static_cast<LoaderJobData*>(data_ptr)};
 
         std::unique_ptr<Resource> res;
 

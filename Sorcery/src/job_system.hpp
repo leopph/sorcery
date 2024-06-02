@@ -14,7 +14,7 @@
 
 
 namespace sorcery {
-using JobFuncType = void(*)(void const* data);
+using JobFuncType = void(*)(void* data);
 constexpr auto kMaxJobDataSize{55};
 
 
