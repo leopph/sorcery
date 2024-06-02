@@ -109,19 +109,12 @@ auto App::Run() -> void {
     scene_renderer_.ExtractCurrentState();
     PrepareRender();
 
-    auto const render_func{
-      [this] {
-        scene_renderer_.Render();
-        Render();
-        swap_chain_->Present();
-        render_manager_.EndFrame();
-      }
-    };
-
-    render_job_.Reset(job_system_.CreateJob([](void* const data) {
-      auto const& callable{*static_cast<decltype(render_func)*>(data)};
-      callable();
-    }, render_func));
+    render_job_.Reset(job_system_.CreateJob([this] {
+      scene_renderer_.Render();
+      Render();
+      swap_chain_->Present();
+      render_manager_.EndFrame();
+    }));
 
     job_system_.Run(render_job_.Get());
 

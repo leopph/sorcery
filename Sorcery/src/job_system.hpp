@@ -5,6 +5,7 @@
 
 #include <array>
 #include <atomic>
+#include <concepts>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -27,6 +28,13 @@ struct Job {
 
 static_assert(sizeof(Job) == 64);
 
+template<typename T>
+concept JobArgument = sizeof(T) <= kMaxJobDataSize && std::is_copy_constructible_v<T> &&
+                      std::is_trivially_destructible_v<T>;
+
+template<typename T>
+concept JobCallable = JobArgument<T> && std::invocable<T>;
+
 
 class JobSystem {
 public:
@@ -40,10 +48,11 @@ public:
   auto operator=(JobSystem const&) -> void = delete;
   auto operator=(JobSystem&&) -> void = delete;
 
-  template<typename T> requires(sizeof(T) <= kMaxJobDataSize && std::is_trivially_copy_constructible_v<T> &&
-                                std::is_trivially_destructible_v<T>)
-  [[nodiscard]] static auto CreateJob(JobFuncType func, T const& data) -> Job*;
   [[nodiscard]] LEOPPHAPI static auto CreateJob(JobFuncType func) -> Job*;
+  template<JobArgument T>
+  [[nodiscard]] static auto CreateJob(JobFuncType func, T const& data) -> Job*;
+  template<JobCallable Callable>
+  [[nodiscard]] auto CreateJob(Callable&& callable) -> Job*;
 
   template<typename T>
   [[nodiscard]] auto CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> Job*;

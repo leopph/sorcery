@@ -1,17 +1,25 @@
 #pragma once
 
 #include <bit>
-#include <new>
+#include <memory>
+#include <utility>
 #include <vector>
 
 
 namespace sorcery {
-template<typename T> requires(sizeof(T) <= kMaxJobDataSize && std::is_trivially_copy_constructible_v<T> &&
-                              std::is_trivially_destructible_v<T>)
+template<JobArgument T>
 auto JobSystem::CreateJob(JobFuncType const func, T const& data) -> Job* {
   auto const job{CreateJob(func)};
-  new(job->data.data())(T){data};
+  std::construct_at(std::bit_cast<T*>(job->data.data()), data);
   return job;
+}
+
+
+template<JobCallable Callable>
+auto JobSystem::CreateJob(Callable&& callable) -> Job* {
+  return CreateJob([](void* const data_ptr) {
+    (*std::bit_cast<Callable*>(data_ptr))();
+  }, std::forward<Callable>(callable));
 }
 
 
