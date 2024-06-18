@@ -8,8 +8,13 @@ thread_local unsigned this_thread_idx;
 
 
 namespace sorcery {
-JobSystem::JobSystem() :
-  thread_count_{std::max(std::jthread::hardware_concurrency(), 2u)},
+JobSystem::JobSystem(unsigned const max_thread_count) :
+  thread_count_{
+    [max_thread_count] {
+      auto const preferred_thread_count{std::max(std::jthread::hardware_concurrency(), 2u)};
+      return max_thread_count == 0 ? preferred_thread_count : std::min(preferred_thread_count, max_thread_count);
+    }()
+  },
   worker_count_{thread_count_ - 1} {
   job_queues_ = std::make_unique<WorkStealingQueue<ObserverPtr<Job>>[]>(thread_count_);
   workers_ = std::make_unique<std::jthread[]>(worker_count_);

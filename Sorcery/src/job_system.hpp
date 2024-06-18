@@ -39,7 +39,7 @@ concept JobCallable = JobArgument<T> && std::invocable<T>;
 
 class JobSystem {
 public:
-  LEOPPHAPI JobSystem();
+  LEOPPHAPI explicit JobSystem(unsigned max_thread_count = 0);
 
   JobSystem(JobSystem const&) = delete;
   JobSystem(JobSystem&&) = delete;
