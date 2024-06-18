@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Util.hpp"
+
 #include <utility>
 
 
@@ -61,6 +63,27 @@ template<std::derived_from<Resource> ResType>
 auto ResourceManager::Add(std::unique_ptr<ResType> resource) -> ObserverPtr<ResType> {
   if (resource && resource->GetGuid().IsValid()) {
     return ObserverPtr{loaded_resources_.Lock()->emplace(std::move(resource)).first->get()};
+  }
+
+  return nullptr;
+}
+
+
+template<std::derived_from<Resource> ResType>
+auto ResourceManager::Remove(Guid const& guid) -> std::unique_ptr<ResType> {
+  auto resources{loaded_resources_.Lock()};
+
+  if (auto const it{
+    std::ranges::find_if(*resources, [&guid](std::unique_ptr<Resource> const& res) {
+      if constexpr (std::is_same_v<ResType, Resource>) {
+        return res->GetGuid() == guid;
+      } else {
+        return res->GetGuid() == guid && rttr::type::get(res.get()).get_raw_type().is_derived_from<ResType>();
+      }
+    })
+  }; it != std::end(*resources)) {
+    auto node{resources->extract(it)};
+    return static_unique_ptr_cast<ResType>(std::move(node.value()));
   }
 
   return nullptr;

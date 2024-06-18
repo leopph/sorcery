@@ -50,6 +50,9 @@ public:
   template<std::derived_from<Resource> ResType>
   auto Add(std::unique_ptr<ResType> resource) -> ObserverPtr<ResType>;
 
+  template<std::derived_from<Resource> ResType = Resource>
+  [[nodiscard]] auto Remove(Guid const& guid) -> std::unique_ptr<ResType>;
+
   LEOPPHAPI auto UpdateMappings(std::map<Guid, ResourceDescription> mappings) -> void;
 
   template<std::derived_from<Resource> T>
