@@ -72,14 +72,23 @@ EditorApp::EditorApp(std::span<std::string_view const> const args) :
 
   timing::SetTargetFrameRate(SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
 
-  if (args.size() > 0) {
-    std::filesystem::path targetProjPath{args[0]};
-    targetProjPath = absolute(targetProjPath);
-    OpenProject(targetProjPath);
+  auto project_loaded{false};
+
+  for (auto const arg : args) {
+    if (arg.starts_with("-project=")) {
+      OpenProject(std::filesystem::absolute(arg.substr(9)));
+      project_loaded = true;
+      break;
+    }
   }
 
-  if (args.size() > 1) {
-    OpenScene(GetResourceDatabase().PathToGuid(args[1]));
+  if (project_loaded) {
+    for (auto const arg : args) {
+      if (arg.starts_with("-scene=")) {
+        OpenScene(GetResourceDatabase().PathToGuid(arg.substr(7)));
+        break;
+      }
+    }
   }
 }
 
