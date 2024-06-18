@@ -4,11 +4,29 @@
 #include "Platform.hpp"
 #include "Timing.hpp"
 
+#include <charconv>
 #include <stdexcept>
 
 
 namespace sorcery {
 App::App(std::span<std::string_view const> const args) :
+  job_system_{
+    [args] {
+      unsigned thread_count{0};
+
+      for (auto const arg : args) {
+        if (arg.starts_with("-threads=")) {
+          auto const thread_count_sv{arg.substr(9)};
+          if (std::from_chars(thread_count_sv.data(), thread_count_sv.data() + thread_count_sv.size(), thread_count).ec
+              == std::errc{}) {
+            break;
+          }
+        }
+      }
+
+      return thread_count;
+    }()
+  },
   graphics_device_{
 #ifndef NDEBUG
     true

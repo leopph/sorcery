@@ -47,14 +47,13 @@ protected:
   virtual auto Render() -> void {}
 
 private:
+  JobSystem job_system_;
   graphics::GraphicsDevice graphics_device_;
   Window window_;
   graphics::SharedDeviceChildHandle<graphics::SwapChain> swap_chain_;
   rendering::RenderManager render_manager_;
   rendering::SceneRenderer scene_renderer_;
-  JobSystem job_system_;
   ResourceManager resource_manager_;
-
   bool window_resized_{false};
   ObserverPtr<Job> render_job_;
 
