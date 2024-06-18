@@ -192,13 +192,10 @@ auto EditorApp::OpenScene(Guid const& guid) -> void {
     new_scene->Load();
 
     if (scene_) {
-      // Unlod old scene if it was saved
       GetResourceManager().Unload(scene_->GetGuid());
-      // Unload old scene if it was temporary
-      temp_scene_owner_.reset();
     }
 
-    scene_ = new_scene;
+    scene_.Reset(new_scene);
     scene_->SetActive();
     selected_object_ = nullptr;
   }
@@ -207,14 +204,10 @@ auto EditorApp::OpenScene(Guid const& guid) -> void {
 
 auto EditorApp::OpenNewScene() -> void {
   if (scene_) {
-    // Unload old scene if it was saved
     GetResourceManager().Unload(scene_->GetGuid());
   }
 
-  temp_scene_owner_ = Create<Scene>();
-  scene_ = temp_scene_owner_.get();
-
-  scene_->Load();
+  scene_ = GetResourceManager().Add(Create<Scene>());
   scene_->SetActive();
   selected_object_ = nullptr;
 }
@@ -232,7 +225,7 @@ auto EditorApp::SaveCurrentSceneToFile() -> void {
         relative(std::filesystem::path{dst}, resource_db_.GetResourceDirectoryAbsolutePath()) +=
         ResourceManager::SCENE_RESOURCE_EXT
       }; !dstResDirRel.empty()) {
-        resource_db_.CreateResource(std::move(temp_scene_owner_), dstResDirRel);
+        resource_db_.CreateResource(GetResourceManager().Remove<Scene>(scene_->GetGuid()), dstResDirRel);
       }
       std::free(dst);
     }

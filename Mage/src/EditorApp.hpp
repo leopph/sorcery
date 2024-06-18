@@ -18,7 +18,6 @@
 #include <memory>
 #include <span>
 #include <string_view>
-#include <type_traits>
 
 
 namespace sorcery::mage {
@@ -81,8 +80,7 @@ private:
   ObserverPtr<ImGuiContext> imgui_ctx_;
   ObserverPtr<ImGuiIO> imgui_io_;
 
-  std::unique_ptr<Scene> temp_scene_owner_;
-  Scene* scene_{nullptr};
+  ObserverPtr<Scene> scene_;
   Object* selected_object_{nullptr};
   ResourceDB resource_db_{selected_object_};
 
