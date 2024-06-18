@@ -186,10 +186,9 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
     int shadowIdx;
   };
 
-  auto& tmpMemRes{GetSingleFrameLinearMemory()};
   std::array lightIndexIndicesInCell{
-    std::pmr::vector<LightCascadeIndex>{&tmpMemRes}, std::pmr::vector<LightCascadeIndex>{&tmpMemRes},
-    std::pmr::vector<LightCascadeIndex>{&tmpMemRes}, std::pmr::vector<LightCascadeIndex>{&tmpMemRes}
+    std::vector<LightCascadeIndex>{}, std::vector<LightCascadeIndex>{},
+    std::vector<LightCascadeIndex>{}, std::vector<LightCascadeIndex>{}
   };
 
   auto const& camPos{cam_data.position};
@@ -514,7 +513,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
         Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
 
-        std::pmr::vector<unsigned> visible_static_submesh_instance_indices{&GetSingleFrameLinearMemory()};
+        std::pmr::vector<unsigned> visible_static_submesh_instance_indices;
         CullStaticSubmeshInstances(shadow_frustum_ws, frame_packet.mesh_data, frame_packet.submesh_data,
           frame_packet.instance_data, visible_static_submesh_instance_indices);
 
@@ -594,7 +593,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 
         Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
 
-        std::pmr::vector<unsigned> visible_static_submesh_instance_indices{&GetSingleFrameLinearMemory()};
+        std::pmr::vector<unsigned> visible_static_submesh_instance_indices;
         CullStaticSubmeshInstances(shadow_frustum_ws, frame_packet.mesh_data, frame_packet.submesh_data,
           frame_packet.instance_data, visible_static_submesh_instance_indices);
 
@@ -1196,7 +1195,7 @@ auto SceneRenderer::Render() -> void {
   auto& cmd{render_manager_->AcquireCommandList()};
   cmd.Begin(nullptr);
 
-  std::pmr::vector<graphics::TextureBarrier> cam_rt_barriers{&GetSingleFrameLinearMemory()};
+  std::vector<graphics::TextureBarrier> cam_rt_barriers;
   cam_rt_barriers.reserve(frame_packet.render_targets.size());
 
   std::ranges::transform(frame_packet.render_targets, std::back_inserter(cam_rt_barriers),
@@ -1271,7 +1270,7 @@ auto SceneRenderer::Render() -> void {
     auto const cam_view_proj_mtx{cam_view_mtx * cam_proj_mtx};
     Frustum const cam_frust_ws{cam_view_proj_mtx};
 
-    std::pmr::vector<unsigned> visible_light_indices{&GetSingleFrameLinearMemory()};
+    std::pmr::vector<unsigned> visible_light_indices;
     CullLights(cam_frust_ws, frame_packet.light_data, visible_light_indices);
 
     cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -1286,7 +1285,7 @@ auto SceneRenderer::Render() -> void {
       cam_view_proj_mtx, frame_packet.shadow_params.distance);
     DrawPunctualShadowMaps(*punctual_shadow_atlas_, frame_packet, cmd);
 
-    std::pmr::vector<unsigned> visible_static_submesh_instance_indices{&GetSingleFrameLinearMemory()};
+    std::pmr::vector<unsigned> visible_static_submesh_instance_indices;
     CullStaticSubmeshInstances(cam_frust_ws, frame_packet.mesh_data, frame_packet.submesh_data,
       frame_packet.instance_data, visible_static_submesh_instance_indices);
 

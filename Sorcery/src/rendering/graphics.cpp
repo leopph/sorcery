@@ -677,7 +677,7 @@ auto GraphicsDevice::SignalFence(Fence& fence) const -> void {
 
 
 auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) const -> void {
-  std::pmr::vector<ID3D12CommandList*> submit_list{&GetSingleFrameLinearMemory()};
+  std::vector<ID3D12CommandList*> submit_list;
   submit_list.reserve(cmd_lists.size());
   std::ranges::transform(cmd_lists, std::back_inserter(submit_list), [](CommandList const& cmd_list) {
     return cmd_list.cmd_list_.Get();
@@ -1119,13 +1119,13 @@ auto CommandList::End() const -> void {
 auto CommandList::Barrier(std::span<GlobalBarrier const> const global_barriers,
                           std::span<BufferBarrier const> const buffer_barriers,
                           std::span<TextureBarrier const> const texture_barriers) const -> void {
-  std::pmr::vector<D3D12_GLOBAL_BARRIER> globals{&GetSingleFrameLinearMemory()};
+  std::vector<D3D12_GLOBAL_BARRIER> globals;
   globals.reserve(global_barriers.size());
-  std::pmr::vector<D3D12_BUFFER_BARRIER> buffers{&GetSingleFrameLinearMemory()};
+  std::vector<D3D12_BUFFER_BARRIER> buffers;
   buffers.reserve(buffer_barriers.size());
-  std::pmr::vector<D3D12_TEXTURE_BARRIER> textures{&GetSingleFrameLinearMemory()};
+  std::vector<D3D12_TEXTURE_BARRIER> textures;
   textures.reserve(texture_barriers.size());
-  std::pmr::vector<D3D12_BARRIER_GROUP> groups{&GetSingleFrameLinearMemory()};
+  std::vector<D3D12_BARRIER_GROUP> groups;
 
   if (!global_barriers.empty()) {
     std::ranges::transform(global_barriers, std::back_inserter(globals), [](GlobalBarrier const& barrier) {
@@ -1285,7 +1285,7 @@ auto CommandList::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY const primitive_
 
 auto CommandList::SetRenderTargets(std::span<Texture const> render_targets,
                                    Texture const* depth_stencil) const -> void {
-  std::pmr::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt{&GetSingleFrameLinearMemory()};
+  std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt;
   rt.reserve(render_targets.size());
   std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const& tex) {
     return rtv_heap_->GetDescriptorCpuHandle(tex.rtv_);

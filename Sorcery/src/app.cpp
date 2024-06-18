@@ -104,8 +104,6 @@ auto App::Run() -> void {
       window_resized_ = false;
     }
 
-    GetSingleFrameLinearMemory().Clear();
-
     scene_renderer_.ExtractCurrentState();
     PrepareRender();
 

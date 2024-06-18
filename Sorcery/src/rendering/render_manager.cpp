@@ -101,13 +101,13 @@ auto RenderManager::UpdateTexture(graphics::Texture const& tex, UINT const subre
     }
   }
 
-  std::pmr::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts{&GetSingleFrameLinearMemory()};
+  std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts;
   layouts.resize(data.size());
 
-  std::pmr::vector<UINT> row_counts{&GetSingleFrameLinearMemory()};
+  std::vector<UINT> row_counts;
   row_counts.resize(data.size());
 
-  std::pmr::vector<UINT64> row_sizes{&GetSingleFrameLinearMemory()};
+  std::vector<UINT64> row_sizes;
   row_sizes.resize(data.size());
 
   device_->GetCopyableFootprints(tex.GetDesc(), subresource_offset, static_cast<UINT>(data.size()),
@@ -171,7 +171,7 @@ auto RenderManager::CreateReadOnlyTexture(
 
   auto tex{device_->CreateTexture(desc, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr)};
 
-  std::pmr::vector<D3D12_SUBRESOURCE_DATA> subresource_data{&GetSingleFrameLinearMemory()};
+  std::vector<D3D12_SUBRESOURCE_DATA> subresource_data;
   subresource_data.reserve(img.GetImageCount());
 
   for (std::size_t i{0}; i < img.GetImageCount(); i++) {

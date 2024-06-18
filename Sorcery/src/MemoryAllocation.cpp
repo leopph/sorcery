@@ -4,7 +4,7 @@
 
 
 namespace sorcery {
-LinearMemoryResource g_single_frame_linear_memory{static_cast<std::size_t>(128) * 1024 * 1024};
+// LinearMemoryResource g_single_frame_linear_memory{static_cast<std::size_t>(128) * 1024 * 1024}; TODO temporarily disabled due to job system incompatibility
 
 
 auto LinearMemoryResource::do_allocate(std::size_t const required_byte_count, std::size_t const alignment) -> void* {
