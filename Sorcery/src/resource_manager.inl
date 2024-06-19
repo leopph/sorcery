@@ -78,7 +78,7 @@ auto ResourceManager::Remove(Guid const& guid) -> std::unique_ptr<ResType> {
       if constexpr (std::is_same_v<ResType, Resource>) {
         return res->GetGuid() == guid;
       } else {
-        return res->GetGuid() == guid && rttr::type::get(res.get()).get_raw_type().is_derived_from<ResType>();
+        return res->GetGuid() == guid && rttr::type::get(*res).get_raw_type().is_derived_from<ResType>();
       }
     })
   }; it != std::end(*resources)) {
