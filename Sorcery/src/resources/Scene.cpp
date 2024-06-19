@@ -253,11 +253,15 @@ auto Scene::Load() -> void {
     return lhs == rhs;
   }).begin(), required_resource_guids.end());
 
+  std::vector<ObserverPtr<Job>> resource_loading_jobs;
+  resource_loading_jobs.reserve(required_resource_guids.size());
 
   for (auto const& guid : required_resource_guids) {
-    App::Instance().GetJobSystem().Run(App::Instance().GetJobSystem().CreateJob([](Guid const& target_guid) {
+    resource_loading_jobs.emplace_back(App::Instance().GetJobSystem().CreateJob([](Guid const& target_guid) {
       App::Instance().GetResourceManager().GetOrLoad<Resource>(target_guid);
     }, guid));
+
+    App::Instance().GetJobSystem().Run(resource_loading_jobs.back());
   }
 
   // Deserialize the scene objects
@@ -283,6 +287,10 @@ auto Scene::Load() -> void {
   if (skybox_job) {
     App::Instance().GetJobSystem().Wait(skybox_job);
     skybox_ = skybox_job_data.cubemap;
+  }
+
+  for (auto const job : resource_loading_jobs) {
+    App::Instance().GetJobSystem().Wait(job);
   }
 
   // Add the new scene objects to the scene

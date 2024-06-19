@@ -67,7 +67,7 @@ auto JobSystem::Run(ObserverPtr<Job> job) -> void {
 }
 
 
-auto JobSystem::Wait(ObserverPtr<Job const> job) -> void {
+auto JobSystem::Wait(ObserverPtr<Job const> const job) -> void {
   while (!job->is_complete) {
     if (auto const new_job{FindJobToExecute()}) {
       Execute(*new_job);
