@@ -44,14 +44,14 @@ EditorApp::EditorApp(std::span<std::string_view const> const args) :
   App{args},
   imgui_ctx_{ImGui::CreateContext()},
   imgui_io_{&ImGui::GetIO()},
+  imgui_io_ini_path_{
+    WideToUtf8((std::filesystem::path{GetExecutablePath()}.remove_filename() /= "editorconfig.ini").c_str())
+  },
   window_focus_gain_listener_{
     GetWindow().OnWindowFocusGain.add_listener([this] { OnWindowFocusGain(); })
   } {
-  auto const ini_file_path{std::filesystem::path{GetExecutablePath()}.remove_filename() /= "editorconfig.ini"};
-  auto const ini_file_path_str{WideToUtf8(ini_file_path.c_str())};
-
   imgui_io_->FontDefault = imgui_io_->Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 14);
-  imgui_io_->IniFilename = ini_file_path_str.c_str();
+  imgui_io_->IniFilename = imgui_io_ini_path_.c_str();
   imgui_io_->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
   ImGui::StyleColorsDark();

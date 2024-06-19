@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <memory>
 #include <span>
+#include <string>
 #include <string_view>
 
 
@@ -79,6 +80,7 @@ private:
 
   ObserverPtr<ImGuiContext> imgui_ctx_;
   ObserverPtr<ImGuiIO> imgui_io_;
+  std::string imgui_io_ini_path_;
 
   ObserverPtr<Scene> scene_;
   Object* selected_object_{nullptr};
