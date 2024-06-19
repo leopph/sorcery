@@ -70,8 +70,6 @@ public:
   LEOPPHAPI auto Wait(ObserverPtr<Job const> job) -> void;
 
 private:
-  constexpr static auto max_job_count_{4096};
-
   static auto Execute(Job& job) -> void;
 
   [[nodiscard]] auto FindJobToExecute() -> ObserverPtr<Job>;
@@ -82,6 +80,11 @@ private:
   std::unique_ptr<std::jthread[]> workers_;
   std::mutex wake_threads_mutex_;
   std::condition_variable wake_threads_cond_var_;
+
+  constexpr static auto max_job_count_{4096};
+  thread_local static std::size_t allocated_job_count_;
+  thread_local static std::array<Job, max_job_count_> jobs_;
+  thread_local static unsigned this_thread_idx_;
 };
 }
 
