@@ -1,6 +1,5 @@
 #include "render_manager.hpp"
 
-#include "../MemoryAllocation.hpp"
 #include "../Util.hpp"
 
 #include <stdexcept>
@@ -92,11 +91,20 @@ auto RenderManager::UpdateTexture(graphics::Texture const& tex, UINT const subre
 
   std::scoped_lock const lck{upload_mutex_};
 
-  if (auto const upload_buf_size{upload_buf_->GetDesc().size};
-    upload_buf_size - upload_buf_current_offset_ < tex_size) {
+  // We have to make sure to align the texture data in the buffer to 512 bytes (D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT).
+  // Buffers are always aligned to 64KB (D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT), so it is enough to align the offset.
+
+  if (auto const preferred_offset = [this] {
+        auto const remainder{upload_buf_current_offset_ % D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT};
+        return remainder
+                 ? upload_buf_current_offset_ + (D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - remainder)
+                 : upload_buf_current_offset_;
+      }(), upload_buf_size{upload_buf_->GetDesc().size}; preferred_offset + tex_size <= upload_buf_size) {
+    upload_buf_current_offset_ = preferred_offset;
+  } else {
     WaitForAllUploads();
 
-    if (upload_buf_size < tex_size) {
+    if (tex_size > upload_buf_size) {
       RecreateUploadBuffer(tex_size);
     }
   }
