@@ -13,9 +13,9 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <numbers>
 #include <concepts>
 #include <limits>
+#include <numbers>
 #include <ostream>
 
 #ifdef LEOPPH_MATH_USE_INTRINSICS
@@ -134,10 +134,12 @@ template<typename T, int N>
 constexpr auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
 template<typename T, int N>
-[[nodiscard]] constexpr auto operator*(Vector<T, N> const& left, std::type_identity_t<T> right) noexcept -> Vector<T, N>;
+[[nodiscard]] constexpr auto operator*(Vector<T, N> const& left,
+                                       std::type_identity_t<T> right) noexcept -> Vector<T, N>;
 
 template<typename T, int N>
-[[nodiscard]] constexpr auto operator*(std::type_identity_t<T> left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
+[[nodiscard]] constexpr auto operator*(std::type_identity_t<T> left,
+                                       Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
 template<typename T, int N>
 [[nodiscard]] constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
@@ -149,10 +151,12 @@ template<typename T, int N>
 constexpr auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
 template<typename T, int N>
-[[nodiscard]] constexpr auto operator/(Vector<T, N> const& left, std::type_identity_t<T> right) noexcept -> Vector<T, N>;
+[[nodiscard]] constexpr auto operator/(Vector<T, N> const& left,
+                                       std::type_identity_t<T> right) noexcept -> Vector<T, N>;
 
 template<typename T, int N>
-[[nodiscard]] constexpr auto operator/(std::type_identity_t<T> left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
+[[nodiscard]] constexpr auto operator/(std::type_identity_t<T> left,
+                                       Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
 template<typename T, int N>
 [[nodiscard]] constexpr auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
@@ -176,7 +180,8 @@ template<typename T, int N>
 [[nodiscard]] auto Clamp(Vector<T, N> const& v, T min, T max) noexcept -> Vector<T, N>;
 
 template<typename T, int N>
-[[nodiscard]] auto Clamp(Vector<T, N> const& v, Vector<T, N> const& min, Vector<T, N> const& max) noexcept -> Vector<T, N>;
+[[nodiscard]] auto Clamp(Vector<T, N> const& v, Vector<T, N> const& min,
+                         Vector<T, N> const& max) noexcept -> Vector<T, N>;
 
 template<typename T, int N>
 [[nodiscard]] auto Min(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
@@ -294,18 +299,31 @@ public:
 
   [[nodiscard]] static constexpr auto Identity() noexcept -> Matrix requires (N == M);
 
-  [[nodiscard]] static constexpr auto Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
-  [[nodiscard]] static constexpr auto Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+  [[nodiscard]] static constexpr auto Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (
+    N == 4 && M == 4);
+  [[nodiscard]] static constexpr auto Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (
+    N == 4 && M == 4);
 
-  [[nodiscard]] static constexpr auto LookTo(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
-  [[nodiscard]] static constexpr auto LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
+  [[nodiscard]] static constexpr auto LookTo(Vector<T, 3> const& position, Vector<T, 3> const& direction,
+                                             Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(
+    N == 4 && M == 4);
+  [[nodiscard]] static constexpr auto LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target,
+                                             Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(
+    N == 4 && M == 4);
 
-  [[nodiscard]] static constexpr auto OrthographicOffCenter(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
-  [[nodiscard]] static constexpr auto Orthographic(T width, T height, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+  [[nodiscard]] static constexpr auto OrthographicOffCenter(T left, T right, T top, T bottom, T zNear,
+                                                            T zFar) noexcept -> Matrix<T, 4, 4> requires (
+    N == 4 && M == 4);
+  [[nodiscard]] static constexpr auto Orthographic(T width, T height, T zNear, T zFar) noexcept -> Matrix<T, 4, 4>
+    requires (N == 4 && M == 4);
 
-  [[nodiscard]] static constexpr auto PerspectiveOffCenter(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
-  [[nodiscard]] static constexpr auto Perspective(T width, T height, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
-  [[nodiscard]] static auto PerspectiveFov(T fovVertRad, T aspectRatio, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+  [[nodiscard]] static constexpr auto PerspectiveOffCenter(T left, T right, T top, T bottom, T zNear,
+                                                           T zFar) noexcept -> Matrix<T, 4, 4> requires (
+    N == 4 && M == 4);
+  [[nodiscard]] static constexpr auto Perspective(T width, T height, T zNear, T zFar) noexcept -> Matrix<T, 4, 4>
+    requires (N == 4 && M == 4);
+  [[nodiscard]] static auto PerspectiveFov(T fovVertRad, T aspectRatio, T zNear, T zFar) noexcept -> Matrix<T, 4, 4>
+    requires (N == 4 && M == 4);
 
   constexpr Matrix() noexcept = default;
   [[nodiscard]] static constexpr auto Zero() noexcept -> Matrix;
@@ -353,13 +371,15 @@ using Matrix4 = Matrix<float, 4, 4>;
 
 
 template<typename T, int N, int M>
-[[nodiscard]] constexpr auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
+[[nodiscard]] constexpr auto operator+(Matrix<T, N, M> const& left,
+                                       Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
 
 template<typename T, int N, int M>
 constexpr auto operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>&;
 
 template<typename T, int N, int M>
-[[nodiscard]] constexpr auto operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
+[[nodiscard]] constexpr auto operator-(Matrix<T, N, M> const& left,
+                                       Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
 
 template<typename T, int N, int M>
 constexpr auto operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>&;
@@ -377,7 +397,8 @@ template<typename T, int N, int M>
 [[nodiscard]] constexpr auto operator*(Vector<T, N> const& left, Matrix<T, N, M> const& right) noexcept -> Vector<T, M>;
 
 template<typename T, int N, int M, int P>
-[[nodiscard]] constexpr auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) noexcept -> Matrix<T, N, P>;
+[[nodiscard]] constexpr auto operator*(Matrix<T, N, M> const& left,
+                                       Matrix<T, M, P> const& right) noexcept -> Matrix<T, N, P>;
 
 #ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
@@ -1443,7 +1464,8 @@ constexpr auto Matrix<T, N, M>::Identity() noexcept -> Matrix<T, N, M> requires 
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+constexpr auto Matrix<T, N, M>::Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (
+  N == 4 && M == 4) {
   Matrix<T, 4, 4> ret = Identity();
   for (size_t i = 0; i < 3; i++) {
     ret[3][i] = vector[i];
@@ -1453,7 +1475,8 @@ constexpr auto Matrix<T, N, M>::Translate(Vector<T, 3> const& vector) noexcept -
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+constexpr auto Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (
+  N == 4 && M == 4) {
   Matrix<T, 4, 4> ret = Identity();
   for (size_t i = 0; i < 3; i++) {
     ret[i][i] = vector[i];
@@ -1463,7 +1486,9 @@ constexpr auto Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept -> Ma
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::LookTo(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+constexpr auto Matrix<T, N, M>::LookTo(Vector<T, 3> const& position, Vector<T, 3> const& direction,
+                                       Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (
+  N == 4 && M == 4) {
   Vector<T, 3> z{Normalized(direction)};
   Vector<T, 3> x{Normalized(Cross(worldUp, z))};
   Vector<T, 3> y{Cross(z, x)};
@@ -1477,13 +1502,18 @@ constexpr auto Matrix<T, N, M>::LookTo(Vector<T, 3> const& position, Vector<T, 3
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+constexpr auto Matrix<T, N, M>::LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target,
+                                       Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (
+  N == 4 && M == 4) {
   return LookTo(position, target - position, worldUp);
 }
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::OrthographicOffCenter(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+constexpr auto Matrix<T, N, M>::OrthographicOffCenter(T const left, T const right, T const top, T const bottom,
+                                                      T const zNear,
+                                                      T const zFar) noexcept -> Matrix<T, 4, 4> requires (
+  N == 4 && M == 4) {
   return Matrix<T, 4, 4>{
     2 / (right - left), 0, 0, 0,
     0, 2 / (top - bottom), 0, 0,
@@ -1494,7 +1524,8 @@ constexpr auto Matrix<T, N, M>::OrthographicOffCenter(T const left, T const righ
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::Orthographic(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+constexpr auto Matrix<T, N, M>::Orthographic(T const width, T const height, T const zNear,
+                                             T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
   auto const halfWidth{width / 2};
   auto const halfHeight{height / 2};
   return OrthographicOffCenter(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
@@ -1502,7 +1533,10 @@ constexpr auto Matrix<T, N, M>::Orthographic(T const width, T const height, T co
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::PerspectiveOffCenter(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+constexpr auto Matrix<T, N, M>::PerspectiveOffCenter(T const left, T const right, T const top, T const bottom,
+                                                     T const zNear,
+                                                     T const zFar) noexcept -> Matrix<T, 4, 4> requires (
+  N == 4 && M == 4) {
   return Matrix<T, 4, 4>{
     2 * zNear / (right - left), 0, 0, 0,
     0, 2 * zNear / (top - bottom), 0, 0,
@@ -1513,7 +1547,8 @@ constexpr auto Matrix<T, N, M>::PerspectiveOffCenter(T const left, T const right
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::Perspective(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+constexpr auto Matrix<T, N, M>::Perspective(T const width, T const height, T const zNear,
+                                            T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
   auto const halfWidth{width / static_cast<T>(2)};
   auto const halfHeight{height / static_cast<T>(2)};
   return PerspectiveOffCenter(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
@@ -1521,7 +1556,8 @@ constexpr auto Matrix<T, N, M>::Perspective(T const width, T const height, T con
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
-auto Matrix<T, N, M>::PerspectiveFov(T const fovVertRad, T const aspectRatio, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+auto Matrix<T, N, M>::PerspectiveFov(T const fovVertRad, T const aspectRatio, T const zNear,
+                                     T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
   auto const halfFov{fovVertRad / 2};
   auto const yScale{std::cos(halfFov) / std::sin(halfFov)};
   auto const xScale{yScale / aspectRatio};
@@ -1798,23 +1834,23 @@ inline Quaternion::Quaternion(Vector3 const& axis, float const angleDegrees) noe
 
 
 inline auto Quaternion::FromEulerAngles(float const x, float const y, float const z) noexcept -> Quaternion {
-  auto const roll = ToRadians(x);
-  auto const pitch = ToRadians(y);
-  auto const yaw = ToRadians(z);
+  auto const pitch = ToRadians(x);
+  auto const yaw = ToRadians(y);
+  auto const roll = ToRadians(z);
 
-  auto const cr = std::cos(roll * 0.5f);
-  auto const sr = std::sin(roll * 0.5f);
   auto const cp = std::cos(pitch * 0.5f);
   auto const sp = std::sin(pitch * 0.5f);
   auto const cy = std::cos(yaw * 0.5f);
   auto const sy = std::sin(yaw * 0.5f);
+  auto const cr = std::cos(roll * 0.5f);
+  auto const sr = std::sin(roll * 0.5f);
 
   return Quaternion
   {
-    cr * cp * cy + sr * sp * sy,
-    sr * cp * cy - cr * sp * sy,
-    cr * sp * cy + sr * cp * sy,
-    cr * cp * sy - sr * sp * cy,
+    cp * cy * cr + sp * sy * sr,
+    sp * cy * cr - cp * sy * sr,
+    cp * sy * cr + sp * cy * sr,
+    cp * cy * sr - sp * sy * cr,
   };
 }
 
@@ -1827,20 +1863,15 @@ inline auto Quaternion::FromEulerAngles(Vector3 const& euler) noexcept -> Quater
 inline auto Quaternion::ToEulerAngles() const noexcept -> Vector3 {
   Vector3 angles;
 
-  // roll (x-axis rotation)
-  auto const sinr_cosp{2 * (w * x + y * z)};
-  auto const cosr_cosp{1 - 2 * (x * x + y * y)};
-  angles[0] = std::atan2(sinr_cosp, cosr_cosp);
+  auto const pitch_y{2 * (w * x + y * z)};
+  auto const pitch_x{w * w - x * x - y * y + z * z};
+  angles[0] = std::atan2(pitch_y, pitch_x);
 
-  // pitch (y-axis rotation)
-  auto const sinp{std::sqrt(1 + 2 * (w * y - x * z))};
-  auto const cosp{std::sqrt(1 - 2 * (w * y - x * z))};
-  angles[1] = 2 * std::atan2(sinp, cosp) - PI / 2;
+  angles[1] = std::asin(std::clamp(-2 * (x * z - w * y), -1.0f, 1.0f));
 
-  // yaw (z-axis rotation)
-  auto const siny_cosp{2 * (w * z + x * y)};
-  auto const cosy_cosp{1 - 2 * (y * y + z * z)};
-  angles[2] = std::atan2(siny_cosp, cosy_cosp);
+  auto const roll_y{2 * (w * z + x * y)};
+  auto const roll_x{w * w + x * x - y * y - z * z};
+  angles[2] = std::atan2(roll_y, roll_x);
 
   for (int i = 0; i < 3; i++) {
     angles[i] = ToDegrees(angles[i]);
