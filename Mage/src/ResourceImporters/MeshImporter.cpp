@@ -1,11 +1,11 @@
 #include "MeshImporter.hpp"
-#include "../Resources/Mesh.hpp"
-#include "../FileIo.hpp"
 #include "Serialization.hpp"
+#include "../FileIo.hpp"
+#include "../Resources/Mesh.hpp"
 
 #include <assimp/Importer.hpp>
-#include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
 #include <algorithm>
 #include <limits>
@@ -48,7 +48,8 @@ auto MeshImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out
 }
 
 
-auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes, ExternalResourceCategory& categ) -> bool {
+auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes,
+                          ExternalResourceCategory& categ) -> bool {
   std::vector<unsigned char> meshBytes;
 
   if (!ReadFileBinary(src, meshBytes)) {
@@ -57,11 +58,16 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   Assimp::Importer importer;
 
-  importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_ANIMATIONS | aiComponent_BONEWEIGHTS | aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
+  importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
+    aiComponent_ANIMATIONS | aiComponent_BONEWEIGHTS | aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
   importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
   importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
 
-  auto const scene{importer.ReadFileFromMemory(meshBytes.data(), meshBytes.size(), aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded | aiProcess_TransformUVCoords | aiProcess_RemoveComponent)};
+  auto const scene{
+    importer.ReadFileFromMemory(meshBytes.data(), meshBytes.size(),
+      aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded | aiProcess_TransformUVCoords |
+      aiProcess_RemoveComponent)
+  };
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     throw std::runtime_error{std::format("Failed to import model at {}: {}.", src.string(), importer.GetErrorString())};
@@ -102,7 +108,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     aiMesh const* const mesh{scene->mMeshes[i]};
     auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshesUntransformed.emplace_back()};
 
-    if (!mesh->HasPositions() || !mesh->HasNormals() || !mesh->HasTextureCoords(0) || !mesh->HasTangentsAndBitangents()) {
+    if (!mesh->HasPositions() || !mesh->HasNormals() || !mesh->HasTextureCoords(0) || !mesh->
+        HasTangentsAndBitangents()) {
       // TODO log or something
       continue;
     }
@@ -163,7 +170,9 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   std::vector<MeshProcessingData> meshesTransformed;
 
   for (auto const& [trafo, meshIdx] : meshIndicesWithTrafos) {
-    auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshesTransformed.emplace_back(meshesUntransformed[meshIdx])};
+    auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{
+      meshesTransformed.emplace_back(meshesUntransformed[meshIdx])
+    };
 
     Matrix4 const trafoInvTransp{trafo.Inverse().Transpose()};
 
@@ -180,7 +189,9 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   meshData.indices.emplace<std::vector<std::uint32_t>>();
 
   for (auto const& [vertices, normals, uvs, tangents, indices, mtlIdx] : meshesTransformed) {
-    meshData.sub_meshes.emplace_back(static_cast<int>(std::ssize(meshData.positions)), std::visit([]<typename T>(std::vector<T> const& indices) { return static_cast<int>(std::ssize(indices)); }, meshData.indices), static_cast<int>(std::ssize(indices)), static_cast<int>(mtlIdx), AABB{});
+    meshData.sub_meshes.emplace_back(static_cast<int>(std::ssize(meshData.positions)),
+      std::visit([]<typename T>(std::vector<T> const& indices) { return static_cast<int>(std::ssize(indices)); },
+        meshData.indices), static_cast<int>(std::ssize(indices)), static_cast<int>(mtlIdx), AABB{});
 
     std::ranges::copy(vertices, std::back_inserter(meshData.positions));
     std::ranges::copy(normals, std::back_inserter(meshData.normals));
@@ -191,16 +202,21 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Transform indices to 16-bit if possible
 
-  if (auto const& indices32{std::get<std::vector<std::uint32_t>>(meshData.indices)}; std::ranges::all_of(indices32, [](std::uint32_t const idx) {
-    return idx <= std::numeric_limits<std::uint16_t>::max();
-  })) {
+  if (auto const& indices32{std::get<std::vector<std::uint32_t>>(meshData.indices)}; std::ranges::all_of(indices32,
+    [](std::uint32_t const idx) {
+      return idx <= std::numeric_limits<std::uint16_t>::max();
+    })) {
     std::vector<std::uint16_t> indices16;
     indices16.reserve(std::size(indices32));
 
     std::ranges::transform(indices32, std::back_inserter(indices16), [](std::uint32_t const idx) {
       return static_cast<std::uint16_t>(idx);
     });
+
+    meshData.indices = std::move(indices16);
   }
+
+  // Serialize
 
   SerializeToBinary(std::size(meshData.positions), bytes);
   std::visit([&bytes]<typename T>(std::vector<T> const& indices) {
@@ -208,7 +224,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   }, meshData.indices);
   SerializeToBinary(std::ssize(meshData.material_slots), bytes);
   SerializeToBinary(std::size(meshData.sub_meshes), bytes);
-  SerializeToBinary(static_cast<std::int32_t>(std::holds_alternative<std::vector<std::uint32_t>>(meshData.indices)), bytes);
+  SerializeToBinary(static_cast<std::int32_t>(std::holds_alternative<std::vector<std::uint32_t>>(meshData.indices)),
+    bytes);
 
   auto const posBytes{as_bytes(std::span{meshData.positions})};
   auto const normBytes{as_bytes(std::span{meshData.normals})};
@@ -220,7 +237,9 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     }, meshData.indices)
   };
 
-  bytes.reserve(std::size(bytes) + std::size(posBytes) + std::size(normBytes) + std::size(uvBytes) + std::size(tanBytes) + std::size(idxBytes));
+  bytes.reserve(
+    std::size(bytes) + std::size(posBytes) + std::size(normBytes) + std::size(uvBytes) + std::size(tanBytes) +
+    std::size(idxBytes));
 
   std::ranges::copy(posBytes, std::back_inserter(bytes));
   std::ranges::copy(normBytes, std::back_inserter(bytes));
