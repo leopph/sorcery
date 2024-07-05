@@ -458,11 +458,21 @@ struct Quaternion {
 };
 
 
+[[nodiscard]] constexpr auto operator+(Quaternion const& left, Quaternion const& right) -> Quaternion;
+
+constexpr auto operator+=(Quaternion& left, Quaternion const& right) -> Quaternion&;
+
 [[nodiscard]] constexpr auto operator*(Quaternion const& left, Quaternion const& right) noexcept -> Quaternion;
+[[nodiscard]] constexpr auto operator*(Quaternion const& left, float right) -> Quaternion;
+[[nodiscard]] constexpr auto operator*(float left, Quaternion const& right) -> Quaternion;
 
 constexpr auto operator*=(Quaternion& left, Quaternion const& right) noexcept -> Quaternion&;
+constexpr auto operator*=(Quaternion& left, float right) -> Quaternion&;
 
 inline auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream&;
+
+// Assumes unit quaternions
+[[nodiscard]] inline auto Slerp(Quaternion const& from, Quaternion const& to, float amount) -> Quaternion;
 
 /* ############################################################################################
  * ######## IMPLEMENTATION PART ###############################################################
@@ -1981,6 +1991,16 @@ constexpr auto Quaternion::Rotate(Vector<T, 3> const& vec) const noexcept -> Vec
 }
 
 
+constexpr auto operator+(Quaternion const& left, Quaternion const& right) -> Quaternion {
+  return Quaternion{left.w + right.w, left.x + right.x, left.y + right.y, left.z + right.z};
+}
+
+
+constexpr auto operator+=(Quaternion& left, Quaternion const& right) -> Quaternion& {
+  return left = left + right;
+}
+
+
 constexpr auto operator*(Quaternion const& left, Quaternion const& right) noexcept -> Quaternion {
   return Quaternion{
     left.w * right.w - left.x * right.x - left.y * right.y - left.z * right.z,
@@ -1991,12 +2011,34 @@ constexpr auto operator*(Quaternion const& left, Quaternion const& right) noexce
 }
 
 
+constexpr auto operator*(Quaternion const& left, float const right) -> Quaternion {
+  return Quaternion{left.w * right, left.x * right, left.y * right, left.z * right};
+}
+
+
+constexpr auto operator*(float const left, Quaternion const& right) -> Quaternion {
+  return right * left;
+}
+
+
 constexpr auto operator*=(Quaternion& left, Quaternion const& right) noexcept -> Quaternion& {
+  return left = left * right;
+}
+
+
+constexpr auto operator*=(Quaternion& left, float const right) -> Quaternion& {
   return left = left * right;
 }
 
 
 inline auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream& {
   return os << "(" << q.w << ", " << q.x << ", " << q.y << ", " << q.z << ")";
+}
+
+
+inline auto Slerp(Quaternion const& from, Quaternion const& to, float const amount) -> Quaternion {
+  auto const angle{std::acos(from.w * to.w + from.x * to.x + from.y * to.y + from.z * to.z)};
+  auto const sin_angle{std::sin(angle)};
+  return std::sin(1 - amount) * angle / sin_angle * from + std::sin(amount) * angle / sin_angle * to;
 }
 }

@@ -57,7 +57,7 @@
     <ClCompile Include="src\scene_objects\CameraComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp">
+    <ClCompile Include="src\scene_objects\MeshComponentBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\scene_objects\LightComponents.cpp">
@@ -142,6 +142,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\app.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -312,6 +315,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\app.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene_objects\MeshComponentBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

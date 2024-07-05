@@ -137,9 +137,10 @@
     <ClCompile Include="src\Resources\Resource.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\scene_objects\SceneObject.cpp" />
+    <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\rendering\shadow_atlas.cpp" />
-    <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp" />
+    <ClCompile Include="src\scene_objects\MeshComponentBase.cpp" />
     <ClCompile Include="src\Guid.cpp" />
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\scene_objects\LightComponents.cpp" />
@@ -177,6 +178,7 @@
     <ClInclude Include="src\GridLike.hpp" />
     <ClInclude Include="src\rendering\punctual_shadow_atlas.hpp" />
     <ClInclude Include="src\rendering\render_target.hpp" />
+    <ClInclude Include="src\scene_objects\MeshComponentBase.hpp" />
     <ClInclude Include="src\scene_objects\SceneObject.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
     <ClCompile Include="src\Resources\Texture2D.cpp" />
