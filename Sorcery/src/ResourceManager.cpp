@@ -1,4 +1,13 @@
 #include "ResourceManager.hpp"
+
+#include <cassert>
+#include <iostream>
+#include <ranges>
+#include <utility>
+
+#include <DirectXTex.h>
+#include <wrl/client.h>
+
 #include "app.hpp"
 #include "ExternalResource.hpp"
 #include "FileIo.hpp"
@@ -7,14 +16,6 @@
 #include "Reflection.hpp"
 #include "rendering/render_manager.hpp"
 #include "Resources/Scene.hpp"
-
-#include <DirectXTex.h>
-#include <wrl/client.h>
-
-#include <cassert>
-#include <iostream>
-#include <ranges>
-#include <utility>
 
 using Microsoft::WRL::ComPtr;
 
@@ -208,6 +209,27 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
   }
 
   curBytes = curBytes.subspan(sizeof submeshCount);
+  std::uint64_t anim_count;
+
+  if (!DeserializeFromBinary(curBytes, anim_count)) {
+    return nullptr;
+  }
+
+  curBytes = curBytes.subspan(sizeof anim_count);
+  std::uint64_t skeleton_size;
+
+  if (!DeserializeFromBinary(curBytes, skeleton_size)) {
+    return nullptr;
+  }
+
+  curBytes = curBytes.subspan(sizeof skeleton_size);
+  std::uint64_t bone_count;
+
+  if (!DeserializeFromBinary(curBytes, bone_count)) {
+    return nullptr;
+  }
+
+  curBytes = curBytes.subspan(sizeof bone_count);
   std::int32_t idx32;
 
   if (!DeserializeFromBinary(curBytes, idx32)) {
@@ -243,6 +265,14 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
     std::memcpy(indices.data(), curBytes.data(), idxCount * sizeof(T));
     curBytes = curBytes.subspan(idxCount * sizeof(T));
   }, meshData.indices);
+
+  meshData.bone_weights.resize(vertexCount);
+  std::memcpy(meshData.bone_weights.data(), curBytes.data(), vertexCount * sizeof(Vector4));
+  curBytes = curBytes.subspan(vertexCount * sizeof(Vector4));
+
+  meshData.bone_indices.resize(vertexCount);
+  std::memcpy(meshData.bone_indices.data(), curBytes.data(), vertexCount * sizeof(Vector4));
+  curBytes = curBytes.subspan(vertexCount * sizeof(Vector4));
 
   meshData.material_slots.resize(mtlCount);
 
@@ -281,6 +311,118 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 
     curBytes = curBytes.subspan(sizeof(int));
   }
+
+  meshData.animations.resize(anim_count);
+
+  for (auto i{0ull}; i < anim_count; i++) {
+    if (!DeserializeFromBinary(curBytes, meshData.animations[i].name)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(meshData.animations[i].name.size() + 8);
+
+    if (!DeserializeFromBinary(curBytes, meshData.animations[i].duration)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(sizeof(float));
+
+    if (!DeserializeFromBinary(curBytes, meshData.animations[i].ticks_per_second)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(sizeof(float));
+    std::uint64_t node_anim_count;
+
+    if (!DeserializeFromBinary(curBytes, node_anim_count)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(sizeof node_anim_count);
+    meshData.animations[i].node_anims.resize(node_anim_count);
+
+    for (auto j{0ull}; j < node_anim_count; j++) {
+      if (!DeserializeFromBinary(curBytes, meshData.animations[i].node_anims[j].node_idx)) {
+        return nullptr;
+      }
+
+      curBytes = curBytes.subspan(sizeof(std::uint32_t));
+      std::uint64_t pos_key_count;
+
+      if (!DeserializeFromBinary(curBytes, pos_key_count)) {
+        return nullptr;
+      }
+
+      curBytes = curBytes.subspan(sizeof pos_key_count);
+      std::uint64_t rot_key_count;
+
+      if (!DeserializeFromBinary(curBytes, rot_key_count)) {
+        return nullptr;
+      }
+
+      curBytes = curBytes.subspan(sizeof rot_key_count);
+      std::uint64_t scale_key_count;
+
+      if (!DeserializeFromBinary(curBytes, scale_key_count)) {
+        return nullptr;
+      }
+
+      curBytes = curBytes.subspan(sizeof scale_key_count);
+
+      meshData.animations[i].node_anims[j].position_keys.resize(pos_key_count);
+      std::memcpy(meshData.animations[i].node_anims[j].position_keys.data(), curBytes.data(),
+        pos_key_count * sizeof(PositionKey));
+      curBytes = curBytes.subspan(pos_key_count * sizeof(PositionKey));
+
+
+      meshData.animations[i].node_anims[j].rotation_keys.resize(rot_key_count);
+      std::memcpy(meshData.animations[i].node_anims[j].rotation_keys.data(), curBytes.data(),
+        rot_key_count * sizeof(RotationKey));
+      curBytes = curBytes.subspan(rot_key_count * sizeof(RotationKey));
+
+      meshData.animations[i].node_anims[j].scaling_keys.resize(scale_key_count);
+      std::memcpy(meshData.animations[i].node_anims[j].scaling_keys.data(), curBytes.data(),
+        scale_key_count * sizeof(ScalingKey));
+      curBytes = curBytes.subspan(scale_key_count * sizeof(ScalingKey));
+    }
+  }
+
+  meshData.skeleton.resize(skeleton_size);
+
+  for (auto i{0ull}; i < skeleton_size; i++) {
+    if (!DeserializeFromBinary(curBytes, meshData.skeleton[i].name)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(meshData.skeleton[i].name.size() + 8);
+    bool has_parent;
+
+    if (!DeserializeFromBinary(curBytes, has_parent)) {
+      return nullptr;
+    }
+
+    curBytes = curBytes.subspan(sizeof has_parent);
+
+    if (has_parent) {
+      std::uint32_t parent_idx;
+
+      if (!DeserializeFromBinary(curBytes, parent_idx)) {
+        return nullptr;
+      }
+
+      meshData.skeleton[i].parent_idx = parent_idx;
+      curBytes = curBytes.subspan(sizeof std::uint32_t);
+    }
+
+    std::memcpy(meshData.skeleton[i].cumulative_transform.GetData(), curBytes.data(), sizeof(Matrix4));
+    curBytes = curBytes.subspan(sizeof Matrix4);
+  }
+
+  meshData.bones.resize(bone_count);
+  std::memcpy(meshData.bones.data(), curBytes.data(), bone_count * sizeof(Bone));
+  curBytes = curBytes.subspan(bone_count * sizeof(Bone));
+
+  assert(curBytes.empty());
 
   return Create<Mesh>(std::move(meshData));
 }
