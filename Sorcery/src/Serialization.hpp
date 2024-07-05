@@ -74,7 +74,7 @@ LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::varia
                                                = {}) noexcept -> void;
 
 template<typename T> requires std::is_integral_v<T> || (
-                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559()) || std::is_enum_v<T>
+                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559) || std::is_enum_v<T>
 auto SerializeToBinary(T val, std::vector<std::byte>& bytes) noexcept -> void;
 LEOPPHAPI auto SerializeToBinary(std::string_view sv, std::vector<std::byte>& bytes) noexcept -> void;
 
@@ -181,7 +181,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj,
 
 
 template<typename T> requires std::is_integral_v<T> || (
-                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559()) || std::is_enum_v<T>
+                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559) || std::is_enum_v<T>
 auto SerializeToBinary(T const val, std::vector<std::byte>& bytes) noexcept -> void {
   std::ranges::copy_n(reinterpret_cast<std::byte const*>(&val), sizeof(val), std::back_inserter(bytes));
 }
