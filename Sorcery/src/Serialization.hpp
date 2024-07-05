@@ -79,7 +79,7 @@ auto SerializeToBinary(T val, std::vector<std::byte>& bytes) noexcept -> void;
 LEOPPHAPI auto SerializeToBinary(std::string_view sv, std::vector<std::byte>& bytes) noexcept -> void;
 
 template<typename T> requires std::is_integral_v<T> || (
-                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559()) || std::is_enum_v<T>
+                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559) || std::is_enum_v<T>
 [[nodiscard]] auto DeserializeFromBinary(std::span<std::byte const> bytes, T& val) noexcept -> bool;
 [[nodiscard]] LEOPPHAPI auto DeserializeFromBinary(std::span<std::byte const> bytes, std::string& str) noexcept -> bool;
 }
@@ -188,7 +188,7 @@ auto SerializeToBinary(T const val, std::vector<std::byte>& bytes) noexcept -> v
 
 
 template<typename T> requires std::is_integral_v<T> || (
-                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559()) || std::is_enum_v<T>
+                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559) || std::is_enum_v<T>
 auto DeserializeFromBinary(std::span<std::byte const> bytes, T& val) noexcept -> bool {
   if (sizeof(T) > std::size(bytes)) {
     return false;
