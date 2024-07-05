@@ -1,19 +1,61 @@
 #pragma once
 
-#include "Resource.hpp"
-#include "../Math.hpp"
-#include "../Bounds.hpp"
-#include "../rendering/graphics.hpp"
-
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <variant>
 #include <vector>
 
+#include "Resource.hpp"
+#include "../Bounds.hpp"
+#include "../Math.hpp"
+#include "../rendering/graphics.hpp"
+
 
 namespace sorcery {
+struct SkeletonNode {
+  std::string name;
+  Matrix4 cumulative_transform;
+  std::optional<std::uint32_t> parent_idx;
+};
+
+
+struct Bone {
+  Matrix4 offset_mtx;
+  std::uint32_t skeleton_node_idx;
+};
+
+
+template<typename T>
+struct AnimationKey {
+  float timestamp;
+  T value;
+};
+
+
+using PositionKey = AnimationKey<Vector3>;
+using RotationKey = AnimationKey<Quaternion>;
+using ScalingKey = AnimationKey<Vector3>;
+
+
+struct NodeAnimation {
+  std::vector<PositionKey> position_keys;
+  std::vector<RotationKey> rotation_keys;
+  std::vector<ScalingKey> scaling_keys;
+  std::uint32_t node_idx;
+};
+
+
+struct Animation {
+  std::string name;
+  float duration;
+  float ticks_per_second;
+  std::vector<NodeAnimation> node_anims;
+};
+
+
 class Mesh final : public Resource {
   RTTR_ENABLE(Resource)
   struct GeometryData {
@@ -46,8 +88,13 @@ public:
     std::vector<Vector2> uvs;
     std::vector<Vector3> tangents;
     std::variant<std::vector<std::uint16_t>, std::vector<std::uint32_t>> indices;
+    std::vector<Vector4> bone_weights;
+    std::vector<Vector<std::uint32_t, 4>> bone_indices;
     std::vector<MaterialSlotInfo> material_slots;
     std::vector<SubMeshInfo> sub_meshes;
+    std::vector<Animation> animations;
+    std::vector<SkeletonNode> skeleton;
+    std::vector<Bone> bones;
   };
 
 private:
