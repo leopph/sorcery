@@ -137,9 +137,9 @@ auto EditorApp::Update() -> void {
       if (GetKeyDown(Key::F5)) {
         game_is_running_ = true;
         GetWindow().SetEventHandler(nullptr);
-        timing::SetTargetFrameRate(-1);
         GetScene().Save();
         targetFrameRate = timing::GetTargetFrameRate();
+        timing::SetTargetFrameRate(-1);
       }
     }
 
