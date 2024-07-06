@@ -143,7 +143,7 @@ auto CameraComponent::OnAfterEnteringScene(Scene const& scene) -> void {
 
 
 auto CameraComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  App::Instance().GetSceneRenderer().Register(*this);
+  App::Instance().GetSceneRenderer().Unregister(*this);
   Component::OnBeforeExitingScene(scene);
 }
 
