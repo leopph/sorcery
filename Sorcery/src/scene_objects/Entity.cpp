@@ -85,6 +85,10 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
 
   if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
     for (auto const& component_class : rttr::type::get<Component>().get_derived_classes()) {
+      if (component_class.get_constructors().empty()) {
+        continue;
+      }
+
       if (ImGui::MenuItem(component_class.get_name().data())) {
         AddComponent(static_unique_ptr_cast<Component>(Create(component_class)));
         ImGui::CloseCurrentPopup();
