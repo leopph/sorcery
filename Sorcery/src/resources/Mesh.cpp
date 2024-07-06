@@ -24,7 +24,7 @@ auto Mesh::UploadToGpu() noexcept -> void {
   });
 
   pos_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    static_cast<UINT>(positions4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, false
+    static_cast<UINT>(positions4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, true
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(pos_buf_);
 
@@ -36,7 +36,7 @@ auto Mesh::UploadToGpu() noexcept -> void {
   });
 
   norm_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    static_cast<UINT>(normals4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, false
+    static_cast<UINT>(normals4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, true
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(norm_buf_);
 
@@ -60,6 +60,17 @@ auto Mesh::UploadToGpu() noexcept -> void {
   assert(uv_buf_);
 
   App::Instance().GetRenderManager().UpdateBuffer(*uv_buf_, 0, as_bytes(std::span{m_cpu_data_->uvs}));
+
+  bone_weight_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+    static_cast<UINT>(m_cpu_data_->bone_weights.size() * sizeof(Vector4)), sizeof(Vector4), false, true, true
+  }, D3D12_HEAP_TYPE_DEFAULT);
+  assert(bone_weight_buf_);
+
+  bone_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+    static_cast<UINT>(m_cpu_data_->bone_indices.size() * sizeof(Vector<std::uint32_t, 4>)),
+    sizeof(Vector<std::uint32_t, 4>), false, true, true
+  }, D3D12_HEAP_TYPE_DEFAULT);
+  assert(bone_idx_buf_);
 
   struct IdxBufInfo {
     UINT size;
@@ -100,6 +111,8 @@ auto Mesh::CalculateBounds() noexcept -> void {
 
   m_bounds_.min = Vector3{floatMax};
   m_bounds_.max = Vector3{floatMin};
+
+  // TODO calculate bounds based on bones if they exist
 
   for (auto& submeshInfo : m_submeshes_) {
     submeshInfo.bounds.min = Vector3{floatMax};
@@ -153,6 +166,8 @@ Mesh::~Mesh() {
   App::Instance().GetRenderManager().KeepAliveWhileInUse(norm_buf_);
   App::Instance().GetRenderManager().KeepAliveWhileInUse(tan_buf_);
   App::Instance().GetRenderManager().KeepAliveWhileInUse(uv_buf_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(bone_weight_buf_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(bone_idx_buf_);
   App::Instance().GetRenderManager().KeepAliveWhileInUse(idx_buf_);
 }
 
@@ -222,6 +237,40 @@ auto Mesh::SetTangents(std::span<Vector3 const> tangents) noexcept -> void {
 auto Mesh::SetTangents(std::vector<Vector3>&& tangents) noexcept -> void {
   EnsureCpuMemory();
   m_cpu_data_->tangents = std::move(tangents);
+}
+
+
+auto Mesh::GetBoneWeights() const noexcept -> std::span<Vector4 const> {
+  return m_cpu_data_ ? m_cpu_data_->bone_weights : std::span<Vector4 const>{};
+}
+
+
+auto Mesh::SetBoneWeights(std::span<Vector4 const> bone_weights) noexcept -> void {
+  EnsureCpuMemory();
+  m_cpu_data_->bone_weights.assign(std::begin(bone_weights), std::end(bone_weights));
+}
+
+
+auto Mesh::SetBoneWeights(std::vector<Vector4>&& bone_weights) noexcept -> void {
+  EnsureCpuMemory();
+  m_cpu_data_->bone_weights = std::move(bone_weights);
+}
+
+
+auto Mesh::GetBoneIndices() const noexcept -> std::span<Vector<std::uint32_t, 4> const> {
+  return m_cpu_data_ ? m_cpu_data_->bone_indices : std::span<Vector<std::uint32_t, 4> const>{};
+}
+
+
+auto Mesh::SetBoneIndices(std::span<Vector<std::uint32_t, 4> const> bone_indices) noexcept -> void {
+  EnsureCpuMemory();
+  m_cpu_data_->bone_indices.assign(std::begin(bone_indices), std::end(bone_indices));
+}
+
+
+auto Mesh::SetBoneIndices(std::vector<Vector<std::uint32_t, 4>>&& bone_indices) noexcept -> void {
+  EnsureCpuMemory();
+  m_cpu_data_->bone_indices = std::move(bone_indices);
 }
 
 
@@ -308,6 +357,51 @@ auto Mesh::SetSubmeshes(std::vector<SubMeshInfo>&& submeshes) noexcept -> void {
 }
 
 
+auto Mesh::GetAnimations() const noexcept -> std::span<Animation const> {
+  return animations_;
+}
+
+
+auto Mesh::SetAnimations(std::span<Animation const> const animations) noexcept -> void {
+  animations_.assign(std::begin(animations), std::end(animations));
+}
+
+
+auto Mesh::SetAnimations(std::vector<Animation>&& animations) noexcept -> void {
+  animations_ = std::move(animations);
+}
+
+
+auto Mesh::GetSkeleton() const noexcept -> std::span<SkeletonNode const> {
+  return skeleton_;
+}
+
+
+auto Mesh::SetSkeleton(std::span<SkeletonNode const> const skeleton) noexcept -> void {
+  skeleton_.assign(std::begin(skeleton), std::end(skeleton));
+}
+
+
+auto Mesh::SetSkeleton(std::vector<SkeletonNode>&& skeleton) noexcept -> void {
+  skeleton_ = std::move(skeleton);
+}
+
+
+auto Mesh::GetBones() const noexcept -> std::span<Bone const> {
+  return bones_;
+}
+
+
+auto Mesh::SetBones(std::span<Bone const> bones) noexcept -> void {
+  bones_.assign(std::begin(bones), std::end(bones));
+}
+
+
+auto Mesh::SetBones(std::vector<Bone>&& bones) noexcept -> void {
+  bones_ = std::move(bones);
+}
+
+
 auto Mesh::GetBounds() const noexcept -> AABB const& {
   return m_bounds_;
 }
@@ -319,11 +413,16 @@ auto Mesh::SetData(Data const& data) noexcept -> void {
   SetNormals(data.normals);
   SetUVs(data.uvs);
   SetTangents(data.tangents);
+  SetBoneWeights(data.bone_weights);
+  SetBoneIndices(data.bone_indices);
   std::visit([this]<typename T>(std::vector<T> const& indices) {
     SetIndices(indices);
   }, data.indices);
   SetMaterialSlots(data.material_slots);
   SetSubMeshes(data.sub_meshes);
+  SetAnimations(data.animations);
+  SetSkeleton(data.skeleton);
+  SetBones(data.bones);
 }
 
 
@@ -333,11 +432,16 @@ auto Mesh::SetData(Data&& data) noexcept -> void {
   SetNormals(std::move(data.normals));
   SetUVs(std::move(data.uvs));
   SetTangents(std::move(data.tangents));
+  SetBoneWeights(std::move(data.bone_weights));
+  SetBoneIndices(std::move(data.bone_indices));
   std::visit([this]<typename T>(std::vector<T>& indices) {
     SetIndices(std::move(indices));
   }, data.indices);
   SetMaterialSlots(std::move(data.material_slots));
   SetSubMeshes(std::move(data.sub_meshes));
+  SetAnimations(std::move(data.animations));
+  SetSkeleton(std::move(data.skeleton));
+  SetBones(std::move(data.bones));
 }
 
 
@@ -345,6 +449,8 @@ auto Mesh::ValidateAndUpdate(bool const keep_data_in_cpu_memory) noexcept -> boo
   if (!m_cpu_data_) {
     return true;
   }
+
+  // TODO validate bone weights and indices
 
   if (m_cpu_data_->positions.size() != m_cpu_data_->normals.size() || m_cpu_data_->normals.size() != m_cpu_data_->uvs.
       size() || m_cpu_data_->uvs.size() != m_cpu_data_->tangents.size() || m_cpu_data_->positions.empty() || (
@@ -423,6 +529,16 @@ auto Mesh::GetUvBuffer() const noexcept -> graphics::SharedDeviceChildHandle<gra
 
 auto Mesh::GetTangentBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
   return tan_buf_;
+}
+
+
+auto Mesh::GetBoneWeightBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return bone_weight_buf_;
+}
+
+
+auto Mesh::GetBoneIndexBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return bone_idx_buf_;
 }
 
 

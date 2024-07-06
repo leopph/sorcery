@@ -63,6 +63,8 @@ class Mesh final : public Resource {
     std::vector<Vector3> normals;
     std::vector<Vector2> uvs;
     std::vector<Vector3> tangents;
+    std::vector<Vector4> bone_weights;
+    std::vector<Vector<std::uint32_t, 4>> bone_indices;
     std::vector<std::uint16_t> indices16;
     std::vector<std::uint32_t> indices32;
   };
@@ -101,11 +103,16 @@ private:
   std::unique_ptr<GeometryData> m_cpu_data_{nullptr};
   std::vector<SubMeshInfo> m_submeshes_;
   std::vector<MaterialSlotInfo> m_mtl_slots_;
+  std::vector<Animation> animations_;
+  std::vector<SkeletonNode> skeleton_;
+  std::vector<Bone> bones_;
   AABB m_bounds_{};
   graphics::SharedDeviceChildHandle<graphics::Buffer> pos_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> norm_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> tan_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> uv_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> bone_weight_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> bone_idx_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> idx_buf_;
   int m_vertex_count_{0};
   int m_index_count_{0};
@@ -146,6 +153,14 @@ public:
   LEOPPHAPI auto SetTangents(std::span<Vector3 const> tangents) noexcept -> void;
   LEOPPHAPI auto SetTangents(std::vector<Vector3>&& tangents) noexcept -> void;
 
+  [[nodiscard]] LEOPPHAPI auto GetBoneWeights() const noexcept -> std::span<Vector4 const>;
+  LEOPPHAPI auto SetBoneWeights(std::span<Vector4 const> bone_weights) noexcept -> void;
+  LEOPPHAPI auto SetBoneWeights(std::vector<Vector4>&& bone_weights) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetBoneIndices() const noexcept -> std::span<Vector<std::uint32_t, 4> const>;
+  LEOPPHAPI auto SetBoneIndices(std::span<Vector<std::uint32_t, 4> const> bone_indices) noexcept -> void;
+  LEOPPHAPI auto SetBoneIndices(std::vector<Vector<std::uint32_t, 4>>&& bone_indices) noexcept -> void;
+
   [[nodiscard]] LEOPPHAPI auto GetIndices16() const noexcept -> std::span<std::uint16_t const>;
   [[nodiscard]] LEOPPHAPI auto GetIndices32() const noexcept -> std::span<std::uint32_t const>;
   LEOPPHAPI auto SetIndices(std::span<std::uint16_t const> indices) noexcept -> void;
@@ -159,6 +174,18 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetSubMeshes() const noexcept -> std::span<SubMeshInfo const>;
   LEOPPHAPI auto SetSubMeshes(std::span<SubMeshInfo const> submeshes) noexcept -> void;
   LEOPPHAPI auto SetSubmeshes(std::vector<SubMeshInfo>&& submeshes) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetAnimations() const noexcept -> std::span<Animation const>;
+  LEOPPHAPI auto SetAnimations(std::span<Animation const> animations) noexcept -> void;
+  LEOPPHAPI auto SetAnimations(std::vector<Animation>&& animations) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetSkeleton() const noexcept -> std::span<SkeletonNode const>;
+  LEOPPHAPI auto SetSkeleton(std::span<SkeletonNode const> skeleton) noexcept -> void;
+  LEOPPHAPI auto SetSkeleton(std::vector<SkeletonNode>&& skeleton) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetBones() const noexcept -> std::span<Bone const>;
+  LEOPPHAPI auto SetBones(std::span<Bone const> bones) noexcept -> void;
+  LEOPPHAPI auto SetBones(std::vector<Bone>&& bones) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
 
@@ -177,6 +204,10 @@ public:
     &;
   [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer>
     const&;
+  [[nodiscard]] LEOPPHAPI auto GetBoneWeightBuffer() const noexcept -> graphics::SharedDeviceChildHandle<
+    graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetBoneIndexBuffer() const noexcept -> graphics::SharedDeviceChildHandle<
+    graphics::Buffer> const&;
   [[nodiscard]] LEOPPHAPI auto GetIndexBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer>
     const&;
 
