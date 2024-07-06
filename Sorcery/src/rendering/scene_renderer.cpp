@@ -1276,6 +1276,16 @@ auto SceneRenderer::Render() -> void {
   for (auto& [mesh_data_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
          bone_weight_buf_local_idx, bone_index_buf_local_idx, bone_matrix_buf_local_idx, animation_time, animation,
          skeleton, bones] : frame_packet.skinned_mesh_data) {
+    // Skip skinning when we are sitting at 0 time.
+    // This happens for example in the editor scene view.
+    if (animation_time == 0) {
+      prepare_cmd.CopyBuffer(*frame_packet.buffers[frame_packet.mesh_data[mesh_data_local_idx].pos_buf_local_idx],
+        *frame_packet.buffers[original_vertex_buf_local_idx]);
+      prepare_cmd.CopyBuffer(*frame_packet.buffers[frame_packet.mesh_data[mesh_data_local_idx].norm_buf_local_idx],
+        *frame_packet.buffers[original_normal_buf_local_idx]);
+      continue;
+    }
+
     // Compute local node transforms
 
     for (auto const& [position_keys, rotation_keys, scaling_keys, node_idx] : animation.node_anims) {
