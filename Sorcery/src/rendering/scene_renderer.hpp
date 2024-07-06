@@ -159,6 +159,7 @@ private:
     unsigned tan_buf_local_idx;
     unsigned uv_buf_local_idx;
     unsigned idx_buf_local_idx;
+    unsigned vtx_count;
     AABB bounds;
     DXGI_FORMAT idx_format;
   };
@@ -199,6 +200,25 @@ private:
   };
 
 
+  struct SkinnedMeshData {
+    unsigned mesh_data_local_idx;
+    // The referenced mesh data contains an index to skinned vertex buffer
+    unsigned original_vertex_buf_local_idx;
+    // The referenced mesh data contains an index to skinned normal buffer
+    unsigned original_normal_buf_local_idx;
+    unsigned bone_weight_buf_local_idx;
+    unsigned bone_index_buf_local_idx;
+    unsigned bone_matrix_buf_local_idx;
+
+    float animation_time;
+
+    // TODO avoid copying and allocating memory here
+    Animation animation;
+    std::vector<SkeletonNode> skeleton;
+    std::vector<Bone> bones;
+  };
+
+
   struct FramePacket {
     std::vector<graphics::SharedDeviceChildHandle<graphics::Buffer>> buffers;
     std::vector<graphics::SharedDeviceChildHandle<graphics::Texture>> textures;
@@ -208,6 +228,7 @@ private:
     std::vector<InstanceData> instance_data;
     std::vector<CameraData> cam_data;
     std::vector<std::shared_ptr<RenderTarget>> render_targets;
+    std::vector<SkinnedMeshData> skinned_mesh_data;
 
     std::vector<Vector4> gizmo_colors;
     std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data;
@@ -316,6 +337,7 @@ private:
   graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso_;
 
   graphics::UniqueSamplerHandle samp_cmp_pcf_ge_;
   graphics::UniqueSamplerHandle samp_cmp_pcf_le_;
