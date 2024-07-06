@@ -61,16 +61,29 @@ auto Mesh::UploadToGpu() noexcept -> void {
 
   App::Instance().GetRenderManager().UpdateBuffer(*uv_buf_, 0, as_bytes(std::span{m_cpu_data_->uvs}));
 
-  bone_weight_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    static_cast<UINT>(m_cpu_data_->bone_weights.size() * sizeof(Vector4)), sizeof(Vector4), false, true, true
-  }, D3D12_HEAP_TYPE_DEFAULT);
-  assert(bone_weight_buf_);
+  if (!m_cpu_data_->bone_weights.empty()) {
+    bone_weight_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      static_cast<UINT>(m_cpu_data_->bone_weights.size() * sizeof(Vector4)), sizeof(Vector4), false, true, true
+    }, D3D12_HEAP_TYPE_DEFAULT);
+    assert(bone_weight_buf_);
 
-  bone_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    static_cast<UINT>(m_cpu_data_->bone_indices.size() * sizeof(Vector<std::uint32_t, 4>)),
-    sizeof(Vector<std::uint32_t, 4>), false, true, true
-  }, D3D12_HEAP_TYPE_DEFAULT);
-  assert(bone_idx_buf_);
+    App::Instance().GetRenderManager().UpdateBuffer(*bone_weight_buf_, 0,
+      as_bytes(std::span{m_cpu_data_->bone_weights}));
+  } else {
+    bone_weight_buf_ = nullptr;
+  }
+
+  if (!m_cpu_data_->bone_indices.empty()) {
+    bone_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      static_cast<UINT>(m_cpu_data_->bone_indices.size() * sizeof(Vector<std::uint32_t, 4>)),
+      sizeof(Vector<std::uint32_t, 4>), false, true, true
+    }, D3D12_HEAP_TYPE_DEFAULT);
+    assert(bone_idx_buf_);
+
+    App::Instance().GetRenderManager().UpdateBuffer(*bone_idx_buf_, 0, as_bytes(std::span{m_cpu_data_->bone_indices}));
+  } else {
+    bone_idx_buf_ = nullptr;
+  }
 
   struct IdxBufInfo {
     UINT size;
