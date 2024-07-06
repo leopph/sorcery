@@ -24,5 +24,13 @@ public:
   [[nodiscard]] LEOPPHAPI virtual auto Clone() -> std::unique_ptr<SceneObject> = 0;
   LEOPPHAPI virtual auto OnAfterEnteringScene(Scene const& scene) -> void {}
   LEOPPHAPI virtual auto OnBeforeExitingScene(Scene const& scene) -> void {}
+
+  [[nodiscard]] LEOPPHAPI auto IsUpdatable() const -> bool;
+  LEOPPHAPI auto SetUpdatable(bool updatable) -> void;
+
+  LEOPPHAPI virtual auto Update() -> void {}
+
+private:
+  bool updatable_{false};
 };
 }

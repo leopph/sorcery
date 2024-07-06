@@ -125,7 +125,6 @@
     <ClCompile Include="src\rendering\directional_shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\scene_renderer.cpp" />
     <ClCompile Include="src\rendering\render_manager.cpp" />
-    <ClCompile Include="src\scene_objects\Behavior.cpp" />
     <ClCompile Include="src\scene_objects\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\scene_objects\Component.cpp" />
@@ -179,7 +178,6 @@
     <ClInclude Include="src\GridLike.hpp" />
     <ClInclude Include="src\rendering\punctual_shadow_atlas.hpp" />
     <ClInclude Include="src\rendering\render_target.hpp" />
-    <ClInclude Include="src\scene_objects\Behavior.hpp" />
     <ClInclude Include="src\scene_objects\MeshComponentBase.hpp" />
     <ClInclude Include="src\scene_objects\SceneObject.hpp" />
     <ClInclude Include="src\Serialization.hpp" />

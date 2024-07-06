@@ -7,7 +7,6 @@
 #include <implot.h>
 #include <nfd.h>
 
-#include "Behavior.hpp"
 #include "GUI.hpp"
 #include "LoadingScreen.hpp"
 #include "PerformanceCounterWindow.hpp"
@@ -120,8 +119,10 @@ auto EditorApp::Update() -> void {
     int static targetFrameRate{timing::GetTargetFrameRate()};
 
     if (game_is_running_) {
-      for (std::vector<Behavior*> behaviors; auto const behavior : Object::FindObjectsOfType(behaviors)) {
-        behavior->Update();
+      for (std::vector<SceneObject*> scene_objects; auto const so : Object::FindObjectsOfType(scene_objects)) {
+        if (so->IsUpdatable()) {
+          so->Update();
+        }
       }
 
       if (GetKeyDown(Key::Escape)) {
