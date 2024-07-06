@@ -17,7 +17,7 @@ void main(uint3 const id : SV_DispatchThreadID) {
   StructuredBuffer<float4> const weight_buf = ResourceDescriptorHeap[g_params.bone_weight_buf_idx];
   StructuredBuffer<uint4> const bone_idx_buf = ResourceDescriptorHeap[g_params.bone_idx_buf_idx];
   StructuredBuffer<float4x4> const bone_mtx_buf = ResourceDescriptorHeap[g_params.bone_buf_idx];
-  RWStructuredBuffer<float4> const skinned_vtx_buf = ResourceDescriptorHeap[g_params.vtx_buf_idx];
+  RWStructuredBuffer<float4> const skinned_vtx_buf = ResourceDescriptorHeap[g_params.skinned_vtx_buf_idx];
   RWStructuredBuffer<float4> const skinned_norm_buf = ResourceDescriptorHeap[g_params.skinned_norm_buf_idx];
 
   float4 const vtx = vtx_buf[vtx_idx];
