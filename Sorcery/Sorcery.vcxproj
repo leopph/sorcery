@@ -178,6 +178,7 @@
     <ClInclude Include="src\GridLike.hpp" />
     <ClInclude Include="src\rendering\punctual_shadow_atlas.hpp" />
     <ClInclude Include="src\rendering\render_target.hpp" />
+    <ClInclude Include="src\scene_objects\Behavior.hpp" />
     <ClInclude Include="src\scene_objects\MeshComponentBase.hpp" />
     <ClInclude Include="src\scene_objects\SceneObject.hpp" />
     <ClInclude Include="src\Serialization.hpp" />

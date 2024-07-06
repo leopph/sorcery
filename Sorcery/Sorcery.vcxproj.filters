@@ -320,6 +320,9 @@
     <ClInclude Include="src\scene_objects\MeshComponentBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\scene_objects\Behavior.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />

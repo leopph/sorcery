@@ -1,5 +1,13 @@
 #include "EditorApp.hpp"
 
+#include <utility>
+
+#include <ImGuizmo.h>
+#include <imgui_impl_win32.h>
+#include <implot.h>
+#include <nfd.h>
+
+#include "Behavior.hpp"
 #include "GUI.hpp"
 #include "LoadingScreen.hpp"
 #include "PerformanceCounterWindow.hpp"
@@ -8,13 +16,6 @@
 #include "StartupScreen.hpp"
 #include "Timing.hpp"
 #include "Window.hpp"
-
-#include <ImGuizmo.h>
-#include <imgui_impl_win32.h>
-#include <implot.h>
-#include <nfd.h>
-
-#include <utility>
 
 extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 
@@ -119,6 +120,10 @@ auto EditorApp::Update() -> void {
     int static targetFrameRate{timing::GetTargetFrameRate()};
 
     if (game_is_running_) {
+      for (std::vector<Behavior*> behaviors; auto const behavior : Object::FindObjectsOfType(behaviors)) {
+        behavior->Update();
+      }
+
       if (GetKeyDown(Key::Escape)) {
         game_is_running_ = false;
         GetWindow().SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
