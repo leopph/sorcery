@@ -82,6 +82,15 @@
       <AdditionalDependencies>
       </AdditionalDependencies>
     </Lib>
+    <FxCompile>
+      <VariableName>g_%(Filename)_bytes</VariableName>
+    </FxCompile>
+    <FxCompile>
+      <ObjectFileOutput />
+      <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <ShaderModel>6.6</ShaderModel>
+      <AllResourcesBound>true</AllResourcesBound>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -107,6 +116,15 @@
       <AdditionalDependencies>
       </AdditionalDependencies>
     </Lib>
+    <FxCompile>
+      <VariableName>g_%(Filename)_bytes</VariableName>
+    </FxCompile>
+    <FxCompile>
+      <ObjectFileOutput />
+      <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+      <ShaderModel>6.6</ShaderModel>
+      <AllResourcesBound>true</AllResourcesBound>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\vendor\d3d12_memory_allocator\D3D12MemAlloc.cpp">
@@ -498,6 +516,10 @@
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VsMain</EntryPointName>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.6</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.6</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="src\rendering\shaders\vtx_skinning_cs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

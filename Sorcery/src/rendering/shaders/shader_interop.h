@@ -88,6 +88,8 @@ typedef bool BOOL;
 #define DEPTH_RESOLVE_CS_THREADS_Y 16
 #define DEPTH_RESOLVE_CS_THREADS_Z 1
 
+#define SKINNING_CS_THREADS 64
+
 
 struct ShaderLight {
   row_major float4x4 shadowViewProjMatrices[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
@@ -265,6 +267,19 @@ struct SsaoDrawParams {
 struct SsaoBlurDrawParams {
   uint in_tex_idx;
   uint point_clamp_samp_idx;
+};
+
+
+struct VertexSkinningDrawParams {
+  uint vtx_buf_idx;
+  uint norm_buf_idx;
+  uint bone_weight_buf_idx;
+  uint bone_idx_buf_idx;
+
+  uint bone_buf_idx;
+  uint skinned_vtx_buf_idx;
+  uint skinned_norm_buf_idx;
+  uint vtx_count;
 };
 
 
