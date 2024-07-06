@@ -1301,31 +1301,46 @@ auto SceneRenderer::Render() -> void {
         }
       };
 
-      for (std::size_t i{0}; i < position_keys.size(); i++) {
-        if (auto const& [timestamp, value]{position_keys[i]}; timestamp > animation_time) {
-          auto const& [prev_timestamp, prev_value]{position_keys[i - 1]};
-          pos = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
-          break;
+      if (position_keys.size() == 1) {
+        pos = position_keys[0].value;
+      } else {
+        for (std::size_t i{0}; i < position_keys.size(); i++) {
+          if (auto const& [timestamp, value]{position_keys[i]}; timestamp > animation_time) {
+            auto const& [prev_timestamp, prev_value]{position_keys[i - 1]};
+            //TODO pos = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
+            pos = prev_value;
+            break;
+          }
         }
       }
 
-      for (std::size_t i{0}; i < rotation_keys.size(); i++) {
-        if (auto const& [timestamp, value]{rotation_keys[i]}; timestamp > animation_time) {
-          auto const& [prev_timestamp, prev_value]{rotation_keys[i - 1]};
-          rot = Slerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
-          break;
+      if (rotation_keys.size() == 1) {
+        rot = rotation_keys[0].value;
+      } else {
+        for (std::size_t i{0}; i < rotation_keys.size(); i++) {
+          if (auto const& [timestamp, value]{rotation_keys[i]}; timestamp > animation_time) {
+            auto const& [prev_timestamp, prev_value]{rotation_keys[i - 1]};
+            //TODO rot = Slerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
+            rot = prev_value;
+            break;
+          }
         }
       }
 
-      for (std::size_t i{0}; i < scaling_keys.size(); i++) {
-        if (auto const& [timestamp, value]{scaling_keys[i]}; timestamp > animation_time) {
-          auto const& [prev_timestamp, prev_value]{scaling_keys[i - 1]};
-          scale = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
-          break;
+      if (scaling_keys.size() == 1) {
+        scale = scaling_keys[0].value;
+      } else {
+        for (std::size_t i{0}; i < scaling_keys.size(); i++) {
+          if (auto const& [timestamp, value]{scaling_keys[i]}; timestamp > animation_time) {
+            auto const& [prev_timestamp, prev_value]{scaling_keys[i - 1]};
+            //TODOscale = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
+            scale = prev_value;
+            break;
+          }
         }
       }
 
-      node.cumulative_transform = Matrix4::Scale(scale) * static_cast<Matrix4>(rot) * Matrix4::Translate(pos);
+      node.transform = Matrix4::Scale(scale) * static_cast<Matrix4>(rot) * Matrix4::Translate(pos);
     }
 
     // Accumulate node transforms
