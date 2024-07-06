@@ -17,7 +17,7 @@
 namespace sorcery {
 struct SkeletonNode {
   std::string name;
-  Matrix4 cumulative_transform;
+  Matrix4 transform;
   std::optional<std::uint32_t> parent_idx;
 };
 

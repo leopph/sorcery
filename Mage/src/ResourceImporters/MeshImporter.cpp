@@ -264,14 +264,6 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     node_queue.pop();
   }
 
-  // Accumulate skeleton node transforms
-
-  std::ranges::for_each(skeleton_nodes, [&skeleton_nodes](SkeletonNode& node) {
-    if (node.parent_idx) {
-      node.cumulative_transform = node.cumulative_transform * skeleton_nodes[*node.parent_idx].cumulative_transform;
-    }
-  });
-
   // Create final bone data
 
   std::vector<Bone> bones;
@@ -501,7 +493,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Skeleton
 
-  for (auto const& [name, cumulative_transform, parent_idx] : skeleton_nodes) {
+  for (auto const& [name, transform, parent_idx] : skeleton_nodes) {
     SerializeToBinary(name, bytes);
     SerializeToBinary(parent_idx.has_value(), bytes);
 
@@ -509,7 +501,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
       SerializeToBinary(*parent_idx, bytes);
     }
 
-    std::ranges::copy(as_bytes(std::span{cumulative_transform.GetData(), 16}), std::back_inserter(bytes));
+    std::ranges::copy(as_bytes(std::span{transform.GetData(), 16}), std::back_inserter(bytes));
   }
 
   // Bones

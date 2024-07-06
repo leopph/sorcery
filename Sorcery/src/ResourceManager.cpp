@@ -414,7 +414,7 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
       curBytes = curBytes.subspan(sizeof std::uint32_t);
     }
 
-    std::memcpy(meshData.skeleton[i].cumulative_transform.GetData(), curBytes.data(), sizeof(Matrix4));
+    std::memcpy(meshData.skeleton[i].transform.GetData(), curBytes.data(), sizeof(Matrix4));
     curBytes = curBytes.subspan(sizeof Matrix4);
   }
 
