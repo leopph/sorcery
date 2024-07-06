@@ -1,5 +1,10 @@
 #include "scene_renderer.hpp"
 
+#include <algorithm>
+#include <cstring>
+#include <iterator>
+#include <random>
+
 #include "ShadowCascadeBoundary.hpp"
 #include "../app.hpp"
 #include "../MemoryAllocation.hpp"
@@ -45,11 +50,6 @@
 #include "shaders/generated/Release/ssao_main_ps.h"
 #include "shaders/generated/Release/ssao_vs.h"
 #endif
-
-#include <algorithm>
-#include <cstring>
-#include <iterator>
-#include <random>
 
 
 namespace sorcery::rendering {
@@ -1963,6 +1963,16 @@ auto SceneRenderer::Register(StaticMeshComponent const& static_mesh_component) n
 
 auto SceneRenderer::Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void {
   std::erase(static_mesh_components_, std::addressof(static_mesh_component));
+}
+
+
+auto SceneRenderer::Register(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void {
+  skinned_mesh_components_.emplace_back(std::addressof(skinned_mesh_component));
+}
+
+
+auto SceneRenderer::Unregister(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void {
+  std::erase(skinned_mesh_components_, std::addressof(skinned_mesh_component));
 }
 
 

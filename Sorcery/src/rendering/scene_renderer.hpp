@@ -1,5 +1,10 @@
 #pragma once
 
+#include <array>
+#include <cstdint>
+#include <memory>
+#include <vector>
+
 #include "Camera.hpp"
 #include "constant_buffer.hpp"
 #include "directional_shadow_map_array.hpp"
@@ -7,20 +12,16 @@
 #include "punctual_shadow_atlas.hpp"
 #include "render_manager.hpp"
 #include "render_target.hpp"
-#include "shaders/shader_interop.h"
-#include "shaders/shadow_filtering_modes.h"
 #include "structured_buffer.hpp"
 #include "../Color.hpp"
 #include "../Math.hpp"
-#include "../scene_objects/StaticMeshComponent.hpp"
-#include "../scene_objects/LightComponents.hpp"
 #include "../Util.hpp"
 #include "../Window.hpp"
-
-#include <array>
-#include <cstdint>
-#include <memory>
-#include <vector>
+#include "../scene_objects/LightComponents.hpp"
+#include "../scene_objects/SkinnedMeshComponent.hpp"
+#include "../scene_objects/StaticMeshComponent.hpp"
+#include "shaders/shader_interop.h"
+#include "shaders/shadow_filtering_modes.h"
 
 
 namespace sorcery::rendering {
@@ -119,6 +120,9 @@ public:
 
   LEOPPHAPI auto Register(StaticMeshComponent const& static_mesh_component) noexcept -> void;
   LEOPPHAPI auto Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void;
+
+  LEOPPHAPI auto Register(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void;
+  LEOPPHAPI auto Unregister(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void;
 
   LEOPPHAPI auto Register(LightComponent const& light_component) noexcept -> void;
   LEOPPHAPI auto Unregister(LightComponent const& light_component) noexcept -> void;
@@ -360,6 +364,7 @@ private:
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
   std::vector<StaticMeshComponent const*> static_mesh_components_;
+  std::vector<SkinnedMeshComponent const*> skinned_mesh_components_;
   std::vector<LightComponent const*> lights_;
   std::vector<Camera const*> cameras_;
 

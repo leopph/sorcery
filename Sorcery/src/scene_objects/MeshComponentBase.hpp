@@ -20,7 +20,7 @@ public:
   LEOPPHAPI ~MeshComponentBase() override = 0;
 
   [[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> Mesh*;
-  LEOPPHAPI auto SetMesh(Mesh* mesh) noexcept -> void;
+  LEOPPHAPI virtual auto SetMesh(Mesh* mesh) noexcept -> void;
 
   // The returned vector is the same length as the Mesh's submesh count.
   [[nodiscard]] LEOPPHAPI auto GetMaterials() const noexcept -> std::vector<Material*> const&;

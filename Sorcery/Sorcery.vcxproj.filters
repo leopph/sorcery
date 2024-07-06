@@ -147,7 +147,7 @@
     <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\Behavior.cpp">
+    <ClCompile Include="src\scene_objects\SkinnedMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -323,7 +323,7 @@
     <ClInclude Include="src\scene_objects\MeshComponentBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\Behavior.hpp">
+    <ClInclude Include="src\scene_objects\SkinnedMeshComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
