@@ -150,6 +150,9 @@
     <ClCompile Include="src\scene_objects\SkinnedMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\scene_objects\CameraControllerComponent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\scene_objects\Entity.hpp">
@@ -324,6 +327,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\scene_objects\SkinnedMeshComponent.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene_objects\CameraControllerComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
