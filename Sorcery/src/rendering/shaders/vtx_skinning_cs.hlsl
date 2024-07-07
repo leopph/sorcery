@@ -29,9 +29,11 @@ void main(uint3 const id : SV_DispatchThreadID) {
   float4 skinned_norm = float4(0, 0, 0, 0);
 
   for (uint i = 0; i < 4; i++) {
+    // We flip the multiplication order here because HLSL reads the matrices
+    // in the buffer as column major whereas in C++ they are row-major
     float4x4 const bone_mtx = bone_mtx_buf[indices[i]];
-    skinned_vtx += mul(vtx, bone_mtx) * weights[i];
-    skinned_norm += float4(mul(norm.xyz, (float3x3)bone_mtx) * weights[i], 0);
+    skinned_vtx += mul(bone_mtx, vtx) * weights[i];
+    skinned_norm += float4(mul((float3x3)bone_mtx, norm.xyz) * weights[i], 0);
   }
 
   skinned_vtx_buf[vtx_idx] = skinned_vtx;
