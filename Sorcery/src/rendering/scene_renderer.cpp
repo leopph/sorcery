@@ -1117,13 +1117,13 @@ auto SceneRenderer::ExtractCurrentState() -> void {
         return;
       }
 
+      extract_from_mesh_comp(comp);
+
       auto const anim{comp->GetCurrentAnimation()};
 
       if (!anim) {
         return;
       }
-
-      extract_from_mesh_comp(comp);
 
       packet.buffers.emplace_back(mesh->GetBoneWeightBuffer());
       auto const bone_weight_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
@@ -1356,7 +1356,7 @@ auto SceneRenderer::Render() -> void {
     auto const bone_buf{frame_packet.buffers[bone_matrix_buf_local_idx]};
     for (std::size_t i{0}; i < bones.size(); i++) {
       // TODO this is horrible, update all bones at once
-      auto const bone_mtx{skeleton[bones[i].skeleton_node_idx].transform * bones[i].offset_mtx};
+      auto const bone_mtx{bones[i].offset_mtx * skeleton[bones[i].skeleton_node_idx].transform};
       render_manager_->UpdateBuffer(*bone_buf, static_cast<UINT>(i * sizeof(Matrix4)),
         as_bytes(std::span{&bone_mtx, 1}));
     }
