@@ -1307,8 +1307,7 @@ auto SceneRenderer::Render() -> void {
         for (std::size_t i{0}; i < position_keys.size(); i++) {
           if (auto const& [timestamp, value]{position_keys[i]}; timestamp > animation_time) {
             auto const& [prev_timestamp, prev_value]{position_keys[i - 1]};
-            //TODO pos = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
-            pos = prev_value;
+            pos = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
             break;
           }
         }
@@ -1320,7 +1319,7 @@ auto SceneRenderer::Render() -> void {
         for (std::size_t i{0}; i < rotation_keys.size(); i++) {
           if (auto const& [timestamp, value]{rotation_keys[i]}; timestamp > animation_time) {
             auto const& [prev_timestamp, prev_value]{rotation_keys[i - 1]};
-            //TODO rot = Slerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
+            // TODO rot = Slerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
             rot = prev_value;
             break;
           }
@@ -1333,8 +1332,7 @@ auto SceneRenderer::Render() -> void {
         for (std::size_t i{0}; i < scaling_keys.size(); i++) {
           if (auto const& [timestamp, value]{scaling_keys[i]}; timestamp > animation_time) {
             auto const& [prev_timestamp, prev_value]{scaling_keys[i - 1]};
-            //TODO scale = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
-            scale = prev_value;
+            scale = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
             break;
           }
         }
