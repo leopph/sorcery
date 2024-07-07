@@ -1,6 +1,7 @@
 #include "MeshImporter.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <limits>
 #include <optional>
 #include <queue>
@@ -155,13 +156,14 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   meshes_untransformed.reserve(scene->mNumMeshes);
 
   for (unsigned i = 0; i < scene->mNumMeshes; i++) {
+    auto const mesh{scene->mMeshes[i]};
+
     // These meshes are always triangle-only, because
     // AI_CONFIG_PP_SBP_REMOVE is set to remove points and lines, 
     // aiProcess_Triangulate splits up primitives with more than 3 vertices
     // aiProcess_SortByPType splits up meshes with more than 1 primitive type into homogeneous ones
     // TODO Implement non-triangle rendering support
 
-    aiMesh const* const mesh{scene->mMeshes[i]};
     auto& [vertices, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx]{
       meshes_untransformed.emplace_back()
     };
@@ -193,22 +195,33 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     mtlIdx = mesh->mMaterialIndex;
 
     for (unsigned j{0}; j < mesh->mNumBones; j++) {
-      if (auto const bone_idx{static_cast<std::uint32_t>(bone_name_to_idx.size())}; bone_name_to_idx.try_emplace(
-        mesh->mBones[j]->mName.C_Str(), bone_idx).second) {
-        bone_proc_info.emplace_back(Convert(mesh->mBones[j]->mOffsetMatrix).Transpose(),
-          mesh->mBones[j]->mName.C_Str());
+      auto const bone{mesh->mBones[j]};
+
+      auto const [bone_idx_it, inserted]{
+        bone_name_to_idx.emplace(bone->mName.C_Str(), static_cast<std::uint32_t>(bone_name_to_idx.size()))
+      };
+
+      auto const bone_idx{bone_idx_it->second};
+
+      if (inserted) {
+        bone_proc_info.emplace_back(Convert(bone->mOffsetMatrix).Transpose(), bone->mName.C_Str());
       }
 
-      for (unsigned k{0}; k < mesh->mBones[j]->mNumWeights; k++) {
-        auto const& weight{mesh->mBones[j]->mWeights[k]};
+      for (unsigned k{0}; k < bone->mNumWeights; k++) {
+        auto const& weight{bone->mWeights[k]};
+
+        auto found_free_weight_slot{false};
 
         for (auto l{0}; l < 4; l++) {
           if (bone_weights[weight.mVertexId][l] == 0.0f) {
             bone_weights[weight.mVertexId][l] = weight.mWeight;
-            bone_indices[weight.mVertexId][l] = bone_name_to_idx[mesh->mBones[j]->mName.C_Str()];
+            bone_indices[weight.mVertexId][l] = bone_idx;
+            found_free_weight_slot = true;
             break;
           }
         }
+
+        assert(found_free_weight_slot);
       }
     }
   }
@@ -220,12 +233,13 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   // Mark nodes that are part of the skeleton (but not necessarily bones!)
 
   std::ranges::for_each(bone_proc_info, [&root_node](BoneProcessingInfo const& bone_info) {
-    // If we find the node corresponding to the bone, mark it and all its parents
-    if (auto node{FindInHierarchyByName(*root_node, bone_info.node_name)}) {
-      while (node) {
-        node->visited = true;
-        node = node->parent;
-      }
+    // We look for the node corresponding to the bone and mark it along with all of its ancestors
+    auto node{FindInHierarchyByName(*root_node, bone_info.node_name)};
+    assert(node);
+
+    while (node) {
+      node->visited = true;
+      node = node->parent;
     }
   });
 
@@ -365,16 +379,16 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   animations.reserve(scene->mNumAnimations);
 
   for (unsigned i{0}; i < scene->mNumAnimations; i++) {
-    auto const ai_anim{scene->mAnimations[i]};
+    auto const anim{scene->mAnimations[i]};
 
     std::vector<NodeAnimation> node_anims;
 
-    for (unsigned j{0}; j < scene->mAnimations[i]->mNumChannels; j++) {
-      auto const ai_channel{scene->mAnimations[i]->mChannels[j]};
+    for (unsigned j{0}; j < anim->mNumChannels; j++) {
+      auto const channel{anim->mChannels[j]};
 
       std::vector<PositionKey> position_keys;
-      position_keys.reserve(ai_channel->mNumPositionKeys);
-      std::ranges::transform(ai_channel->mPositionKeys, ai_channel->mPositionKeys + ai_channel->mNumPositionKeys,
+      position_keys.reserve(channel->mNumPositionKeys);
+      std::ranges::transform(channel->mPositionKeys, channel->mPositionKeys + channel->mNumPositionKeys,
         std::back_inserter(position_keys), [](aiVectorKey const& pos_key) {
           return PositionKey{
             static_cast<float>(pos_key.mTime), Convert(pos_key.mValue)
@@ -382,8 +396,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
         });
 
       std::vector<RotationKey> rotation_keys;
-      rotation_keys.reserve(ai_channel->mNumRotationKeys);
-      std::ranges::transform(ai_channel->mRotationKeys, ai_channel->mRotationKeys + ai_channel->mNumRotationKeys,
+      rotation_keys.reserve(channel->mNumRotationKeys);
+      std::ranges::transform(channel->mRotationKeys, channel->mRotationKeys + channel->mNumRotationKeys,
         std::back_inserter(rotation_keys), [](aiQuatKey const& rot_key) {
           return RotationKey{
             static_cast<float>(rot_key.mTime), Convert(rot_key.mValue)
@@ -391,8 +405,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
         });
 
       std::vector<ScalingKey> scaling_keys;
-      scaling_keys.reserve(ai_channel->mNumScalingKeys);
-      std::ranges::transform(ai_channel->mScalingKeys, ai_channel->mScalingKeys + ai_channel->mNumScalingKeys,
+      scaling_keys.reserve(channel->mNumScalingKeys);
+      std::ranges::transform(channel->mScalingKeys, channel->mScalingKeys + channel->mNumScalingKeys,
         std::back_inserter(scaling_keys), [](aiVectorKey const& scale_key) {
           return ScalingKey{
             static_cast<float>(scale_key.mTime), Convert(scale_key.mValue)
@@ -400,11 +414,11 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
         });
 
       node_anims.emplace_back(std::move(position_keys), std::move(rotation_keys), std::move(scaling_keys),
-        skeleton_node_name_to_idx.at(ai_channel->mNodeName.C_Str()));
+        skeleton_node_name_to_idx.at(channel->mNodeName.C_Str()));
     }
 
-    animations.emplace_back(ai_anim->mName.C_Str(), static_cast<float>(ai_anim->mDuration),
-      static_cast<float>(ai_anim->mTicksPerSecond), std::move(node_anims));
+    animations.emplace_back(anim->mName.C_Str(), static_cast<float>(anim->mDuration),
+      static_cast<float>(anim->mTicksPerSecond), std::move(node_anims));
   }
 
   // Serialize
