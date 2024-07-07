@@ -23,6 +23,7 @@ public:
 
   LEOPPHAPI auto SetMesh(Mesh* mesh) noexcept -> void override;
 
+  LEOPPHAPI auto Start() -> void override;
   LEOPPHAPI auto Update() -> void override;
 
   LEOPPHAPI SkinnedMeshComponent();
@@ -46,6 +47,7 @@ private:
   bone_matrix_buffers_;
 
   std::optional<std::size_t> cur_animation_idx_;
-  float cur_animation_time_{0};
+  float cur_animation_time_ticks_{0};
+  float cur_anim_delta_time_{0};
 };
 }

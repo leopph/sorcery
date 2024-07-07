@@ -78,7 +78,8 @@ auto SkinnedMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
       }
     }
 
-    cur_animation_time_ = 0;
+    cur_animation_time_ticks_ = 0;
+    cur_anim_delta_time_ = 0;
     cur_animation_idx_ = mesh->GetAnimations().empty() ? std::nullopt : std::make_optional(0);
   } else {
     cur_animation_idx_.reset();
@@ -86,11 +87,19 @@ auto SkinnedMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
 }
 
 
+void SkinnedMeshComponent::Start() {
+  MeshComponentBase::Start();
+  cur_animation_time_ticks_ = 0;
+  cur_anim_delta_time_ = 0;
+}
+
+
 auto SkinnedMeshComponent::Update() -> void {
   if (auto const mesh{GetMesh()}; mesh && cur_animation_idx_ && *cur_animation_idx_ < mesh->GetAnimations().size()) {
     auto const& [name, duration, ticks_per_second, node_anims]{mesh->GetAnimations()[*cur_animation_idx_]};
     auto const actual_ticks_per_second{ticks_per_second == 0 ? 25.0f : ticks_per_second};
-    cur_animation_time_ = std::fmod(timing::GetFullTime() * actual_ticks_per_second, duration);
+    cur_anim_delta_time_ += timing::GetFrameTime();
+    cur_animation_time_ticks_ = std::fmod(cur_anim_delta_time_ * actual_ticks_per_second, duration);
   }
 }
 
@@ -124,6 +133,6 @@ auto SkinnedMeshComponent::GetCurrentAnimation() const -> std::optional<Animatio
 
 
 auto SkinnedMeshComponent::GetCurrentAnimationTime() const noexcept -> float {
-  return cur_animation_time_;
+  return cur_animation_time_ticks_;
 }
 }
