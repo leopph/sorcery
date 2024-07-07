@@ -28,6 +28,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto IsUpdatable() const -> bool;
   LEOPPHAPI auto SetUpdatable(bool updatable) -> void;
 
+  LEOPPHAPI virtual auto Start() -> void {}
   LEOPPHAPI virtual auto Update() -> void {}
 
 private:

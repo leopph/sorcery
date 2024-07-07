@@ -141,6 +141,12 @@ auto EditorApp::Update() -> void {
         GetScene().Save();
         targetFrameRate = timing::GetTargetFrameRate();
         timing::SetTargetFrameRate(-1);
+
+        for (std::vector<SceneObject*> scene_objects; auto const so : Object::FindObjectsOfType(scene_objects)) {
+          if (so->IsUpdatable()) {
+            so->Start();
+          }
+        }
       }
     }
 
