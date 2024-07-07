@@ -1,6 +1,7 @@
 #include "SkinnedMeshComponent.hpp"
 
 #include <cmath>
+#include <imgui.h>
 
 #include "../app.hpp"
 #include "../Timing.hpp"
@@ -14,6 +15,24 @@ RTTR_REGISTRATION {
 namespace sorcery {
 auto SkinnedMeshComponent::OnDrawProperties(bool& changed) -> void {
   MeshComponentBase::OnDrawProperties(changed);
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Animation");
+
+  ImGui::TableNextColumn();
+  std::vector<char const*> items;
+  items.emplace_back("None");
+
+  if (auto const mesh{GetMesh()}) {
+    for (auto const& [name, duration, ticks_per_second, node_anims] : mesh->GetAnimations()) {
+      items.emplace_back(name.c_str());
+    }
+  }
+
+  if (int combo_idx{static_cast<int>(cur_animation_idx_ ? *cur_animation_idx_ + 1 : 0)};
+    ImGui::Combo("##animCombo", &combo_idx, items.data(), static_cast<int>(items.size()))) {
+    cur_animation_idx_ = combo_idx == 0 ? std::nullopt : std::make_optional(combo_idx - 1);
+  }
 }
 
 
@@ -53,10 +72,10 @@ auto SkinnedMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
         D3D12_HEAP_TYPE_DEFAULT);
 
       if (auto const bones{mesh->GetBones()}; !bones.empty()) {
-      bone_matrix_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
-        graphics::BufferDesc{mesh->GetBones().size() * sizeof(Matrix4), sizeof(Matrix4), false, false, true},
-        D3D12_HEAP_TYPE_DEFAULT);
-    }
+        bone_matrix_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
+          graphics::BufferDesc{mesh->GetBones().size() * sizeof(Matrix4), sizeof(Matrix4), false, false, true},
+          D3D12_HEAP_TYPE_DEFAULT);
+      }
     }
 
     cur_animation_time_ = 0;
