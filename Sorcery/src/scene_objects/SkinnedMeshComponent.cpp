@@ -52,9 +52,11 @@ auto SkinnedMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
         graphics::BufferDesc{mesh->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
         D3D12_HEAP_TYPE_DEFAULT);
 
+      if (auto const bones{mesh->GetBones()}; !bones.empty()) {
       bone_matrix_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
         graphics::BufferDesc{mesh->GetBones().size() * sizeof(Matrix4), sizeof(Matrix4), false, false, true},
         D3D12_HEAP_TYPE_DEFAULT);
+    }
     }
 
     cur_animation_time_ = 0;
