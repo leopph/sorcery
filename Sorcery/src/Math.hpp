@@ -2039,6 +2039,6 @@ inline auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream& {
 inline auto Slerp(Quaternion const& from, Quaternion const& to, float const amount) -> Quaternion {
   auto const angle{std::acos(from.w * to.w + from.x * to.x + from.y * to.y + from.z * to.z)};
   auto const sin_angle{std::sin(angle)};
-  return std::sin(1 - amount) * angle / sin_angle * from + std::sin(amount) * angle / sin_angle * to;
+  return std::sin((1 - amount) * angle) / sin_angle * from + std::sin(amount * angle) / sin_angle * to;
 }
 }
