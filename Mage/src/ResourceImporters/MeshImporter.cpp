@@ -113,7 +113,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   auto const scene{
     importer.ReadFileFromMemory(meshBytes.data(), meshBytes.size(),
       aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded | aiProcess_TransformUVCoords |
-      aiProcess_RemoveComponent)
+      aiProcess_RemoveComponent, src.extension().string().c_str())
   };
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
