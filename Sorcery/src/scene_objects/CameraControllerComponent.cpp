@@ -35,14 +35,16 @@ auto CameraControllerComponent::Update() -> void {
     return;
   }
 
+  auto& transform{GetEntity()->GetTransform()};
+
   Vector3 move_dir;
 
   if (GetKey(Key::D)) {
-    move_dir[0] += 1;
+    move_dir += transform.GetRightAxis();
   }
 
   if (GetKey(Key::A)) {
-    move_dir[0] -= 1;
+    move_dir -= transform.GetRightAxis();
   }
 
   if (GetKey(Key::Space)) {
@@ -54,11 +56,11 @@ auto CameraControllerComponent::Update() -> void {
   }
 
   if (GetKey(Key::W)) {
-    move_dir[2] += 1;
+    move_dir += transform.GetForwardAxis();
   }
 
   if (GetKey(Key::S)) {
-    move_dir[2] -= 1;
+    move_dir -= transform.GetForwardAxis();
   }
 
   if (Length(move_dir) != 0) {
@@ -69,7 +71,6 @@ auto CameraControllerComponent::Update() -> void {
     move_dir *= 2;
   }
 
-  auto& transform{GetEntity()->GetTransform()};
   transform.Translate(move_dir * move_speed_ * timing::GetFrameTime());
 
   auto const [mouse_delta_x, mouse_delta_y]{GetMouseDelta()};

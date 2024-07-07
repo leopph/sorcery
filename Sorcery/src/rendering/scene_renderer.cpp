@@ -1333,7 +1333,7 @@ auto SceneRenderer::Render() -> void {
         for (std::size_t i{0}; i < scaling_keys.size(); i++) {
           if (auto const& [timestamp, value]{scaling_keys[i]}; timestamp > animation_time) {
             auto const& [prev_timestamp, prev_value]{scaling_keys[i - 1]};
-            //TODOscale = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
+            //TODO scale = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
             scale = prev_value;
             break;
           }
