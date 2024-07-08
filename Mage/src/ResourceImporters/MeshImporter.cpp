@@ -122,7 +122,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   Mesh::Data mesh_data;
 
-  // Collect all info from aiMaterials
+  // Collect material info
 
   mesh_data.material_slots.resize(scene->mNumMaterials);
 
@@ -130,7 +130,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     mesh_data.material_slots[i].name = scene->mMaterials[i]->GetName().C_Str();
   }
 
-  // Collect all info from aiMeshes
+  // Collect mesh info
 
   struct MeshProcessingData {
     std::vector<Vector3> vertices;
@@ -143,87 +143,100 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     unsigned mtl_idx{};
   };
 
+  std::vector<MeshProcessingData> meshes;
+  meshes.reserve(scene->mNumMeshes);
+
   struct BoneProcessingInfo {
     Matrix4 offset_matrix;
     std::string node_name;
   };
 
-  std::unordered_map<std::string, std::uint32_t> bone_name_to_idx;
   std::vector<BoneProcessingInfo> bone_proc_info;
 
-  // Collected mesh data not yet transformed by node matrices
-  std::vector<MeshProcessingData> meshes_untransformed;
-  meshes_untransformed.reserve(scene->mNumMeshes);
+  struct NodeAndAccumTrafo {
+    Matrix4 absolute_parent_transform;
+    aiNode const* node;
+  };
 
-  for (unsigned i = 0; i < scene->mNumMeshes; i++) {
-    auto const mesh{scene->mMeshes[i]};
+  std::queue<NodeAndAccumTrafo> node_transform_queue;
+  node_transform_queue.emplace(Matrix4::Identity(), scene->mRootNode);
 
-    // These meshes are always triangle-only, because
-    // AI_CONFIG_PP_SBP_REMOVE is set to remove points and lines, 
-    // aiProcess_Triangulate splits up primitives with more than 3 vertices
-    // aiProcess_SortByPType splits up meshes with more than 1 primitive type into homogeneous ones
-    // TODO Implement non-triangle rendering support
+  while (!node_transform_queue.empty()) {
+    auto const& [absolute_parent_transform, node] = node_transform_queue.front();
+    auto const abs_transform{Convert(node->mTransformation).Transpose() * absolute_parent_transform};
+    auto const abs_transform_inv{abs_transform.Inverse()};
+    auto const abs_transform_inv_transp{abs_transform_inv.Transpose()};
 
-    auto& [vertices, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx]{
-      meshes_untransformed.emplace_back()
-    };
+    for (unsigned i = 0; i < node->mNumMeshes; ++i) {
+      auto const mesh{scene->mMeshes[node->mMeshes[i]]};
 
-    if (!mesh->HasPositions() || !mesh->HasNormals() || !mesh->HasTextureCoords(0) || !mesh->
-        HasTangentsAndBitangents()) {
-      // TODO log or something
-      continue;
-    }
+      // These meshes are always triangle-only, because
+      // AI_CONFIG_PP_SBP_REMOVE is set to remove points and lines, 
+      // aiProcess_Triangulate splits up primitives with more than 3 vertices
+      // aiProcess_SortByPType splits up meshes with more than 1 primitive type into homogeneous ones
+      // TODO Implement non-triangle rendering support
 
-    vertices.reserve(mesh->mNumVertices);
-    normals.reserve(mesh->mNumVertices);
-    uvs.reserve(mesh->mNumVertices);
-    tangents.reserve(mesh->mNumVertices);
-    bone_weights.resize(mesh->mNumVertices);
-    bone_indices.resize(mesh->mNumVertices);
-
-    for (unsigned j = 0; j < mesh->mNumVertices; j++) {
-      vertices.emplace_back(Convert(mesh->mVertices[j]));
-      normals.emplace_back(Normalized(Convert(mesh->mNormals[j])));
-      uvs.emplace_back(mesh->HasTextureCoords(0) ? Vector2{Convert(mesh->mTextureCoords[0][j])} : Vector2{});
-      tangents.emplace_back(Convert(mesh->mTangents[j]));
-    }
-
-    for (unsigned j = 0; j < mesh->mNumFaces; j++) {
-      std::ranges::copy(std::span{mesh->mFaces[j].mIndices, mesh->mFaces[j].mNumIndices}, std::back_inserter(indices));
-    }
-
-    mtlIdx = mesh->mMaterialIndex;
-
-    for (unsigned j{0}; j < mesh->mNumBones; j++) {
-      auto const bone{mesh->mBones[j]};
-
-      auto const [bone_idx_it, inserted]{
-        bone_name_to_idx.emplace(bone->mName.C_Str(), static_cast<std::uint32_t>(bone_name_to_idx.size()))
+      auto& [vertices, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx]{
+        meshes.emplace_back()
       };
 
-      auto const bone_idx{bone_idx_it->second};
-
-      if (inserted) {
-        bone_proc_info.emplace_back(Convert(bone->mOffsetMatrix).Transpose(), bone->mName.C_Str());
+      if (!mesh->HasPositions() || !mesh->HasNormals() || !mesh->HasTextureCoords(0) || !mesh->
+          HasTangentsAndBitangents()) {
+        // TODO log or something
+        continue;
       }
 
-      for (unsigned k{0}; k < bone->mNumWeights; k++) {
-        auto const& weight{bone->mWeights[k]};
+      vertices.reserve(mesh->mNumVertices);
+      normals.reserve(mesh->mNumVertices);
+      uvs.reserve(mesh->mNumVertices);
+      tangents.reserve(mesh->mNumVertices);
+      bone_weights.resize(mesh->mNumVertices);
+      bone_indices.resize(mesh->mNumVertices);
 
-        auto found_free_weight_slot{false};
+      for (unsigned j = 0; j < mesh->mNumVertices; j++) {
+        vertices.emplace_back(Vector4{Convert(mesh->mVertices[j]), 1} * abs_transform);
+        normals.emplace_back(Vector4{Normalized(Convert(mesh->mNormals[j])), 0} * abs_transform_inv_transp);
+        tangents.emplace_back(Vector4{Convert(mesh->mTangents[j]), 0} * abs_transform_inv_transp);
+        uvs.emplace_back(mesh->HasTextureCoords(0) ? Vector2{Convert(mesh->mTextureCoords[0][j])} : Vector2{});
+      }
 
-        for (auto l{0}; l < 4; l++) {
-          if (bone_weights[weight.mVertexId][l] == 0.0f) {
-            bone_weights[weight.mVertexId][l] = weight.mWeight;
-            bone_indices[weight.mVertexId][l] = bone_idx;
-            found_free_weight_slot = true;
-            break;
+      for (unsigned j = 0; j < mesh->mNumFaces; j++) {
+        std::ranges::copy(std::span{mesh->mFaces[j].mIndices, mesh->mFaces[j].mNumIndices},
+          std::back_inserter(indices));
+      }
+
+      mtlIdx = mesh->mMaterialIndex;
+
+      for (unsigned j{0}; j < mesh->mNumBones; j++) {
+        auto const bone{mesh->mBones[j]};
+
+        auto const bone_idx{static_cast<std::uint32_t>(bone_proc_info.size())};
+        bone_proc_info.emplace_back(abs_transform_inv * Convert(bone->mOffsetMatrix).Transpose(), bone->mName.C_Str());
+
+        for (unsigned k{0}; k < bone->mNumWeights; k++) {
+          auto const& weight{bone->mWeights[k]};
+
+          auto found_free_weight_slot{false};
+
+          for (auto l{0}; l < 4; l++) {
+            if (bone_weights[weight.mVertexId][l] == 0.0f) {
+              bone_weights[weight.mVertexId][l] = weight.mWeight;
+              bone_indices[weight.mVertexId][l] = bone_idx;
+              found_free_weight_slot = true;
+              break;
+            }
           }
-        }
 
-        assert(found_free_weight_slot);
+          assert(found_free_weight_slot);
+        }
       }
     }
+
+    for (unsigned i = 0; i < node->mNumChildren; ++i) {
+      node_transform_queue.emplace(abs_transform, node->mChildren[i]);
+    }
+
+    node_transform_queue.pop();
   }
 
   // Convert node hierarchy
@@ -287,63 +300,12 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
       return Bone{bone_info.offset_matrix, skeleton_node_name_to_idx.at(bone_info.node_name)};
     });
 
-  // Accumulate node trafos
-
-  struct MeshTrafoAndIndex {
-    Matrix4 trafo;
-    unsigned meshIdx;
-  };
-
-  struct NodeAndAccumTrafo {
-    Matrix4 accumParentTrafo;
-    aiNode const* node;
-  };
-
-  std::vector<MeshTrafoAndIndex> meshIndicesWithTrafos;
-  std::queue<NodeAndAccumTrafo> transformQueue;
-  transformQueue.emplace(Matrix4::Identity(), scene->mRootNode);
-
-  while (!transformQueue.empty()) {
-    auto const& [accumParentTrafo, node] = transformQueue.front();
-    auto const trafo{Convert(node->mTransformation).Transpose() * accumParentTrafo};
-
-    for (unsigned i = 0; i < node->mNumMeshes; ++i) {
-      meshIndicesWithTrafos.emplace_back(trafo, node->mMeshes[i]);
-    }
-
-    for (unsigned i = 0; i < node->mNumChildren; ++i) {
-      transformQueue.emplace(trafo, node->mChildren[i]);
-    }
-
-    transformQueue.pop();
-  }
-
-  // Transform mesh geometry using trafos
-
-  // Collected mesh data transformed by node matrices
-  std::vector<MeshProcessingData> meshesTransformed;
-
-  for (auto const& [trafo, meshIdx] : meshIndicesWithTrafos) {
-    auto& [vertices, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx]{
-      meshesTransformed.emplace_back(meshes_untransformed[meshIdx])
-    };
-
-    Matrix4 const trafoInvTransp{trafo.Inverse().Transpose()};
-
-    for (int i = 0; i < std::ssize(vertices); i++) {
-      vertices[i] = Vector3{Vector4{vertices[i], 1} * trafo};
-      normals[i] = Vector3{Vector4{normals[i], 0} * trafoInvTransp};
-      tangents[i] = Vector3{Vector4{tangents[i], 0} * trafoInvTransp};
-    }
-  }
-
   // Store geometry data and create submeshes
 
-  mesh_data.sub_meshes.reserve(std::size(meshesTransformed));
+  mesh_data.sub_meshes.reserve(std::size(meshes));
   mesh_data.indices.emplace<std::vector<std::uint32_t>>();
 
-  for (auto const& [vertices, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] :
-       meshesTransformed) {
+  for (auto const& [vertices, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] : meshes) {
     mesh_data.sub_meshes.emplace_back(static_cast<int>(std::ssize(mesh_data.positions)),
       std::visit([]<typename T>(std::vector<T> const& indices) { return static_cast<int>(std::ssize(indices)); },
         mesh_data.indices), static_cast<int>(std::ssize(indices)), static_cast<int>(mtlIdx), AABB{});
