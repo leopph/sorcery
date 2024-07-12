@@ -2037,8 +2037,14 @@ inline auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream& {
 
 
 inline auto Slerp(Quaternion const& from, Quaternion const& to, float const amount) -> Quaternion {
-  auto const angle{std::acos(from.w * to.w + from.x * to.x + from.y * to.y + from.z * to.z)};
-  auto const sin_angle{std::sin(angle)};
+  auto const cos_angle{from.w * to.w + from.x * to.x + from.y * to.y + from.z * to.z};
+
+  if (std::abs(cos_angle) >= 1) {
+    return from;
+  }
+
+  auto const angle{std::acos(cos_angle)};
+  auto const sin_angle{std::sqrt(1 - cos_angle * cos_angle)};
 
   if (std::abs(sin_angle) < std::numeric_limits<float>::epsilon()) {
     return from;
