@@ -1319,8 +1319,7 @@ auto SceneRenderer::Render() -> void {
         for (std::size_t i{0}; i < rotation_keys.size(); i++) {
           if (auto const& [timestamp, value]{rotation_keys[i]}; timestamp > animation_time) {
             auto const& [prev_timestamp, prev_value]{rotation_keys[i - 1]};
-            // TODO rot = Slerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
-            rot = prev_value;
+            rot = Slerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
             break;
           }
         }
