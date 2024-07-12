@@ -602,7 +602,7 @@ constexpr auto Vector<T, N>::Zero() noexcept -> Vector {
 template<typename T, int N> requires (N > 1)
 template<std::convertible_to<T> T1>
 constexpr Vector<T, N>::Vector(T1 const value) noexcept {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     mData[i] = static_cast<T>(value);
   }
 }
@@ -624,7 +624,7 @@ constexpr Vector<T, N>::Vector(Args&&... args) noexcept :
 template<typename T, int N> requires (N > 1)
 template<int M> requires (M > N)
 constexpr Vector<T, N>::Vector(Vector<T, M> const& other) noexcept {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     mData[i] = other[i];
   }
 }
@@ -633,7 +633,7 @@ constexpr Vector<T, N>::Vector(Vector<T, M> const& other) noexcept {
 template<typename T, int N> requires (N > 1)
 template<int M, std::convertible_to<T>... Args> requires (M < N && sizeof...(Args) == N - M)
 constexpr Vector<T, N>::Vector(Vector<T, M> const& other, Args&&... additionalElems) noexcept {
-  for (int i = 0; i < M; i++) {
+  for (auto i = 0; i < M; i++) {
     mData[i] = other[i];
   }
 
@@ -671,7 +671,7 @@ auto Normalize(Vector<T, N>& vector) noexcept -> Vector<T, N>& {
     }
   }
 
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     vector[i] /= length;
   }
 
@@ -748,7 +748,7 @@ constexpr auto operator+(Vector<T, N> const& left, Vector<T, N> const& right) no
 
 template<typename T, int N>
 constexpr auto operator+=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     left[i] += right[i];
   }
   return left;
@@ -758,7 +758,7 @@ constexpr auto operator+=(Vector<T, N>& left, Vector<T, N> const& right) noexcep
 template<typename T, int N>
 constexpr auto operator-(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
   Vector<T, N> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = left[i] - right[i];
   }
   return ret;
@@ -767,7 +767,7 @@ constexpr auto operator-(Vector<T, N> const& left, Vector<T, N> const& right) no
 
 template<typename T, int N>
 constexpr auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     left[i] -= right[i];
   }
   return left;
@@ -793,7 +793,7 @@ constexpr auto operator*(std::type_identity_t<T> const left, Vector<T, N> const&
 template<typename T, int N>
 constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
   Vector<T, N> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = left[i] * right[i];
   }
   return ret;
@@ -802,7 +802,7 @@ constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) no
 
 template<typename T, int N>
 constexpr auto operator*=(Vector<T, N>& left, std::type_identity_t<T> const right) noexcept -> Vector<T, N>& {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     left[i] *= right;
   }
   return left;
@@ -811,7 +811,7 @@ constexpr auto operator*=(Vector<T, N>& left, std::type_identity_t<T> const righ
 
 template<typename T, int N>
 constexpr auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     left[i] *= right[i];
   }
   return left;
@@ -821,7 +821,7 @@ constexpr auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) noexcep
 template<typename T, int N>
 constexpr auto operator/(Vector<T, N> const& left, std::type_identity_t<T> const right) noexcept -> Vector<T, N> {
   Vector<T, N> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = left[i] / right;
   }
   return ret;
@@ -831,7 +831,7 @@ constexpr auto operator/(Vector<T, N> const& left, std::type_identity_t<T> const
 template<typename T, int N>
 constexpr auto operator/(std::type_identity_t<T> const left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
   Vector<T, N> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = left / right[i];
   }
   return ret;
@@ -841,7 +841,7 @@ constexpr auto operator/(std::type_identity_t<T> const left, Vector<T, N> const&
 template<typename T, int N>
 constexpr auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
   Vector<T, N> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = left[i] / right[i];
   }
   return ret;
@@ -850,7 +850,7 @@ constexpr auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) no
 
 template<typename T, int N>
 constexpr auto operator/=(Vector<T, N>& left, std::type_identity_t<T> const right) noexcept -> Vector<T, N>& {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     left[i] /= right;
   }
   return left;
@@ -859,7 +859,7 @@ constexpr auto operator/=(Vector<T, N>& left, std::type_identity_t<T> const righ
 
 template<typename T, int N>
 constexpr auto operator/=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     left[i] /= right[i];
   }
   return left;
@@ -901,7 +901,7 @@ template<typename T, int N>
 auto Clamp(Vector<T, N> const& v, T const min, T const max) noexcept -> Vector<T, N> {
   Vector<T, N> ret{v};
 
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = std::clamp(v[i], min, max);
   }
 
@@ -913,7 +913,7 @@ template<typename T, int N>
 auto Clamp(Vector<T, N> const& v, Vector<T, N> const& min, Vector<T, N> const& max) noexcept -> Vector<T, N> {
   Vector<T, N> ret{v};
 
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = std::clamp(v[i], min[i], max[i]);
   }
 
@@ -924,7 +924,7 @@ auto Clamp(Vector<T, N> const& v, Vector<T, N> const& min, Vector<T, N> const& m
 template<typename T, int N>
 auto Min(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
   Vector<T, N> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = std::min(left[i], right[i]);
   }
   return ret;
@@ -934,7 +934,7 @@ auto Min(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector
 template<typename T, int N>
 auto Max(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
   Vector<T, N> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = std::max(left[i], right[i]);
   }
   return ret;
@@ -957,7 +957,7 @@ template<typename T, int N>
 auto Floor(Vector<T, N> const& v) -> Vector<T, N> {
   Vector<T, N> ret;
 
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = std::floor(v[i]);
   }
 
@@ -969,7 +969,7 @@ template<typename T, int N>
 auto Round(Vector<T, N> const& v) -> Vector<T, N> {
   Vector<T, N> ret;
 
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = std::round(v[i]);
   }
 
@@ -1377,7 +1377,7 @@ constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M> requ
   Matrix<T, N, M> right{Matrix<T, N, M>::Identity()};
 
   // Iterate over the main diagonal/submatrices
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     // Index of the row with the largest absolute value element in the ith column
     auto pivotInd{i};
 
@@ -1417,7 +1417,7 @@ constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M> requ
 
   // Left is in reduced echelon form
   // Now eliminate the remaining non-zeros outside the main diagonal
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     for (auto j = i + 1; j < N; j++) {
       // We subtract the jth row from the ith one
       // Because it is guaranteed to have 0s before the main diagonal
@@ -1434,8 +1434,8 @@ constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M> requ
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::Trace() const noexcept -> float requires (N == M) {
   float ret{0};
-  for (int i{0}; i < N; i++) {
-    for (int j{0}; j < M; j++) {
+  for (auto i{0}; i < N; i++) {
+    for (auto j{0}; j < M; j++) {
       ret += mData[i][j];
     }
   }
@@ -1644,7 +1644,7 @@ constexpr Matrix<T, N, M>::Matrix(Args&&... args) noexcept {
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 template<int N1, int M1> requires (N1 < N && M1 < M)
 constexpr Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) noexcept {
-  for (int i = 0; i < N1; i++) {
+  for (auto i = 0; i < N1; i++) {
     mData[i] = Vector<T, M>{other[i], 0};
   }
 
@@ -1659,7 +1659,7 @@ constexpr Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) noexcept {
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 template<int N1, int M1> requires (N1 > N && M1 > M)
 constexpr Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) noexcept {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     mData[i] = Vector<T, M>{other[i]};
   }
 }
@@ -1668,7 +1668,7 @@ constexpr Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) noexcept {
 template<typename T, int N, int M>
 constexpr auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M> {
   Matrix<T, N, M> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = left[i] + right[i];
   }
   return ret;
@@ -1677,7 +1677,7 @@ constexpr auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& rig
 
 template<typename T, int N, int M>
 constexpr auto operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>& {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     left[i] += right[i];
   }
   return left;
@@ -1687,7 +1687,7 @@ constexpr auto operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) n
 template<typename T, int N, int M>
 constexpr auto operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M> {
   Matrix<T, N, M> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = left[i] - right[i];
   }
   return ret;
@@ -1696,7 +1696,7 @@ constexpr auto operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& rig
 
 template<typename T, int N, int M>
 constexpr auto operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>& {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     left[i] -= right[i];
   }
   return left;
@@ -1706,7 +1706,7 @@ constexpr auto operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) n
 template<typename T, int N, int M, std::convertible_to<T> T1>
 constexpr auto operator*(Matrix<T, N, M> const& left, T1 const& right) noexcept -> Matrix<T, N, M> {
   Matrix<T, N, M> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = left[i] * static_cast<T>(right);
   }
   return ret;
@@ -1716,7 +1716,7 @@ constexpr auto operator*(Matrix<T, N, M> const& left, T1 const& right) noexcept 
 template<typename T, int N, int M, std::convertible_to<T> T1>
 constexpr auto operator*(T1 const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M> {
   Matrix<T, N, M> ret;
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     ret[i] = static_cast<T>(left) * right[i];
   }
   return ret;
@@ -1763,7 +1763,7 @@ constexpr auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& rig
 
 template<typename T, int N, int M, std::convertible_to<T> T1>
 constexpr auto operator*=(Matrix<T, N, M>& left, T1 const& right) noexcept -> Matrix<T, N, M>& {
-  for (int i = 0; i < N; i++) {
+  for (auto i = 0; i < N; i++) {
     left[i] *= static_cast<T>(right);
   }
   return left;
@@ -1883,7 +1883,7 @@ inline auto Quaternion::ToEulerAngles() const noexcept -> Vector3 {
   auto const roll_x{w * w + x * x - y * y - z * z};
   angles[2] = std::atan2(roll_y, roll_x);
 
-  for (int i = 0; i < 3; i++) {
+  for (auto i = 0; i < 3; i++) {
     angles[i] = ToDegrees(angles[i]);
   }
 
@@ -2039,6 +2039,11 @@ inline auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream& {
 inline auto Slerp(Quaternion const& from, Quaternion const& to, float const amount) -> Quaternion {
   auto const angle{std::acos(from.w * to.w + from.x * to.x + from.y * to.y + from.z * to.z)};
   auto const sin_angle{std::sin(angle)};
+
+  if (std::abs(sin_angle) < std::numeric_limits<float>::epsilon()) {
+    return from;
+  }
+
   return std::sin((1 - amount) * angle) / sin_angle * from + std::sin(amount * angle) / sin_angle * to;
 }
 }
