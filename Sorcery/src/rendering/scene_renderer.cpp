@@ -1143,13 +1143,19 @@ auto SceneRenderer::ExtractCurrentState() -> void {
       packet.buffers.emplace_back(comp->GetBoneMatrixBuffers()[render_manager_->GetCurrentFrameIndex()]);
       auto const bone_mtx_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
-      // Swap the original and skinned vertex, normal, and tangent buffers for easy rendering later.
-      std::swap(packet.buffers[packet.mesh_data.back().pos_buf_local_idx], packet.buffers[skinned_pos_buf_local_idx]);
-      std::swap(packet.buffers[packet.mesh_data.back().norm_buf_local_idx], packet.buffers[skinned_norm_buf_local_idx]);
-      std::swap(packet.buffers[packet.mesh_data.back().tan_buf_local_idx], packet.buffers[skinned_tan_buf_local_idx]);
+      // Switch the original and skinned buffer indices so that the renderer can treat the skinned mesh as static after
+      // the skinning is done
+
+      auto const orig_pos_buf_local_idx{packet.mesh_data.back().pos_buf_local_idx};
+      auto const orig_norm_buf_local_idx{packet.mesh_data.back().norm_buf_local_idx};
+      auto const orig_tan_buf_local_idx{packet.mesh_data.back().tan_buf_local_idx};
+
+      packet.mesh_data.back().pos_buf_local_idx = skinned_pos_buf_local_idx;
+      packet.mesh_data.back().norm_buf_local_idx = skinned_norm_buf_local_idx;
+      packet.mesh_data.back().tan_buf_local_idx = skinned_tan_buf_local_idx;
 
       packet.skinned_mesh_data.emplace_back(static_cast<unsigned>(packet.mesh_data.size() - 1),
-        skinned_pos_buf_local_idx, skinned_norm_buf_local_idx, skinned_tan_buf_local_idx, bone_weight_buf_local_idx,
+        orig_pos_buf_local_idx, orig_norm_buf_local_idx, orig_tan_buf_local_idx, bone_weight_buf_local_idx,
         bone_index_buf_local_idx, bone_mtx_buf_local_idx, comp->GetCurrentAnimationTime(), *anim,
         std::vector<SkeletonNode>{mesh->GetSkeleton().begin(), mesh->GetSkeleton().end()},
         std::vector<Bone>{mesh->GetBones().begin(), mesh->GetBones().end()});
