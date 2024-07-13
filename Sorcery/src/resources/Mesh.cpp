@@ -48,7 +48,7 @@ auto Mesh::UploadToGpu() noexcept -> void {
   });
 
   tan_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    static_cast<UINT>(tangents4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, false
+    static_cast<UINT>(tangents4.size() * sizeof(Vector4)), sizeof(Vector4), false, true, true
   }, D3D12_HEAP_TYPE_DEFAULT);
   assert(norm_buf_);
 

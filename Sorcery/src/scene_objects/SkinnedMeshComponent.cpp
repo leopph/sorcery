@@ -29,7 +29,7 @@ auto SkinnedMeshComponent::OnDrawProperties(bool& changed) -> void {
     }
   }
 
-  if (int combo_idx{static_cast<int>(cur_animation_idx_ ? *cur_animation_idx_ + 1 : 0)};
+  if (auto combo_idx{static_cast<int>(cur_animation_idx_ ? *cur_animation_idx_ + 1 : 0)};
     ImGui::Combo("##animCombo", &combo_idx, items.data(), static_cast<int>(items.size()))) {
     cur_animation_idx_ = combo_idx == 0 ? std::nullopt : std::make_optional(combo_idx - 1);
   }
@@ -71,6 +71,10 @@ auto SkinnedMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
         graphics::BufferDesc{mesh->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
         D3D12_HEAP_TYPE_DEFAULT);
 
+      skinned_tangent_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
+        graphics::BufferDesc{mesh->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
+        D3D12_HEAP_TYPE_DEFAULT);
+
       if (auto const bones{mesh->GetBones()}; !bones.empty()) {
         bone_matrix_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
           graphics::BufferDesc{mesh->GetBones().size() * sizeof(Matrix4), sizeof(Matrix4), false, false, true},
@@ -87,7 +91,7 @@ auto SkinnedMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
 }
 
 
-void SkinnedMeshComponent::Start() {
+auto SkinnedMeshComponent::Start() -> void {
   MeshComponentBase::Start();
   cur_animation_time_ticks_ = 0;
   cur_anim_delta_time_ = 0;
@@ -118,6 +122,12 @@ auto SkinnedMeshComponent::GetSkinnedVertexBuffers() const noexcept -> std::span
 auto SkinnedMeshComponent::GetSkinnedNormalBuffers() const noexcept -> std::span<graphics::SharedDeviceChildHandle<
     graphics::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()> {
   return skinned_normal_buffers_;
+}
+
+
+auto SkinnedMeshComponent::GetSkinnedTangentBuffers() const noexcept -> std::span<graphics::SharedDeviceChildHandle<
+    graphics::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()> {
+  return skinned_tangent_buffers_;
 }
 
 

@@ -273,12 +273,15 @@ struct SsaoBlurDrawParams {
 struct VertexSkinningDrawParams {
   uint vtx_buf_idx;
   uint norm_buf_idx;
+  uint tan_buf_idx;
   uint bone_weight_buf_idx;
-  uint bone_idx_buf_idx;
 
+  uint bone_idx_buf_idx;
   uint bone_buf_idx;
   uint skinned_vtx_buf_idx;
   uint skinned_norm_buf_idx;
+
+  uint skinned_tan_buf_idx;
   uint vtx_count;
 };
 

@@ -66,7 +66,7 @@ auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(CameraData const& cam
 
   boundaries[0].nearClip = cam_near;
 
-  for (int i = 0; i < shadow_params.cascade_count - 1; i++) {
+  for (auto i = 0; i < shadow_params.cascade_count - 1; i++) {
     boundaries[i + 1].nearClip = cam_near + shadow_params.normalized_cascade_splits[i] * shadowed_frustum_depth;
     boundaries[i].farClip = boundaries[i + 1].nearClip * 1.005f;
   }
@@ -165,7 +165,7 @@ auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& 
   data.viewProjMtx = view_mtx * proj_mtx;
   data.viewPos = view_pos;
 
-  for (int i = 0; i < MAX_CASCADE_COUNT; i++) {
+  for (auto i = 0; i < MAX_CASCADE_COUNT; i++) {
     data.shadowCascadeSplitDistances[i] = cascade_bounds[i].farClip;
   }
 
@@ -239,7 +239,7 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
     }
   };
 
-  for (int i = 0; i < static_cast<int>(visible_light_indices.size()); i++) {
+  for (auto i = 0; i < static_cast<int>(visible_light_indices.size()); i++) {
     if (auto const light{lights[visible_light_indices[i]]};
       light.casts_shadow && (light.type == LightComponent::Type::Spot || light.type == LightComponent::Type::Point)) {
       Vector3 const& lightPos{light.position};
@@ -287,7 +287,7 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
     }
   }
 
-  for (int i = 0; i < 4; i++) {
+  for (auto i = 0; i < 4; i++) {
     std::ranges::sort(lightIndexIndicesInCell[i],
       [&visible_light_indices, &camPos, &lights](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
         auto const leftLight{lights[visible_light_indices[lhs.lightIdxIdx]]};
@@ -302,7 +302,7 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
         return leftDist > rightDist;
       });
 
-    for (int j = 0; j < atlas.GetCell(i).GetElementCount(); j++) {
+    for (auto j = 0; j < atlas.GetCell(i).GetElementCount(); j++) {
       auto& subcell{atlas.GetCell(i).GetSubcell(j)};
       subcell.reset();
 
@@ -451,7 +451,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
             std::array<Vector3, 8> ret;
 
-            for (int j = 0; j < 4; j++) {
+            for (auto j = 0; j < 4; j++) {
               Vector3 const& from{frustumVertsWS[j]};
               Vector3 const& to{frustumVertsWS[j + 4]};
 
@@ -471,7 +471,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
         cascadeCenterWS /= 8.0f;
 
-        float sphereRadius{0.0f};
+        auto sphereRadius{0.0f};
 
         for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
           sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
@@ -1137,16 +1137,20 @@ auto SceneRenderer::ExtractCurrentState() -> void {
       packet.buffers.emplace_back(comp->GetSkinnedNormalBuffers()[render_manager_->GetCurrentFrameIndex()]);
       auto const skinned_norm_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
+      packet.buffers.emplace_back(comp->GetSkinnedTangentBuffers()[render_manager_->GetCurrentFrameIndex()]);
+      auto const skinned_tan_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
+
       packet.buffers.emplace_back(comp->GetBoneMatrixBuffers()[render_manager_->GetCurrentFrameIndex()]);
       auto const bone_mtx_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
-      // Swap the original and skinned vertex and normals buffers for easy rendering later.
+      // Swap the original and skinned vertex, normal, and tangent buffers for easy rendering later.
       std::swap(packet.buffers[packet.mesh_data.back().pos_buf_local_idx], packet.buffers[skinned_pos_buf_local_idx]);
       std::swap(packet.buffers[packet.mesh_data.back().norm_buf_local_idx], packet.buffers[skinned_norm_buf_local_idx]);
+      std::swap(packet.buffers[packet.mesh_data.back().tan_buf_local_idx], packet.buffers[skinned_tan_buf_local_idx]);
 
       packet.skinned_mesh_data.emplace_back(static_cast<unsigned>(packet.mesh_data.size() - 1),
-        skinned_pos_buf_local_idx, skinned_norm_buf_local_idx, bone_weight_buf_local_idx, bone_index_buf_local_idx,
-        bone_mtx_buf_local_idx, comp->GetCurrentAnimationTime(), *anim,
+        skinned_pos_buf_local_idx, skinned_norm_buf_local_idx, skinned_tan_buf_local_idx, bone_weight_buf_local_idx,
+        bone_index_buf_local_idx, bone_mtx_buf_local_idx, comp->GetCurrentAnimationTime(), *anim,
         std::vector<SkeletonNode>{mesh->GetSkeleton().begin(), mesh->GetSkeleton().end()},
         std::vector<Bone>{mesh->GetBones().begin(), mesh->GetBones().end()});
     });
@@ -1274,8 +1278,8 @@ auto SceneRenderer::Render() -> void {
   }
 
   for (auto& [mesh_data_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
-         bone_weight_buf_local_idx, bone_index_buf_local_idx, bone_matrix_buf_local_idx, animation_time, animation,
-         skeleton, bones] : frame_packet.skinned_mesh_data) {
+         original_tangent_buf_local_idx,bone_weight_buf_local_idx, bone_index_buf_local_idx, bone_matrix_buf_local_idx,
+         animation_time, animation, skeleton, bones] : frame_packet.skinned_mesh_data) {
     // Skip skinning when we are sitting at 0 time.
     // This happens for example in the editor scene view.
     if (animation_time == 0) {
@@ -1283,6 +1287,8 @@ auto SceneRenderer::Render() -> void {
         *frame_packet.buffers[original_vertex_buf_local_idx]);
       prepare_cmd.CopyBuffer(*frame_packet.buffers[frame_packet.mesh_data[mesh_data_local_idx].norm_buf_local_idx],
         *frame_packet.buffers[original_normal_buf_local_idx]);
+      prepare_cmd.CopyBuffer(*frame_packet.buffers[frame_packet.mesh_data[mesh_data_local_idx].tan_buf_local_idx],
+        *frame_packet.buffers[original_tangent_buf_local_idx]);
       continue;
     }
 
@@ -1364,6 +1370,8 @@ auto SceneRenderer::Render() -> void {
       frame_packet.buffers[original_vertex_buf_local_idx]->GetUnorderedAccess());
     prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, norm_buf_idx),
       frame_packet.buffers[original_normal_buf_local_idx]->GetUnorderedAccess());
+    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, tan_buf_idx),
+      frame_packet.buffers[original_tangent_buf_local_idx]->GetUnorderedAccess());
     prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_weight_buf_idx),
       frame_packet.buffers[bone_weight_buf_local_idx]->GetUnorderedAccess());
     prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_idx_buf_idx),
@@ -1374,6 +1382,8 @@ auto SceneRenderer::Render() -> void {
       frame_packet.buffers[mesh_data.pos_buf_local_idx]->GetUnorderedAccess());
     prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_norm_buf_idx),
       frame_packet.buffers[mesh_data.norm_buf_local_idx]->GetUnorderedAccess());
+    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_tan_buf_idx),
+      frame_packet.buffers[mesh_data.tan_buf_local_idx]->GetUnorderedAccess());
     prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_count), mesh_data.vtx_count);
     prepare_cmd.Dispatch(
       static_cast<UINT>(std::ceil(static_cast<float>(mesh_data.vtx_count) / static_cast<float>(SKINNING_CS_THREADS))),
@@ -1733,7 +1743,7 @@ auto SceneRenderer::Render() -> void {
     light_buffer.Resize(static_cast<int>(light_count));
     auto const light_buffer_data{light_buffer.GetData()};
 
-    for (int i = 0; i < light_count; i++) {
+    for (auto i = 0; i < light_count; i++) {
       light_buffer_data[i].color = frame_packet.light_data[visible_light_indices[i]].color;
       light_buffer_data[i].intensity = frame_packet.light_data[visible_light_indices[i]].intensity;
       light_buffer_data[i].type = static_cast<int>(frame_packet.light_data[visible_light_indices[i]].type);
@@ -2053,7 +2063,7 @@ auto SceneRenderer::SetShadowCascadeCount(int const cascade_count) noexcept -> v
   shadow_params_.cascade_count = std::clamp(cascade_count, 1, MAX_CASCADE_COUNT);
   int const splitCount{shadow_params_.cascade_count - 1};
 
-  for (int i = 1; i < splitCount; i++) {
+  for (auto i = 1; i < splitCount; i++) {
     shadow_params_.normalized_cascade_splits[i] = std::max(shadow_params_.normalized_cascade_splits[i - 1],
       shadow_params_.normalized_cascade_splits[i]);
   }

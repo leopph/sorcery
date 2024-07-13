@@ -32,6 +32,8 @@ public:
     graphics::SharedDeviceChildHandle<graphics::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()>;
   [[nodiscard]] LEOPPHAPI auto GetSkinnedNormalBuffers() const noexcept -> std::span<
     graphics::SharedDeviceChildHandle<graphics::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()>;
+  [[nodiscard]] LEOPPHAPI auto GetSkinnedTangentBuffers() const noexcept -> std::span<
+    graphics::SharedDeviceChildHandle<graphics::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()>;
   [[nodiscard]] LEOPPHAPI auto GetBoneMatrixBuffers() const noexcept -> std::span<
     graphics::SharedDeviceChildHandle<graphics::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()>;
 
@@ -43,6 +45,8 @@ private:
   skinned_vertex_buffers_;
   std::array<graphics::SharedDeviceChildHandle<graphics::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
   skinned_normal_buffers_;
+  std::array<graphics::SharedDeviceChildHandle<graphics::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
+  skinned_tangent_buffers_;
   std::array<graphics::SharedDeviceChildHandle<graphics::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
   bone_matrix_buffers_;
 

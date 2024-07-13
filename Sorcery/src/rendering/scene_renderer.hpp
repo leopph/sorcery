@@ -206,6 +206,8 @@ private:
     unsigned original_vertex_buf_local_idx;
     // The referenced mesh data contains an index to skinned normal buffer
     unsigned original_normal_buf_local_idx;
+    // The referenced mesh data contains an index to skinned tangent buffer
+    unsigned original_tangent_buf_local_idx;
     unsigned bone_weight_buf_local_idx;
     unsigned bone_index_buf_local_idx;
     unsigned bone_matrix_buf_local_idx;
