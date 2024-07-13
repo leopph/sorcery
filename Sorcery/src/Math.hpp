@@ -2047,7 +2047,7 @@ inline auto Slerp(Quaternion const& from, Quaternion const& to, float const amou
   auto const sin_angle{std::sqrt(1 - cos_angle * cos_angle)};
 
   if (std::abs(sin_angle) < std::numeric_limits<float>::epsilon()) {
-    return from;
+    return 0.5f * from + 0.5f * to;
   }
 
   return std::sin((1 - amount) * angle) / sin_angle * from + std::sin(amount * angle) / sin_angle * to;
