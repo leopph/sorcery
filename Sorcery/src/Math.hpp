@@ -459,8 +459,10 @@ struct Quaternion {
 
 
 [[nodiscard]] constexpr auto operator+(Quaternion const& left, Quaternion const& right) -> Quaternion;
+[[nodiscard]] constexpr auto operator-(Quaternion const& left, Quaternion const& right) -> Quaternion;
 
 constexpr auto operator+=(Quaternion& left, Quaternion const& right) -> Quaternion&;
+constexpr auto operator-=(Quaternion& left, Quaternion const& right) -> Quaternion&;
 
 [[nodiscard]] constexpr auto operator*(Quaternion const& left, Quaternion const& right) noexcept -> Quaternion;
 [[nodiscard]] constexpr auto operator*(Quaternion const& left, float right) -> Quaternion;
@@ -1996,8 +1998,18 @@ constexpr auto operator+(Quaternion const& left, Quaternion const& right) -> Qua
 }
 
 
+constexpr auto operator-(Quaternion const& left, Quaternion const& right) -> Quaternion {
+  return Quaternion{left.w - right.w, left.x - right.x, left.y - right.y, left.z - right.z};
+}
+
+
 constexpr auto operator+=(Quaternion& left, Quaternion const& right) -> Quaternion& {
   return left = left + right;
+}
+
+
+constexpr auto operator-=(Quaternion& left, Quaternion const& right) -> Quaternion& {
+  return left = left - right;
 }
 
 
@@ -2037,19 +2049,33 @@ inline auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream& {
 
 
 inline auto Slerp(Quaternion const& from, Quaternion const& to, float const amount) -> Quaternion {
-  auto const cos_angle{from.w * to.w + from.x * to.x + from.y * to.y + from.z * to.z};
+  auto cos_angle{from.w * to.w + from.x * to.x + from.y * to.y + from.z * to.z};
 
   if (std::abs(cos_angle) >= 1) {
     return from;
+  }
+
+  auto reverse{false};
+
+  if (cos_angle < 0) {
+    cos_angle = -cos_angle;
+    reverse = true;
   }
 
   auto const angle{std::acos(cos_angle)};
   auto const sin_angle{std::sqrt(1 - cos_angle * cos_angle)};
 
   if (std::abs(sin_angle) < std::numeric_limits<float>::epsilon()) {
-    return 0.5f * from + 0.5f * to;
+    return reverse
+             ? (1 - amount) * from - amount * to
+             : (1 - amount) * from + amount * to;
   }
 
-  return std::sin((1 - amount) * angle) / sin_angle * from + std::sin(amount * angle) / sin_angle * to;
+  auto const from_term{std::sin((1 - amount) * angle) / sin_angle * from};
+  auto const to_term{std::sin(amount * angle) / sin_angle * to};
+
+  return reverse
+           ? from_term - to_term
+           : from_term + to_term;
 }
 }
