@@ -348,6 +348,55 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     for (unsigned j{0}; j < anim->mNumChannels; j++) {
       auto const channel{anim->mChannels[j]};
 
+      // Check if the animated node is an ancestor of a mesh's node
+
+      std::queue<aiNode const*> node_search_queue;
+      node_search_queue.emplace(scene->mRootNode);
+
+      std::queue<aiNode const*> mesh_search_queue;
+
+      // Find the node that the channel is animating
+      while (!node_search_queue.empty()) {
+        auto const node{node_search_queue.front()};
+
+        if (node->mName == channel->mNodeName) {
+          mesh_search_queue.emplace(node);
+          break;
+        }
+
+        for (unsigned k{0}; k < node->mNumChildren; k++) {
+          node_search_queue.emplace(node->mChildren[k]);
+        }
+
+        node_search_queue.pop();
+      }
+
+      // Check if any of the node's descendants are mesh nodes
+      while (!mesh_search_queue.empty()) {
+        auto const node{mesh_search_queue.front()};
+
+        if (node->mNumMeshes > 0) {
+          // TODO log this properly
+          OutputDebugStringA(
+            "Animated node is an ancestor of a submesh node. Animations on submesh nodes are currently not supported.\n");
+          break;
+        }
+
+        for (unsigned k{0}; k < node->mNumChildren; k++) {
+          mesh_search_queue.emplace(node->mChildren[k]);
+        }
+
+        mesh_search_queue.pop();
+      }
+
+      // Check if the animated node is part of the skeleton
+
+      if (!skeleton_node_name_to_idx.contains(channel->mNodeName.C_Str())) {
+        // TODO log this properly
+        OutputDebugStringA("Animated node is not part of the skeleton. Such animations are currently not supported.\n");
+        continue;
+      }
+
       std::vector<PositionKey> position_keys;
       position_keys.reserve(channel->mNumPositionKeys);
       std::ranges::transform(channel->mPositionKeys, channel->mPositionKeys + channel->mNumPositionKeys,
@@ -376,7 +425,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
         });
 
       node_anims.emplace_back(std::move(position_keys), std::move(rotation_keys), std::move(scaling_keys),
-        skeleton_node_name_to_idx.at(channel->mNodeName.C_Str()));
+        skeleton_node_name_to_idx[channel->mNodeName.C_Str()]);
     }
 
     animations.emplace_back(anim->mName.C_Str(), static_cast<float>(anim->mDuration),
