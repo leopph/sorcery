@@ -200,6 +200,38 @@ private:
   };
 
 
+  struct NodeAnimationData {
+    unsigned pos_key_begin_local_idx;
+    unsigned pos_key_count;
+
+    unsigned rot_key_begin_local_idx;
+    unsigned rot_key_count;
+
+    unsigned scaling_key_begin_local_idx;
+    unsigned scaling_key_count;
+
+    unsigned node_idx; // Original index, needs to be offset with the absolute position in the array
+  };
+
+
+  struct AnimationData {
+    unsigned node_anim_begin_local_idx;
+    unsigned node_anim_count;
+  };
+
+
+  struct SkeletonNodeData {
+    Matrix4 transform;
+    std::optional<unsigned> parent_idx; // Original index, needs to be offset with the absolute position in the array
+  };
+
+
+  struct BoneData {
+    Matrix4 offset_mtx;
+    unsigned skeleton_node_idx; // Original index, needs to be offset with the absolute position in the array
+  };
+
+
   struct SkinnedMeshData {
     unsigned mesh_data_local_idx;
     // The referenced mesh data contains an index to skinned vertex buffer
@@ -212,12 +244,14 @@ private:
     unsigned bone_index_buf_local_idx;
     unsigned bone_matrix_buf_local_idx;
 
-    float animation_time;
+    float cur_animation_time;
 
-    // TODO avoid copying and allocating memory here
-    Animation animation;
-    std::vector<SkeletonNode> skeleton;
-    std::vector<Bone> bones;
+    unsigned node_anim_begin_local_idx;
+    unsigned node_anim_count;
+    unsigned skeleton_begin_local_idx;
+    unsigned skeleton_size;
+    unsigned bone_begin_local_idx;
+    unsigned bone_count;
   };
 
 
@@ -230,6 +264,13 @@ private:
     std::vector<InstanceData> instance_data;
     std::vector<CameraData> cam_data;
     std::vector<std::shared_ptr<RenderTarget>> render_targets;
+
+    std::vector<PositionKey> anim_pos_keys;
+    std::vector<RotationKey> anim_rot_keys;
+    std::vector<ScalingKey> anim_scaling_keys;
+    std::vector<NodeAnimationData> node_anim_data;
+    std::vector<SkeletonNodeData> skeleton_node_data;
+    std::vector<BoneData> bone_data;
     std::vector<SkinnedMeshData> skinned_mesh_data;
 
     std::vector<Vector4> gizmo_colors;

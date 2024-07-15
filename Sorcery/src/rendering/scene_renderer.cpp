@@ -1016,6 +1016,12 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.instance_data.clear();
   packet.cam_data.clear();
   packet.render_targets.clear();
+  packet.anim_pos_keys.clear();
+  packet.anim_rot_keys.clear();
+  packet.anim_scaling_keys.clear();
+  packet.node_anim_data.clear();
+  packet.skeleton_node_data.clear();
+  packet.bone_data.clear();
   packet.skinned_mesh_data.clear();
 
   packet.light_data.reserve(lights_.size());
@@ -1154,11 +1160,46 @@ auto SceneRenderer::ExtractCurrentState() -> void {
       packet.mesh_data.back().norm_buf_local_idx = skinned_norm_buf_local_idx;
       packet.mesh_data.back().tan_buf_local_idx = skinned_tan_buf_local_idx;
 
+      // Extract animation data
+
+      auto const node_anim_begin_local_idx{static_cast<unsigned>(packet.node_anim_data.size())};
+
+      for (auto const& [pos_keys, rot_keys, scaling_keys, node_idx] : anim->node_anims) {
+        auto const pos_key_begin_local_idx{static_cast<unsigned>(packet.anim_pos_keys.size())};
+        auto const rot_key_begin_local_idx{static_cast<unsigned>(packet.anim_rot_keys.size())};
+        auto const scaling_key_begin_local_idx{static_cast<unsigned>(packet.anim_scaling_keys.size())};
+
+        std::ranges::copy(pos_keys, std::back_inserter(packet.anim_pos_keys));
+        std::ranges::copy(rot_keys, std::back_inserter(packet.anim_rot_keys));
+        std::ranges::copy(scaling_keys, std::back_inserter(packet.anim_scaling_keys));
+
+        packet.node_anim_data.emplace_back(pos_key_begin_local_idx, static_cast<unsigned>(pos_keys.size()),
+          rot_key_begin_local_idx, static_cast<unsigned>(rot_keys.size()), scaling_key_begin_local_idx,
+          static_cast<unsigned>(scaling_keys.size()), node_idx);
+      }
+
+      // Extract skeleton data
+
+      auto const skeleton_begin_local_idx{static_cast<unsigned>(packet.skeleton_node_data.size())};
+      std::ranges::transform(mesh->GetSkeleton(), std::back_inserter(packet.skeleton_node_data),
+        [&comp](SkeletonNode const& node) {
+          return SkeletonNodeData{node.transform, node.parent_idx};
+        });
+
+      // Extract bone data
+
+      auto const bone_begin_local_idx{static_cast<unsigned>(packet.bone_data.size())};
+      std::ranges::transform(mesh->GetBones(), std::back_inserter(packet.bone_data),
+        [&comp](Bone const& bone) {
+          return BoneData{bone.offset_mtx, bone.skeleton_node_idx};
+        });
+
       packet.skinned_mesh_data.emplace_back(static_cast<unsigned>(packet.mesh_data.size() - 1),
         orig_pos_buf_local_idx, orig_norm_buf_local_idx, orig_tan_buf_local_idx, bone_weight_buf_local_idx,
-        bone_index_buf_local_idx, bone_mtx_buf_local_idx, comp->GetCurrentAnimationTime(), *anim,
-        std::vector<SkeletonNode>{mesh->GetSkeleton().begin(), mesh->GetSkeleton().end()},
-        std::vector<Bone>{mesh->GetBones().begin(), mesh->GetBones().end()});
+        bone_index_buf_local_idx, bone_mtx_buf_local_idx, comp->GetCurrentAnimationTime(), node_anim_begin_local_idx,
+        static_cast<unsigned>(anim->node_anims.size()), skeleton_begin_local_idx,
+        static_cast<unsigned>(mesh->GetSkeleton().size()), bone_begin_local_idx,
+        static_cast<unsigned>(mesh->GetBones().size()));
     });
 
   auto const find_or_emplace_back_rt{
@@ -1284,11 +1325,12 @@ auto SceneRenderer::Render() -> void {
   }
 
   for (auto& [mesh_data_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
-         original_tangent_buf_local_idx,bone_weight_buf_local_idx, bone_index_buf_local_idx, bone_matrix_buf_local_idx,
-         animation_time, animation, skeleton, bones] : frame_packet.skinned_mesh_data) {
+         original_tangent_buf_local_idx, bone_weight_buf_local_idx, bone_index_buf_local_idx, bone_matrix_buf_local_idx,
+         cur_animation_time, node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size,
+         bone_begin_local_idx, bone_count] : frame_packet.skinned_mesh_data) {
     // Skip skinning when we are sitting at 0 time.
     // This happens for example in the editor scene view.
-    if (animation_time == 0) {
+    if (cur_animation_time == 0) {
       prepare_cmd.CopyBuffer(*frame_packet.buffers[frame_packet.mesh_data[mesh_data_local_idx].pos_buf_local_idx],
         *frame_packet.buffers[original_vertex_buf_local_idx]);
       prepare_cmd.CopyBuffer(*frame_packet.buffers[frame_packet.mesh_data[mesh_data_local_idx].norm_buf_local_idx],
@@ -1300,12 +1342,15 @@ auto SceneRenderer::Render() -> void {
 
     // Compute local node transforms
 
-    for (auto const& [position_keys, rotation_keys, scaling_keys, node_idx] : animation.node_anims) {
-      auto& node{skeleton[node_idx]};
+    for (unsigned i{0}; i < node_anim_count; i++) {
+      auto const& [pos_key_begin_local_idx, pos_key_count, rot_key_begin_local_idx, rot_key_count,
+        scaling_key_begin_local_idx, scaling_key_count, node_idx]{
+        frame_packet.node_anim_data[node_anim_begin_local_idx + i]
+      };
 
-      Vector3 pos;
-      Quaternion rot;
-      Vector3 scale;
+      Vector3 pos{};
+      Quaternion rot{};
+      Vector3 scale{1};
 
       auto const calc_interpolation_factor{
         [](float const from_time, float const to_time, float const current_time) {
@@ -1313,59 +1358,68 @@ auto SceneRenderer::Render() -> void {
         }
       };
 
-      if (position_keys.size() == 1) {
-        pos = position_keys[0].value;
+      if (pos_key_count == 1) {
+        pos = frame_packet.anim_pos_keys[pos_key_begin_local_idx].value;
       } else {
-        for (std::size_t i{0}; i < position_keys.size(); i++) {
-          if (auto const& [timestamp, value]{position_keys[i]}; timestamp > animation_time) {
-            auto const& [prev_timestamp, prev_value]{position_keys[i - 1]};
-            pos = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
+        for (unsigned j{0}; j < pos_key_count; j++) {
+          if (auto const& [timestamp, value]{frame_packet.anim_pos_keys[pos_key_begin_local_idx + j]};
+            timestamp > cur_animation_time) {
+            auto const& [prev_timestamp, prev_value]{frame_packet.anim_pos_keys[pos_key_begin_local_idx + j - 1]};
+            pos = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, cur_animation_time));
             break;
           }
         }
       }
 
-      if (rotation_keys.size() == 1) {
-        rot = rotation_keys[0].value;
+      if (rot_key_count == 1) {
+        rot = frame_packet.anim_rot_keys[rot_key_begin_local_idx].value;
       } else {
-        for (std::size_t i{0}; i < rotation_keys.size(); i++) {
-          if (auto const& [timestamp, value]{rotation_keys[i]}; timestamp > animation_time) {
-            auto const& [prev_timestamp, prev_value]{rotation_keys[i - 1]};
-            rot = Slerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
+        for (unsigned j{0}; j < rot_key_count; j++) {
+          if (auto const& [timestamp, value]{frame_packet.anim_rot_keys[rot_key_begin_local_idx + j]};
+            timestamp > cur_animation_time) {
+            auto const& [prev_timestamp, prev_value]{frame_packet.anim_rot_keys[rot_key_begin_local_idx + j - 1]};
+            rot = Slerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, cur_animation_time));
             break;
           }
         }
       }
 
-      if (scaling_keys.size() == 1) {
-        scale = scaling_keys[0].value;
+      if (scaling_key_count == 1) {
+        scale = frame_packet.anim_scaling_keys[scaling_key_begin_local_idx].value;
       } else {
-        for (std::size_t i{0}; i < scaling_keys.size(); i++) {
-          if (auto const& [timestamp, value]{scaling_keys[i]}; timestamp > animation_time) {
-            auto const& [prev_timestamp, prev_value]{scaling_keys[i - 1]};
-            scale = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, animation_time));
+        for (unsigned j{0}; j < scaling_key_count; j++) {
+          if (auto const& [timestamp, value]{frame_packet.anim_scaling_keys[scaling_key_begin_local_idx + j]};
+            timestamp > cur_animation_time) {
+            auto const& [prev_timestamp, prev_value]{
+              frame_packet.anim_scaling_keys[scaling_key_begin_local_idx + j - 1]
+            };
+            scale = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, cur_animation_time));
             break;
           }
         }
       }
 
-      node.transform = Matrix4::Scale(scale) * static_cast<Matrix4>(rot) * Matrix4::Translate(pos);
+      frame_packet.skeleton_node_data[skeleton_begin_local_idx + node_idx].transform =
+        Matrix4::Scale(scale) * static_cast<Matrix4>(rot) * Matrix4::Translate(pos);
     }
 
     // Accumulate node transforms
 
-    for (auto& [name, transform, parent_idx] : skeleton) {
-      if (parent_idx) {
-        transform = transform * skeleton[*parent_idx].transform;
+    for (unsigned i{0}; i < skeleton_size; i++) {
+      if (auto& [transform, parent_idx]{frame_packet.skeleton_node_data[skeleton_begin_local_idx + i]}; parent_idx) {
+        transform = transform * frame_packet.skeleton_node_data[skeleton_begin_local_idx + *parent_idx].transform;
       }
     }
 
     // Update bone matrices
 
     auto const bone_buf{frame_packet.buffers[bone_matrix_buf_local_idx]};
-    for (std::size_t i{0}; i < bones.size(); i++) {
+    for (unsigned i{0}; i < bone_count; i++) {
       // TODO this is horrible, update all bones at once
-      auto const bone_mtx{bones[i].offset_mtx * skeleton[bones[i].skeleton_node_idx].transform};
+      auto const bone_mtx{
+        frame_packet.bone_data[bone_begin_local_idx + i].offset_mtx * frame_packet.skeleton_node_data[
+          skeleton_begin_local_idx + frame_packet.bone_data[bone_begin_local_idx + i].skeleton_node_idx].transform
+      };
       render_manager_->UpdateBuffer(*bone_buf, static_cast<UINT>(i * sizeof(Matrix4)),
         as_bytes(std::span{&bone_mtx, 1}));
     }
