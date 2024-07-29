@@ -35,6 +35,7 @@ Some screenshots from Sorcery's editor, Mage!
   * Frustum culling for cameras and shadows
   * Screen Space Ambient Occlusion (SSAO)
   * Multi-camera support with custom viewports and render targets
+  * Skeletal animations with compute skinning
 * Entity-Component model
   * Camera, Static Mesh, Light, Skybox, and Transform components
   * Transform hierarchy
