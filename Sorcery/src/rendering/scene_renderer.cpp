@@ -1131,6 +1131,22 @@ auto SceneRenderer::ExtractCurrentState() -> void {
         return;
       }
 
+      // TODO add proper skinned mesh culling with GPU culling
+
+      AABB const inf_aabb{
+        Vector3{-std::numeric_limits<float>::infinity()},
+        Vector3{std::numeric_limits<float>::infinity()}
+      };
+
+      // Set mesh AABB to infinity to prevent culling
+      packet.mesh_data.back().bounds = inf_aabb;
+
+      // Set submesh AABBs to infinity to prevent culling
+      for (auto i{std::ssize(packet.submesh_data) - 1};
+           i >= 0 && packet.submesh_data[i].mesh_local_idx == std::ssize(packet.mesh_data) - 1; i--) {
+        packet.submesh_data[i].bounds = inf_aabb;
+      }
+
       packet.buffers.emplace_back(mesh->GetBoneWeightBuffer());
       auto const bone_weight_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
