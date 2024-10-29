@@ -81,7 +81,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
-    <None Include="src\rendering\imgui.hlsli" />
+    <None Include="src\rendering\shaders\imgui.hlsli" />
     <None Include="packages.config" />
     <None Include="src\editor_app.inl">
       <Filter>Header Files</Filter>
@@ -148,7 +148,7 @@
     <ClInclude Include="src\rendering\imgui_renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\imgui_shader_interop.h">
+    <ClInclude Include="src\rendering\shaders\imgui_shader_interop.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\editor_gui.hpp">
@@ -159,7 +159,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\rendering\imgui_vs.hlsl" />
-    <FxCompile Include="src\rendering\imgui_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\imgui_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\imgui_ps.hlsl" />
   </ItemGroup>
 </Project>

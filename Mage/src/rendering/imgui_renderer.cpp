@@ -3,14 +3,14 @@
 
 #include "imgui_renderer.hpp"
 
-#include "imgui_shader_interop.h"
+#include "shaders/imgui_shader_interop.h"
 
 #ifndef NDEBUG
-#include "generated/Debug/imgui_ps.h"
-#include "generated/Debug/imgui_vs.h"
+#include "shaders/generated/Debug/imgui_ps.h"
+#include "shaders/generated/Debug/imgui_vs.h"
 #else
-#include "generated/Release/imgui_ps.h"
-#include "generated/Release/imgui_vs.h"
+#include "shaders/generated/Release/imgui_ps.h"
+#include "shaders/generated/Release/imgui_vs.h"
 #endif
 
 #include <bit>
