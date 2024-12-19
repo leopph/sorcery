@@ -1,19 +1,23 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "builtin-baseline": "8eb57355a4ffb410a2e94c07b4dca2dffbee8e50",
+  "builtin-baseline": "01f602195983451bc83e72f4214af2cbc495aa94",
   "dependencies": [
     {
       "name": "yaml-cpp",
-      "version>=": "0.7.0"
+      "version>=": "0.8.0"
     },
     {
       "name": "rttr",
       "version>=": "0.9.6+20210811"
     },
     {
+      "name": "directxtex",
+      "version>=": "2024-03-06"
+    },
+    {
       "name": "imgui",
       "features": [ "docking-experimental", "win32-binding" ],
-      "version>=": "1.90.2"
+      "version>=": "1.90.6"
     },
     {
       "name": "nativefiledialog",
@@ -25,15 +29,11 @@
     },
     {
       "name": "implot",
-      "version>=": "0.15"
-    },
-    {
-      "name": "directxtex",
-      "version>=": "2023-01-31"
+      "version>=": "0.16"
     },
     {
       "name": "assimp",
-      "version>=": "5.2.5"
+      "version>=": "5.4.0"
     }
   ]
 }

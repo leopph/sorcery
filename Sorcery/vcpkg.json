@@ -1,23 +1,23 @@
 {
 	"$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-	"builtin-baseline": "fba75d09065fcc76a25dcf386b1d00d33f5175af",
+	"builtin-baseline": "01f602195983451bc83e72f4214af2cbc495aa94",
 	"dependencies": [
 		{
 			"name": "yaml-cpp",
-			"version>=": "0.7.0"
+			"version>=": "0.8.0"
 		},
 		{
 			"name": "rttr",
 			"version>=": "0.9.6+20210811"
 		},
 		{
-			"name": "imgui",
-			"features": [ "docking-experimental" ],
-			"version>=": "1.90.2"
+			"name": "directxtex",
+			"version>=": "2024-03-06"
 		},
 		{
-			"name": "directxtex",
-			"version>=": "2023-12-31"
+			"name": "imgui",
+			"features": [ "docking-experimental" ],
+			"version>=": "1.90.6"
 		}
 	]
 }
