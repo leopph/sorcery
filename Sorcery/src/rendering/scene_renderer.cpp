@@ -55,6 +55,22 @@
 
 
 namespace sorcery::rendering {
+namespace {
+// Returns view matrices looking at each face of a cube from the specified origin.
+// The order of faces is +X, -X, +Y, -Y, +Z, -Z.
+[[nodiscard]] auto MakeCubeFaceViewMatrices(Vector3 const& origin) noexcept {
+  return std::array{
+    Matrix4::LookTo(origin, Vector3::Right(), Vector3::Up()), // +X
+    Matrix4::LookTo(origin, Vector3::Left(), Vector3::Up()), // -X
+    Matrix4::LookTo(origin, Vector3::Up(), Vector3::Backward()), // +Y
+    Matrix4::LookTo(origin, Vector3::Down(), Vector3::Forward()), // -Y
+    Matrix4::LookTo(origin, Vector3::Forward(), Vector3::Up()), // +Z
+    Matrix4::LookTo(origin, Vector3::Backward(), Vector3::Up()), // -Z
+  };
+}
+}
+
+
 auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,
                                                            ShadowParams const& shadow_params) ->
   ShadowCascadeBoundaries {
@@ -324,15 +340,7 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
       } else if (light.type == LightComponent::Type::Point) {
         auto const lightPos{light.position};
 
-        std::array const faceViewMatrices{
-          Matrix4::LookTo(lightPos, Vector3::Right(), Vector3::Up()), // +X
-          Matrix4::LookTo(lightPos, Vector3::Left(), Vector3::Up()), // -X
-          Matrix4::LookTo(lightPos, Vector3::Up(), Vector3::Backward()), // +Y
-          Matrix4::LookTo(lightPos, Vector3::Down(), Vector3::Forward()), // -Y
-          Matrix4::LookTo(lightPos, Vector3::Forward(), Vector3::Up()), // +Z
-          Matrix4::LookTo(lightPos, Vector3::Backward(), Vector3::Up()), // -Z
-        };
-
+        auto const faceViewMatrices{MakeCubeFaceViewMatrices(lightPos)};
         auto const shadowViewMtx{faceViewMatrices[shadowIdx]};
         auto const shadowProjMtx{
           TransformProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, light.shadow_near_plane,
