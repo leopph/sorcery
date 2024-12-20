@@ -6,8 +6,8 @@
 #include <optional>
 #include <string>
 
-#include "../Core.hpp"
 #include "graphics.hpp"
+#include "../Core.hpp"
 
 
 namespace sorcery::rendering {
@@ -30,11 +30,15 @@ public:
     float depth_clear_value{0.0f};
     std::uint8_t stencil_clear_value{0};
 
+    graphics::TextureDimension dimension{graphics::TextureDimension::k2D};
+    UINT16 depth_or_array_size{1};
+
     LEOPPHAPI [[nodiscard]] auto operator==(Desc const& other) const -> bool;
   };
 
 
-  [[nodiscard]] LEOPPHAPI static auto New(graphics::GraphicsDevice& device, Desc const& desc) -> std::unique_ptr<RenderTarget>;
+  [[nodiscard]] LEOPPHAPI static auto New(graphics::GraphicsDevice& device,
+                                          Desc const& desc) -> std::unique_ptr<RenderTarget>;
 
   RenderTarget(RenderTarget const&) = delete;
   RenderTarget(RenderTarget&&) = delete;
