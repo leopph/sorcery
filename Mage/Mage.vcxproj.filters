@@ -82,10 +82,10 @@
   <ItemGroup>
     <None Include="vcpkg.json" />
     <None Include="src\rendering\shaders\imgui.hlsli" />
-    <None Include="packages.config" />
     <None Include="src\editor_app.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Widgets.hpp">
