@@ -1370,7 +1370,11 @@ auto CommandList::DrawInstanced(UINT const vertex_count_per_instance, UINT const
 }
 
 
-auto CommandList::Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT const format) const -> void {
+auto CommandList::Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT const format) -> void {
+  GenerateBarrier(src, D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_ACCESS_RESOLVE_SOURCE,
+    D3D12_BARRIER_LAYOUT_RESOLVE_SOURCE);
+  GenerateBarrier(dst, D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_ACCESS_RESOLVE_DEST,
+    D3D12_BARRIER_LAYOUT_RESOLVE_DEST);
   cmd_list_->ResolveSubresource(dst.resource_.Get(), 0, src.resource_.Get(), 0, format);
 }
 
