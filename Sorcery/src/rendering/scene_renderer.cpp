@@ -367,14 +367,6 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
   cmd.SetPipelineState(*shadow_pso_);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
   cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
-  cmd.Barrier({}, {}, std::array{
-    graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_UNDEFINED,
-      D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, dir_shadow_map_arr_->GetTex().get(), {0xffffffff, 0},
-      D3D12_TEXTURE_BARRIER_FLAG_NONE
-    }
-  });
   cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, {});
 
   for (auto const lightIdx : visible_light_indices) {
@@ -518,8 +510,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
         SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, ShadowCascadeBoundaries{}, Vector3{});
-        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx),
-          per_view_cb.GetBuffer()->GetConstantBuffer());
+        cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
         Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
 
@@ -536,13 +527,13 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
           SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
-            frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
-            frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
-            per_draw_cb.GetBuffer()->GetConstantBuffer());
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
+            *frame_packet.buffers[mesh.pos_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
+            *frame_packet.buffers[mesh.uv_buf_local_idx]);
+          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), *mtl_buf);
+          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
+            *per_draw_cb.GetBuffer());
           cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
           cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
         }
@@ -561,16 +552,6 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
   cmd.SetRenderTargets({}, atlas.GetTex().get());
-
-  cmd.Barrier({}, {}, std::array{
-    graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_UNDEFINED,
-      D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, punctual_shadow_atlas_->GetTex().get(), {0, 0},
-      D3D12_TEXTURE_BARRIER_FLAG_NONE
-    }
-  });
-
   cmd.ClearDepthStencil(*atlas.GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
   auto const cell_size_norm{atlas.GetNormalizedElementSize()};
@@ -598,8 +579,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
         SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, ShadowCascadeBoundaries{},
           Vector3{});
-        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx),
-          per_view_cb.GetBuffer()->GetConstantBuffer());
+        cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
         Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
 
@@ -616,13 +596,13 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
           auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
           SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
-            frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
-            frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
-            per_draw_cb.GetBuffer()->GetConstantBuffer());
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
+            *frame_packet.buffers[mesh.pos_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
+            *frame_packet.buffers[mesh.uv_buf_local_idx]);
+          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), *mtl_buf);
+          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
+            *per_draw_cb.GetBuffer());
           cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
           cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
         }
@@ -1322,23 +1302,9 @@ auto SceneRenderer::Render() -> void {
   line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.line_gizmo_vertex_data)));
   std::ranges::copy(frame_packet.line_gizmo_vertex_data, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
-  // Transitions render targets and dispatches skinning
+  // Clears all render targets and dispatches skinning
   auto& prepare_cmd{render_manager_->AcquireCommandList()};
   prepare_cmd.Begin(nullptr);
-
-  std::vector<graphics::TextureBarrier> cam_rt_barriers;
-  cam_rt_barriers.reserve(frame_packet.render_targets.size());
-
-  std::ranges::transform(frame_packet.render_targets, std::back_inserter(cam_rt_barriers),
-    [](std::shared_ptr<RenderTarget> const& rt) {
-      return graphics::TextureBarrier{
-        D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
-        D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-        rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-      };
-    });
-
-  prepare_cmd.Barrier({}, {}, cam_rt_barriers);
 
   std::ranges::for_each(frame_packet.render_targets, [&prepare_cmd](std::shared_ptr<RenderTarget> const& rt) {
     prepare_cmd.ClearRenderTarget(*rt->GetColorTex(), rt->GetDesc().color_clear_value, {});
@@ -1450,24 +1416,24 @@ auto SceneRenderer::Render() -> void {
 
     auto const& mesh_data{frame_packet.mesh_data[mesh_data_local_idx]};
 
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_buf_idx),
-      frame_packet.buffers[original_vertex_buf_local_idx]->GetUnorderedAccess());
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, norm_buf_idx),
-      frame_packet.buffers[original_normal_buf_local_idx]->GetUnorderedAccess());
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, tan_buf_idx),
-      frame_packet.buffers[original_tangent_buf_local_idx]->GetUnorderedAccess());
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_weight_buf_idx),
-      frame_packet.buffers[bone_weight_buf_local_idx]->GetUnorderedAccess());
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_idx_buf_idx),
-      frame_packet.buffers[bone_index_buf_local_idx]->GetUnorderedAccess());
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_buf_idx),
-      frame_packet.buffers[bone_matrix_buf_local_idx]->GetUnorderedAccess());
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_vtx_buf_idx),
-      frame_packet.buffers[mesh_data.pos_buf_local_idx]->GetUnorderedAccess());
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_norm_buf_idx),
-      frame_packet.buffers[mesh_data.norm_buf_local_idx]->GetUnorderedAccess());
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_tan_buf_idx),
-      frame_packet.buffers[mesh_data.tan_buf_local_idx]->GetUnorderedAccess());
+    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_buf_idx),
+      *frame_packet.buffers[original_vertex_buf_local_idx]);
+    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, norm_buf_idx),
+      *frame_packet.buffers[original_normal_buf_local_idx]);
+    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, tan_buf_idx),
+      *frame_packet.buffers[original_tangent_buf_local_idx]);
+    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_weight_buf_idx),
+      *frame_packet.buffers[bone_weight_buf_local_idx]);
+    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_idx_buf_idx),
+      *frame_packet.buffers[bone_index_buf_local_idx]);
+    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_buf_idx),
+      *frame_packet.buffers[bone_matrix_buf_local_idx]);
+    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_vtx_buf_idx),
+      *frame_packet.buffers[mesh_data.pos_buf_local_idx]);
+    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_norm_buf_idx),
+      *frame_packet.buffers[mesh_data.norm_buf_local_idx]);
+    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_tan_buf_idx),
+      *frame_packet.buffers[mesh_data.tan_buf_local_idx]);
     prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_count), mesh_data.vtx_count);
     prepare_cmd.Dispatch(
       static_cast<UINT>(std::ceil(static_cast<float>(mesh_data.vtx_count) / static_cast<float>(SKINNING_CS_THREADS))),
@@ -1561,15 +1527,6 @@ auto SceneRenderer::Render() -> void {
 
     auto const hdr_rt{render_manager_->AcquireTemporaryRenderTarget(hdr_rt_desc)};
 
-    cam_cmd.Barrier({}, {}, std::array{
-      graphics::TextureBarrier{
-        D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_NO_ACCESS,
-        D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_UNDEFINED,
-        D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, hdr_rt->GetDepthStencilTex().get(), {0, 1, 0, 1, 0, 1},
-        D3D12_TEXTURE_BARRIER_FLAG_NONE
-      },
-    });
-
     cam_cmd.ClearDepthStencil(*hdr_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
@@ -1598,13 +1555,6 @@ auto SceneRenderer::Render() -> void {
 
       cam_cmd.SetPipelineState(*frame_packet.depth_normal_pso);
       cam_cmd.SetRenderTargets(std::span{actual_normal_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
-      cam_cmd.Barrier({}, {}, std::array{
-        graphics::TextureBarrier{
-          D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
-          D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-          actual_normal_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-        }
-      });
       cam_cmd.ClearRenderTarget(*actual_normal_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
 
       for (auto const instance_idx : visible_static_submesh_instance_indices) {
@@ -1616,62 +1566,31 @@ auto SceneRenderer::Render() -> void {
         auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
         SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, pos_buf_idx),
-          frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, norm_buf_idx),
-          frame_packet.buffers[mesh.norm_buf_local_idx]->GetShaderResource());
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, tan_buf_idx),
-          frame_packet.buffers[mesh.tan_buf_local_idx]->GetShaderResource());
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, uv_buf_idx),
-          frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, mtl_idx),
-          mtl_buf->GetConstantBuffer());
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, pos_buf_idx),
+          *frame_packet.buffers[mesh.pos_buf_local_idx]);
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, norm_buf_idx),
+          *frame_packet.buffers[mesh.norm_buf_local_idx]);
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, tan_buf_idx),
+          *frame_packet.buffers[mesh.tan_buf_local_idx]);
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, uv_buf_idx),
+          *frame_packet.buffers[mesh.uv_buf_local_idx]);
+        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, mtl_idx), *mtl_buf);
         cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, samp_idx), samp_af16_wrap_.Get());
         cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, rt_idx), 0);
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_draw_cb_idx),
-          per_draw_cb.GetBuffer()->GetConstantBuffer());
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_view_cb_idx),
-          cam_per_view_cb.GetBuffer()->GetConstantBuffer());
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_frame_cb_idx),
-          per_frame_cb.GetBuffer()->GetConstantBuffer());
+        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_draw_cb_idx),
+          *per_draw_cb.GetBuffer());
+        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_view_cb_idx),
+          *cam_per_view_cb.GetBuffer());
+        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_frame_cb_idx),
+          *per_frame_cb.GetBuffer());
         cam_cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
         cam_cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
       }
 
       // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
       if (frame_packet.msaa_mode != MultisamplingMode::kOff) {
-        cam_cmd.Barrier({}, {}, std::array{
-          graphics::TextureBarrier{
-            D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
-            D3D12_BARRIER_ACCESS_RESOLVE_SOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-            D3D12_BARRIER_LAYOUT_RESOLVE_SOURCE, actual_normal_rt->GetColorTex().get(), {0, 0},
-            D3D12_TEXTURE_BARRIER_FLAG_NONE
-          },
-          graphics::TextureBarrier{
-            D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_ACCESS_NO_ACCESS,
-            D3D12_BARRIER_ACCESS_RESOLVE_DEST, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RESOLVE_DEST,
-            normal_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-          }
-        });
         cam_cmd.Resolve(*normal_rt->GetColorTex(), *actual_normal_rt->GetColorTex(),
           *normal_rt->GetDesc().color_format);
-        cam_cmd.Barrier({}, {}, std::array{
-          graphics::TextureBarrier{
-            D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RESOLVE_DEST,
-            D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RESOLVE_DEST,
-            D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, normal_rt->GetColorTex().get(), {0, 0},
-            D3D12_TEXTURE_BARRIER_FLAG_NONE
-          }
-        });
-      } else {
-        cam_cmd.Barrier({}, {}, std::array{
-          graphics::TextureBarrier{
-            D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RENDER_TARGET,
-            D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-            D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, actual_normal_rt->GetColorTex().get(), {0, 0},
-            D3D12_TEXTURE_BARRIER_FLAG_NONE
-          }
-        });
       }
     }
 
@@ -1689,14 +1608,6 @@ auto SceneRenderer::Render() -> void {
       auto const ssao_depth_tex{
         [this, &hdr_rt, &cam_cmd, &frame_packet] {
           if (frame_packet.msaa_mode == MultisamplingMode::kOff) {
-            cam_cmd.Barrier({}, {}, std::array{
-              graphics::TextureBarrier{
-                D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_SYNC_PIXEL_SHADING,
-                D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
-                D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
-                hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-              }
-            });
             return hdr_rt->GetDepthStencilTex();
           }
 
@@ -1707,54 +1618,31 @@ auto SceneRenderer::Render() -> void {
           ssao_depth_rt_desc.enable_unordered_access = true;
           auto const ssao_depth_rt{render_manager_->AcquireTemporaryRenderTarget(ssao_depth_rt_desc)};
 
-          cam_cmd.Barrier({}, {}, std::array{
-            graphics::TextureBarrier{
-              D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_SYNC_COMPUTE_SHADING,
-              D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
-              D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
-              hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-            },
-            graphics::TextureBarrier{
-              D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_COMPUTE_SHADING, D3D12_BARRIER_ACCESS_NO_ACCESS,
-              D3D12_BARRIER_ACCESS_UNORDERED_ACCESS, D3D12_BARRIER_LAYOUT_UNDEFINED,
-              D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS, ssao_depth_rt->GetColorTex().get(), {0, 0},
-              D3D12_TEXTURE_BARRIER_FLAG_NONE
-            }
-          });
-
           cam_cmd.SetPipelineState(*frame_packet.depth_resolve_pso);
-          cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthResolveDrawParams, in_tex_idx),
-            hdr_rt->GetDepthStencilTex()->GetShaderResource());
-          cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthResolveDrawParams, out_tex_idx),
-            ssao_depth_rt->GetColorTex()->GetUnorderedAccess());
+          cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthResolveDrawParams, in_tex_idx),
+            *hdr_rt->GetDepthStencilTex());
+          cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(DepthResolveDrawParams, out_tex_idx),
+            *ssao_depth_rt->GetColorTex());
 
           cam_cmd.Dispatch(
             static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.width) / DEPTH_RESOLVE_CS_THREADS_X)),
             static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.height) / DEPTH_RESOLVE_CS_THREADS_Y)),
             static_cast<UINT>(std::ceil(1.0f / DEPTH_RESOLVE_CS_THREADS_Z)));
 
-          cam_cmd.Barrier({}, {}, std::array{
-            graphics::TextureBarrier{
-              D3D12_BARRIER_SYNC_COMPUTE_SHADING, D3D12_BARRIER_SYNC_PIXEL_SHADING,
-              D3D12_BARRIER_ACCESS_UNORDERED_ACCESS, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
-              D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
-              ssao_depth_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-            }
-          });
 
           return ssao_depth_rt->GetColorTex();
         }()
       };
 
       cam_cmd.SetPipelineState(*frame_packet.ssao_pso);
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx),
-        ssao_noise_tex_->GetShaderResource());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, depth_tex_idx),
-        ssao_depth_tex->GetShaderResource());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, normal_tex_idx),
-        normal_rt->GetColorTex()->GetShaderResource());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx),
-        ssao_samples_buffer_.GetBuffer()->GetShaderResource());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx),
+        *ssao_noise_tex_);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, depth_tex_idx),
+        *ssao_depth_tex);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, normal_tex_idx),
+        *normal_rt->GetColorTex());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx),
+        *ssao_samples_buffer_.GetBuffer());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_wrap_samp_idx), samp_point_wrap_.Get());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, radius),
@@ -1765,18 +1653,11 @@ auto SceneRenderer::Render() -> void {
         *std::bit_cast<UINT*>(&frame_packet.ssao_params.power));
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, sample_count),
         frame_packet.ssao_params.sample_count);
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_view_cb_idx),
-        cam_per_view_cb.GetBuffer()->GetConstantBuffer());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx),
-        per_frame_cb.GetBuffer()->GetConstantBuffer());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_view_cb_idx),
+        *cam_per_view_cb.GetBuffer());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx),
+        *per_frame_cb.GetBuffer());
       cam_cmd.SetRenderTargets(std::span{ssao_rt->GetColorTex().get(), 1}, nullptr);
-      cam_cmd.Barrier({}, {}, std::array{
-        graphics::TextureBarrier{
-          D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
-          D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-          ssao_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-        }
-      });
       cam_cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cam_cmd.DrawInstanced(3, 1, 0, 0);
 
@@ -1789,33 +1670,13 @@ auto SceneRenderer::Render() -> void {
       };
 
       cam_cmd.SetPipelineState(*frame_packet.ssao_blur_pso);
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, in_tex_idx),
-        ssao_rt->GetColorTex()->GetShaderResource());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, in_tex_idx),
+        *ssao_rt->GetColorTex());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, point_clamp_samp_idx),
         samp_point_clamp_.Get());
       cam_cmd.SetRenderTargets(std::span{ssao_blur_rt->GetColorTex().get(), 1}, nullptr);
-      cam_cmd.Barrier({}, {}, std::array{
-        graphics::TextureBarrier{
-          D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
-          D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-          ssao_blur_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-        },
-        graphics::TextureBarrier{
-          D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RENDER_TARGET,
-          D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-          D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, ssao_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-        }
-      });
       cam_cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cam_cmd.DrawInstanced(3, 1, 0, 0);
-      cam_cmd.Barrier({}, {}, std::array{
-        graphics::TextureBarrier{
-          D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RENDER_TARGET,
-          D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-          D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, ssao_blur_rt->GetColorTex().get(), {0, 0},
-          D3D12_TEXTURE_BARRIER_FLAG_NONE
-        }
-      });
 
       ssao_tex = ssao_blur_rt->GetColorTex().get();
     }
@@ -1865,77 +1726,24 @@ auto SceneRenderer::Render() -> void {
 
     punctual_shadow_atlas_->SetLookUpInfo(light_buffer_data);
 
-    auto const forward_pass_depth_tex_sync_before{
-      frame_packet.ssao_enabled
-        ? frame_packet.msaa_mode != MultisamplingMode::kOff
-            ? D3D12_BARRIER_SYNC_COMPUTE_SHADING
-            : D3D12_BARRIER_SYNC_PIXEL_SHADING
-        : D3D12_BARRIER_SYNC_DEPTH_STENCIL
-    };
-
-    auto const forward_pass_depth_tex_access_before{
-      frame_packet.ssao_enabled ? D3D12_BARRIER_ACCESS_SHADER_RESOURCE : D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE
-    };
-
-    auto const forward_pass_depth_tex_access_after{
-      frame_packet.depth_normal_pre_pass_enabled
-        ? D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ
-        : D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE
-    };
-
-    auto const forward_pass_depth_tex_layout_before{
-      frame_packet.ssao_enabled ? D3D12_BARRIER_LAYOUT_SHADER_RESOURCE : D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE
-    };
-
-    auto const forward_pass_depth_tex_layout_after{
-      frame_packet.depth_normal_pre_pass_enabled
-        ? D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ
-        : D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE
-    };
-
-    cam_cmd.Barrier({}, {}, std::array{
-      graphics::TextureBarrier{
-        D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE,
-        D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE,
-        D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, dir_shadow_map_arr_->GetTex().get(), {0xffffffff, 0},
-        D3D12_TEXTURE_BARRIER_FLAG_NONE
-      },
-      graphics::TextureBarrier{
-        D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE,
-        D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE,
-        D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, punctual_shadow_atlas_->GetTex().get(), {0, 0},
-        D3D12_TEXTURE_BARRIER_FLAG_NONE
-      },
-      graphics::TextureBarrier{
-        D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
-        D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-        hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-      },
-      graphics::TextureBarrier{
-        forward_pass_depth_tex_sync_before, D3D12_BARRIER_SYNC_DEPTH_STENCIL, forward_pass_depth_tex_access_before,
-        forward_pass_depth_tex_access_after, forward_pass_depth_tex_layout_before, forward_pass_depth_tex_layout_after,
-        hdr_rt->GetDepthStencilTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-      }
-    });
-
     cam_cmd.SetPipelineState(frame_packet.depth_normal_pre_pass_enabled
                                ? *frame_packet.object_pso_depth_read
                                : *frame_packet.object_pso_depth_write);
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, ssao_tex_idx), ssao_tex->GetShaderResource());
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, light_buf_idx),
-      light_buffer.GetBuffer()->GetShaderResource());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, ssao_tex_idx), *ssao_tex);
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, light_buf_idx),
+      *light_buffer.GetBuffer());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, light_count), static_cast<UINT>(light_count));
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, dir_shadow_arr_idx),
-      dir_shadow_map_arr_->GetTex()->GetShaderResource());
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, punc_shadow_atlas_idx),
-      punctual_shadow_atlas_->GetTex()->GetShaderResource());
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_view_cb_idx),
-      cam_per_view_cb.GetBuffer()->GetConstantBuffer());
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_frame_cb_idx),
-      per_frame_cb.GetBuffer()->GetConstantBuffer());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, dir_shadow_arr_idx),
+      *dir_shadow_map_arr_->GetTex());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, punc_shadow_atlas_idx),
+      *punctual_shadow_atlas_->GetTex());
+    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_view_cb_idx),
+      *cam_per_view_cb.GetBuffer());
+    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_frame_cb_idx),
+      *per_frame_cb.GetBuffer());
     cam_cmd.SetRenderTargets(std::span{hdr_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
     cam_cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), frame_packet.background_color, {});
 
@@ -1948,17 +1756,17 @@ auto SceneRenderer::Render() -> void {
       auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
       SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, pos_buf_idx),
-        frame_packet.buffers[mesh.pos_buf_local_idx]->GetShaderResource());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, norm_buf_idx),
-        frame_packet.buffers[mesh.norm_buf_local_idx]->GetShaderResource());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, tan_buf_idx),
-        frame_packet.buffers[mesh.tan_buf_local_idx]->GetShaderResource());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, uv_buf_idx),
-        frame_packet.buffers[mesh.uv_buf_local_idx]->GetShaderResource());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_idx), mtl_buf->GetConstantBuffer());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_draw_cb_idx),
-        per_draw_cb.GetBuffer()->GetConstantBuffer());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, pos_buf_idx),
+        *frame_packet.buffers[mesh.pos_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, norm_buf_idx),
+        *frame_packet.buffers[mesh.norm_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, tan_buf_idx),
+        *frame_packet.buffers[mesh.tan_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, uv_buf_idx),
+        *frame_packet.buffers[mesh.uv_buf_local_idx]);
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_idx), *mtl_buf);
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_draw_cb_idx),
+        *per_draw_cb.GetBuffer());
       cam_cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
       cam_cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
     }
@@ -1966,12 +1774,12 @@ auto SceneRenderer::Render() -> void {
     if (frame_packet.skybox_cubemap) {
       auto const cube_mesh{App::Instance().GetResourceManager().GetCubeMesh()};
       cam_cmd.SetPipelineState(*frame_packet.skybox_pso);
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, pos_buf_idx),
-        cube_mesh->GetPositionBuffer()->GetShaderResource());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, per_view_cb_idx),
-        cam_per_view_cb.GetBuffer()->GetConstantBuffer());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, cubemap_idx),
-        frame_packet.skybox_cubemap->GetShaderResource());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, pos_buf_idx),
+        *cube_mesh->GetPositionBuffer());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SkyboxDrawParams, per_view_cb_idx),
+        *cam_per_view_cb.GetBuffer());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, cubemap_idx),
+        *frame_packet.skybox_cubemap);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
       cam_cmd.SetIndexBuffer(*cube_mesh->GetIndexBuffer(), cube_mesh->GetIndexFormat());
       cam_cmd.DrawIndexedInstanced(
@@ -1983,41 +1791,12 @@ auto SceneRenderer::Render() -> void {
 
     if (frame_packet.msaa_mode == MultisamplingMode::kOff) {
       post_process_input_rt = hdr_rt.get();
-      cam_cmd.Barrier({}, {}, std::array{
-        graphics::TextureBarrier{
-          D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RENDER_TARGET,
-          D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET,
-          D3D12_BARRIER_LAYOUT_SHADER_RESOURCE, hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-        }
-      });
     } else {
       auto resolved_hdr_rt_desc{hdr_rt_desc};
       resolved_hdr_rt_desc.sample_count = 1;
       auto const resolve_hdr_rt{render_manager_->AcquireTemporaryRenderTarget(resolved_hdr_rt_desc)};
 
-      cam_cmd.Barrier({}, {}, std::array{
-        graphics::TextureBarrier{
-          D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
-          D3D12_BARRIER_ACCESS_RESOLVE_SOURCE, D3D12_BARRIER_LAYOUT_RENDER_TARGET, D3D12_BARRIER_LAYOUT_RESOLVE_SOURCE,
-          hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-        },
-        graphics::TextureBarrier{
-          D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_ACCESS_NO_ACCESS,
-          D3D12_BARRIER_ACCESS_RESOLVE_DEST, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RESOLVE_DEST,
-          resolve_hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-        }
-      });
-
       cam_cmd.Resolve(*resolve_hdr_rt->GetColorTex(), *hdr_rt->GetColorTex(), *hdr_rt_desc.color_format);
-
-      cam_cmd.Barrier({}, {}, std::array{
-        graphics::TextureBarrier{
-          D3D12_BARRIER_SYNC_RESOLVE, D3D12_BARRIER_SYNC_PIXEL_SHADING, D3D12_BARRIER_ACCESS_RESOLVE_DEST,
-          D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_RESOLVE_DEST, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
-          resolve_hdr_rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-        }
-      });
-
       post_process_input_rt = resolve_hdr_rt.get();
     }
 
@@ -2025,8 +1804,8 @@ auto SceneRenderer::Render() -> void {
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
 
     cam_cmd.SetPipelineState(*frame_packet.post_process_pso);
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx),
-      post_process_input_rt->GetColorTex()->GetShaderResource());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx),
+      *post_process_input_rt->GetColorTex());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, inv_gamma),
       *std::bit_cast<UINT*>(&frame_packet.inv_gamma));
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, bi_clamp_samp_idx), samp_bi_clamp_.Get());
@@ -2035,12 +1814,12 @@ auto SceneRenderer::Render() -> void {
 
     if (!frame_packet.line_gizmo_vertex_data.empty()) {
       cam_cmd.SetPipelineState(*frame_packet.line_gizmo_pso);
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, vertex_buf_idx),
-        line_gizmo_vertex_data_buffer_.GetBuffer()->GetShaderResource());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, color_buf_idx),
-        gizmo_color_buffer_.GetBuffer()->GetShaderResource());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx),
-        cam_per_view_cb.GetBuffer()->GetConstantBuffer());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GizmoDrawParams, vertex_buf_idx),
+        *line_gizmo_vertex_data_buffer_.GetBuffer());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GizmoDrawParams, color_buf_idx),
+        *gizmo_color_buffer_.GetBuffer());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx),
+        *cam_per_view_cb.GetBuffer());
       cam_cmd.SetRenderTargets(std::span{target_rt.GetColorTex().get(), 1}, nullptr);
       cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
       cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -2050,24 +1829,6 @@ auto SceneRenderer::Render() -> void {
     cam_cmd.End();
     device_->ExecuteCommandLists(std::span{&cam_cmd, 1});
   }
-
-  cam_rt_barriers.clear();
-
-  std::ranges::transform(frame_packet.render_targets, std::back_inserter(cam_rt_barriers),
-    [](std::shared_ptr<RenderTarget> const& rt) {
-      return graphics::TextureBarrier{
-        D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_NO_ACCESS,
-        D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_LAYOUT_RENDER_TARGET, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
-        rt->GetColorTex().get(), {0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-      };
-    });
-
-  // Transitions the render targets back to shader resource state
-  auto& finish_cmd{render_manager_->AcquireCommandList()};
-  finish_cmd.Begin(nullptr);
-  finish_cmd.Barrier({}, {}, cam_rt_barriers);
-  finish_cmd.End();
-  device_->ExecuteCommandLists(std::span{&finish_cmd, 1});
 }
 
 

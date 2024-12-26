@@ -179,19 +179,12 @@ auto ImGuiRenderer::Render() -> void {
   auto& cmd{render_manager_->AcquireCommandList()};
   cmd.Begin(pso_.get());
 
-  cmd.Barrier({}, {}, std::array{
-    graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_NO_ACCESS,
-      D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_LAYOUT_UNDEFINED, D3D12_BARRIER_LAYOUT_RENDER_TARGET, &rt,
-      D3D12_BARRIER_SUBRESOURCE_RANGE{0, 1, 0, 1, 0, 1}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-    }
-  });
   cmd.SetBlendFactor(std::array{0.f, 0.f, 0.f, 0.f});
   cmd.SetIndexBuffer(*ib, idx_format);
   cmd.SetPipelineParameters(offsetof(ImGuiDrawParams, proj_mtx) / 4,
     std::span{std::bit_cast<UINT const*>(&proj_mtx), 16});
   cmd.SetPipelineParameter(offsetof(ImGuiDrawParams, samp_idx) / 4, samp_.Get());
-  cmd.SetPipelineParameter(offsetof(ImGuiDrawParams, vb_idx) / 4, vb->GetShaderResource());
+  cmd.SetShaderResource(offsetof(ImGuiDrawParams, vb_idx) / 4, *vb);
   cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   cmd.SetRenderTargets(std::span{&rt, 1}, nullptr);
   cmd.SetViewports(std::array<D3D12_VIEWPORT, 1>{
@@ -246,14 +239,6 @@ auto ImGuiRenderer::Render() -> void {
     global_idx_offset += static_cast<int>(imgui_cmd.IdxBuffer.size());
     global_vtx_offset += static_cast<int>(imgui_cmd.VtxBuffer.size());
   }
-
-  cmd.Barrier({}, {}, std::array{
-    graphics::TextureBarrier{
-      D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_RENDER_TARGET,
-      D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_LAYOUT_RENDER_TARGET, D3D12_BARRIER_LAYOUT_PRESENT, &rt,
-      D3D12_BARRIER_SUBRESOURCE_RANGE{0, 1, 0, 1, 0, 1}, D3D12_TEXTURE_BARRIER_FLAG_NONE
-    }
-  });
 
   cmd.End();
   device_->ExecuteCommandLists(std::span{&cmd, 1});
