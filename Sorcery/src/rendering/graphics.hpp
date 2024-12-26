@@ -252,7 +252,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto CreateBuffer(BufferDesc const& desc,
                                             D3D12_HEAP_TYPE heap_type) -> SharedDeviceChildHandle<Buffer>;
   [[nodiscard]] LEOPPHAPI auto CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE heap_type,
-                                             D3D12_BARRIER_LAYOUT initial_layout,
                                              D3D12_CLEAR_VALUE const* clear_value) -> SharedDeviceChildHandle<Texture>;
   [[nodiscard]] LEOPPHAPI auto CreatePipelineState(PipelineDesc const& desc,
                                                    std::uint8_t num_32_bit_params) -> SharedDeviceChildHandle<

@@ -177,7 +177,7 @@ auto RenderManager::CreateReadOnlyTexture(
     desc.depth_or_array_size = static_cast<UINT16>(meta.depth);
   }
 
-  auto tex{device_->CreateTexture(desc, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr)};
+  auto tex{device_->CreateTexture(desc, D3D12_HEAP_TYPE_DEFAULT, nullptr)};
 
   std::vector<D3D12_SUBRESOURCE_DATA> subresource_data;
   subresource_data.reserve(img.GetImageCount());

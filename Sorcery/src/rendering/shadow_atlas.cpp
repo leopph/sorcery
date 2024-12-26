@@ -11,7 +11,7 @@ ShadowAtlas::ShadowAtlas(graphics::GraphicsDevice* const device, DXGI_FORMAT con
     device->CreateTexture(
       graphics::TextureDesc{
         graphics::TextureDimension::k2D, size, size, 1, 1, depth_format, 1, true, false, true, false
-      }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COMMON, std::array{
+      }, D3D12_HEAP_TYPE_DEFAULT, std::array{
         D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {0.0f, 0}}
       }.data())
   },

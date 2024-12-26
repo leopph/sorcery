@@ -70,7 +70,7 @@ auto ImGuiRenderer::UpdateFonts() -> void {
   fonts_tex_ = device_->CreateTexture(graphics::TextureDesc{
     graphics::TextureDimension::k2D, static_cast<UINT>(fonts_tex_width), static_cast<UINT>(fonts_tex_height), 1, 1,
     DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
-  }, D3D12_HEAP_TYPE_DEFAULT, D3D12_BARRIER_LAYOUT_COPY_DEST, nullptr);
+  }, D3D12_HEAP_TYPE_DEFAULT, nullptr);
 
 
   render_manager_->UpdateTexture(*fonts_tex_, 0, std::array{

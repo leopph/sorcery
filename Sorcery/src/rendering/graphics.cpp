@@ -348,7 +348,6 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc,
 
 
 auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE const heap_type,
-                                   D3D12_BARRIER_LAYOUT const initial_layout,
                                    D3D12_CLEAR_VALUE const* clear_value) -> SharedDeviceChildHandle<Texture> {
   ComPtr<D3D12MA::Allocation> allocation;
   ComPtr<ID3D12Resource2> resource;
@@ -371,6 +370,8 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
   D3D12MA::ALLOCATION_DESC const alloc_desc{
     D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_NONE, nullptr, nullptr
   };
+
+  constexpr auto initial_layout{D3D12_BARRIER_LAYOUT_UNDEFINED};
 
   ThrowIfFailed(allocator_->CreateResource3(&alloc_desc, &res_desc, initial_layout, clear_value, 0, nullptr,
     &allocation, IID_PPV_ARGS(&resource)), "Failed to create texture.");
@@ -712,15 +713,15 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
 
   for (auto const& cmd_list : cmd_lists) {
     for (auto const& pending_barrier : cmd_list.pending_barriers_) {
-        auto const global_state{global_resource_states_.Get(pending_barrier.resource)};
-        auto layout_before{global_state ? global_state->layout : D3D12_BARRIER_LAYOUT_UNDEFINED};
+      auto const global_state{global_resource_states_.Get(pending_barrier.resource)};
+      auto layout_before{global_state ? global_state->layout : D3D12_BARRIER_LAYOUT_UNDEFINED};
 
       pending_tex_barriers.emplace_back(D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_NONE,
         D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_ACCESS_NO_ACCESS,
         layout_before, pending_barrier.layout, pending_barrier.resource,
-          D3D12_BARRIER_SUBRESOURCE_RANGE{0xffffffff}, D3D12_TEXTURE_BARRIER_FLAG_NONE);
-      }
+        D3D12_BARRIER_SUBRESOURCE_RANGE{0xffffffff}, D3D12_TEXTURE_BARRIER_FLAG_NONE);
     }
+  }
 
   D3D12_BARRIER_GROUP const pending_barrier_group{
     .Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = clamp_cast<UINT32>(pending_tex_barriers.size()),
