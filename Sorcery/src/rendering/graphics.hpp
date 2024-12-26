@@ -282,6 +282,7 @@ public:
   LEOPPHAPI auto WaitIdle() const -> void;
 
   LEOPPHAPI auto ResizeSwapChain(SwapChain& swap_chain, UINT width, UINT height) -> void;
+  LEOPPHAPI auto Present(SwapChain const& swap_chain) -> void;
 
   LEOPPHAPI auto GetCopyableFootprints(TextureDesc const& desc, UINT first_subresource, UINT subresource_count,
                                        UINT64 base_offset, D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layouts,
@@ -432,7 +433,7 @@ public:
                                       INT base_vertex_location, UINT start_instance_location) const -> void;
   LEOPPHAPI auto DrawInstanced(UINT vertex_count_per_instance, UINT instance_count, UINT start_vertex_location,
                                UINT start_instance_location) const -> void;
-  LEOPPHAPI auto Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT format) const -> void;
+  LEOPPHAPI auto Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT format) -> void;
   LEOPPHAPI auto SetBlendFactor(std::span<FLOAT const, 4> blend_factor) const -> void;
   LEOPPHAPI auto SetIndexBuffer(Buffer const& buf, DXGI_FORMAT index_format) -> void;
   LEOPPHAPI auto SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY primitive_topology) const -> void;
@@ -499,8 +500,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetTextures() const -> std::span<SharedDeviceChildHandle<Texture const> const>;
   [[nodiscard]] LEOPPHAPI auto GetCurrentTextureIndex() const -> UINT;
   [[nodiscard]] LEOPPHAPI auto GetCurrentTexture() const -> Texture const&;
-
-  LEOPPHAPI auto Present() const -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSyncInterval() const -> UINT;
   LEOPPHAPI auto SetSyncInterval(UINT sync_interval) -> void;

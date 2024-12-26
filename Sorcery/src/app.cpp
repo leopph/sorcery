@@ -128,7 +128,7 @@ auto App::Run() -> void {
     render_job_ = job_system_.CreateJob([this] {
       scene_renderer_.Render();
       Render();
-      swap_chain_->Present();
+      graphics_device_.Present(*swap_chain_);
       render_manager_.EndFrame();
     });
 

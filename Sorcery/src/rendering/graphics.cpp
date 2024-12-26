@@ -760,6 +760,36 @@ auto GraphicsDevice::ResizeSwapChain(SwapChain& swap_chain, UINT const width, UI
 }
 
 
+auto GraphicsDevice::Present(SwapChain const& swap_chain) -> void {
+  auto const state{global_resource_states_.Get(swap_chain.GetCurrentTexture().resource_.Get())};
+  auto const layout_before{state ? state->layout : D3D12_BARRIER_LAYOUT_UNDEFINED};
+
+  if (!state || state->layout != D3D12_BARRIER_LAYOUT_PRESENT) {
+    D3D12_TEXTURE_BARRIER const barrier{
+      D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_NONE,
+      D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_ACCESS_NO_ACCESS,
+      layout_before, D3D12_BARRIER_LAYOUT_PRESENT,
+      swap_chain.GetCurrentTexture().resource_.Get(), {0xffffffff},
+      D3D12_TEXTURE_BARRIER_FLAG_NONE
+    };
+
+    D3D12_BARRIER_GROUP const barrier_group{
+      .Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = 1, .pTextureBarriers = &barrier
+    };
+
+    auto& cmd_list{AcquirePendingBarrierCmdList()};
+    cmd_list.Begin(nullptr);
+    cmd_list.cmd_list_->Barrier(1, &barrier_group);
+    cmd_list.End();
+
+    queue_->ExecuteCommandLists(1, std::array{static_cast<ID3D12CommandList*>(cmd_list.cmd_list_.Get())}.data());
+    SignalFence(*execute_barrier_fence_);
+  }
+
+  ThrowIfFailed(swap_chain.swap_chain_->Present(swap_chain.GetSyncInterval(), present_flags_),
+    "Failed to present swap chain.");
+}
+
 
 auto GraphicsDevice::GetCopyableFootprints(TextureDesc const& desc, UINT const first_subresource,
                                            UINT const subresource_count, UINT64 const base_offset,
@@ -1582,11 +1612,6 @@ auto SwapChain::GetCurrentTextureIndex() const -> UINT {
 
 auto SwapChain::GetCurrentTexture() const -> Texture const& {
   return *textures_[GetCurrentTextureIndex()];
-}
-
-
-auto SwapChain::Present() const -> void {
-  ThrowIfFailed(swap_chain_->Present(sync_interval_, present_flags_), "Failed to present swap chain.");
 }
 
 
