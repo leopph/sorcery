@@ -443,11 +443,11 @@ public:
   LEOPPHAPI auto SetViewports(std::span<D3D12_VIEWPORT const> viewports) const -> void;
   LEOPPHAPI auto SetPipelineParameter(UINT index, UINT value) const -> void;
   LEOPPHAPI auto SetPipelineParameters(UINT index, std::span<UINT const> values) const -> void;
-  LEOPPHAPI auto SetConstantBuffer(Buffer const& buf, UINT param_idx) -> void;
-  LEOPPHAPI auto SetShaderResource(Buffer const& buf, UINT param_idx) -> void;
-  LEOPPHAPI auto SetShaderResource(Texture const& tex, UINT param_idx) -> void;
-  LEOPPHAPI auto SetUnorderedAccess(Buffer const& buf, UINT param_idx) -> void;
-  LEOPPHAPI auto SetUnorderedAccess(Texture const& tex, UINT param_idx) -> void;
+  LEOPPHAPI auto SetConstantBuffer(UINT param_idx, Buffer const& buf) -> void;
+  LEOPPHAPI auto SetShaderResource(UINT param_idx, Buffer const& buf) -> void;
+  LEOPPHAPI auto SetShaderResource(UINT param_idx, Texture const& tex) -> void;
+  LEOPPHAPI auto SetUnorderedAccess(UINT param_idx, Buffer const& buf) -> void;
+  LEOPPHAPI auto SetUnorderedAccess(UINT param_idx, Texture const& tex) -> void;
   LEOPPHAPI auto SetPipelineState(PipelineState const& pipeline_state) -> void;
 
 private:

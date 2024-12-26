@@ -1451,32 +1451,32 @@ auto CommandList::SetPipelineParameters(UINT const index, std::span<UINT const> 
 }
 
 
-auto CommandList::SetConstantBuffer(Buffer const& buf, UINT const param_idx) -> void {
+auto CommandList::SetConstantBuffer(UINT const param_idx, Buffer const& buf) -> void {
   GenerateBarrier(buf, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_CONSTANT_BUFFER);
   SetPipelineParameter(param_idx, buf.GetConstantBuffer());
 }
 
 
-auto CommandList::SetShaderResource(Buffer const& buf, UINT const param_idx) -> void {
+auto CommandList::SetShaderResource(UINT const param_idx, Buffer const& buf) -> void {
   GenerateBarrier(buf, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_SHADER_RESOURCE);
   SetPipelineParameter(param_idx, buf.GetShaderResource());
 }
 
 
-auto CommandList::SetShaderResource(Texture const& tex, UINT const param_idx) -> void {
+auto CommandList::SetShaderResource(UINT const param_idx, Texture const& tex) -> void {
   GenerateBarrier(tex, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
     D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE);
   SetPipelineParameter(param_idx, tex.GetShaderResource());
 }
 
 
-auto CommandList::SetUnorderedAccess(Buffer const& buf, UINT const param_idx) -> void {
+auto CommandList::SetUnorderedAccess(UINT const param_idx, Buffer const& buf) -> void {
   GenerateBarrier(buf, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_UNORDERED_ACCESS);
   SetPipelineParameter(param_idx, buf.GetUnorderedAccess());
 }
 
 
-auto CommandList::SetUnorderedAccess(Texture const& tex, UINT const param_idx) -> void {
+auto CommandList::SetUnorderedAccess(UINT const param_idx, Texture const& tex) -> void {
   GenerateBarrier(tex, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_UNORDERED_ACCESS,
     D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS);
   SetPipelineParameter(param_idx, tex.GetUnorderedAccess());
