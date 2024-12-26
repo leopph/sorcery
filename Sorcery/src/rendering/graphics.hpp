@@ -226,11 +226,8 @@ private:
 
 
 struct PendingBarrier {
-  D3D12_BARRIER_SYNC sync;
-  D3D12_BARRIER_ACCESS access;
   D3D12_BARRIER_LAYOUT layout;
   ID3D12Resource* resource;
-  bool is_texture;
 };
 
 

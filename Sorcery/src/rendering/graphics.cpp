@@ -1513,9 +1513,10 @@ CommandList::CommandList(ComPtr<ID3D12CommandAllocator> allocator, ComPtr<ID3D12
   root_signatures_{root_signatures} {}
 
 
-auto CommandList::GenerateBarrier(Buffer const& buf, D3D12_BARRIER_SYNC sync, D3D12_BARRIER_ACCESS access) -> void {
+auto CommandList::GenerateBarrier(Buffer const& buf, D3D12_BARRIER_SYNC const sync,
+                                  D3D12_BARRIER_ACCESS const access) -> void {
   if (auto const state{local_resource_states_.Get(buf.resource_.Get())}; !state) {
-    pending_barriers_.emplace_back(sync, access, D3D12_BARRIER_LAYOUT_UNDEFINED, buf.resource_.Get(), false);
+    local_resource_states_.Record(buf.resource_.Get(), {sync, access, D3D12_BARRIER_LAYOUT_UNDEFINED});
   } else if ((state->access & access) == 0) {
     D3D12_BUFFER_BARRIER const barrier{
       state->sync, sync, state->access, access, buf.resource_.Get(), 0, buf.resource_->GetDesc1().Width
@@ -1528,10 +1529,11 @@ auto CommandList::GenerateBarrier(Buffer const& buf, D3D12_BARRIER_SYNC sync, D3
 }
 
 
-auto CommandList::GenerateBarrier(Texture const& tex, D3D12_BARRIER_SYNC sync, D3D12_BARRIER_ACCESS access,
-                                  D3D12_BARRIER_LAYOUT layout) -> void {
+auto CommandList::GenerateBarrier(Texture const& tex, D3D12_BARRIER_SYNC const sync, D3D12_BARRIER_ACCESS const access,
+                                  D3D12_BARRIER_LAYOUT const layout) -> void {
   if (auto const state{local_resource_states_.Get(tex.resource_.Get())}; !state) {
-    pending_barriers_.emplace_back(sync, access, layout, tex.resource_.Get(), true);
+    pending_barriers_.emplace_back(layout, tex.resource_.Get());
+    local_resource_states_.Record(tex.resource_.Get(), {sync, access, layout});
   } else if ((state->layout & layout) == 0 || (state->access & access) == 0) {
     D3D12_TEXTURE_BARRIER const barrier{
       state->sync, sync, state->access, access, state->layout, layout, tex.resource_.Get(), {},
