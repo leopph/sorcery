@@ -229,8 +229,8 @@ auto ImGuiRenderer::Render() -> void {
           }
         });
 
-        cmd.SetPipelineParameter(offsetof(ImGuiDrawParams, tex_idx) / 4,
-          static_cast<graphics::Texture*>(draw_cmd.GetTexID())->GetShaderResource());
+        cmd.SetShaderResource(offsetof(ImGuiDrawParams, tex_idx) / 4,
+          *static_cast<graphics::Texture*>(draw_cmd.GetTexID()));
 
         cmd.DrawIndexedInstanced(draw_cmd.ElemCount, 1, draw_cmd.IdxOffset + global_idx_offset,
           draw_cmd.VtxOffset + global_vtx_offset, 0);
