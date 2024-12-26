@@ -207,22 +207,54 @@ private:
 };
 
 
-struct ResourceState {
+template<typename ResourceStateType>
+class ResourceStateTracker {
+public:
+  auto Record(ID3D12Resource* const resource, ResourceStateType const state) -> void {
+    resource_states_[resource] = state;
+  }
+
+
+  [[nodiscard]] auto Get(ID3D12Resource* const resource) const -> std::optional<ResourceStateType> {
+    if (auto const it{resource_states_.find(resource)}; it != std::end(resource_states_)) {
+      return it->second;
+    }
+
+    return std::nullopt;
+  }
+
+
+  auto Clear() -> void {
+    resource_states_.clear();
+  }
+
+  auto begin() const {
+    return std::begin(resource_states_);
+  }
+
+  auto end() const {
+    return std::end(resource_states_);
+  }
+
+private:
+  std::unordered_map<ID3D12Resource*, ResourceStateType> resource_states_;
+};
+
+
+struct GlobalResourceState {
+  D3D12_BARRIER_LAYOUT layout{D3D12_BARRIER_LAYOUT_UNDEFINED};
+};
+
+
+struct PipelineResourceState {
   D3D12_BARRIER_SYNC sync{D3D12_BARRIER_SYNC_NONE};
   D3D12_BARRIER_ACCESS access{D3D12_BARRIER_ACCESS_NO_ACCESS};
   D3D12_BARRIER_LAYOUT layout{D3D12_BARRIER_LAYOUT_UNDEFINED};
 };
 
 
-class ResourceStateTracker {
-public:
-  auto Record(ID3D12Resource* resource, ResourceState state) -> void;
-  [[nodiscard]] auto Get(ID3D12Resource* resource) const -> std::optional<ResourceState>;
-  auto Clear() -> void;
-
-private:
-  std::unordered_map<ID3D12Resource*, ResourceState> resource_states_;
-};
+using GlobalResourceStateTracker = ResourceStateTracker<GlobalResourceState>;
+using PipelineResourceStateTracker = ResourceStateTracker<PipelineResourceState>;
 
 
 struct PendingBarrier {
@@ -314,7 +346,7 @@ private:
   Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue_;
 
   details::RootSignatureCache root_signatures_;
-  details::ResourceStateTracker global_resource_states_;
+  details::GlobalResourceStateTracker global_resource_states_;
 
   UINT swap_chain_flags_{0};
   UINT present_flags_{0};
@@ -461,7 +493,7 @@ private:
 
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list_;
-  details::ResourceStateTracker local_resource_states_;
+  details::PipelineResourceStateTracker local_resource_states_;
   std::vector<details::PendingBarrier> pending_barriers_;
   details::DescriptorHeap const* dsv_heap_;
   details::DescriptorHeap const* rtv_heap_;

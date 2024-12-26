@@ -183,25 +183,6 @@ auto RootSignatureCache::Get(std::uint8_t const num_params) -> ComPtr<ID3D12Root
 }
 
 
-auto details::ResourceStateTracker::Record(ID3D12Resource* const resource, ResourceState const state) -> void {
-  resource_states_[resource] = state;
-}
-
-
-auto details::ResourceStateTracker::Get(ID3D12Resource* const resource) const -> std::optional<ResourceState> {
-  if (auto const it{resource_states_.find(resource)}; it != std::end(resource_states_)) {
-    return it->second;
-  }
-
-  return std::nullopt;
-}
-
-
-auto details::ResourceStateTracker::Clear() -> void {
-  resource_states_.clear();
-}
-
-
 GraphicsDevice::GraphicsDevice(bool const enable_debug) {
   if (enable_debug) {
     ComPtr<ID3D12Debug6> debug;
@@ -336,9 +317,7 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc,
 
   CreateBufferViews(*resource.Get(), desc, cbv, srv, uav);
 
-  global_resource_states_.Record(resource.Get(), details::ResourceState{
-    D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_LAYOUT_UNDEFINED
-  });
+  global_resource_states_.Record(resource.Get(), {.layout = D3D12_BARRIER_LAYOUT_UNDEFINED});
 
   return SharedDeviceChildHandle<Buffer>{
     new Buffer{std::move(allocation), std::move(resource), cbv, srv, uav, desc},
@@ -383,9 +362,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
 
   CreateTextureViews(*resource.Get(), desc, dsv, rtv, srv, uav);
 
-  global_resource_states_.Record(resource.Get(), details::ResourceState{
-    D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_NO_ACCESS, initial_layout
-  });
+  global_resource_states_.Record(resource.Get(), {.layout = initial_layout});
 
   return SharedDeviceChildHandle<Texture>{
     new Texture{std::move(allocation), std::move(resource), dsv, rtv, srv, uav, desc},
@@ -719,7 +696,14 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
       pending_tex_barriers.emplace_back(D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_NONE,
         D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_ACCESS_NO_ACCESS,
         layout_before, pending_barrier.layout, pending_barrier.resource,
-        D3D12_BARRIER_SUBRESOURCE_RANGE{0xffffffff}, D3D12_TEXTURE_BARRIER_FLAG_NONE);
+        D3D12_BARRIER_SUBRESOURCE_RANGE{
+          .IndexOrFirstMipLevel = 0xffffffff, .NumMipLevels = 0, .FirstArraySlice = 0, .NumArraySlices = 0,
+          .FirstPlane = 0, .NumPlanes = 0
+        }, D3D12_TEXTURE_BARRIER_FLAG_NONE);
+    }
+
+    for (auto const& [res, state] : cmd_list.local_resource_states_) {
+      global_resource_states_.Record(res, {.layout = state.layout});
     }
   }
 
@@ -762,15 +746,22 @@ auto GraphicsDevice::ResizeSwapChain(SwapChain& swap_chain, UINT const width, UI
 
 
 auto GraphicsDevice::Present(SwapChain const& swap_chain) -> void {
-  auto const state{global_resource_states_.Get(swap_chain.GetCurrentTexture().resource_.Get())};
+  auto const cur_tex{swap_chain.GetCurrentTexture().resource_.Get()};
+  auto const state{global_resource_states_.Get(cur_tex)};
   auto const layout_before{state ? state->layout : D3D12_BARRIER_LAYOUT_UNDEFINED};
 
   if (!state || state->layout != D3D12_BARRIER_LAYOUT_PRESENT) {
+    global_resource_states_.Record(cur_tex, {.layout = D3D12_BARRIER_LAYOUT_PRESENT});
+
     D3D12_TEXTURE_BARRIER const barrier{
       D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_NONE,
       D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_ACCESS_NO_ACCESS,
       layout_before, D3D12_BARRIER_LAYOUT_PRESENT,
-      swap_chain.GetCurrentTexture().resource_.Get(), {0xffffffff},
+      swap_chain.GetCurrentTexture().resource_.Get(),
+      {
+        .IndexOrFirstMipLevel = 0xffffffff, .NumMipLevels = 0, .FirstArraySlice = 0, .NumArraySlices = 0,
+        .FirstPlane = 0, .NumPlanes = 0
+      },
       D3D12_TEXTURE_BARRIER_FLAG_NONE
     };
 
@@ -1491,34 +1482,48 @@ CommandList::CommandList(ComPtr<ID3D12CommandAllocator> allocator, ComPtr<ID3D12
 
 auto CommandList::GenerateBarrier(Buffer const& buf, D3D12_BARRIER_SYNC const sync,
                                   D3D12_BARRIER_ACCESS const access) -> void {
-  if (auto const state{local_resource_states_.Get(buf.resource_.Get())}; !state) {
-    local_resource_states_.Record(buf.resource_.Get(), {sync, access, D3D12_BARRIER_LAYOUT_UNDEFINED});
-  } else if ((state->access & access) == 0) {
+  auto const local_state{local_resource_states_.Get(buf.resource_.Get())};
+  auto const needs_barrier{local_state && (local_state->access & access) == 0};
+
+  if (!local_state || needs_barrier) {
+    local_resource_states_.Record(buf.resource_.Get(), {
+      .sync = sync, .access = access, .layout = D3D12_BARRIER_LAYOUT_UNDEFINED
+    });
+  }
+
+  if (needs_barrier) {
     D3D12_BUFFER_BARRIER const barrier{
-      state->sync, sync, state->access, access, buf.resource_.Get(), 0, buf.resource_->GetDesc1().Width
+      local_state->sync, sync, local_state->access, access, buf.resource_.Get(), 0, UINT64_MAX
     };
     D3D12_BARRIER_GROUP const group{.Type = D3D12_BARRIER_TYPE_BUFFER, .NumBarriers = 1, .pBufferBarriers = &barrier};
     cmd_list_->Barrier(1, &group);
-
-    local_resource_states_.Record(buf.resource_.Get(), {sync, access, D3D12_BARRIER_LAYOUT_UNDEFINED});
   }
 }
 
 
 auto CommandList::GenerateBarrier(Texture const& tex, D3D12_BARRIER_SYNC const sync, D3D12_BARRIER_ACCESS const access,
                                   D3D12_BARRIER_LAYOUT const layout) -> void {
-  if (auto const state{local_resource_states_.Get(tex.resource_.Get())}; !state) {
+  auto const local_state{local_resource_states_.Get(tex.resource_.Get())};
+  auto const needs_barrier{local_state && ((local_state->layout & layout) == 0 || (local_state->access & access) == 0)};
+
+  if (!local_state) {
     pending_barriers_.emplace_back(layout, tex.resource_.Get());
-    local_resource_states_.Record(tex.resource_.Get(), {sync, access, layout});
-  } else if ((state->layout & layout) == 0 || (state->access & access) == 0) {
+  }
+
+  if (!local_state || needs_barrier) {
+    local_resource_states_.Record(tex.resource_.Get(), {.sync = sync, .access = access, .layout = layout});
+  }
+
+  if (needs_barrier) {
     D3D12_TEXTURE_BARRIER const barrier{
-      state->sync, sync, state->access, access, state->layout, layout, tex.resource_.Get(), {},
+      local_state->sync, sync, local_state->access, access, local_state->layout, layout, tex.resource_.Get(), {
+        .IndexOrFirstMipLevel = 0xffffffff, .NumMipLevels = 0, .FirstArraySlice = 0, .NumArraySlices = 0,
+        .FirstPlane = 0, .NumPlanes = 0
+      },
       D3D12_TEXTURE_BARRIER_FLAG_NONE
     };
     D3D12_BARRIER_GROUP const group{.Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = 1, .pTextureBarriers = &barrier};
     cmd_list_->Barrier(1, &group);
-
-    local_resource_states_.Record(tex.resource_.Get(), {sync, access, layout});
   }
 }
 
