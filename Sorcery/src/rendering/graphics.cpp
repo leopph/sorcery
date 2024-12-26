@@ -708,58 +708,32 @@ auto GraphicsDevice::SignalFence(Fence& fence) const -> void {
 
 
 auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) -> void {
-  std::vector<D3D12_BUFFER_BARRIER> buffer_barriers;
-  std::vector<D3D12_TEXTURE_BARRIER> texture_barriers;
+  std::vector<D3D12_TEXTURE_BARRIER> pending_tex_barriers;
 
   for (auto const& cmd_list : cmd_lists) {
     for (auto const& pending_barrier : cmd_list.pending_barriers_) {
-      if (pending_barrier.is_texture) {
         auto const global_state{global_resource_states_.Get(pending_barrier.resource)};
-        auto access_before{global_state ? global_state->access : D3D12_BARRIER_ACCESS_NO_ACCESS};
         auto layout_before{global_state ? global_state->layout : D3D12_BARRIER_LAYOUT_UNDEFINED};
 
-        texture_barriers.emplace_back(D3D12_BARRIER_SYNC_NONE, pending_barrier.sync, access_before,
-          pending_barrier.access, layout_before, pending_barrier.layout, pending_barrier.resource,
+      pending_tex_barriers.emplace_back(D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_SYNC_NONE,
+        D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_ACCESS_NO_ACCESS,
+        layout_before, pending_barrier.layout, pending_barrier.resource,
           D3D12_BARRIER_SUBRESOURCE_RANGE{0xffffffff}, D3D12_TEXTURE_BARRIER_FLAG_NONE);
-      } else {
-        buffer_barriers.emplace_back(D3D12_BARRIER_SYNC_NONE, pending_barrier.sync, D3D12_BARRIER_ACCESS_NO_ACCESS,
-          pending_barrier.access, pending_barrier.resource, 0, UINT64_MAX);
       }
     }
-  }
 
-  std::array const barrier_groups{
-    D3D12_BARRIER_GROUP{
-      .Type = D3D12_BARRIER_TYPE_BUFFER, .NumBarriers = clamp_cast<UINT32>(buffer_barriers.size()),
-      .pBufferBarriers = buffer_barriers.data()
-    },
-    D3D12_BARRIER_GROUP{
-      .Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = clamp_cast<UINT32>(texture_barriers.size()),
-      .pTextureBarriers = texture_barriers.data()
-    }
+  D3D12_BARRIER_GROUP const pending_barrier_group{
+    .Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = clamp_cast<UINT32>(pending_tex_barriers.size()),
+    .pTextureBarriers = pending_tex_barriers.data()
   };
 
-  auto const next_fence_val{execute_barrier_fence_val_++};
-  auto const cur_fence_val{next_fence_val - 1};
+  auto& pending_barrier_cmd{AcquirePendingBarrierCmdList()};
 
-  CommandList* pending_barrier_cmd{nullptr};
-
-  for (std::size_t i{0}; i < execute_barrier_cmd_lists_.size(); i++) {
-    if (execute_barrier_cmd_lists_[i].fence_completion_val <= cur_fence_val) {
-      execute_barrier_cmd_lists_[i].fence_completion_val = next_fence_val;
-      pending_barrier_cmd = execute_barrier_cmd_lists_[i].cmd_list.get();
-    }
-  }
-
-  if (!pending_barrier_cmd) {
-    pending_barrier_cmd = execute_barrier_cmd_lists_.emplace_back(CreateCommandList(), next_fence_val).cmd_list.get();
-  }
-
-  pending_barrier_cmd->Begin(nullptr);
-  pending_barrier_cmd->cmd_list_->Barrier(clamp_cast<UINT32>(barrier_groups.size()), barrier_groups.data());
-  pending_barrier_cmd->End();
+  pending_barrier_cmd.Begin(nullptr);
+  pending_barrier_cmd.cmd_list_->Barrier(1, &pending_barrier_group);
+  pending_barrier_cmd.End();
   queue_->ExecuteCommandLists(1,
-    std::array{static_cast<ID3D12CommandList*>(pending_barrier_cmd->cmd_list_.Get())}.data());
+    std::array{static_cast<ID3D12CommandList*>(pending_barrier_cmd.cmd_list_.Get())}.data());
   SignalFence(*execute_barrier_fence_);
 
   std::vector<ID3D12CommandList*> submit_list;
@@ -784,6 +758,7 @@ auto GraphicsDevice::ResizeSwapChain(SwapChain& swap_chain, UINT const width, UI
     "Failed to resize swap chain buffers.");
   SwapChainCreateTextures(swap_chain);
 }
+
 
 
 auto GraphicsDevice::GetCopyableFootprints(TextureDesc const& desc, UINT const first_subresource,
@@ -1089,6 +1064,23 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
   } else {
     uav = details::kInvalidResourceIndex;
   }
+}
+
+
+auto GraphicsDevice::AcquirePendingBarrierCmdList() -> CommandList& {
+  std::unique_lock const lock{execute_barrier_mutex_};
+
+  auto const completed_fence_val{execute_barrier_fence_->GetCompletedValue()};
+  auto const next_fence_val{execute_barrier_fence_->GetNextValue()};
+
+  for (std::size_t i{0}; i < execute_barrier_cmd_lists_.size(); i++) {
+    if (execute_barrier_cmd_lists_[i].fence_completion_val <= completed_fence_val) {
+      execute_barrier_cmd_lists_[i].fence_completion_val = next_fence_val;
+      return *execute_barrier_cmd_lists_[i].cmd_list;
+    }
+  }
+
+  return *execute_barrier_cmd_lists_.emplace_back(CreateCommandList(), next_fence_val).cmd_list;
 }
 
 

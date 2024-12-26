@@ -295,6 +295,8 @@ private:
   auto CreateTextureViews(ID3D12Resource2& texture, TextureDesc const& desc, UINT& dsv, UINT& rtv, UINT& srv,
                           UINT& uav) const -> void;
 
+  [[nodiscard]] auto AcquirePendingBarrierCmdList() -> CommandList&;
+
   static UINT const rtv_heap_size_;
   static UINT const dsv_heap_size_;
   static UINT const res_desc_heap_size_;
@@ -321,7 +323,7 @@ private:
   SharedDeviceChildHandle<Fence> execute_barrier_fence_;
 
   std::vector<details::ExecuteBarrierCmdListRecord> execute_barrier_cmd_lists_;
-  std::atomic<UINT64> execute_barrier_fence_val_;
+  std::mutex execute_barrier_mutex_;
 };
 
 
