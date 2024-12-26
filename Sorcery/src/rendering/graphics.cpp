@@ -13,6 +13,8 @@
 #include <utility>
 #include <vector>
 
+#include "../Util.hpp"
+
 using Microsoft::WRL::ComPtr;
 
 
@@ -181,6 +183,25 @@ auto RootSignatureCache::Get(std::uint8_t const num_params) -> ComPtr<ID3D12Root
 }
 
 
+auto details::ResourceStateTracker::Record(ID3D12Resource* const resource, ResourceState const state) -> void {
+  resource_states_[resource] = state;
+}
+
+
+auto details::ResourceStateTracker::Get(ID3D12Resource* const resource) const -> std::optional<ResourceState> {
+  if (auto const it{resource_states_.find(resource)}; it != std::end(resource_states_)) {
+    return it->second;
+  }
+
+  return std::nullopt;
+}
+
+
+auto details::ResourceStateTracker::Clear() -> void {
+  resource_states_.clear();
+}
+
+
 GraphicsDevice::GraphicsDevice(bool const enable_debug) {
   if (enable_debug) {
     ComPtr<ID3D12Debug6> debug;
@@ -291,6 +312,7 @@ GraphicsDevice::GraphicsDevice(bool const enable_debug) {
   }
 
   idle_fence_ = CreateFence(0);
+  execute_barrier_fence_ = CreateFence(0);
 }
 
 
@@ -313,6 +335,10 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc,
   UINT uav;
 
   CreateBufferViews(*resource.Get(), desc, cbv, srv, uav);
+
+  global_resource_states_.Record(resource.Get(), details::ResourceState{
+    D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_NO_ACCESS, D3D12_BARRIER_LAYOUT_UNDEFINED
+  });
 
   return SharedDeviceChildHandle<Buffer>{
     new Buffer{std::move(allocation), std::move(resource), cbv, srv, uav, desc},
@@ -355,6 +381,10 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
   UINT uav;
 
   CreateTextureViews(*resource.Get(), desc, dsv, rtv, srv, uav);
+
+  global_resource_states_.Record(resource.Get(), details::ResourceState{
+    D3D12_BARRIER_SYNC_NONE, D3D12_BARRIER_ACCESS_NO_ACCESS, initial_layout
+  });
 
   return SharedDeviceChildHandle<Texture>{
     new Texture{std::move(allocation), std::move(resource), dsv, rtv, srv, uav, desc},
@@ -424,7 +454,8 @@ auto GraphicsDevice::CreatePipelineState(PipelineDesc const& desc,
 
   return SharedDeviceChildHandle<PipelineState>{
     new PipelineState{
-      std::move(root_signature), std::move(pipeline_state), num_32_bit_params, desc.cs.BytecodeLength != 0
+      std::move(root_signature), std::move(pipeline_state), num_32_bit_params, desc.cs.BytecodeLength != 0,
+      desc.depth_stencil_state.DepthEnable && desc.depth_stencil_state.DepthWriteMask != D3D12_DEPTH_WRITE_MASK_ZERO
     },
     details::DeviceChildDeleter<PipelineState>{*this}
   };
@@ -676,7 +707,61 @@ auto GraphicsDevice::SignalFence(Fence& fence) const -> void {
 }
 
 
-auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) const -> void {
+auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) -> void {
+  std::vector<D3D12_BUFFER_BARRIER> buffer_barriers;
+  std::vector<D3D12_TEXTURE_BARRIER> texture_barriers;
+
+  for (auto const& cmd_list : cmd_lists) {
+    for (auto const& pending_barrier : cmd_list.pending_barriers_) {
+      if (pending_barrier.is_texture) {
+        auto const global_state{global_resource_states_.Get(pending_barrier.resource)};
+        auto access_before{global_state ? global_state->access : D3D12_BARRIER_ACCESS_NO_ACCESS};
+        auto layout_before{global_state ? global_state->layout : D3D12_BARRIER_LAYOUT_UNDEFINED};
+
+        texture_barriers.emplace_back(D3D12_BARRIER_SYNC_NONE, pending_barrier.sync, access_before,
+          pending_barrier.access, layout_before, pending_barrier.layout, pending_barrier.resource,
+          D3D12_BARRIER_SUBRESOURCE_RANGE{0xffffffff}, D3D12_TEXTURE_BARRIER_FLAG_NONE);
+      } else {
+        buffer_barriers.emplace_back(D3D12_BARRIER_SYNC_NONE, pending_barrier.sync, D3D12_BARRIER_ACCESS_NO_ACCESS,
+          pending_barrier.access, pending_barrier.resource, 0, UINT64_MAX);
+      }
+    }
+  }
+
+  std::array const barrier_groups{
+    D3D12_BARRIER_GROUP{
+      .Type = D3D12_BARRIER_TYPE_BUFFER, .NumBarriers = clamp_cast<UINT32>(buffer_barriers.size()),
+      .pBufferBarriers = buffer_barriers.data()
+    },
+    D3D12_BARRIER_GROUP{
+      .Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = clamp_cast<UINT32>(texture_barriers.size()),
+      .pTextureBarriers = texture_barriers.data()
+    }
+  };
+
+  auto const next_fence_val{execute_barrier_fence_val_++};
+  auto const cur_fence_val{next_fence_val - 1};
+
+  CommandList* pending_barrier_cmd{nullptr};
+
+  for (std::size_t i{0}; i < execute_barrier_cmd_lists_.size(); i++) {
+    if (execute_barrier_cmd_lists_[i].fence_completion_val <= cur_fence_val) {
+      execute_barrier_cmd_lists_[i].fence_completion_val = next_fence_val;
+      pending_barrier_cmd = execute_barrier_cmd_lists_[i].cmd_list.get();
+    }
+  }
+
+  if (!pending_barrier_cmd) {
+    pending_barrier_cmd = execute_barrier_cmd_lists_.emplace_back(CreateCommandList(), next_fence_val).cmd_list.get();
+  }
+
+  pending_barrier_cmd->Begin(nullptr);
+  pending_barrier_cmd->cmd_list_->Barrier(clamp_cast<UINT32>(barrier_groups.size()), barrier_groups.data());
+  pending_barrier_cmd->End();
+  queue_->ExecuteCommandLists(1,
+    std::array{static_cast<ID3D12CommandList*>(pending_barrier_cmd->cmd_list_.Get())}.data());
+  SignalFence(*execute_barrier_fence_);
+
   std::vector<ID3D12CommandList*> submit_list;
   submit_list.reserve(cmd_lists.size());
   std::ranges::transform(cmd_lists, std::back_inserter(submit_list), [](CommandList const& cmd_list) {
@@ -1093,11 +1178,12 @@ Texture::Texture(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2>
 
 
 PipelineState::PipelineState(ComPtr<ID3D12RootSignature> root_signature, ComPtr<ID3D12PipelineState> pipeline_state,
-                             std::uint8_t const num_params, bool const is_compute) :
+                             std::uint8_t const num_params, bool const is_compute, bool const allows_ds_write) :
   root_signature_{std::move(root_signature)},
   pipeline_state_{std::move(pipeline_state)},
   num_params_{num_params},
-  is_compute_{is_compute} {}
+  is_compute_{is_compute},
+  allows_ds_write_{allows_ds_write} {}
 
 
 auto CommandList::Begin(PipelineState const* pipeline_state) -> void {
@@ -1108,6 +1194,8 @@ auto CommandList::Begin(PipelineState const* pipeline_state) -> void {
     std::array{res_desc_heap_->GetInternalPtr(), sampler_heap_->GetInternalPtr()}.data());
   compute_pipeline_set_ = pipeline_state && pipeline_state->is_compute_;
   SetRootSignature(pipeline_state ? pipeline_state->num_params_ : 0);
+  local_resource_states_.Clear();
+  pending_barriers_.clear();
 }
 
 
@@ -1168,8 +1256,11 @@ auto CommandList::Barrier(std::span<GlobalBarrier const> const global_barriers,
 
 
 auto CommandList::ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS const clear_flags, FLOAT const depth,
-                                    UINT8 const stencil, std::span<D3D12_RECT const> const rects) const -> void {
+                                    UINT8 const stencil, std::span<D3D12_RECT const> const rects) -> void {
   if (tex.dsv_ != details::kInvalidResourceIndex) {
+    GenerateBarrier(tex, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE,
+      D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE);
+
     cmd_list_->ClearDepthStencilView(dsv_heap_->GetDescriptorCpuHandle(tex.dsv_), clear_flags, depth, stencil,
       static_cast<UINT>(rects.size()), rects.data());
   }
@@ -1177,33 +1268,49 @@ auto CommandList::ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS const 
 
 
 auto CommandList::ClearRenderTarget(Texture const& tex, std::span<FLOAT const, 4> const color_rgba,
-                                    std::span<D3D12_RECT const> const rects) const -> void {
+                                    std::span<D3D12_RECT const> const rects) -> void {
   if (tex.rtv_ != details::kInvalidResourceIndex) {
+    GenerateBarrier(tex, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+      D3D12_BARRIER_LAYOUT_RENDER_TARGET);
+
     cmd_list_->ClearRenderTargetView(rtv_heap_->GetDescriptorCpuHandle(tex.rtv_), color_rgba.data(),
       static_cast<UINT>(rects.size()), rects.data());
   }
 }
 
 
-auto CommandList::CopyBuffer(Buffer const& dst, Buffer const& src) const -> void {
+auto CommandList::CopyBuffer(Buffer const& dst, Buffer const& src) -> void {
+  GenerateBarrier(src, D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_ACCESS_COPY_SOURCE);
+  GenerateBarrier(dst, D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_ACCESS_COPY_DEST);
   cmd_list_->CopyResource(dst.resource_.Get(), src.resource_.Get());
 }
 
 
 auto CommandList::CopyBufferRegion(Buffer const& dst, UINT64 const dst_offset, Buffer const& src,
-                                   UINT64 const src_offset, UINT64 const num_bytes) const -> void {
+                                   UINT64 const src_offset, UINT64 const num_bytes) -> void {
+  GenerateBarrier(src, D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_ACCESS_COPY_SOURCE);
+  GenerateBarrier(dst, D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_ACCESS_COPY_DEST);
   cmd_list_->CopyBufferRegion(dst.resource_.Get(), dst_offset, src.resource_.Get(), src_offset, num_bytes);
 }
 
 
-auto CommandList::CopyTexture(Texture const& dst, Texture const& src) const -> void {
+auto CommandList::CopyTexture(Texture const& dst, Texture const& src) -> void {
+  GenerateBarrier(src, D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_ACCESS_COPY_SOURCE,
+    D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_SOURCE);
+  GenerateBarrier(dst, D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_ACCESS_COPY_DEST,
+    D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_DEST);
   cmd_list_->CopyResource(dst.resource_.Get(), src.resource_.Get());
 }
 
 
 auto CommandList::CopyTextureRegion(Texture const& dst, UINT const dst_subresource_index, UINT const dst_x,
                                     UINT const dst_y, UINT const dst_z, Texture const& src,
-                                    UINT const src_subresource_index, D3D12_BOX const* src_box) const -> void {
+                                    UINT const src_subresource_index, D3D12_BOX const* src_box) -> void {
+  GenerateBarrier(src, D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_ACCESS_COPY_SOURCE,
+    D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_SOURCE);
+  GenerateBarrier(dst, D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_ACCESS_COPY_DEST,
+    D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_DEST);
+
   D3D12_TEXTURE_COPY_LOCATION const dst_loc{
     .pResource = dst.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
     .SubresourceIndex = dst_subresource_index
@@ -1218,7 +1325,10 @@ auto CommandList::CopyTextureRegion(Texture const& dst, UINT const dst_subresour
 
 auto CommandList::CopyTextureRegion(Texture const& dst, UINT const dst_subresource_index, UINT const dst_x,
                                     UINT const dst_y, UINT const dst_z, Buffer const& src,
-                                    D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void {
+                                    D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) -> void {
+  GenerateBarrier(src, D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_ACCESS_COPY_SOURCE);
+  GenerateBarrier(dst, D3D12_BARRIER_SYNC_COPY, D3D12_BARRIER_ACCESS_COPY_DEST,
+    D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_DEST);
   D3D12_TEXTURE_COPY_LOCATION const dst_loc{
     .pResource = dst.resource_.Get(), .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
     .SubresourceIndex = dst_subresource_index
@@ -1270,7 +1380,8 @@ auto CommandList::SetBlendFactor(std::span<FLOAT const, 4> const blend_factor) c
 }
 
 
-auto CommandList::SetIndexBuffer(Buffer const& buf, DXGI_FORMAT const index_format) const -> void {
+auto CommandList::SetIndexBuffer(Buffer const& buf, DXGI_FORMAT const index_format) -> void {
+  GenerateBarrier(buf, D3D12_BARRIER_SYNC_VERTEX_SHADING, D3D12_BARRIER_ACCESS_INDEX_BUFFER);
   D3D12_INDEX_BUFFER_VIEW const ibv{
     buf.resource_->GetGPUVirtualAddress(), static_cast<UINT>(buf.resource_->GetDesc1().Width), index_format
   };
@@ -1283,8 +1394,18 @@ auto CommandList::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY const primitive_
 }
 
 
-auto CommandList::SetRenderTargets(std::span<Texture const> render_targets,
-                                   Texture const* depth_stencil) const -> void {
+auto CommandList::SetRenderTargets(std::span<Texture const> render_targets, Texture const* depth_stencil) -> void {
+  std::ranges::for_each(render_targets, [this](Texture const& tex) {
+    GenerateBarrier(tex, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+      D3D12_BARRIER_LAYOUT_RENDER_TARGET);
+  });
+
+  if (depth_stencil) {
+    GenerateBarrier(*depth_stencil, D3D12_BARRIER_SYNC_DEPTH_STENCIL,
+      pipeline_allows_ds_write_ ? D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE : D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ,
+      pipeline_allows_ds_write_ ? D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE : D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ);
+  }
+
   std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt;
   rt.reserve(render_targets.size());
   std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const& tex) {
@@ -1330,16 +1451,43 @@ auto CommandList::SetPipelineParameters(UINT const index, std::span<UINT const> 
 }
 
 
-auto CommandList::SetPipelineState(PipelineState const& pipeline_state) -> void {
-  cmd_list_->SetPipelineState(pipeline_state.pipeline_state_.Get());
-  compute_pipeline_set_ = pipeline_state.is_compute_;
-  SetRootSignature(pipeline_state.num_params_);
+auto CommandList::SetConstantBuffer(Buffer const& buf, UINT const param_idx) -> void {
+  GenerateBarrier(buf, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_CONSTANT_BUFFER);
+  SetPipelineParameter(param_idx, buf.GetConstantBuffer());
 }
 
 
-auto CommandList::SetStreamOutputTargets(UINT const start_slot,
-                                         std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> const views) const -> void {
-  cmd_list_->SOSetTargets(start_slot, static_cast<UINT>(views.size()), views.data());
+auto CommandList::SetShaderResource(Buffer const& buf, UINT const param_idx) -> void {
+  GenerateBarrier(buf, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_SHADER_RESOURCE);
+  SetPipelineParameter(param_idx, buf.GetShaderResource());
+}
+
+
+auto CommandList::SetShaderResource(Texture const& tex, UINT const param_idx) -> void {
+  GenerateBarrier(tex, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
+    D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE);
+  SetPipelineParameter(param_idx, tex.GetShaderResource());
+}
+
+
+auto CommandList::SetUnorderedAccess(Buffer const& buf, UINT const param_idx) -> void {
+  GenerateBarrier(buf, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_UNORDERED_ACCESS);
+  SetPipelineParameter(param_idx, buf.GetUnorderedAccess());
+}
+
+
+auto CommandList::SetUnorderedAccess(Texture const& tex, UINT const param_idx) -> void {
+  GenerateBarrier(tex, D3D12_BARRIER_SYNC_ALL_SHADING, D3D12_BARRIER_ACCESS_UNORDERED_ACCESS,
+    D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS);
+  SetPipelineParameter(param_idx, tex.GetUnorderedAccess());
+}
+
+
+auto CommandList::SetPipelineState(PipelineState const& pipeline_state) -> void {
+  cmd_list_->SetPipelineState(pipeline_state.pipeline_state_.Get());
+  compute_pipeline_set_ = pipeline_state.is_compute_;
+  pipeline_allows_ds_write_ = pipeline_state.allows_ds_write_;
+  SetRootSignature(pipeline_state.num_params_);
 }
 
 
@@ -1363,6 +1511,38 @@ CommandList::CommandList(ComPtr<ID3D12CommandAllocator> allocator, ComPtr<ID3D12
   res_desc_heap_{res_desc_heap},
   sampler_heap_{sampler_heap},
   root_signatures_{root_signatures} {}
+
+
+auto CommandList::GenerateBarrier(Buffer const& buf, D3D12_BARRIER_SYNC sync, D3D12_BARRIER_ACCESS access) -> void {
+  if (auto const state{local_resource_states_.Get(buf.resource_.Get())}; !state) {
+    pending_barriers_.emplace_back(sync, access, D3D12_BARRIER_LAYOUT_UNDEFINED, buf.resource_.Get(), false);
+  } else if ((state->access & access) == 0) {
+    D3D12_BUFFER_BARRIER const barrier{
+      state->sync, sync, state->access, access, buf.resource_.Get(), 0, buf.resource_->GetDesc1().Width
+    };
+    D3D12_BARRIER_GROUP const group{.Type = D3D12_BARRIER_TYPE_BUFFER, .NumBarriers = 1, .pBufferBarriers = &barrier};
+    cmd_list_->Barrier(1, &group);
+
+    local_resource_states_.Record(buf.resource_.Get(), {sync, access, D3D12_BARRIER_LAYOUT_UNDEFINED});
+  }
+}
+
+
+auto CommandList::GenerateBarrier(Texture const& tex, D3D12_BARRIER_SYNC sync, D3D12_BARRIER_ACCESS access,
+                                  D3D12_BARRIER_LAYOUT layout) -> void {
+  if (auto const state{local_resource_states_.Get(tex.resource_.Get())}; !state) {
+    pending_barriers_.emplace_back(sync, access, layout, tex.resource_.Get(), true);
+  } else if ((state->layout & layout) == 0 || (state->access & access) == 0) {
+    D3D12_TEXTURE_BARRIER const barrier{
+      state->sync, sync, state->access, access, state->layout, layout, tex.resource_.Get(), {},
+      D3D12_TEXTURE_BARRIER_FLAG_NONE
+    };
+    D3D12_BARRIER_GROUP const group{.Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = 1, .pTextureBarriers = &barrier};
+    cmd_list_->Barrier(1, &group);
+
+    local_resource_states_.Record(tex.resource_.Get(), {sync, access, layout});
+  }
+}
 
 
 auto Fence::GetNextValue() const -> UINT64 {

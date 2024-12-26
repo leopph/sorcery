@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <span>
 #include <string_view>
 #include <type_traits>
@@ -196,13 +197,46 @@ private:
 
 class RootSignatureCache {
 public:
-  auto Add(std::uint8_t num_params, Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature) -> Microsoft::WRL::
-    ComPtr<ID3D12RootSignature>;
+  auto Add(std::uint8_t num_params,
+           Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature) -> Microsoft::WRL::ComPtr<ID3D12RootSignature>;
   [[nodiscard]] auto Get(std::uint8_t num_params) -> Microsoft::WRL::ComPtr<ID3D12RootSignature>;
 
 private:
   std::unordered_map<std::uint8_t, Microsoft::WRL::ComPtr<ID3D12RootSignature>> root_signatures_;
   std::mutex mutex_;
+};
+
+
+struct ResourceState {
+  D3D12_BARRIER_SYNC sync{D3D12_BARRIER_SYNC_NONE};
+  D3D12_BARRIER_ACCESS access{D3D12_BARRIER_ACCESS_NO_ACCESS};
+  D3D12_BARRIER_LAYOUT layout{D3D12_BARRIER_LAYOUT_UNDEFINED};
+};
+
+
+class ResourceStateTracker {
+public:
+  auto Record(ID3D12Resource* resource, ResourceState state) -> void;
+  [[nodiscard]] auto Get(ID3D12Resource* resource) const -> std::optional<ResourceState>;
+  auto Clear() -> void;
+
+private:
+  std::unordered_map<ID3D12Resource*, ResourceState> resource_states_;
+};
+
+
+struct PendingBarrier {
+  D3D12_BARRIER_SYNC sync;
+  D3D12_BARRIER_ACCESS access;
+  D3D12_BARRIER_LAYOUT layout;
+  ID3D12Resource* resource;
+  bool is_texture;
+};
+
+
+struct ExecuteBarrierCmdListRecord {
+  SharedDeviceChildHandle<CommandList> cmd_list;
+  UINT64 fence_completion_val;
 };
 }
 
@@ -247,7 +281,7 @@ public:
 
   LEOPPHAPI auto WaitFence(Fence const& fence, UINT64 wait_value) const -> void;
   LEOPPHAPI auto SignalFence(Fence& fence) const -> void;
-  LEOPPHAPI auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) const -> void;
+  LEOPPHAPI auto ExecuteCommandLists(std::span<CommandList const> cmd_lists) -> void;
   LEOPPHAPI auto WaitIdle() const -> void;
 
   LEOPPHAPI auto ResizeSwapChain(SwapChain& swap_chain, UINT width, UINT height) -> void;
@@ -281,11 +315,16 @@ private:
   Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue_;
 
   details::RootSignatureCache root_signatures_;
+  details::ResourceStateTracker global_resource_states_;
 
   UINT swap_chain_flags_{0};
   UINT present_flags_{0};
 
   SharedDeviceChildHandle<Fence> idle_fence_;
+  SharedDeviceChildHandle<Fence> execute_barrier_fence_;
+
+  std::vector<details::ExecuteBarrierCmdListRecord> execute_barrier_cmd_lists_;
+  std::atomic<UINT64> execute_barrier_fence_val_;
 };
 
 
@@ -354,12 +393,14 @@ private:
 
 class PipelineState {
   PipelineState(Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature,
-                Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state, std::uint8_t num_params, bool is_compute);
+                Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state, std::uint8_t num_params, bool is_compute,
+                bool allows_ds_write);
 
   Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature_;
   Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state_;
   std::uint8_t num_params_;
   bool is_compute_;
+  bool allows_ds_write_;
 
   friend GraphicsDevice;
   friend CommandList;
@@ -373,19 +414,17 @@ public:
   LEOPPHAPI auto Barrier(std::span<GlobalBarrier const> global_barriers, std::span<BufferBarrier const> buffer_barriers,
                          std::span<TextureBarrier const> texture_barriers) const -> void;
   LEOPPHAPI auto ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth, UINT8 stencil,
-                                   std::span<D3D12_RECT const> rects) const -> void;
+                                   std::span<D3D12_RECT const> rects) -> void;
   LEOPPHAPI auto ClearRenderTarget(Texture const& tex, std::span<FLOAT const, 4> color_rgba,
-                                   std::span<D3D12_RECT const> rects) const -> void;
-  LEOPPHAPI auto CopyBuffer(Buffer const& dst, Buffer const& src) const -> void;
+                                   std::span<D3D12_RECT const> rects) -> void;
+  LEOPPHAPI auto CopyBuffer(Buffer const& dst, Buffer const& src) -> void;
   LEOPPHAPI auto CopyBufferRegion(Buffer const& dst, UINT64 dst_offset, Buffer const& src, UINT64 src_offset,
-                                  UINT64 num_bytes) const -> void;
-  LEOPPHAPI auto CopyTexture(Texture const& dst, Texture const& src) const -> void;
+                                  UINT64 num_bytes) -> void;
+  LEOPPHAPI auto CopyTexture(Texture const& dst, Texture const& src) -> void;
   LEOPPHAPI auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
-                                   Texture const& src, UINT src_subresource_index,
-                                   D3D12_BOX const* src_box) const -> void;
+                                   Texture const& src, UINT src_subresource_index, D3D12_BOX const* src_box) -> void;
   LEOPPHAPI auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
-                                   Buffer const& src,
-                                   D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) const -> void;
+                                   Buffer const& src, D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) -> void;
   LEOPPHAPI auto Dispatch(UINT thread_group_count_x, UINT thread_group_count_y,
                           UINT thread_group_count_z) const -> void;
   LEOPPHAPI auto DispatchMesh(UINT thread_group_count_x, UINT thread_group_count_y,
@@ -396,17 +435,20 @@ public:
                                UINT start_instance_location) const -> void;
   LEOPPHAPI auto Resolve(Texture const& dst, Texture const& src, DXGI_FORMAT format) const -> void;
   LEOPPHAPI auto SetBlendFactor(std::span<FLOAT const, 4> blend_factor) const -> void;
-  LEOPPHAPI auto SetIndexBuffer(Buffer const& buf, DXGI_FORMAT index_format) const -> void;
+  LEOPPHAPI auto SetIndexBuffer(Buffer const& buf, DXGI_FORMAT index_format) -> void;
   LEOPPHAPI auto SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY primitive_topology) const -> void;
-  LEOPPHAPI auto SetRenderTargets(std::span<Texture const> render_targets, Texture const* depth_stencil) const -> void;
+  LEOPPHAPI auto SetRenderTargets(std::span<Texture const> render_targets, Texture const* depth_stencil) -> void;
   LEOPPHAPI auto SetStencilRef(UINT stencil_ref) const -> void;
   LEOPPHAPI auto SetScissorRects(std::span<D3D12_RECT const> rects) const -> void;
   LEOPPHAPI auto SetViewports(std::span<D3D12_VIEWPORT const> viewports) const -> void;
   LEOPPHAPI auto SetPipelineParameter(UINT index, UINT value) const -> void;
   LEOPPHAPI auto SetPipelineParameters(UINT index, std::span<UINT const> values) const -> void;
+  LEOPPHAPI auto SetConstantBuffer(Buffer const& buf, UINT param_idx) -> void;
+  LEOPPHAPI auto SetShaderResource(Buffer const& buf, UINT param_idx) -> void;
+  LEOPPHAPI auto SetShaderResource(Texture const& tex, UINT param_idx) -> void;
+  LEOPPHAPI auto SetUnorderedAccess(Buffer const& buf, UINT param_idx) -> void;
+  LEOPPHAPI auto SetUnorderedAccess(Texture const& tex, UINT param_idx) -> void;
   LEOPPHAPI auto SetPipelineState(PipelineState const& pipeline_state) -> void;
-  LEOPPHAPI auto SetStreamOutputTargets(UINT start_slot,
-                                        std::span<D3D12_STREAM_OUTPUT_BUFFER_VIEW const> views) const -> void;
 
 private:
   auto SetRootSignature(std::uint8_t num_params) const -> void;
@@ -416,14 +458,21 @@ private:
               details::DescriptorHeap const* rtv_heap, details::DescriptorHeap const* res_desc_heap,
               details::DescriptorHeap const* sampler_heap, details::RootSignatureCache* root_signatures);
 
+  auto GenerateBarrier(Buffer const& buf, D3D12_BARRIER_SYNC sync, D3D12_BARRIER_ACCESS access) -> void;
+  auto GenerateBarrier(Texture const& tex, D3D12_BARRIER_SYNC sync, D3D12_BARRIER_ACCESS access,
+                       D3D12_BARRIER_LAYOUT layout) -> void;
+
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list_;
+  details::ResourceStateTracker local_resource_states_;
+  std::vector<details::PendingBarrier> pending_barriers_;
   details::DescriptorHeap const* dsv_heap_;
   details::DescriptorHeap const* rtv_heap_;
   details::DescriptorHeap const* res_desc_heap_;
   details::DescriptorHeap const* sampler_heap_;
   details::RootSignatureCache* root_signatures_;
   bool compute_pipeline_set_{false};
+  bool pipeline_allows_ds_write_{false};
 
   friend GraphicsDevice;
 };
