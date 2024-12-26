@@ -410,8 +410,6 @@ class CommandList {
 public:
   LEOPPHAPI auto Begin(PipelineState const* pipeline_state) -> void;
   LEOPPHAPI auto End() const -> void;
-  LEOPPHAPI auto Barrier(std::span<GlobalBarrier const> global_barriers, std::span<BufferBarrier const> buffer_barriers,
-                         std::span<TextureBarrier const> texture_barriers) const -> void;
   LEOPPHAPI auto ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth, UINT8 stencil,
                                    std::span<D3D12_RECT const> rects) -> void;
   LEOPPHAPI auto ClearRenderTarget(Texture const& tex, std::span<FLOAT const, 4> color_rgba,

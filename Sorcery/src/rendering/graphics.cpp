@@ -1227,57 +1227,6 @@ auto CommandList::End() const -> void {
 }
 
 
-auto CommandList::Barrier(std::span<GlobalBarrier const> const global_barriers,
-                          std::span<BufferBarrier const> const buffer_barriers,
-                          std::span<TextureBarrier const> const texture_barriers) const -> void {
-  std::vector<D3D12_GLOBAL_BARRIER> globals;
-  globals.reserve(global_barriers.size());
-  std::vector<D3D12_BUFFER_BARRIER> buffers;
-  buffers.reserve(buffer_barriers.size());
-  std::vector<D3D12_TEXTURE_BARRIER> textures;
-  textures.reserve(texture_barriers.size());
-  std::vector<D3D12_BARRIER_GROUP> groups;
-
-  if (!global_barriers.empty()) {
-    std::ranges::transform(global_barriers, std::back_inserter(globals), [](GlobalBarrier const& barrier) {
-      return D3D12_GLOBAL_BARRIER{barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after};
-    });
-    groups.emplace_back(D3D12_BARRIER_GROUP{
-      .Type = D3D12_BARRIER_TYPE_GLOBAL, .NumBarriers = static_cast<UINT32>(globals.size()),
-      .pGlobalBarriers = globals.data()
-    });
-  }
-
-  if (!buffer_barriers.empty()) {
-    std::ranges::transform(buffer_barriers, std::back_inserter(buffers), [](BufferBarrier const& barrier) {
-      return D3D12_BUFFER_BARRIER{
-        barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after,
-        barrier.buffer->resource_.Get(), barrier.offset, barrier.size
-      };
-    });
-    groups.emplace_back(D3D12_BARRIER_GROUP{
-      .Type = D3D12_BARRIER_TYPE_BUFFER, .NumBarriers = static_cast<UINT32>(buffers.size()),
-      .pBufferBarriers = buffers.data()
-    });
-  }
-
-  if (!texture_barriers.empty()) {
-    std::ranges::transform(texture_barriers, std::back_inserter(textures), [](TextureBarrier const& barrier) {
-      return D3D12_TEXTURE_BARRIER{
-        barrier.sync_before, barrier.sync_after, barrier.access_before, barrier.access_after, barrier.layout_before,
-        barrier.layout_after, barrier.texture->resource_.Get(), barrier.subresources, barrier.flags
-      };
-    });
-    groups.emplace_back(D3D12_BARRIER_GROUP{
-      .Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = static_cast<UINT32>(textures.size()),
-      .pTextureBarriers = textures.data()
-    });
-  }
-
-  cmd_list_->Barrier(static_cast<UINT32>(groups.size()), groups.data());
-}
-
-
 auto CommandList::ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS const clear_flags, FLOAT const depth,
                                     UINT8 const stencil, std::span<D3D12_RECT const> const rects) -> void {
   if (tex.dsv_ != details::kInvalidResourceIndex) {
