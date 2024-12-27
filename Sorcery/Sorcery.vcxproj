@@ -90,6 +90,7 @@
       <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
       <ShaderModel>6.6</ShaderModel>
       <AllResourcesBound>true</AllResourcesBound>
+      <AdditionalOptions>-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
   </ItemDefinitionGroup>
