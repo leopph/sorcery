@@ -214,12 +214,6 @@ private:
   };
 
 
-  struct AnimationData {
-    unsigned node_anim_begin_local_idx;
-    unsigned node_anim_count;
-  };
-
-
   struct SkeletonNodeData {
     Matrix4 transform;
     std::optional<unsigned> parent_idx; // Original index, needs to be offset with the absolute position in the array
