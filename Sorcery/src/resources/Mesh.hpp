@@ -5,7 +5,6 @@
 #include <optional>
 #include <span>
 #include <string>
-#include <variant>
 #include <vector>
 
 #include "Resource.hpp"
@@ -16,38 +15,59 @@
 
 
 namespace sorcery {
-class Mesh final : public Resource {
-  RTTR_ENABLE(Resource)
-  struct GeometryData {
-    std::vector<Vector3> positions;
-    std::vector<Vector3> normals;
-    std::vector<Vector2> uvs;
-    std::vector<Vector3> tangents;
-    std::vector<Vector4> bone_weights;
-    std::vector<Vector<std::uint32_t, 4>> bone_indices;
-    std::vector<std::uint16_t> indices16;
-    std::vector<std::uint32_t> indices32;
-  };
+class Submesh {
+public:
+  explicit Submesh(SubmeshData const& data);
 
+  [[nodiscard]] LEOPPHAPI auto
+  GetShaderAccessSrvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto
+  GetShaderAccessGeometryUavBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
 
-  std::unique_ptr<GeometryData> m_cpu_data_{nullptr};
-  std::vector<SubmeshData> m_submeshes_;
-  std::vector<MaterialSlotInfo> m_mtl_slots_;
-  std::vector<Animation> animations_;
-  std::vector<SkeletonNode> skeleton_;
-  std::vector<Bone> bones_;
-  AABB m_bounds_{};
+  [[nodiscard]] auto GetVertexCount() const -> std::size_t;
+  [[nodiscard]] auto GetMeshletCount() const -> std::size_t;
+
+private:
+  // Geometry
+
   graphics::SharedDeviceChildHandle<graphics::Buffer> pos_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> norm_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> tan_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> uv_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> bone_weight_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> bone_idx_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> idx_buf_;
-  int m_vertex_count_{0};
-  int m_index_count_{0};
-  int m_submesh_count_{0};
-  DXGI_FORMAT m_idx_format_{DXGI_FORMAT_R16_UINT};
+
+  // Indexing
+
+  graphics::SharedDeviceChildHandle<graphics::Buffer> meshlet_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> vertex_idx_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> prim_idx_buf_;
+
+  // Shader access
+
+  graphics::SharedDeviceChildHandle<graphics::Buffer> shader_access_srv_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> shader_access_geom_uav_buf_;
+
+  // CPU info
+
+  std::vector<MeshletData> meshlets_;
+  std::uint32_t material_idx_;
+  AABB bounds_;
+  std::size_t vertex_count_;
+};
+
+
+class Mesh final : public Resource {
+  RTTR_ENABLE(Resource)
+  std::vector<MaterialSlotInfo> mtl_slots_;
+  std::vector<Submesh> submeshes_;
+  std::vector<Animation> animations_;
+  std::vector<SkeletonNode> skeleton_;
+  std::vector<Bone> bones_;
+  AABB bounds_;
+
+  int vertex_count_{0};
+  int submesh_count_{0};
 
   auto UploadToGpu() noexcept -> void;
   auto CalculateBounds() noexcept -> void;
@@ -58,7 +78,7 @@ public:
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 
   Mesh() = default;
-  LEOPPHAPI explicit Mesh(MeshData data, bool keep_data_in_cpu_memory = false) noexcept;
+  LEOPPHAPI explicit Mesh(mesh_data data, bool keep_data_in_cpu_memory = false) noexcept;
   Mesh(Mesh const&) = delete;
   Mesh(Mesh&& other) noexcept = delete;
 
@@ -119,8 +139,8 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
 
-  LEOPPHAPI auto SetData(MeshData const& data) noexcept -> void;
-  LEOPPHAPI auto SetData(MeshData&& data) noexcept -> void;
+  LEOPPHAPI auto SetData(mesh_data const& data) noexcept -> void;
+  LEOPPHAPI auto SetData(mesh_data&& data) noexcept -> void;
   [[nodiscard]] LEOPPHAPI auto ValidateAndUpdate(bool keep_data_in_cpu_memory = false) noexcept -> bool;
 
   [[nodiscard]] LEOPPHAPI auto HasCpuMemory() const noexcept -> bool;

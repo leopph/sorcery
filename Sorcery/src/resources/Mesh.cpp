@@ -17,6 +17,175 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
+Submesh::Submesh(SubmeshData const& data) :
+  pos_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(data.positions.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
+      .constant_buffer = false, .shader_resource = true, .unordered_access = true
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  norm_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(data.normals.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
+      .constant_buffer = false, .shader_resource = true, .unordered_access = true
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  tan_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(data.tangents.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
+      .constant_buffer = false, .shader_resource = true, .unordered_access = true
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  uv_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(data.uvs.size() * sizeof(Vector2)), .stride = sizeof(Vector2),
+      .constant_buffer = false, .shader_resource = true, .unordered_access = true
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  bone_weight_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(data.bone_weights.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
+      .constant_buffer = false, .shader_resource = true, .unordered_access = true
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  bone_idx_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(data.bone_indices.size() * sizeof(Vector<std::uint32_t, 4>)),
+      .stride = sizeof(Vector<std::uint32_t, 4>), .constant_buffer = false, .shader_resource = true,
+      .unordered_access = true
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  meshlet_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(data.meshlets.size() * sizeof(MeshletData)), .stride = sizeof(MeshletData),
+      .constant_buffer = false, .shader_resource = true, .unordered_access = false
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  vertex_idx_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(data.vertex_indices.size()), .stride = 1,
+      .constant_buffer = false, .shader_resource = true, .unordered_access = false
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  prim_idx_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(data.triangle_indices.size() * sizeof(MeshletTriangleIndexData)),
+      .stride = sizeof(MeshletTriangleIndexData), .constant_buffer = false, .shader_resource = true,
+      .unordered_access = false
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  shader_access_srv_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(sizeof(ShaderSubmeshData)), .stride = static_cast<UINT>(sizeof(ShaderSubmeshData)),
+      .constant_buffer = false, .shader_resource = true, .unordered_access = false
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  shader_access_geom_uav_buf_{
+    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+      .size = static_cast<UINT>(sizeof(ShaderSubmeshGeometryUavData)),
+      .stride = static_cast<UINT>(sizeof(ShaderSubmeshGeometryUavData)),
+      .constant_buffer = false, .shader_resource = true, .unordered_access = false
+    }, D3D12_HEAP_TYPE_DEFAULT)
+  },
+  meshlets_{data.meshlets},
+  material_idx_{data.material_idx},
+  bounds_{
+    [&data] {
+      AABB ret{.min = Vector3{std::numeric_limits<float>::max()}, .max = Vector3{std::numeric_limits<float>::lowest()}};
+      for (auto const& pos : data.positions) {
+        ret.min = Min(ret.min, pos);
+        ret.max = Max(ret.max, pos);
+      }
+      return ret;
+    }()
+  },
+  vertex_count_{data.positions.size()} {
+  assert(pos_buf_);
+  assert(norm_buf_);
+  assert(tan_buf_);
+  assert(uv_buf_);
+  assert(bone_weight_buf_);
+  assert(bone_idx_buf_);
+  assert(meshlet_buf_);
+  assert(vertex_idx_buf_);
+  assert(prim_idx_buf_);
+  assert(shader_access_srv_buf_);
+  assert(data.idx32); // TODO: Support 16-bit indices
+
+  std::vector<Vector4> vector4_buf;
+  std::ranges::transform(data.positions, std::back_inserter(vector4_buf), [](Vector3 const& p) {
+    return Vector4{p, 1};
+  });
+  App::Instance().GetRenderManager().UpdateBuffer(*pos_buf_, 0, as_bytes(std::span{vector4_buf}));
+
+  vector4_buf.clear();
+  std::ranges::transform(data.normals, std::back_inserter(vector4_buf), [](Vector3 const& n) {
+    return Vector4{n, 0};
+  });
+  App::Instance().GetRenderManager().UpdateBuffer(*norm_buf_, 0, as_bytes(std::span{vector4_buf}));
+
+  vector4_buf.clear();
+  std::ranges::transform(data.tangents, std::back_inserter(vector4_buf), [](Vector3 const& t) {
+    return Vector4{t, 0};
+  });
+  App::Instance().GetRenderManager().UpdateBuffer(*tan_buf_, 0, as_bytes(std::span{vector4_buf}));
+
+  App::Instance().GetRenderManager().UpdateBuffer(*uv_buf_, 0, as_bytes(std::span{data.uvs}));
+  App::Instance().GetRenderManager().UpdateBuffer(*bone_weight_buf_, 0, as_bytes(std::span{data.bone_weights}));
+  App::Instance().GetRenderManager().UpdateBuffer(*bone_idx_buf_, 0, as_bytes(std::span{data.bone_indices}));
+  App::Instance().GetRenderManager().UpdateBuffer(*meshlet_buf_, 0, as_bytes(std::span{data.meshlets}));
+  App::Instance().GetRenderManager().UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{data.vertex_indices}));
+  App::Instance().GetRenderManager().UpdateBuffer(*prim_idx_buf_, 0, as_bytes(std::span{data.triangle_indices}));
+
+  ShaderSubmeshData const shader_access_data{
+    .pos_buf_idx = pos_buf_->GetShaderResource(),
+    .norm_buf_idx = norm_buf_->GetShaderResource(),
+    .tan_buf_idx = tan_buf_->GetShaderResource(),
+    .uv_buf_idx = uv_buf_->GetShaderResource(),
+    .bone_weight_buf_idx = bone_weight_buf_->GetShaderResource(),
+    .bone_idx_buf_idx = bone_idx_buf_->GetShaderResource(),
+    .meshlet_buf_idx = meshlet_buf_->GetShaderResource(),
+    .vertex_idx_buf_idx = vertex_idx_buf_->GetShaderResource(),
+    .prim_idx_buf_idx = prim_idx_buf_->GetShaderResource(),
+    .idx32 = data.idx32,
+    .pad = {}
+  };
+  App::Instance().GetRenderManager().UpdateBuffer(*shader_access_srv_buf_, 0,
+    std::span{std::bit_cast<std::byte const*>(&shader_access_data), sizeof(shader_access_data)});
+
+  ShaderSubmeshGeometryUavData const shader_access_geom_uav_data{
+    .pos_buf_idx = pos_buf_->GetUnorderedAccess(),
+    .norm_buf_idx = norm_buf_->GetUnorderedAccess(),
+    .tan_buf_idx = tan_buf_->GetUnorderedAccess(),
+    .bone_weight_buf_idx = bone_weight_buf_->GetUnorderedAccess(),
+    .bone_idx_buf_idx = bone_idx_buf_->GetUnorderedAccess(),
+    .pad = {}
+  };
+  App::Instance().GetRenderManager().UpdateBuffer(*shader_access_srv_buf_, 0,
+    std::span{std::bit_cast<std::byte const*>(&shader_access_geom_uav_data), sizeof(shader_access_geom_uav_data)});
+}
+
+
+auto Submesh::GetShaderAccessSrvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return shader_access_srv_buf_;
+}
+
+
+auto Submesh::GetShaderAccessGeometryUavBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return shader_access_geom_uav_buf_;
+}
+
+
+auto Submesh::GetVertexCount() const -> std::size_t {
+  return vertex_count_;
+}
+
+
+auto Submesh::GetMeshletCount() const -> std::size_t {
+  return meshlets_.size();
+}
+
+
 auto Mesh::UploadToGpu() noexcept -> void {
   std::vector<Vector4> positions4{m_cpu_data_->positions.size()};
   std::ranges::transform(m_cpu_data_->positions, positions4.begin(), [](Vector3 const& p) {
@@ -122,8 +291,8 @@ auto Mesh::CalculateBounds() noexcept -> void {
   auto constexpr floatMin{std::numeric_limits<float>::lowest()};
   auto constexpr floatMax{std::numeric_limits<float>::max()};
 
-  m_bounds_.min = Vector3{floatMax};
-  m_bounds_.max = Vector3{floatMin};
+  bounds_.min = Vector3{floatMax};
+  bounds_.max = Vector3{floatMin};
 
   // TODO calculate bounds based on bones if they exist
 
@@ -139,8 +308,8 @@ auto Mesh::CalculateBounds() noexcept -> void {
       };
       auto const& position{m_cpu_data_->positions[idx + submeshInfo.base_vertex]};
 
-      m_bounds_.min = Min(m_bounds_.min, position);
-      m_bounds_.max = Max(m_bounds_.max, position);
+      bounds_.min = Min(bounds_.min, position);
+      bounds_.max = Max(bounds_.max, position);
 
       submeshInfo.bounds.min = Min(submeshInfo.bounds.min, position);
       submeshInfo.bounds.max = Max(submeshInfo.bounds.max, position);
@@ -167,14 +336,14 @@ auto Mesh::Set16BitIndicesFrom32BitBuffer(std::span<std::uint32_t const> const i
 }
 
 
-Mesh::Mesh(MeshData data, bool const keep_data_in_cpu_memory) noexcept {
+auto Mesh::Mesh(mesh_data data, bool const keep_data_in_cpu_memory) noexcept ->  {
   SetData(std::move(data));
   [[maybe_unused]] auto const isValid{ValidateAndUpdate(keep_data_in_cpu_memory)};
   assert(isValid);
 }
 
 
-Mesh::~Mesh() {
+auto Mesh::~Mesh() ->  {
   App::Instance().GetRenderManager().KeepAliveWhileInUse(pos_buf_);
   App::Instance().GetRenderManager().KeepAliveWhileInUse(norm_buf_);
   App::Instance().GetRenderManager().KeepAliveWhileInUse(tan_buf_);
@@ -346,12 +515,12 @@ auto Mesh::SetIndices(std::vector<std::uint32_t>&& indices) noexcept -> void {
 
 
 auto Mesh::GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const> {
-  return m_mtl_slots_;
+  return mtl_slots_;
 }
 
 
 auto Mesh::SetMaterialSlots(std::span<MaterialSlotInfo const> mtl_slots) noexcept -> void {
-  m_mtl_slots_.assign(std::begin(mtl_slots), std::end(mtl_slots));
+  mtl_slots_.assign(std::begin(mtl_slots), std::end(mtl_slots));
 }
 
 
@@ -416,11 +585,11 @@ auto Mesh::SetBones(std::vector<Bone>&& bones) noexcept -> void {
 
 
 auto Mesh::GetBounds() const noexcept -> AABB const& {
-  return m_bounds_;
+  return bounds_;
 }
 
 
-auto Mesh::SetData(MeshData const& data) noexcept -> void {
+auto Mesh::SetData(mesh_data const& data) noexcept -> void {
   EnsureCpuMemory();
   SetPositions(data.positions);
   SetNormals(data.normals);
@@ -439,7 +608,7 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
 }
 
 
-auto Mesh::SetData(MeshData&& data) noexcept -> void {
+auto Mesh::SetData(mesh_data&& data) noexcept -> void {
   EnsureCpuMemory();
   SetPositions(std::move(data.positions));
   SetNormals(std::move(data.normals));
@@ -493,16 +662,16 @@ auto Mesh::ValidateAndUpdate(bool const keep_data_in_cpu_memory) noexcept -> boo
       }
     }
 
-    if (mtlSlotIdx < 0 || mtlSlotIdx >= std::ssize(m_mtl_slots_)) {
+    if (mtlSlotIdx < 0 || mtlSlotIdx >= std::ssize(mtl_slots_)) {
       return false;
     }
   }
 
-  m_vertex_count_ = static_cast<int>(std::ssize(m_cpu_data_->positions));
+  vertex_count_ = static_cast<int>(std::ssize(m_cpu_data_->positions));
   m_index_count_ = static_cast<int>(m_cpu_data_->indices16.empty()
                                       ? std::ssize(m_cpu_data_->indices32)
                                       : std::ssize(m_cpu_data_->indices16));
-  m_submesh_count_ = static_cast<int>(std::ssize(m_submeshes_));
+  submesh_count_ = static_cast<int>(std::ssize(m_submeshes_));
 
   CalculateBounds();
   UploadToGpu();
@@ -561,7 +730,7 @@ auto Mesh::GetIndexBuffer() const noexcept -> graphics::SharedDeviceChildHandle<
 
 
 auto Mesh::GetVertexCount() const noexcept -> int {
-  return m_vertex_count_;
+  return vertex_count_;
 }
 
 
@@ -571,7 +740,7 @@ auto Mesh::GetIndexCount() const noexcept -> int {
 
 
 auto Mesh::GetSubmeshCount() const noexcept -> int {
-  return m_submesh_count_;
+  return submesh_count_;
 }
 
 

@@ -289,6 +289,33 @@ struct VertexSkinningDrawParams {
 };
 
 
+struct ShaderSubmeshData {
+  uint pos_buf_idx;
+  uint norm_buf_idx;
+  uint tan_buf_idx;
+  uint uv_buf_idx;
+
+  uint bone_weight_buf_idx;
+  uint bone_idx_buf_idx;
+  uint meshlet_buf_idx;
+  uint vertex_idx_buf_idx;
+
+  uint prim_idx_buf_idx;
+  uint idx32;
+  uint2 pad;
+};
+
+
+struct ShaderSubmeshGeometryUavData {
+  uint pos_buf_idx;
+  uint norm_buf_idx;
+  uint tan_buf_idx;
+  uint bone_weight_buf_idx;
+
+  uint bone_idx_buf_idx;
+  uint3 pad;
+};
+
 #ifdef __cplusplus
 } // namespace sorcery
 #endif
