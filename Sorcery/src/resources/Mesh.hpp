@@ -1,10 +1,12 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <span>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "Resource.hpp"
@@ -18,13 +20,23 @@ namespace sorcery {
 class Submesh {
 public:
   explicit Submesh(SubmeshData const& data);
+  Submesh(Submesh const&) = default;
+  Submesh(Submesh&&) noexcept = default;
+
+  ~Submesh();
+
+  auto operator=(Submesh const&) -> Submesh& = default;
+  auto operator=(Submesh&&) noexcept -> Submesh& = default;
 
   [[nodiscard]] LEOPPHAPI auto
   GetShaderAccessSrvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
   [[nodiscard]] LEOPPHAPI auto
   GetShaderAccessGeometryUavBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
 
+  [[nodiscard]] auto GetBounds() const -> AABB const&;
+
   [[nodiscard]] auto GetVertexCount() const -> std::size_t;
+  [[nodiscard]] auto GetPrimitiveCount() const -> std::size_t;
   [[nodiscard]] auto GetMeshletCount() const -> std::size_t;
 
 private:
@@ -51,9 +63,10 @@ private:
   // CPU info
 
   std::vector<MeshletData> meshlets_;
-  std::uint32_t material_idx_;
   AABB bounds_;
   std::size_t vertex_count_;
+  std::size_t primitive_count_;
+  std::uint32_t material_idx_;
 };
 
 
@@ -64,107 +77,46 @@ class Mesh final : public Resource {
   std::vector<Animation> animations_;
   std::vector<SkeletonNode> skeleton_;
   std::vector<Bone> bones_;
+
   AABB bounds_;
-
-  int vertex_count_{0};
-  int submesh_count_{0};
-
-  auto UploadToGpu() noexcept -> void;
-  auto CalculateBounds() noexcept -> void;
-  auto EnsureCpuMemory() noexcept -> void;
-  auto Set16BitIndicesFrom32BitBuffer(std::span<std::uint32_t const> indices) noexcept -> void;
+  std::size_t vertex_count_{0};
+  std::size_t primitive_count_{0};
+  std::size_t meshlet_count_{0};
 
 public:
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 
   Mesh() = default;
-  LEOPPHAPI explicit Mesh(mesh_data data, bool keep_data_in_cpu_memory = false) noexcept;
   Mesh(Mesh const&) = delete;
   Mesh(Mesh&& other) noexcept = delete;
+  LEOPPHAPI explicit Mesh(mesh_data const& data) noexcept;
 
-  LEOPPHAPI ~Mesh() override;
+  ~Mesh() override = default;
 
   auto operator=(Mesh const&) -> void = delete;
   auto operator=(Mesh&& other) noexcept -> void = delete;
 
-  [[nodiscard]] LEOPPHAPI auto GetPositions() const noexcept -> std::span<Vector3 const>;
-  LEOPPHAPI auto SetPositions(std::span<Vector3 const> positions) noexcept -> void;
-  LEOPPHAPI auto SetPositions(std::vector<Vector3>&& positions) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetNormals() const noexcept -> std::span<Vector3 const>;
-  LEOPPHAPI auto SetNormals(std::span<Vector3 const> normals) noexcept -> void;
-  LEOPPHAPI auto SetNormals(std::vector<Vector3>&& normals) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetUVs() const noexcept -> std::span<Vector2 const>;
-  LEOPPHAPI auto SetUVs(std::span<Vector2 const> uvs) noexcept -> void;
-  LEOPPHAPI auto SetUVs(std::vector<Vector2>&& uvs) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetTangents() const noexcept -> std::span<Vector3 const>;
-  LEOPPHAPI auto SetTangents(std::span<Vector3 const> tangents) noexcept -> void;
-  LEOPPHAPI auto SetTangents(std::vector<Vector3>&& tangents) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetBoneWeights() const noexcept -> std::span<Vector4 const>;
-  LEOPPHAPI auto SetBoneWeights(std::span<Vector4 const> bone_weights) noexcept -> void;
-  LEOPPHAPI auto SetBoneWeights(std::vector<Vector4>&& bone_weights) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetBoneIndices() const noexcept -> std::span<Vector<std::uint32_t, 4> const>;
-  LEOPPHAPI auto SetBoneIndices(std::span<Vector<std::uint32_t, 4> const> bone_indices) noexcept -> void;
-  LEOPPHAPI auto SetBoneIndices(std::vector<Vector<std::uint32_t, 4>>&& bone_indices) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetIndices16() const noexcept -> std::span<std::uint16_t const>;
-  [[nodiscard]] LEOPPHAPI auto GetIndices32() const noexcept -> std::span<std::uint32_t const>;
-  LEOPPHAPI auto SetIndices(std::span<std::uint16_t const> indices) noexcept -> void;
-  LEOPPHAPI auto SetIndices(std::span<std::uint32_t const> indices) noexcept -> void;
-  LEOPPHAPI auto SetIndices(std::vector<std::uint16_t>&& indices) noexcept -> void;
-  LEOPPHAPI auto SetIndices(std::vector<std::uint32_t>&& indices) noexcept -> void;
+  LEOPPHAPI auto SetData(mesh_data const& data) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const>;
-  LEOPPHAPI auto SetMaterialSlots(std::span<MaterialSlotInfo const> mtl_slots) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetSubMeshes() const noexcept -> std::span<SubMeshInfo const>;
-  LEOPPHAPI auto SetSubMeshes(std::span<SubMeshInfo const> submeshes) noexcept -> void;
-  LEOPPHAPI auto SetSubmeshes(std::vector<SubMeshInfo>&& submeshes) noexcept -> void;
-
+  [[nodiscard]] LEOPPHAPI auto GetSubmeshes() const noexcept -> std::span<Submesh const>;
   [[nodiscard]] LEOPPHAPI auto GetAnimations() const noexcept -> std::span<Animation const>;
-  LEOPPHAPI auto SetAnimations(std::span<Animation const> animations) noexcept -> void;
-  LEOPPHAPI auto SetAnimations(std::vector<Animation>&& animations) noexcept -> void;
-
   [[nodiscard]] LEOPPHAPI auto GetSkeleton() const noexcept -> std::span<SkeletonNode const>;
-  LEOPPHAPI auto SetSkeleton(std::span<SkeletonNode const> skeleton) noexcept -> void;
-  LEOPPHAPI auto SetSkeleton(std::vector<SkeletonNode>&& skeleton) noexcept -> void;
-
   [[nodiscard]] LEOPPHAPI auto GetBones() const noexcept -> std::span<Bone const>;
-  LEOPPHAPI auto SetBones(std::span<Bone const> bones) noexcept -> void;
-  LEOPPHAPI auto SetBones(std::vector<Bone>&& bones) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
-
-  LEOPPHAPI auto SetData(mesh_data const& data) noexcept -> void;
-  LEOPPHAPI auto SetData(mesh_data&& data) noexcept -> void;
-  [[nodiscard]] LEOPPHAPI auto ValidateAndUpdate(bool keep_data_in_cpu_memory = false) noexcept -> bool;
-
-  [[nodiscard]] LEOPPHAPI auto HasCpuMemory() const noexcept -> bool;
-  LEOPPHAPI auto ReleaseCpuMemory() noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetPositionBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer>
-    const&;
-  [[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer>
-    const&;
-  [[nodiscard]] LEOPPHAPI auto GetUvBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const
-    &;
-  [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer>
-    const&;
-  [[nodiscard]] LEOPPHAPI auto GetBoneWeightBuffer() const noexcept -> graphics::SharedDeviceChildHandle<
-    graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto GetBoneIndexBuffer() const noexcept -> graphics::SharedDeviceChildHandle<
-    graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto GetIndexBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer>
-    const&;
-
-  [[nodiscard]] LEOPPHAPI auto GetVertexCount() const noexcept -> int;
-  [[nodiscard]] LEOPPHAPI auto GetIndexCount() const noexcept -> int;
-  [[nodiscard]] LEOPPHAPI auto GetSubmeshCount() const noexcept -> int;
-
-  [[nodiscard]] LEOPPHAPI auto GetIndexFormat() const noexcept -> DXGI_FORMAT;
+  [[nodiscard]] LEOPPHAPI auto GetVertexCount() const noexcept -> std::size_t;
+  [[nodiscard]] LEOPPHAPI auto GetPrimitiveCount() const noexcept -> std::size_t;
+  [[nodiscard]] LEOPPHAPI auto GetMeshletCount() const noexcept -> std::size_t;
 };
+
+
+[[nodiscard]] LEOPPHAPI auto ComputeMeshlets(
+  std::variant<std::span<std::uint16_t const>, std::span<std::uint32_t const>> const& indices,
+  std::variant<std::span<Vector3 const>, std::span<Vector4 const>> const& positions,
+  std::vector<MeshletData>& out_meshlets,
+  std::vector<std::uint8_t>& out_unique_vertex_indices,
+  std::vector<MeshletTriangleData>& out_primitive_indices,
+  std::uint16_t max_verts_per_meshlet = kMeshletMaxVerts,
+  std::uint16_t max_prims_per_meshlet = kMeshletMaxPrims) -> bool;
 }

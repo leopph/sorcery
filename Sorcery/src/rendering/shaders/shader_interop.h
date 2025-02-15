@@ -4,6 +4,8 @@
 
 #ifdef __cplusplus
 
+#include <cstdint>
+
 #include "../../Math.hpp"
 
 
@@ -11,9 +13,12 @@ namespace sorcery {
 using float2 = Vector2;
 using float3 = Vector3;
 using float4 = Vector4;
-
 using float4x4 = Matrix4;
+
 using uint = unsigned;
+using uint2 = Vector<std::uint32_t, 2>;
+using uint3 = Vector<std::uint32_t, 3>;
+
 using BOOL = int;
 
 #define row_major

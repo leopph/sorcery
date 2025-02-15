@@ -41,7 +41,7 @@ auto MeshComponentBase::OnDrawProperties(bool& changed) -> void {
 
     auto const mtls{GetMaterials()};
 
-    for (int i = 0; i < mtlCount; i++) {
+    for (auto i = 0; i < mtlCount; i++) {
       ImGui::TableNextRow();
       ImGui::TableNextColumn();
       ImGui::Text("%s", mtlSlots[i].name.c_str());
@@ -96,10 +96,10 @@ auto MeshComponentBase::OnDrawGizmosSelected() -> void {
 
       auto const& local_to_world_mtx{GetEntity()->GetTransform().GetLocalToWorldMatrix()};
 
-      if (auto const drawable_submesh_count{std::max(mesh_->GetSubmeshCount(), static_cast<int>(materials_.size()))};
+      if (auto const drawable_submesh_count{std::max(mesh_->GetSubmeshes().size(), materials_.size())};
         drawable_submesh_count > 1) {
         for (auto i{0}; i < drawable_submesh_count; i++) {
-          draw_aabb_edges(mesh_->GetSubMeshes()[i].bounds.Transform(local_to_world_mtx), Color{255, 165, 0, 255});
+          draw_aabb_edges(mesh_->GetSubmeshes()[i].GetBounds().Transform(local_to_world_mtx), Color{255, 165, 0, 255});
         }
       }
 
@@ -157,7 +157,7 @@ auto MeshComponentBase::ResizeMaterialListToSubmeshCount() -> void {
     return;
   }
 
-  if (auto const subMeshCount{std::size(mesh_->GetSubMeshes())}, mtlCount{std::size(materials_)};
+  if (auto const subMeshCount{std::size(mesh_->GetSubmeshes())}, mtlCount{std::size(materials_)};
     subMeshCount != mtlCount) {
     materials_.resize(subMeshCount);
 

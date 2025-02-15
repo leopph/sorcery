@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "Core.hpp"
 #include "Math.hpp"
 
 
@@ -71,7 +72,7 @@ struct MeshletData {
 
 
 // Describes a triangle in a meshlet
-struct MeshletTriangleIndexData {
+struct MeshletTriangleData {
   std::uint32_t idx0 : 10;
   std::uint32_t idx1 : 10;
   std::uint32_t idx2 : 10;
@@ -89,7 +90,7 @@ struct SubmeshData {
   std::vector<Vector<std::uint32_t, 4>> bone_indices;
   std::vector<MeshletData> meshlets;
   std::vector<std::uint8_t> vertex_indices;
-  std::vector<MeshletTriangleIndexData> triangle_indices;
+  std::vector<MeshletTriangleData> triangle_indices;
   std::uint32_t material_idx;
   bool idx32;
 };
@@ -107,6 +108,6 @@ struct mesh_data {
 };
 
 
-extern std::uint16_t const kMeshletMaxVerts;
-extern std::uint16_t const kMeshletMaxPrims;
+LEOPPHAPI extern std::uint16_t const kMeshletMaxVerts;
+LEOPPHAPI extern std::uint16_t const kMeshletMaxPrims;
 }

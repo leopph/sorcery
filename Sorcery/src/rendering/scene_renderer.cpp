@@ -1074,7 +1074,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
       packet.submesh_data.reserve(packet.submesh_data.size() + mesh->GetSubmeshCount());
 
-      for (auto const& submesh : mesh->GetSubMeshes()) {
+      for (auto const& submesh : mesh->GetSubmeshes()) {
         auto const mtl{comp->GetMaterials()[submesh.material_index]};
 
         if (!mtl) {

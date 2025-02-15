@@ -10,7 +10,6 @@
 #include <string_view>
 #include <utility>
 
-#include <DirectXMesh.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -309,41 +308,15 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   mesh_data.submeshes.reserve(std::size(meshes));
 
   for (auto& [vertices, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] : meshes) {
-    std::vector<DirectX::XMFLOAT3> dx_vertices;
-    dx_vertices.reserve(std::size(vertices));
-    std::ranges::transform(vertices, std::back_inserter(dx_vertices), [](Vector3 const& v) {
-      return DirectX::XMFLOAT3{v[0], v[1], v[2]};
-    });
-
-    std::vector<DirectX::Meshlet> dx_meshlets;
+    std::vector<MeshletData> meshlets;
     std::vector<std::uint8_t> vertex_indices;
-    std::vector<DirectX::MeshletTriangle> dx_primitive_indices;
+    std::vector<MeshletTriangleData> primitive_indices;
 
-    if (FAILED(
-      ComputeMeshlets(indices.data(), indices.size() / 3, dx_vertices.data(), dx_vertices.size(), nullptr, dx_meshlets,
-        vertex_indices, dx_primitive_indices, kMeshletMaxVerts, kMeshletMaxPrims))) {
+    if (!ComputeMeshlets(indices, vertices, meshlets, vertex_indices, primitive_indices)) {
       // TODO log this properly
       OutputDebugStringA("Failed to compute meshlets.\n");
       continue;
     }
-
-    std::vector<MeshletData> meshlets;
-    meshlets.reserve(std::size(dx_meshlets));
-    std::ranges::transform(dx_meshlets, std::back_inserter(meshlets), [](DirectX::Meshlet const& meshlet) {
-      return MeshletData{
-        .vert_count = meshlet.VertCount, .prim_count = meshlet.PrimCount, .vert_offset = meshlet.VertOffset,
-        .prim_offset = meshlet.PrimOffset,
-      };
-    });
-
-    std::vector<MeshletTriangleIndexData> primitive_indices;
-    primitive_indices.reserve(std::size(dx_primitive_indices));
-    std::ranges::transform(dx_primitive_indices, std::back_inserter(primitive_indices),
-      [](DirectX::MeshletTriangle const& tri) {
-        return MeshletTriangleIndexData{
-          .idx0 = tri.i0, .idx1 = tri.i1, .idx2 = tri.i2,
-        };
-      });
 
     mesh_data.submeshes.emplace_back(std::move(vertices), std::move(normals), std::move(tangents), std::move(uvs),
       std::move(bone_weights), std::move(bone_indices), std::move(meshlets), std::move(vertex_indices),

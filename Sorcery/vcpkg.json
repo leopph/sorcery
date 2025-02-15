@@ -18,6 +18,11 @@
 			"name": "imgui",
 			"features": [ "docking-experimental" ],
 			"version>=": "1.90.6"
+		},
+		{
+			"name": "directxmesh",
+			"features": [ "dx12", "spectre" ],
+			"version>=": "2024-02-21"
 		}
 	]
 }
