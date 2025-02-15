@@ -35,6 +35,9 @@ typedef bool BOOL;
 
 #define INVALID_RES_IDX ((uint)-1)
 
+#define MESHLET_MAX_VERTS 128
+#define MESHLET_MAX_PRIMS 256
+
 #define RES_SLOT_ALBEDO_MAP 0
 #define RES_SLOT_METALLIC_MAP 1
 #define RES_SLOT_ROUGHNESS_MAP 2

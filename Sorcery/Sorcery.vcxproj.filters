@@ -153,6 +153,9 @@
     <ClCompile Include="src\scene_objects\CameraControllerComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\mesh_data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\scene_objects\Entity.hpp">
@@ -332,7 +335,7 @@
     <ClInclude Include="src\scene_objects\CameraControllerComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\MeshData.hpp">
+    <ClInclude Include="src\mesh_data.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

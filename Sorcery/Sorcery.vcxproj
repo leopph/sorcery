@@ -139,6 +139,7 @@
     <ClCompile Include="src\ExternalResource.cpp" />
     <ClCompile Include="src\FileIo.cpp" />
     <ClCompile Include="src\job_system.cpp" />
+    <ClCompile Include="src\mesh_data.cpp" />
     <ClCompile Include="src\random.cpp" />
     <ClCompile Include="src\rendering\graphics.cpp" />
     <ClCompile Include="src\MemoryAllocation.cpp" />
@@ -179,7 +180,7 @@
     <ClInclude Include="src\ExternalResource.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\job_system.hpp" />
-    <ClInclude Include="src\MeshData.hpp" />
+    <ClInclude Include="src\mesh_data.hpp" />
     <ClInclude Include="src\mutex.hpp" />
     <ClInclude Include="src\observer_ptr.hpp" />
     <ClInclude Include="src\random.hpp" />

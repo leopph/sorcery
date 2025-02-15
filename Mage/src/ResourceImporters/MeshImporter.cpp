@@ -122,7 +122,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     throw std::runtime_error{std::format("Failed to import model at {}: {}.", src.string(), importer.GetErrorString())};
   }
 
-  MeshData mesh_data;
+  mesh_data mesh_data;
 
   // Collect material info
 

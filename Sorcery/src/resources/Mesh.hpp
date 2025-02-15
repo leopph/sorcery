@@ -11,7 +11,7 @@
 #include "Resource.hpp"
 #include "../Bounds.hpp"
 #include "../Math.hpp"
-#include "../MeshData.hpp"
+#include "../mesh_data.hpp"
 #include "../rendering/graphics.hpp"
 
 

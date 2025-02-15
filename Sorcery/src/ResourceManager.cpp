@@ -219,7 +219,7 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
   }
 
   cur_bytes = cur_bytes.subspan(sizeof bone_count);
-  MeshData mesh_data;
+  mesh_data mesh_data;
 
   // Material slots
 
