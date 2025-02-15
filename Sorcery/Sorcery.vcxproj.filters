@@ -332,6 +332,9 @@
     <ClInclude Include="src\scene_objects\CameraControllerComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\MeshData.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />

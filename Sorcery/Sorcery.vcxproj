@@ -179,6 +179,7 @@
     <ClInclude Include="src\ExternalResource.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\job_system.hpp" />
+    <ClInclude Include="src\MeshData.hpp" />
     <ClInclude Include="src\mutex.hpp" />
     <ClInclude Include="src\observer_ptr.hpp" />
     <ClInclude Include="src\random.hpp" />

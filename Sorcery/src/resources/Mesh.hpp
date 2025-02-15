@@ -11,51 +11,11 @@
 #include "Resource.hpp"
 #include "../Bounds.hpp"
 #include "../Math.hpp"
+#include "../MeshData.hpp"
 #include "../rendering/graphics.hpp"
 
 
 namespace sorcery {
-struct SkeletonNode {
-  std::string name;
-  Matrix4 transform;
-  std::optional<std::uint32_t> parent_idx;
-};
-
-
-struct Bone {
-  Matrix4 offset_mtx;
-  std::uint32_t skeleton_node_idx;
-};
-
-
-template<typename T>
-struct AnimationKey {
-  float timestamp;
-  T value;
-};
-
-
-using PositionKey = AnimationKey<Vector3>;
-using RotationKey = AnimationKey<Quaternion>;
-using ScalingKey = AnimationKey<Vector3>;
-
-
-struct NodeAnimation {
-  std::vector<PositionKey> position_keys;
-  std::vector<RotationKey> rotation_keys;
-  std::vector<ScalingKey> scaling_keys;
-  std::uint32_t node_idx;
-};
-
-
-struct Animation {
-  std::string name;
-  float duration;
-  float ticks_per_second;
-  std::vector<NodeAnimation> node_anims;
-};
-
-
 class Mesh final : public Resource {
   RTTR_ENABLE(Resource)
   struct GeometryData {
@@ -69,39 +29,9 @@ class Mesh final : public Resource {
     std::vector<std::uint32_t> indices32;
   };
 
-public:
-  struct MaterialSlotInfo {
-    std::string name;
-  };
 
-
-  struct SubMeshInfo {
-    int base_vertex;
-    int first_index;
-    int index_count;
-    int material_index;
-    AABB bounds;
-  };
-
-
-  struct Data {
-    std::vector<Vector3> positions;
-    std::vector<Vector3> normals;
-    std::vector<Vector2> uvs;
-    std::vector<Vector3> tangents;
-    std::variant<std::vector<std::uint16_t>, std::vector<std::uint32_t>> indices;
-    std::vector<Vector4> bone_weights;
-    std::vector<Vector<std::uint32_t, 4>> bone_indices;
-    std::vector<MaterialSlotInfo> material_slots;
-    std::vector<SubMeshInfo> sub_meshes;
-    std::vector<Animation> animations;
-    std::vector<SkeletonNode> skeleton;
-    std::vector<Bone> bones;
-  };
-
-private:
   std::unique_ptr<GeometryData> m_cpu_data_{nullptr};
-  std::vector<SubMeshInfo> m_submeshes_;
+  std::vector<SubmeshData> m_submeshes_;
   std::vector<MaterialSlotInfo> m_mtl_slots_;
   std::vector<Animation> animations_;
   std::vector<SkeletonNode> skeleton_;
@@ -128,7 +58,7 @@ public:
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 
   Mesh() = default;
-  LEOPPHAPI explicit Mesh(Data data, bool keep_data_in_cpu_memory = false) noexcept;
+  LEOPPHAPI explicit Mesh(MeshData data, bool keep_data_in_cpu_memory = false) noexcept;
   Mesh(Mesh const&) = delete;
   Mesh(Mesh&& other) noexcept = delete;
 
@@ -189,8 +119,8 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
 
-  LEOPPHAPI auto SetData(Data const& data) noexcept -> void;
-  LEOPPHAPI auto SetData(Data&& data) noexcept -> void;
+  LEOPPHAPI auto SetData(MeshData const& data) noexcept -> void;
+  LEOPPHAPI auto SetData(MeshData&& data) noexcept -> void;
   [[nodiscard]] LEOPPHAPI auto ValidateAndUpdate(bool keep_data_in_cpu_memory = false) noexcept -> bool;
 
   [[nodiscard]] LEOPPHAPI auto HasCpuMemory() const noexcept -> bool;

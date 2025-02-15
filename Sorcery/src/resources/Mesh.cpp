@@ -167,7 +167,7 @@ auto Mesh::Set16BitIndicesFrom32BitBuffer(std::span<std::uint32_t const> const i
 }
 
 
-Mesh::Mesh(Data data, bool const keep_data_in_cpu_memory) noexcept {
+Mesh::Mesh(MeshData data, bool const keep_data_in_cpu_memory) noexcept {
   SetData(std::move(data));
   [[maybe_unused]] auto const isValid{ValidateAndUpdate(keep_data_in_cpu_memory)};
   assert(isValid);
@@ -420,7 +420,7 @@ auto Mesh::GetBounds() const noexcept -> AABB const& {
 }
 
 
-auto Mesh::SetData(Data const& data) noexcept -> void {
+auto Mesh::SetData(MeshData const& data) noexcept -> void {
   EnsureCpuMemory();
   SetPositions(data.positions);
   SetNormals(data.normals);
@@ -432,14 +432,14 @@ auto Mesh::SetData(Data const& data) noexcept -> void {
     SetIndices(indices);
   }, data.indices);
   SetMaterialSlots(data.material_slots);
-  SetSubMeshes(data.sub_meshes);
+  SetSubMeshes(data.submeshes);
   SetAnimations(data.animations);
   SetSkeleton(data.skeleton);
   SetBones(data.bones);
 }
 
 
-auto Mesh::SetData(Data&& data) noexcept -> void {
+auto Mesh::SetData(MeshData&& data) noexcept -> void {
   EnsureCpuMemory();
   SetPositions(std::move(data.positions));
   SetNormals(std::move(data.normals));
@@ -451,7 +451,7 @@ auto Mesh::SetData(Data&& data) noexcept -> void {
     SetIndices(std::move(indices));
   }, data.indices);
   SetMaterialSlots(std::move(data.material_slots));
-  SetSubMeshes(std::move(data.sub_meshes));
+  SetSubMeshes(std::move(data.submeshes));
   SetAnimations(std::move(data.animations));
   SetSkeleton(std::move(data.skeleton));
   SetBones(std::move(data.bones));

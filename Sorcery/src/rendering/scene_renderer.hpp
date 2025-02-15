@@ -259,9 +259,9 @@ private:
     std::vector<CameraData> cam_data;
     std::vector<std::shared_ptr<RenderTarget>> render_targets;
 
-    std::vector<PositionKey> anim_pos_keys;
-    std::vector<RotationKey> anim_rot_keys;
-    std::vector<ScalingKey> anim_scaling_keys;
+    std::vector<AnimPositionKey> anim_pos_keys;
+    std::vector<AnimRotationKey> anim_rot_keys;
+    std::vector<AnimScalingKey> anim_scaling_keys;
     std::vector<NodeAnimationData> node_anim_data;
     std::vector<SkeletonNodeData> skeleton_node_data;
     std::vector<BoneData> bone_data;

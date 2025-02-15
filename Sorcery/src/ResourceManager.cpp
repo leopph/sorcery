@@ -180,251 +180,263 @@ auto ResourceManager::LoadTexture(
 
 
 auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeNull<std::unique_ptr<Resource>> {
-  auto curBytes{as_bytes(std::span{bytes})};
-  std::uint64_t vertexCount;
+  auto cur_bytes{as_bytes(std::span{bytes})};
 
-  if (!DeserializeFromBinary(curBytes, vertexCount)) {
+  // Element counts
+
+  std::uint64_t material_slot_count;
+
+  if (!DeserializeFromBinary(cur_bytes, material_slot_count)) {
     return nullptr;
   }
 
-  curBytes = curBytes.subspan(sizeof vertexCount);
-  std::uint64_t idxCount;
+  cur_bytes = cur_bytes.subspan(sizeof material_slot_count);
+  std::uint64_t submesh_count;
 
-  if (!DeserializeFromBinary(curBytes, idxCount)) {
+  if (!DeserializeFromBinary(cur_bytes, submesh_count)) {
     return nullptr;
   }
 
-  curBytes = curBytes.subspan(sizeof idxCount);
-  std::uint64_t mtlCount;
-
-  if (!DeserializeFromBinary(curBytes, mtlCount)) {
-    return nullptr;
-  }
-
-  curBytes = curBytes.subspan(sizeof mtlCount);
-  std::uint64_t submeshCount;
-
-  if (!DeserializeFromBinary(curBytes, submeshCount)) {
-    return nullptr;
-  }
-
-  curBytes = curBytes.subspan(sizeof submeshCount);
+  cur_bytes = cur_bytes.subspan(sizeof submesh_count);
   std::uint64_t anim_count;
 
-  if (!DeserializeFromBinary(curBytes, anim_count)) {
+  if (!DeserializeFromBinary(cur_bytes, anim_count)) {
     return nullptr;
   }
 
-  curBytes = curBytes.subspan(sizeof anim_count);
+  cur_bytes = cur_bytes.subspan(sizeof anim_count);
   std::uint64_t skeleton_size;
 
-  if (!DeserializeFromBinary(curBytes, skeleton_size)) {
+  if (!DeserializeFromBinary(cur_bytes, skeleton_size)) {
     return nullptr;
   }
 
-  curBytes = curBytes.subspan(sizeof skeleton_size);
+  cur_bytes = cur_bytes.subspan(sizeof skeleton_size);
   std::uint64_t bone_count;
 
-  if (!DeserializeFromBinary(curBytes, bone_count)) {
+  if (!DeserializeFromBinary(cur_bytes, bone_count)) {
     return nullptr;
   }
 
-  curBytes = curBytes.subspan(sizeof bone_count);
-  std::int32_t idx32;
+  cur_bytes = cur_bytes.subspan(sizeof bone_count);
+  MeshData mesh_data;
 
-  if (!DeserializeFromBinary(curBytes, idx32)) {
-    return nullptr;
+  // Material slots
+
+  mesh_data.material_slots.resize(material_slot_count);
+
+  for (auto i{0ull}; i < material_slot_count; i++) {
+    if (!DeserializeFromBinary(cur_bytes, mesh_data.material_slots[i].name)) {
+      return nullptr;
+    }
+
+    cur_bytes = cur_bytes.subspan(mesh_data.material_slots[i].name.size() + 8);
   }
 
-  curBytes = curBytes.subspan(sizeof idx32);
+  // Submeshes
 
-  Mesh::Data meshData;
+  mesh_data.submeshes.resize(submesh_count);
 
-  meshData.positions.resize(vertexCount);
-  std::memcpy(meshData.positions.data(), curBytes.data(), vertexCount * sizeof(Vector3));
-  curBytes = curBytes.subspan(vertexCount * sizeof(Vector3));
+  for (auto i{0ull}; i < submesh_count; i++) {
+    std::uint64_t vert_count;
 
-  meshData.normals.resize(vertexCount);
-  std::memcpy(meshData.normals.data(), curBytes.data(), vertexCount * sizeof(Vector3));
-  curBytes = curBytes.subspan(vertexCount * sizeof(Vector3));
+    if (!DeserializeFromBinary(cur_bytes, vert_count)) {
+      return nullptr;
+    }
 
-  meshData.uvs.resize(vertexCount);
-  std::memcpy(meshData.uvs.data(), curBytes.data(), vertexCount * sizeof(Vector2));
-  curBytes = curBytes.subspan(vertexCount * sizeof(Vector2));
+    cur_bytes = cur_bytes.subspan(sizeof vert_count);
+    std::uint64_t meshlet_count;
 
-  meshData.tangents.resize(vertexCount);
-  std::memcpy(meshData.tangents.data(), curBytes.data(), vertexCount * sizeof(Vector3));
-  curBytes = curBytes.subspan(vertexCount * sizeof(Vector3));
+    if (!DeserializeFromBinary(cur_bytes, meshlet_count)) {
+      return nullptr;
+    }
 
-  if (idx32) {
-    meshData.indices.emplace<std::vector<std::uint32_t>>();
+    cur_bytes = cur_bytes.subspan(sizeof meshlet_count);
+    std::uint64_t vtx_idx_count;
+
+    if (!DeserializeFromBinary(cur_bytes, vtx_idx_count)) {
+      return nullptr;
+    }
+
+    cur_bytes = cur_bytes.subspan(sizeof vtx_idx_count);
+    std::uint64_t prim_idx_count;
+
+    if (!DeserializeFromBinary(cur_bytes, prim_idx_count)) {
+      return nullptr;
+    }
+
+    cur_bytes = cur_bytes.subspan(sizeof prim_idx_count);
+
+    mesh_data.submeshes[i].positions.resize(vert_count);
+    std::memcpy(mesh_data.submeshes[i].positions.data(), cur_bytes.data(), vert_count * sizeof(Vector3));
+    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector3));
+
+    mesh_data.submeshes[i].normals.resize(vert_count);
+    std::memcpy(mesh_data.submeshes[i].normals.data(), cur_bytes.data(), vert_count * sizeof(Vector3));
+    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector3));
+
+    mesh_data.submeshes[i].tangents.resize(vert_count);
+    std::memcpy(mesh_data.submeshes[i].tangents.data(), cur_bytes.data(), vert_count * sizeof(Vector3));
+    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector3));
+
+    mesh_data.submeshes[i].uvs.resize(vert_count);
+    std::memcpy(mesh_data.submeshes[i].uvs.data(), cur_bytes.data(), vert_count * sizeof(Vector2));
+    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector2));
+
+    mesh_data.submeshes[i].bone_weights.resize(vert_count);
+    std::memcpy(mesh_data.submeshes[i].bone_weights.data(), cur_bytes.data(), vert_count * sizeof(Vector4));
+    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector4));
+
+    mesh_data.submeshes[i].bone_indices.resize(vert_count);
+    std::memcpy(mesh_data.submeshes[i].bone_indices.data(), cur_bytes.data(),
+      vert_count * sizeof(Vector<std::uint32_t, 4>));
+    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector<std::uint32_t, 4>));
+
+    mesh_data.submeshes[i].meshlets.resize(meshlet_count);
+    std::memcpy(mesh_data.submeshes[i].meshlets.data(), cur_bytes.data(), meshlet_count * sizeof(MeshletData));
+    cur_bytes = cur_bytes.subspan(meshlet_count * sizeof(MeshletData));
+
+    mesh_data.submeshes[i].vertex_indices.resize(vtx_idx_count);
+    std::memcpy(mesh_data.submeshes[i].vertex_indices.data(), cur_bytes.data(), vtx_idx_count);
+    cur_bytes = cur_bytes.subspan(vtx_idx_count);
+
+    mesh_data.submeshes[i].triangle_indices.resize(prim_idx_count);
+    std::memcpy(mesh_data.submeshes[i].triangle_indices.data(), cur_bytes.data(),
+      prim_idx_count * sizeof(MeshletTriangleIndexData));
+    cur_bytes = cur_bytes.subspan(prim_idx_count * sizeof(MeshletTriangleIndexData));
+
+    if (!DeserializeFromBinary(cur_bytes, mesh_data.submeshes[i].material_idx)) {
+      return nullptr;
+    }
+
+    cur_bytes = cur_bytes.subspan(sizeof(std::uint32_t));
+
+    if (!DeserializeFromBinary(cur_bytes, mesh_data.submeshes[i].idx32)) {
+      return nullptr;
+    }
+
+    cur_bytes = cur_bytes.subspan(sizeof(bool));
   }
 
-  std::visit([idxCount, &curBytes]<typename T>(std::vector<T>& indices) {
-    indices.resize(idxCount);
-    std::memcpy(indices.data(), curBytes.data(), idxCount * sizeof(T));
-    curBytes = curBytes.subspan(idxCount * sizeof(T));
-  }, meshData.indices);
+  // Animations
 
-  meshData.bone_weights.resize(vertexCount);
-  std::memcpy(meshData.bone_weights.data(), curBytes.data(), vertexCount * sizeof(Vector4));
-  curBytes = curBytes.subspan(vertexCount * sizeof(Vector4));
-
-  meshData.bone_indices.resize(vertexCount);
-  std::memcpy(meshData.bone_indices.data(), curBytes.data(), vertexCount * sizeof(Vector4));
-  curBytes = curBytes.subspan(vertexCount * sizeof(Vector4));
-
-  meshData.material_slots.resize(mtlCount);
-
-  for (auto i{0ull}; i < mtlCount; i++) {
-    if (!DeserializeFromBinary(curBytes, meshData.material_slots[i].name)) {
-      return nullptr;
-    }
-
-    curBytes = curBytes.subspan(meshData.material_slots[i].name.size() + 8);
-  }
-
-  meshData.sub_meshes.resize(submeshCount);
-
-  for (auto i{0ull}; i < submeshCount; i++) {
-    if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].base_vertex)) {
-      return nullptr;
-    }
-
-    curBytes = curBytes.subspan(sizeof(int));
-
-    if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].first_index)) {
-      return nullptr;
-    }
-
-    curBytes = curBytes.subspan(sizeof(int));
-
-    if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].index_count)) {
-      return nullptr;
-    }
-
-    curBytes = curBytes.subspan(sizeof(int));
-
-    if (!DeserializeFromBinary(curBytes, meshData.sub_meshes[i].material_index)) {
-      return nullptr;
-    }
-
-    curBytes = curBytes.subspan(sizeof(int));
-  }
-
-  meshData.animations.resize(anim_count);
+  mesh_data.animations.resize(anim_count);
 
   for (auto i{0ull}; i < anim_count; i++) {
-    if (!DeserializeFromBinary(curBytes, meshData.animations[i].name)) {
+    if (!DeserializeFromBinary(cur_bytes, mesh_data.animations[i].name)) {
       return nullptr;
     }
 
-    curBytes = curBytes.subspan(meshData.animations[i].name.size() + 8);
+    cur_bytes = cur_bytes.subspan(mesh_data.animations[i].name.size() + 8);
 
-    if (!DeserializeFromBinary(curBytes, meshData.animations[i].duration)) {
+    if (!DeserializeFromBinary(cur_bytes, mesh_data.animations[i].duration)) {
       return nullptr;
     }
 
-    curBytes = curBytes.subspan(sizeof(float));
+    cur_bytes = cur_bytes.subspan(sizeof(float));
 
-    if (!DeserializeFromBinary(curBytes, meshData.animations[i].ticks_per_second)) {
+    if (!DeserializeFromBinary(cur_bytes, mesh_data.animations[i].ticks_per_second)) {
       return nullptr;
     }
 
-    curBytes = curBytes.subspan(sizeof(float));
+    cur_bytes = cur_bytes.subspan(sizeof(float));
     std::uint64_t node_anim_count;
 
-    if (!DeserializeFromBinary(curBytes, node_anim_count)) {
+    if (!DeserializeFromBinary(cur_bytes, node_anim_count)) {
       return nullptr;
     }
 
-    curBytes = curBytes.subspan(sizeof node_anim_count);
-    meshData.animations[i].node_anims.resize(node_anim_count);
+    cur_bytes = cur_bytes.subspan(sizeof node_anim_count);
+    mesh_data.animations[i].node_anims.resize(node_anim_count);
 
     for (auto j{0ull}; j < node_anim_count; j++) {
-      if (!DeserializeFromBinary(curBytes, meshData.animations[i].node_anims[j].node_idx)) {
+      if (!DeserializeFromBinary(cur_bytes, mesh_data.animations[i].node_anims[j].node_idx)) {
         return nullptr;
       }
 
-      curBytes = curBytes.subspan(sizeof(std::uint32_t));
+      cur_bytes = cur_bytes.subspan(sizeof(std::uint32_t));
       std::uint64_t pos_key_count;
 
-      if (!DeserializeFromBinary(curBytes, pos_key_count)) {
+      if (!DeserializeFromBinary(cur_bytes, pos_key_count)) {
         return nullptr;
       }
 
-      curBytes = curBytes.subspan(sizeof pos_key_count);
+      cur_bytes = cur_bytes.subspan(sizeof pos_key_count);
       std::uint64_t rot_key_count;
 
-      if (!DeserializeFromBinary(curBytes, rot_key_count)) {
+      if (!DeserializeFromBinary(cur_bytes, rot_key_count)) {
         return nullptr;
       }
 
-      curBytes = curBytes.subspan(sizeof rot_key_count);
+      cur_bytes = cur_bytes.subspan(sizeof rot_key_count);
       std::uint64_t scale_key_count;
 
-      if (!DeserializeFromBinary(curBytes, scale_key_count)) {
+      if (!DeserializeFromBinary(cur_bytes, scale_key_count)) {
         return nullptr;
       }
 
-      curBytes = curBytes.subspan(sizeof scale_key_count);
+      cur_bytes = cur_bytes.subspan(sizeof scale_key_count);
 
-      meshData.animations[i].node_anims[j].position_keys.resize(pos_key_count);
-      std::memcpy(meshData.animations[i].node_anims[j].position_keys.data(), curBytes.data(),
-        pos_key_count * sizeof(PositionKey));
-      curBytes = curBytes.subspan(pos_key_count * sizeof(PositionKey));
+      mesh_data.animations[i].node_anims[j].position_keys.resize(pos_key_count);
+      std::memcpy(mesh_data.animations[i].node_anims[j].position_keys.data(), cur_bytes.data(),
+        pos_key_count * sizeof(AnimPositionKey));
+      cur_bytes = cur_bytes.subspan(pos_key_count * sizeof(AnimPositionKey));
 
 
-      meshData.animations[i].node_anims[j].rotation_keys.resize(rot_key_count);
-      std::memcpy(meshData.animations[i].node_anims[j].rotation_keys.data(), curBytes.data(),
-        rot_key_count * sizeof(RotationKey));
-      curBytes = curBytes.subspan(rot_key_count * sizeof(RotationKey));
+      mesh_data.animations[i].node_anims[j].rotation_keys.resize(rot_key_count);
+      std::memcpy(mesh_data.animations[i].node_anims[j].rotation_keys.data(), cur_bytes.data(),
+        rot_key_count * sizeof(AnimRotationKey));
+      cur_bytes = cur_bytes.subspan(rot_key_count * sizeof(AnimRotationKey));
 
-      meshData.animations[i].node_anims[j].scaling_keys.resize(scale_key_count);
-      std::memcpy(meshData.animations[i].node_anims[j].scaling_keys.data(), curBytes.data(),
-        scale_key_count * sizeof(ScalingKey));
-      curBytes = curBytes.subspan(scale_key_count * sizeof(ScalingKey));
+      mesh_data.animations[i].node_anims[j].scaling_keys.resize(scale_key_count);
+      std::memcpy(mesh_data.animations[i].node_anims[j].scaling_keys.data(), cur_bytes.data(),
+        scale_key_count * sizeof(AnimScalingKey));
+      cur_bytes = cur_bytes.subspan(scale_key_count * sizeof(AnimScalingKey));
     }
   }
 
-  meshData.skeleton.resize(skeleton_size);
+  // Skeleton nodes
+
+  mesh_data.skeleton.resize(skeleton_size);
 
   for (auto i{0ull}; i < skeleton_size; i++) {
-    if (!DeserializeFromBinary(curBytes, meshData.skeleton[i].name)) {
+    if (!DeserializeFromBinary(cur_bytes, mesh_data.skeleton[i].name)) {
       return nullptr;
     }
 
-    curBytes = curBytes.subspan(meshData.skeleton[i].name.size() + 8);
+    cur_bytes = cur_bytes.subspan(mesh_data.skeleton[i].name.size() + 8);
     bool has_parent;
 
-    if (!DeserializeFromBinary(curBytes, has_parent)) {
+    if (!DeserializeFromBinary(cur_bytes, has_parent)) {
       return nullptr;
     }
 
-    curBytes = curBytes.subspan(sizeof has_parent);
+    cur_bytes = cur_bytes.subspan(sizeof has_parent);
 
     if (has_parent) {
       std::uint32_t parent_idx;
 
-      if (!DeserializeFromBinary(curBytes, parent_idx)) {
+      if (!DeserializeFromBinary(cur_bytes, parent_idx)) {
         return nullptr;
       }
 
-      meshData.skeleton[i].parent_idx = parent_idx;
-      curBytes = curBytes.subspan(sizeof std::uint32_t);
+      mesh_data.skeleton[i].parent_idx = parent_idx;
+      cur_bytes = cur_bytes.subspan(sizeof std::uint32_t);
     }
 
-    std::memcpy(meshData.skeleton[i].transform.GetData(), curBytes.data(), sizeof(Matrix4));
-    curBytes = curBytes.subspan(sizeof Matrix4);
+    std::memcpy(mesh_data.skeleton[i].transform.GetData(), cur_bytes.data(), sizeof(Matrix4));
+    cur_bytes = cur_bytes.subspan(sizeof Matrix4);
   }
 
-  meshData.bones.resize(bone_count);
-  std::memcpy(meshData.bones.data(), curBytes.data(), bone_count * sizeof(Bone));
-  curBytes = curBytes.subspan(bone_count * sizeof(Bone));
+  // Bones
 
-  assert(curBytes.empty());
+  mesh_data.bones.resize(bone_count);
+  std::memcpy(mesh_data.bones.data(), cur_bytes.data(), bone_count * sizeof(Bone));
+  cur_bytes = cur_bytes.subspan(bone_count * sizeof(Bone));
 
-  return Create<Mesh>(std::move(meshData));
+  assert(cur_bytes.empty());
+
+  return Create<Mesh>(std::move(mesh_data));
 }
 
 
@@ -575,8 +587,8 @@ auto ResourceManager::CreateDefaultResources() -> void {
     cube_mesh_->SetUVs(kCubeUvs);
     cube_mesh_->SetTangents(std::move(cubeTangents));
     cube_mesh_->SetIndices(kCubeIndices);
-    cube_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-    cube_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kCubeIndices.size()), 0, AABB{}}});
+    cube_mesh_->SetMaterialSlots(std::array{MaterialSlotInfo{"Material"}});
+    cube_mesh_->SetSubMeshes(std::array{SubMeshInfo{0, 0, static_cast<int>(kCubeIndices.size()), 0, AABB{}}});
     if (!cube_mesh_->ValidateAndUpdate(false)) {
       throw std::runtime_error{"Failed to validate and update default cube mesh."};
     }
@@ -598,8 +610,8 @@ auto ResourceManager::CreateDefaultResources() -> void {
     plane_mesh_->SetUVs(kQuadUvs);
     plane_mesh_->SetTangents(std::move(quadTangents));
     plane_mesh_->SetIndices(kQuadIndices);
-    plane_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-    plane_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(kQuadIndices.size()), 0, AABB{}}});
+    plane_mesh_->SetMaterialSlots(std::array{MaterialSlotInfo{"Material"}});
+    plane_mesh_->SetSubMeshes(std::array{SubMeshInfo{0, 0, static_cast<int>(kQuadIndices.size()), 0, AABB{}}});
     if (!plane_mesh_->ValidateAndUpdate(false)) {
       throw std::runtime_error{"Failed to validate and update default plane mesh."};
     }
@@ -623,8 +635,8 @@ auto ResourceManager::CreateDefaultResources() -> void {
     sphere_mesh_->SetUVs(std::move(sphereUvs));
     sphere_mesh_->SetTangents(std::move(sphereTangents));
     sphere_mesh_->SetIndices(std::move(sphereIndices));
-    sphere_mesh_->SetMaterialSlots(std::array{Mesh::MaterialSlotInfo{"Material"}});
-    sphere_mesh_->SetSubMeshes(std::array{Mesh::SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
+    sphere_mesh_->SetMaterialSlots(std::array{MaterialSlotInfo{"Material"}});
+    sphere_mesh_->SetSubMeshes(std::array{SubMeshInfo{0, 0, static_cast<int>(sphereIdxCount), 0, AABB{}}});
     if (!sphere_mesh_->ValidateAndUpdate(false)) {
       throw std::runtime_error{"Failed to validate and update default sphere mesh."};
     }
