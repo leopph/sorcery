@@ -17,7 +17,12 @@ struct Meshlet {
 };
 
 
-template<typename VertexProcessor, typename PsIn>
+template<typename VertexProcessor,
+#if !defined(MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES)
+         typename PrimitiveProcessor,
+         typename PerTriData,
+#endif
+         typename PsIn>
 void MeshShaderCore(
   uint const gid : SV_GroupID,
   uint const gtid : SV_GroupThreadID,
@@ -28,8 +33,11 @@ void MeshShaderCore(
   uint const draw_meshlet_count,
   uint const draw_instance_offset,
   uint const draw_instance_count,
-  out PsIn out_verts[MESHLET_MAX_VERTS],
-  out uint3 out_tris[MESHLET_MAX_PRIMS]) {
+  out PsIn out_vertices[MESHLET_MAX_VERTS],
+#if !defined(MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES)
+  out PerTriData out_primitives[MESHLET_MAX_PRIMS],
+#endif
+  out uint3 out_indices[MESHLET_MAX_PRIMS]) {
   uint const meshlet_idx = gid / draw_instance_count;
   StructuredBuffer<Meshlet> const meshlets = ResourceDescriptorHeap[meshlet_buf_idx];
   Meshlet const meshlet = meshlets[meshlet_idx + draw_meshlet_offset];
@@ -61,7 +69,7 @@ void MeshShaderCore(
     uint const vertex_index = vertex_indices[meshlet.vertex_offset + read_index];
     uint const instance_index = start_instance + instance_id;
 
-    out_verts[gtid] = VertexProcessor::CalculateVertex(vertex_index, instance_index);
+    out_vertices[gtid] = VertexProcessor::CalculateVertex(vertex_index, instance_index);
   }
 
   for (uint i = 0; i < 2; i++) {
@@ -73,19 +81,34 @@ void MeshShaderCore(
 
       StructuredBuffer<uint> const primitive_indices = ResourceDescriptorHeap[prim_idx_buf_idx];
 
-      out_tris[primitive_id] = UnpackTriangleIndices(primitive_indices[meshlet.primitive_offset + read_index]) + (
-                                 meshlet.vertex_count * instance_id);
+      out_indices[primitive_id] = UnpackTriangleIndices(primitive_indices[meshlet.primitive_offset + read_index]) + (
+                                    meshlet.vertex_count * instance_id);
+
+#if !defined(MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES)
+      out_primitives[primitive_id] = PrimitiveProcessor::CalculatePrimitive(primitive_id);
+#endif
     }
   }
 }
 
 
+#ifdef MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES
 #define DECLARE_MESH_SHADER_MAIN(MainFuncName) [outputtopology("triangle")]\
 [numthreads(MESHLET_MAX_VERTS, 1, 1)]\
 void MainFuncName(\
   const uint gid : SV_GroupID, \
   const uint gtid : SV_GroupThreadID, \
-  out vertices PsIn out_verts[MESHLET_MAX_VERTS], \
-  out indices uint3 out_tris[MESHLET_MAX_PRIMS])
+  out vertices PsIn out_vertices[MESHLET_MAX_VERTS], \
+  out indices uint3 out_indices[MESHLET_MAX_PRIMS])
+#else
+#define DECLARE_MESH_SHADER_MAIN(MainFuncName, PrimitiveDataType) [outputtopology("triangle")]\
+[numthreads(MESHLET_MAX_VERTS, 1, 1)]\
+void MainFuncName(\
+  const uint gid : SV_GroupID,\
+  const uint gtid : SV_GroupThreadID,\
+  out vertices PsIn out_vertices[MESHLET_MAX_VERTS],\
+  out primitives PrimitiveDataType out_primitives[MESHLET_MAX_PRIMS],\
+  out indices uint3 out_indices[MESHLET_MAX_PRIMS])
+#endif
 
 #endif

@@ -3,6 +3,7 @@
 
 #include "common.hlsli"
 #include "lighting.hlsli"
+#define MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES
 #include "mesh_shader_core.hlsli"
 #include "shader_interop.h"
 
@@ -62,7 +63,7 @@ class VertexProcessor {
 DECLARE_MESH_SHADER_MAIN(MsMain) {
   MeshShaderCore<VertexProcessor>(gid, gtid, g_params.meshlet_buf_idx, g_params.vertex_idx_buf_idx,
     g_params.prim_idx_buf_idx, g_params.meshlet_offset, g_params.meshlet_count, g_params.instance_offset,
-    g_params.instance_count, out_verts, out_tris);
+    g_params.instance_count, out_vertices, out_indices);
 }
 
 
