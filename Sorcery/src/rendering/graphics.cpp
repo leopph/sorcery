@@ -247,6 +247,10 @@ GraphicsDevice::GraphicsDevice(bool const enable_debug) {
     };
   }
 
+  if (features.MeshShaderTier() < D3D12_MESH_SHADER_TIER_1) {
+    throw std::runtime_error{"Mesh Shader Tier 1 is required but not supported."};
+  }
+
   D3D12MA::ALLOCATOR_DESC const allocator_desc{D3D12MA::ALLOCATOR_FLAG_NONE, device_.Get(), 0, nullptr, adapter.Get()};
   ThrowIfFailed(CreateAllocator(&allocator_desc, &allocator_), "Failed to create D3D12 memory allocator.");
 
