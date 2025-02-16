@@ -9,7 +9,7 @@ DECLARE_PARAMS(DepthNormalDrawParams);
 DECLARE_DRAW_CALL_PARAMS(g_draw_call_params);
 
 
-struct VertexOut {
+struct PsIn {
   float4 pos_cs : SV_POSITION;
   float3 norm_ws : NORMAL;
   float2 uv : TEXCOORD;
@@ -18,7 +18,7 @@ struct VertexOut {
 };
 
 
-VertexOut VsMain(uint vertex_id : SV_VertexID) {
+PsIn VsMain(uint vertex_id : SV_VertexID) {
   vertex_id += g_draw_call_params.base_vertex;
 
   const StructuredBuffer<float4> positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
@@ -45,7 +45,7 @@ VertexOut VsMain(uint vertex_id : SV_VertexID) {
   const StructuredBuffer<float2> uvs = ResourceDescriptorHeap[g_params.uv_buf_idx];
   const float2 uv = uvs[vertex_id];
 
-  VertexOut ret;
+  PsIn ret;
   ret.pos_cs = pos_cs;
   ret.norm_ws = norm_ws;
   ret.uv = uv;
@@ -55,7 +55,7 @@ VertexOut VsMain(uint vertex_id : SV_VertexID) {
 }
 
 
-float4 PsMain(const VertexOut vs_out) : SV_Target {
+float4 PsMain(const PsIn vs_out) : SV_Target {
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
 
   if (mtl.blendMode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {

@@ -90,7 +90,7 @@
       <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
       <ShaderModel>6.6</ShaderModel>
       <AllResourcesBound>true</AllResourcesBound>
-      <AdditionalOptions>-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Qembed_debug -HV 2021 %(AdditionalOptions)</AdditionalOptions>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
   </ItemDefinitionGroup>
@@ -127,6 +127,7 @@
       <ShaderModel>6.6</ShaderModel>
       <AllResourcesBound>true</AllResourcesBound>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>-Qembed_debug -HV 2021 %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -252,6 +253,7 @@
     <None Include="src\rendering\shaders\depth_normal.hlsli" />
     <None Include="src\rendering\shaders\depth_only.hlsli" />
     <None Include="src\rendering\shaders\gizmos.hlsli" />
+    <None Include="src\rendering\shaders\lighting.hlsli" />
     <None Include="src\rendering\shaders\object_pbr.hlsli" />
     <None Include="src\rendering\shaders\post_process.hlsli" />
     <None Include="src\rendering\shaders\shader_interop.h" />

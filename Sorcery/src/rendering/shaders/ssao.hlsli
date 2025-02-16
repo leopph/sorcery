@@ -10,14 +10,14 @@ DECLARE_PARAMS1(SsaoDrawParams, g_params);
 DECLARE_PARAMS1(SsaoBlurDrawParams, g_blur_params);
 
 
-struct VertexOut {
+struct PsIn {
   float4 pos_cs : SV_POSITION;
   float2 uv : TEXCOORD;
 };
 
 
-VertexOut VsMain(const uint vertex_id : SV_VertexID) {
-  VertexOut ret;
+PsIn VsMain(const uint vertex_id : SV_VertexID) {
+  PsIn ret;
   ret.uv = float2((vertex_id << 1) & 2, vertex_id & 2);
   ret.pos_cs = float4(UvToNdc(ret.uv), 0, 1);
   return ret;
@@ -35,7 +35,7 @@ float3 CalculatePositionVsAtUv(const Texture2D<float> depth_tex, const SamplerSt
 // MAIN PASS ######################################################
 
 
-float PsMain(const VertexOut vs_out) : SV_Target {
+float PsMain(const PsIn vs_out) : SV_Target {
   float2 noise_tex_size;
 
   const Texture2D<float3> noise_tex = ResourceDescriptorHeap[g_params.noise_tex_idx];

@@ -84,7 +84,7 @@
       <VariableName>g_%(Filename)_bytes</VariableName>
       <ObjectFileOutput />
       <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
-      <AdditionalOptions>-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Qembed_debug -HV 2021 %(AdditionalOptions)</AdditionalOptions>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
   </ItemDefinitionGroup>
@@ -115,6 +115,7 @@
       <ObjectFileOutput />
       <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>-Qembed_debug -HV 2021 %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
