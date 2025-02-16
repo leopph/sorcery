@@ -92,14 +92,14 @@ public:
   Mesh() = default;
   Mesh(Mesh const&) = delete;
   Mesh(Mesh&& other) noexcept = delete;
-  LEOPPHAPI explicit Mesh(mesh_data const& data) noexcept;
+  LEOPPHAPI explicit Mesh(MeshData const& data) noexcept;
 
   ~Mesh() override = default;
 
   auto operator=(Mesh const&) -> void = delete;
   auto operator=(Mesh&& other) noexcept -> void = delete;
 
-  LEOPPHAPI auto SetData(mesh_data const& data) noexcept -> void;
+  LEOPPHAPI auto SetData(MeshData const& data) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const>;
   [[nodiscard]] LEOPPHAPI auto GetSubmeshes() const noexcept -> std::span<Submesh const>;

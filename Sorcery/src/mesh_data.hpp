@@ -99,7 +99,7 @@ struct SubmeshData {
 // A mesh is a list of submeshes, material slots, animations, and a skeleton
 // Each submesh refers to a material slot and a set of bones.
 // Bones refer to the skeleton hierarchy, and animations operate on the nodes of the hierarchy.
-struct mesh_data {
+struct MeshData {
   std::vector<MaterialSlotInfo> material_slots;
   std::vector<SubmeshData> submeshes;
   std::vector<Animation> animations;

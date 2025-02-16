@@ -230,12 +230,12 @@ auto Mesh::OnDrawProperties(bool& changed) -> void {
 }
 
 
-Mesh::Mesh(mesh_data const& data) noexcept {
+Mesh::Mesh(MeshData const& data) noexcept {
   SetData(data);
 }
 
 
-auto Mesh::SetData(mesh_data const& data) noexcept -> void {
+auto Mesh::SetData(MeshData const& data) noexcept -> void {
   mtl_slots_ = data.material_slots;
   animations_ = data.animations;
   skeleton_ = data.skeleton;

@@ -219,7 +219,7 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
   }
 
   cur_bytes = cur_bytes.subspan(sizeof bone_count);
-  mesh_data mesh_data;
+  MeshData mesh_data;
 
   // Material slots
 
@@ -573,7 +573,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
   }
 
   if (!cube_mesh_) {
-    mesh_data cube_data;
+    MeshData cube_data;
 
     cube_data.material_slots.emplace_back("Material");
     cube_data.submeshes.resize(1);
@@ -597,7 +597,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
   }
 
   if (!plane_mesh_) {
-    mesh_data plane_data;
+    MeshData plane_data;
 
     plane_data.material_slots.emplace_back("Material");
     plane_data.submeshes.resize(1);
@@ -621,7 +621,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
   }
 
   if (!sphere_mesh_) {
-    mesh_data sphere_data;
+    MeshData sphere_data;
 
     sphere_data.material_slots.emplace_back("Material");
     sphere_data.submeshes.resize(1);
