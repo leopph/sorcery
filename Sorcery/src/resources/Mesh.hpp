@@ -57,8 +57,8 @@ private:
 
   // Shader access
 
-  graphics::SharedDeviceChildHandle<graphics::Buffer> shader_access_srv_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> shader_access_geom_uav_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> shader_access_draw_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> shader_access_skinning_buf_;
 
   // CPU info
 

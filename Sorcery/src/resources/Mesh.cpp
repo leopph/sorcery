@@ -40,7 +40,7 @@ Submesh::Submesh(SubmeshData const& data) :
   uv_buf_{
     App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
       .size = static_cast<UINT>(data.uvs.size() * sizeof(Vector2)), .stride = sizeof(Vector2),
-      .constant_buffer = false, .shader_resource = true, .unordered_access = true
+      .constant_buffer = false, .shader_resource = true, .unordered_access = false
     }, D3D12_HEAP_TYPE_DEFAULT)
   },
   bone_weight_buf_{
@@ -48,7 +48,7 @@ Submesh::Submesh(SubmeshData const& data) :
       ? nullptr
       : App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
         .size = static_cast<UINT>(data.bone_weights.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
-        .constant_buffer = false, .shader_resource = true, .unordered_access = true
+        .constant_buffer = false, .shader_resource = false, .unordered_access = true
       }, D3D12_HEAP_TYPE_DEFAULT)
   },
   bone_idx_buf_{
@@ -56,7 +56,7 @@ Submesh::Submesh(SubmeshData const& data) :
       ? nullptr
       : App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
         .size = static_cast<UINT>(data.bone_indices.size() * sizeof(Vector<std::uint32_t, 4>)),
-        .stride = sizeof(Vector<std::uint32_t, 4>), .constant_buffer = false, .shader_resource = true,
+        .stride = sizeof(Vector<std::uint32_t, 4>), .constant_buffer = false, .shader_resource = false,
         .unordered_access = true
       }, D3D12_HEAP_TYPE_DEFAULT)
   },
@@ -79,18 +79,21 @@ Submesh::Submesh(SubmeshData const& data) :
       .unordered_access = false
     }, D3D12_HEAP_TYPE_DEFAULT)
   },
-  shader_access_srv_buf_{
+  shader_access_draw_buf_{
     App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-      .size = static_cast<UINT>(sizeof(ShaderSubmeshData)), .stride = static_cast<UINT>(sizeof(ShaderSubmeshData)),
+      .size = static_cast<UINT>(sizeof(ShaderSubmeshDrawData)),
+      .stride = static_cast<UINT>(sizeof(ShaderSubmeshDrawData)),
       .constant_buffer = false, .shader_resource = true, .unordered_access = false
     }, D3D12_HEAP_TYPE_DEFAULT)
   },
-  shader_access_geom_uav_buf_{
-    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-      .size = static_cast<UINT>(sizeof(ShaderSubmeshGeometryUavData)),
-      .stride = static_cast<UINT>(sizeof(ShaderSubmeshGeometryUavData)),
-      .constant_buffer = false, .shader_resource = true, .unordered_access = false
-    }, D3D12_HEAP_TYPE_DEFAULT)
+  shader_access_skinning_buf_{
+    data.bone_weights.empty() || data.bone_indices.empty()
+      ? nullptr
+      : App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
+        .size = static_cast<UINT>(sizeof(ShaderSubmeshSkinningData)),
+        .stride = static_cast<UINT>(sizeof(ShaderSubmeshSkinningData)),
+        .constant_buffer = false, .shader_resource = false, .unordered_access = true
+      }, D3D12_HEAP_TYPE_DEFAULT)
   },
   meshlets_{data.meshlets},
   bounds_{
@@ -113,7 +116,7 @@ Submesh::Submesh(SubmeshData const& data) :
   assert(meshlet_buf_);
   assert(vertex_idx_buf_);
   assert(prim_idx_buf_);
-  assert(shader_access_srv_buf_);
+  assert(shader_access_draw_buf_);
   assert(data.idx32); // TODO: Support 16-bit indices
 
   std::vector<Vector4> vector4_buf;
@@ -148,32 +151,31 @@ Submesh::Submesh(SubmeshData const& data) :
   App::Instance().GetRenderManager().UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{data.vertex_indices}));
   App::Instance().GetRenderManager().UpdateBuffer(*prim_idx_buf_, 0, as_bytes(std::span{data.triangle_indices}));
 
-  ShaderSubmeshData const shader_access_data{
+  ShaderSubmeshDrawData const shader_access_data{
     .pos_buf_idx = pos_buf_->GetShaderResource(),
     .norm_buf_idx = norm_buf_->GetShaderResource(),
     .tan_buf_idx = tan_buf_->GetShaderResource(),
     .uv_buf_idx = uv_buf_->GetShaderResource(),
-    .bone_weight_buf_idx = bone_weight_buf_ ? bone_weight_buf_->GetShaderResource() : INVALID_RES_IDX,
-    .bone_idx_buf_idx = bone_idx_buf_ ? bone_idx_buf_->GetShaderResource() : INVALID_RES_IDX,
     .meshlet_buf_idx = meshlet_buf_->GetShaderResource(),
     .vertex_idx_buf_idx = vertex_idx_buf_->GetShaderResource(),
     .prim_idx_buf_idx = prim_idx_buf_->GetShaderResource(),
-    .idx32 = data.idx32,
-    .pad = {}
+    .idx32 = data.idx32
   };
-  App::Instance().GetRenderManager().UpdateBuffer(*shader_access_srv_buf_, 0,
+  App::Instance().GetRenderManager().UpdateBuffer(*shader_access_draw_buf_, 0,
     std::span{std::bit_cast<std::byte const*>(&shader_access_data), sizeof(shader_access_data)});
 
-  ShaderSubmeshGeometryUavData const shader_access_geom_uav_data{
-    .pos_buf_idx = pos_buf_->GetUnorderedAccess(),
-    .norm_buf_idx = norm_buf_->GetUnorderedAccess(),
-    .tan_buf_idx = tan_buf_->GetUnorderedAccess(),
-    .bone_weight_buf_idx = bone_weight_buf_ ? bone_weight_buf_->GetUnorderedAccess() : INVALID_RES_IDX,
-    .bone_idx_buf_idx = bone_idx_buf_ ? bone_idx_buf_->GetUnorderedAccess() : INVALID_RES_IDX,
-    .pad = {}
-  };
-  App::Instance().GetRenderManager().UpdateBuffer(*shader_access_srv_buf_, 0,
-    std::span{std::bit_cast<std::byte const*>(&shader_access_geom_uav_data), sizeof(shader_access_geom_uav_data)});
+  if (shader_access_skinning_buf_) {
+    ShaderSubmeshSkinningData const shader_access_geom_uav_data{
+      .pos_buf_idx = pos_buf_->GetUnorderedAccess(),
+      .norm_buf_idx = norm_buf_->GetUnorderedAccess(),
+      .tan_buf_idx = tan_buf_->GetUnorderedAccess(),
+      .bone_weight_buf_idx = bone_weight_buf_ ? bone_weight_buf_->GetUnorderedAccess() : INVALID_RES_IDX,
+      .bone_idx_buf_idx = bone_idx_buf_ ? bone_idx_buf_->GetUnorderedAccess() : INVALID_RES_IDX,
+      .pad = {}
+    };
+    App::Instance().GetRenderManager().UpdateBuffer(*shader_access_draw_buf_, 0,
+      std::span{std::bit_cast<std::byte const*>(&shader_access_geom_uav_data), sizeof(shader_access_geom_uav_data)});
+  }
 }
 
 
@@ -194,18 +196,18 @@ Submesh::~Submesh() {
   App::Instance().GetRenderManager().KeepAliveWhileInUse(meshlet_buf_);
   App::Instance().GetRenderManager().KeepAliveWhileInUse(vertex_idx_buf_);
   App::Instance().GetRenderManager().KeepAliveWhileInUse(prim_idx_buf_);
-  App::Instance().GetRenderManager().KeepAliveWhileInUse(shader_access_srv_buf_);
-  App::Instance().GetRenderManager().KeepAliveWhileInUse(shader_access_geom_uav_buf_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(shader_access_draw_buf_);
+  App::Instance().GetRenderManager().KeepAliveWhileInUse(shader_access_skinning_buf_);
 }
 
 
 auto Submesh::GetShaderAccessSrvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return shader_access_srv_buf_;
+  return shader_access_draw_buf_;
 }
 
 
 auto Submesh::GetShaderAccessGeometryUavBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return shader_access_geom_uav_buf_;
+  return shader_access_skinning_buf_;
 }
 
 
