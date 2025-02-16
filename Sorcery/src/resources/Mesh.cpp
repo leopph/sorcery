@@ -79,22 +79,6 @@ Submesh::Submesh(SubmeshData const& data) :
       .unordered_access = false
     }, D3D12_HEAP_TYPE_DEFAULT)
   },
-  shader_access_draw_buf_{
-    App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-      .size = static_cast<UINT>(sizeof(ShaderSubmeshDrawData)),
-      .stride = static_cast<UINT>(sizeof(ShaderSubmeshDrawData)),
-      .constant_buffer = false, .shader_resource = true, .unordered_access = false
-    }, D3D12_HEAP_TYPE_DEFAULT)
-  },
-  shader_access_skinning_buf_{
-    data.bone_weights.empty() || data.bone_indices.empty()
-      ? nullptr
-      : App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-        .size = static_cast<UINT>(sizeof(ShaderSubmeshSkinningData)),
-        .stride = static_cast<UINT>(sizeof(ShaderSubmeshSkinningData)),
-        .constant_buffer = false, .shader_resource = false, .unordered_access = true
-      }, D3D12_HEAP_TYPE_DEFAULT)
-  },
   meshlets_{data.meshlets},
   bounds_{
     [&data] {
@@ -116,7 +100,6 @@ Submesh::Submesh(SubmeshData const& data) :
   assert(meshlet_buf_);
   assert(vertex_idx_buf_);
   assert(prim_idx_buf_);
-  assert(shader_access_draw_buf_);
   assert(data.idx32); // TODO: Support 16-bit indices
 
   std::vector<Vector4> vector4_buf;
@@ -150,32 +133,6 @@ Submesh::Submesh(SubmeshData const& data) :
   App::Instance().GetRenderManager().UpdateBuffer(*meshlet_buf_, 0, as_bytes(std::span{data.meshlets}));
   App::Instance().GetRenderManager().UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{data.vertex_indices}));
   App::Instance().GetRenderManager().UpdateBuffer(*prim_idx_buf_, 0, as_bytes(std::span{data.triangle_indices}));
-
-  ShaderSubmeshDrawData const shader_access_data{
-    .pos_buf_idx = pos_buf_->GetShaderResource(),
-    .norm_buf_idx = norm_buf_->GetShaderResource(),
-    .tan_buf_idx = tan_buf_->GetShaderResource(),
-    .uv_buf_idx = uv_buf_->GetShaderResource(),
-    .meshlet_buf_idx = meshlet_buf_->GetShaderResource(),
-    .vertex_idx_buf_idx = vertex_idx_buf_->GetShaderResource(),
-    .prim_idx_buf_idx = prim_idx_buf_->GetShaderResource(),
-    .idx32 = data.idx32
-  };
-  App::Instance().GetRenderManager().UpdateBuffer(*shader_access_draw_buf_, 0,
-    std::span{std::bit_cast<std::byte const*>(&shader_access_data), sizeof(shader_access_data)});
-
-  if (shader_access_skinning_buf_) {
-    ShaderSubmeshSkinningData const shader_access_geom_uav_data{
-      .pos_buf_idx = pos_buf_->GetUnorderedAccess(),
-      .norm_buf_idx = norm_buf_->GetUnorderedAccess(),
-      .tan_buf_idx = tan_buf_->GetUnorderedAccess(),
-      .bone_weight_buf_idx = bone_weight_buf_ ? bone_weight_buf_->GetUnorderedAccess() : INVALID_RES_IDX,
-      .bone_idx_buf_idx = bone_idx_buf_ ? bone_idx_buf_->GetUnorderedAccess() : INVALID_RES_IDX,
-      .pad = {}
-    };
-    App::Instance().GetRenderManager().UpdateBuffer(*shader_access_draw_buf_, 0,
-      std::span{std::bit_cast<std::byte const*>(&shader_access_geom_uav_data), sizeof(shader_access_geom_uav_data)});
-  }
 }
 
 
@@ -196,18 +153,51 @@ Submesh::~Submesh() {
   App::Instance().GetRenderManager().KeepAliveWhileInUse(meshlet_buf_);
   App::Instance().GetRenderManager().KeepAliveWhileInUse(vertex_idx_buf_);
   App::Instance().GetRenderManager().KeepAliveWhileInUse(prim_idx_buf_);
-  App::Instance().GetRenderManager().KeepAliveWhileInUse(shader_access_draw_buf_);
-  App::Instance().GetRenderManager().KeepAliveWhileInUse(shader_access_skinning_buf_);
 }
 
 
-auto Submesh::GetShaderAccessSrvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return shader_access_draw_buf_;
+auto Submesh::GetPositionBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return pos_buf_;
 }
 
 
-auto Submesh::GetShaderAccessGeometryUavBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return shader_access_skinning_buf_;
+auto Submesh::GetNormalBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return norm_buf_;
+}
+
+
+auto Submesh::GetTangentBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return tan_buf_;
+}
+
+
+auto Submesh::GetUvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return uv_buf_;
+}
+
+
+auto Submesh::GetBoneWeightBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return bone_weight_buf_;
+}
+
+
+auto Submesh::GetBoneIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return bone_idx_buf_;
+}
+
+
+auto Submesh::GetMeshletBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return meshlet_buf_;
+}
+
+
+auto Submesh::GetVertexIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return vertex_idx_buf_;
+}
+
+
+auto Submesh::GetPrimitiveIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return prim_idx_buf_;
 }
 
 

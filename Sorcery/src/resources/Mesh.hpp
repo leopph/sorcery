@@ -28,10 +28,18 @@ public:
   auto operator=(Submesh const&) -> Submesh& = default;
   auto operator=(Submesh&&) noexcept -> Submesh& = default;
 
+  [[nodiscard]] LEOPPHAPI auto GetPositionBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetUvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
   [[nodiscard]] LEOPPHAPI auto
-  GetShaderAccessSrvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  GetBoneWeightBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetBoneIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetMeshletBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
   [[nodiscard]] LEOPPHAPI auto
-  GetShaderAccessGeometryUavBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  GetVertexIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto
+  GetPrimitiveIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
 
   [[nodiscard]] auto GetBounds() const -> AABB const&;
 
@@ -54,11 +62,6 @@ private:
   graphics::SharedDeviceChildHandle<graphics::Buffer> meshlet_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> vertex_idx_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> prim_idx_buf_;
-
-  // Shader access
-
-  graphics::SharedDeviceChildHandle<graphics::Buffer> shader_access_draw_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> shader_access_skinning_buf_;
 
   // CPU info
 
