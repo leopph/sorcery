@@ -254,6 +254,7 @@
     <None Include="src\rendering\shaders\depth_only.hlsli" />
     <None Include="src\rendering\shaders\gizmos.hlsli" />
     <None Include="src\rendering\shaders\lighting.hlsli" />
+    <None Include="src\rendering\shaders\mesh_shader_core.hlsli" />
     <None Include="src\rendering\shaders\object_pbr.hlsli" />
     <None Include="src\rendering\shaders\post_process.hlsli" />
     <None Include="src\rendering\shaders\shader_interop.h" />
