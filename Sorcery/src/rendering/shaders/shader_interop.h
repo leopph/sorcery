@@ -199,8 +199,6 @@ struct DepthNormalDrawParams {
 
   uint samp_idx;
 
-  uint rt_idx;
-
   uint per_draw_cb_idx;
   uint per_view_cb_idx;
   uint per_frame_cb_idx;

@@ -385,7 +385,7 @@
     <FxCompile Include="src\rendering\shaders\gizmos_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\depth_only_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\depth_normal_ps.hlsl" />
-    <FxCompile Include="src\rendering\shaders\depth_normal_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\depth_normal_ms.hlsl" />
     <FxCompile Include="src\rendering\shaders\ssao_blur_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\ssao_main_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\depth_resolve_cs.hlsl" />
