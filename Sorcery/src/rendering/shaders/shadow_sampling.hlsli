@@ -166,7 +166,7 @@ float SampleShadowMapNoFilter(const Texture2D<float> shadowMap, uniform const Sa
 
 float SampleShadowMapArrayNoFilter(const Texture2DArray<float> shadowMapArray,
                                    uniform const SamplerComparisonState cmp_point_sampler, const float2 uv,
-                                   const int arraySlice, const float cmpDepth) {
+                                   const uint arraySlice, const float cmpDepth) {
   return shadowMapArray.SampleCmpLevelZero(cmp_point_sampler, float3(uv, arraySlice), cmpDepth);
 }
 
@@ -179,7 +179,7 @@ float SampleShadowMapHardwarePCF(const Texture2D<float> shadowMap, uniform const
 
 float SampleShadowMapArrayHardwarePCF(const Texture2DArray<float> shadowMapArray,
                                       uniform const SamplerComparisonState cmp_pcf_samp, const float2 uv,
-                                      const int arraySlice, const float cmpDepth) {
+                                      const uint arraySlice, const float cmpDepth) {
   return shadowMapArray.SampleCmpLevelZero(cmp_pcf_samp, float3(uv, arraySlice), cmpDepth);
 }
 
@@ -201,7 +201,7 @@ float SampleShadowMapPCF3x34TapFast(const Texture2D<float> shadowMap, uniform co
 
 float SampleShadowMapArrayPCF3x34TapFast(const Texture2DArray<float> shadowMapArray,
                                          uniform const SamplerComparisonState cmp_pcf_samp, const float2 uv,
-                                         const int arraySlice, const float depth) {
+                                         const uint arraySlice, const float depth) {
   const float2 texelSize = GetShadowMapArrayTexelSize(shadowMapArray).xy;
   const float2 uvOffset = texelSize * 0.5;
 
@@ -237,7 +237,7 @@ float SampleShadowMapPCF3x3Tent4Tap(const Texture2D<float> shadowMap, uniform co
 
 float SampleShadowMapArrayPCF3x3Tent4Tap(const Texture2DArray<float> shadowMapArray,
                                          uniform const SamplerComparisonState cmp_pcf_samp, const float2 uv,
-                                         const int arraySlice, const float depth) {
+                                         const uint arraySlice, const float depth) {
   float2 uv0, uv1, uv2, uv3;
   float4 weights;
   GetPCF3x3Tent4TapParams(uv, GetShadowMapArraySize(shadowMapArray).xy, uv0, uv1, uv2, uv3, weights);
@@ -279,7 +279,7 @@ float SampleShadowMapPCF5x5Tent9Tap(const Texture2D<float> shadowMap, uniform co
 
 float SampleShadowMapArrayPCF5x5Tent9Tap(const Texture2DArray<float> shadowMapArray,
                                          uniform const SamplerComparisonState cmp_pcf_samp, const float2 uv,
-                                         const int arraySlice, const float depth) {
+                                         const uint arraySlice, const float depth) {
   float2 uv0, uv1, uv2, uv3, uv4, uv5, uv6, uv7, uv8;
   float3 groupWeightsA, groupWeightsB, groupWeightsC;
   GetPCF5x5Tent9TapParams(uv, GetShadowMapArraySize(shadowMapArray).xy, uv0, uv1, uv2, uv3, uv4, uv5, uv6, uv7, uv8,

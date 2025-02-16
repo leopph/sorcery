@@ -22,7 +22,7 @@ void main(const uint3 dtid : SV_DispatchThreadID) {
   const RWTexture2D<float> out_tex = ResourceDescriptorHeap[g_params.out_tex_idx];
 
   for (uint i = 0; i < sample_count; ++i) {
-    result = max(result, in_tex.Load(dtid.xy, i).r);
+    result = max(result, in_tex.Load(dtid.xy, (int) i).r);
   }
 
   out_tex[dtid.xy] = result;

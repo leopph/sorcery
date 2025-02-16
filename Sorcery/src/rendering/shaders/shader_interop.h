@@ -156,7 +156,7 @@ struct ShaderLineGizmoVertexData {
 
 struct ShaderPerFrameConstants {
   float3 ambientLightColor;
-  int shadowCascadeCount;
+  uint shadowCascadeCount;
   float2 screenSize;
   BOOL visualizeShadowCascades;
   int shadowFilteringMode;

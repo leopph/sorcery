@@ -21,7 +21,7 @@ struct PsIn {
 
 
 PsIn VsMain(uint vertex_id : SV_VertexID) {
-  vertex_id += g_draw_call_params.base_vertex;
+  vertex_id = (uint) ((int) vertex_id + g_draw_call_params.base_vertex);
 
   const StructuredBuffer<VertexData> vertex_data_buf = ResourceDescriptorHeap[g_draw_params.vb_idx];
   const VertexData vertex_data = vertex_data_buf[vertex_id];

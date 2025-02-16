@@ -19,7 +19,7 @@ struct PsIn {
 
 
 PsIn VsMain(uint vertex_id : SV_VertexID) {
-  vertex_id += g_draw_call_params.base_vertex;
+  vertex_id = (uint) ((int) vertex_id + g_draw_call_params.base_vertex);
 
   const StructuredBuffer<float4> positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
 

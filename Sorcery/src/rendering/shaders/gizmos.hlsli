@@ -16,7 +16,7 @@ struct PsIn {
 
 
 PsIn VsMainLine(uint vertex_id : SV_VertexID, uint instance_id : SV_InstanceID) {
-  vertex_id += g_draw_call_params.base_vertex;
+  vertex_id = (uint) ((int) vertex_id + g_draw_call_params.base_vertex);
   instance_id += g_draw_call_params.base_instance;
 
   const StructuredBuffer<ShaderLineGizmoVertexData> vertices = ResourceDescriptorHeap[g_params.vertex_buf_idx];

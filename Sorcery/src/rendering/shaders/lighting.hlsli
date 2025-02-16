@@ -6,16 +6,16 @@
 #include "shadow_filtering_modes.h"
 #include "shadow_sampling.hlsli"
 
-int CalculateShadowCascadeIdx(const float pos_vs_z, uniform const float4 cascade_splits)
+uint CalculateShadowCascadeIdx(const float pos_vs_z, uniform const float4 cascade_splits)
 {
-  return dot(cascade_splits < pos_vs_z, 1.0);
+  return (uint) dot(cascade_splits < pos_vs_z, 1.0);
 }
 
 
 float3 VisualizeShadowCascades(const float pos_vs_z, uniform const float4 cascade_splits,
                                uniform const uint cascade_count)
 {
-  const int cascade_idx = CalculateShadowCascadeIdx(pos_vs_z, cascade_splits);
+  const uint cascade_idx = CalculateShadowCascadeIdx(pos_vs_z, cascade_splits);
 
   if (cascade_idx >= cascade_count)
   {
@@ -150,7 +150,7 @@ float3 CalculateDirLight(const ShaderLight light, const float3 pos_ws, const flo
   [branch]
   if (light.isCastingShadow)
   {
-    const int cascade_idx = CalculateShadowCascadeIdx(pos_vs_z, cascade_splits);
+    const uint cascade_idx = CalculateShadowCascadeIdx(pos_vs_z, cascade_splits);
 
     [branch]
     if (cascade_idx < cascade_count)
