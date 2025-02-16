@@ -181,13 +181,26 @@ struct ShaderPerDrawConstants {
 
 
 struct DepthNormalDrawParams {
+  uint meshlet_count;
+  uint meshlet_offset;
+  uint instance_count;
+  uint instance_offset;
+
   uint pos_buf_idx;
   uint norm_buf_idx;
   uint tan_buf_idx;
   uint uv_buf_idx;
+
+  uint vertex_idx_buf_idx;
+  uint prim_idx_buf_idx;
+  uint meshlet_buf_idx;
+
   uint mtl_idx;
+
   uint samp_idx;
+
   uint rt_idx;
+
   uint per_draw_cb_idx;
   uint per_view_cb_idx;
   uint per_frame_cb_idx;
@@ -195,11 +208,24 @@ struct DepthNormalDrawParams {
 
 
 struct DepthOnlyDrawParams {
+  uint meshlet_count;
+  uint meshlet_offset;
+  uint instance_count;
+  uint instance_offset;
+
   uint pos_buf_idx;
   uint uv_buf_idx;
+
+  uint vertex_idx_buf_idx;
+  uint prim_idx_buf_idx;
+  uint meshlet_buf_idx;
+
   uint mtl_idx;
+
   uint samp_idx;
+
   uint rt_idx;
+
   uint per_draw_cb_idx;
   uint per_view_cb_idx;
 };
@@ -219,22 +245,34 @@ struct GizmoDrawParams {
 
 
 struct ObjectDrawParams {
+  uint meshlet_count;
+  uint meshlet_offset;
+  uint instance_count;
+  uint instance_offset;
+
   uint pos_buf_idx;
   uint norm_buf_idx;
   uint tan_buf_idx;
   uint uv_buf_idx;
 
+  uint vertex_idx_buf_idx;
+  uint prim_idx_buf_idx;
+  uint meshlet_buf_idx;
+
   uint mtl_idx;
+
   uint mtl_samp_idx;
   uint point_clamp_samp_idx;
   uint shadow_samp_idx;
 
   uint ssao_tex_idx;
+
   uint light_buf_idx;
   uint light_count;
-  uint dir_shadow_arr_idx;
 
+  uint dir_shadow_arr_idx;
   uint punc_shadow_atlas_idx;
+
   uint per_draw_cb_idx;
   uint per_view_cb_idx;
   uint per_frame_cb_idx;
@@ -291,30 +329,6 @@ struct VertexSkinningDrawParams {
 
   uint skinned_tan_buf_idx;
   uint vtx_count;
-};
-
-
-struct ShaderSubmeshDrawData {
-  uint pos_buf_idx;
-  uint norm_buf_idx;
-  uint tan_buf_idx;
-  uint uv_buf_idx;
-
-  uint meshlet_buf_idx;
-  uint vertex_idx_buf_idx;
-  uint prim_idx_buf_idx;
-  uint idx32;
-};
-
-
-struct ShaderSubmeshSkinningData {
-  uint pos_buf_idx;
-  uint norm_buf_idx;
-  uint tan_buf_idx;
-  uint bone_weight_buf_idx;
-
-  uint bone_idx_buf_idx;
-  uint3 pad;
 };
 
 #ifdef __cplusplus

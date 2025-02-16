@@ -3,11 +3,11 @@
 
 #include "common.hlsli"
 #include "lighting.hlsli"
+#include "mesh_shader_core.hlsli"
 #include "shader_interop.h"
 
 DECLARE_PARAMS(ObjectDrawParams);
 DECLARE_DRAW_CALL_PARAMS(g_draw_call_params);
-
 
 struct PsIn {
   float4 pos_cs : SV_POSITION;
@@ -18,43 +18,50 @@ struct PsIn {
   float3x3 tbn_mtx_ws : TBNMTXWS;
 };
 
+class VertexProcessor
+{
+  static PsIn CalculateVertex(const uint vertex_idx, const uint instance_idx) {
+    const StructuredBuffer<float4> positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
+    const float4 pos_os = positions[vertex_idx];
 
-PsIn VsMain(uint vertex_id : SV_VertexID) {
-  vertex_id += g_draw_call_params.base_vertex;
+    const ConstantBuffer<ShaderPerDrawConstants> per_draw_cb = ResourceDescriptorHeap[g_params.per_draw_cb_idx];
+    const float4 pos_ws = mul(pos_os, per_draw_cb.modelMtx);
 
-  const StructuredBuffer<float4> positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
-  const float4 pos_os = positions[vertex_id];
+    const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
+    const float4 pos_vs = mul(pos_ws, per_view_cb.viewMtx);
+    const float4 pos_cs = mul(pos_ws, per_view_cb.viewProjMtx);
 
-  const ConstantBuffer<ShaderPerDrawConstants> per_draw_cb = ResourceDescriptorHeap[g_params.per_draw_cb_idx];
-  const float4 pos_ws = mul(pos_os, per_draw_cb.modelMtx);
+    const StructuredBuffer<float4> normals = ResourceDescriptorHeap[g_params.norm_buf_idx];
+    const float4 norm_os = normals[vertex_idx];
+    const float3 norm_ws = normalize(mul(norm_os.xyz, (float3x3) per_draw_cb.invTranspModelMtx));
 
-  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
-  const float4 pos_vs = mul(pos_ws, per_view_cb.viewMtx);
-  const float4 pos_cs = mul(pos_ws, per_view_cb.viewProjMtx);
+    const StructuredBuffer<float4> tangents = ResourceDescriptorHeap[g_params.tan_buf_idx];
+    const float4 tan_os = tangents[vertex_idx];
+    float3 tan_ws = normalize(mul(tan_os.xyz, (float3x3) per_draw_cb.modelMtx));
+    tan_ws = normalize(tan_ws - dot(tan_ws, norm_ws) * norm_ws);
+    const float3 bitan_ws = cross(norm_ws, tan_ws);
+    const float3x3 tbn_mtx_ws = float3x3(tan_ws, bitan_ws, norm_ws);
 
-  const StructuredBuffer<float4> normals = ResourceDescriptorHeap[g_params.norm_buf_idx];
-  const float4 norm_os = normals[vertex_id];
-  const float3 norm_ws = normalize(mul(norm_os.xyz, (float3x3)per_draw_cb.invTranspModelMtx));
+    const StructuredBuffer<float2> uvs = ResourceDescriptorHeap[g_params.uv_buf_idx];
+    const float2 uv = uvs[vertex_idx];
 
-  const StructuredBuffer<float4> tangents = ResourceDescriptorHeap[g_params.tan_buf_idx];
-  const float4 tan_os = tangents[vertex_id];
-  float3 tan_ws = normalize(mul(tan_os.xyz, (float3x3)per_draw_cb.modelMtx));
-  tan_ws = normalize(tan_ws - dot(tan_ws, norm_ws) * norm_ws);
-  const float3 bitan_ws = cross(norm_ws, tan_ws);
-  const float3x3 tbn_mtx_ws = float3x3(tan_ws, bitan_ws, norm_ws);
+    PsIn ret;
+    ret.pos_ws = pos_ws.xyz;
+    ret.pos_vs = pos_vs.xyz;
+    ret.pos_cs = pos_cs;
+    ret.norm_ws = norm_ws;
+    ret.uv = uv;
+    ret.tbn_mtx_ws = tbn_mtx_ws;
 
-  const StructuredBuffer<float2> uvs = ResourceDescriptorHeap[g_params.uv_buf_idx];
-  const float2 uv = uvs[vertex_id];
+    return ret;
+  }
+};
 
-  PsIn ret;
-  ret.pos_ws = pos_ws.xyz;
-  ret.pos_vs = pos_vs.xyz;
-  ret.pos_cs = pos_cs;
-  ret.norm_ws = norm_ws;
-  ret.uv = uv;
-  ret.tbn_mtx_ws = tbn_mtx_ws;
 
-  return ret;
+DECLARE_MESH_SHADER_MAIN(MsMain) {
+  MeshShaderCore < VertexProcessor > (gid, gtid, g_params.meshlet_buf_idx, g_params.vertex_idx_buf_idx,
+    g_params.prim_idx_buf_idx, g_params.meshlet_offset, g_params.meshlet_count, g_params.instance_offset,
+    g_params.instance_count, out_verts, out_tris);
 }
 
 
