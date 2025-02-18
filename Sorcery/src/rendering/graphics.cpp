@@ -1307,6 +1307,20 @@ auto CommandList::CopyTextureRegion(Texture const& dst, UINT const dst_subresour
 }
 
 
+auto CommandList::DiscardRenderTarget(Texture const& tex, std::optional<D3D12_DISCARD_REGION> const& region) -> void {
+  GenerateBarrier(tex, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+    D3D12_BARRIER_LAYOUT_RENDER_TARGET);
+  cmd_list_->DiscardResource(tex.resource_.Get(), region ? &*region : nullptr);
+}
+
+
+auto CommandList::DiscardDepthStencil(Texture const& tex, std::optional<D3D12_DISCARD_REGION> const& region) -> void {
+  GenerateBarrier(tex, D3D12_BARRIER_SYNC_DEPTH_STENCIL, D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE,
+    D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE);
+  cmd_list_->DiscardResource(tex.resource_.Get(), region ? &*region : nullptr);
+}
+
+
 auto CommandList::Dispatch(UINT const thread_group_count_x, UINT const thread_group_count_y,
                            UINT const thread_group_count_z) const -> void {
   cmd_list_->Dispatch(thread_group_count_x, thread_group_count_y, thread_group_count_z);

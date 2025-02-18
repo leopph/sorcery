@@ -40,7 +40,7 @@ using Sampler = UINT;
 
 
 namespace details {
-UINT constexpr kInvalidResourceIndex{static_cast<UINT>(-1)};
+auto constexpr kInvalidResourceIndex{static_cast<UINT>(-1)};
 
 template<typename T>concept DeviceChild = std::same_as<std::remove_const_t<T>, Buffer> || std::same_as<
                                             std::remove_const_t<T>, Texture> || std::same_as<
@@ -228,9 +228,11 @@ public:
     resource_states_.clear();
   }
 
+
   auto begin() const {
     return std::begin(resource_states_);
   }
+
 
   auto end() const {
     return std::end(resource_states_);
@@ -454,6 +456,8 @@ public:
                                    Texture const& src, UINT src_subresource_index, D3D12_BOX const* src_box) -> void;
   LEOPPHAPI auto CopyTextureRegion(Texture const& dst, UINT dst_subresource_index, UINT dst_x, UINT dst_y, UINT dst_z,
                                    Buffer const& src, D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& src_footprint) -> void;
+  LEOPPHAPI auto DiscardRenderTarget(Texture const& tex, std::optional<D3D12_DISCARD_REGION> const& region) -> void;
+  LEOPPHAPI auto DiscardDepthStencil(Texture const& tex, std::optional<D3D12_DISCARD_REGION> const& region) -> void;
   LEOPPHAPI auto Dispatch(UINT thread_group_count_x, UINT thread_group_count_y,
                           UINT thread_group_count_z) const -> void;
   LEOPPHAPI auto DispatchMesh(UINT thread_group_count_x, UINT thread_group_count_y,
