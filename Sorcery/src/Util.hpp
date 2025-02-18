@@ -115,4 +115,10 @@ template<std::unsigned_integral T>
   ret &= -(ret <= lhs);
   return ret;
 }
+
+
+template<std::unsigned_integral T>
+[[nodiscard]] constexpr auto DivRoundUp(T const lhs, T const rhs) -> T {
+  return (lhs + rhs - 1) / rhs;
+}
 }
