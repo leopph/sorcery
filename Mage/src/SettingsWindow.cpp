@@ -141,7 +141,7 @@ auto SettingsWindow::Draw() -> void {
       }()
     };
 
-    if (int currentShadowFilteringModeIdx{
+    if (auto currentShadowFilteringModeIdx{
         static_cast<int>(App::Instance().GetSceneRenderer().GetShadowFilteringMode())
       };
       ImGui::Combo("Shadow Filtering Mode", &currentShadowFilteringModeIdx, shadowFilteringModeNames.data(),
@@ -150,16 +150,16 @@ auto SettingsWindow::Draw() -> void {
         static_cast<rendering::ShadowFilteringMode>(currentShadowFilteringModeIdx));
     }
 
-    if (int cascadeCount{App::Instance().GetSceneRenderer().GetShadowCascadeCount()}; ImGui::SliderInt(
-      "Shadow Cascade Count", &cascadeCount, 1, rendering::SceneRenderer::GetMaxShadowCascadeCount(), "%d",
-      ImGuiSliderFlags_NoInput)) {
+    if (auto cascadeCount{static_cast<int>(App::Instance().GetSceneRenderer().GetShadowCascadeCount())};
+      ImGui::SliderInt("Shadow Cascade Count", &cascadeCount, 1, rendering::SceneRenderer::GetMaxShadowCascadeCount(),
+        "%d", ImGuiSliderFlags_NoInput)) {
       App::Instance().GetSceneRenderer().SetShadowCascadeCount(cascadeCount);
     }
 
     auto const cascadeSplits{App::Instance().GetSceneRenderer().GetNormalizedShadowCascadeSplits()};
     auto const splitCount{std::ssize(cascadeSplits)};
 
-    for (int i = 0; i < splitCount; i++) {
+    for (auto i = 0; i < splitCount; i++) {
       if (float cascadeSplit{cascadeSplits[i] * 100.0f}; ImGui::SliderFloat(
         std::format("Split {} (percent)", i + 1).data(), &cascadeSplit, 0, 100, "%.3f", ImGuiSliderFlags_NoInput)) {
         App::Instance().GetSceneRenderer().SetNormalizedShadowCascadeSplit(i, cascadeSplit / 100.0f);
