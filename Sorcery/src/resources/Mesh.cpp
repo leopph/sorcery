@@ -216,11 +216,6 @@ auto Mesh::GetPrimitiveCount() const noexcept -> std::size_t {
 }
 
 
-auto Mesh::GetMeshletCount() const noexcept -> std::size_t {
-  return meshlets_.size();
-}
-
-
 auto ComputeMeshlets(std::variant<std::span<std::uint16_t const>, std::span<std::uint32_t const>> const& indices,
                      std::variant<std::span<Vector3 const>, std::span<Vector4 const>> const& positions,
                      std::span<SubmeshFaceRange const> submeshes, std::vector<MeshletData>& out_meshlets,

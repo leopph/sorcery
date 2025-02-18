@@ -98,7 +98,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
   [[nodiscard]] LEOPPHAPI auto GetVertexCount() const noexcept -> std::size_t;
   [[nodiscard]] LEOPPHAPI auto GetPrimitiveCount() const noexcept -> std::size_t;
-  [[nodiscard]] LEOPPHAPI auto GetMeshletCount() const noexcept -> std::size_t;
 };
 
 
