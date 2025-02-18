@@ -85,7 +85,7 @@
       <VariableName>g_%(Filename)_bytes</VariableName>
       <ObjectFileOutput />
       <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
-      <AdditionalOptions>-Qembed_debug -HV 202x -Wconversion -Wdouble-promotion -Whlsl-legacy-literal %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-HV 202x -Wconversion -Wdouble-promotion -Whlsl-legacy-literal -Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
   </ItemDefinitionGroup>
@@ -116,7 +116,7 @@
       <ObjectFileOutput />
       <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>-Qembed_debug -HV 202x -Wconversion -Wdouble-promotion -Whlsl-legacy-literal %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-HV 202x -Wconversion -Wdouble-promotion -Whlsl-legacy-literal %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

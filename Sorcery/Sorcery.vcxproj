@@ -91,7 +91,7 @@
       <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
       <ShaderModel>6.6</ShaderModel>
       <AllResourcesBound>true</AllResourcesBound>
-      <AdditionalOptions>-Qembed_debug -HV 202x -Wconversion -Wdouble-promotion -Whlsl-legacy-literal %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-HV 202x -Wconversion -Wdouble-promotion -Whlsl-legacy-literal -Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
   </ItemDefinitionGroup>
@@ -128,7 +128,7 @@
       <ShaderModel>6.6</ShaderModel>
       <AllResourcesBound>true</AllResourcesBound>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>-Qembed_debug -HV 202x -Wconversion -Wdouble-promotion -Whlsl-legacy-literal %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-HV 202x -Wconversion -Wdouble-promotion -Whlsl-legacy-literal %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
