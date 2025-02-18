@@ -340,8 +340,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     submesh_face_ranges.emplace_back(combined_indices.size() / 3, indices.size() / 3);
 
     combined_indices.reserve(combined_indices.size() + indices.size());
-    std::ranges::transform(indices, std::back_inserter(combined_indices), [&positions](unsigned const idx) {
-      return static_cast<unsigned>(idx + positions.size());
+    std::ranges::transform(indices, std::back_inserter(combined_indices), [&mesh_data](unsigned const idx) {
+      return static_cast<unsigned>(idx + mesh_data.positions.size());
     });
 
     mesh_data.positions.reserve(mesh_data.positions.size() + positions.size());
