@@ -126,7 +126,7 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
   App::Instance().GetRenderManager().UpdateBuffer(*meshlet_buf_, 0, as_bytes(std::span{data.meshlets}));
 
   vertex_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    .size = static_cast<UINT>(data.vertex_indices.size()), .stride = 1,
+    .size = static_cast<UINT>(data.vertex_indices.size()), .stride = sizeof(UINT),
     .constant_buffer = false, .shader_resource = true, .unordered_access = false
   }, D3D12_HEAP_TYPE_DEFAULT);
   App::Instance().GetRenderManager().UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{data.vertex_indices}));
