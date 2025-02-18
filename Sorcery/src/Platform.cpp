@@ -3,6 +3,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
+// Has to be after Windows.h
 #include <hidusage.h>
 
 
@@ -18,7 +19,7 @@ enum class KeyState : std::uint8_t {
 
 KeyState gKeyboardState[256]{};
 Point2D gMouseDelta{0, 0};
-bool mQuitSignaled{false};
+auto mQuitSignaled{false};
 }
 
 
@@ -42,7 +43,7 @@ auto ProcessEvents() -> void {
     throw std::runtime_error{"Failed to get keyboard state."};
   }
 
-  for (int i = 0; i < 256; i++) {
+  for (auto i = 0; i < 256; i++) {
     if (newState[i] & 0x80) {
       if (gKeyboardState[i] == KeyState::Down) {
         gKeyboardState[i] = KeyState::Held;
@@ -66,7 +67,8 @@ auto IsQuitSignaled() noexcept -> bool {
 
 
 auto GetKey(Key const key) noexcept -> bool {
-  return gKeyboardState[static_cast<std::uint8_t>(key)] == KeyState::Down || gKeyboardState[static_cast<std::uint8_t>(key)] == KeyState::Held;
+  return gKeyboardState[static_cast<std::uint8_t>(key)] == KeyState::Down || gKeyboardState[static_cast<std::uint8_t>(
+           key)] == KeyState::Held;
 }
 
 
@@ -98,23 +100,40 @@ auto SetMouseDelta(Point2D<int> const mouseDelta) noexcept -> void {
 
 
 auto WideToUtf8(std::wstring_view const wstr) -> std::string {
-  std::string ret(static_cast<std::size_t>(WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), nullptr, 0, nullptr, nullptr)), '\0');
-  WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), ret.data(), static_cast<int>(ret.size()), nullptr, nullptr);
+  std::string ret(static_cast<std::size_t>(WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()),
+    nullptr, 0, nullptr, nullptr)), '\0');
+  WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), ret.data(), static_cast<int>(ret.size()),
+    nullptr, nullptr);
   return ret;
 }
 
 
 auto Utf8ToWide(std::string_view const str) -> std::wstring {
-  std::wstring ret(static_cast<std::size_t>(MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), nullptr, 0)), wchar_t{0});
+  std::wstring ret(
+    static_cast<std::size_t>(MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), nullptr, 0)),
+    wchar_t{0});
   MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), ret.data(), static_cast<int>(ret.size()));
   return ret;
 }
 
 
 auto GetExecutablePath() noexcept -> std::wstring_view {
-  wchar_t* exePath;
+#ifdef NDEBUG
+    wchar_t* exePath;
   _get_wpgmptr(&exePath);
   return exePath;
+#else
+  static std::wstring const exe_path{
+    [] {
+      constexpr DWORD buf_size{10'000};
+      std::wstring ret(buf_size, L'\0');
+      auto const real_length{GetModuleFileNameW(nullptr, ret.data(), buf_size)};
+      ret.resize(real_length);
+      return ret;
+    }()
+  };
+  return exe_path;
+#endif
 }
 
 
