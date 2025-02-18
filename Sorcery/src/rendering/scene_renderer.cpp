@@ -533,8 +533,14 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), *mtl_buf);
           cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
             *per_draw_cb.GetBuffer());
-          cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
-          cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, vertex_idx_buf_idx),
+            *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, prim_idx_buf_idx),
+            *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
+            *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
+
+          DrawSubmesh(submesh, cmd);
         }
       }
 
@@ -602,8 +608,14 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
           cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), *mtl_buf);
           cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
             *per_draw_cb.GetBuffer());
-          cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
-          cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, vertex_idx_buf_idx),
+            *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, prim_idx_buf_idx),
+            *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
+            *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
+
+          DrawSubmesh(submesh, cmd);
         }
       }
     }
@@ -818,6 +830,72 @@ auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
     desc.width = size.width;
     desc.height = size.height;
     main_rt_ = RenderTarget::New(*device_, desc);
+  }
+}
+
+
+auto SceneRenderer::DrawSubmesh(SubmeshData const& submesh, graphics::CommandList const& cmd) -> void {
+  std::size_t constexpr max_dispatch_thread_group_count{65535};
+
+  for (std::size_t meshlet_offset{0}; meshlet_offset < submesh.meshlet_count;
+       meshlet_offset += max_dispatch_thread_group_count) {
+    auto const meshlet_count{
+      std::min(submesh.meshlet_count - meshlet_offset,
+        max_dispatch_thread_group_count)
+    };
+
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_count), meshlet_count);
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_offset), meshlet_offset);
+
+    // Parts commented out are needed for instancing
+
+    /* auto const& last_meshlet{
+       mesh.meshlets[meshlet_offset + meshlet_count - 1]
+     };*/
+
+    auto const pack_count{
+      /*std::min(MESHLET_MAX_VERTS / last_meshlet.vert_count,
+        MESHLET_MAX_PRIMS / last_meshlet.prim_count)*/
+      1u
+    };
+
+    auto const group_count_per_instance{
+      static_cast<float>(meshlet_count - 1) + 1.0f / static_cast<float>(
+        pack_count)
+    };
+
+    auto const max_instance_count_per_batch{
+      static_cast<std::uint32_t>(static_cast<float>(
+                                   max_dispatch_thread_group_count) / group_count_per_instance)
+    };
+
+    auto const dispatch_count{
+      //DivRoundUp(mesh.instance_count, max_instance_count_per_batch)
+      DivRoundUp(1u, max_instance_count_per_batch)
+    };
+
+    for (std::size_t i{0}; i < dispatch_count; i++) {
+      auto const batch_instance_offset{
+        static_cast<UINT>(i * max_instance_count_per_batch)
+      };
+
+      auto const batch_instance_count{
+        /*std::min(mesh.instance_count - batch_instance_offset,
+          max_instance_count_per_batch)*/
+        std::min(1 - batch_instance_offset,
+          max_instance_count_per_batch)
+      };
+
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, instance_count), batch_instance_count);
+      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, instance_offset), batch_instance_offset);
+
+      auto const group_count{
+        static_cast<std::uint32_t>(std::ceilf(
+          group_count_per_instance * batch_instance_count))
+      };
+
+      cmd.DispatchMesh(group_count, 1, 1);
+    }
   }
 }
 
@@ -1570,15 +1648,20 @@ auto SceneRenderer::Render() -> void {
           *frame_packet.buffers[mesh.uv_buf_local_idx]);
         cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, mtl_idx), *mtl_buf);
         cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, samp_idx), samp_af16_wrap_.Get());
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, rt_idx), 0);
         cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_draw_cb_idx),
           *per_draw_cb.GetBuffer());
         cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_view_cb_idx),
           *cam_per_view_cb.GetBuffer());
         cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_frame_cb_idx),
           *per_frame_cb.GetBuffer());
-        cam_cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
-        cam_cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, vertex_idx_buf_idx),
+          *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, prim_idx_buf_idx),
+          *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, meshlet_buf_idx),
+          *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
+
+        DrawSubmesh(submesh, cam_cmd);
       }
 
       // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
@@ -1761,8 +1844,14 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_idx), *mtl_buf);
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_draw_cb_idx),
         *per_draw_cb.GetBuffer());
-      cam_cmd.SetIndexBuffer(*frame_packet.buffers[mesh.idx_buf_local_idx], mesh.idx_format);
-      cam_cmd.DrawIndexedInstanced(submesh.index_count, 1, submesh.first_index, submesh.base_vertex, 0);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, vertex_idx_buf_idx),
+        *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, prim_idx_buf_idx),
+        *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_buf_idx),
+        *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
+
+      DrawSubmesh(submesh, cam_cmd);
     }
 
     if (frame_packet.skybox_cubemap) {
