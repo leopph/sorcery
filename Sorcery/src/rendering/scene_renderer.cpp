@@ -1067,15 +1067,16 @@ auto SceneRenderer::ExtractCurrentState() -> void {
       auto const norm_buf_local_idx{find_or_emplace_back_buffer(mesh->GetNormalBuffer())};
       auto const tan_buf_local_idx{find_or_emplace_back_buffer(mesh->GetTangentBuffer())};
       auto const uv_buf_local_idx{find_or_emplace_back_buffer(mesh->GetUvBuffer())};
-      auto const idx_buf_local_idx{find_or_emplace_back_buffer(mesh->GetIndexBuffer())};
-      auto const idx_format{mesh->GetIndexFormat()};
+      auto const meshlet_buf_local_idx{find_or_emplace_back_buffer(mesh->GetMeshletBuffer())};
+      auto const vtx_idx_buf_local_idx{find_or_emplace_back_buffer(mesh->GetVertexIndexBuffer())};
+      auto const prim_idx_buf_local_idx{find_or_emplace_back_buffer(mesh->GetPrimitiveIndexBuffer())};
       packet.mesh_data.emplace_back(pos_buf_local_idx, norm_buf_local_idx, tan_buf_local_idx, uv_buf_local_idx,
-        idx_buf_local_idx, static_cast<unsigned>(mesh->GetVertexCount()), mesh->GetBounds(), idx_format);
+        meshlet_buf_local_idx, vtx_idx_buf_local_idx, prim_idx_buf_local_idx, mesh->GetBounds());
 
-      packet.submesh_data.reserve(packet.submesh_data.size() + mesh->GetSubmeshCount());
+      packet.submesh_data.reserve(packet.submesh_data.size() + mesh->GetSubmeshes().size());
 
       for (auto const& submesh : mesh->GetSubmeshes()) {
-        auto const mtl{comp->GetMaterials()[submesh.material_index]};
+        auto const mtl{comp->GetMaterials()[submesh.GetMaterialIndex()]};
 
         if (!mtl) {
           continue;
@@ -1092,8 +1093,8 @@ auto SceneRenderer::ExtractCurrentState() -> void {
           }
         }
 
-        packet.submesh_data.emplace_back(static_cast<unsigned>(packet.mesh_data.size() - 1), submesh.base_vertex,
-          submesh.first_index, submesh.index_count, mtl_buf_local_idx, submesh.bounds);
+        packet.submesh_data.emplace_back(static_cast<unsigned>(packet.mesh_data.size() - 1), submesh.GetFirstMeshlet(),
+          submesh.GetMeshletCount(), mtl_buf_local_idx);
 
         packet.instance_data.emplace_back(static_cast<unsigned>(packet.submesh_data.size() - 1),
           comp->GetEntity()->GetTransform().GetLocalToWorldMatrix());
@@ -1128,12 +1129,6 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
       // Set mesh AABB to infinity to prevent culling
       packet.mesh_data.back().bounds = inf_aabb;
-
-      // Set submesh AABBs to infinity to prevent culling
-      for (auto i{std::ssize(packet.submesh_data) - 1};
-           i >= 0 && packet.submesh_data[i].mesh_local_idx == std::ssize(packet.mesh_data) - 1; i--) {
-        packet.submesh_data[i].bounds = inf_aabb;
-      }
 
       packet.buffers.emplace_back(mesh->GetBoneWeightBuffer());
       auto const bone_weight_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};

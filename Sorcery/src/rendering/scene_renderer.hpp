@@ -158,20 +158,18 @@ private:
     unsigned norm_buf_local_idx;
     unsigned tan_buf_local_idx;
     unsigned uv_buf_local_idx;
-    unsigned idx_buf_local_idx;
-    unsigned vtx_count;
+    unsigned meshlet_buf_local_idx;
+    unsigned vtx_idx_buf_local_idx;
+    unsigned prim_idx_buf_local_idx;
     AABB bounds;
-    DXGI_FORMAT idx_format;
   };
 
 
   struct SubmeshData {
     unsigned mesh_local_idx;
-    INT base_vertex;
-    UINT first_index;
-    UINT index_count;
+    UINT first_meshlet;
+    UINT meshlet_count;
     UINT mtl_buf_local_idx;
-    AABB bounds;
   };
 
 
