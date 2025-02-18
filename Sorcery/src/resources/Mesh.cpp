@@ -112,6 +112,13 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
 
   meshlets_ = data.meshlets;
   mtl_slots_ = data.material_slots;
+
+  submeshes_.clear();
+  submeshes_.reserve(data.submeshes.size());
+  std::ranges::for_each(data.submeshes, [this](SubmeshData const& submesh) {
+    submeshes_.emplace_back(submesh);
+  });
+
   animations_ = data.animations;
   skeleton_ = data.skeleton;
   bones_ = data.bones;
