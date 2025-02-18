@@ -10,6 +10,7 @@ namespace sorcery::mage {
 class CommandLineProcessor {
 public:
   explicit CommandLineProcessor(wchar_t* win_cmd_line);
+  CommandLineProcessor(int argc, char** argv);
 
   [[nodiscard]] auto GetArgs() const -> std::span<std::string_view const>;
 

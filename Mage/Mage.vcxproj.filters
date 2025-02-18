@@ -75,7 +75,7 @@
     <ClCompile Include="src\rendering\imgui_renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\CommandLineProcessor.cpp">
+    <ClCompile Include="src\command_line_processor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

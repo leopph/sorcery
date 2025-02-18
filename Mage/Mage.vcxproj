@@ -120,7 +120,7 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\CommandLineProcessor.cpp" />
+    <ClCompile Include="src\command_line_processor.cpp" />
     <ClCompile Include="src\rendering\imgui_renderer.cpp" />
     <ClCompile Include="src\ResourceImporters\MeshImporter.cpp" />
     <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp" />

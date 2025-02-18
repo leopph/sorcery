@@ -25,12 +25,23 @@ CommandLineProcessor::CommandLineProcessor(wchar_t* const win_cmd_line) {
     args_.reserve(argc);
     arg_views_.reserve(argc);
 
-    for (int i{0}; i < argc; i++) {
+    for (auto i{0}; i < argc; i++) {
       args_.emplace_back(WideToUtf8(argv[i]));
       arg_views_.emplace_back(args_.back());
     }
 
     LocalFree(argv);
+  }
+}
+
+
+CommandLineProcessor::CommandLineProcessor(int const argc, char** argv) {
+  args_.reserve(argc);
+  arg_views_.reserve(argc);
+
+  for (auto i{0}; i < argc; i++) {
+    args_.emplace_back(argv[i]);
+    arg_views_.emplace_back(args_.back());
   }
 }
 
