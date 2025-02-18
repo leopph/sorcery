@@ -134,7 +134,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   // Collect mesh info
 
   struct MeshProcessingData {
-    std::vector<Vector3> vertices;
+    std::vector<Vector3> positions;
     std::vector<Vector3> normals;
     std::vector<Vector2> uvs;
     std::vector<Vector3> tangents;
@@ -303,24 +303,64 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
       };
     });
 
-  // Store geometry data and create submeshes
+  // Store geometry data and combine indices
 
-  mesh_data.submeshes.reserve(std::size(meshes));
+  std::vector<SubmeshFaceRange> submesh_face_ranges;
+  submesh_face_ranges.reserve(meshes.size());
 
-  for (auto& [vertices, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] : meshes) {
-    std::vector<MeshletData> meshlets;
-    std::vector<std::uint8_t> vertex_indices;
-    std::vector<MeshletTriangleData> primitive_indices;
+  // Combined index buffer of all meshes
+  // Indices have base vertex baked in
+  std::vector<unsigned> combined_indices;
 
-    if (!ComputeMeshlets(indices, vertices, meshlets, vertex_indices, primitive_indices)) {
-      // TODO log this properly
-      OutputDebugStringA("Failed to compute meshlets.\n");
-      continue;
-    }
+  for (auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] : meshes) {
+    // This works because we only support triangle meshes
+    submesh_face_ranges.emplace_back(combined_indices.size() / 3, indices.size() / 3);
 
-    mesh_data.submeshes.emplace_back(std::move(vertices), std::move(normals), std::move(tangents), std::move(uvs),
-      std::move(bone_weights), std::move(bone_indices), std::move(meshlets), std::move(vertex_indices),
-      std::move(primitive_indices), mtlIdx, true /*TODO convert to 16bit if possible*/);
+    combined_indices.reserve(combined_indices.size() + indices.size());
+    std::ranges::transform(indices, std::back_inserter(combined_indices), [&positions](unsigned const idx) {
+      return static_cast<unsigned>(idx + positions.size());
+    });
+
+    mesh_data.positions.reserve(mesh_data.positions.size() + positions.size());
+    std::ranges::copy(positions, std::back_inserter(mesh_data.positions));
+
+    mesh_data.normals.reserve(mesh_data.normals.size() + normals.size());
+    std::ranges::copy(normals, std::back_inserter(mesh_data.normals));
+
+    mesh_data.tangents.reserve(mesh_data.tangents.size() + tangents.size());
+    std::ranges::copy(tangents, std::back_inserter(mesh_data.tangents));
+
+    mesh_data.uvs.reserve(mesh_data.uvs.size() + uvs.size());
+    std::ranges::copy(uvs, std::back_inserter(mesh_data.uvs));
+
+    mesh_data.bone_weights.reserve(mesh_data.bone_weights.size() + bone_weights.size());
+    std::ranges::copy(bone_weights, std::back_inserter(mesh_data.bone_weights));
+
+    mesh_data.bone_indices.reserve(mesh_data.bone_indices.size() + bone_indices.size());
+    std::ranges::copy(bone_indices, std::back_inserter(mesh_data.bone_indices));
+  }
+
+  // Create and store meshlets
+
+  std::vector<SubmeshMeshletRange> submesh_meshlet_ranges;
+
+  if (!ComputeMeshlets(combined_indices, mesh_data.positions, submesh_face_ranges, mesh_data.meshlets,
+    mesh_data.vertex_indices, mesh_data.triangle_indices, submesh_meshlet_ranges)) {
+    throw std::runtime_error{"Failed to compute meshlets."};
+  }
+
+  mesh_data.submeshes.reserve(std::size(submesh_meshlet_ranges));
+  std::ranges::transform(submesh_meshlet_ranges, std::back_inserter(mesh_data.submeshes),
+    [](SubmeshMeshletRange const& meshlet_range) {
+      return SubmeshData{
+        .first_meshlet = static_cast<std::uint32_t>(meshlet_range.first_meshlet),
+        .meshlet_count = static_cast<std::uint32_t>(meshlet_range.meshlet_count),
+        .material_idx = 0
+      };
+    });
+
+  for (std::size_t i{0}; i < std::size(mesh_data.submeshes) && i < std::size(meshes); i++) {
+    mesh_data.submeshes[i].material_idx = meshes[i].mtl_idx;
   }
 
   // Collect animations
@@ -424,11 +464,42 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Element counts
 
+  SerializeToBinary(std::size(mesh_data.positions), bytes);
+  SerializeToBinary(std::size(mesh_data.meshlets), bytes);
+  SerializeToBinary(std::size(mesh_data.vertex_indices), bytes);
+  SerializeToBinary(std::size(mesh_data.triangle_indices), bytes);
   SerializeToBinary(std::size(mesh_data.material_slots), bytes);
   SerializeToBinary(std::size(mesh_data.submeshes), bytes);
   SerializeToBinary(std::ssize(mesh_data.animations), bytes);
   SerializeToBinary(std::ssize(skeleton_nodes), bytes);
   SerializeToBinary(std::ssize(bones), bytes);
+
+  // Geometry data
+
+  auto const pos_bytes{as_bytes(std::span{mesh_data.positions})};
+  auto const norm_bytes{as_bytes(std::span{mesh_data.normals})};
+  auto const tan_bytes{as_bytes(std::span{mesh_data.tangents})};
+  auto const uv_bytes{as_bytes(std::span{mesh_data.uvs})};
+  auto const bone_weight_bytes{as_bytes(std::span{mesh_data.bone_weights})};
+  auto const bone_idx_bytes{as_bytes(std::span{mesh_data.bone_indices})};
+  auto const meshlet_bytes{as_bytes(std::span{mesh_data.meshlets})};
+  auto const vtx_idx_bytes{as_bytes(std::span{mesh_data.vertex_indices})};
+  auto const prim_idx_bytes{as_bytes(std::span{mesh_data.triangle_indices})};
+
+  bytes.reserve(
+    std::size(bytes) + std::size(pos_bytes) + std::size(norm_bytes) + std::size(tan_bytes) + std::size(uv_bytes) +
+    std::size(bone_weight_bytes) + std::size(bone_idx_bytes) + std::size(meshlet_bytes) + std::size(vtx_idx_bytes) +
+    std::size(prim_idx_bytes));
+
+  std::ranges::copy(pos_bytes, std::back_inserter(bytes));
+  std::ranges::copy(norm_bytes, std::back_inserter(bytes));
+  std::ranges::copy(tan_bytes, std::back_inserter(bytes));
+  std::ranges::copy(uv_bytes, std::back_inserter(bytes));
+  std::ranges::copy(bone_weight_bytes, std::back_inserter(bytes));
+  std::ranges::copy(bone_idx_bytes, std::back_inserter(bytes));
+  std::ranges::copy(meshlet_bytes, std::back_inserter(bytes));
+  std::ranges::copy(vtx_idx_bytes, std::back_inserter(bytes));
+  std::ranges::copy(prim_idx_bytes, std::back_inserter(bytes));
 
   // Material slots
 
@@ -439,37 +510,9 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   // Submeshes
 
   for (auto const& submesh : mesh_data.submeshes) {
-    SerializeToBinary(submesh.positions.size(), bytes);
-    SerializeToBinary(submesh.meshlets.size(), bytes);
-    SerializeToBinary(submesh.vertex_indices.size(), bytes);
-    SerializeToBinary(submesh.triangle_indices.size(), bytes);
-
-    auto const pos_bytes{as_bytes(std::span{submesh.positions})};
-    auto const norm_bytes{as_bytes(std::span{submesh.normals})};
-    auto const tan_bytes{as_bytes(std::span{submesh.tangents})};
-    auto const uv_bytes{as_bytes(std::span{submesh.uvs})};
-    auto const bone_weight_bytes{as_bytes(std::span{submesh.bone_weights})};
-    auto const bone_idx_bytes{as_bytes(std::span{submesh.bone_indices})};
-    auto const meshlet_bytes{as_bytes(std::span{submesh.meshlets})};
-    auto const vtx_idx_bytes{as_bytes(std::span{submesh.vertex_indices})};
-    auto const prim_idx_bytes{as_bytes(std::span{submesh.triangle_indices})};
-
-    bytes.reserve(
-      std::size(bytes) + std::size(pos_bytes) + std::size(norm_bytes) + std::size(tan_bytes) + std::size(uv_bytes) +
-      std::size(bone_weight_bytes) + std::size(bone_idx_bytes) + std::size(meshlet_bytes) + std::size(vtx_idx_bytes) +
-      std::size(prim_idx_bytes));
-
-    std::ranges::copy(pos_bytes, std::back_inserter(bytes));
-    std::ranges::copy(norm_bytes, std::back_inserter(bytes));
-    std::ranges::copy(tan_bytes, std::back_inserter(bytes));
-    std::ranges::copy(uv_bytes, std::back_inserter(bytes));
-    std::ranges::copy(bone_weight_bytes, std::back_inserter(bytes));
-    std::ranges::copy(bone_idx_bytes, std::back_inserter(bytes));
-    std::ranges::copy(meshlet_bytes, std::back_inserter(bytes));
-    std::ranges::copy(vtx_idx_bytes, std::back_inserter(bytes));
-    std::ranges::copy(prim_idx_bytes, std::back_inserter(bytes));
+    SerializeToBinary(submesh.first_meshlet, bytes);
+    SerializeToBinary(submesh.meshlet_count, bytes);
     SerializeToBinary(submesh.material_idx, bytes);
-    SerializeToBinary(submesh.idx32, bytes);
   }
 
   // Animations

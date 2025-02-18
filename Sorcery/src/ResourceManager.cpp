@@ -184,6 +184,34 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 
   // Element counts
 
+  std::uint64_t vert_count;
+
+  if (!DeserializeFromBinary(cur_bytes, vert_count)) {
+    return nullptr;
+  }
+
+  cur_bytes = cur_bytes.subspan(sizeof vert_count);
+  std::uint64_t meshlet_count;
+
+  if (!DeserializeFromBinary(cur_bytes, meshlet_count)) {
+    return nullptr;
+  }
+
+  cur_bytes = cur_bytes.subspan(sizeof meshlet_count);
+  std::uint64_t vtx_idx_count;
+
+  if (!DeserializeFromBinary(cur_bytes, vtx_idx_count)) {
+    return nullptr;
+  }
+
+  cur_bytes = cur_bytes.subspan(sizeof vtx_idx_count);
+  std::uint64_t prim_idx_count;
+
+  if (!DeserializeFromBinary(cur_bytes, prim_idx_count)) {
+    return nullptr;
+  }
+
+  cur_bytes = cur_bytes.subspan(sizeof prim_idx_count);
   std::uint64_t material_slot_count;
 
   if (!DeserializeFromBinary(cur_bytes, material_slot_count)) {
@@ -221,6 +249,46 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
   cur_bytes = cur_bytes.subspan(sizeof bone_count);
   MeshData mesh_data;
 
+  // Geometry data
+
+  mesh_data.positions.resize(vert_count);
+  std::memcpy(mesh_data.positions.data(), cur_bytes.data(), vert_count * sizeof(Vector3));
+  cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector3));
+
+  mesh_data.normals.resize(vert_count);
+  std::memcpy(mesh_data.normals.data(), cur_bytes.data(), vert_count * sizeof(Vector3));
+  cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector3));
+
+  mesh_data.tangents.resize(vert_count);
+  std::memcpy(mesh_data.tangents.data(), cur_bytes.data(), vert_count * sizeof(Vector3));
+  cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector3));
+
+  mesh_data.uvs.resize(vert_count);
+  std::memcpy(mesh_data.uvs.data(), cur_bytes.data(), vert_count * sizeof(Vector2));
+  cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector2));
+
+  mesh_data.bone_weights.resize(vert_count);
+  std::memcpy(mesh_data.bone_weights.data(), cur_bytes.data(), vert_count * sizeof(Vector4));
+  cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector4));
+
+  mesh_data.bone_indices.resize(vert_count);
+  std::memcpy(mesh_data.bone_indices.data(), cur_bytes.data(),
+    vert_count * sizeof(Vector<std::uint32_t, 4>));
+  cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector<std::uint32_t, 4>));
+
+  mesh_data.meshlets.resize(meshlet_count);
+  std::memcpy(mesh_data.meshlets.data(), cur_bytes.data(), meshlet_count * sizeof(MeshletData));
+  cur_bytes = cur_bytes.subspan(meshlet_count * sizeof(MeshletData));
+
+  mesh_data.vertex_indices.resize(vtx_idx_count);
+  std::memcpy(mesh_data.vertex_indices.data(), cur_bytes.data(), vtx_idx_count);
+  cur_bytes = cur_bytes.subspan(vtx_idx_count);
+
+  mesh_data.triangle_indices.resize(prim_idx_count);
+  std::memcpy(mesh_data.triangle_indices.data(), cur_bytes.data(),
+    prim_idx_count * sizeof(MeshletTriangleData));
+  cur_bytes = cur_bytes.subspan(prim_idx_count * sizeof(MeshletTriangleData));
+
   // Material slots
 
   mesh_data.material_slots.resize(material_slot_count);
@@ -238,84 +306,22 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
   mesh_data.submeshes.resize(submesh_count);
 
   for (auto i{0ull}; i < submesh_count; i++) {
-    std::uint64_t vert_count;
+    if (!DeserializeFromBinary(cur_bytes, mesh_data.submeshes[i].first_meshlet)) {
+      return nullptr;
+    }
+    cur_bytes = cur_bytes.subspan(sizeof(std::uint32_t));
 
-    if (!DeserializeFromBinary(cur_bytes, vert_count)) {
+    if (!DeserializeFromBinary(cur_bytes, mesh_data.submeshes[i].meshlet_count)) {
       return nullptr;
     }
 
-    cur_bytes = cur_bytes.subspan(sizeof vert_count);
-    std::uint64_t meshlet_count;
-
-    if (!DeserializeFromBinary(cur_bytes, meshlet_count)) {
-      return nullptr;
-    }
-
-    cur_bytes = cur_bytes.subspan(sizeof meshlet_count);
-    std::uint64_t vtx_idx_count;
-
-    if (!DeserializeFromBinary(cur_bytes, vtx_idx_count)) {
-      return nullptr;
-    }
-
-    cur_bytes = cur_bytes.subspan(sizeof vtx_idx_count);
-    std::uint64_t prim_idx_count;
-
-    if (!DeserializeFromBinary(cur_bytes, prim_idx_count)) {
-      return nullptr;
-    }
-
-    cur_bytes = cur_bytes.subspan(sizeof prim_idx_count);
-
-    mesh_data.submeshes[i].positions.resize(vert_count);
-    std::memcpy(mesh_data.submeshes[i].positions.data(), cur_bytes.data(), vert_count * sizeof(Vector3));
-    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector3));
-
-    mesh_data.submeshes[i].normals.resize(vert_count);
-    std::memcpy(mesh_data.submeshes[i].normals.data(), cur_bytes.data(), vert_count * sizeof(Vector3));
-    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector3));
-
-    mesh_data.submeshes[i].tangents.resize(vert_count);
-    std::memcpy(mesh_data.submeshes[i].tangents.data(), cur_bytes.data(), vert_count * sizeof(Vector3));
-    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector3));
-
-    mesh_data.submeshes[i].uvs.resize(vert_count);
-    std::memcpy(mesh_data.submeshes[i].uvs.data(), cur_bytes.data(), vert_count * sizeof(Vector2));
-    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector2));
-
-    mesh_data.submeshes[i].bone_weights.resize(vert_count);
-    std::memcpy(mesh_data.submeshes[i].bone_weights.data(), cur_bytes.data(), vert_count * sizeof(Vector4));
-    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector4));
-
-    mesh_data.submeshes[i].bone_indices.resize(vert_count);
-    std::memcpy(mesh_data.submeshes[i].bone_indices.data(), cur_bytes.data(),
-      vert_count * sizeof(Vector<std::uint32_t, 4>));
-    cur_bytes = cur_bytes.subspan(vert_count * sizeof(Vector<std::uint32_t, 4>));
-
-    mesh_data.submeshes[i].meshlets.resize(meshlet_count);
-    std::memcpy(mesh_data.submeshes[i].meshlets.data(), cur_bytes.data(), meshlet_count * sizeof(MeshletData));
-    cur_bytes = cur_bytes.subspan(meshlet_count * sizeof(MeshletData));
-
-    mesh_data.submeshes[i].vertex_indices.resize(vtx_idx_count);
-    std::memcpy(mesh_data.submeshes[i].vertex_indices.data(), cur_bytes.data(), vtx_idx_count);
-    cur_bytes = cur_bytes.subspan(vtx_idx_count);
-
-    mesh_data.submeshes[i].triangle_indices.resize(prim_idx_count);
-    std::memcpy(mesh_data.submeshes[i].triangle_indices.data(), cur_bytes.data(),
-      prim_idx_count * sizeof(MeshletTriangleData));
-    cur_bytes = cur_bytes.subspan(prim_idx_count * sizeof(MeshletTriangleData));
+    cur_bytes = cur_bytes.subspan(sizeof(std::uint32_t));
 
     if (!DeserializeFromBinary(cur_bytes, mesh_data.submeshes[i].material_idx)) {
       return nullptr;
     }
 
     cur_bytes = cur_bytes.subspan(sizeof(std::uint32_t));
-
-    if (!DeserializeFromBinary(cur_bytes, mesh_data.submeshes[i].idx32)) {
-      return nullptr;
-    }
-
-    cur_bytes = cur_bytes.subspan(sizeof(bool));
   }
 
   // Animations
@@ -575,20 +581,18 @@ auto ResourceManager::CreateDefaultResources() -> void {
   if (!cube_mesh_) {
     MeshData cube_data;
 
-    cube_data.material_slots.emplace_back("Material");
-    cube_data.submeshes.resize(1);
+    cube_data.positions = kCubePositions;
+    CalculateNormals(kCubePositions, kCubeIndices, cube_data.normals);
+    CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cube_data.tangents);
+    cube_data.uvs = kCubeUvs;
 
-    cube_data.submeshes[0].positions = kCubePositions;
-    CalculateNormals(kCubePositions, kCubeIndices, cube_data.submeshes[0].normals);
-    CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cube_data.submeshes[0].tangents);
-    cube_data.submeshes[0].uvs = kCubeUvs;
-    cube_data.submeshes[0].material_idx = 0;
-    cube_data.submeshes[0].idx32 = true;
-
-    if (!ComputeMeshlets(kCubeIndices, kCubePositions, cube_data.submeshes[0].meshlets,
-      cube_data.submeshes[0].vertex_indices, cube_data.submeshes[0].triangle_indices)) {
+    if (!ComputeMeshlets(kCubeIndices, kCubePositions, cube_data.meshlets,
+      cube_data.vertex_indices, cube_data.triangle_indices)) {
       throw std::runtime_error{"Failed to compute meshlets for default cube mesh."};
     }
+
+    cube_data.material_slots.emplace_back("Material");
+    cube_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(cube_data.meshlets.size()), 0);
 
     cube_mesh_ = Create<Mesh>(cube_data);
     cube_mesh_->SetGuid(cube_mesh_guid_);
@@ -599,20 +603,18 @@ auto ResourceManager::CreateDefaultResources() -> void {
   if (!plane_mesh_) {
     MeshData plane_data;
 
-    plane_data.material_slots.emplace_back("Material");
-    plane_data.submeshes.resize(1);
+    plane_data.positions = kQuadPositions;
+    CalculateNormals(kQuadPositions, kQuadIndices, plane_data.normals);
+    CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, plane_data.tangents);
+    plane_data.uvs = kQuadUvs;
 
-    plane_data.submeshes[0].positions = kQuadPositions;
-    CalculateNormals(kQuadPositions, kQuadIndices, plane_data.submeshes[0].normals);
-    CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, plane_data.submeshes[0].tangents);
-    plane_data.submeshes[0].uvs = kQuadUvs;
-    plane_data.submeshes[0].material_idx = 0;
-    plane_data.submeshes[0].idx32 = true;
-
-    if (!ComputeMeshlets(kQuadIndices, kQuadPositions, plane_data.submeshes[0].meshlets,
-      plane_data.submeshes[0].vertex_indices, plane_data.submeshes[0].triangle_indices)) {
+    if (!ComputeMeshlets(kQuadIndices, kQuadPositions, plane_data.meshlets,
+      plane_data.vertex_indices, plane_data.triangle_indices)) {
       throw std::runtime_error{"Failed to compute meshlets for default plane mesh."};
     }
+
+    plane_data.material_slots.emplace_back("Material");
+    plane_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(plane_data.meshlets.size()), 0);
 
     plane_mesh_ = Create<Mesh>(plane_data);
     plane_mesh_->SetGuid(plane_mesh_guid_);
@@ -622,23 +624,20 @@ auto ResourceManager::CreateDefaultResources() -> void {
 
   if (!sphere_mesh_) {
     MeshData sphere_data;
-
-    sphere_data.material_slots.emplace_back("Material");
-    sphere_data.submeshes.resize(1);
-
     std::vector<std::uint32_t> sphere_indices;
 
-    rendering::GenerateSphereMesh(1, 50, 50, sphere_data.submeshes[0].positions, sphere_data.submeshes[0].normals,
-      sphere_data.submeshes[0].uvs, sphere_indices);
-    CalculateTangents(sphere_data.submeshes[0].positions, sphere_data.submeshes[0].uvs, sphere_indices,
-      sphere_data.submeshes[0].tangents);
-    sphere_data.submeshes[0].material_idx = 0;
-    sphere_data.submeshes[0].idx32 = true;
+    rendering::GenerateSphereMesh(1, 50, 50, sphere_data.positions, sphere_data.normals,
+      sphere_data.uvs, sphere_indices);
+    CalculateTangents(sphere_data.positions, sphere_data.uvs, sphere_indices,
+      sphere_data.tangents);
 
-    if (!ComputeMeshlets(sphere_indices, sphere_data.submeshes[0].positions, sphere_data.submeshes[0].meshlets,
-      sphere_data.submeshes[0].vertex_indices, sphere_data.submeshes[0].triangle_indices)) {
+    if (!ComputeMeshlets(sphere_indices, sphere_data.positions, sphere_data.meshlets,
+      sphere_data.vertex_indices, sphere_data.triangle_indices)) {
       throw std::runtime_error{"Failed to compute meshlets for default sphere mesh."};
     }
+
+    sphere_data.material_slots.emplace_back("Material");
+    sphere_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(sphere_data.meshlets.size()), 0);
 
     sphere_mesh_ = Create<Mesh>(sphere_data);
     sphere_mesh_->SetGuid(sphere_mesh_guid_);

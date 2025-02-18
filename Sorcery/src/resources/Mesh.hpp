@@ -20,34 +20,20 @@ namespace sorcery {
 class Submesh {
 public:
   explicit Submesh(SubmeshData const& data);
-  Submesh(Submesh const&) = default;
-  Submesh(Submesh&&) noexcept = default;
 
-  ~Submesh();
-
-  auto operator=(Submesh const&) -> Submesh& = default;
-  auto operator=(Submesh&&) noexcept -> Submesh& = default;
-
-  [[nodiscard]] LEOPPHAPI auto GetPositionBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto GetUvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto
-  GetBoneWeightBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto GetBoneIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto GetMeshletBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto
-  GetVertexIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto
-  GetPrimitiveIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-
-  [[nodiscard]] auto GetBounds() const -> AABB const&;
-
-  [[nodiscard]] auto GetVertexCount() const -> std::size_t;
-  [[nodiscard]] auto GetPrimitiveCount() const -> std::size_t;
-  [[nodiscard]] auto GetMeshletCount() const -> std::size_t;
+  [[nodiscard]] auto GetFirstMeshlet() const -> std::uint32_t;
+  [[nodiscard]] auto GetMeshletCount() const -> std::uint32_t;
+  [[nodiscard]] auto GetMaterialIndex() const -> std::uint32_t;
 
 private:
+  std::uint32_t first_meshlet_;
+  std::uint32_t meshlet_count_;
+  std::uint32_t material_idx_;
+};
+
+
+class Mesh final : public Resource {
+  RTTR_ENABLE(Resource)
   // Geometry
 
   graphics::SharedDeviceChildHandle<graphics::Buffer> pos_buf_;
@@ -66,25 +52,14 @@ private:
   // CPU info
 
   std::vector<MeshletData> meshlets_;
-  AABB bounds_;
-  std::size_t vertex_count_;
-  std::size_t primitive_count_;
-  std::uint32_t material_idx_;
-};
-
-
-class Mesh final : public Resource {
-  RTTR_ENABLE(Resource)
   std::vector<MaterialSlotInfo> mtl_slots_;
   std::vector<Submesh> submeshes_;
   std::vector<Animation> animations_;
   std::vector<SkeletonNode> skeleton_;
   std::vector<Bone> bones_;
-
   AABB bounds_;
   std::size_t vertex_count_{0};
   std::size_t primitive_count_{0};
-  std::size_t meshlet_count_{0};
 
 public:
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
@@ -101,6 +76,19 @@ public:
 
   LEOPPHAPI auto SetData(MeshData const& data) noexcept -> void;
 
+  [[nodiscard]] LEOPPHAPI auto GetPositionBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetUvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto
+  GetBoneWeightBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetBoneIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetMeshletBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto
+  GetVertexIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto
+  GetPrimitiveIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+
   [[nodiscard]] LEOPPHAPI auto GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const>;
   [[nodiscard]] LEOPPHAPI auto GetSubmeshes() const noexcept -> std::span<Submesh const>;
   [[nodiscard]] LEOPPHAPI auto GetAnimations() const noexcept -> std::span<Animation const>;
@@ -113,6 +101,26 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetMeshletCount() const noexcept -> std::size_t;
 };
 
+
+struct SubmeshFaceRange {
+  std::size_t first_face;
+  std::size_t face_count;
+};
+
+
+struct SubmeshMeshletRange {
+  std::size_t first_meshlet;
+  std::size_t meshlet_count;
+};
+
+
+[[nodiscard]] LEOPPHAPI auto ComputeMeshlets(
+  std::variant<std::span<std::uint16_t const>, std::span<std::uint32_t const>> const& indices,
+  std::variant<std::span<Vector3 const>, std::span<Vector4 const>> const& positions,
+  std::span<SubmeshFaceRange const> submeshes, std::vector<MeshletData>& out_meshlets,
+  std::vector<std::uint8_t>& out_unique_vertex_indices, std::vector<MeshletTriangleData>& out_primitive_indices,
+  std::vector<SubmeshMeshletRange>& out_submeshes, std::uint16_t max_verts_per_meshlet = kMeshletMaxVerts,
+  std::uint16_t max_prims_per_meshlet = kMeshletMaxPrims) -> bool;
 
 [[nodiscard]] LEOPPHAPI auto ComputeMeshlets(
   std::variant<std::span<std::uint16_t const>, std::span<std::uint32_t const>> const& indices,
