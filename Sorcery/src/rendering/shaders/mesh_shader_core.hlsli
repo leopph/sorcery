@@ -24,8 +24,8 @@ template<typename VertexProcessor,
 #endif
          typename PsIn>
 void MeshShaderCore(
-  uint const gid : SV_GroupID,
-  uint const gtid : SV_GroupThreadID,
+  uint const gid,
+  uint const gtid,
   uint const meshlet_buf_idx,
   uint const vertex_idx_buf_idx,
   uint const prim_idx_buf_idx,
