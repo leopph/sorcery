@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iterator>
 #include <utility>
 
 
@@ -56,23 +57,39 @@ Mesh::Mesh(MeshData const& data) noexcept {
 auto Mesh::SetData(MeshData const& data) noexcept -> void {
   // GPU buffers
 
+  auto const to_vec4{
+    [](std::span<Vector3 const> const vectors, float const component4, std::vector<Vector4>& out) {
+      out.clear();
+      out.reserve(vectors.size());
+
+      std::ranges::transform(vectors, std::back_inserter(out), [component4](Vector3 const vec3) {
+        return Vector4{vec3, component4};
+      });
+    }
+  };
+
+  std::vector<Vector4> vec4_buf;
+
   pos_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.positions.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
     .constant_buffer = false, .shader_resource = true, .unordered_access = true
   }, D3D12_HEAP_TYPE_DEFAULT);
-  App::Instance().GetRenderManager().UpdateBuffer(*pos_buf_, 0, as_bytes(std::span{data.positions}));
+  to_vec4(data.positions, 1, vec4_buf);
+  App::Instance().GetRenderManager().UpdateBuffer(*pos_buf_, 0, as_bytes(std::span{vec4_buf}));
 
   norm_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.normals.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
     .constant_buffer = false, .shader_resource = true, .unordered_access = true
   }, D3D12_HEAP_TYPE_DEFAULT);
-  App::Instance().GetRenderManager().UpdateBuffer(*norm_buf_, 0, as_bytes(std::span{data.normals}));
+  to_vec4(data.normals, 0, vec4_buf);
+  App::Instance().GetRenderManager().UpdateBuffer(*norm_buf_, 0, as_bytes(std::span{vec4_buf}));
 
   tan_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.tangents.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
     .constant_buffer = false, .shader_resource = true, .unordered_access = true
   }, D3D12_HEAP_TYPE_DEFAULT);
-  App::Instance().GetRenderManager().UpdateBuffer(*tan_buf_, 0, as_bytes(std::span{data.tangents}));
+  to_vec4(data.tangents, 0, vec4_buf);
+  App::Instance().GetRenderManager().UpdateBuffer(*tan_buf_, 0, as_bytes(std::span{vec4_buf}));
 
   uv_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.uvs.size() * sizeof(Vector2)), .stride = sizeof(Vector2),
