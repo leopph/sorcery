@@ -1899,14 +1899,14 @@ auto SceneRenderer::SetShadowDistance(float const distance) noexcept -> void {
 }
 
 
-auto SceneRenderer::GetShadowCascadeCount() const noexcept -> int {
+auto SceneRenderer::GetShadowCascadeCount() const noexcept -> unsigned {
   return shadow_params_.cascade_count;
 }
 
 
-auto SceneRenderer::SetShadowCascadeCount(int const cascade_count) noexcept -> void {
-  shadow_params_.cascade_count = std::clamp(cascade_count, 1, MAX_CASCADE_COUNT);
-  int const splitCount{shadow_params_.cascade_count - 1};
+auto SceneRenderer::SetShadowCascadeCount(unsigned cascade_count) noexcept -> void {
+  shadow_params_.cascade_count = std::clamp(cascade_count, 1u, MAX_CASCADE_COUNT);
+  unsigned const splitCount{shadow_params_.cascade_count - 1};
 
   for (auto i = 1; i < splitCount; i++) {
     shadow_params_.normalized_cascade_splits[i] = std::max(shadow_params_.normalized_cascade_splits[i - 1],

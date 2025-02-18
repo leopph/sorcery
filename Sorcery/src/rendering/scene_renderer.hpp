@@ -54,7 +54,7 @@ struct SsaoParams {
 
 struct ShadowParams {
   std::array<float, MAX_CASCADE_COUNT - 1> normalized_cascade_splits;
-  int cascade_count;
+  unsigned cascade_count;
   bool visualize_cascades;
   float distance;
   ShadowFilteringMode filtering_mode;
@@ -96,9 +96,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetShadowDistance() const noexcept -> float;
   LEOPPHAPI auto SetShadowDistance(float distance) noexcept -> void;
 
-  [[nodiscard]] constexpr static auto GetMaxShadowCascadeCount() noexcept -> int;
-  [[nodiscard]] LEOPPHAPI auto GetShadowCascadeCount() const noexcept -> int;
-  LEOPPHAPI auto SetShadowCascadeCount(int cascade_count) noexcept -> void;
+  [[nodiscard]] constexpr static auto GetMaxShadowCascadeCount() noexcept -> unsigned;
+  [[nodiscard]] LEOPPHAPI auto GetShadowCascadeCount() const noexcept -> unsigned;
+  LEOPPHAPI auto SetShadowCascadeCount(unsigned cascade_count) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetNormalizedShadowCascadeSplits() const noexcept -> std::span<float const>;
   LEOPPHAPI auto SetNormalizedShadowCascadeSplit(int idx, float split) noexcept -> void;
@@ -434,7 +434,7 @@ private:
 };
 
 
-constexpr auto SceneRenderer::GetMaxShadowCascadeCount() noexcept -> int {
+constexpr auto SceneRenderer::GetMaxShadowCascadeCount() noexcept -> unsigned {
   return MAX_CASCADE_COUNT;
 }
 }
