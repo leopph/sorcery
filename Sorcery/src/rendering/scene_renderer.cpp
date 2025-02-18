@@ -152,8 +152,7 @@ auto SceneRenderer::CullStaticSubmeshInstances(Frustum const& frustum_ws, std::s
     auto const& submesh{submeshes[instance.submesh_local_idx]};
     auto const& mesh{meshes[submesh.mesh_local_idx]};
 
-    if (frustum_ws.Intersects(mesh.bounds.Transform(instance.local_to_world_mtx)) && frustum_ws.Intersects(
-          submesh.bounds.Transform(instance.local_to_world_mtx))) {
+    if (frustum_ws.Intersects(mesh.bounds.Transform(instance.local_to_world_mtx))) {
       visible_static_submesh_instance_indices.emplace_back(i);
     }
   }
