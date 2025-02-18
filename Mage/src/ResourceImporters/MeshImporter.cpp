@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <format>
 #include <iterator>
 #include <limits>
 #include <optional>
@@ -177,15 +178,37 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
       // aiProcess_SortByPType splits up meshes with more than 1 primitive type into homogeneous ones
       // TODO Implement non-triangle rendering support
 
+      if (!mesh->HasPositions() || !mesh->HasNormals() || !mesh->HasTextureCoords(0) || !mesh->
+          HasTangentsAndBitangents()) {
+        std::string missing_attrs_list;
+
+        if (!mesh->HasPositions()) {
+          missing_attrs_list += "positions, ";
+        }
+
+        if (!mesh->HasNormals()) {
+          missing_attrs_list += "normals, ";
+        }
+
+        if (!mesh->HasTextureCoords(0)) {
+          missing_attrs_list += "texture coordinates, ";
+        }
+
+        if (!mesh->HasTangentsAndBitangents()) {
+          missing_attrs_list += "tangents, ";
+        }
+
+        missing_attrs_list.erase(missing_attrs_list.size() - 2);
+
+        OutputDebugStringA(std::format(
+          "Skipping mesh {} in node \"{}\" of file \"{}\" because it is missing some attributes. The following attributes are missing: {}.\n",
+          i, node->mName.C_Str(), src.string(), missing_attrs_list).c_str());
+        continue;
+      }
+
       auto& [vertices, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx]{
         meshes.emplace_back()
       };
-
-      if (!mesh->HasPositions() || !mesh->HasNormals() || !mesh->HasTextureCoords(0) || !mesh->
-          HasTangentsAndBitangents()) {
-        // TODO log or something
-        continue;
-      }
 
       vertices.reserve(mesh->mNumVertices);
       normals.reserve(mesh->mNumVertices);
