@@ -16,37 +16,37 @@
 #include "shaders/shader_interop.h"
 
 #ifndef NDEBUG
+#include "shaders/generated/Debug/depth_normal_ms.h"
 #include "shaders/generated/Debug/depth_normal_ps.h"
-#include "shaders/generated/Debug/depth_normal_vs.h"
+#include "shaders/generated/Debug/depth_only_ms.h"
 #include "shaders/generated/Debug/depth_only_ps.h"
-#include "shaders/generated/Debug/depth_only_vs.h"
 #include "shaders/generated/Debug/depth_resolve_cs.h"
 #include "shaders/generated/Debug/gizmos_line_vs.h"
 #include "shaders/generated/Debug/gizmos_ps.h"
+#include "shaders/generated/Debug/object_pbr_ms.h"
 #include "shaders/generated/Debug/object_pbr_ps.h"
-#include "shaders/generated/Debug/object_pbr_vs.h"
 #include "shaders/generated/Debug/post_process_ps.h"
 #include "shaders/generated/Debug/post_process_vs.h"
+#include "shaders/generated/Debug/skybox_ms.h"
 #include "shaders/generated/Debug/skybox_ps.h"
-#include "shaders/generated/Debug/skybox_vs.h"
 #include "shaders/generated/Debug/ssao_blur_ps.h"
 #include "shaders/generated/Debug/ssao_main_ps.h"
 #include "shaders/generated/Debug/ssao_vs.h"
 #include "shaders/generated/Debug/vtx_skinning_cs.h"
 #else
+#include "shaders/generated/Release/depth_normal_ms.h"
 #include "shaders/generated/Release/depth_normal_ps.h"
-#include "shaders/generated/Release/depth_normal_vs.h"
+#include "shaders/generated/Release/depth_only_ms.h"
 #include "shaders/generated/Release/depth_only_ps.h"
-#include "shaders/generated/Release/depth_only_vs.h"
 #include "shaders/generated/Release/depth_resolve_cs.h"
 #include "shaders/generated/Release/gizmos_line_vs.h"
 #include "shaders/generated/Release/gizmos_ps.h"
+#include "shaders/generated/Release/object_pbr_ms.h"
 #include "shaders/generated/Release/object_pbr_ps.h"
-#include "shaders/generated/Release/object_pbr_vs.h"
 #include "shaders/generated/Release/post_process_ps.h"
 #include "shaders/generated/Release/post_process_vs.h"
+#include "shaders/generated/Release/skybox_ms.h"
 #include "shaders/generated/Release/skybox_ps.h"
-#include "shaders/generated/Release/skybox_vs.h"
 #include "shaders/generated/Release/ssao_blur_ps.h"
 #include "shaders/generated/Release/ssao_main_ps.h"
 #include "shaders/generated/Release/ssao_vs.h"
@@ -676,8 +676,8 @@ auto SceneRenderer::RecreatePipelines() -> void {
   CD3DX12_RT_FORMAT_ARRAY const ssao_format{D3D12_RT_FORMAT_ARRAY{{ssao_buffer_format_}, 1}};
 
   graphics::PipelineDesc const depth_normal_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{g_depth_normal_vs_bytes, ARRAYSIZE(g_depth_normal_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_depth_normal_ps_bytes, ARRAYSIZE(g_depth_normal_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{g_depth_normal_ms_bytes, ARRAYSIZE(g_depth_normal_ms_bytes)},
     .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_,
     .rt_formats = CD3DX12_RT_FORMAT_ARRAY{D3D12_RT_FORMAT_ARRAY{{normal_buffer_format_}, 1}},
     .sample_desc = msaa_sample_desc
@@ -686,8 +686,8 @@ auto SceneRenderer::RecreatePipelines() -> void {
   depth_normal_pso_ = device_->CreatePipelineState(depth_normal_pso_desc, sizeof(DepthNormalDrawParams) / 4);
 
   graphics::PipelineDesc const shadow_pso_desc_{
-    .vs = CD3DX12_SHADER_BYTECODE{g_depth_only_vs_bytes, ARRAYSIZE(g_depth_only_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{g_depth_only_ms_bytes, ARRAYSIZE(g_depth_only_ms_bytes)},
     .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_,
     .rasterizer_state = shadow_rasterizer_desc
   };
@@ -710,8 +710,8 @@ auto SceneRenderer::RecreatePipelines() -> void {
   line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
 
   graphics::PipelineDesc const object_pso_depth_write_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{g_object_pbr_vs_bytes, ARRAYSIZE(g_object_pbr_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_object_pbr_ps_bytes, ARRAYSIZE(g_object_pbr_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{g_object_pbr_ms_bytes, ARRAYSIZE(g_object_pbr_ms_bytes)},
     .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_, .rt_formats = color_format,
     .sample_desc = msaa_sample_desc,
   };
@@ -719,8 +719,8 @@ auto SceneRenderer::RecreatePipelines() -> void {
   object_pso_depth_write_ = device_->CreatePipelineState(object_pso_depth_write_desc, sizeof(ObjectDrawParams) / 4);
 
   graphics::PipelineDesc const object_pso_depth_read_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{g_object_pbr_vs_bytes, ARRAYSIZE(g_object_pbr_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_object_pbr_ps_bytes, ARRAYSIZE(g_object_pbr_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{g_object_pbr_ms_bytes, ARRAYSIZE(g_object_pbr_ms_bytes)},
     .depth_stencil_state = reverse_z_depth_stencil_read, .ds_format = depth_format_, .rt_formats = color_format,
     .sample_desc = msaa_sample_desc,
   };
@@ -736,8 +736,8 @@ auto SceneRenderer::RecreatePipelines() -> void {
   post_process_pso_ = device_->CreatePipelineState(post_process_pso_desc, sizeof(PostProcessDrawParams) / 4);
 
   graphics::PipelineDesc const skybox_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_skybox_vs_bytes, ARRAYSIZE(g_skybox_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_skybox_ps_bytes, ARRAYSIZE(g_skybox_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{&g_skybox_ms_bytes, ARRAYSIZE(g_skybox_ms_bytes)},
     .depth_stencil_state = CD3DX12_DEPTH_STENCIL_DESC1{
       TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {},
       {}, FALSE
