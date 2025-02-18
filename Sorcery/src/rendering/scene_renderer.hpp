@@ -344,6 +344,8 @@ private:
   auto OnWindowSize(Extent2D<std::uint32_t> size) -> void;
 
   static auto DrawSubmesh(SubmeshData const& submesh, graphics::CommandList const& cmd) -> void;
+  static auto DrawSubmesh(UINT submesh_meshlet_count, UINT submesh_meshlet_offset,
+                          graphics::CommandList const& cmd) -> void;
 
   static DXGI_FORMAT constexpr imprecise_color_buffer_format_{DXGI_FORMAT_R11G11B10_FLOAT};
   static DXGI_FORMAT constexpr precise_color_buffer_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};

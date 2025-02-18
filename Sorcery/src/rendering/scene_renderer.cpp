@@ -835,13 +835,18 @@ auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
 
 
 auto SceneRenderer::DrawSubmesh(SubmeshData const& submesh, graphics::CommandList const& cmd) -> void {
-  std::size_t constexpr max_dispatch_thread_group_count{65535};
+  DrawSubmesh(submesh.meshlet_count, submesh.first_meshlet, cmd);
+}
 
-  for (std::size_t meshlet_offset{0}; meshlet_offset < submesh.meshlet_count;
+
+auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const submesh_meshlet_offset,
+                                graphics::CommandList const& cmd) -> void {
+  UINT constexpr max_dispatch_thread_group_count{65535};
+
+  for (auto meshlet_offset{submesh_meshlet_offset}; meshlet_offset < submesh_meshlet_count;
        meshlet_offset += max_dispatch_thread_group_count) {
     auto const meshlet_count{
-      std::min(submesh.meshlet_count - meshlet_offset,
-        max_dispatch_thread_group_count)
+      std::min(submesh_meshlet_count - meshlet_offset, max_dispatch_thread_group_count)
     };
 
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_count), meshlet_count);
@@ -1865,10 +1870,14 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, cubemap_idx),
         *frame_packet.skybox_cubemap);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
-      cam_cmd.SetIndexBuffer(*cube_mesh->GetIndexBuffer(), cube_mesh->GetIndexFormat());
-      cam_cmd.DrawIndexedInstanced(
-        static_cast<UINT>(App::Instance().GetResourceManager().GetCubeMesh()->GetIndexCount()),
-        1, 0, 0, 0);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, vertex_idx_buf_idx),
+        *cube_mesh->GetVertexIndexBuffer());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, prim_idx_buf_idx),
+        *cube_mesh->GetPrimitiveIndexBuffer());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_buf_idx),
+        *cube_mesh->GetMeshletBuffer());
+
+      DrawSubmesh(1, 0, cam_cmd);
     }
 
     RenderTarget const* post_process_input_rt;

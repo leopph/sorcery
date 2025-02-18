@@ -377,7 +377,7 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />
-    <FxCompile Include="src\rendering\shaders\skybox_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\skybox_ms.hlsl" />
     <FxCompile Include="src\rendering\shaders\skybox_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\depth_only_ms.hlsl" />
     <FxCompile Include="src\rendering\shaders\post_process_vs.hlsl" />

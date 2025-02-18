@@ -286,6 +286,9 @@ struct PostProcessDrawParams {
 
 struct SkyboxDrawParams {
   uint pos_buf_idx;
+  uint vertex_idx_buf_idx;
+  uint prim_idx_buf_idx;
+  uint meshlet_buf_idx;
   uint per_view_cb_idx;
   uint cubemap_idx;
   uint samp_idx;
