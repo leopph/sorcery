@@ -60,21 +60,25 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
     .size = static_cast<UINT>(data.positions.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
     .constant_buffer = false, .shader_resource = true, .unordered_access = true
   }, D3D12_HEAP_TYPE_DEFAULT);
+  App::Instance().GetRenderManager().UpdateBuffer(*pos_buf_, 0, as_bytes(std::span{data.positions}));
 
   norm_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.normals.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
     .constant_buffer = false, .shader_resource = true, .unordered_access = true
   }, D3D12_HEAP_TYPE_DEFAULT);
+  App::Instance().GetRenderManager().UpdateBuffer(*norm_buf_, 0, as_bytes(std::span{data.normals}));
 
   tan_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.tangents.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
     .constant_buffer = false, .shader_resource = true, .unordered_access = true
   }, D3D12_HEAP_TYPE_DEFAULT);
+  App::Instance().GetRenderManager().UpdateBuffer(*tan_buf_, 0, as_bytes(std::span{data.tangents}));
 
   uv_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.uvs.size() * sizeof(Vector2)), .stride = sizeof(Vector2),
     .constant_buffer = false, .shader_resource = true, .unordered_access = false
   }, D3D12_HEAP_TYPE_DEFAULT);
+  App::Instance().GetRenderManager().UpdateBuffer(*uv_buf_, 0, as_bytes(std::span{data.uvs}));
 
   bone_weight_buf_ = data.bone_weights.empty()
                        ? nullptr
@@ -83,6 +87,9 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
                          .stride = sizeof(Vector4),
                          .constant_buffer = false, .shader_resource = false, .unordered_access = true
                        }, D3D12_HEAP_TYPE_DEFAULT);
+  if (bone_weight_buf_) {
+    App::Instance().GetRenderManager().UpdateBuffer(*bone_weight_buf_, 0, as_bytes(std::span{data.bone_weights}));
+  }
 
   bone_idx_buf_ = data.bone_indices.empty()
                     ? nullptr
@@ -91,22 +98,28 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
                       .stride = sizeof(Vector<std::uint32_t, 4>), .constant_buffer = false, .shader_resource = false,
                       .unordered_access = true
                     }, D3D12_HEAP_TYPE_DEFAULT);
+  if (bone_idx_buf_) {
+    App::Instance().GetRenderManager().UpdateBuffer(*bone_idx_buf_, 0, as_bytes(std::span{data.bone_indices}));
+  }
 
   meshlet_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.meshlets.size() * sizeof(MeshletData)), .stride = sizeof(MeshletData),
     .constant_buffer = false, .shader_resource = true, .unordered_access = false
   }, D3D12_HEAP_TYPE_DEFAULT);
+  App::Instance().GetRenderManager().UpdateBuffer(*meshlet_buf_, 0, as_bytes(std::span{data.meshlets}));
 
   vertex_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.vertex_indices.size()), .stride = 1,
     .constant_buffer = false, .shader_resource = true, .unordered_access = false
   }, D3D12_HEAP_TYPE_DEFAULT);
+  App::Instance().GetRenderManager().UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{data.vertex_indices}));
 
   prim_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.triangle_indices.size() * sizeof(MeshletTriangleData)),
     .stride = sizeof(MeshletTriangleData), .constant_buffer = false, .shader_resource = true,
     .unordered_access = false
   }, D3D12_HEAP_TYPE_DEFAULT);
+  App::Instance().GetRenderManager().UpdateBuffer(*prim_idx_buf_, 0, as_bytes(std::span{data.triangle_indices}));
 
   // CPU lists
 
