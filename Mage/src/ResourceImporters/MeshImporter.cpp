@@ -282,8 +282,6 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Flatten visited hierarchy to a BFS list
 
-  std::vector<SkeletonNode> skeleton_nodes;
-
   // Indices are needed for node animations. It is guaranteed that animated nodes have unique names.
   std::unordered_map<std::string, std::uint32_t> skeleton_node_name_to_idx;
 
@@ -302,8 +300,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   while (!node_queue.empty()) {
     auto const& [node, parent_idx]{node_queue.front()};
-    auto const this_node_idx{static_cast<std::uint32_t>(skeleton_nodes.size())};
-    skeleton_nodes.emplace_back(node->name, node->transform, parent_idx);
+    auto const this_node_idx{static_cast<std::uint32_t>(mesh_data.skeleton.size())};
+    mesh_data.skeleton.emplace_back(node->name, node->transform, parent_idx);
     skeleton_node_name_to_idx.try_emplace(node->name, this_node_idx);
 
     for (auto const& child : node->children) {
@@ -317,9 +315,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Create final bone data
 
-  std::vector<Bone> bones;
-  bones.reserve(bone_proc_info.size());
-  std::ranges::transform(bone_proc_info, std::back_inserter(bones),
+  mesh_data.bones.reserve(bone_proc_info.size());
+  std::ranges::transform(bone_proc_info, std::back_inserter(mesh_data.bones),
     [&skeleton_node_name_to_idx](BoneProcessingInfo const& bone_info) {
       return Bone{
         .offset_mtx = bone_info.offset_matrix, .skeleton_node_idx = skeleton_node_name_to_idx.at(bone_info.node_name)
@@ -388,8 +385,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Collect animations
 
-  std::vector<Animation> animations;
-  animations.reserve(scene->mNumAnimations);
+  mesh_data.animations.reserve(scene->mNumAnimations);
 
   for (unsigned i{0}; i < scene->mNumAnimations; i++) {
     auto const anim{scene->mAnimations[i]};
@@ -479,7 +475,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
         skeleton_node_name_to_idx[channel->mNodeName.C_Str()]);
     }
 
-    animations.emplace_back(anim->mName.C_Str(), static_cast<float>(anim->mDuration),
+    mesh_data.animations.emplace_back(anim->mName.C_Str(), static_cast<float>(anim->mDuration),
       static_cast<float>(anim->mTicksPerSecond), std::move(node_anims));
   }
 
@@ -487,15 +483,15 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Element counts
 
-  SerializeToBinary(std::size(mesh_data.positions), bytes);
-  SerializeToBinary(std::size(mesh_data.meshlets), bytes);
-  SerializeToBinary(std::size(mesh_data.vertex_indices), bytes);
-  SerializeToBinary(std::size(mesh_data.triangle_indices), bytes);
-  SerializeToBinary(std::size(mesh_data.material_slots), bytes);
-  SerializeToBinary(std::size(mesh_data.submeshes), bytes);
-  SerializeToBinary(std::ssize(mesh_data.animations), bytes);
-  SerializeToBinary(std::ssize(skeleton_nodes), bytes);
-  SerializeToBinary(std::ssize(bones), bytes);
+  SerializeToBinary(mesh_data.positions.size(), bytes);
+  SerializeToBinary(mesh_data.meshlets.size(), bytes);
+  SerializeToBinary(mesh_data.vertex_indices.size(), bytes);
+  SerializeToBinary(mesh_data.triangle_indices.size(), bytes);
+  SerializeToBinary(mesh_data.material_slots.size(), bytes);
+  SerializeToBinary(mesh_data.submeshes.size(), bytes);
+  SerializeToBinary(mesh_data.animations.size(), bytes);
+  SerializeToBinary(mesh_data.skeleton.size(), bytes);
+  SerializeToBinary(mesh_data.bones.size(), bytes);
 
   // Geometry data
 
@@ -540,7 +536,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Animations
 
-  for (auto const& [name, duration, ticks_per_second, node_anims] : animations) {
+  for (auto const& [name, duration, ticks_per_second, node_anims] : mesh_data.animations) {
     SerializeToBinary(name, bytes);
     SerializeToBinary(duration, bytes);
     SerializeToBinary(ticks_per_second, bytes);
@@ -567,7 +563,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Skeleton nodes
 
-  for (auto const& [name, transform, parent_idx] : skeleton_nodes) {
+  for (auto const& [name, transform, parent_idx] : mesh_data.skeleton) {
     SerializeToBinary(name, bytes);
     SerializeToBinary(parent_idx.has_value(), bytes);
 
@@ -580,7 +576,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Bones
 
-  for (auto const& [offset_matrix, node_idx] : bones) {
+  for (auto const& [offset_matrix, node_idx] : mesh_data.bones) {
     std::ranges::copy(as_bytes(std::span{offset_matrix.GetData(), 16}), std::back_inserter(bytes));
     SerializeToBinary(node_idx, bytes);
   }
