@@ -1148,7 +1148,8 @@ auto SceneRenderer::ExtractCurrentState() -> void {
       auto const vtx_idx_buf_local_idx{find_or_emplace_back_buffer(mesh->GetVertexIndexBuffer())};
       auto const prim_idx_buf_local_idx{find_or_emplace_back_buffer(mesh->GetPrimitiveIndexBuffer())};
       packet.mesh_data.emplace_back(pos_buf_local_idx, norm_buf_local_idx, tan_buf_local_idx, uv_buf_local_idx,
-        meshlet_buf_local_idx, vtx_idx_buf_local_idx, prim_idx_buf_local_idx, mesh->GetBounds());
+        meshlet_buf_local_idx, vtx_idx_buf_local_idx, prim_idx_buf_local_idx, mesh->GetBounds(),
+        mesh->GetVertexCount());
 
       packet.submesh_data.reserve(packet.submesh_data.size() + mesh->GetSubmeshes().size());
 
