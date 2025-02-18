@@ -1605,6 +1605,7 @@ auto SceneRenderer::Render() -> void {
 
     auto const hdr_rt{render_manager_->AcquireTemporaryRenderTarget(hdr_rt_desc)};
 
+    cam_cmd.DiscardRenderTarget(*hdr_rt->GetColorTex(), {});
     cam_cmd.ClearDepthStencil(*hdr_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
@@ -1672,6 +1673,7 @@ auto SceneRenderer::Render() -> void {
 
       // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
       if (frame_packet.msaa_mode != MultisamplingMode::kOff) {
+        cam_cmd.DiscardRenderTarget(*normal_rt->GetColorTex(), {});
         cam_cmd.Resolve(*normal_rt->GetColorTex(), *actual_normal_rt->GetColorTex(),
           *normal_rt->GetDesc().color_format);
       }
@@ -1889,6 +1891,7 @@ auto SceneRenderer::Render() -> void {
       resolved_hdr_rt_desc.sample_count = 1;
       auto const resolve_hdr_rt{render_manager_->AcquireTemporaryRenderTarget(resolved_hdr_rt_desc)};
 
+      cam_cmd.DiscardRenderTarget(*resolve_hdr_rt->GetColorTex(), {});
       cam_cmd.Resolve(*resolve_hdr_rt->GetColorTex(), *hdr_rt->GetColorTex(), *hdr_rt_desc.color_format);
       post_process_input_rt = resolve_hdr_rt.get();
     }
