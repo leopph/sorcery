@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Math.hpp"
-
 #include <array>
 #include <span>
+
+#include "Core.hpp"
+#include "Math.hpp"
 
 
 namespace sorcery {
@@ -17,19 +18,19 @@ struct AABB {
   Vector3 min;
   Vector3 max;
 
-  [[nodiscard]] static auto FromVertices(std::span<Vector3 const> vertices) noexcept -> AABB;
-  [[nodiscard]] auto CalculateVertices() const noexcept -> std::array<Vector3, 8>;
-  [[nodiscard]] auto Transform(Matrix4 const& mtx) const noexcept -> AABB;
+  [[nodiscard]] LEOPPHAPI static auto FromVertices(std::span<Vector3 const> vertices) noexcept -> AABB;
+  [[nodiscard]] LEOPPHAPI auto CalculateVertices() const noexcept -> std::array<Vector3, 8>;
+  [[nodiscard]] LEOPPHAPI auto Transform(Matrix4 const& mtx) const noexcept -> AABB;
 };
 
 
 struct Plane {
   float a, b, c, d;
 
-  auto Normalize() noexcept -> void;
-  [[nodiscard]] auto Normalized() const noexcept -> Plane;
+  LEOPPHAPI auto Normalize() noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto Normalized() const noexcept -> Plane;
 
-  [[nodiscard]] auto DistanceToPoint(Vector3 const& p) const noexcept -> float;
+  [[nodiscard]] LEOPPHAPI auto DistanceToPoint(Vector3 const& p) const noexcept -> float;
 };
 
 
@@ -38,9 +39,9 @@ class Frustum {
   std::array<Plane, 6> mPlanes{};
 
 public:
-  explicit Frustum(Matrix4 const& mtx);
+  LEOPPHAPI explicit Frustum(Matrix4 const& mtx);
 
-  [[nodiscard]] auto Intersects(BoundingSphere const& boundingSphere) const noexcept -> bool;
-  [[nodiscard]] auto Intersects(AABB const& aabb) const noexcept -> bool;
+  [[nodiscard]] LEOPPHAPI auto Intersects(BoundingSphere const& boundingSphere) const noexcept -> bool;
+  [[nodiscard]] LEOPPHAPI auto Intersects(AABB const& aabb) const noexcept -> bool;
 };
 }
