@@ -171,6 +171,7 @@ private:
     UINT first_meshlet;
     UINT meshlet_count;
     UINT mtl_buf_local_idx;
+    AABB bounds;
   };
 
 

@@ -152,7 +152,8 @@ auto SceneRenderer::CullStaticSubmeshInstances(Frustum const& frustum_ws, std::s
     auto const& submesh{submeshes[instance.submesh_local_idx]};
     auto const& mesh{meshes[submesh.mesh_local_idx]};
 
-    if (frustum_ws.Intersects(mesh.bounds.Transform(instance.local_to_world_mtx))) {
+    if (frustum_ws.Intersects(mesh.bounds.Transform(instance.local_to_world_mtx)) && frustum_ws.Intersects(
+          submesh.bounds.Transform(instance.local_to_world_mtx))) {
       visible_static_submesh_instance_indices.emplace_back(i);
     }
   }
@@ -1208,7 +1209,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
         }
 
         packet.submesh_data.emplace_back(static_cast<unsigned>(packet.mesh_data.size() - 1), submesh.GetFirstMeshlet(),
-          submesh.GetMeshletCount(), mtl_buf_local_idx);
+          submesh.GetMeshletCount(), mtl_buf_local_idx, submesh.GetBounds());
 
         packet.instance_data.emplace_back(static_cast<unsigned>(packet.submesh_data.size() - 1),
           comp->GetEntity()->GetTransform().GetLocalToWorldMatrix());
