@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "Bounds.hpp"
 #include "Core.hpp"
 #include "Math.hpp"
 
@@ -83,6 +84,7 @@ struct MeshletTriangleData {
 struct SubmeshData {
   std::uint32_t first_meshlet;
   std::uint32_t meshlet_count;
+  AABB bounds;
 };
 
 
@@ -103,6 +105,7 @@ struct MeshData {
   std::vector<Animation> animations;
   std::vector<SkeletonNode> skeleton;
   std::vector<Bone> bones;
+  AABB bounds;
 };
 
 

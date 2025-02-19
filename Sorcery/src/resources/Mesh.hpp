@@ -23,10 +23,12 @@ public:
 
   [[nodiscard]] auto GetFirstMeshlet() const -> std::uint32_t;
   [[nodiscard]] auto GetMeshletCount() const -> std::uint32_t;
+  [[nodiscard]] auto GetBounds() const -> AABB const&;
 
 private:
   std::uint32_t first_meshlet_;
   std::uint32_t meshlet_count_;
+  AABB bounds_;
 };
 
 

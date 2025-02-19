@@ -21,7 +21,8 @@ RTTR_REGISTRATION {
 namespace sorcery {
 Submesh::Submesh(SubmeshData const& data) :
   first_meshlet_{data.first_meshlet},
-  meshlet_count_{data.meshlet_count} {}
+  meshlet_count_{data.meshlet_count},
+  bounds_{data.bounds} {}
 
 
 auto Submesh::GetFirstMeshlet() const -> std::uint32_t {
@@ -31,6 +32,11 @@ auto Submesh::GetFirstMeshlet() const -> std::uint32_t {
 
 auto Submesh::GetMeshletCount() const -> std::uint32_t {
   return meshlet_count_;
+}
+
+
+auto Submesh::GetBounds() const -> AABB const& {
+  return bounds_;
 }
 
 
@@ -149,14 +155,7 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
 
   // Other info
 
-  bounds_.min = Vector3{std::numeric_limits<float>::max()};
-  bounds_.max = Vector3{std::numeric_limits<float>::lowest()};
-
-  for (auto const& pos : data.positions) {
-    bounds_.min = Min(bounds_.min, pos);
-    bounds_.max = Max(bounds_.max, pos);
-  }
-
+  bounds_ = data.bounds;
   vertex_count_ = data.positions.size();
   primitive_count_ = data.triangle_indices.size();
 }

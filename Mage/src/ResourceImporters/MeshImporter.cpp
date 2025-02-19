@@ -377,6 +377,10 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   //std::vector<unsigned> combined_indices;
 
   std::vector<SubmeshMeshletRange> submesh_meshlet_ranges;
+  submesh_meshlet_ranges.reserve(fused_meshes.size());
+
+  std::vector<AABB> submesh_bounds;
+  submesh_bounds.reserve(fused_meshes.size());
 
   for (auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] : fused_meshes) {
     // This works because we only support triangle meshes
@@ -419,6 +423,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
       }
     }
 
+    submesh_bounds.emplace_back(AABB::FromVertices(positions));
+
     std::ranges::copy(primitive_indices, std::back_inserter(mesh_data.triangle_indices));
 
     mesh_data.positions.reserve(mesh_data.positions.size() + positions.size());
@@ -447,14 +453,14 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     throw std::runtime_error{"Failed to compute meshlets."};
   }*/
 
-  mesh_data.submeshes.reserve(std::size(submesh_meshlet_ranges));
-  std::ranges::transform(submesh_meshlet_ranges, std::back_inserter(mesh_data.submeshes),
-    [](SubmeshMeshletRange const& meshlet_range) {
-      return SubmeshData{
-        .first_meshlet = static_cast<std::uint32_t>(meshlet_range.first_meshlet),
-        .meshlet_count = static_cast<std::uint32_t>(meshlet_range.meshlet_count)
-      };
+  mesh_data.submeshes.reserve(fused_meshes.size());
+  for (std::size_t i{0}; i < fused_meshes.size(); i++) {
+    mesh_data.submeshes.emplace_back(SubmeshData{
+      .first_meshlet = static_cast<std::uint32_t>(submesh_meshlet_ranges[i].first_meshlet),
+      .meshlet_count = static_cast<std::uint32_t>(submesh_meshlet_ranges[i].meshlet_count),
+      .bounds = submesh_bounds[i]
     });
+  }
 
   // Collect animations
 
@@ -552,6 +558,10 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
       static_cast<float>(anim->mTicksPerSecond), std::move(node_anims));
   }
 
+  // Bounds
+
+  mesh_data.bounds = AABB::FromVertices(mesh_data.positions);
+
   // Serialize
 
   // Element counts
@@ -604,6 +614,14 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   for (auto const& submesh : mesh_data.submeshes) {
     SerializeToBinary(submesh.first_meshlet, bytes);
     SerializeToBinary(submesh.meshlet_count, bytes);
+
+    for (auto i{0}; i < 3; i++) {
+      SerializeToBinary(submesh.bounds.min[i], bytes);
+    }
+
+    for (auto i{0}; i < 3; i++) {
+      SerializeToBinary(submesh.bounds.max[i], bytes);
+    }
   }
 
   // Animations
@@ -651,6 +669,16 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   for (auto const& [offset_matrix, node_idx] : mesh_data.bones) {
     std::ranges::copy(as_bytes(std::span{offset_matrix.GetData(), 16}), std::back_inserter(bytes));
     SerializeToBinary(node_idx, bytes);
+  }
+
+  // Bounds
+
+  for (auto i{0}; i < 3; i++) {
+    SerializeToBinary(mesh_data.bounds.min[i], bytes);
+  }
+
+  for (auto i{0}; i < 3; i++) {
+    SerializeToBinary(mesh_data.bounds.max[i], bytes);
   }
 
   categ = ExternalResourceCategory::Mesh;
