@@ -540,7 +540,10 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
             *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
 
-          DrawSubmesh(submesh, cmd);
+          DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, instance_count),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, instance_offset), cmd);
         }
       }
 
@@ -615,7 +618,10 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
           cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
             *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
 
-          DrawSubmesh(submesh, cmd);
+          DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, instance_count),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, instance_offset), cmd);
         }
       }
     }
@@ -834,12 +840,21 @@ auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
 }
 
 
-auto SceneRenderer::DrawSubmesh(SubmeshData const& submesh, graphics::CommandList const& cmd) -> void {
-  DrawSubmesh(submesh.meshlet_count, submesh.first_meshlet, cmd);
+auto SceneRenderer::DrawSubmesh(SubmeshData const& submesh, std::optional<UINT> meshlet_count_param_idx,
+                                std::optional<UINT> meshlet_offset_param_idx,
+                                std::optional<UINT> instance_count_param_idx,
+                                std::optional<UINT> instance_offset_param_idx,
+                                graphics::CommandList const& cmd) -> void {
+  DrawSubmesh(submesh.meshlet_count, submesh.first_meshlet, meshlet_count_param_idx, meshlet_offset_param_idx,
+    instance_count_param_idx, instance_offset_param_idx, cmd);
 }
 
 
 auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const submesh_meshlet_offset,
+                                std::optional<UINT> meshlet_count_param_idx,
+                                std::optional<UINT> meshlet_offset_param_idx,
+                                std::optional<UINT> instance_count_param_idx,
+                                std::optional<UINT> instance_offset_param_idx,
                                 graphics::CommandList const& cmd) -> void {
   UINT constexpr max_dispatch_thread_group_count{65535};
 
@@ -849,8 +864,13 @@ auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const sub
       std::min(submesh_meshlet_count - meshlet_offset, max_dispatch_thread_group_count)
     };
 
-    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_count), meshlet_count);
-    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_offset), meshlet_offset);
+    if (meshlet_count_param_idx) {
+      cmd.SetPipelineParameter(*meshlet_count_param_idx, meshlet_count);
+    }
+
+    if (meshlet_offset_param_idx) {
+      cmd.SetPipelineParameter(*meshlet_offset_param_idx, meshlet_offset);
+    }
 
     // Parts commented out are needed for instancing
 
@@ -891,8 +911,13 @@ auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const sub
           max_instance_count_per_batch)
       };
 
-      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, instance_count), batch_instance_count);
-      cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, instance_offset), batch_instance_offset);
+      if (instance_count_param_idx) {
+        cmd.SetPipelineParameter(*instance_count_param_idx, batch_instance_count);
+      }
+
+      if (instance_offset_param_idx) {
+        cmd.SetPipelineParameter(*instance_offset_param_idx, batch_instance_offset);
+      }
 
       auto const group_count{
         static_cast<std::uint32_t>(std::ceilf(
@@ -1668,7 +1693,10 @@ auto SceneRenderer::Render() -> void {
         cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, meshlet_buf_idx),
           *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
 
-        DrawSubmesh(submesh, cam_cmd);
+        DrawSubmesh(submesh,PIPELINE_PARAM_INDEX(DepthNormalDrawParams, meshlet_count),
+          PIPELINE_PARAM_INDEX(DepthNormalDrawParams, meshlet_offset),
+          PIPELINE_PARAM_INDEX(DepthNormalDrawParams, instance_count),
+          PIPELINE_PARAM_INDEX(DepthNormalDrawParams, instance_offset), cam_cmd);
       }
 
       // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
@@ -1859,7 +1887,9 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_buf_idx),
         *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
 
-      DrawSubmesh(submesh, cam_cmd);
+      DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_count),
+        PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_offset), PIPELINE_PARAM_INDEX(ObjectDrawParams, instance_count),
+        PIPELINE_PARAM_INDEX(ObjectDrawParams, instance_offset), cam_cmd);
     }
 
     if (frame_packet.skybox_cubemap) {
@@ -1872,14 +1902,14 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, cubemap_idx),
         *frame_packet.skybox_cubemap);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, vertex_idx_buf_idx),
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, vertex_idx_buf_idx),
         *cube_mesh->GetVertexIndexBuffer());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, prim_idx_buf_idx),
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, prim_idx_buf_idx),
         *cube_mesh->GetPrimitiveIndexBuffer());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_buf_idx),
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, meshlet_buf_idx),
         *cube_mesh->GetMeshletBuffer());
 
-      DrawSubmesh(1, 0, cam_cmd);
+      DrawSubmesh(1, 0, {}, {}, {}, {}, cam_cmd);
     }
 
     RenderTarget const* post_process_input_rt;

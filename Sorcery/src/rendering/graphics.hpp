@@ -24,7 +24,7 @@
 #include <vector>
 
 // Returns the index of the member if all the pipeline parameters are considered a single buffer of the specified type.
-#define PIPELINE_PARAM_INDEX(BufferType, MemberName) offsetof(BufferType, MemberName) / 4
+#define PIPELINE_PARAM_INDEX(BufferType, MemberName) static_cast<UINT>(offsetof(BufferType, MemberName) / 4)
 
 
 namespace sorcery::graphics {
