@@ -843,7 +843,7 @@ auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const sub
                                 graphics::CommandList const& cmd) -> void {
   UINT constexpr max_dispatch_thread_group_count{65535};
 
-  for (auto meshlet_offset{submesh_meshlet_offset}; meshlet_offset < submesh_meshlet_count;
+  for (auto meshlet_offset{submesh_meshlet_offset}; meshlet_offset < submesh_meshlet_offset + submesh_meshlet_count;
        meshlet_offset += max_dispatch_thread_group_count) {
     auto const meshlet_count{
       std::min(submesh_meshlet_count - meshlet_offset, max_dispatch_thread_group_count)
