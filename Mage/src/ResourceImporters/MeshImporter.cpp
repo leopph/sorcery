@@ -369,22 +369,57 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Store geometry data and combine indices
 
-  std::vector<SubmeshFaceRange> submesh_face_ranges;
-  submesh_face_ranges.reserve(meshes.size());
+  /*std::vector<SubmeshFaceRange> submesh_face_ranges;
+  submesh_face_ranges.reserve(meshes.size());*/
 
   // Combined index buffer of all meshes
   // Indices have base vertex baked in
-  std::vector<unsigned> combined_indices;
+  //std::vector<unsigned> combined_indices;
 
-  for (auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] : meshes) {
+  std::vector<SubmeshMeshletRange> submesh_meshlet_ranges;
+
   for (auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] : fused_meshes) {
     // This works because we only support triangle meshes
-    submesh_face_ranges.emplace_back(combined_indices.size() / 3, indices.size() / 3);
+    /*submesh_face_ranges.emplace_back(combined_indices.size() / 3, indices.size() / 3);
 
     combined_indices.reserve(combined_indices.size() + indices.size());
     std::ranges::transform(indices, std::back_inserter(combined_indices), [&mesh_data](unsigned const idx) {
       return static_cast<unsigned>(idx + mesh_data.positions.size());
-    });
+    });*/
+
+    std::vector<MeshletData> meshlets;
+    std::vector<std::uint8_t> unique_vertex_indices;
+    std::vector<MeshletTriangleData> primitive_indices;
+
+    if (!ComputeMeshlets(indices, positions, meshlets, unique_vertex_indices, primitive_indices)) {
+      throw std::runtime_error{"Failed to compute meshlets."};
+    }
+
+    submesh_meshlet_ranges.emplace_back(mesh_data.meshlets.size(), meshlets.size());
+
+    mesh_data.meshlets.reserve(mesh_data.meshlets.size() + meshlets.size());
+    std::ranges::transform(meshlets, std::back_inserter(mesh_data.meshlets),
+      [&mesh_data](MeshletData const& meshlet) {
+        // Offset index ranges by existing index counts
+        return MeshletData{
+          .vert_count = meshlet.vert_count,
+          .vert_offset = meshlet.vert_offset + static_cast<std::uint32_t>(mesh_data.vertex_indices.size() / 4),
+          .prim_count = meshlet.prim_count,
+          .prim_offset = meshlet.prim_offset + static_cast<std::uint32_t>(mesh_data.triangle_indices.size()),
+        };
+      });
+
+    // Offset vertex indices by existing vertex count
+    for (std::size_t i{0}; i < unique_vertex_indices.size(); i += 4) {
+      auto idx32{*std::bit_cast<std::uint32_t*>(&unique_vertex_indices[i])};
+      idx32 += static_cast<std::uint32_t>(mesh_data.positions.size());
+
+      for (auto j{0}; j < 4; j++) {
+        mesh_data.vertex_indices.push_back(std::bit_cast<std::uint8_t*>(&idx32)[j]);
+      }
+    }
+
+    std::ranges::copy(primitive_indices, std::back_inserter(mesh_data.triangle_indices));
 
     mesh_data.positions.reserve(mesh_data.positions.size() + positions.size());
     std::ranges::copy(positions, std::back_inserter(mesh_data.positions));
@@ -407,12 +442,10 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Create and store meshlets
 
-  std::vector<SubmeshMeshletRange> submesh_meshlet_ranges;
-
-  if (!ComputeMeshlets(combined_indices, mesh_data.positions, submesh_face_ranges, mesh_data.meshlets,
+  /*if (!ComputeMeshlets(combined_indices, mesh_data.positions, submesh_face_ranges, mesh_data.meshlets,
     mesh_data.vertex_indices, mesh_data.triangle_indices, submesh_meshlet_ranges)) {
     throw std::runtime_error{"Failed to compute meshlets."};
-  }
+  }*/
 
   mesh_data.submeshes.reserve(std::size(submesh_meshlet_ranges));
   std::ranges::transform(submesh_meshlet_ranges, std::back_inserter(mesh_data.submeshes),
