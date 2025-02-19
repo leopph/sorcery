@@ -80,16 +80,13 @@ struct MeshletTriangleData {
 
 
 // A submesh is a part of a mesh that can be rendered with a single material.
-// It is composed of its own vertex data, a list of meshlets, and related indices.
 struct SubmeshData {
   std::uint32_t first_meshlet;
   std::uint32_t meshlet_count;
-  std::uint32_t material_idx;
 };
 
 
-// A mesh is a list of submeshes, material slots, animations, and a skeleton
-// Each submesh refers to a material slot and a set of bones.
+// A mesh is a list of submeshes, material slots, animations, and a skeleton.
 // Bones refer to the skeleton hierarchy, and animations operate on the nodes of the hierarchy.
 struct MeshData {
   std::vector<Vector3> positions;

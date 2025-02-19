@@ -1183,8 +1183,12 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
       packet.submesh_data.reserve(packet.submesh_data.size() + mesh->GetSubmeshes().size());
 
-      for (auto const& submesh : mesh->GetSubmeshes()) {
-        auto const mtl{comp->GetMaterials()[submesh.GetMaterialIndex()]};
+      auto const submeshes{mesh->GetSubmeshes()};
+      auto const& materials{comp->GetMaterials()};
+
+      for (std::size_t i{0}; i < submeshes.size() && i < materials.size(); i++) {
+        auto const& submesh{submeshes[i]};
+        auto const& mtl{materials[i]};
 
         if (!mtl) {
           continue;

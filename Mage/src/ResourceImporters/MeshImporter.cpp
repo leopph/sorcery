@@ -452,14 +452,9 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     [](SubmeshMeshletRange const& meshlet_range) {
       return SubmeshData{
         .first_meshlet = static_cast<std::uint32_t>(meshlet_range.first_meshlet),
-        .meshlet_count = static_cast<std::uint32_t>(meshlet_range.meshlet_count),
-        .material_idx = 0
+        .meshlet_count = static_cast<std::uint32_t>(meshlet_range.meshlet_count)
       };
     });
-
-  for (std::size_t i{0}; i < std::size(mesh_data.submeshes) && i < std::size(meshes); i++) {
-    mesh_data.submeshes[i].material_idx = meshes[i].mtl_idx;
-  }
 
   // Collect animations
 
@@ -609,7 +604,6 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   for (auto const& submesh : mesh_data.submeshes) {
     SerializeToBinary(submesh.first_meshlet, bytes);
     SerializeToBinary(submesh.meshlet_count, bytes);
-    SerializeToBinary(submesh.material_idx, bytes);
   }
 
   // Animations

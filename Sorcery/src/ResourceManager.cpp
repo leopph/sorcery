@@ -316,12 +316,6 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
     }
 
     cur_bytes = cur_bytes.subspan(sizeof(std::uint32_t));
-
-    if (!DeserializeFromBinary(cur_bytes, mesh_data.submeshes[i].material_idx)) {
-      return nullptr;
-    }
-
-    cur_bytes = cur_bytes.subspan(sizeof(std::uint32_t));
   }
 
   // Animations
@@ -592,7 +586,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     }
 
     cube_data.material_slots.emplace_back("Material");
-    cube_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(cube_data.meshlets.size()), 0);
+    cube_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(cube_data.meshlets.size()));
 
     cube_mesh_ = Create<Mesh>(cube_data);
     cube_mesh_->SetGuid(cube_mesh_guid_);
@@ -614,7 +608,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     }
 
     plane_data.material_slots.emplace_back("Material");
-    plane_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(plane_data.meshlets.size()), 0);
+    plane_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(plane_data.meshlets.size()));
 
     plane_mesh_ = Create<Mesh>(plane_data);
     plane_mesh_->SetGuid(plane_mesh_guid_);
@@ -637,7 +631,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     }
 
     sphere_data.material_slots.emplace_back("Material");
-    sphere_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(sphere_data.meshlets.size()), 0);
+    sphere_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(sphere_data.meshlets.size()));
 
     sphere_mesh_ = Create<Mesh>(sphere_data);
     sphere_mesh_->SetGuid(sphere_mesh_guid_);

@@ -23,12 +23,10 @@ public:
 
   [[nodiscard]] auto GetFirstMeshlet() const -> std::uint32_t;
   [[nodiscard]] auto GetMeshletCount() const -> std::uint32_t;
-  [[nodiscard]] auto GetMaterialIndex() const -> std::uint32_t;
 
 private:
   std::uint32_t first_meshlet_;
   std::uint32_t meshlet_count_;
-  std::uint32_t material_idx_;
 };
 
 
