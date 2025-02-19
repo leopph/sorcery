@@ -1,6 +1,7 @@
 #include "MeshImporter.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <format>
 #include <iterator>
@@ -323,6 +324,49 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
       };
     });
 
+  // Fuse meshes that share materials
+
+  std::map<std::uint32_t, std::vector<MeshProcessingData const*>> meshes_per_mtl_idx;
+
+  for (auto const& mesh : meshes) {
+    meshes_per_mtl_idx[mesh.mtl_idx].push_back(&mesh);
+  }
+
+  std::vector<MeshProcessingData> fused_meshes;
+  fused_meshes.reserve(meshes_per_mtl_idx.size());
+
+  for (auto const& [mtl_idx, mtl_meshes] : meshes_per_mtl_idx) {
+    auto& fused_mesh{fused_meshes.emplace_back()};
+
+    fused_mesh.mtl_idx = mtl_idx;
+
+    for (auto const& mesh : mtl_meshes) {
+      // Bake 'baseVertex' into indices
+      fused_mesh.indices.reserve(fused_mesh.indices.size() + mesh->indices.size());
+      std::ranges::transform(mesh->indices, std::back_inserter(fused_mesh.indices), [&fused_mesh](unsigned const idx) {
+        return static_cast<unsigned>(idx + fused_mesh.positions.size());
+      });
+
+      fused_mesh.positions.reserve(fused_mesh.positions.size() + mesh->positions.size());
+      std::ranges::copy(mesh->positions, std::back_inserter(fused_mesh.positions));
+
+      fused_mesh.normals.reserve(fused_mesh.normals.size() + mesh->normals.size());
+      std::ranges::copy(mesh->normals, std::back_inserter(fused_mesh.normals));
+
+      fused_mesh.tangents.reserve(fused_mesh.tangents.size() + mesh->tangents.size());
+      std::ranges::copy(mesh->tangents, std::back_inserter(fused_mesh.tangents));
+
+      fused_mesh.uvs.reserve(fused_mesh.uvs.size() + mesh->uvs.size());
+      std::ranges::copy(mesh->uvs, std::back_inserter(fused_mesh.uvs));
+
+      fused_mesh.bone_weights.reserve(fused_mesh.bone_weights.size() + mesh->bone_weights.size());
+      std::ranges::copy(mesh->bone_weights, std::back_inserter(fused_mesh.bone_weights));
+
+      fused_mesh.bone_indices.reserve(fused_mesh.bone_indices.size() + mesh->bone_indices.size());
+      std::ranges::copy(mesh->bone_indices, std::back_inserter(fused_mesh.bone_indices));
+    }
+  }
+
   // Store geometry data and combine indices
 
   std::vector<SubmeshFaceRange> submesh_face_ranges;
@@ -333,6 +377,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   std::vector<unsigned> combined_indices;
 
   for (auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] : meshes) {
+  for (auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] : fused_meshes) {
     // This works because we only support triangle meshes
     submesh_face_ranges.emplace_back(combined_indices.size() / 3, indices.size() / 3);
 
