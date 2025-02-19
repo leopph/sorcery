@@ -24,65 +24,12 @@ using BOOL = int;
 #define row_major
 #else
 typedef bool BOOL;
-#define MAKE_RES_SLOT(slot) t##slot
-#define MAKE_SAMPLER_SLOT(slot) s##slot
-#define MAKE_UAV_SLOT(slot) u##slot
-
-#define TEXTURE2D(name, type, slot) Texture2D<type> name : register(MAKE_RES_SLOT(slot))
-#define TEXTURE2DMS(name, type, slot) Texture2DMS<type> name : register(MAKE_RES_SLOT(slot))
-#define TEXTURE2DARRAY(name, type, slot) Texture2DArray<type> name : register(MAKE_RES_SLOT(slot))
-#define TEXTURECUBE(name, type, slot) TextureCube<type> name : register(MAKE_RES_SLOT(slot))
-#define SAMPLERCOMPARISONSTATE(name, slot) SamplerComparisonState name : register(MAKE_SAMPLER_SLOT(slot))
-#define SAMPLERSTATE(name, slot) SamplerState name : register(MAKE_SAMPLER_SLOT(slot))
-#define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(MAKE_RES_SLOT(slot))
-#define RWTEXTURE2D(name, type, slot) RWTexture2D<type> name : register(MAKE_UAV_SLOT(slot))
 #endif
 
 #define INVALID_RES_IDX ((uint)-1)
 
 #define MESHLET_MAX_VERTS 128
 #define MESHLET_MAX_PRIMS 256
-
-#define RES_SLOT_ALBEDO_MAP 0
-#define RES_SLOT_METALLIC_MAP 1
-#define RES_SLOT_ROUGHNESS_MAP 2
-#define RES_SLOT_AO_MAP 3
-#define RES_SLOT_NORMAL_MAP 4
-#define RES_SLOT_OPACITY_MASK 5
-#define RES_SLOT_PUNCTUAL_SHADOW_ATLAS 6
-#define RES_SLOT_DIR_SHADOW_ATLAS 7
-#define RES_SLOT_DIR_SHADOW_MAP_ARRAY 7
-#define RES_SLOT_LIGHTS 8
-#define RES_SLOT_SSAO_TEX 9
-#define RES_SLOT_POST_PROCESS_SRC 0
-#define RES_SLOT_SKYBOX_CUBEMAP 0
-#define RES_SLOT_LINE_GIZMO_VERTEX 1
-#define RES_SLOT_GIZMO_COLOR 0
-#define RES_SLOT_SSAO_DEPTH 6
-#define RES_SLOT_SSAO_NORMAL 7
-#define RES_SLOT_SSAO_NOISE 8
-#define RES_SLOT_SSAO_SAMPLES 9
-#define RES_SLOT_SSAO_BLUR_INPUT 6
-#define RES_SLOT_DEPTH_RESOLVE_INPUT 0
-
-#define UAV_SLOT_DEPTH_RESOLVE_OUTPUT 0
-
-#define SAMPLER_SLOT_CMP_PCF 0
-#define SAMPLER_SLOT_CMP_POINT 1
-#define SAMPLER_SLOT_AF16_CLAMP 2
-#define SAMPLER_SLOT_AF8_CLAMP 3
-#define SAMPLER_SLOT_AF4_CLAMP 4
-#define SAMPLER_SLOT_AF2_CLAMP 4
-#define SAMPLER_SLOT_TRI_CLAMP 5
-#define SAMPLER_SLOT_BI_CLAMP 6
-#define SAMPLER_SLOT_POINT_CLAMP 7
-#define SAMPLER_SLOT_AF16_WRAP 8
-#define SAMPLER_SLOT_AF8_WRAP 9
-#define SAMPLER_SLOT_AF4_WRAP 10
-#define SAMPLER_SLOT_AF2_WRAP 10
-#define SAMPLER_SLOT_TRI_WRAP 11
-#define SAMPLER_SLOT_BI_WRAP 12
-#define SAMPLER_SLOT_POINT_WRAP 13
 
 #define MAX_CASCADE_COUNT (uint) 4
 #define MAX_PER_LIGHT_SHADOW_MAP_COUNT 6
