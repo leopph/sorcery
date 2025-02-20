@@ -317,6 +317,12 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 
     cur_bytes = cur_bytes.subspan(sizeof(std::uint32_t));
 
+    if (!DeserializeFromBinary(cur_bytes, mesh_data.submeshes[i].material_idx)) {
+      return nullptr;
+    }
+
+    cur_bytes = cur_bytes.subspan(sizeof(std::uint32_t));
+
     for (auto j{0}; j < 3; j++) {
       if (!DeserializeFromBinary(cur_bytes, mesh_data.submeshes[i].bounds.min[j])) {
         return nullptr;
@@ -620,7 +626,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     }
 
     cube_data.material_slots.emplace_back("Material");
-    cube_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(cube_data.meshlets.size()),
+    cube_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(cube_data.meshlets.size()), 0,
       AABB::FromVertices(kCubePositions));
     cube_data.bounds = cube_data.submeshes[0].bounds;
 
@@ -644,7 +650,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     }
 
     plane_data.material_slots.emplace_back("Material");
-    plane_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(plane_data.meshlets.size()),
+    plane_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(plane_data.meshlets.size()), 0,
       AABB::FromVertices(kQuadPositions));
     plane_data.bounds = plane_data.submeshes[0].bounds;
 
@@ -669,7 +675,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     }
 
     sphere_data.material_slots.emplace_back("Material");
-    sphere_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(sphere_data.meshlets.size()),
+    sphere_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(sphere_data.meshlets.size()), 0,
       AABB::FromVertices(sphere_data.positions));
     sphere_data.bounds = sphere_data.submeshes[0].bounds;
 

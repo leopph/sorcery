@@ -22,6 +22,7 @@ namespace sorcery {
 Submesh::Submesh(SubmeshData const& data) :
   first_meshlet_{data.first_meshlet},
   meshlet_count_{data.meshlet_count},
+  material_idx_{data.material_idx},
   bounds_{data.bounds} {}
 
 
@@ -32,6 +33,11 @@ auto Submesh::GetFirstMeshlet() const -> std::uint32_t {
 
 auto Submesh::GetMeshletCount() const -> std::uint32_t {
   return meshlet_count_;
+}
+
+
+auto Submesh::GetMaterialIndex() const -> std::uint32_t {
+  return material_idx_;
 }
 
 

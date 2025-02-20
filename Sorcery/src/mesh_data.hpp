@@ -84,6 +84,7 @@ struct MeshletTriangleData {
 struct SubmeshData {
   std::uint32_t first_meshlet;
   std::uint32_t meshlet_count;
+  std::uint32_t material_idx;
   AABB bounds;
 };
 
