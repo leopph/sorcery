@@ -86,7 +86,7 @@ void MeshShaderCore(
         vertex_index = vertex_indices[meshlet.vertex_offset + read_index] + base_vertex;
       }
 
-      uint const instance_index = start_instance + instance_id;
+      uint const instance_index = dispatch_instance_offset + start_instance + instance_id;
 
       out_vertices[vertex_id] = VertexProcessor::CalculateVertex(vertex_index, instance_index);
     }
