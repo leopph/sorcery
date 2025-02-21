@@ -35,10 +35,10 @@ void MeshShaderCore(
   uint const meshlet_buf_idx,
   uint const vertex_idx_buf_idx,
   uint const prim_idx_buf_idx,
-  uint const draw_meshlet_offset,
-  uint const draw_meshlet_count,
-  uint const draw_instance_offset,
-  uint const draw_instance_count,
+  uint const dispatch_meshlet_offset,
+  uint const dispatch_meshlet_count,
+  uint const dispatch_instance_offset,
+  uint const dispatch_instance_count,
   uint const base_vertex,
   bool const idx32,
   out PsIn out_vertices[MESHLET_MAX_VERTS],
@@ -46,22 +46,22 @@ void MeshShaderCore(
   out PerTriData out_primitives[MESHLET_MAX_PRIMS],
 #endif
   out uint3 out_indices[MESHLET_MAX_PRIMS]) {
-  uint const meshlet_idx = gid / draw_instance_count;
+  uint const meshlet_idx = gid / dispatch_instance_count;
   StructuredBuffer<Meshlet> const meshlets = ResourceDescriptorHeap[meshlet_buf_idx];
-  Meshlet const meshlet = meshlets[meshlet_idx + draw_meshlet_offset];
+  Meshlet const meshlet = meshlets[meshlet_idx + dispatch_meshlet_offset];
 
-  uint start_instance = gid % draw_instance_count;
+  uint start_instance = gid % dispatch_instance_count;
   uint instance_count = 1;
 
-  if (meshlet_idx == draw_meshlet_count - 1) {
+  if (meshlet_idx == dispatch_meshlet_count - 1) {
     uint const instances_per_group = min(MESHLET_MAX_VERTS / meshlet.vertex_count,
       MESHLET_MAX_PRIMS / meshlet.primitive_count);
 
-    uint const unpacked_group_count = (draw_meshlet_count - 1) * draw_instance_count;
+    uint const unpacked_group_count = (dispatch_meshlet_count - 1) * dispatch_instance_count;
     uint const packed_index = gid - unpacked_group_count;
 
     start_instance = packed_index * instances_per_group;
-    instance_count = min(draw_instance_count - start_instance, instances_per_group);
+    instance_count = min(dispatch_instance_count - start_instance, instances_per_group);
   }
 
   uint const vert_count = meshlet.vertex_count * instance_count;
