@@ -17,10 +17,10 @@ struct Meshlet {
 };
 
 
-#define THREAD_GROUP_SIZE MESHLET_MAX_VERTS
-#define VERTEX_LOOP_COUNT (MESHLET_MAX_VERTS + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE
-#define PRIMITIVE_LOOP_COUNT (MESHLET_MAX_PRIMS + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE
-#define VERTEX_PRIMITIVE_LOOP_STRIDE THREAD_GROUP_SIZE
+#define MS_THREAD_GROUP_SIZE MESHLET_MAX_VERTS
+#define MS_VERTEX_LOOP_COUNT (MESHLET_MAX_VERTS + MS_THREAD_GROUP_SIZE - 1) / MS_THREAD_GROUP_SIZE
+#define MS_PRIMITIVE_LOOP_COUNT (MESHLET_MAX_PRIMS + MS_THREAD_GROUP_SIZE - 1) / MS_THREAD_GROUP_SIZE
+#define MS_VERTEX_PRIMITIVE_LOOP_STRIDE MS_THREAD_GROUP_SIZE
 
 
 template<typename VertexProcessor,
@@ -69,8 +69,8 @@ void MeshShaderCore(
 
   SetMeshOutputCounts(vert_count, prim_count);
 
-  for (uint i = 0; i < VERTEX_LOOP_COUNT; i++) {
-    uint const vertex_id = gtid + i * THREAD_GROUP_SIZE;
+  for (uint i = 0; i < MS_VERTEX_LOOP_COUNT; i++) {
+    uint const vertex_id = gtid + i * MS_VERTEX_PRIMITIVE_LOOP_STRIDE;
 
     if (vertex_id < vert_count) {
       uint const read_index = vertex_id % meshlet.vertex_count;
@@ -92,8 +92,8 @@ void MeshShaderCore(
     }
   }
 
-  for (uint i = 0; i < PRIMITIVE_LOOP_COUNT; i++) {
-    uint const primitive_id = gtid + i * VERTEX_PRIMITIVE_LOOP_STRIDE;
+  for (uint i = 0; i < MS_PRIMITIVE_LOOP_COUNT; i++) {
+    uint const primitive_id = gtid + i * MS_VERTEX_PRIMITIVE_LOOP_STRIDE;
 
     if (primitive_id < prim_count) {
       uint const read_index = primitive_id % meshlet.primitive_count;
@@ -114,7 +114,7 @@ void MeshShaderCore(
 
 #ifdef MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES
 #define DECLARE_MESH_SHADER_MAIN(MainFuncName) [outputtopology("triangle")]\
-[numthreads(THREAD_GROUP_SIZE, 1, 1)]\
+[numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]\
 void MainFuncName(\
   const uint gid : SV_GroupID, \
   const uint gtid : SV_GroupThreadID, \
@@ -122,7 +122,7 @@ void MainFuncName(\
   out indices uint3 out_indices[MESHLET_MAX_PRIMS])
 #else
 #define DECLARE_MESH_SHADER_MAIN(MainFuncName, PrimitiveDataType) [outputtopology("triangle")]\
-[numthreads(THREAD_GROUP_SIZE, 1, 1)]\
+[numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]\
 void MainFuncName(\
   const uint gid : SV_GroupID,\
   const uint gtid : SV_GroupThreadID,\
