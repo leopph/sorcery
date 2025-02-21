@@ -18,8 +18,9 @@ struct Meshlet {
 
 
 #define THREAD_GROUP_SIZE MESHLET_MAX_VERTS
+#define VERTEX_LOOP_COUNT (MESHLET_MAX_VERTS + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE
 #define PRIMITIVE_LOOP_COUNT (MESHLET_MAX_PRIMS + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE
-#define PRIMITIVE_LOOP_STRIDE THREAD_GROUP_SIZE
+#define VERTEX_PRIMITIVE_LOOP_STRIDE THREAD_GROUP_SIZE
 
 
 template<typename VertexProcessor,
@@ -68,27 +69,31 @@ void MeshShaderCore(
 
   SetMeshOutputCounts(vert_count, prim_count);
 
-  if (gtid < vert_count) {
-    uint const read_index = gtid % meshlet.vertex_count;
-    uint const instance_id = gtid / meshlet.vertex_count;
+  for (uint i = 0; i < VERTEX_LOOP_COUNT; i++) {
+    uint const vertex_id = gtid + i * THREAD_GROUP_SIZE;
 
-    uint vertex_index;
+    if (vertex_id < vert_count) {
+      uint const read_index = vertex_id % meshlet.vertex_count;
+      uint const instance_id = vertex_id / meshlet.vertex_count;
 
-    if (idx32) {
-      StructuredBuffer<uint> const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];
-      vertex_index = vertex_indices[meshlet.vertex_offset + read_index] + base_vertex;
-    } else {
-      StructuredBuffer<uint16_t> const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];
-      vertex_index = vertex_indices[meshlet.vertex_offset + read_index] + base_vertex;
+      uint vertex_index;
+
+      if (idx32) {
+        StructuredBuffer<uint> const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];
+        vertex_index = vertex_indices[meshlet.vertex_offset + read_index] + base_vertex;
+      } else {
+        StructuredBuffer<uint16_t> const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];
+        vertex_index = vertex_indices[meshlet.vertex_offset + read_index] + base_vertex;
+      }
+
+      uint const instance_index = start_instance + instance_id;
+
+      out_vertices[vertex_id] = VertexProcessor::CalculateVertex(vertex_index, instance_index);
     }
-
-    uint const instance_index = start_instance + instance_id;
-
-    out_vertices[gtid] = VertexProcessor::CalculateVertex(vertex_index, instance_index);
   }
 
   for (uint i = 0; i < PRIMITIVE_LOOP_COUNT; i++) {
-    uint const primitive_id = gtid + i * PRIMITIVE_LOOP_STRIDE;
+    uint const primitive_id = gtid + i * VERTEX_PRIMITIVE_LOOP_STRIDE;
 
     if (primitive_id < prim_count) {
       uint const read_index = primitive_id % meshlet.primitive_count;
@@ -96,8 +101,8 @@ void MeshShaderCore(
 
       StructuredBuffer<uint> const primitive_indices = ResourceDescriptorHeap[prim_idx_buf_idx];
 
-      out_indices[primitive_id] = UnpackTriangleIndices(primitive_indices[meshlet.primitive_offset + read_index]) + (
-                                    meshlet.vertex_count * instance_id);
+      out_indices[primitive_id] = UnpackTriangleIndices(primitive_indices[meshlet.primitive_offset + read_index])
+                                  + (meshlet.vertex_count * instance_id);
 
 #if !defined(MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES)
       out_primitives[primitive_id] = PrimitiveProcessor::CalculatePrimitive(primitive_id);
