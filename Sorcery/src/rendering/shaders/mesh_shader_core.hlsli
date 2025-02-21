@@ -33,6 +33,8 @@ void MeshShaderCore(
   uint const draw_meshlet_count,
   uint const draw_instance_offset,
   uint const draw_instance_count,
+  uint const base_vertex,
+  bool const idx32,
   out PsIn out_vertices[MESHLET_MAX_VERTS],
 #if !defined(MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES)
   out PerTriData out_primitives[MESHLET_MAX_PRIMS],
@@ -65,8 +67,16 @@ void MeshShaderCore(
     uint const read_index = gtid % meshlet.vertex_count;
     uint const instance_id = gtid / meshlet.vertex_count;
 
-    StructuredBuffer<uint> const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];
-    uint const vertex_index = vertex_indices[meshlet.vertex_offset + read_index];
+    uint vertex_index;
+
+    if (idx32) {
+      StructuredBuffer<uint> const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];
+      vertex_index = vertex_indices[meshlet.vertex_offset + read_index] + base_vertex;
+    } else {
+      StructuredBuffer<uint16_t> const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];
+      vertex_index = vertex_indices[meshlet.vertex_offset + read_index] + base_vertex;
+    }
+
     uint const instance_index = start_instance + instance_id;
 
     out_vertices[gtid] = VertexProcessor::CalculateVertex(vertex_index, instance_index);

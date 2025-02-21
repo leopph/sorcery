@@ -163,6 +163,7 @@ private:
     unsigned prim_idx_buf_local_idx;
     AABB bounds;
     unsigned vtx_count;
+    bool idx32;
   };
 
 
@@ -170,6 +171,7 @@ private:
     unsigned mesh_local_idx;
     UINT first_meshlet;
     UINT meshlet_count;
+    UINT base_vertex;
     UINT mtl_buf_local_idx;
     AABB bounds;
   };
@@ -346,10 +348,12 @@ private:
 
   static auto DrawSubmesh(SubmeshData const& submesh, std::optional<UINT> meshlet_count_param_idx,
                           std::optional<UINT> meshlet_offset_param_idx, std::optional<UINT> instance_count_param_idx,
-                          std::optional<UINT> instance_offset_param_idx, graphics::CommandList const& cmd) -> void;
+                          std::optional<UINT> instance_offset_param_idx, std::optional<UINT> base_vertex_param_idx,
+                          graphics::CommandList const& cmd) -> void;
   static auto DrawSubmesh(UINT submesh_meshlet_count, UINT submesh_meshlet_offset,
-                          std::optional<UINT> meshlet_count_param_idx, std::optional<UINT> meshlet_offset_param_idx,
-                          std::optional<UINT> instance_count_param_idx, std::optional<UINT> instance_offset_param_idx,
+                          UINT submesh_base_vertex, std::optional<UINT> meshlet_count_param_idx,
+                          std::optional<UINT> meshlet_offset_param_idx, std::optional<UINT> instance_count_param_idx,
+                          std::optional<UINT> instance_offset_param_idx, std::optional<UINT> base_vertex_param_idx,
                           graphics::CommandList const& cmd) -> void;
 
   static DXGI_FORMAT constexpr imprecise_color_buffer_format_{DXGI_FORMAT_R11G11B10_FLOAT};

@@ -22,6 +22,7 @@ namespace sorcery {
 Submesh::Submesh(SubmeshData const& data) :
   first_meshlet_{data.first_meshlet},
   meshlet_count_{data.meshlet_count},
+  base_vertex_{data.base_vertex},
   material_idx_{data.material_idx},
   bounds_{data.bounds} {}
 
@@ -33,6 +34,11 @@ auto Submesh::GetFirstMeshlet() const -> std::uint32_t {
 
 auto Submesh::GetMeshletCount() const -> std::uint32_t {
   return meshlet_count_;
+}
+
+
+auto Submesh::GetBaseVertex() const -> std::uint32_t {
+  return base_vertex_;
 }
 
 
@@ -132,7 +138,8 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
   App::Instance().GetRenderManager().UpdateBuffer(*meshlet_buf_, 0, as_bytes(std::span{data.meshlets}));
 
   vertex_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    .size = static_cast<UINT>(data.vertex_indices.size()), .stride = sizeof(UINT),
+    .size = static_cast<UINT>(data.vertex_indices.size()),
+    .stride = static_cast<UINT>(data.idx32 ? sizeof(UINT) : sizeof(USHORT)),
     .constant_buffer = false, .shader_resource = true, .unordered_access = false
   }, D3D12_HEAP_TYPE_DEFAULT);
   App::Instance().GetRenderManager().UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{data.vertex_indices}));
@@ -164,6 +171,7 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
   bounds_ = data.bounds;
   vertex_count_ = data.positions.size();
   primitive_count_ = data.triangle_indices.size();
+  idx32_ = data.idx32;
 }
 
 
@@ -249,6 +257,11 @@ auto Mesh::GetVertexCount() const noexcept -> std::size_t {
 
 auto Mesh::GetPrimitiveCount() const noexcept -> std::size_t {
   return primitive_count_;
+}
+
+
+auto Mesh::Has32BitVertexIndices() const noexcept -> bool {
+  return idx32_;
 }
 
 

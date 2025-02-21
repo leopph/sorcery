@@ -55,7 +55,7 @@ class PrimitiveProcessor {
 DECLARE_MESH_SHADER_MAIN(MsMain, PrimitiveAttributes) {
   MeshShaderCore<VertexProcessor, PrimitiveProcessor>(gid, gtid, g_params.meshlet_buf_idx, g_params.vertex_idx_buf_idx,
     g_params.prim_idx_buf_idx, g_params.meshlet_offset, g_params.meshlet_count, g_params.instance_offset,
-    g_params.instance_count, out_vertices, out_primitives, out_indices);
+    g_params.instance_count, g_params.base_vertex, g_params.idx32, out_vertices, out_primitives, out_indices);
 }
 
 

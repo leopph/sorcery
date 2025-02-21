@@ -23,12 +23,14 @@ public:
 
   [[nodiscard]] auto GetFirstMeshlet() const -> std::uint32_t;
   [[nodiscard]] auto GetMeshletCount() const -> std::uint32_t;
+  [[nodiscard]] auto GetBaseVertex() const -> std::uint32_t;
   [[nodiscard]] auto GetMaterialIndex() const -> std::uint32_t;
   [[nodiscard]] auto GetBounds() const -> AABB const&;
 
 private:
   std::uint32_t first_meshlet_;
   std::uint32_t meshlet_count_;
+  std::uint32_t base_vertex_;
   std::uint32_t material_idx_;
   AABB bounds_;
 };
@@ -62,6 +64,7 @@ class Mesh final : public Resource {
   AABB bounds_;
   std::size_t vertex_count_{0};
   std::size_t primitive_count_{0};
+  bool idx32_{false};
 
 public:
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
@@ -100,6 +103,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
   [[nodiscard]] LEOPPHAPI auto GetVertexCount() const noexcept -> std::size_t;
   [[nodiscard]] LEOPPHAPI auto GetPrimitiveCount() const noexcept -> std::size_t;
+  [[nodiscard]] LEOPPHAPI auto Has32BitVertexIndices() const noexcept -> bool;
 };
 
 

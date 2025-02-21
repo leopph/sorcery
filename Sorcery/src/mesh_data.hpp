@@ -84,6 +84,7 @@ struct MeshletTriangleData {
 struct SubmeshData {
   std::uint32_t first_meshlet;
   std::uint32_t meshlet_count;
+  std::uint32_t base_vertex;
   std::uint32_t material_idx;
   AABB bounds;
 };
@@ -107,6 +108,7 @@ struct MeshData {
   std::vector<SkeletonNode> skeleton;
   std::vector<Bone> bones;
   AABB bounds;
+  bool idx32;
 };
 
 

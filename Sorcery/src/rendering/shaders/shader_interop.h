@@ -133,6 +133,9 @@ struct DepthNormalDrawParams {
   uint instance_count;
   uint instance_offset;
 
+  uint base_vertex;
+  uint mtl_idx;
+
   uint pos_buf_idx;
   uint norm_buf_idx;
   uint tan_buf_idx;
@@ -142,7 +145,7 @@ struct DepthNormalDrawParams {
   uint prim_idx_buf_idx;
   uint meshlet_buf_idx;
 
-  uint mtl_idx;
+  BOOL idx32;
 
   uint samp_idx;
 
@@ -158,6 +161,9 @@ struct DepthOnlyDrawParams {
   uint instance_count;
   uint instance_offset;
 
+  uint base_vertex;
+  uint mtl_idx;
+
   uint pos_buf_idx;
   uint uv_buf_idx;
 
@@ -165,7 +171,7 @@ struct DepthOnlyDrawParams {
   uint prim_idx_buf_idx;
   uint meshlet_buf_idx;
 
-  uint mtl_idx;
+  BOOL idx32;
 
   uint samp_idx;
 
@@ -195,6 +201,9 @@ struct ObjectDrawParams {
   uint instance_count;
   uint instance_offset;
 
+  uint base_vertex;
+  uint mtl_idx;
+
   uint pos_buf_idx;
   uint norm_buf_idx;
   uint tan_buf_idx;
@@ -204,7 +213,7 @@ struct ObjectDrawParams {
   uint prim_idx_buf_idx;
   uint meshlet_buf_idx;
 
-  uint mtl_idx;
+  BOOL idx32;
 
   uint mtl_samp_idx;
   uint point_clamp_samp_idx;
