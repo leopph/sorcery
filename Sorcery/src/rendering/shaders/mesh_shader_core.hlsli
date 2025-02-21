@@ -17,6 +17,11 @@ struct Meshlet {
 };
 
 
+#define THREAD_GROUP_SIZE MESHLET_MAX_VERTS
+#define PRIMITIVE_LOOP_COUNT (MESHLET_MAX_PRIMS + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE
+#define PRIMITIVE_LOOP_STRIDE THREAD_GROUP_SIZE
+
+
 template<typename VertexProcessor,
 #if !defined(MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES)
          typename PrimitiveProcessor,
@@ -82,8 +87,8 @@ void MeshShaderCore(
     out_vertices[gtid] = VertexProcessor::CalculateVertex(vertex_index, instance_index);
   }
 
-  for (uint i = 0; i < 2; i++) {
-    uint const primitive_id = gtid + i * 128;
+  for (uint i = 0; i < PRIMITIVE_LOOP_COUNT; i++) {
+    uint const primitive_id = gtid + i * PRIMITIVE_LOOP_STRIDE;
 
     if (primitive_id < prim_count) {
       uint const read_index = primitive_id % meshlet.primitive_count;
@@ -104,7 +109,7 @@ void MeshShaderCore(
 
 #ifdef MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES
 #define DECLARE_MESH_SHADER_MAIN(MainFuncName) [outputtopology("triangle")]\
-[numthreads(MESHLET_MAX_VERTS, 1, 1)]\
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]\
 void MainFuncName(\
   const uint gid : SV_GroupID, \
   const uint gtid : SV_GroupThreadID, \
@@ -112,7 +117,7 @@ void MainFuncName(\
   out indices uint3 out_indices[MESHLET_MAX_PRIMS])
 #else
 #define DECLARE_MESH_SHADER_MAIN(MainFuncName, PrimitiveDataType) [outputtopology("triangle")]\
-[numthreads(MESHLET_MAX_VERTS, 1, 1)]\
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]\
 void MainFuncName(\
   const uint gid : SV_GroupID,\
   const uint gtid : SV_GroupThreadID,\
