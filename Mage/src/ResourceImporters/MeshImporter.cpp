@@ -17,6 +17,7 @@
 #include <assimp/scene.h>
 
 #include "Serialization.hpp"
+#include "../EditorApp.hpp"
 #include "../FileIo.hpp"
 #include "../Resources/Mesh.hpp"
 
@@ -373,7 +374,62 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     meshes = std::move(fused_meshes);
   }
 
-  // Store geometry data and combine indices
+  // Determine index format
+
+  mesh_data.idx32 = std::ranges::any_of(meshes, [](MeshProcessingData const& mesh) {
+    return std::ranges::any_of(mesh.indices, [](unsigned const idx) {
+      return idx > std::numeric_limits<std::uint16_t>::max();
+    });
+  });
+
+  // Meshletize submeshes
+
+  struct MeshletizedMesh {
+    std::vector<MeshletData> meshlets;
+    std::vector<std::uint8_t> unique_vertex_indices;
+    std::vector<MeshletTriangleData> primitive_indices;
+  };
+
+  std::vector<std::optional<MeshletizedMesh>> meshletized_meshes(meshes.size());
+  std::vector<ObserverPtr<Job>> meshletize_jobs;
+  meshletize_jobs.reserve(meshes.size());
+
+  for (std::size_t i{0}; i < meshes.size(); i++) {
+    meshletize_jobs.emplace_back(App::Instance().GetJobSystem().CreateJob(
+      [i, &meshes, &meshletized_meshes, idx32 = mesh_data.idx32] {
+        auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtl_idx]{meshes[i]};
+        auto [meshlets, unique_vertex_indices, primitive_indices]{MeshletizedMesh{}};
+
+        bool success;
+
+        if (idx32) {
+          success = SUCCEEDED(ComputeMeshlets(indices, positions, meshlets, unique_vertex_indices, primitive_indices));
+        } else {
+          std::vector<std::uint16_t> indices16(indices.size());
+          std::ranges::transform(indices, indices16.begin(), [](unsigned const idx) {
+            return static_cast<std::uint16_t>(idx);
+          });
+
+          success = SUCCEEDED(
+            ComputeMeshlets(indices16, positions, meshlets, unique_vertex_indices, primitive_indices));
+        }
+
+        if (success) {
+          meshletized_meshes[i] = MeshletizedMesh{
+            std::move(meshlets), std::move(unique_vertex_indices),
+            std::move(primitive_indices)
+          };
+        }
+      }));
+
+    App::Instance().GetJobSystem().Run(meshletize_jobs.back());
+  }
+
+  for (auto const job : meshletize_jobs) {
+    App::Instance().GetJobSystem().Wait(job);
+  }
+
+  // Combine geometry
 
   std::vector<SubmeshMeshletRange> submesh_meshlet_ranges;
   submesh_meshlet_ranges.reserve(meshes.size());
@@ -384,31 +440,13 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   std::vector<std::uint32_t> submesh_base_vertices;
   submesh_base_vertices.reserve(meshes.size());
 
-  mesh_data.idx32 = std::ranges::any_of(meshes, [](MeshProcessingData const& mesh) {
-    return std::ranges::any_of(mesh.indices, [](unsigned const idx) {
-      return idx > std::numeric_limits<std::uint16_t>::max();
-    });
-  });
-
-  for (auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx] : meshes) {
-    std::vector<MeshletData> meshlets;
-    std::vector<std::uint8_t> unique_vertex_indices;
-    std::vector<MeshletTriangleData> primitive_indices;
-
-    if (mesh_data.idx32) {
-      if (!ComputeMeshlets(indices, positions, meshlets, unique_vertex_indices, primitive_indices)) {
-        throw std::runtime_error{"Failed to compute meshlets."};
-      }
-    } else {
-      std::vector<std::uint16_t> indices16(indices.size());
-      std::ranges::transform(indices, indices16.begin(), [](unsigned const idx) {
-        return static_cast<std::uint16_t>(idx);
-      });
-
-      if (!ComputeMeshlets(indices16, positions, meshlets, unique_vertex_indices, primitive_indices)) {
-        throw std::runtime_error{"Failed to compute meshlets."};
-      }
+  for (std::size_t i{0}; i < meshes.size(); i++) {
+    if (!meshletized_meshes[i]) {
+      throw std::runtime_error{"Failed to compute meshlets."};
     }
+
+    auto& [meshlets, unique_vertex_indices, primitive_indices]{*meshletized_meshes[i]};
+    auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx]{meshes[i]};
 
     submesh_base_vertices.emplace_back(static_cast<std::uint32_t>(mesh_data.positions.size()));
 
@@ -453,7 +491,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     std::ranges::copy(primitive_indices, std::back_inserter(mesh_data.triangle_indices));
   }
 
-  // Create and store meshlets
+  // Create and store submeshes
 
   mesh_data.submeshes.reserve(meshes.size());
   for (std::size_t i{0}; i < meshes.size(); i++) {
