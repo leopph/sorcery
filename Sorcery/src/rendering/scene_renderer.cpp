@@ -82,7 +82,7 @@ auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(CameraData const& cam
 
   boundaries[0].nearClip = cam_near;
 
-  for (auto i = 0; i < shadow_params.cascade_count - 1; i++) {
+  for (auto i = 0u; i < shadow_params.cascade_count - 1; i++) {
     boundaries[i + 1].nearClip = cam_near + shadow_params.normalized_cascade_splits[i] * shadowed_frustum_depth;
     boundaries[i].farClip = boundaries[i + 1].nearClip * 1.005f;
   }
@@ -1842,7 +1842,7 @@ auto SceneRenderer::Render() -> void {
         light.type == LightComponent::Type::Directional && light.casts_shadow) {
         light_buffer_data[i].isCastingShadow = TRUE;
 
-        for (auto cascade_idx{0}; cascade_idx < frame_packet.shadow_params.cascade_count; cascade_idx++) {
+        for (auto cascade_idx{0u}; cascade_idx < frame_packet.shadow_params.cascade_count; cascade_idx++) {
           light_buffer_data[i].sampleShadowMap[cascade_idx] = TRUE;
           light_buffer_data[i].shadowViewProjMatrices[cascade_idx] = shadow_view_proj_matrices[cascade_idx];
         }
@@ -2049,7 +2049,7 @@ auto SceneRenderer::SetShadowCascadeCount(unsigned cascade_count) noexcept -> vo
   shadow_params_.cascade_count = std::clamp(cascade_count, 1u, MAX_CASCADE_COUNT);
   unsigned const splitCount{shadow_params_.cascade_count - 1};
 
-  for (auto i = 1; i < splitCount; i++) {
+  for (auto i = 1u; i < splitCount; i++) {
     shadow_params_.normalized_cascade_splits[i] = std::max(shadow_params_.normalized_cascade_splits[i - 1],
       shadow_params_.normalized_cascade_splits[i]);
   }
@@ -2066,12 +2066,14 @@ auto SceneRenderer::GetNormalizedShadowCascadeSplits() const noexcept -> std::sp
 auto SceneRenderer::SetNormalizedShadowCascadeSplit(int const idx, float const split) noexcept -> void {
   auto const splitCount{shadow_params_.cascade_count - 1};
 
-  if (idx < 0 || idx >= splitCount) {
+  if (idx < 0 || static_cast<unsigned>(idx) >= splitCount) {
     return;
   }
 
   float const clampMin{idx == 0 ? 0.0f : shadow_params_.normalized_cascade_splits[idx - 1]};
-  float const clampMax{idx == splitCount - 1 ? 1.0f : shadow_params_.normalized_cascade_splits[idx + 1]};
+  float const clampMax{
+    static_cast<unsigned>(idx) == splitCount - 1 ? 1.0f : shadow_params_.normalized_cascade_splits[idx + 1]
+  };
 
   shadow_params_.normalized_cascade_splits[idx] = std::clamp(split, clampMin, clampMax);
 }
