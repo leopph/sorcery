@@ -251,6 +251,10 @@ GraphicsDevice::GraphicsDevice(bool const enable_debug) {
     throw std::runtime_error{"Mesh Shader Tier 1 is required but not supported."};
   }
 
+  if (!features.GPUUploadHeapSupported()) {
+    throw std::runtime_error{"GPU upload heap is required but not supported."};
+  }
+
   D3D12MA::ALLOCATOR_DESC const allocator_desc{D3D12MA::ALLOCATOR_FLAG_NONE, device_.Get(), 0, nullptr, adapter.Get()};
   ThrowIfFailed(CreateAllocator(&allocator_desc, &allocator_), "Failed to create D3D12 memory allocator.");
 
@@ -302,12 +306,12 @@ GraphicsDevice::GraphicsDevice(bool const enable_debug) {
 
 
 auto GraphicsDevice::CreateBuffer(BufferDesc const& desc,
-                                  D3D12_HEAP_TYPE const heap_type) -> SharedDeviceChildHandle<Buffer> {
+                                  CpuAccess const cpu_access) -> SharedDeviceChildHandle<Buffer> {
   ComPtr<D3D12MA::Allocation> allocation;
   ComPtr<ID3D12Resource2> resource;
 
   D3D12MA::ALLOCATION_DESC const alloc_desc{
-    D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_NONE, nullptr, nullptr
+    D3D12MA::ALLOCATION_FLAG_NONE, MakeHeapType(cpu_access), D3D12_HEAP_FLAG_NONE, nullptr, nullptr
   };
 
   auto const res_desc{AsD3d12Desc(desc)};
@@ -330,7 +334,8 @@ auto GraphicsDevice::CreateBuffer(BufferDesc const& desc,
 }
 
 
-auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE const heap_type,
+auto GraphicsDevice::CreateTexture(TextureDesc const& desc,
+                                   CpuAccess const cpu_access,
                                    D3D12_CLEAR_VALUE const* clear_value) -> SharedDeviceChildHandle<Texture> {
   ComPtr<D3D12MA::Allocation> allocation;
   ComPtr<ID3D12Resource2> resource;
@@ -351,7 +356,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE cons
   }
 
   D3D12MA::ALLOCATION_DESC const alloc_desc{
-    D3D12MA::ALLOCATION_FLAG_NONE, heap_type, D3D12_HEAP_FLAG_NONE, nullptr, nullptr
+    D3D12MA::ALLOCATION_FLAG_NONE, MakeHeapType(cpu_access), D3D12_HEAP_FLAG_NONE, nullptr, nullptr
   };
 
   constexpr auto initial_layout{D3D12_BARRIER_LAYOUT_UNDEFINED};
@@ -507,7 +512,7 @@ auto GraphicsDevice::CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamp
 
 auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const buffer_descs,
                                              std::span<AliasedTextureCreateInfo const> const texture_infos,
-                                             D3D12_HEAP_TYPE heap_type,
+                                             CpuAccess cpu_access,
                                              std::pmr::vector<SharedDeviceChildHandle<Buffer>>* buffers,
                                              std::pmr::vector<SharedDeviceChildHandle<Texture>>* textures) -> void {
   D3D12_RESOURCE_ALLOCATION_INFO buf_alloc_info{0, 0};
@@ -529,6 +534,8 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
     tex_alloc_info.Alignment = std::max(tex_alloc_info.Alignment, alloc_info.Alignment);
     tex_alloc_info.SizeInBytes = std::max(tex_alloc_info.SizeInBytes, alloc_info.SizeInBytes);
   }
+
+  auto const heap_type{MakeHeapType(cpu_access)};
 
   ComPtr<D3D12MA::Allocation> buf_alloc;
   ComPtr<D3D12MA::Allocation> rt_ds_alloc;
@@ -1107,6 +1114,20 @@ auto GraphicsDevice::AcquirePendingBarrierCmdList() -> CommandList& {
   }
 
   return *execute_barrier_cmd_lists_.emplace_back(CreateCommandList(), next_fence_val).cmd_list;
+}
+
+
+auto GraphicsDevice::MakeHeapType(CpuAccess const cpu_access) -> D3D12_HEAP_TYPE {
+  switch (cpu_access) {
+    case CpuAccess::kNone:
+      return D3D12_HEAP_TYPE_DEFAULT;
+    case CpuAccess::kRead:
+      return D3D12_HEAP_TYPE_READBACK;
+    case CpuAccess::kWrite:
+      return D3D12_HEAP_TYPE_GPU_UPLOAD;
+  }
+
+  throw std::runtime_error{"Failed to make D3D12 heap type: unknown CPU access type."};
 }
 
 

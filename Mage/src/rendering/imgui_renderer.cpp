@@ -70,7 +70,7 @@ auto ImGuiRenderer::UpdateFonts() -> void {
   fonts_tex_ = device_->CreateTexture(graphics::TextureDesc{
     graphics::TextureDimension::k2D, static_cast<UINT>(fonts_tex_width), static_cast<UINT>(fonts_tex_height), 1, 1,
     DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
-  }, D3D12_HEAP_TYPE_DEFAULT, nullptr);
+  }, graphics::CpuAccess::kNone, nullptr);
 
 
   render_manager_->UpdateTexture(*fonts_tex_, 0, std::array{
@@ -139,7 +139,7 @@ auto ImGuiRenderer::Render() -> void {
     !vb || vb->GetDesc().size < vtx_data_byte_size) {
     vb = device_->CreateBuffer(graphics::BufferDesc{
       vtx_data_byte_size, static_cast<UINT>(sizeof(ImDrawVert)), false, true, false
-    }, D3D12_HEAP_TYPE_UPLOAD);
+    }, graphics::CpuAccess::kWrite);
     vb_ptr = vb->Map();
   }
 
@@ -149,7 +149,7 @@ auto ImGuiRenderer::Render() -> void {
   if (auto const idx_data_byte_size{draw_data->TotalIdxCount * sizeof(ImDrawIdx)};
     !ib || ib->GetDesc().size < idx_data_byte_size) {
     ib = device_->CreateBuffer(graphics::BufferDesc{idx_data_byte_size, 0, false, false, false},
-      D3D12_HEAP_TYPE_UPLOAD);
+      graphics::CpuAccess::kWrite);
     ib_ptr = ib->Map();
   }
 

@@ -11,9 +11,8 @@ ShadowAtlas::ShadowAtlas(graphics::GraphicsDevice* const device, DXGI_FORMAT con
     device->CreateTexture(
       graphics::TextureDesc{
         graphics::TextureDimension::k2D, size, size, 1, 1, depth_format, 1, true, false, true, false
-      }, D3D12_HEAP_TYPE_DEFAULT, std::array{
-        D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {0.0f, 0}}
-      }.data())
+      }, graphics::CpuAccess::kNone,
+      std::array{D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {0.0f, 0}}}.data())
   },
   size_{size} {
   if (!IsPowerOfTwo(size_)) {
@@ -59,10 +58,10 @@ auto ShadowAtlas::GetSize() const noexcept -> UINT {
 
 
 auto ShadowAtlas::SetLookUpInfo(std::span<ShaderLight> lights) const -> void {
-  for (int i = 0; i < GetElementCount(); i++) {
+  for (auto i = 0; i < GetElementCount(); i++) {
     auto const& cell{GetCell(i)};
 
-    for (int j = 0; j < cell.GetElementCount(); j++) {
+    for (auto j = 0; j < cell.GetElementCount(); j++) {
       if (auto const& subcell{cell.GetSubcell(j)}) {
         lights[subcell->visibleLightIdxIdx].isCastingShadow = TRUE;
         lights[subcell->visibleLightIdxIdx].sampleShadowMap[subcell->shadowMapIdx] = TRUE;

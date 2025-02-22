@@ -28,7 +28,7 @@ auto RenderTarget::New(graphics::GraphicsDevice& device, Desc const& desc) -> st
     color_tex = device.CreateTexture(graphics::TextureDesc{
       desc.dimension, desc.width, desc.height, desc.depth_or_array_size, 1, *desc.color_format, desc.sample_count,
       false, true, true, desc.enable_unordered_access
-    }, D3D12_HEAP_TYPE_DEFAULT, &clear_value);
+    }, graphics::CpuAccess::kNone, &clear_value);
 
     color_tex->SetDebugName(desc.debug_name + L" - Color Texture");
   }
@@ -39,7 +39,7 @@ auto RenderTarget::New(graphics::GraphicsDevice& device, Desc const& desc) -> st
     depth_stencil_tex = device.CreateTexture(graphics::TextureDesc{
       desc.dimension, desc.width, desc.height, desc.depth_or_array_size, 1, *desc.depth_stencil_format,
       desc.sample_count, true, false, true, desc.enable_unordered_access
-    }, D3D12_HEAP_TYPE_DEFAULT, &clear_value);
+    }, graphics::CpuAccess::kNone, &clear_value);
 
     depth_stencil_tex->SetDebugName(desc.debug_name + L" - Depth-Stencil Texture");
   }

@@ -177,7 +177,7 @@ auto RenderManager::CreateReadOnlyTexture(
     desc.depth_or_array_size = static_cast<UINT16>(meta.depth);
   }
 
-  auto tex{device_->CreateTexture(desc, D3D12_HEAP_TYPE_DEFAULT, nullptr)};
+  auto tex{device_->CreateTexture(desc, graphics::CpuAccess::kNone, nullptr)};
 
   std::vector<D3D12_SUBRESOURCE_DATA> subresource_data;
   subresource_data.reserve(img.GetImageCount());
@@ -262,7 +262,7 @@ auto RenderManager::ReleaseUnusedBuffers() -> void {
 
 
 auto RenderManager::RecreateUploadBuffer(UINT64 const size) -> void {
-  upload_buf_ = device_->CreateBuffer(graphics::BufferDesc{size, 0, false, false, false}, D3D12_HEAP_TYPE_UPLOAD);
+  upload_buf_ = device_->CreateBuffer(graphics::BufferDesc{size, 0, false, false, false}, graphics::CpuAccess::kWrite);
   upload_buf_->SetDebugName(L"Render Manager Upload Buffer");
   upload_ptr_ = static_cast<std::byte*>(upload_buf_->Map());
 }

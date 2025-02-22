@@ -65,20 +65,20 @@ auto SkinnedMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
     for (UINT i{0}; i < rendering::RenderManager::GetMaxFramesInFlight(); i++) {
       skinned_vertex_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
         graphics::BufferDesc{mesh->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
-        D3D12_HEAP_TYPE_DEFAULT);
+        graphics::CpuAccess::kNone);
 
       skinned_normal_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
         graphics::BufferDesc{mesh->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
-        D3D12_HEAP_TYPE_DEFAULT);
+        graphics::CpuAccess::kNone);
 
       skinned_tangent_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
         graphics::BufferDesc{mesh->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
-        D3D12_HEAP_TYPE_DEFAULT);
+        graphics::CpuAccess::kNone);
 
       if (auto const bones{mesh->GetBones()}; !bones.empty()) {
         bone_matrix_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
           graphics::BufferDesc{mesh->GetBones().size() * sizeof(Matrix4), sizeof(Matrix4), false, false, true},
-          D3D12_HEAP_TYPE_DEFAULT);
+          graphics::CpuAccess::kNone);
       }
     }
 

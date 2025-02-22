@@ -33,7 +33,7 @@ auto ConstantBuffer<T>::New(graphics::GraphicsDevice& device,
   auto buf{
     device.CreateBuffer(graphics::BufferDesc{
       static_cast<UINT>(RoundToNextMultiple(sizeof(T), 256)), 0, true, false, false
-    }, cpu_accessible ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT)
+    }, cpu_accessible ? graphics::CpuAccess::kWrite : graphics::CpuAccess::kNone)
   };
 
   if (!buf) {

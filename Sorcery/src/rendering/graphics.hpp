@@ -54,6 +54,13 @@ class DeviceChildDeleter;
 }
 
 
+enum class CpuAccess : std::uint8_t {
+  kNone  = 0,
+  kRead  = 1,
+  kWrite = 2
+};
+
+
 template<details::DeviceChild T>
 using UniqueDeviceChildHandle = std::unique_ptr<T, details::DeviceChildDeleter<T>>;
 template<details::DeviceChild T>
@@ -284,8 +291,9 @@ public:
   auto operator=(GraphicsDevice&&) -> void = delete;
 
   [[nodiscard]] LEOPPHAPI auto CreateBuffer(BufferDesc const& desc,
-                                            D3D12_HEAP_TYPE heap_type) -> SharedDeviceChildHandle<Buffer>;
-  [[nodiscard]] LEOPPHAPI auto CreateTexture(TextureDesc const& desc, D3D12_HEAP_TYPE heap_type,
+                                            CpuAccess cpu_access) -> SharedDeviceChildHandle<Buffer>;
+  [[nodiscard]] LEOPPHAPI auto CreateTexture(TextureDesc const& desc,
+                                             CpuAccess cpu_access,
                                              D3D12_CLEAR_VALUE const* clear_value) -> SharedDeviceChildHandle<Texture>;
   [[nodiscard]] LEOPPHAPI auto CreatePipelineState(PipelineDesc const& desc,
                                                    std::uint8_t num_32_bit_params) -> SharedDeviceChildHandle<
@@ -297,7 +305,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamplerHandle;
   LEOPPHAPI auto CreateAliasingResources(std::span<BufferDesc const> buffer_descs,
                                          std::span<AliasedTextureCreateInfo const> texture_infos,
-                                         D3D12_HEAP_TYPE heap_type,
+                                         CpuAccess cpu_access,
                                          std::pmr::vector<SharedDeviceChildHandle<Buffer>>* buffers,
                                          std::pmr::vector<SharedDeviceChildHandle<Texture>>* textures) -> void;
 
@@ -330,6 +338,8 @@ private:
                           UINT& uav) const -> void;
 
   [[nodiscard]] auto AcquirePendingBarrierCmdList() -> CommandList&;
+
+  [[nodiscard]] static auto MakeHeapType(CpuAccess cpu_access) -> D3D12_HEAP_TYPE;
 
   static UINT const rtv_heap_size_;
   static UINT const dsv_heap_size_;

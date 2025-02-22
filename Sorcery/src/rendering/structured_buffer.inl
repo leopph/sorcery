@@ -69,7 +69,7 @@ auto StructuredBuffer<T>::RecreateBuffer() -> void {
 
   buffer_ = device_->CreateBuffer(graphics::BufferDesc{
     static_cast<UINT>(capacity_ * sizeof(T)), sizeof(T), false, true, false
-  }, cpu_accessible_ ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT);
+  }, cpu_accessible_ ? graphics::CpuAccess::kWrite : graphics::CpuAccess::kNone);
 
   mapped_ptr_ = static_cast<T*>(cpu_accessible_ ? buffer_->Map() : nullptr);
 }
