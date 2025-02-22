@@ -4,6 +4,7 @@
 #include "Timing.hpp"
 
 #include <chrono>
+#include <numeric>
 
 
 namespace sorcery::mage {
@@ -27,6 +28,9 @@ auto DrawPerformanceCounterWindow() -> void {
 
     ImGui::Text("%d FPS", static_cast<int>(1.0f / frameTimeSeconds.count()));
     ImGui::Text("%.2f ms", static_cast<double>(frameTimeMillis.count()));
+
+    /*ImGui::Text("Average %.2f ms",
+      std::reduce(std::begin(dataPoints), std::end(dataPoints), 0.0f) / static_cast<double>(dataPoints.size()));*/
 
     if (ImPlot::BeginPlot("###frameTimeChart", ImGui::GetContentRegionAvail(),
       ImPlotFlags_NoInputs | ImPlotFlags_NoFrame)) {
