@@ -70,11 +70,12 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
   // GPU buffers
 
   auto const to_vec4{
-    [](std::span<Vector3 const> const vectors, float const component4, std::vector<Vector4>& out) {
-      out.clear();
-      out.reserve(vectors.size());
+    [](std::span<Vector3 const> const vectors, float const component4, Vector4* out) {
+      if (!out) {
+        return;
+      }
 
-      std::ranges::transform(vectors, std::back_inserter(out), [component4](Vector3 const vec3) {
+      std::ranges::transform(vectors, out, [component4](Vector3 const vec3) {
         return Vector4{vec3, component4};
       });
     }
@@ -85,29 +86,26 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
   pos_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.positions.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
     .constant_buffer = false, .shader_resource = true, .unordered_access = true
-  }, graphics::CpuAccess::kNone);
-  to_vec4(data.positions, 1, vec4_buf);
-  App::Instance().GetRenderManager().UpdateBuffer(*pos_buf_, 0, as_bytes(std::span{vec4_buf}));
+  }, graphics::CpuAccess::kWrite);
+  to_vec4(data.positions, 1, static_cast<Vector4*>(pos_buf_->Map()));
 
   norm_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.normals.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
     .constant_buffer = false, .shader_resource = true, .unordered_access = true
-  }, graphics::CpuAccess::kNone);
-  to_vec4(data.normals, 0, vec4_buf);
-  App::Instance().GetRenderManager().UpdateBuffer(*norm_buf_, 0, as_bytes(std::span{vec4_buf}));
+  }, graphics::CpuAccess::kWrite);
+  to_vec4(data.normals, 0, static_cast<Vector4*>(norm_buf_->Map()));
 
   tan_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.tangents.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
     .constant_buffer = false, .shader_resource = true, .unordered_access = true
-  }, graphics::CpuAccess::kNone);
-  to_vec4(data.tangents, 0, vec4_buf);
-  App::Instance().GetRenderManager().UpdateBuffer(*tan_buf_, 0, as_bytes(std::span{vec4_buf}));
+  }, graphics::CpuAccess::kWrite);
+  to_vec4(data.tangents, 0, static_cast<Vector4*>(tan_buf_->Map()));
 
   uv_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.uvs.size() * sizeof(Vector2)), .stride = sizeof(Vector2),
     .constant_buffer = false, .shader_resource = true, .unordered_access = false
-  }, graphics::CpuAccess::kNone);
-  App::Instance().GetRenderManager().UpdateBuffer(*uv_buf_, 0, as_bytes(std::span{data.uvs}));
+  }, graphics::CpuAccess::kWrite);
+  std::ranges::copy(data.uvs, static_cast<Vector2*>(uv_buf_->Map()));
 
   bone_weight_buf_ = data.bone_weights.empty()
                        ? nullptr
@@ -115,9 +113,9 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
                          .size = static_cast<UINT>(data.bone_weights.size() * sizeof(Vector4)),
                          .stride = sizeof(Vector4),
                          .constant_buffer = false, .shader_resource = false, .unordered_access = true
-                       }, graphics::CpuAccess::kNone);
+                       }, graphics::CpuAccess::kWrite);
   if (bone_weight_buf_) {
-    App::Instance().GetRenderManager().UpdateBuffer(*bone_weight_buf_, 0, as_bytes(std::span{data.bone_weights}));
+    std::ranges::copy(data.bone_weights, static_cast<Vector4*>(bone_weight_buf_->Map()));
   }
 
   bone_idx_buf_ = data.bone_indices.empty()
@@ -126,30 +124,30 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
                       .size = static_cast<UINT>(data.bone_indices.size() * sizeof(Vector<std::uint32_t, 4>)),
                       .stride = sizeof(Vector<std::uint32_t, 4>), .constant_buffer = false, .shader_resource = false,
                       .unordered_access = true
-                    }, graphics::CpuAccess::kNone);
+                    }, graphics::CpuAccess::kWrite);
   if (bone_idx_buf_) {
-    App::Instance().GetRenderManager().UpdateBuffer(*bone_idx_buf_, 0, as_bytes(std::span{data.bone_indices}));
+    std::ranges::copy(data.bone_indices, static_cast<Vector<std::uint32_t, 4>*>(bone_idx_buf_->Map()));
   }
 
   meshlet_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.meshlets.size() * sizeof(MeshletData)), .stride = sizeof(MeshletData),
     .constant_buffer = false, .shader_resource = true, .unordered_access = false
-  }, graphics::CpuAccess::kNone);
-  App::Instance().GetRenderManager().UpdateBuffer(*meshlet_buf_, 0, as_bytes(std::span{data.meshlets}));
+  }, graphics::CpuAccess::kWrite);
+  std::ranges::copy(data.meshlets, static_cast<MeshletData*>(meshlet_buf_->Map()));
 
   vertex_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.vertex_indices.size()),
     .stride = static_cast<UINT>(data.idx32 ? sizeof(UINT) : sizeof(USHORT)),
     .constant_buffer = false, .shader_resource = true, .unordered_access = false
-  }, graphics::CpuAccess::kNone);
-  App::Instance().GetRenderManager().UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{data.vertex_indices}));
+  }, graphics::CpuAccess::kWrite);
+  std::ranges::copy(data.vertex_indices, static_cast<std::uint8_t*>(vertex_idx_buf_->Map()));
 
   prim_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
     .size = static_cast<UINT>(data.triangle_indices.size() * sizeof(MeshletTriangleData)),
     .stride = sizeof(MeshletTriangleData), .constant_buffer = false, .shader_resource = true,
     .unordered_access = false
-  }, graphics::CpuAccess::kNone);
-  App::Instance().GetRenderManager().UpdateBuffer(*prim_idx_buf_, 0, as_bytes(std::span{data.triangle_indices}));
+  }, graphics::CpuAccess::kWrite);
+  std::ranges::copy(data.triangle_indices, static_cast<MeshletTriangleData*>(prim_idx_buf_->Map()));
 
   // CPU lists
 

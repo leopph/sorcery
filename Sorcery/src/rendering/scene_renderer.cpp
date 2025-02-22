@@ -1521,15 +1521,19 @@ auto SceneRenderer::Render() -> void {
     // Update bone matrices
 
     auto const bone_buf{frame_packet.buffers[bone_matrix_buf_local_idx]};
+    auto const bone_buf_ptr{static_cast<Matrix4*>(bone_buf->Map())};
+
     for (unsigned i{0}; i < bone_count; i++) {
       // TODO this is horrible, update all bones at once
       auto const bone_mtx{
         frame_packet.bone_data[bone_begin_local_idx + i].offset_mtx * frame_packet.skeleton_node_data[
           skeleton_begin_local_idx + frame_packet.bone_data[bone_begin_local_idx + i].skeleton_node_idx].transform
       };
-      render_manager_->UpdateBuffer(*bone_buf, static_cast<UINT>(i * sizeof(Matrix4)),
-        as_bytes(std::span{&bone_mtx, 1}));
+
+      bone_buf_ptr[i] = bone_mtx;
     }
+
+    bone_buf->Unmap();
 
     auto const& mesh_data{frame_packet.mesh_data[mesh_data_local_idx]};
 
