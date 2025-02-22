@@ -121,4 +121,18 @@ template<std::unsigned_integral T>
 [[nodiscard]] constexpr auto DivRoundUp(T const lhs, T const rhs) -> T {
   return (lhs + rhs - 1) / rhs;
 }
+
+
+template<std::unsigned_integral T>
+[[nodiscard]] constexpr auto AlignsTo(T const value, T const alignment) -> bool {
+  if (value == alignment) {
+    return true;
+  }
+
+  if (value < alignment) {
+    return alignment % value == 0;
+  }
+
+  return value % alignment == 0;
+}
 }
