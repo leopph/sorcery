@@ -57,8 +57,9 @@ auto Mesh::OnDrawProperties(bool& changed) -> void {
   Resource::OnDrawProperties(changed);
 
   ImGui::Text("%s: %d", "Vertex Count", vertex_count_);
-  ImGui::Text("%s: %d", "Submesh Count", submeshes_.size());
+  ImGui::Text("%s: %d", "Triangle Count", primitive_count_);
   ImGui::Text("%s: %d", "Meshlet Count", meshlets_.size());
+  ImGui::Text("%s: %d", "Submesh Count", submeshes_.size());
 }
 
 
