@@ -14,6 +14,7 @@
 #include "../Math.hpp"
 #include "../mesh_data.hpp"
 #include "../rendering/graphics.hpp"
+#include "../rendering/structured_buffer.hpp"
 
 
 namespace sorcery {
@@ -40,18 +41,18 @@ class Mesh final : public Resource {
   RTTR_ENABLE(Resource)
   // Geometry
 
-  graphics::SharedDeviceChildHandle<graphics::Buffer> pos_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> norm_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> tan_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> uv_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> bone_weight_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> bone_idx_buf_;
+  rendering::StructuredBuffer<Vector4> pos_buf_;
+  rendering::StructuredBuffer<Vector4> norm_buf_;
+  rendering::StructuredBuffer<Vector4> tan_buf_;
+  rendering::StructuredBuffer<Vector2> uv_buf_;
+  rendering::StructuredBuffer<Vector4> bone_weight_buf_;
+  rendering::StructuredBuffer<Vector<std::uint32_t, 4>> bone_idx_buf_;
 
   // Indexing
 
-  graphics::SharedDeviceChildHandle<graphics::Buffer> meshlet_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> vertex_idx_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> prim_idx_buf_;
+  rendering::StructuredBuffer<MeshletData> meshlet_buf_;
+  std::variant<rendering::StructuredBuffer<std::uint16_t>, rendering::StructuredBuffer<std::uint32_t>> vertex_idx_buf_;
+  rendering::StructuredBuffer<MeshletTriangleData> prim_idx_buf_;
 
   // CPU info
 

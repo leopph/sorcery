@@ -8,6 +8,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <iterator>
 #include <utility>
@@ -70,84 +71,61 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
   // GPU buffers
 
   auto const to_vec4{
-    [](std::span<Vector3 const> const vectors, float const component4, Vector4* out) {
-      if (!out) {
-        return;
-      }
+    [](std::span<Vector3 const> const vectors, float const component4,
+       std::vector<Vector4>& out) -> std::vector<Vector4>& {
+      out.reserve(vectors.size());
+      out.clear();
 
-      std::ranges::transform(vectors, out, [component4](Vector3 const vec3) {
+      std::ranges::transform(vectors, std::back_inserter(out), [component4](Vector3 const vec3) {
         return Vector4{vec3, component4};
       });
+
+      return out;
+    }
+  };
+
+  auto const to_index_format{
+    []<typename Format>(std::span<std::uint8_t const> const indices) {
+      return std::span{std::bit_cast<Format const*>(indices.data()), indices.size() / sizeof(Format)};
+    }
+  };
+
+  auto const to_u32{
+    [to_index_format](std::span<std::uint8_t const> const indices) {
+      return to_index_format.operator()<std::uint32_t>(indices);
+    }
+  };
+
+  auto const to_u16{
+    [to_index_format](std::span<std::uint8_t const> const indices) {
+      return to_index_format.operator()<std::uint16_t>(indices);
     }
   };
 
   std::vector<Vector4> vec4_buf;
 
-  pos_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    .size = static_cast<UINT>(data.positions.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
-    .constant_buffer = false, .shader_resource = true, .unordered_access = true
-  }, graphics::CpuAccess::kWrite);
-  to_vec4(data.positions, 1, static_cast<Vector4*>(pos_buf_->Map()));
+  auto& gd{App::Instance().GetGraphicsDevice()};
+  auto& rm{App::Instance().GetRenderManager()};
 
-  norm_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    .size = static_cast<UINT>(data.normals.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
-    .constant_buffer = false, .shader_resource = true, .unordered_access = true
-  }, graphics::CpuAccess::kWrite);
-  to_vec4(data.normals, 0, static_cast<Vector4*>(norm_buf_->Map()));
+  using rendering::StructuredBuffer;
 
-  tan_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    .size = static_cast<UINT>(data.tangents.size() * sizeof(Vector4)), .stride = sizeof(Vector4),
-    .constant_buffer = false, .shader_resource = true, .unordered_access = true
-  }, graphics::CpuAccess::kWrite);
-  to_vec4(data.tangents, 0, static_cast<Vector4*>(tan_buf_->Map()));
-
-  uv_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    .size = static_cast<UINT>(data.uvs.size() * sizeof(Vector2)), .stride = sizeof(Vector2),
-    .constant_buffer = false, .shader_resource = true, .unordered_access = false
-  }, graphics::CpuAccess::kWrite);
-  std::ranges::copy(data.uvs, static_cast<Vector2*>(uv_buf_->Map()));
-
+  pos_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.positions, 1, vec4_buf), true, true);
+  norm_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.normals, 0, vec4_buf), true, true);
+  tan_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.tangents, 0, vec4_buf), true, true);
+  uv_buf_ = StructuredBuffer<Vector2>::New(gd, rm, data.uvs, true, false);
   bone_weight_buf_ = data.bone_weights.empty()
-                       ? nullptr
-                       : App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-                         .size = static_cast<UINT>(data.bone_weights.size() * sizeof(Vector4)),
-                         .stride = sizeof(Vector4),
-                         .constant_buffer = false, .shader_resource = false, .unordered_access = true
-                       }, graphics::CpuAccess::kWrite);
-  if (bone_weight_buf_) {
-    std::ranges::copy(data.bone_weights, static_cast<Vector4*>(bone_weight_buf_->Map()));
-  }
-
+                       ? StructuredBuffer<Vector4>{}
+                       : StructuredBuffer<Vector4>::New(gd, rm, data.bone_weights, false, true);
   bone_idx_buf_ = data.bone_indices.empty()
-                    ? nullptr
-                    : App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-                      .size = static_cast<UINT>(data.bone_indices.size() * sizeof(Vector<std::uint32_t, 4>)),
-                      .stride = sizeof(Vector<std::uint32_t, 4>), .constant_buffer = false, .shader_resource = false,
-                      .unordered_access = true
-                    }, graphics::CpuAccess::kWrite);
-  if (bone_idx_buf_) {
-    std::ranges::copy(data.bone_indices, static_cast<Vector<std::uint32_t, 4>*>(bone_idx_buf_->Map()));
+                    ? StructuredBuffer<Vector<std::uint32_t, 4>>{}
+                    : StructuredBuffer<Vector<std::uint32_t, 4>>::New(gd, rm, data.bone_indices, false, true);
+  meshlet_buf_ = StructuredBuffer<MeshletData>::New(gd, rm, data.meshlets);
+  if (data.idx32) {
+    vertex_idx_buf_ = StructuredBuffer<std::uint32_t>::New(gd, rm, to_u32(data.vertex_indices), true, false);
+  } else {
+    vertex_idx_buf_ = StructuredBuffer<std::uint16_t>::New(gd, rm, to_u16(data.vertex_indices), true, false);
   }
-
-  meshlet_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    .size = static_cast<UINT>(data.meshlets.size() * sizeof(MeshletData)), .stride = sizeof(MeshletData),
-    .constant_buffer = false, .shader_resource = true, .unordered_access = false
-  }, graphics::CpuAccess::kWrite);
-  std::ranges::copy(data.meshlets, static_cast<MeshletData*>(meshlet_buf_->Map()));
-
-  vertex_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    .size = static_cast<UINT>(data.vertex_indices.size()),
-    .stride = static_cast<UINT>(data.idx32 ? sizeof(UINT) : sizeof(USHORT)),
-    .constant_buffer = false, .shader_resource = true, .unordered_access = false
-  }, graphics::CpuAccess::kWrite);
-  std::ranges::copy(data.vertex_indices, static_cast<std::uint8_t*>(vertex_idx_buf_->Map()));
-
-  prim_idx_buf_ = App::Instance().GetGraphicsDevice().CreateBuffer(graphics::BufferDesc{
-    .size = static_cast<UINT>(data.triangle_indices.size() * sizeof(MeshletTriangleData)),
-    .stride = sizeof(MeshletTriangleData), .constant_buffer = false, .shader_resource = true,
-    .unordered_access = false
-  }, graphics::CpuAccess::kWrite);
-  std::ranges::copy(data.triangle_indices, static_cast<MeshletTriangleData*>(prim_idx_buf_->Map()));
+  prim_idx_buf_ = StructuredBuffer<MeshletTriangleData>::New(gd, rm, data.triangle_indices, true, false);
 
   // CPU lists
 
@@ -174,47 +152,49 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
 
 
 auto Mesh::GetPositionBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return pos_buf_;
+  return pos_buf_.GetBuffer();
 }
 
 
 auto Mesh::GetNormalBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return norm_buf_;
+  return norm_buf_.GetBuffer();
 }
 
 
 auto Mesh::GetTangentBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return tan_buf_;
+  return tan_buf_.GetBuffer();
 }
 
 
 auto Mesh::GetUvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return uv_buf_;
+  return uv_buf_.GetBuffer();
 }
 
 
 auto Mesh::GetBoneWeightBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return bone_weight_buf_;
+  return bone_weight_buf_.GetBuffer();
 }
 
 
 auto Mesh::GetBoneIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return bone_idx_buf_;
+  return bone_idx_buf_.GetBuffer();
 }
 
 
 auto Mesh::GetMeshletBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return meshlet_buf_;
+  return meshlet_buf_.GetBuffer();
 }
 
 
 auto Mesh::GetVertexIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return vertex_idx_buf_;
+  return std::visit<graphics::SharedDeviceChildHandle<graphics::Buffer> const&>([](auto const& buf) -> auto& {
+    return buf.GetBuffer();
+  }, vertex_idx_buf_);
 }
 
 
 auto Mesh::GetPrimitiveIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return prim_idx_buf_;
+  return prim_idx_buf_.GetBuffer();
 }
 
 
