@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Advanced Micro Devices, Inc. All rights reserved.
+// Copyright (c) 2019-2025 Advanced Micro Devices, Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,9 @@
 
 /** \mainpage D3D12 Memory Allocator
 
-<b>Version 2.1.0-development</b> (2023-07-05)
+<b>Version 2.1.0-development</b> (2024-07-05)
 
-Copyright (c) 2019-2023 Advanced Micro Devices, Inc. All rights reserved. \n
+Copyright (c) 2019-2025 Advanced Micro Devices, Inc. All rights reserved. \n
 License: MIT
 
 Documentation of all members: D3D12MemAlloc.h
@@ -57,6 +57,8 @@ Documentation of all members: D3D12MemAlloc.h
 - [Product page on GPUOpen](https://gpuopen.com/gaming-product/d3d12-memory-allocator/)
 - [Source repository on GitHub](https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator)
 */
+
+#define D3D12MA_OPTIONS16_SUPPORTED 1
 
 // If using this library on a platform different than Windows PC or want to use different version of DXGI,
 // you should include D3D12-compatible headers before this library on your own and define 
@@ -160,9 +162,9 @@ class D3D12MA_API IUnknownImpl : public IUnknown
 {
 public:
     virtual ~IUnknownImpl() = default;
-    virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject);
-    virtual ULONG STDMETHODCALLTYPE AddRef();
-    virtual ULONG STDMETHODCALLTYPE Release();
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
+    ULONG STDMETHODCALLTYPE AddRef() override;
+    ULONG STDMETHODCALLTYPE Release() override;
 protected:
     virtual void ReleaseThis() { delete this; }
 private:
@@ -402,8 +404,9 @@ struct TotalStatistics
     - 1 = `D3D12_HEAP_TYPE_UPLOAD`
     - 2 = `D3D12_HEAP_TYPE_READBACK`
     - 3 = `D3D12_HEAP_TYPE_CUSTOM`
+    - 4 = `D3D12_HEAP_TYPE_GPU_UPLOAD`
     */
-    DetailedStatistics HeapType[4];
+    DetailedStatistics HeapType[5];
     /** \brief One element for each memory segment group located at the following indices:
 
     - 0 = `DXGI_MEMORY_SEGMENT_GROUP_LOCAL`
@@ -413,9 +416,9 @@ struct TotalStatistics
 
     - When `IsUMA() == FALSE` (discrete graphics card):
       - `DXGI_MEMORY_SEGMENT_GROUP_LOCAL` (index 0) represents GPU memory
-      (resources allocated in `D3D12_HEAP_TYPE_DEFAULT` or `D3D12_MEMORY_POOL_L1`).
+        (resources allocated in `D3D12_HEAP_TYPE_DEFAULT`, `D3D12_HEAP_TYPE_GPU_UPLOAD` or `D3D12_MEMORY_POOL_L1`).
       - `DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL` (index 1) represents system memory
-      (resources allocated in `D3D12_HEAP_TYPE_UPLOAD`, `D3D12_HEAP_TYPE_READBACK`, or `D3D12_MEMORY_POOL_L0`).
+        (resources allocated in `D3D12_HEAP_TYPE_UPLOAD`, `D3D12_HEAP_TYPE_READBACK`, or `D3D12_MEMORY_POOL_L0`).
     - When `IsUMA() == TRUE` (integrated graphics chip):
       - `DXGI_MEMORY_SEGMENT_GROUP_LOCAL` = (index 0) represents memory shared for all the resources.
       - `DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL` = (index 1) is unused and always 0.
@@ -542,26 +545,6 @@ public:
     */
     LPCWSTR GetName() const { return m_Name; }
 
-    /** \brief Returns `TRUE` if the memory of the allocation was filled with zeros when the allocation was created.
-
-    Returns `TRUE` only if the allocator is sure that the entire memory where the
-    allocation was created was filled with zeros at the moment the allocation was made.
-    
-    Returns `FALSE` if the memory could potentially contain garbage data.
-    If it's a render-target or depth-stencil texture, it then needs proper
-    initialization with `ClearRenderTargetView`, `ClearDepthStencilView`, `DiscardResource`,
-    or a copy operation, as described on page
-    "ID3D12Device::CreatePlacedResource method - Notes on the required resource initialization" in Microsoft documentation.
-    Please note that rendering a fullscreen triangle or quad to the texture as
-    a render target is not a proper way of initialization!
-
-    See also articles:
-
-    - "Coming to DirectX 12: More control over memory allocation" on DirectX Developer Blog
-    - ["Initializing DX12 Textures After Allocation and Aliasing"](https://asawicki.info/news_1724_initializing_dx12_textures_after_allocation_and_aliasing).
-    */
-    BOOL WasZeroInitialized() const { return m_PackedData.WasZeroInitialized(); }
-
 protected:
     void ReleaseThis() override;
 
@@ -620,29 +603,26 @@ private:
     {
     public:
         PackedData() :
-            m_Type(0), m_ResourceDimension(0), m_ResourceFlags(0), m_TextureLayout(0), m_WasZeroInitialized(0) { }
+            m_Type(0), m_ResourceDimension(0), m_ResourceFlags(0), m_TextureLayout(0) { }
 
         Type GetType() const { return (Type)m_Type; }
         D3D12_RESOURCE_DIMENSION GetResourceDimension() const { return (D3D12_RESOURCE_DIMENSION)m_ResourceDimension; }
         D3D12_RESOURCE_FLAGS GetResourceFlags() const { return (D3D12_RESOURCE_FLAGS)m_ResourceFlags; }
         D3D12_TEXTURE_LAYOUT GetTextureLayout() const { return (D3D12_TEXTURE_LAYOUT)m_TextureLayout; }
-        BOOL WasZeroInitialized() const { return (BOOL)m_WasZeroInitialized; }
 
         void SetType(Type type);
         void SetResourceDimension(D3D12_RESOURCE_DIMENSION resourceDimension);
         void SetResourceFlags(D3D12_RESOURCE_FLAGS resourceFlags);
         void SetTextureLayout(D3D12_TEXTURE_LAYOUT textureLayout);
-        void SetWasZeroInitialized(BOOL wasZeroInitialized) { m_WasZeroInitialized = wasZeroInitialized ? 1 : 0; }
 
     private:
         UINT m_Type : 2;               // enum Type
         UINT m_ResourceDimension : 3;  // enum D3D12_RESOURCE_DIMENSION
         UINT m_ResourceFlags : 24;     // flags D3D12_RESOURCE_FLAGS
         UINT m_TextureLayout : 9;      // enum D3D12_TEXTURE_LAYOUT
-        UINT m_WasZeroInitialized : 1; // BOOL
     } m_PackedData;
 
-    Allocation(AllocatorPimpl* allocator, UINT64 size, UINT64 alignment, BOOL wasZeroInitialized);
+    Allocation(AllocatorPimpl* allocator, UINT64 size, UINT64 alignment);
     //  Nothing here, everything already done in Release.
     virtual ~Allocation() = default;
 
@@ -1140,6 +1120,15 @@ public:
     - "ID3D12Device::GetCustomHeapProperties method (d3d12.h)"
     */
     BOOL IsCacheCoherentUMA() const;
+    /** \brief Returns true if GPU Upload Heaps are supported on the current system.
+
+    When true, you can use `D3D12_HEAP_TYPE_GPU_UPLOAD`.
+
+    This flag is fetched from `D3D12_FEATURE_D3D12_OPTIONS16::GPUUploadHeapSupported`.
+
+    `#define D3D12MA_OPTIONS16_SUPPORTED 1` is needed for the compilation of this library. Otherwise the flag is always false.
+    */
+    BOOL IsGPUUploadHeapSupported() const;
     /** \brief Returns total amount of memory of specific segment group, in bytes.
     
     \param memorySegmentGroup use `DXGI_MEMORY_SEGMENT_GROUP_LOCAL` or DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL`.
@@ -1650,6 +1639,9 @@ ID3D12Device* device = (...)
 D3D12MA::ALLOCATOR_DESC allocatorDesc = {};
 allocatorDesc.pDevice = device;
 allocatorDesc.pAdapter = adapter;
+// These flags are optional but recommended.
+allocatorDesc.Flags = D3D12MA::ALLOCATOR_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED |
+    D3D12MA::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED;
 
 D3D12MA::Allocator* allocator;
 HRESULT hr = D3D12MA::CreateAllocator(&allocatorDesc, &allocator);
@@ -1874,6 +1866,9 @@ to obtain object D3D12MA::Pool. Example:
 \code
 POOL_DESC poolDesc = {};
 poolDesc.HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+// These flags are optional but recommended.
+poolDesc.Flags = D3D12MA::POOL_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED;
+poolDesc.HeapFlags = D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
 
 Pool* pool;
 HRESULT hr = allocator->CreatePool(&poolDesc, &pool);
