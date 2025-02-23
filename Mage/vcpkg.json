@@ -33,7 +33,7 @@
     },
     {
       "name": "assimp",
-      "version>=": "5.4.0"
+      "version>=": "5.4.3"
     }
   ]
 }
