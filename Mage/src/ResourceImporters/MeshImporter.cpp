@@ -115,7 +115,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
   // We don't want to bother with non-triangle primitives
   importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
-  //importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
+  // Smoothing angle for smooth normal generation
+  importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
 
   auto const scene{
     importer.ReadFileFromMemory(meshBytes.data(), meshBytes.size(),
