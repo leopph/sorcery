@@ -17,7 +17,7 @@ struct Meshlet {
 };
 
 
-#define MS_THREAD_GROUP_SIZE MESHLET_MAX_VERTS
+#define MS_THREAD_GROUP_SIZE 128
 #define MS_VERTEX_LOOP_COUNT (MESHLET_MAX_VERTS + MS_THREAD_GROUP_SIZE - 1) / MS_THREAD_GROUP_SIZE
 #define MS_PRIMITIVE_LOOP_COUNT (MESHLET_MAX_PRIMS + MS_THREAD_GROUP_SIZE - 1) / MS_THREAD_GROUP_SIZE
 #define MS_VERTEX_PRIMITIVE_LOOP_STRIDE MS_THREAD_GROUP_SIZE
@@ -68,7 +68,7 @@ void MeshShaderCore(
   uint const prim_count = meshlet.primitive_count * instance_count;
 
   SetMeshOutputCounts(vert_count, prim_count);
-
+  
   for (uint i = 0; i < MS_VERTEX_LOOP_COUNT; i++) {
     uint const vertex_id = gtid + i * MS_VERTEX_PRIMITIVE_LOOP_STRIDE;
 
@@ -91,7 +91,7 @@ void MeshShaderCore(
       out_vertices[vertex_id] = VertexProcessor::CalculateVertex(vertex_index, instance_index);
     }
   }
-
+  
   for (uint i = 0; i < MS_PRIMITIVE_LOOP_COUNT; i++) {
     uint const primitive_id = gtid + i * MS_VERTEX_PRIMITIVE_LOOP_STRIDE;
 

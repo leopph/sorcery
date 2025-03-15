@@ -29,7 +29,7 @@ typedef bool BOOL;
 #define INVALID_RES_IDX ((uint)-1)
 
 #define MESHLET_MAX_VERTS 128
-#define MESHLET_MAX_PRIMS 256
+#define MESHLET_MAX_PRIMS 128
 
 #define MAX_CASCADE_COUNT (uint) 4
 #define MAX_PER_LIGHT_SHADOW_MAP_COUNT 6
