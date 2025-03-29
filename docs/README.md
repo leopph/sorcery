@@ -1,6 +1,6 @@
 # 🪄 Sorcery 🪄
 
-Sorcery is my hobby game engine that I started developing during the second year of my BSc to learn about the technologies behind video games. I have used it as my BSc and MSc theses. Generally it lacks quite a few features, mainly because I can work on it only in my free time and I also keep reworking systems forever and ever as I learn new things. Basically I use it to implement, integrate, and play with ideas I come across as well my own.
+Sorcery is my hobby game engine that I use to play around with new hardware features and graphics algorithms. The aim is to eventually make it a complete toolset for video game creation, but in its current state, it's more of a close integration of ideas.
 
 ## Gallery 
 Some screenshots from Sorcery's editor, Mage!
@@ -16,7 +16,7 @@ Some screenshots from Sorcery's editor, Mage!
 ## Features
 ### Implemented
 * DX12 Renderer
-  * Built using HLSL Dynamic Resources, Enhanced Barriers, and other modern features
+  * Built using HLSL Dynamic Resources, Enhanced Barriers, Mesh Shaders, and other modern features
   * Hybrid Forward rendering
     * Forward rendering with a thin G-buffers for screen space effects
   * PBR material system using Cook-Torrance BRDF
@@ -83,6 +83,7 @@ Non-exhaustive list of core components:
 - Dear ImGui for tool interfaces
 - Assimp for model asset importing
 - DirectXTex for texture preprocessing
+- DirectXMesh for mesh preprocessing
 
 ## Building and Usage
 ### Build requirements
@@ -95,11 +96,12 @@ Non-exhaustive list of core components:
 - CPU
   - AVX2
 - GPU
-  - Feature Level 11_0
+  - Feature Level 12_2
   - Shader Model 6.6
   - Resource Binding Tier 3
   - Enhanced Barriers
   - Root Signature 1.1
+  - Mesh Shaders
 
 ### Building
 - Run **setup.bat** from the root directory
