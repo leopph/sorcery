@@ -80,7 +80,7 @@ auto ImGuiRenderer::UpdateFonts() -> void {
     }
   });
 
-  ImGui::GetIO().Fonts->SetTexID(fonts_tex_.get());
+  ImGui::GetIO().Fonts->SetTexID(std::bit_cast<ImTextureID>(fonts_tex_.get()));
 }
 
 
@@ -230,7 +230,7 @@ auto ImGuiRenderer::Render() -> void {
         });
 
         cmd.SetShaderResource(offsetof(ImGuiDrawParams, tex_idx) / 4,
-          *static_cast<graphics::Texture*>(draw_cmd.GetTexID()));
+          *std::bit_cast<graphics::Texture*>(draw_cmd.GetTexID()));
 
         cmd.DrawIndexedInstanced(draw_cmd.ElemCount, 1, draw_cmd.IdxOffset + global_idx_offset,
           draw_cmd.VtxOffset + global_vtx_offset, 0);

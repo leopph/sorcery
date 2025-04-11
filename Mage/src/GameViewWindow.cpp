@@ -75,7 +75,7 @@ auto GameViewWindow::Draw(bool const game_is_running) -> void {
     App::Instance().GetSceneRenderer().SetRenderTargetOverride(rt_override_);
   }
 
-  ImGui::Image(rt_override_->GetColorTex().get(), [content_region_size, this] {
+  ImGui::Image(std::bit_cast<ImTextureID>(rt_override_->GetColorTex().get()), [content_region_size, this] {
     auto const& desc{rt_override_->GetDesc()};
     auto const scale{
       std::min(content_region_size.x / static_cast<float>(desc.width),

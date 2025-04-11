@@ -157,7 +157,7 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
       selectedObject->OnDrawGizmosSelected();
     }
 
-    ImGui::Image(cam_.GetRenderTarget()->GetColorTex().get(), contentRegionSize);
+    ImGui::Image(std::bit_cast<ImTextureID>(cam_.GetRenderTarget()->GetColorTex().get()), contentRegionSize);
 
     auto const aspect{ImGui::GetWindowWidth() / ImGui::GetWindowHeight()};
     auto const camViewMtx{cam_.CalculateViewMatrix()};

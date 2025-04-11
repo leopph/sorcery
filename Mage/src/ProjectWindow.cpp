@@ -8,7 +8,7 @@
 #include "Util.hpp"
 
 #include <imgui_stdlib.h>
-#include <nfd.h>
+#include <nfd.hpp>
 
 #include <cstring>
 #include <optional>
@@ -195,25 +195,29 @@ auto ProjectWindow::DrawContextMenu() -> void {
     }
 
     if (ImGui::MenuItem("Import")) {
-      if (nfdpathset_t pathSet; NFD_OpenDialogMultiple("", "", &pathSet) == NFD_OKAY) {
+      if (NFD::UniquePathSet pathSet;
+        OpenDialogMultiple(pathSet, static_cast<nfdu8filteritem_t*>(nullptr)) == NFD_OKAY) {
         mFilesToImport.clear();
         mOpenImportModal = false;
 
-        for (std::size_t i{0}; i < NFD_PathSet_GetCount(&pathSet); i++) {
-          std::filesystem::path const srcPathAbs{NFD_PathSet_GetPath(&pathSet, i)};
-          if (auto importer{ResourceDB::GetNewImporterForResourceFile(srcPathAbs)}) {
-            mFilesToImport.emplace_back(std::move(importer), srcPathAbs,
-              GenerateUniquePath(workingDirAbs / srcPathAbs.filename()));
-            mOpenImportModal = true;
-          } else {
-            ImGui::EndPopup();
-            throw std::runtime_error{
-              std::format("Couldn't find importer for file type {}.", srcPathAbs.extension().string())
-            };
+        if (nfdpathsetsize_t path_set_size{0}; NFD::PathSet::Count(pathSet, path_set_size) == NFD_OKAY) {
+          for (nfdpathsetsize_t i{0}; i < path_set_size; i++) {
+            if (NFD::UniquePathSetPathU8 src_path_abs_u8;
+              NFD::PathSet::GetPath(pathSet, i, src_path_abs_u8) == NFD_OKAY) {
+              std::filesystem::path const src_path_abs{src_path_abs_u8.get()};
+              if (auto importer{ResourceDB::GetNewImporterForResourceFile(src_path_abs)}) {
+                mFilesToImport.emplace_back(std::move(importer), src_path_abs,
+                  GenerateUniquePath(workingDirAbs / src_path_abs.filename()));
+                mOpenImportModal = true;
+              } else {
+                ImGui::EndPopup();
+                throw std::runtime_error{
+                  std::format("Couldn't find importer for file type {}.", src_path_abs.extension().string())
+                };
+              }
+            }
           }
         }
-
-        NFD_PathSet_Free(&pathSet);
       }
     }
 

@@ -8,11 +8,11 @@ class EditorApp;
 
 
 class MainMenuBar {
-  EditorApp* mApp;
-  SettingsWindow* mEditorSettingsWindow;
+  EditorApp* app_;
+  SettingsWindow* editor_settings_window_;
 
 public:
-  MainMenuBar(EditorApp& app, SettingsWindow& editorSettingsWindow);
+  MainMenuBar(EditorApp& app, SettingsWindow& editor_settings_window);
 
   auto Draw() -> void;
 };

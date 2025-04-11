@@ -96,6 +96,6 @@ auto Texture2D::OnDrawProperties(bool& changed) -> void {
     displaySize.y = imgHeight * widthRatio;
   }
 
-  ImGui::Image(tex_.get(), displaySize);
+  ImGui::Image(std::bit_cast<ImTextureID>(tex_.get()), displaySize);
 }
 }

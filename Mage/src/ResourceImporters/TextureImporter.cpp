@@ -1,7 +1,7 @@
 #include "TextureImporter.hpp"
-#include "../Resources/Texture2D.hpp"
-#include "../Resources/Cubemap.hpp"
 #include "../FileIo.hpp"
+#include "../Resources/Cubemap.hpp"
+#include "../Resources/Texture2D.hpp"
 
 #include <DirectXTex.h>
 
@@ -26,7 +26,8 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 namespace {
-[[nodiscard]] auto CompressTexture(DirectX::ScratchImage const& src, bool const isSrgb, DirectX::ScratchImage& out) noexcept -> bool {
+[[nodiscard]] auto CompressTexture(DirectX::ScratchImage const& src, bool const isSrgb,
+                                   DirectX::ScratchImage& out) noexcept -> bool {
   DXGI_FORMAT compressionFormat;
 
   auto const getFormatChannelCount{
@@ -49,7 +50,10 @@ namespace {
 
   DirectX::ScratchImage compressed;
 
-  if (FAILED(Compress(src.GetImages(), src.GetImageCount(), src.GetMetadata(), compressionFormat, DirectX::TEX_COMPRESS_PARALLEL | (isSrgb ? DirectX::TEX_COMPRESS_SRGB : DirectX::TEX_COMPRESS_DEFAULT), DirectX::TEX_THRESHOLD_DEFAULT, compressed))) {
+  if (FAILED(
+    Compress(src.GetImages(), src.GetImageCount(), src.GetMetadata(), compressionFormat, DirectX::TEX_COMPRESS_PARALLEL
+      | (isSrgb ? DirectX::TEX_COMPRESS_SRGB : DirectX::TEX_COMPRESS_DEFAULT), DirectX::TEX_THRESHOLD_DEFAULT,
+      compressed))) {
     return false;
   }
 
@@ -69,7 +73,8 @@ auto TextureImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& 
 }
 
 
-auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes, ExternalResourceCategory& categ) -> bool {
+auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes,
+                             ExternalResourceCategory& categ) -> bool {
   std::vector<unsigned char> fileBytes;
 
   if (!ReadFileBinary(src, fileBytes)) {
@@ -206,7 +211,9 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
   if (mGenerateMips && img.GetMetadata().mipLevels == 1) {
     DirectX::ScratchImage mipChain;
 
-    if (FAILED(GenerateMipMaps(img.GetImages(), img.GetImageCount(), img.GetMetadata(), DirectX::TEX_FILTER_DEFAULT, 0, mipChain))) {
+    if (FAILED(
+      GenerateMipMaps(img.GetImages(), img.GetImageCount(), img.GetMetadata(), DirectX::TEX_FILTER_DEFAULT, 0, mipChain
+      ))) {
       return false;
     }
 
@@ -225,7 +232,9 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
   }
 
   // Mark image as linear or sRGB based on user setting
-  img.OverrideFormat(mIsSrgb ? DirectX::MakeSRGB(img.GetMetadata().format) : DirectX::MakeLinear(img.GetMetadata().format));
+  img.OverrideFormat(mIsSrgb
+                       ? DirectX::MakeSRGB(img.GetMetadata().format)
+                       : DirectX::MakeLinear(img.GetMetadata().format));
 
   // Save processed image
 
@@ -236,7 +245,8 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
   }
 
   bytes.reserve(std::size(bytes) + blob.GetBufferSize());
-  std::ranges::copy(std::span{static_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()}, std::back_inserter(bytes));
+  std::ranges::copy(std::span{std::bit_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()},
+    std::back_inserter(bytes));
   categ = ExternalResourceCategory::Texture;
   return true;
 }

@@ -1,6 +1,6 @@
 #include "StartupScreen.hpp"
 
-#include <nfd.h>
+#include <nfd.hpp>
 
 
 namespace sorcery::mage {
@@ -11,17 +11,16 @@ auto DrawStartupScreen(EditorApp& context) -> void {
   ImGui::SetNextWindowSize(viewport->Size);
 
   if (ImGui::Begin("Open Project##OpenProjectWindow", nullptr, flags)) {
-    auto const openProjectButtonLabel{"Open Project##OpenProjectButton"};
-    auto const windowSize{ImGui::GetWindowSize()};
-    auto const textSize{ImGui::CalcTextSize(openProjectButtonLabel)};
+    auto const open_project_button_label{"Open Project##OpenProjectButton"};
+    auto const window_size{ImGui::GetWindowSize()};
+    auto const text_size{ImGui::CalcTextSize(open_project_button_label)};
 
-    ImGui::SetCursorPosX((windowSize.x - textSize.x) * 0.5f);
-    ImGui::SetCursorPosY((windowSize.y - textSize.y) * 0.5f);
+    ImGui::SetCursorPosX((window_size.x - text_size.x) * 0.5f);
+    ImGui::SetCursorPosY((window_size.y - text_size.y) * 0.5f);
 
-    if (ImGui::Button(openProjectButtonLabel)) {
-      if (nfdchar_t* selectedPath{nullptr}; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-        context.OpenProject(selectedPath);
-        std::free(selectedPath);
+    if (ImGui::Button(open_project_button_label)) {
+      if (NFD::UniquePath selected_path{nullptr}; PickFolder(selected_path, nullptr) == NFD_OKAY) {
+        context.OpenProject(selected_path.get());
       }
     }
   }

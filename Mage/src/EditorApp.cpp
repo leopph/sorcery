@@ -5,7 +5,7 @@
 #include <ImGuizmo.h>
 #include <imgui_impl_win32.h>
 #include <implot.h>
-#include <nfd.h>
+#include <nfd.hpp>
 
 #include "GUI.hpp"
 #include "LoadingScreen.hpp"
@@ -240,15 +240,15 @@ auto EditorApp::SaveCurrentSceneToFile() -> void {
   if (resource_db_.IsSavedResource(*scene_)) {
     resource_db_.SaveResource(*scene_);
   } else {
-    if (nfdchar_t* dst; NFD_SaveDialog(ResourceManager::SCENE_RESOURCE_EXT.substr(1).data(),
-                          resource_db_.GetResourceDirectoryAbsolutePath().string().c_str(), &dst) == NFD_OKAY) {
+    constexpr nfdu8filteritem_t filter{ResourceManager::SCENE_RESOURCE_EXT.substr(1).data()};
+    if (NFD::UniquePath dst;
+      SaveDialog(dst, &filter, 1, resource_db_.GetResourceDirectoryAbsolutePath().string().c_str()) == NFD_OKAY) {
       if (auto const dstResDirRel{
-        relative(std::filesystem::path{dst}, resource_db_.GetResourceDirectoryAbsolutePath()) +=
+        relative(std::filesystem::path{dst.get()}, resource_db_.GetResourceDirectoryAbsolutePath()) +=
         ResourceManager::SCENE_RESOURCE_EXT
       }; !dstResDirRel.empty()) {
         resource_db_.CreateResource(GetResourceManager().Remove<Scene>(scene_->GetGuid()), dstResDirRel);
       }
-      std::free(dst);
     }
   }
 }
@@ -379,7 +379,7 @@ auto EditorApp::SetGuiDarkMode(bool const darkMode) noexcept -> void {
 
 
 auto EditorApp::OnEnterBusyExecution() -> BusyExecutionContext {
-  bool isBusy{false};
+  auto isBusy{false};
   while (!busy_.compare_exchange_weak(isBusy, true)) {}
 
   BusyExecutionContext const ret{.imGuiConfigFlagsBackup = imgui_io_->ConfigFlags};
