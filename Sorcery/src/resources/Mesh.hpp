@@ -51,7 +51,7 @@ class Mesh final : public Resource {
   // Indexing
 
   rendering::StructuredBuffer<MeshletData> meshlet_buf_;
-  std::variant<rendering::StructuredBuffer<std::uint16_t>, rendering::StructuredBuffer<std::uint32_t>> vertex_idx_buf_;
+  graphics::SharedDeviceChildHandle<graphics::Buffer> vertex_idx_buf_;
   rendering::StructuredBuffer<MeshletTriangleData> prim_idx_buf_;
 
   // CPU info

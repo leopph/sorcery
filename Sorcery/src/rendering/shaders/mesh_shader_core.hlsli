@@ -68,7 +68,7 @@ void MeshShaderCore(
   uint const prim_count = meshlet.primitive_count * instance_count;
 
   SetMeshOutputCounts(vert_count, prim_count);
-  
+
   for (uint i = 0; i < MS_VERTEX_LOOP_COUNT; i++) {
     uint const vertex_id = gtid + i * MS_VERTEX_PRIMITIVE_LOOP_STRIDE;
 
@@ -76,22 +76,29 @@ void MeshShaderCore(
       uint const read_index = vertex_id % meshlet.vertex_count;
       uint const instance_id = vertex_id / meshlet.vertex_count;
 
+      ByteAddressBuffer const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];
+      uint const vertex_index_idx = meshlet.vertex_offset + read_index;
+
       uint vertex_index;
 
       if (idx32) {
-        StructuredBuffer<uint> const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];
-        vertex_index = vertex_indices[meshlet.vertex_offset + read_index] + base_vertex;
+        vertex_index = vertex_indices.Load(vertex_index_idx * 4);
       } else {
-        StructuredBuffer<uint16_t> const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];
-        vertex_index = vertex_indices[meshlet.vertex_offset + read_index] + base_vertex;
+        uint const word_offset = vertex_index_idx & 0x1;
+        uint const byte_offset = (vertex_index_idx / 2) * 4;
+
+        uint const index_pair = vertex_indices.Load(byte_offset);
+        vertex_index = (index_pair >> (word_offset * 16)) & 0xFFFF;
       }
+
+      vertex_index += base_vertex;
 
       uint const instance_index = dispatch_instance_offset + start_instance + instance_id;
 
       out_vertices[vertex_id] = VertexProcessor::CalculateVertex(vertex_index, instance_index);
     }
   }
-  
+
   for (uint i = 0; i < MS_PRIMITIVE_LOOP_COUNT; i++) {
     uint const primitive_id = gtid + i * MS_VERTEX_PRIMITIVE_LOOP_STRIDE;
 

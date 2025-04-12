@@ -122,12 +122,12 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
                     ? StructuredBuffer<Vector<std::uint32_t, 4>>{}
                     : StructuredBuffer<Vector<std::uint32_t, 4>>::New(gd, rm, data.bone_indices, false, true);
   meshlet_buf_ = StructuredBuffer<MeshletData>::New(gd, rm, data.meshlets);
-  if (data.idx32) {
-    vertex_idx_buf_ = StructuredBuffer<std::uint32_t>::New(gd, rm, to_u32(data.vertex_indices), true, false);
-  } else {
-    vertex_idx_buf_ = StructuredBuffer<std::uint16_t>::New(gd, rm, to_u16(data.vertex_indices), true, false);
-  }
+  vertex_idx_buf_ = gd.CreateBuffer(graphics::BufferDesc{data.vertex_indices.size(), 1, false, true, false},
+    graphics::CpuAccess::kWrite);
   prim_idx_buf_ = StructuredBuffer<MeshletTriangleData>::New(gd, rm, data.triangle_indices, true, false);
+
+  std::memcpy(vertex_idx_buf_->Map(), data.vertex_indices.data(), data.vertex_indices.size());
+  vertex_idx_buf_->Unmap();
 
   // CPU lists
 
@@ -189,9 +189,7 @@ auto Mesh::GetMeshletBuffer() const -> graphics::SharedDeviceChildHandle<graphic
 
 
 auto Mesh::GetVertexIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
-  return std::visit<graphics::SharedDeviceChildHandle<graphics::Buffer> const&>([](auto const& buf) -> auto& {
-    return buf.GetBuffer();
-  }, vertex_idx_buf_);
+  return vertex_idx_buf_;
 }
 
 
