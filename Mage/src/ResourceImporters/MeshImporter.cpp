@@ -466,7 +466,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
         // Offset index ranges by existing index counts
         return MeshletData{
           .vert_count = meshlet.vert_count,
-          .vert_offset = meshlet.vert_offset + static_cast<std::uint32_t>(mesh_data.vertex_indices.size() / 4),
+          .vert_offset = meshlet.vert_offset + static_cast<std::uint32_t>(
+                           mesh_data.vertex_indices.size() / (mesh_data.idx32 ? 4 : 2)),
           .prim_count = meshlet.prim_count,
           .prim_offset = meshlet.prim_offset + static_cast<std::uint32_t>(mesh_data.triangle_indices.size()),
         };
