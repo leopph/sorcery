@@ -60,6 +60,7 @@ auto Mesh::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("%s: %d", "Triangle Count", primitive_count_);
   ImGui::Text("%s: %d", "Meshlet Count", meshlets_.size());
   ImGui::Text("%s: %d", "Submesh Count", submeshes_.size());
+  ImGui::Text("%s: %s", "Uses 32-bit indices", idx32_ ? "yes" : "no");
 }
 
 
