@@ -16,5 +16,6 @@ public:
 
 private:
   bool fuse_submeshes_{false};
+  bool force_idx32_{false};
 };
 }

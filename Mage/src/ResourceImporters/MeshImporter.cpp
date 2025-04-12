@@ -25,7 +25,8 @@
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::MeshImporter>{"Mesh Importer"}
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR
-    .property("Fuse submeshes", &sorcery::MeshImporter::fuse_submeshes_);
+    .property("Fuse submeshes", &sorcery::MeshImporter::fuse_submeshes_)
+    .property("Force 32-bit indices", &sorcery::MeshImporter::force_idx32_);
 }
 
 
@@ -383,7 +384,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Determine index format
 
-  mesh_data.idx32 = std::ranges::any_of(meshes, [](MeshProcessingData const& mesh) {
+  mesh_data.idx32 = force_idx32_ || std::ranges::any_of(meshes, [](MeshProcessingData const& mesh) {
     return std::ranges::any_of(mesh.indices, [](unsigned const idx) {
       return idx > std::numeric_limits<std::uint16_t>::max();
     });
