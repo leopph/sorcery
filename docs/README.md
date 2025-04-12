@@ -17,8 +17,8 @@ Some screenshots from Sorcery's editor, Mage!
 ### Implemented
 * DX12 Renderer
   * Built using HLSL Dynamic Resources, Enhanced Barriers, Mesh Shaders, and other modern features
-  * Hybrid Forward rendering
-    * Forward rendering with a thin G-buffers for screen space effects
+  * Deferred rendering
+    * Thin G-buffer for deferred lighting and screen space effects
   * PBR material system using Cook-Torrance BRDF
     * Albedo, metallic, roughness, ao, and normal values/maps, alpha clipping support
   * Directional, spot, and pointlights
