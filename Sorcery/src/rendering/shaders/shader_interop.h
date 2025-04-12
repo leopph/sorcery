@@ -112,9 +112,14 @@ struct ShaderPerFrameConstants {
 
 struct ShaderPerViewConstants {
   row_major float4x4 viewMtx;
+  row_major float4x4 invViewMtx;
+
   row_major float4x4 projMtx;
   row_major float4x4 invProjMtx;
+
   row_major float4x4 viewProjMtx;
+  row_major float4x4 invViewProjMtx;
+
   float4 shadowCascadeSplitDistances;
   float3 viewPos;
   float pad;
@@ -127,34 +132,6 @@ struct ShaderPerDrawConstants {
 };
 
 
-struct DepthNormalDrawParams {
-  uint meshlet_count;
-  uint meshlet_offset;
-  uint instance_count;
-  uint instance_offset;
-
-  uint base_vertex;
-  uint mtl_idx;
-
-  uint pos_buf_idx;
-  uint norm_buf_idx;
-  uint tan_buf_idx;
-  uint uv_buf_idx;
-
-  uint vertex_idx_buf_idx;
-  uint prim_idx_buf_idx;
-  uint meshlet_buf_idx;
-
-  BOOL idx32;
-
-  uint samp_idx;
-
-  uint per_draw_cb_idx;
-  uint per_view_cb_idx;
-  uint per_frame_cb_idx;
-};
-
-
 struct DepthOnlyDrawParams {
   uint meshlet_count;
   uint meshlet_offset;
@@ -163,21 +140,18 @@ struct DepthOnlyDrawParams {
 
   uint base_vertex;
   uint mtl_idx;
-
   uint pos_buf_idx;
   uint uv_buf_idx;
 
   uint vertex_idx_buf_idx;
   uint prim_idx_buf_idx;
   uint meshlet_buf_idx;
-
   BOOL idx32;
 
   uint samp_idx;
-
   uint rt_idx;
-
   uint per_draw_cb_idx;
+
   uint per_view_cb_idx;
 };
 
@@ -195,7 +169,7 @@ struct GizmoDrawParams {
 };
 
 
-struct ObjectDrawParams {
+struct GBufferDrawParams {
   uint meshlet_count;
   uint meshlet_offset;
   uint instance_count;
@@ -203,32 +177,39 @@ struct ObjectDrawParams {
 
   uint base_vertex;
   uint mtl_idx;
-
   uint pos_buf_idx;
   uint norm_buf_idx;
+
   uint tan_buf_idx;
   uint uv_buf_idx;
-
   uint vertex_idx_buf_idx;
   uint prim_idx_buf_idx;
+
   uint meshlet_buf_idx;
-
   BOOL idx32;
-
   uint mtl_samp_idx;
-  uint point_clamp_samp_idx;
-  uint shadow_samp_idx;
+  uint per_draw_cb_idx;
+
+  uint per_view_cb_idx;
+};
+
+
+struct DeferredLightingDrawParams {
+  uint gbuffer0_idx;
+  uint gbuffer1_idx;
+  uint gbuffer2_idx;
+  uint depth_tex_idx;
 
   uint ssao_tex_idx;
-
-  uint light_buf_idx;
-  uint light_count;
-
   uint dir_shadow_arr_idx;
   uint punc_shadow_atlas_idx;
+  uint shadow_samp_idx;
 
-  uint per_draw_cb_idx;
+  uint point_clamp_samp_idx;
+  uint light_buf_idx;
+  uint light_count;
   uint per_view_cb_idx;
+
   uint per_frame_cb_idx;
 };
 
@@ -254,7 +235,7 @@ struct SkyboxDrawParams {
 struct SsaoDrawParams {
   uint noise_tex_idx;
   uint depth_tex_idx;
-  uint normal_tex_idx;
+  uint gbuffer1_tex_idx;
   uint samp_buf_idx;
   uint point_clamp_samp_idx;
   uint point_wrap_samp_idx;

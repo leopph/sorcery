@@ -1400,10 +1400,12 @@ auto CommandList::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY const primitive_
 }
 
 
-auto CommandList::SetRenderTargets(std::span<Texture const> render_targets, Texture const* depth_stencil) -> void {
-  std::ranges::for_each(render_targets, [this](Texture const& tex) {
-    GenerateBarrier(tex, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_RENDER_TARGET,
-      D3D12_BARRIER_LAYOUT_RENDER_TARGET);
+auto CommandList::SetRenderTargets(std::span<Texture const*> render_targets, Texture const* depth_stencil) -> void {
+  std::ranges::for_each(render_targets, [this](Texture const* const tex) {
+    if (tex) {
+      GenerateBarrier(*tex, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_RENDER_TARGET,
+        D3D12_BARRIER_LAYOUT_RENDER_TARGET);
+    }
   });
 
   if (depth_stencil) {
@@ -1414,8 +1416,8 @@ auto CommandList::SetRenderTargets(std::span<Texture const> render_targets, Text
 
   std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt;
   rt.reserve(render_targets.size());
-  std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const& tex) {
-    return rtv_heap_->GetDescriptorCpuHandle(tex.rtv_);
+  std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const* const tex) {
+    return tex ? rtv_heap_->GetDescriptorCpuHandle(tex->rtv_) : D3D12_CPU_DESCRIPTOR_HANDLE{};
   });
 
   auto const ds{dsv_heap_->GetDescriptorCpuHandle(depth_stencil ? depth_stencil->dsv_ : 0)};

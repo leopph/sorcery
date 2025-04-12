@@ -16,15 +16,15 @@
 #include "shaders/shader_interop.h"
 
 #ifndef NDEBUG
-#include "shaders/generated/Debug/depth_normal_ms.h"
-#include "shaders/generated/Debug/depth_normal_ps.h"
+#include "shaders/generated/Debug/deferred_lighting_ps.h"
+#include "shaders/generated/Debug/deferred_lighting_vs.h"
 #include "shaders/generated/Debug/depth_only_ms.h"
 #include "shaders/generated/Debug/depth_only_ps.h"
 #include "shaders/generated/Debug/depth_resolve_cs.h"
+#include "shaders/generated/Debug/gbuffer_ms.h"
+#include "shaders/generated/Debug/gbuffer_ps.h"
 #include "shaders/generated/Debug/gizmos_line_vs.h"
 #include "shaders/generated/Debug/gizmos_ps.h"
-#include "shaders/generated/Debug/object_pbr_ms.h"
-#include "shaders/generated/Debug/object_pbr_ps.h"
 #include "shaders/generated/Debug/post_process_ps.h"
 #include "shaders/generated/Debug/post_process_vs.h"
 #include "shaders/generated/Debug/skybox_ms.h"
@@ -34,15 +34,15 @@
 #include "shaders/generated/Debug/ssao_vs.h"
 #include "shaders/generated/Debug/vtx_skinning_cs.h"
 #else
-#include "shaders/generated/Release/depth_normal_ms.h"
-#include "shaders/generated/Release/depth_normal_ps.h"
+#include "shaders/generated/Release/deferred_lighting_ps.h"
+#include "shaders/generated/Release/deferred_lighting_vs.h"
 #include "shaders/generated/Release/depth_only_ms.h"
 #include "shaders/generated/Release/depth_only_ps.h"
 #include "shaders/generated/Release/depth_resolve_cs.h"
+#include "shaders/generated/Release/gbuffer_ms.h"
+#include "shaders/generated/Release/gbuffer_ps.h"
 #include "shaders/generated/Release/gizmos_line_vs.h"
 #include "shaders/generated/Release/gizmos_ps.h"
-#include "shaders/generated/Release/object_pbr_ms.h"
-#include "shaders/generated/Release/object_pbr_ps.h"
 #include "shaders/generated/Release/post_process_ps.h"
 #include "shaders/generated/Release/post_process_vs.h"
 #include "shaders/generated/Release/skybox_ms.h"
@@ -176,9 +176,11 @@ auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& 
                                         Vector3 const& view_pos) -> void {
   ShaderPerViewConstants data;
   data.viewMtx = view_mtx;
+  data.invViewMtx = view_mtx.Inverse();
   data.projMtx = proj_mtx;
   data.invProjMtx = proj_mtx.Inverse();
   data.viewProjMtx = view_mtx * proj_mtx;
+  data.invViewProjMtx = data.viewProjMtx.Inverse();
   data.viewPos = view_pos;
 
   for (auto i = 0; i < MAX_CASCADE_COUNT; i++) {
@@ -667,8 +669,8 @@ auto SceneRenderer::RecreatePipelines() -> void {
     FALSE
   };
 
-  CD3DX12_DEPTH_STENCIL_DESC1 const reverse_z_depth_stencil_read{
-    TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {},
+  CD3DX12_DEPTH_STENCIL_DESC1 const depth_disabled{
+    FALSE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {},
     {}, FALSE
   };
 
@@ -681,20 +683,12 @@ auto SceneRenderer::RecreatePipelines() -> void {
     D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF
   };
 
-  DXGI_SAMPLE_DESC const msaa_sample_desc{static_cast<UINT>(msaa_mode_), 0};
   CD3DX12_RT_FORMAT_ARRAY const render_target_format{D3D12_RT_FORMAT_ARRAY{{render_target_format_}, 1}};
   CD3DX12_RT_FORMAT_ARRAY const color_format{D3D12_RT_FORMAT_ARRAY{{color_buffer_format_}, 1}};
   CD3DX12_RT_FORMAT_ARRAY const ssao_format{D3D12_RT_FORMAT_ARRAY{{ssao_buffer_format_}, 1}};
-
-  graphics::PipelineDesc const depth_normal_pso_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{g_depth_normal_ps_bytes, ARRAYSIZE(g_depth_normal_ps_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{g_depth_normal_ms_bytes, ARRAYSIZE(g_depth_normal_ms_bytes)},
-    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_,
-    .rt_formats = CD3DX12_RT_FORMAT_ARRAY{D3D12_RT_FORMAT_ARRAY{{normal_buffer_format_}, 1}},
-    .sample_desc = msaa_sample_desc
+  CD3DX12_RT_FORMAT_ARRAY const gbuffer_format{
+    D3D12_RT_FORMAT_ARRAY{{gbuffer0_format_, gbuffer1_format_, gbuffer2_format_}, 3}
   };
-
-  depth_normal_pso_ = device_->CreatePipelineState(depth_normal_pso_desc, sizeof(DepthNormalDrawParams) / 4);
 
   graphics::PipelineDesc const shadow_pso_desc_{
     .ps = CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
@@ -720,23 +714,23 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
 
-  graphics::PipelineDesc const object_pso_depth_write_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{g_object_pbr_ps_bytes, ARRAYSIZE(g_object_pbr_ps_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{g_object_pbr_ms_bytes, ARRAYSIZE(g_object_pbr_ms_bytes)},
-    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_, .rt_formats = color_format,
-    .sample_desc = msaa_sample_desc,
+  graphics::PipelineDesc const gbuffer_pso_desc{
+    .ps = CD3DX12_SHADER_BYTECODE{g_gbuffer_ps_bytes, ARRAYSIZE(g_gbuffer_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{g_gbuffer_ms_bytes, ARRAYSIZE(g_gbuffer_ms_bytes)},
+    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_,
+    .rt_formats = gbuffer_format
   };
 
-  object_pso_depth_write_ = device_->CreatePipelineState(object_pso_depth_write_desc, sizeof(ObjectDrawParams) / 4);
+  gbuffer_pso_ = device_->CreatePipelineState(gbuffer_pso_desc, sizeof(GBufferDrawParams) / 4);
 
-  graphics::PipelineDesc const object_pso_depth_read_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{g_object_pbr_ps_bytes, ARRAYSIZE(g_object_pbr_ps_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{g_object_pbr_ms_bytes, ARRAYSIZE(g_object_pbr_ms_bytes)},
-    .depth_stencil_state = reverse_z_depth_stencil_read, .ds_format = depth_format_, .rt_formats = color_format,
-    .sample_desc = msaa_sample_desc,
+  graphics::PipelineDesc const deferred_lighting_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{g_deferred_lighting_vs_bytes, ARRAYSIZE(g_deferred_lighting_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{g_deferred_lighting_ps_bytes, ARRAYSIZE(g_deferred_lighting_ps_bytes)},
+    .depth_stencil_state = depth_disabled, .rt_formats = color_format
   };
 
-  object_pso_depth_read_ = device_->CreatePipelineState(object_pso_depth_read_desc, sizeof(ObjectDrawParams) / 4);
+  deferred_lighting_pso_ = device_->CreatePipelineState(deferred_lighting_pso_desc,
+    sizeof(DeferredLightingDrawParams) / 4);
 
   graphics::PipelineDesc const post_process_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_post_process_vs_bytes, ARRAYSIZE(g_post_process_vs_bytes)},
@@ -758,7 +752,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
       D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
       D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, TRUE, TRUE, FALSE, 0, {}
     },
-    .rt_formats = color_format, .sample_desc = msaa_sample_desc
+    .rt_formats = color_format
   };
 
   skybox_pso_ = device_->CreatePipelineState(skybox_pso_desc, sizeof(SkyboxDrawParams) / 4);
@@ -1363,13 +1357,11 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   // can queue new gizmos without a race condition.
   ClearGizmoDrawQueue();
 
-  packet.msaa_mode = msaa_mode_;
   packet.ssao_params = ssao_params_;
   packet.shadow_params = shadow_params_;
 
   packet.inv_gamma = inv_gamma_;
 
-  packet.depth_normal_pre_pass_enabled = depth_normal_pre_pass_enabled_;
   packet.ssao_enabled = ssao_enabled_;
 
   packet.color_buffer_format = color_buffer_format_;
@@ -1393,11 +1385,10 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   }
 
   packet.shadow_pso = shadow_pso_;
-  packet.depth_normal_pso = depth_normal_pso_;
+  packet.gbuffer_pso = gbuffer_pso_;
   packet.depth_resolve_pso = depth_resolve_pso_;
   packet.line_gizmo_pso = line_gizmo_pso_;
-  packet.object_pso_depth_write = object_pso_depth_write_;
-  packet.object_pso_depth_read = object_pso_depth_read_;
+  packet.deferred_lighting_pso = deferred_lighting_pso_;
   packet.post_process_pso = post_process_pso_;
   packet.skybox_pso = skybox_pso_;
   packet.ssao_pso = ssao_pso_;
@@ -1565,6 +1556,8 @@ auto SceneRenderer::Render() -> void {
   device_->ExecuteCommandLists(std::span{&prepare_cmd, 1});
 
   for (auto const& cam_data : frame_packet.cam_data) {
+    // Compute render target dimensions
+
     auto& target_rt{*frame_packet.render_targets[cam_data.rt_local_idx]};
     auto const& target_rt_desc{target_rt.GetDesc()};
 
@@ -1602,10 +1595,40 @@ auto SceneRenderer::Render() -> void {
       0, 0, static_cast<LONG>(transient_rt_width), static_cast<LONG>(transient_rt_height)
     };
 
-    RenderTarget::Desc const hdr_rt_desc{
-      transient_rt_width, transient_rt_height, frame_packet.color_buffer_format, depth_format_,
-      static_cast<UINT>(frame_packet.msaa_mode), L"Camera HDR RenderTarget", false, frame_packet.background_color, 0.0f
+    // Allocate render targets
+
+    RenderTarget::Desc const depth_rt_desc{
+      target_rt_width, target_rt_height, std::nullopt, depth_format_, 1, L"Camera Depth RenderTarget", false,
+      {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f
     };
+
+    RenderTarget::Desc const gbuffer0_rt_desc{
+      transient_rt_width, transient_rt_height, gbuffer0_format_, std::nullopt, 1,
+      L"Camera GBuffer0 RenderTarget", false, {0.0f, 0.0f, 0.0f, 0.0f}
+    };
+
+    RenderTarget::Desc const gbuffer1_rt_desc{
+      transient_rt_width, transient_rt_height, gbuffer1_format_, std::nullopt, 1,
+      L"Camera GBuffer1 RenderTarget", false, {0.0f, 0.0f, 0.0f, 0.0f}
+    };
+
+    RenderTarget::Desc const gbuffer2_rt_desc{
+      transient_rt_width, transient_rt_height, gbuffer2_format_, std::nullopt, 1,
+      L"Camera GBuffer2 RenderTarget", false, {0.0f, 0.0f, 0.0f, 0.0f}
+    };
+
+    RenderTarget::Desc const color_hdr_rt_desc{
+      transient_rt_width, transient_rt_height, frame_packet.color_buffer_format, std::nullopt,
+      1, L"Camera HDR RenderTarget", false, frame_packet.background_color
+    };
+
+    auto const depth_rt{render_manager_->AcquireTemporaryRenderTarget(depth_rt_desc)};
+    auto const gbuffer0_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer0_rt_desc)};
+    auto const gbuffer1_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer1_rt_desc)};
+    auto const gbuffer2_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer2_rt_desc)};
+    auto const color_hdr_rt{render_manager_->AcquireTemporaryRenderTarget(color_hdr_rt_desc)};
+
+    // Fill constant buffers
 
     auto& per_frame_cb{per_frame_cbs_[frame_idx]};
     SetPerFrameConstants(per_frame_cb, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height),
@@ -1624,7 +1647,7 @@ auto SceneRenderer::Render() -> void {
     std::pmr::vector<unsigned> visible_light_indices;
     CullLights(cam_frust_ws, frame_packet.light_data, visible_light_indices);
 
-    // Performs rendering of the camera
+    // Command list for the camera
     auto& cam_cmd{render_manager_->AcquireCommandList()};
     cam_cmd.Begin(nullptr);
     cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -1646,83 +1669,58 @@ auto SceneRenderer::Render() -> void {
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer()};
     SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, shadow_cascade_boundaries, cam_data.position);
 
-    auto const hdr_rt{render_manager_->AcquireTemporaryRenderTarget(hdr_rt_desc)};
-
-    cam_cmd.ClearDepthStencil(*hdr_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
-
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
 
-    auto const normal_rt{
-      render_manager_->AcquireTemporaryRenderTarget(RenderTarget::Desc{
-        transient_rt_width, transient_rt_height, normal_buffer_format_, std::nullopt, 1, L"Camera Normal RT"
-      })
+    // GBuffer pass
+
+    cam_cmd.SetPipelineState(*frame_packet.gbuffer_pso);
+    std::array<graphics::Texture const*, 3> gbuffer_textures{
+      gbuffer0_rt->GetColorTex().get(), gbuffer1_rt->GetColorTex().get(), gbuffer2_rt->GetColorTex().get()
     };
+    cam_cmd.SetRenderTargets(std::span{gbuffer_textures},
+      depth_rt->GetDepthStencilTex().get());
+    cam_cmd.ClearRenderTarget(*gbuffer0_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+    cam_cmd.ClearRenderTarget(*gbuffer1_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+    cam_cmd.ClearRenderTarget(*gbuffer2_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+    cam_cmd.ClearDepthStencil(*depth_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
 
-    // Depth-Normal pre-pass
-    if (frame_packet.depth_normal_pre_pass_enabled) {
-      // If MSAA is enabled we render into an MSAA RT and then resolve into normalRt
-      auto const actual_normal_rt{
-        [this, &normal_rt, &frame_packet] {
-          if (frame_packet.msaa_mode == MultisamplingMode::kOff) {
-            return normal_rt;
-          }
+    for (auto const instance_idx : visible_static_submesh_instance_indices) {
+      auto const& instance{frame_packet.instance_data[instance_idx]};
+      auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
+      auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
+      auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
-          auto actual_normal_rt_desc{normal_rt->GetDesc()};
-          actual_normal_rt_desc.sample_count = static_cast<int>(frame_packet.msaa_mode);
-          return render_manager_->AcquireTemporaryRenderTarget(actual_normal_rt_desc);
-        }()
-      };
+      auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
+      SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
 
-      cam_cmd.SetPipelineState(*frame_packet.depth_normal_pso);
-      cam_cmd.SetRenderTargets(std::span{actual_normal_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
-      cam_cmd.ClearRenderTarget(*actual_normal_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, pos_buf_idx),
+        *frame_packet.buffers[mesh.pos_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, norm_buf_idx),
+        *frame_packet.buffers[mesh.norm_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, tan_buf_idx),
+        *frame_packet.buffers[mesh.tan_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, uv_buf_idx),
+        *frame_packet.buffers[mesh.uv_buf_local_idx]);
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, mtl_idx), *mtl_buf);
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_draw_cb_idx),
+        *per_draw_cb.GetBuffer());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_view_cb_idx),
+        *cam_per_view_cb.GetBuffer());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, vertex_idx_buf_idx),
+        *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, prim_idx_buf_idx),
+        *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_buf_idx),
+        *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, idx32), mesh.idx32);
 
-      for (auto const instance_idx : visible_static_submesh_instance_indices) {
-        auto const& instance{frame_packet.instance_data[instance_idx]};
-        auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
-        auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
-        auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
-
-        auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
-        SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
-
-        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, pos_buf_idx),
-          *frame_packet.buffers[mesh.pos_buf_local_idx]);
-        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, norm_buf_idx),
-          *frame_packet.buffers[mesh.norm_buf_local_idx]);
-        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, tan_buf_idx),
-          *frame_packet.buffers[mesh.tan_buf_local_idx]);
-        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, uv_buf_idx),
-          *frame_packet.buffers[mesh.uv_buf_local_idx]);
-        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, mtl_idx), *mtl_buf);
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, samp_idx), samp_af16_wrap_.Get());
-        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_draw_cb_idx),
-          *per_draw_cb.GetBuffer());
-        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_view_cb_idx),
-          *cam_per_view_cb.GetBuffer());
-        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, per_frame_cb_idx),
-          *per_frame_cb.GetBuffer());
-        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, vertex_idx_buf_idx),
-          *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
-        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, prim_idx_buf_idx),
-          *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
-        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, meshlet_buf_idx),
-          *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
-        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthNormalDrawParams, idx32), mesh.idx32);
-
-        DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthNormalDrawParams, meshlet_count),
-          PIPELINE_PARAM_INDEX(DepthNormalDrawParams, meshlet_offset),
-          PIPELINE_PARAM_INDEX(DepthNormalDrawParams, instance_count),
-          PIPELINE_PARAM_INDEX(DepthNormalDrawParams, instance_offset),
-          PIPELINE_PARAM_INDEX(DepthNormalDrawParams, base_vertex), cam_cmd);
-      }
-
-      // If we have MSAA enabled, actualNormalRt is an MSAA texture that we have to resolve into normalRt
-      if (frame_packet.msaa_mode != MultisamplingMode::kOff) {
-        cam_cmd.Resolve(*normal_rt->GetColorTex(), *actual_normal_rt->GetColorTex(),
-          *normal_rt->GetDesc().color_format);
-      }
+      DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_count),
+        PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_offset),
+        PIPELINE_PARAM_INDEX(GBufferDrawParams, instance_count),
+        PIPELINE_PARAM_INDEX(GBufferDrawParams, instance_offset),
+        PIPELINE_PARAM_INDEX(GBufferDrawParams, base_vertex), cam_cmd);
     }
 
     auto ssao_tex{white_tex_.get()};
@@ -1735,43 +1733,13 @@ auto SceneRenderer::Render() -> void {
         })
       };
 
-      // If MSAA is enabled we have to resolve the depth texture before running SSAO
-      auto const ssao_depth_tex{
-        [this, &hdr_rt, &cam_cmd, &frame_packet] {
-          if (frame_packet.msaa_mode == MultisamplingMode::kOff) {
-            return hdr_rt->GetDepthStencilTex();
-          }
-
-          auto ssao_depth_rt_desc{hdr_rt->GetDesc()};
-          ssao_depth_rt_desc.color_format = DXGI_FORMAT_R32_FLOAT;
-          ssao_depth_rt_desc.sample_count = 1;
-          ssao_depth_rt_desc.depth_stencil_format = std::nullopt;
-          ssao_depth_rt_desc.enable_unordered_access = true;
-          auto const ssao_depth_rt{render_manager_->AcquireTemporaryRenderTarget(ssao_depth_rt_desc)};
-
-          cam_cmd.SetPipelineState(*frame_packet.depth_resolve_pso);
-          cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthResolveDrawParams, in_tex_idx),
-            *hdr_rt->GetDepthStencilTex());
-          cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(DepthResolveDrawParams, out_tex_idx),
-            *ssao_depth_rt->GetColorTex());
-
-          cam_cmd.Dispatch(
-            static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.width) / DEPTH_RESOLVE_CS_THREADS_X)),
-            static_cast<UINT>(std::ceil(static_cast<float>(ssao_depth_rt_desc.height) / DEPTH_RESOLVE_CS_THREADS_Y)),
-            static_cast<UINT>(std::ceil(1.0f / DEPTH_RESOLVE_CS_THREADS_Z)));
-
-
-          return ssao_depth_rt->GetColorTex();
-        }()
-      };
-
       cam_cmd.SetPipelineState(*frame_packet.ssao_pso);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx),
         *ssao_noise_tex_);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, depth_tex_idx),
-        *ssao_depth_tex);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, normal_tex_idx),
-        *normal_rt->GetColorTex());
+        *depth_rt->GetDepthStencilTex());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, gbuffer1_tex_idx),
+        *gbuffer1_rt->GetColorTex());
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx),
         *ssao_samples_buffer_.GetBuffer());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
@@ -1788,7 +1756,9 @@ auto SceneRenderer::Render() -> void {
         *cam_per_view_cb.GetBuffer());
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx),
         *per_frame_cb.GetBuffer());
-      cam_cmd.SetRenderTargets(std::span{ssao_rt->GetColorTex().get(), 1}, nullptr);
+      cam_cmd.SetRenderTargets(std::span{
+        std::array{static_cast<graphics::Texture const*>(ssao_rt->GetColorTex().get())}.data(), 1
+      }, nullptr);
       cam_cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cam_cmd.DrawInstanced(3, 1, 0, 0);
 
@@ -1805,14 +1775,16 @@ auto SceneRenderer::Render() -> void {
         *ssao_rt->GetColorTex());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, point_clamp_samp_idx),
         samp_point_clamp_.Get());
-      cam_cmd.SetRenderTargets(std::span{ssao_blur_rt->GetColorTex().get(), 1}, nullptr);
+      cam_cmd.SetRenderTargets(std::span{
+        std::array{static_cast<graphics::Texture const*>(ssao_blur_rt->GetColorTex().get())}.data(), 1
+      }, nullptr);
       cam_cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cam_cmd.DrawInstanced(3, 1, 0, 0);
 
       ssao_tex = ssao_blur_rt->GetColorTex().get();
     }
 
-    // Full forward lighting pass
+    // Deferred lighting pass
 
     auto const light_count{std::ssize(visible_light_indices)};
     auto& light_buffer{light_buffers_[frame_idx]};
@@ -1857,64 +1829,50 @@ auto SceneRenderer::Render() -> void {
 
     punctual_shadow_atlas_->SetLookUpInfo(light_buffer_data);
 
-    cam_cmd.SetPipelineState(frame_packet.depth_normal_pre_pass_enabled
-                               ? *frame_packet.object_pso_depth_read
-                               : *frame_packet.object_pso_depth_write);
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, shadow_samp_idx), samp_cmp_pcf_ge_.Get());
-    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, ssao_tex_idx), *ssao_tex);
-    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, light_buf_idx),
-      *light_buffer.GetBuffer());
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, light_count), static_cast<UINT>(light_count));
-    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, dir_shadow_arr_idx),
+    cam_cmd.SetPipelineState(*frame_packet.deferred_lighting_pso);
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, gbuffer0_idx),
+      *gbuffer0_rt->GetColorTex());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, gbuffer1_idx),
+      *gbuffer1_rt->GetColorTex());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, gbuffer2_idx),
+      *gbuffer2_rt->GetColorTex());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, depth_tex_idx),
+      *depth_rt->GetDepthStencilTex());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, ssao_tex_idx), *ssao_tex);
+
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, dir_shadow_arr_idx),
       *dir_shadow_map_arr_->GetTex());
-    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, punc_shadow_atlas_idx),
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, punc_shadow_atlas_idx),
       *punctual_shadow_atlas_->GetTex());
-    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_view_cb_idx),
+    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, shadow_samp_idx),
+      samp_cmp_pcf_ge_.Get());
+    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, point_clamp_samp_idx),
+      samp_point_clamp_.Get());
+
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx),
+      *light_buffer.GetBuffer());
+    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_count),
+      static_cast<UINT>(light_count));
+    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_view_cb_idx),
       *cam_per_view_cb.GetBuffer());
-    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_frame_cb_idx),
+    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_frame_cb_idx),
       *per_frame_cb.GetBuffer());
-    cam_cmd.SetRenderTargets(std::span{hdr_rt->GetColorTex().get(), 1}, hdr_rt->GetDepthStencilTex().get());
-    cam_cmd.ClearRenderTarget(*hdr_rt->GetColorTex(), frame_packet.background_color, {});
 
-    for (auto const instance_idx : visible_static_submesh_instance_indices) {
-      auto const& instance{frame_packet.instance_data[instance_idx]};
-      auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
-      auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
-      auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
+    cam_cmd.SetRenderTargets(std::span{
+      std::array{static_cast<graphics::Texture const*>(color_hdr_rt->GetColorTex().get())}.data(), 1
+    }, nullptr);
+    cam_cmd.ClearRenderTarget(*color_hdr_rt->GetColorTex(), frame_packet.background_color, {});
 
-      auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
-      SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx);
+    cam_cmd.DrawInstanced(3, 1, 0, 0);
 
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, pos_buf_idx),
-        *frame_packet.buffers[mesh.pos_buf_local_idx]);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, norm_buf_idx),
-        *frame_packet.buffers[mesh.norm_buf_local_idx]);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, tan_buf_idx),
-        *frame_packet.buffers[mesh.tan_buf_local_idx]);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, uv_buf_idx),
-        *frame_packet.buffers[mesh.uv_buf_local_idx]);
-      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(ObjectDrawParams, mtl_idx), *mtl_buf);
-      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(ObjectDrawParams, per_draw_cb_idx),
-        *per_draw_cb.GetBuffer());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, vertex_idx_buf_idx),
-        *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, prim_idx_buf_idx),
-        *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_buf_idx),
-        *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ObjectDrawParams, idx32), mesh.idx32);
-
-      DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_count),
-        PIPELINE_PARAM_INDEX(ObjectDrawParams, meshlet_offset), PIPELINE_PARAM_INDEX(ObjectDrawParams, instance_count),
-        PIPELINE_PARAM_INDEX(ObjectDrawParams, instance_offset), PIPELINE_PARAM_INDEX(ObjectDrawParams, base_vertex),
-        cam_cmd);
-    }
-
+    // Skybox pass
     if (frame_packet.skybox_cubemap) {
-      auto const cube_mesh{App::Instance().GetResourceManager().GetCubeMesh()};
       cam_cmd.SetPipelineState(*frame_packet.skybox_pso);
+      cam_cmd.SetRenderTargets(std::span{
+        std::array{static_cast<graphics::Texture const*>(color_hdr_rt->GetColorTex().get())}.data(), 1
+      }, depth_rt->GetDepthStencilTex().get());
+
+      auto const cube_mesh{App::Instance().GetResourceManager().GetCubeMesh()};
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, pos_buf_idx),
         *cube_mesh->GetPositionBuffer());
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SkyboxDrawParams, per_view_cb_idx),
@@ -1932,18 +1890,9 @@ auto SceneRenderer::Render() -> void {
       DrawSubmesh(1, 0, 0, {}, {}, {}, {}, {}, cam_cmd);
     }
 
-    RenderTarget const* post_process_input_rt;
+    // Post-processing pass
 
-    if (frame_packet.msaa_mode == MultisamplingMode::kOff) {
-      post_process_input_rt = hdr_rt.get();
-    } else {
-      auto resolved_hdr_rt_desc{hdr_rt_desc};
-      resolved_hdr_rt_desc.sample_count = 1;
-      auto const resolve_hdr_rt{render_manager_->AcquireTemporaryRenderTarget(resolved_hdr_rt_desc)};
-
-      cam_cmd.Resolve(*resolve_hdr_rt->GetColorTex(), *hdr_rt->GetColorTex(), *hdr_rt_desc.color_format);
-      post_process_input_rt = resolve_hdr_rt.get();
-    }
+    auto const* const post_process_input_rt{color_hdr_rt.get()};
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&cam_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
@@ -1954,8 +1903,12 @@ auto SceneRenderer::Render() -> void {
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, inv_gamma),
       *std::bit_cast<UINT*>(&frame_packet.inv_gamma));
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, bi_clamp_samp_idx), samp_bi_clamp_.Get());
-    cam_cmd.SetRenderTargets(std::span{target_rt.GetColorTex().get(), 1}, nullptr);
+    cam_cmd.SetRenderTargets(std::span{
+      std::array{static_cast<graphics::Texture const*>(target_rt.GetColorTex().get())}.data(), 1
+    }, nullptr);
     cam_cmd.DrawInstanced(3, 1, 0, 0);
+
+    // Gizmo pass
 
     if (!frame_packet.line_gizmo_vertex_data.empty()) {
       cam_cmd.SetPipelineState(*frame_packet.line_gizmo_pso);
@@ -1965,7 +1918,9 @@ auto SceneRenderer::Render() -> void {
         *gizmo_color_buffer_.GetBuffer());
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx),
         *cam_per_view_cb.GetBuffer());
-      cam_cmd.SetRenderTargets(std::span{target_rt.GetColorTex().get(), 1}, nullptr);
+      cam_cmd.SetRenderTargets(std::span{
+        std::array{static_cast<graphics::Texture const*>(target_rt.GetColorTex().get())}.data(), 1
+      }, nullptr);
       cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
       cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
       cam_cmd.DrawInstanced(2, static_cast<UINT>(frame_packet.line_gizmo_vertex_data.size()), 0, 0);
@@ -1995,31 +1950,6 @@ auto SceneRenderer::SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_ove
 
 auto SceneRenderer::GetCurrentRenderTarget() const -> RenderTarget const& {
   return rt_override_ ? *rt_override_ : *main_rt_;
-}
-
-
-auto SceneRenderer::GetMultisamplingMode() const noexcept -> MultisamplingMode {
-  return msaa_mode_;
-}
-
-
-auto SceneRenderer::SetMultisamplingMode(MultisamplingMode const mode) noexcept -> void {
-  msaa_mode_ = mode;
-  RecreatePipelines();
-}
-
-
-auto SceneRenderer::IsDepthNormalPrePassEnabled() const noexcept -> bool {
-  return depth_normal_pre_pass_enabled_;
-}
-
-
-auto SceneRenderer::SetDepthNormalPrePassEnabled(bool const enabled) noexcept -> void {
-  depth_normal_pre_pass_enabled_ = enabled;
-
-  if (!enabled && IsSsaoEnabled()) {
-    SetSsaoEnabled(false);
-  }
 }
 
 
@@ -2110,10 +2040,6 @@ auto SceneRenderer::IsSsaoEnabled() const noexcept -> bool {
 
 auto SceneRenderer::SetSsaoEnabled(bool const enabled) noexcept -> void {
   ssao_enabled_ = enabled;
-
-  if (enabled && !IsDepthNormalPrePassEnabled()) {
-    SetDepthNormalPrePassEnabled(true);
-  }
 }
 
 

@@ -186,7 +186,7 @@ auto ImGuiRenderer::Render() -> void {
   cmd.SetPipelineParameter(offsetof(ImGuiDrawParams, samp_idx) / 4, samp_.Get());
   cmd.SetShaderResource(offsetof(ImGuiDrawParams, vb_idx) / 4, *vb);
   cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  cmd.SetRenderTargets(std::span{&rt, 1}, nullptr);
+  cmd.SetRenderTargets(std::span{std::array{(&rt)}.data(), 1}, nullptr);
   cmd.SetViewports(std::array<D3D12_VIEWPORT, 1>{
     CD3DX12_VIEWPORT{0.0f, 0.0f, draw_data->DisplaySize.x, draw_data->DisplaySize.y}
   });

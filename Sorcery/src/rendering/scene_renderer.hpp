@@ -35,15 +35,6 @@ enum class ShadowFilteringMode : int {
 };
 
 
-// Cast to int to get the sample count
-enum class MultisamplingMode : int {
-  kOff = 1,
-  kX2  = 2,
-  kX4  = 4,
-  kX8  = 8
-};
-
-
 struct SsaoParams {
   float radius;
   float bias;
@@ -83,12 +74,6 @@ public:
   LEOPPHAPI auto SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetCurrentRenderTarget() const -> RenderTarget const&;
-
-  [[nodiscard]] LEOPPHAPI auto GetMultisamplingMode() const noexcept -> MultisamplingMode;
-  LEOPPHAPI auto SetMultisamplingMode(MultisamplingMode mode) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto IsDepthNormalPrePassEnabled() const noexcept -> bool;
-  LEOPPHAPI auto SetDepthNormalPrePassEnabled(bool enabled) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto IsUsingPreciseColorFormat() const noexcept -> bool;
   LEOPPHAPI auto SetUsePreciseColorFormat(bool precise) noexcept -> void;
@@ -272,11 +257,9 @@ private:
     std::vector<Vector4> gizmo_colors;
     std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data;
 
-    MultisamplingMode msaa_mode;
     SsaoParams ssao_params;
     ShadowParams shadow_params;
     float inv_gamma;
-    bool depth_normal_pre_pass_enabled;
     bool ssao_enabled;
     DXGI_FORMAT color_buffer_format;
     std::array<float, 4> background_color;
@@ -286,11 +269,10 @@ private:
     Vector3 ambient_light;
 
     graphics::SharedDeviceChildHandle<graphics::PipelineState> shadow_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_normal_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> gbuffer_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_resolve_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> line_gizmo_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> object_pso_depth_write;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> object_pso_depth_read;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> deferred_lighting_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> post_process_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso;
@@ -362,6 +344,9 @@ private:
   static DXGI_FORMAT constexpr render_target_format_{DXGI_FORMAT_R8G8B8A8_UNORM};
   static DXGI_FORMAT constexpr ssao_buffer_format_{DXGI_FORMAT_R8_UNORM};
   static DXGI_FORMAT constexpr normal_buffer_format_{DXGI_FORMAT_R8G8B8A8_SNORM};
+  static DXGI_FORMAT constexpr gbuffer0_format_{DXGI_FORMAT_R8G8B8A8_UNORM};
+  static DXGI_FORMAT constexpr gbuffer1_format_{DXGI_FORMAT_R16G16_FLOAT};
+  static DXGI_FORMAT constexpr gbuffer2_format_{DXGI_FORMAT_R8G8_UNORM};
 
   ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<Window> window_;
@@ -377,11 +362,10 @@ private:
   graphics::SharedDeviceChildHandle<graphics::Texture> ssao_noise_tex_;
 
   graphics::SharedDeviceChildHandle<graphics::PipelineState> shadow_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_normal_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_resolve_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> line_gizmo_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> object_pso_depth_write_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> object_pso_depth_read_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> gbuffer_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> deferred_lighting_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> post_process_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso_;
@@ -423,13 +407,11 @@ private:
 
   StructuredBuffer<Vector4> ssao_samples_buffer_;
 
-  MultisamplingMode msaa_mode_{MultisamplingMode::kX8};
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
   ShadowParams shadow_params_{{0.1f, 0.3f, 0.6f}, 4, false, 100, ShadowFilteringMode::kPcfTent5X5};
 
   float inv_gamma_{1.f / 2.2f};
 
-  bool depth_normal_pre_pass_enabled_{true};
   bool ssao_enabled_{true};
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};

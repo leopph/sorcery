@@ -1,13 +1,15 @@
-#ifndef OBJECT_PBR_HLSLI
-#define OBJECT_PBR_HLSLI
+#ifndef GBUFFER_HLSLI
+#define GBUFFER_HLSLI
 
-#include "common.hlsli"
-#include "lighting.hlsli"
 #define MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES
 #include "mesh_shader_core.hlsli"
+
+#include "common.hlsli"
+#include "gbuffer_utils.hlsli"
 #include "shader_interop.h"
 
-DECLARE_PARAMS(ObjectDrawParams);
+
+DECLARE_PARAMS(GBufferDrawParams);
 DECLARE_DRAW_CALL_PARAMS(g_draw_call_params);
 
 
@@ -67,14 +69,15 @@ DECLARE_MESH_SHADER_MAIN(MsMain) {
 }
 
 
-float4 PsMain(PsIn const vs_out) : SV_Target {
+void PsMain(PsIn const ps_in, out float4 out0 : SV_Target0, out float2 out1 : SV_Target1,
+            out float2 out2 : SV_Target2) {
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
   SamplerState const mtl_samp = SamplerDescriptorHeap[g_params.mtl_samp_idx];
 
   if (mtl.blendMode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {
     Texture2D<float> const opacity_map = ResourceDescriptorHeap[mtl.opacity_map_idx];
 
-    if (opacity_map.Sample(mtl_samp, vs_out.uv) < mtl.alphaThreshold) {
+    if (opacity_map.Sample(mtl_samp, ps_in.uv) < mtl.alphaThreshold) {
       discard;
     }
   }
@@ -83,72 +86,43 @@ float4 PsMain(PsIn const vs_out) : SV_Target {
 
   if (mtl.albedo_map_idx != INVALID_RES_IDX) {
     Texture2D const albedo_map = ResourceDescriptorHeap[mtl.albedo_map_idx];
-    albedo *= albedo_map.Sample(mtl_samp, vs_out.uv).rgb;
+    albedo *= albedo_map.Sample(mtl_samp, ps_in.uv).rgb;
   }
 
   float metallic = mtl.metallic;
 
   if (mtl.metallic_map_idx != INVALID_RES_IDX) {
     Texture2D<float> const metallic_map = ResourceDescriptorHeap[mtl.metallic_map_idx];
-    metallic *= metallic_map.Sample(mtl_samp, vs_out.uv).r;
+    metallic *= metallic_map.Sample(mtl_samp, ps_in.uv).r;
   }
 
   float roughness = mtl.roughness;
 
   if (mtl.roughness_map_idx != INVALID_RES_IDX) {
     Texture2D<float> const roughness_map = ResourceDescriptorHeap[mtl.roughness_map_idx];
-    roughness *= roughness_map.Sample(mtl_samp, vs_out.uv).r;
+    roughness *= roughness_map.Sample(mtl_samp, ps_in.uv).r;
   }
 
-  const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_params.per_frame_cb_idx];
-  float2 const screen_uv = vs_out.pos_cs.xy / per_frame_cb.screenSize;
-
-  SamplerState const point_clamp_samp = SamplerDescriptorHeap[g_params.point_clamp_samp_idx];
-  Texture2D<float> const ssao_tex = ResourceDescriptorHeap[g_params.ssao_tex_idx];
-  float ao = mtl.ao * ssao_tex.Sample(point_clamp_samp, screen_uv).r;
+  float ao = mtl.ao;
 
   if (mtl.ao_map_idx != INVALID_RES_IDX) {
     Texture2D<float> const ao_map = ResourceDescriptorHeap[mtl.ao_map_idx];
-    ao *= ao_map.Sample(mtl_samp, vs_out.uv).r;
+    ao *= ao_map.Sample(mtl_samp, ps_in.uv).r;
   }
 
-  float3 norm_ws = normalize(vs_out.norm_ws);
+  float3 norm_ws = normalize(ps_in.norm_ws);
 
   if (mtl.normal_map_idx != INVALID_RES_IDX) {
     Texture2D<float3> const normal_map = ResourceDescriptorHeap[mtl.normal_map_idx];
-    norm_ws = normal_map.Sample(mtl_samp, vs_out.uv).rgb;
+    norm_ws = normal_map.Sample(mtl_samp, ps_in.uv).rgb;
     norm_ws *= 2.0;
     norm_ws -= 1.0;
-    norm_ws = normalize(mul(normalize(norm_ws), vs_out.tbn_mtx_ws));
+    norm_ws = normalize(mul(normalize(norm_ws), ps_in.tbn_mtx_ws));
   }
 
-  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
-  float3 const dir_to_cam_ws = normalize(per_view_cb.viewPos - vs_out.pos_ws);
-
-  float3 out_color = per_frame_cb.ambientLightColor * albedo * ao;
-
-  StructuredBuffer<ShaderLight> const lights = ResourceDescriptorHeap[g_params.light_buf_idx];
-
-  Texture2DArray<float> const dir_light_shadow_map_arr = ResourceDescriptorHeap[g_params.dir_shadow_arr_idx];
-  Texture2D<float> const punc_light_shadow_atlas = ResourceDescriptorHeap[g_params.punc_shadow_atlas_idx];
-  SamplerComparisonState const shadow_samp = SamplerDescriptorHeap[g_params.shadow_samp_idx];
-
-  for (uint i = 0; i < g_params.light_count; i++) {
-    if (lights[i].type == 0) {
-      out_color += CalculateDirLight(lights[i], vs_out.pos_ws, norm_ws, dir_to_cam_ws, vs_out.pos_vs.z, albedo,
-        metallic, roughness, dir_light_shadow_map_arr, shadow_samp, per_frame_cb.shadowFilteringMode,
-        per_view_cb.shadowCascadeSplitDistances, per_frame_cb.shadowCascadeCount, per_frame_cb.visualizeShadowCascades);
-    } else if (lights[i].type == 1) {
-      out_color += CalculateSpotLight(lights[i], vs_out.pos_ws, norm_ws, dir_to_cam_ws, albedo, metallic,
-        roughness, punc_light_shadow_atlas, shadow_samp, per_frame_cb.shadowFilteringMode);
-    } else if (lights[i].type == 2) {
-      out_color += CalculatePointLight(lights[i], vs_out.pos_ws, norm_ws, dir_to_cam_ws, albedo, metallic,
-        roughness, punc_light_shadow_atlas, shadow_samp, per_frame_cb.shadowFilteringMode);
-    }
-  }
-
-  return float4(out_color, 1);
+  out0 = PackGBuffer0(albedo, ao);
+  out1 = PackGBuffer1(norm_ws);
+  out2 = PackGBuffer2(roughness, metallic);
 }
-
 
 #endif

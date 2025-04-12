@@ -56,29 +56,9 @@ auto SettingsWindow::Draw() -> void {
       App::Instance().GetSceneRenderer().SetUsePreciseColorFormat(preciseColor);
     }
 
-    constexpr char const* msaaComboLabels[]{"Off", "2x", "4x", "8x"};
-
-    if (auto const msaaModeIdx{
-      static_cast<int>(std::log2(static_cast<int>(App::Instance().GetSceneRenderer().GetMultisamplingMode())))
-    }; ImGui::BeginCombo("MSAA", msaaComboLabels[msaaModeIdx])) {
-      for (auto i{0}; i < 4; i++) {
-        if (ImGui::Selectable(msaaComboLabels[i], msaaModeIdx == i)) {
-          App::Instance().GetSceneRenderer().SetMultisamplingMode(
-            static_cast<rendering::MultisamplingMode>(static_cast<int>(std::pow(2, i))));
-        }
-      }
-
-      ImGui::EndCombo();
-    }
-
     if (auto gamma{App::Instance().GetSceneRenderer().GetGamma()}; ImGui::DragFloat("Gamma", &gamma, 0.01f, 0.01f, 5.0f,
       "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetGamma(gamma);
-    }
-
-    if (auto depthPrePassEnabled{App::Instance().GetSceneRenderer().IsDepthNormalPrePassEnabled()}; ImGui::Checkbox(
-      "Depth-Normal Pre-Pass", &depthPrePassEnabled)) {
-      App::Instance().GetSceneRenderer().SetDepthNormalPrePassEnabled(depthPrePassEnabled);
     }
 
     ImGui::TreePop();
