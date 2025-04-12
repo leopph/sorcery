@@ -29,7 +29,6 @@ Some screenshots from Sorcery's editor, Mage!
     * Screen-coverage based allocation from shadow atlas
   * PCF Tent filtering on shadow maps
   * Depth and normal shadow bias
-  * MSAA
   * HDR Skybox
   * Mipmapping
   * Frustum culling for cameras and shadows
