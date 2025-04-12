@@ -138,6 +138,7 @@
     </ClCompile>
     <ClCompile Include="src\app.cpp" />
     <ClCompile Include="src\Bounds.cpp" />
+    <ClCompile Include="src\char_encoding_helpers.cpp" />
     <ClCompile Include="src\ExternalResource.cpp" />
     <ClCompile Include="src\FileIo.cpp" />
     <ClCompile Include="src\job_system.cpp" />
@@ -179,6 +180,7 @@
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
     <ClInclude Include="src\app.hpp" />
+    <ClInclude Include="src\char_encoding_helpers.hpp" />
     <ClInclude Include="src\ExternalResource.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\job_system.hpp" />
