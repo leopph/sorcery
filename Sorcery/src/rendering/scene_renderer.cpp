@@ -1462,7 +1462,11 @@ auto SceneRenderer::Render() -> void {
         for (unsigned j{0}; j < pos_key_count; j++) {
           if (auto const& [timestamp, value]{frame_packet.anim_pos_keys[pos_key_begin_local_idx + j]};
             timestamp > cur_animation_time) {
-            auto const& [prev_timestamp, prev_value]{frame_packet.anim_pos_keys[pos_key_begin_local_idx + j - 1]};
+            auto const& [prev_timestamp, prev_value]{
+              pos_key_begin_local_idx + j == 0
+                ? frame_packet.anim_pos_keys.back()
+                : frame_packet.anim_pos_keys[pos_key_begin_local_idx + j - 1]
+            };
             pos = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, cur_animation_time));
             break;
           }
@@ -1475,7 +1479,11 @@ auto SceneRenderer::Render() -> void {
         for (unsigned j{0}; j < rot_key_count; j++) {
           if (auto const& [timestamp, value]{frame_packet.anim_rot_keys[rot_key_begin_local_idx + j]};
             timestamp > cur_animation_time) {
-            auto const& [prev_timestamp, prev_value]{frame_packet.anim_rot_keys[rot_key_begin_local_idx + j - 1]};
+            auto const& [prev_timestamp, prev_value]{
+              rot_key_begin_local_idx + j == 0
+                ? frame_packet.anim_rot_keys.back()
+                : frame_packet.anim_rot_keys[rot_key_begin_local_idx + j - 1]
+            };
             rot = Slerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, cur_animation_time));
             break;
           }
@@ -1489,7 +1497,9 @@ auto SceneRenderer::Render() -> void {
           if (auto const& [timestamp, value]{frame_packet.anim_scaling_keys[scaling_key_begin_local_idx + j]};
             timestamp > cur_animation_time) {
             auto const& [prev_timestamp, prev_value]{
-              frame_packet.anim_scaling_keys[scaling_key_begin_local_idx + j - 1]
+              scaling_key_begin_local_idx + j == 0
+                ? frame_packet.anim_scaling_keys.back()
+                : frame_packet.anim_scaling_keys[scaling_key_begin_local_idx + j - 1]
             };
             scale = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, cur_animation_time));
             break;
