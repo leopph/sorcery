@@ -298,7 +298,8 @@ private:
   static auto SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
                                   Matrix4 const& proj_mtx, ShadowCascadeBoundaries const& cascade_bounds,
                                   Vector3 const& view_pos) -> void;
-  static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx) -> void;
+  static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
+                                  Matrix4 const& view_mtx, Matrix4 const& proj_mtx) -> void;
 
 
   auto UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas, std::span<LightData const> lights,

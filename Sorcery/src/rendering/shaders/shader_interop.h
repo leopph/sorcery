@@ -129,6 +129,9 @@ struct ShaderPerViewConstants {
 struct ShaderPerDrawConstants {
   row_major float4x4 modelMtx;
   row_major float4x4 invTranspModelMtx;
+
+  row_major float4x4 model_view_mtx;
+  row_major float4x4 model_view_proj_mtx;
 };
 
 
