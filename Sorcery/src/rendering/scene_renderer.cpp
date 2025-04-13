@@ -942,9 +942,7 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   render_manager_{&render_manager},
   window_{&window},
   device_{&device} {
-  for (auto& buf : light_buffers_) {
-    buf = StructuredBuffer<ShaderLight>::New(*device_, *render_manager_, true);
-  }
+  light_buffer_ = StructuredBuffer<ShaderLight>::New(*device_, *render_manager_, false, true, false);
 
   gizmo_color_buffer_ = StructuredBuffer<Vector4>::New(*device_, *render_manager_, true);
 
@@ -1797,26 +1795,25 @@ auto SceneRenderer::Render() -> void {
     // Deferred lighting pass
 
     auto const light_count{std::ssize(visible_light_indices)};
-    auto& light_buffer{light_buffers_[frame_idx]};
-    light_buffer.Resize(static_cast<int>(light_count));
-    auto const light_buffer_data{light_buffer.GetData()};
+    std::vector<ShaderLight> light_data(light_count);
+
 
     for (auto i = 0; i < light_count; i++) {
-      light_buffer_data[i].color = frame_packet.light_data[visible_light_indices[i]].color;
-      light_buffer_data[i].intensity = frame_packet.light_data[visible_light_indices[i]].intensity;
-      light_buffer_data[i].type = static_cast<int>(frame_packet.light_data[visible_light_indices[i]].type);
-      light_buffer_data[i].direction = frame_packet.light_data[visible_light_indices[i]].direction;
-      light_buffer_data[i].isCastingShadow = FALSE;
-      light_buffer_data[i].range = frame_packet.light_data[visible_light_indices[i]].range;
-      light_buffer_data[i].halfInnerAngleCos = std::cos(
+      light_data[i].color = frame_packet.light_data[visible_light_indices[i]].color;
+      light_data[i].intensity = frame_packet.light_data[visible_light_indices[i]].intensity;
+      light_data[i].type = static_cast<int>(frame_packet.light_data[visible_light_indices[i]].type);
+      light_data[i].direction = frame_packet.light_data[visible_light_indices[i]].direction;
+      light_data[i].isCastingShadow = FALSE;
+      light_data[i].range = frame_packet.light_data[visible_light_indices[i]].range;
+      light_data[i].halfInnerAngleCos = std::cos(
         ToRadians(frame_packet.light_data[visible_light_indices[i]].inner_angle / 2.0f));
-      light_buffer_data[i].halfOuterAngleCos = std::cos(
+      light_data[i].halfOuterAngleCos = std::cos(
         ToRadians(frame_packet.light_data[visible_light_indices[i]].outer_angle / 2.0f));
-      light_buffer_data[i].position = frame_packet.light_data[visible_light_indices[i]].position;
-      light_buffer_data[i].depthBias = frame_packet.light_data[visible_light_indices[i]].shadow_depth_bias;
-      light_buffer_data[i].normalBias = frame_packet.light_data[visible_light_indices[i]].shadow_normal_bias;
+      light_data[i].position = frame_packet.light_data[visible_light_indices[i]].position;
+      light_data[i].depthBias = frame_packet.light_data[visible_light_indices[i]].shadow_depth_bias;
+      light_data[i].normalBias = frame_packet.light_data[visible_light_indices[i]].shadow_normal_bias;
 
-      for (auto& sample : light_buffer_data[i].sampleShadowMap) {
+      for (auto& sample : light_data[i].sampleShadowMap) {
         sample = FALSE;
       }
     }
@@ -1826,18 +1823,22 @@ auto SceneRenderer::Render() -> void {
     for (auto i{0}; i < light_count; i++) {
       if (auto const light{frame_packet.light_data[visible_light_indices[i]]};
         light.type == LightComponent::Type::Directional && light.casts_shadow) {
-        light_buffer_data[i].isCastingShadow = TRUE;
+        light_data[i].isCastingShadow = TRUE;
 
         for (auto cascade_idx{0u}; cascade_idx < frame_packet.shadow_params.cascade_count; cascade_idx++) {
-          light_buffer_data[i].sampleShadowMap[cascade_idx] = TRUE;
-          light_buffer_data[i].shadowViewProjMatrices[cascade_idx] = shadow_view_proj_matrices[cascade_idx];
+          light_data[i].sampleShadowMap[cascade_idx] = TRUE;
+          light_data[i].shadowViewProjMatrices[cascade_idx] = shadow_view_proj_matrices[cascade_idx];
         }
 
         break;
       }
     }
 
-    punctual_shadow_atlas_->SetLookUpInfo(light_buffer_data);
+    punctual_shadow_atlas_->SetLookUpInfo(light_data);
+
+    auto& light_buffer{light_buffer_};
+    light_buffer.Resize(static_cast<int>(light_count));
+    render_manager_->UpdateBuffer(*light_buffer.GetBuffer(), 0, as_bytes(std::span{light_data}));
 
     cam_cmd.SetPipelineState(*frame_packet.deferred_lighting_pso);
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, gbuffer0_idx),

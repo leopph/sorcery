@@ -356,7 +356,7 @@ private:
   std::array<ConstantBuffer<ShaderPerFrameConstants>, RenderManager::GetMaxFramesInFlight()> per_frame_cbs_;
   std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, RenderManager::GetMaxFramesInFlight()>> per_view_cbs_;
   std::vector<std::array<ConstantBuffer<ShaderPerDrawConstants>, RenderManager::GetMaxFramesInFlight()>> per_draw_cbs_;
-  std::array<StructuredBuffer<ShaderLight>, RenderManager::GetMaxFramesInFlight()> light_buffers_;
+  StructuredBuffer<ShaderLight> light_buffer_;
 
   graphics::SharedDeviceChildHandle<graphics::Texture> white_tex_;
   graphics::SharedDeviceChildHandle<graphics::Texture> ssao_noise_tex_;
