@@ -4,11 +4,11 @@
 #include "../Resources/Scene.hpp"
 
 #include <algorithm>
+#include <cassert>
+#include <format>
 #include <functional>
 #include <iostream>
 #include <iterator>
-#include <cassert>
-#include <format>
 #include <utility>
 
 #include <imgui.h>
@@ -216,6 +216,13 @@ Entity::Entity(Entity&& other) noexcept :
   }
 
   other.AddComponent(Create<TransformComponent>());
+}
+
+
+Entity::~Entity() {
+  while (!components_.empty()) {
+    RemoveComponent(*components_.back());
+  }
 }
 
 

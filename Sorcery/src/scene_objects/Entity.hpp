@@ -31,7 +31,7 @@ public:
   LEOPPHAPI Entity(Entity const& other);
   LEOPPHAPI Entity(Entity&& other) noexcept;
 
-  ~Entity() override = default;
+  LEOPPHAPI ~Entity() override;
 
   auto operator=(Entity const& other) -> void = delete;
   auto operator=(Entity&& other) -> void = delete;
