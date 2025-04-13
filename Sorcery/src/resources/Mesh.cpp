@@ -86,24 +86,6 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
     }
   };
 
-  auto const to_index_format{
-    []<typename Format>(std::span<std::uint8_t const> const indices) {
-      return std::span{std::bit_cast<Format const*>(indices.data()), indices.size() / sizeof(Format)};
-    }
-  };
-
-  auto const to_u32{
-    [to_index_format](std::span<std::uint8_t const> const indices) {
-      return to_index_format.operator()<std::uint32_t>(indices);
-    }
-  };
-
-  auto const to_u16{
-    [to_index_format](std::span<std::uint8_t const> const indices) {
-      return to_index_format.operator()<std::uint16_t>(indices);
-    }
-  };
-
   std::vector<Vector4> vec4_buf;
 
   auto& gd{App::Instance().GetGraphicsDevice()};
@@ -111,23 +93,22 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
 
   using rendering::StructuredBuffer;
 
-  pos_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.positions, 1, vec4_buf), true, true);
-  norm_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.normals, 0, vec4_buf), true, true);
-  tan_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.tangents, 0, vec4_buf), true, true);
-  uv_buf_ = StructuredBuffer<Vector2>::New(gd, rm, data.uvs, true, false);
+  pos_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.positions, 1, vec4_buf), false, true, true);
+  norm_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.normals, 0, vec4_buf), false, true, true);
+  tan_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.tangents, 0, vec4_buf), false, true, true);
+  uv_buf_ = StructuredBuffer<Vector2>::New(gd, rm, data.uvs, false, true, false);
   bone_weight_buf_ = data.bone_weights.empty()
                        ? StructuredBuffer<Vector4>{}
-                       : StructuredBuffer<Vector4>::New(gd, rm, data.bone_weights, false, true);
+                       : StructuredBuffer<Vector4>::New(gd, rm, data.bone_weights, false, false, true);
   bone_idx_buf_ = data.bone_indices.empty()
                     ? StructuredBuffer<Vector<std::uint32_t, 4>>{}
-                    : StructuredBuffer<Vector<std::uint32_t, 4>>::New(gd, rm, data.bone_indices, false, true);
-  meshlet_buf_ = StructuredBuffer<MeshletData>::New(gd, rm, data.meshlets);
+                    : StructuredBuffer<Vector<std::uint32_t, 4>>::New(gd, rm, data.bone_indices, false, false, true);
+  meshlet_buf_ = StructuredBuffer<MeshletData>::New(gd, rm, data.meshlets, false);
   vertex_idx_buf_ = gd.CreateBuffer(graphics::BufferDesc{data.vertex_indices.size(), 1, false, true, false},
-    graphics::CpuAccess::kWrite);
-  prim_idx_buf_ = StructuredBuffer<MeshletTriangleData>::New(gd, rm, data.triangle_indices, true, false);
+    graphics::CpuAccess::kNone);
+  prim_idx_buf_ = StructuredBuffer<MeshletTriangleData>::New(gd, rm, data.triangle_indices, false, true, false);
 
-  std::memcpy(vertex_idx_buf_->Map(), data.vertex_indices.data(), data.vertex_indices.size());
-  vertex_idx_buf_->Unmap();
+  rm.UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{data.vertex_indices}));
 
   // CPU lists
 

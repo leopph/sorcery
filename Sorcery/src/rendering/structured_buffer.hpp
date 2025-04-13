@@ -15,7 +15,7 @@ public:
                                 bool cpu_accessible, bool shader_resource = true,
                                 bool unordered_access = false) -> StructuredBuffer;
   [[nodiscard]] static auto New(graphics::GraphicsDevice& device, RenderManager& render_manager,
-                                std::span<T const> data, bool shader_resource = true,
+                                std::span<T const> data, bool cpu_accessible, bool shader_resource = true,
                                 bool unordered_access = false) -> StructuredBuffer;
 
   StructuredBuffer() = default;
@@ -30,7 +30,7 @@ private:
   StructuredBuffer(graphics::GraphicsDevice& device, RenderManager& render_manager, UINT initial_capacity,
                    bool cpu_accessible, bool shader_resource, bool unordered_access);
   StructuredBuffer(graphics::GraphicsDevice& device, RenderManager& render_manager, std::span<T const> data,
-                   bool shader_resource, bool unordered_access);
+                   bool cpu_accessible, bool shader_resource, bool unordered_access);
 
   auto RecreateBuffer() -> void;
 

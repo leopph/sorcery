@@ -78,7 +78,7 @@ auto SkinnedMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
       if (auto const bones{mesh->GetBones()}; !bones.empty()) {
         bone_matrix_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
           graphics::BufferDesc{mesh->GetBones().size() * sizeof(Matrix4), sizeof(Matrix4), false, false, true},
-          graphics::CpuAccess::kWrite);
+          graphics::CpuAccess::kNone);
       }
     }
 

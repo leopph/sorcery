@@ -339,7 +339,7 @@ private:
 
   [[nodiscard]] auto AcquirePendingBarrierCmdList() -> CommandList&;
 
-  [[nodiscard]] static auto MakeHeapType(CpuAccess cpu_access) -> D3D12_HEAP_TYPE;
+  [[nodiscard]] auto MakeHeapType(CpuAccess cpu_access) const -> D3D12_HEAP_TYPE;
 
   static UINT const rtv_heap_size_;
   static UINT const dsv_heap_size_;
@@ -368,6 +368,8 @@ private:
 
   std::vector<details::ExecuteBarrierCmdListRecord> execute_barrier_cmd_lists_;
   std::mutex execute_barrier_mutex_;
+
+  CD3DX12FeatureSupport supported_features_;
 };
 
 

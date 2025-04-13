@@ -222,37 +222,32 @@ GraphicsDevice::GraphicsDevice(bool const enable_debug) {
       "Failed to set debug break on D3D12 corruption.");
   }
 
-  CD3DX12FeatureSupport features;
-  ThrowIfFailed(features.Init(device_.Get()), "Failed to query D3D12 features.");
+  ThrowIfFailed(supported_features_.Init(device_.Get()), "Failed to query D3D12 features.");
 
-  if (features.ResourceBindingTier() < D3D12_RESOURCE_BINDING_TIER_3) {
+  if (supported_features_.ResourceBindingTier() < D3D12_RESOURCE_BINDING_TIER_3) {
     throw std::runtime_error{"Resource Bindig Tier 3 is required but not supported."};
   }
 
-  if (features.HighestShaderModel() < D3D_SHADER_MODEL_6_6) {
+  if (supported_features_.HighestShaderModel() < D3D_SHADER_MODEL_6_6) {
     throw std::runtime_error{"Shader Model 6.6 is required but not supported."};
   }
 
-  if (!features.EnhancedBarriersSupported()) {
+  if (!supported_features_.EnhancedBarriersSupported()) {
     throw std::runtime_error{"Enhanced barriers is required but not supported."};
   }
 
-  if (features.HighestRootSignatureVersion() < D3D_ROOT_SIGNATURE_VERSION_1_1) {
+  if (supported_features_.HighestRootSignatureVersion() < D3D_ROOT_SIGNATURE_VERSION_1_1) {
     throw std::runtime_error{"Root Signature 1.1 is required but no supported."};
   }
 
-  if (!features.VPAndRTArrayIndexFromAnyShaderFeedingRasterizerSupportedWithoutGSEmulation()) {
+  if (!supported_features_.VPAndRTArrayIndexFromAnyShaderFeedingRasterizerSupportedWithoutGSEmulation()) {
     throw std::runtime_error{
       "Viewport and render target array index outside of geometry shaders is required but no supported."
     };
   }
 
-  if (features.MeshShaderTier() < D3D12_MESH_SHADER_TIER_1) {
+  if (supported_features_.MeshShaderTier() < D3D12_MESH_SHADER_TIER_1) {
     throw std::runtime_error{"Mesh Shader Tier 1 is required but not supported."};
-  }
-
-  if (!features.GPUUploadHeapSupported()) {
-    throw std::runtime_error{"GPU upload heap is required but not supported."};
   }
 
   D3D12MA::ALLOCATOR_DESC const allocator_desc{D3D12MA::ALLOCATOR_FLAG_NONE, device_.Get(), 0, nullptr, adapter.Get()};
@@ -1121,14 +1116,14 @@ auto GraphicsDevice::AcquirePendingBarrierCmdList() -> CommandList& {
 }
 
 
-auto GraphicsDevice::MakeHeapType(CpuAccess const cpu_access) -> D3D12_HEAP_TYPE {
+auto GraphicsDevice::MakeHeapType(CpuAccess const cpu_access) const -> D3D12_HEAP_TYPE {
   switch (cpu_access) {
     case CpuAccess::kNone:
       return D3D12_HEAP_TYPE_DEFAULT;
     case CpuAccess::kRead:
       return D3D12_HEAP_TYPE_READBACK;
     case CpuAccess::kWrite:
-      return D3D12_HEAP_TYPE_GPU_UPLOAD;
+      return supported_features_.GPUUploadHeapSupported() ? D3D12_HEAP_TYPE_GPU_UPLOAD : D3D12_HEAP_TYPE_UPLOAD;
   }
 
   throw std::runtime_error{"Failed to make D3D12 heap type: unknown CPU access type."};

@@ -12,9 +12,9 @@ auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, RenderManager& r
 
 template<typename T> requires (AlignsTo(sizeof(T), 16ull))
 auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, RenderManager& render_manager,
-                              std::span<T const> const data, bool const shader_resource,
+                              std::span<T const> const data, bool const cpu_accessible, bool const shader_resource,
                               bool const unordered_access) -> StructuredBuffer {
-  return StructuredBuffer(device, render_manager, data, shader_resource, unordered_access);
+  return StructuredBuffer(device, render_manager, data, cpu_accessible, shader_resource, unordered_access);
 }
 
 
@@ -76,11 +76,18 @@ StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice& device, RenderMa
 
 template<typename T> requires (AlignsTo(sizeof(T), 16ull))
 StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice& device, RenderManager& render_manager,
-                                      std::span<T const> const data, bool const shader_resource,
-                                      bool const unordered_access) :
-  StructuredBuffer{device, render_manager, static_cast<UINT>(data.size()), true, shader_resource, unordered_access} {
+                                      std::span<T const> const data, bool const cpu_accessible,
+                                      bool const shader_resource, bool const unordered_access) :
+  StructuredBuffer{
+    device, render_manager, static_cast<UINT>(data.size()), cpu_accessible, shader_resource, unordered_access
+  } {
   Resize(static_cast<UINT>(data.size()));
-  std::ranges::copy(data.subspan(0, static_cast<UINT>(data.size())), mapped_ptr_);
+
+  if (cpu_accessible_) {
+    std::ranges::copy(data.subspan(0, static_cast<UINT>(data.size())), mapped_ptr_);
+  } else {
+    render_manager.UpdateBuffer(*buffer_, 0, as_bytes(data));
+  }
 }
 
 
