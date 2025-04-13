@@ -19,7 +19,7 @@ auto DrawStartupScreen(EditorApp& context) -> void {
     ImGui::SetCursorPosY((window_size.y - text_size.y) * 0.5f);
 
     if (ImGui::Button(open_project_button_label)) {
-      if (NFD::UniquePath selected_path{nullptr}; PickFolder(selected_path, nullptr) == NFD_OKAY) {
+      if (NFD::UniquePathN selected_path; PickFolder(selected_path, nullptr) == NFD_OKAY) {
         context.OpenProject(selected_path.get());
       }
     }

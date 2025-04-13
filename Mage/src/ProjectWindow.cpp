@@ -195,16 +195,17 @@ auto ProjectWindow::DrawContextMenu() -> void {
     }
 
     if (ImGui::MenuItem("Import")) {
-      if (NFD::UniquePathSet pathSet;
-        OpenDialogMultiple(pathSet, static_cast<nfdu8filteritem_t*>(nullptr)) == NFD_OKAY) {
+      if (NFD::UniquePathSet dst_paths;
+        OpenDialogMultiple(dst_paths, static_cast<nfdnfilteritem_t*>(nullptr)) == NFD_OKAY) {
         mFilesToImport.clear();
         mOpenImportModal = false;
 
-        if (nfdpathsetsize_t path_set_size{0}; NFD::PathSet::Count(pathSet, path_set_size) == NFD_OKAY) {
+        if (nfdpathsetsize_t path_set_size{0}; NFD::PathSet::Count(dst_paths, path_set_size) == NFD_OKAY) {
           for (nfdpathsetsize_t i{0}; i < path_set_size; i++) {
-            if (NFD::UniquePathSetPathU8 src_path_abs_u8;
-              NFD::PathSet::GetPath(pathSet, i, src_path_abs_u8) == NFD_OKAY) {
-              std::filesystem::path const src_path_abs{src_path_abs_u8.get()};
+            if (NFD::UniquePathSetPathN src_path_abs_str;
+              NFD::PathSet::GetPath(dst_paths, i, src_path_abs_str) == NFD_OKAY) {
+              std::filesystem::path const src_path_abs{src_path_abs_str.get()};
+
               if (auto importer{ResourceDB::GetNewImporterForResourceFile(src_path_abs)}) {
                 mFilesToImport.emplace_back(std::move(importer), src_path_abs,
                   GenerateUniquePath(workingDirAbs / src_path_abs.filename()));

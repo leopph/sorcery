@@ -1,7 +1,5 @@
 #include "EditorApp.hpp"
 
-#include <utility>
-
 #include <ImGuizmo.h>
 #include <imgui_impl_win32.h>
 #include <implot.h>
@@ -72,6 +70,8 @@ EditorApp::EditorApp(std::span<std::string_view const> const args) :
 
   timing::SetTargetFrameRate(SettingsWindow::DEFAULT_TARGET_FRAME_RATE);
 
+  NFD::Init();
+
   auto project_loaded{false};
 
   for (auto const arg : args) {
@@ -96,6 +96,8 @@ EditorApp::EditorApp(std::span<std::string_view const> const args) :
 EditorApp::~EditorApp() {
   WaitRenderJob();
   GetGraphicsDevice().WaitIdle();
+
+  NFD::Quit();
 
   GetWindow().OnWindowFocusGain.remove_listener(window_focus_gain_listener_);
 
