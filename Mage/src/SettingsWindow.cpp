@@ -99,6 +99,35 @@ auto SettingsWindow::Draw() -> void {
 
     ImGui::Unindent();
     ImGui::EndDisabled();
+
+    ImGui::SeparatorText("Screen Space Reflections");
+    ImGui::Indent();
+
+    auto ssr_params{App::Instance().GetSceneRenderer().GetSsrParams()};
+
+    if (ImGui::DragFloat("Roughness Threshold", &ssr_params.roughness_threshold, 0.001f, 0, 1, "%.3f",
+      ImGuiSliderFlags_AlwaysClamp)) {
+      App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
+    }
+
+    if (ImGui::DragFloat("Thickness Threshold", &ssr_params.thickness_threshold, 0.001f, 0,
+      std::numeric_limits<float>::max() / 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+      App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
+    }
+
+    if (ImGui::DragFloat("Ray Length", &ssr_params.ray_length, 0.001f, 0,
+      std::numeric_limits<float>::max() / 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+      App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
+    }
+
+    if (auto val{static_cast<int>(ssr_params.max_march_steps)};
+      ImGui::DragInt("Max Ray March Steps", &val, 1, 1, std::numeric_limits<int>::max() / 2, "%d",
+        ImGuiSliderFlags_AlwaysClamp)) {
+      ssr_params.max_march_steps = static_cast<unsigned>(val);
+      App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
+    }
+
+    ImGui::Unindent();
     ImGui::TreePop();
   }
 
