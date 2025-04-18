@@ -52,6 +52,14 @@ struct ShadowParams {
 };
 
 
+struct SsrParams {
+  float roughness_threshold;
+  float thickness_threshold;
+  float ray_length;
+  unsigned max_march_steps;
+};
+
+
 class SceneRenderer {
 public:
   LEOPPHAPI SceneRenderer(Window& window, graphics::GraphicsDevice& device, RenderManager& render_manager);
@@ -99,6 +107,9 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetSsaoParams() const noexcept -> SsaoParams const&;
   LEOPPHAPI auto SetSsaoParams(SsaoParams const& ssao_params) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetSsrParams() const noexcept -> SsrParams const&;
+  LEOPPHAPI auto SetSsrParams(SsrParams const& ssr_params) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetGamma() const noexcept -> float;
   LEOPPHAPI auto SetGamma(float gamma) noexcept -> void;
@@ -410,6 +421,10 @@ private:
   StructuredBuffer<Vector4> ssao_samples_buffer_;
 
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
+  SsrParams ssr_params_{
+    .roughness_threshold = 0.1f, .thickness_threshold = 0.1f, .ray_length = 0.5f,
+    .max_march_steps = 32
+  };
   ShadowParams shadow_params_{{0.1f, 0.3f, 0.6f}, 4, false, 100, ShadowFilteringMode::kPcfTent5X5};
 
   float inv_gamma_{1.f / 2.2f};

@@ -2074,6 +2074,16 @@ auto SceneRenderer::SetSsaoParams(SsaoParams const& ssao_params) noexcept -> voi
 }
 
 
+auto SceneRenderer::GetSsrParams() const noexcept -> SsrParams const& {
+  return ssr_params_;
+}
+
+
+auto SceneRenderer::SetSsrParams(SsrParams const& ssr_params) -> void {
+  ssr_params_ = ssr_params;
+}
+
+
 auto SceneRenderer::GetGamma() const noexcept -> f32 {
   return 1.f / inv_gamma_;
 }
