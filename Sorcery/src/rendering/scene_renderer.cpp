@@ -1396,6 +1396,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.skybox_pso = skybox_pso_;
   packet.ssao_pso = ssao_pso_;
   packet.ssao_blur_pso = ssao_blur_pso_;
+  packet.vtx_skinning_pso = vtx_skinning_pso_;
 }
 
 
@@ -1422,7 +1423,7 @@ auto SceneRenderer::Render() -> void {
   });
 
   if (!frame_packet.skinned_mesh_data.empty()) {
-    prepare_cmd.SetPipelineState(*vtx_skinning_pso_);
+    prepare_cmd.SetPipelineState(*frame_packet.vtx_skinning_pso);
   }
 
   for (auto& [mesh_data_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,

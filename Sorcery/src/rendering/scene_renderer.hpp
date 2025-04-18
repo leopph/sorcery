@@ -277,6 +277,7 @@ private:
     graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso;
   };
 
 
