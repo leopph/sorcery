@@ -1804,18 +1804,14 @@ auto SceneRenderer::Render() -> void {
       light_data[i].color = frame_packet.light_data[visible_light_indices[i]].color;
       light_data[i].intensity = frame_packet.light_data[visible_light_indices[i]].intensity;
       light_data[i].type = static_cast<int>(frame_packet.light_data[visible_light_indices[i]].type);
-      light_data[i].direction = Vector3{
-        Vector4{frame_packet.light_data[visible_light_indices[i]].direction, 0} * cam_view_mtx
-      };
+      light_data[i].direction = frame_packet.light_data[visible_light_indices[i]].direction;
       light_data[i].isCastingShadow = FALSE;
       light_data[i].range = frame_packet.light_data[visible_light_indices[i]].range;
       light_data[i].halfInnerAngleCos = std::cos(
         ToRadians(frame_packet.light_data[visible_light_indices[i]].inner_angle / 2.0f));
       light_data[i].halfOuterAngleCos = std::cos(
         ToRadians(frame_packet.light_data[visible_light_indices[i]].outer_angle / 2.0f));
-      light_data[i].position = Vector3{
-        Vector4{frame_packet.light_data[visible_light_indices[i]].position, 1} * cam_view_mtx
-      };
+      light_data[i].position = frame_packet.light_data[visible_light_indices[i]].position;
       light_data[i].depthBias = frame_packet.light_data[visible_light_indices[i]].shadow_depth_bias;
       light_data[i].normalBias = frame_packet.light_data[visible_light_indices[i]].shadow_normal_bias;
 
