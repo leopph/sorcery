@@ -5,6 +5,7 @@
 #include <implot.h>
 #include <nfd.hpp>
 
+#include "char_encoding_helpers.hpp"
 #include "GUI.hpp"
 #include "LoadingScreen.hpp"
 #include "PerformanceCounterWindow.hpp"
@@ -242,9 +243,10 @@ auto EditorApp::SaveCurrentSceneToFile() -> void {
   if (resource_db_.IsSavedResource(*scene_)) {
     resource_db_.SaveResource(*scene_);
   } else {
-    constexpr nfdu8filteritem_t filter{ResourceManager::SCENE_RESOURCE_EXT.substr(1).data()};
+    constexpr nfdu8filteritem_t filter{"Scene files", ResourceManager::SCENE_RESOURCE_EXT.substr(1).data()};
     if (NFD::UniquePath dst;
-      SaveDialog(dst, &filter, 1, resource_db_.GetResourceDirectoryAbsolutePath().string().c_str()) == NFD_OKAY) {
+      SaveDialog(dst, &filter, 1,
+        ToUntypedStrView(resource_db_.GetResourceDirectoryAbsolutePath().u8string()).data()) == NFD_OKAY) {
       if (auto const dstResDirRel{
         relative(std::filesystem::path{dst.get()}, resource_db_.GetResourceDirectoryAbsolutePath()) +=
         ResourceManager::SCENE_RESOURCE_EXT
