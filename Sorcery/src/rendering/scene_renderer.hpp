@@ -53,9 +53,9 @@ struct ShadowParams {
 
 
 struct SsrParams {
-  float roughness_threshold;
-  float thickness_threshold;
-  float ray_length;
+  float max_roughness;
+  float depth_tolerance_ndc;
+  float ray_length_vs;
   unsigned max_march_steps;
 };
 
@@ -425,7 +425,7 @@ private:
 
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
   SsrParams ssr_params_{
-    .roughness_threshold = 0.1f, .thickness_threshold = 0.1f, .ray_length = 0.5f,
+    .max_roughness = 0.8f, .depth_tolerance_ndc = 0.1f, .ray_length_vs = 100.0f,
     .max_march_steps = 32
   };
   ShadowParams shadow_params_{{0.1f, 0.3f, 0.6f}, 4, false, 100, ShadowFilteringMode::kPcfTent5X5};

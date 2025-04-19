@@ -110,17 +110,17 @@ auto SettingsWindow::Draw() -> void {
 
     auto ssr_params{App::Instance().GetSceneRenderer().GetSsrParams()};
 
-    if (ImGui::DragFloat("Roughness Threshold", &ssr_params.roughness_threshold, 0.001f, 0, 1, "%.3f",
+    if (ImGui::DragFloat("Roughness Threshold", &ssr_params.max_roughness, 0.001f, 0, 1, "%.3f",
       ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
 
-    if (ImGui::DragFloat("Thickness Threshold", &ssr_params.thickness_threshold, 0.001f, 0,
+    if (ImGui::DragFloat("Thickness Threshold", &ssr_params.depth_tolerance_ndc, 0.001f, 0,
       std::numeric_limits<float>::max() / 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
 
-    if (ImGui::DragFloat("Ray Length", &ssr_params.ray_length, 0.001f, 0,
+    if (ImGui::DragFloat("Ray Length", &ssr_params.ray_length_vs, 0.001f, 0,
       std::numeric_limits<float>::max() / 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
