@@ -272,9 +272,11 @@ private:
     std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data;
 
     SsaoParams ssao_params;
+    SsrParams ssr_params;
     ShadowParams shadow_params;
     float inv_gamma;
     bool ssao_enabled;
+    bool ssr_enabled;
     DXGI_FORMAT color_buffer_format;
     std::array<float, 4> background_color;
 
@@ -291,6 +293,7 @@ private:
     graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso;
   };
 
@@ -386,6 +389,7 @@ private:
   graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso_;
 
   graphics::UniqueSamplerHandle samp_cmp_pcf_ge_;

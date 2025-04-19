@@ -1377,11 +1377,13 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   ClearGizmoDrawQueue();
 
   packet.ssao_params = ssao_params_;
+  packet.ssr_params = ssr_params_;
   packet.shadow_params = shadow_params_;
 
   packet.inv_gamma = inv_gamma_;
 
   packet.ssao_enabled = ssao_enabled_;
+  packet.ssr_enabled = ssr_enabled_;
 
   packet.color_buffer_format = color_buffer_format_;
 
@@ -1412,6 +1414,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.skybox_pso = skybox_pso_;
   packet.ssao_pso = ssao_pso_;
   packet.ssao_blur_pso = ssao_blur_pso_;
+  packet.ssr_pso = ssr_pso_;
   packet.vtx_skinning_pso = vtx_skinning_pso_;
 }
 
