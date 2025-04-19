@@ -108,6 +108,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetSsaoParams() const noexcept -> SsaoParams const&;
   LEOPPHAPI auto SetSsaoParams(SsaoParams const& ssao_params) noexcept -> void;
 
+  [[nodiscard]] LEOPPHAPI auto IsSsrEnabled() const noexcept -> bool;
+  LEOPPHAPI auto SetSsrEnabled(bool enabled) noexcept -> void;
+
   [[nodiscard]] LEOPPHAPI auto GetSsrParams() const noexcept -> SsrParams const&;
   LEOPPHAPI auto SetSsrParams(SsrParams const& ssr_params) -> void;
 
@@ -430,6 +433,7 @@ private:
   float inv_gamma_{1.f / 2.2f};
 
   bool ssao_enabled_{true};
+  bool ssr_enabled_{true};
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 

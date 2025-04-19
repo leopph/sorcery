@@ -2088,6 +2088,16 @@ auto SceneRenderer::SetSsaoParams(SsaoParams const& ssao_params) noexcept -> voi
 }
 
 
+auto SceneRenderer::IsSsrEnabled() const noexcept -> bool {
+  return ssr_enabled_;
+}
+
+
+auto SceneRenderer::SetSsrEnabled(bool const enabled) noexcept -> void {
+  ssr_enabled_ = enabled;
+}
+
+
 auto SceneRenderer::GetSsrParams() const noexcept -> SsrParams const& {
   return ssr_params_;
 }
