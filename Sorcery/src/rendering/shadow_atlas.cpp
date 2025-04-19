@@ -12,7 +12,7 @@ ShadowAtlas::ShadowAtlas(graphics::GraphicsDevice* const device, DXGI_FORMAT con
       graphics::TextureDesc{
         graphics::TextureDimension::k2D, size, size, 1, 1, depth_format, 1, true, false, true, false
       }, graphics::CpuAccess::kNone,
-      std::array{D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {0.0f, 0}}}.data())
+      std::array{D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {DEPTH_CLEAR_VALUE, 0}}}.data())
   },
   size_{size} {
   if (!IsPowerOfTwo(size_)) {

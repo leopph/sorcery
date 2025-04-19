@@ -11,7 +11,7 @@ DirectionalShadowMapArray::DirectionalShadowMapArray(graphics::GraphicsDevice* c
       graphics::TextureDesc{
         graphics::TextureDimension::k2D, size, size, MAX_CASCADE_COUNT, 1, depth_format, 1, true, false, true, false
       }, graphics::CpuAccess::kNone,
-      std::array{D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {0.0f, 0}}}.data())
+      std::array{D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {DEPTH_CLEAR_VALUE, 0}}}.data())
   },
   size_{size} {}
 

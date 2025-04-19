@@ -45,6 +45,12 @@ typedef bool BOOL;
 
 #define SKINNING_CS_THREADS 64
 
+#define REVERSE_Z
+#ifdef REVERSE_Z
+#define DEPTH_CLEAR_VALUE 0.0f
+#else
+#define DEPTH_CLEAR_VALUE 1.0f
+#endif
 
 struct ShaderLight {
   row_major float4x4 shadowViewProjMatrices[MAX_PER_LIGHT_SHADOW_MAP_COUNT];

@@ -373,7 +373,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
   cmd.SetPipelineState(*shadow_pso_);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
   cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
-  cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, {});
+  cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
 
   for (auto const lightIdx : visible_light_indices) {
     if (auto const light{frame_packet.light_data[lightIdx]};
@@ -569,7 +569,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
   cmd.SetRenderTargets({}, atlas.GetTex().get());
-  cmd.ClearDepthStencil(*atlas.GetTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
+  cmd.ClearDepthStencil(*atlas.GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
 
   auto const cell_size_norm{atlas.GetNormalizedElementSize()};
 
@@ -669,40 +669,64 @@ auto SceneRenderer::RecreateSsaoSamples(int const sample_count) noexcept -> void
 
 
 auto SceneRenderer::RecreatePipelines() -> void {
-  CD3DX12_DEPTH_STENCIL_DESC1 const reverse_z_depth_stencil_write{
-    TRUE, D3D12_DEPTH_WRITE_MASK_ALL, D3D12_COMPARISON_FUNC_GREATER, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+  CD3DX12_DEPTH_STENCIL_DESC1 const depth_stencil_write{
+    TRUE, D3D12_DEPTH_WRITE_MASK_ALL,
+#ifdef REVERSE_Z
+    D3D12_COMPARISON_FUNC_GREATER_EQUAL,
+#else
+    D3D12_COMPARISON_FUNC_LESS_EQUAL,
+#endif
+    FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, FALSE
+  };
+
+  CD3DX12_DEPTH_STENCIL_DESC1 const depth_stencil_read_not_equal{
+    TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_NOT_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     FALSE
   };
 
-  CD3DX12_DEPTH_STENCIL_DESC1 const depth_disabled{
-    FALSE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {},
-    {}, FALSE
+  CD3DX12_DEPTH_STENCIL_DESC1 const depth_stencil_disabled{
+    FALSE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_NONE, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, FALSE
   };
 
-  CD3DX12_DEPTH_STENCIL_DESC1 const disabled_depth_stencil{
-    FALSE, D3D12_DEPTH_WRITE_MASK_ZERO, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, FALSE
+  auto constexpr depth_bias_multiplier{
+#ifdef REVERSE_Z
+    -1
+#else
+    1
+#endif
   };
 
   CD3DX12_RASTERIZER_DESC const shadow_rasterizer_desc{
-    D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, FALSE, -1, 0.f, -2.5f, TRUE, FALSE, FALSE, 0,
-    D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF
+    D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, FALSE, depth_bias_multiplier * 1, 0.f, depth_bias_multiplier * 2.5f,
+    TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF
   };
 
-  CD3DX12_RT_FORMAT_ARRAY const render_target_format{D3D12_RT_FORMAT_ARRAY{{render_target_format_}, 1}};
-  CD3DX12_RT_FORMAT_ARRAY const color_format{D3D12_RT_FORMAT_ARRAY{{color_buffer_format_}, 1}};
-  CD3DX12_RT_FORMAT_ARRAY const ssao_format{D3D12_RT_FORMAT_ARRAY{{ssao_buffer_format_}, 1}};
+  CD3DX12_RASTERIZER_DESC const skybox_rasterizer_desc{
+    D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+    D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, TRUE, TRUE, FALSE, 0, {}
+  };
+
+  CD3DX12_RT_FORMAT_ARRAY const render_target_format{
+    D3D12_RT_FORMAT_ARRAY{.RTFormats = {render_target_format_}, .NumRenderTargets = 1}
+  };
+  CD3DX12_RT_FORMAT_ARRAY const color_format{
+    D3D12_RT_FORMAT_ARRAY{.RTFormats = {color_buffer_format_}, .NumRenderTargets = 1}
+  };
+  CD3DX12_RT_FORMAT_ARRAY const ssao_format{
+    D3D12_RT_FORMAT_ARRAY{.RTFormats = {ssao_buffer_format_}, .NumRenderTargets = 1}
+  };
   CD3DX12_RT_FORMAT_ARRAY const gbuffer_format{
-    D3D12_RT_FORMAT_ARRAY{{gbuffer0_format_, gbuffer1_format_, gbuffer2_format_}, 3}
+    D3D12_RT_FORMAT_ARRAY{.RTFormats = {gbuffer0_format_, gbuffer1_format_, gbuffer2_format_}, .NumRenderTargets = 3}
   };
 
-  graphics::PipelineDesc const shadow_pso_desc_{
+  graphics::PipelineDesc const shadow_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{g_depth_only_ms_bytes, ARRAYSIZE(g_depth_only_ms_bytes)},
-    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_,
+    .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
     .rasterizer_state = shadow_rasterizer_desc
   };
 
-  shadow_pso_ = device_->CreatePipelineState(shadow_pso_desc_, sizeof(DepthOnlyDrawParams) / 4);
+  shadow_pso_ = device_->CreatePipelineState(shadow_pso_desc, sizeof(DepthOnlyDrawParams) / 4);
 
   graphics::PipelineDesc const depth_resolve_pso_desc{
     .cs = CD3DX12_SHADER_BYTECODE{g_depth_resolve_cs_bytes, ARRAYSIZE(g_depth_resolve_cs_bytes)}
@@ -714,7 +738,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
     .primitive_topology_type = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
     .vs = CD3DX12_SHADER_BYTECODE{g_gizmos_line_vs_bytes, ARRAYSIZE(g_gizmos_line_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_gizmos_ps_bytes, ARRAYSIZE(g_gizmos_ps_bytes)},
-    .depth_stencil_state = disabled_depth_stencil, .rt_formats = render_target_format
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = render_target_format
   };
 
   line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
@@ -722,7 +746,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   graphics::PipelineDesc const gbuffer_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{g_gbuffer_ps_bytes, ARRAYSIZE(g_gbuffer_ps_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{g_gbuffer_ms_bytes, ARRAYSIZE(g_gbuffer_ms_bytes)},
-    .depth_stencil_state = reverse_z_depth_stencil_write, .ds_format = depth_format_,
+    .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
     .rt_formats = gbuffer_format
   };
 
@@ -731,7 +755,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   graphics::PipelineDesc const deferred_lighting_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{g_deferred_lighting_vs_bytes, ARRAYSIZE(g_deferred_lighting_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_deferred_lighting_ps_bytes, ARRAYSIZE(g_deferred_lighting_ps_bytes)},
-    .depth_stencil_state = depth_disabled, .rt_formats = color_format
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
   };
 
   deferred_lighting_pso_ = device_->CreatePipelineState(deferred_lighting_pso_desc,
@@ -740,7 +764,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   graphics::PipelineDesc const post_process_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_post_process_vs_bytes, ARRAYSIZE(g_post_process_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_post_process_ps_bytes, ARRAYSIZE(g_post_process_ps_bytes)},
-    .depth_stencil_state = disabled_depth_stencil, .rt_formats = render_target_format,
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = render_target_format,
   };
 
   post_process_pso_ = device_->CreatePipelineState(post_process_pso_desc, sizeof(PostProcessDrawParams) / 4);
@@ -748,15 +772,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   graphics::PipelineDesc const skybox_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{&g_skybox_ps_bytes, ARRAYSIZE(g_skybox_ps_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{&g_skybox_ms_bytes, ARRAYSIZE(g_skybox_ms_bytes)},
-    .depth_stencil_state = CD3DX12_DEPTH_STENCIL_DESC1{
-      TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_GREATER_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {},
-      {}, FALSE
-    },
-    .ds_format = depth_format_,
-    .rasterizer_state = CD3DX12_RASTERIZER_DESC{
-      D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-      D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, TRUE, TRUE, FALSE, 0, {}
-    },
+    .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_, .rasterizer_state = skybox_rasterizer_desc,
     .rt_formats = color_format
   };
 
@@ -765,7 +781,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   graphics::PipelineDesc const ssao_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_main_ps_bytes, ARRAYSIZE(g_ssao_main_ps_bytes)},
-    .depth_stencil_state = disabled_depth_stencil, .rt_formats = ssao_format,
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = ssao_format,
   };
 
   ssao_pso_ = device_->CreatePipelineState(ssao_pso_desc, sizeof(SsaoDrawParams) / 4);
@@ -773,7 +789,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   graphics::PipelineDesc const ssao_blur_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_blur_ps_bytes, ARRAYSIZE(g_ssao_blur_ps_bytes)},
-    .depth_stencil_state = disabled_depth_stencil, .rt_formats = ssao_format
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = ssao_format
   };
 
   ssao_blur_pso_ = device_->CreatePipelineState(ssao_blur_pso_desc, sizeof(SsaoBlurDrawParams) / 4);
@@ -1609,7 +1625,7 @@ auto SceneRenderer::Render() -> void {
 
     RenderTarget::Desc const depth_rt_desc{
       target_rt_width, target_rt_height, std::nullopt, depth_format_, 1, L"Camera Depth RenderTarget", false,
-      {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f
+      {0.0f, 0.0f, 0.0f, 0.0f}, DEPTH_CLEAR_VALUE
     };
 
     RenderTarget::Desc const gbuffer0_rt_desc{
@@ -1693,7 +1709,7 @@ auto SceneRenderer::Render() -> void {
     cam_cmd.ClearRenderTarget(*gbuffer0_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cam_cmd.ClearRenderTarget(*gbuffer1_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cam_cmd.ClearRenderTarget(*gbuffer2_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
-    cam_cmd.ClearDepthStencil(*depth_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, 0, 0, {});
+    cam_cmd.ClearDepthStencil(*depth_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
 
     for (auto const instance_idx : visible_static_submesh_instance_indices) {
       auto const& instance{frame_packet.instance_data[instance_idx]};
@@ -1799,7 +1815,6 @@ auto SceneRenderer::Render() -> void {
     auto const light_count{std::ssize(visible_light_indices)};
     std::vector<ShaderLight> light_data(light_count);
 
-
     for (auto i = 0; i < light_count; i++) {
       light_data[i].color = frame_packet.light_data[visible_light_indices[i]].color;
       light_data[i].intensity = frame_packet.light_data[visible_light_indices[i]].intensity;
@@ -1819,8 +1834,6 @@ auto SceneRenderer::Render() -> void {
         sample = FALSE;
       }
     }
-
-    // Set directional light shadow constant data
 
     for (auto i{0}; i < light_count; i++) {
       if (auto const light{frame_packet.light_data[visible_light_indices[i]]};
@@ -1858,7 +1871,12 @@ auto SceneRenderer::Render() -> void {
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, punc_shadow_atlas_idx),
       *punctual_shadow_atlas_->GetTex());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, shadow_samp_idx),
-      samp_cmp_pcf_ge_.Get());
+#ifdef REVERSE_Z
+      samp_cmp_pcf_ge_.Get()
+#else
+      samp_cmp_pcf_le_.Get()
+#endif
+    );
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, point_clamp_samp_idx),
       samp_point_clamp_.Get());
 

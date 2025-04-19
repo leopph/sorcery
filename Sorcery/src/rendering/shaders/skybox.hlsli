@@ -26,14 +26,18 @@ class VertexProcessor {
     PsIn ret;
     ret.pos_cs = mul(float4(mul(pos_os.xyz, (float3x3)per_view_cb.viewMtx), 1), per_view_cb.projMtx);
     ret.uv = pos_os.xyz;
+#ifdef REVERSE_Z
     ret.pos_cs.z = 0;
+#else
+    ret.pos_cs.z = ret.pos_cs.w;
+#endif
     return ret;
   }
 };
 
 
 DECLARE_MESH_SHADER_MAIN(MsMain) {
-    MeshShaderCore<VertexProcessor>(gid, gtid, g_params.meshlet_buf_idx, g_params.vertex_idx_buf_idx,
+  MeshShaderCore<VertexProcessor>(gid, gtid, g_params.meshlet_buf_idx, g_params.vertex_idx_buf_idx,
     g_params.prim_idx_buf_idx, 0, 1, 0, 1, 0, true, out_vertices, out_indices);
 }
 

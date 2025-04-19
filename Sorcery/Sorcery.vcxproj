@@ -254,6 +254,7 @@
     <None Include="src\rendering\shaders\brdf.hlsli" />
     <None Include="src\rendering\shaders\common.hlsli" />
     <None Include="src\rendering\shaders\depth_only.hlsli" />
+    <None Include="src\rendering\shaders\fullscreen_tri.hlsli" />
     <None Include="src\rendering\shaders\gbuffer.hlsli" />
     <None Include="src\rendering\shaders\gbuffer_utils.hlsli" />
     <None Include="src\rendering\shaders\gizmos.hlsli" />

@@ -1,6 +1,7 @@
 #include "render_manager.hpp"
 
 #include "../Util.hpp"
+#include "shaders/shader_interop.h"
 
 #include <stdexcept>
 #include <utility>
@@ -289,7 +290,11 @@ auto RenderManager::UpdateCounters() -> void {
 
 
 auto TransformProjectionMatrixForRendering(Matrix4 const& proj_mtx) noexcept -> Matrix4 {
+#ifdef REVERSE_Z
   return proj_mtx * Matrix4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 1};
+#else
+  return proj_mtx;
+#endif
 }
 
 
@@ -301,7 +306,7 @@ auto GenerateSphereMesh(float const radius, int const latitudes, int const longi
   auto const deltaLatitude{PI / static_cast<float>(latitudes)};
   auto const deltaLongitude{2 * PI / static_cast<float>(longitudes)};
 
-  for (int i = 0; i <= latitudes; i++) {
+  for (auto i = 0; i <= latitudes; i++) {
     auto const latitudeAngle{PI / 2 - static_cast<float>(i) * deltaLatitude};
 
     float const xz{radius * std::cos(latitudeAngle)};
@@ -311,7 +316,7 @@ auto GenerateSphereMesh(float const radius, int const latitudes, int const longi
      * the North pole and South pole are not counted here, as they overlap.
      * The first and last vertices have same position and normal, but
      * different tex coords. */
-    for (int j = 0; j <= longitudes; j++) {
+    for (auto j = 0; j <= longitudes; j++) {
       auto const longitudeAngle{static_cast<float>(j) * deltaLongitude};
 
       auto const x{xz * std::cos(longitudeAngle)};
@@ -330,12 +335,12 @@ auto GenerateSphereMesh(float const radius, int const latitudes, int const longi
    *  |  / |
    *  | /  |
    *  k2--k2+1 */
-  for (int i = 0; i < latitudes; ++i) {
+  for (auto i = 0; i < latitudes; ++i) {
     unsigned int v1 = i * (longitudes + 1);
     unsigned int v2 = v1 + longitudes + 1;
 
     // 2 Triangles per latitude block excluding the first and last longitudes blocks
-    for (int j = 0; j < longitudes; j++, v1++, v2++) {
+    for (auto j = 0; j < longitudes; j++, v1++, v2++) {
       if (i != 0) {
         indices.push_back(v1);
         indices.push_back(v1 + 1);

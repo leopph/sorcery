@@ -2,6 +2,7 @@
 #define SSAO_HLSLI
 
 #include "common.hlsli"
+#include "fullscreen_tri.hlsli"
 #include "gbuffer_utils.hlsli"
 #include "shader_interop.h"
 #include "utility.hlsli"
@@ -9,20 +10,6 @@
 
 DECLARE_PARAMS1(SsaoDrawParams, g_params);
 DECLARE_PARAMS1(SsaoBlurDrawParams, g_blur_params);
-
-
-struct PsIn {
-  float4 pos_cs : SV_POSITION;
-  float2 uv : TEXCOORD;
-};
-
-
-PsIn VsMain(uint const vertex_id : SV_VertexID) {
-  PsIn ret;
-  ret.uv = float2((vertex_id << 1) & 2, vertex_id & 2);
-  ret.pos_cs = float4(UvToNdc(ret.uv), 0, 1);
-  return ret;
-}
 
 
 float3 CalculatePositionVsAtUv(Texture2D<float> const depth_tex, SamplerState const point_clamp_samp,

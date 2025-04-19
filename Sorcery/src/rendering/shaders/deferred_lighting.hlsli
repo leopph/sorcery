@@ -2,6 +2,7 @@
 #define DEFERRED_LIGHTING_HLSLI
 
 #include "common.hlsli"
+#include "fullscreen_tri.hlsli"
 #include "gbuffer_utils.hlsli"
 #include "lighting.hlsli"
 #include "shader_interop.h"
@@ -9,22 +10,6 @@
 
 
 DECLARE_PARAMS(DeferredLightingDrawParams);
-
-
-struct PsIn {
-  float4 pos_cs : SV_Position;
-  float2 uv : TEXCOORD;
-};
-
-
-PsIn VsMain(uint const vertex_id : SV_VertexID) {
-  // A triangle covering the entire screen.
-
-  PsIn ps_in;
-  ps_in.uv = float2((vertex_id << 1) & 2, vertex_id & 2);
-  ps_in.pos_cs = float4(UvToNdc(ps_in.uv), 0, 1);
-  return ps_in;
-}
 
 
 float4 PsMain(PsIn const ps_in) : SV_Target {
@@ -45,7 +30,7 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
 
   Texture2D<float> const depth_tex = ResourceDescriptorHeap[g_params.depth_tex_idx];
   float const depth = depth_tex.Sample(point_clamp_samp, ps_in.uv.xy, 0, 0);
-  
+
   Texture2D<float> const ssao_tex = ResourceDescriptorHeap[g_params.ssao_tex_idx];
   ao *= ssao_tex.Sample(point_clamp_samp, ps_in.uv).r;
 
