@@ -100,7 +100,12 @@ auto SettingsWindow::Draw() -> void {
     ImGui::Unindent();
     ImGui::EndDisabled();
 
-    ImGui::SeparatorText("Screen Space Reflections");
+    if (auto ssr_enabled{App::Instance().GetSceneRenderer().IsSsrEnabled()};
+      ImGui::Checkbox("Screen Space Reflections", &ssr_enabled)) {
+      App::Instance().GetSceneRenderer().SetSsrEnabled(ssr_enabled);
+    }
+
+    ImGui::BeginDisabled(!App::Instance().GetSceneRenderer().IsSsrEnabled());
     ImGui::Indent();
 
     auto ssr_params{App::Instance().GetSceneRenderer().GetSsrParams()};
@@ -128,6 +133,7 @@ auto SettingsWindow::Draw() -> void {
     }
 
     ImGui::Unindent();
+    ImGui::EndDisabled();
     ImGui::TreePop();
   }
 
