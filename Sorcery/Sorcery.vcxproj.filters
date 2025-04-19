@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -381,6 +381,7 @@
     <None Include="src\rendering\shaders\mesh_shader_core.hlsli" />
     <None Include="src\rendering\shaders\gbuffer.hlsli" />
     <None Include="src\rendering\shaders\gbuffer_utils.hlsli" />
+    <None Include="src\rendering\shaders\ssr.hlsli" />
     <None Include="src\rendering\shaders\fullscreen_tri.hlsli" />
   </ItemGroup>
   <ItemGroup>
@@ -401,5 +402,8 @@
     <FxCompile Include="src\rendering\shaders\vtx_skinning_cs.hlsl" />
     <FxCompile Include="src\rendering\shaders\gbuffer_ms.hlsl" />
     <FxCompile Include="src\rendering\shaders\gbuffer_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ssr_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ssr_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\ssr_compose_ps.hlsl" />
   </ItemGroup>
 </Project>

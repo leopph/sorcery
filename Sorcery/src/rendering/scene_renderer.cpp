@@ -32,6 +32,9 @@
 #include "shaders/generated/Debug/ssao_blur_ps.h"
 #include "shaders/generated/Debug/ssao_main_ps.h"
 #include "shaders/generated/Debug/ssao_vs.h"
+#include "shaders/generated/Debug/ssr_compose_ps.h"
+#include "shaders/generated/Debug/ssr_ps.h"
+#include "shaders/generated/Debug/ssr_vs.h"
 #include "shaders/generated/Debug/vtx_skinning_cs.h"
 #else
 #include "shaders/generated/Release/deferred_lighting_ps.h"
@@ -50,6 +53,9 @@
 #include "shaders/generated/Release/ssao_blur_ps.h"
 #include "shaders/generated/Release/ssao_main_ps.h"
 #include "shaders/generated/Release/ssao_vs.h"
+#include "shaders/generated/Release/ssr_compose_ps.h"
+#include "shaders/generated/Release/ssr_ps.h"
+#include "shaders/generated/Release/ssr_vs.h"
 #include "shaders/generated/Release/vtx_skinning_cs.h"
 #endif
 
@@ -755,7 +761,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   graphics::PipelineDesc const deferred_lighting_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{g_deferred_lighting_vs_bytes, ARRAYSIZE(g_deferred_lighting_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_deferred_lighting_ps_bytes, ARRAYSIZE(g_deferred_lighting_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
+    .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_, .rt_formats = color_format
   };
 
   deferred_lighting_pso_ = device_->CreatePipelineState(deferred_lighting_pso_desc,
@@ -793,6 +799,23 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
 
   ssao_blur_pso_ = device_->CreatePipelineState(ssao_blur_pso_desc, sizeof(SsaoBlurDrawParams) / 4);
+
+  graphics::PipelineDesc const ssr_compose_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_compose_ps_bytes, ARRAYSIZE(g_ssr_compose_ps_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
+  };
+
+  ssr_compose_pso_ = device_->CreatePipelineState(ssr_compose_pso_desc, sizeof(SsrComposeDrawParams) / 4);
+
+  graphics::PipelineDesc const ssr_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_ps_bytes, ARRAYSIZE(g_ssr_ps_bytes)},
+    .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_,
+    .rt_formats = color_format
+  };
+
+  ssr_pso_ = device_->CreatePipelineState(ssr_pso_desc, sizeof(SsrDrawParams) / 4);
 
   graphics::PipelineDesc const vtx_skinning_pso_desc{
     .cs = CD3DX12_SHADER_BYTECODE{g_vtx_skinning_cs_bytes, ARRAYSIZE(g_vtx_skinning_cs_bytes)}
@@ -1414,6 +1437,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.skybox_pso = skybox_pso_;
   packet.ssao_pso = ssao_pso_;
   packet.ssao_blur_pso = ssao_blur_pso_;
+  packet.ssr_compose_pso = ssr_compose_pso_;
   packet.ssr_pso = ssr_pso_;
   packet.vtx_skinning_pso = vtx_skinning_pso_;
 }
@@ -1631,6 +1655,11 @@ auto SceneRenderer::Render() -> void {
       {0.0f, 0.0f, 0.0f, 0.0f}, DEPTH_CLEAR_VALUE
     };
 
+    RenderTarget::Desc const depth_sample_rt_desc{
+      target_rt_width, target_rt_height, std::nullopt, depth_format_, 1, L"Camera Depth Sample RenderTarget", false,
+      {0.0f, 0.0f, 0.0f, 0.0f}, DEPTH_CLEAR_VALUE
+    };
+
     RenderTarget::Desc const gbuffer0_rt_desc{
       transient_rt_width, transient_rt_height, gbuffer0_format_, std::nullopt, 1,
       L"Camera GBuffer0 RenderTarget", false, {0.0f, 0.0f, 0.0f, 0.0f}
@@ -1652,6 +1681,7 @@ auto SceneRenderer::Render() -> void {
     };
 
     auto const depth_rt{render_manager_->AcquireTemporaryRenderTarget(depth_rt_desc)};
+    auto const depth_sample_rt{render_manager_->AcquireTemporaryRenderTarget(depth_sample_rt_desc)};
     auto const gbuffer0_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer0_rt_desc)};
     auto const gbuffer1_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer1_rt_desc)};
     auto const gbuffer2_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer2_rt_desc)};
@@ -1752,6 +1782,11 @@ auto SceneRenderer::Render() -> void {
         PIPELINE_PARAM_INDEX(GBufferDrawParams, base_vertex), cam_cmd);
     }
 
+    // Duplicate depth texture so that we can sample it and use it for stencil test at the same time.
+    // This is only a workaround, the ideal would be to transition the depth texture to a simultaneous
+    // shader reource/depth read state, but the current architecture doesn't allow that.
+    cam_cmd.CopyTexture(*depth_sample_rt->GetDepthStencilTex(), *depth_rt->GetDepthStencilTex());
+
     auto ssao_tex{white_tex_.get()};
 
     // SSAO pass
@@ -1766,7 +1801,7 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx),
         *ssao_noise_tex_);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, depth_tex_idx),
-        *depth_rt->GetDepthStencilTex());
+        *depth_sample_rt->GetDepthStencilTex());
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, gbuffer1_tex_idx),
         *gbuffer1_rt->GetColorTex());
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx),
@@ -1866,7 +1901,7 @@ auto SceneRenderer::Render() -> void {
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, gbuffer2_idx),
       *gbuffer2_rt->GetColorTex());
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, depth_tex_idx),
-      *depth_rt->GetDepthStencilTex());
+      *depth_sample_rt->GetDepthStencilTex());
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, ssao_tex_idx), *ssao_tex);
 
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, dir_shadow_arr_idx),
@@ -1894,10 +1929,68 @@ auto SceneRenderer::Render() -> void {
 
     cam_cmd.SetRenderTargets(std::span{
       std::array{static_cast<graphics::Texture const*>(color_hdr_rt->GetColorTex().get())}.data(), 1
-    }, nullptr);
+    }, depth_rt->GetDepthStencilTex().get());
     cam_cmd.ClearRenderTarget(*color_hdr_rt->GetColorTex(), frame_packet.background_color, {});
 
     cam_cmd.DrawInstanced(3, 1, 0, 0);
+
+    // SSR pass
+    if (frame_packet.ssr_enabled) {
+      cam_cmd.SetPipelineState(*frame_packet.ssr_pso);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, depth_tex_idx),
+        *depth_sample_rt->GetDepthStencilTex());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, lit_scene_tex_idx), *color_hdr_rt->GetColorTex());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, gbuffer1_tex_idx), *gbuffer1_rt->GetColorTex());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, gbuffer2_tex_idx), *gbuffer2_rt->GetColorTex());
+
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsrDrawParams, per_view_cb_idx), *cam_per_view_cb.GetBuffer());
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_roughness),
+        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_roughness));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, ray_length_vs),
+        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.ray_length_vs));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_march_steps),
+        frame_packet.ssr_params.max_march_steps);
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, depth_tolerance_ndc),
+        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.depth_tolerance_ndc));
+
+      RenderTarget::Desc const ssr_rt_desc{
+        transient_rt_width, transient_rt_height, frame_packet.color_buffer_format, std::nullopt,
+        1, L"SSR RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
+      };
+
+      auto const ssr_rt{render_manager_->AcquireTemporaryRenderTarget(ssr_rt_desc)};
+
+      cam_cmd.SetRenderTargets(std::span{
+        std::array{static_cast<graphics::Texture const*>(ssr_rt->GetColorTex().get())}.data(), 1
+      }, depth_rt->GetDepthStencilTex().get());
+      cam_cmd.ClearRenderTarget(*ssr_rt->GetColorTex(), ssr_rt_desc.color_clear_value, {});
+
+      cam_cmd.DrawInstanced(3, 1, 0, 0);
+
+      cam_cmd.SetPipelineState(*frame_packet.ssr_compose_pso);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrComposeDrawParams, ssr_tex_idx),
+        *ssr_rt->GetColorTex());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrComposeDrawParams, lit_scene_tex_idx),
+        *color_hdr_rt->GetColorTex());
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrComposeDrawParams, point_clamp_samp_idx),
+        samp_point_clamp_.Get());
+
+      RenderTarget::Desc const ssr_compose_rt_desc{
+        transient_rt_width, transient_rt_height, frame_packet.color_buffer_format, std::nullopt,
+        1, L"SSR Compose RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
+      };
+
+      auto const ssr_compose_rt{render_manager_->AcquireTemporaryRenderTarget(ssr_compose_rt_desc)};
+      cam_cmd.SetRenderTargets(std::span{
+        std::array{static_cast<graphics::Texture const*>(ssr_compose_rt->GetColorTex().get())}.data(), 1
+      }, nullptr);
+      cam_cmd.ClearRenderTarget(*ssr_compose_rt->GetColorTex(), ssr_compose_rt_desc.color_clear_value, {});
+
+      cam_cmd.DrawInstanced(3, 1, 0, 0);
+
+      cam_cmd.CopyTexture(*color_hdr_rt->GetColorTex(), *ssr_compose_rt->GetColorTex());
+    }
 
     // Skybox pass
     if (frame_packet.skybox_cubemap) {

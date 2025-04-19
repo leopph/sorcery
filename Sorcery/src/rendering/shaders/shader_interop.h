@@ -45,7 +45,7 @@ typedef bool BOOL;
 
 #define SKINNING_CS_THREADS 64
 
-#define REVERSE_Z
+//#define REVERSE_Z
 #ifdef REVERSE_Z
 #define DEPTH_CLEAR_VALUE 0.0f
 #else
@@ -276,6 +276,29 @@ struct VertexSkinningDrawParams {
 
   uint skinned_tan_buf_idx;
   uint vtx_count;
+};
+
+
+struct SsrDrawParams {
+  uint depth_tex_idx;
+  uint lit_scene_tex_idx;
+  uint gbuffer1_tex_idx;
+  uint gbuffer2_tex_idx;
+
+  uint point_clamp_samp_idx;
+  uint per_view_cb_idx;
+  float max_roughness;
+  float ray_length_vs;
+
+  uint max_march_steps;
+  float depth_tolerance_ndc;
+};
+
+
+struct SsrComposeDrawParams {
+  uint lit_scene_tex_idx;
+  uint ssr_tex_idx;
+  uint point_clamp_samp_idx;
 };
 
 #ifdef __cplusplus
