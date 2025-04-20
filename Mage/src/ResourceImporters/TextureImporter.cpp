@@ -81,10 +81,6 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
     return false;
   }
 
-  if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))) {
-    return false;
-  }
-
   DirectX::ScratchImage img;
 
   // Parse image file bytes

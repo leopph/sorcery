@@ -4,6 +4,7 @@
 
 #include <dwmapi.h>
 #include <hidusage.h>
+#include <Objbase.h>
 
 #include <cassert>
 
@@ -32,6 +33,11 @@ WindowImpl::WindowImpl() {
 
   if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
     throw std::runtime_error{"Failed to register raw input devices."};
+  }
+
+
+  if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))) {
+    throw std::runtime_error{"Failed to initialize COM."};
   }
 
   SetWindowLongPtrW(hwnd_, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
