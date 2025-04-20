@@ -431,8 +431,8 @@ private:
 
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
   SsrParams ssr_params_{
-    .max_roughness = 0.8f, .depth_tolerance_ndc = 0.1f, .ray_length_vs = 100.0f,
-    .max_march_steps = 32
+    .max_roughness = 0.8f, .depth_tolerance_ndc = 0.001f, .ray_length_vs = 1000.0f,
+    .max_march_steps = 2000
   };
   ShadowParams shadow_params_{{0.1f, 0.3f, 0.6f}, 4, false, 100, ShadowFilteringMode::kPcfTent5X5};
 
