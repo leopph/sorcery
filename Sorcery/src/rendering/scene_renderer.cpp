@@ -1968,6 +1968,8 @@ auto SceneRenderer::Render() -> void {
         frame_packet.ssr_params.max_march_steps);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_trace_dist_vs),
         *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_trace_dist_vs));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, ray_start_bias_vs),
+        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.ray_start_bias_vs));
 
       RenderTarget::Desc const ssr_rt_desc{
         transient_rt_width, transient_rt_height, DXGI_FORMAT_R32G32B32A32_FLOAT, std::nullopt,

@@ -61,7 +61,9 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
       half_depth_tex_size.x, half_depth_tex_size.y, 0, 1
     };
 
-    if (traceScreenSpaceRay(float3(frag_pos_vs.xy, -frag_pos_vs.z), float3(refl_dir_vs.xy, -refl_dir_vs.z),
+    float3 const refl_start_vs = frag_pos_vs + g_params.ray_start_bias_vs * refl_dir_vs;
+
+    if (traceScreenSpaceRay(float3(refl_start_vs.xy, -refl_start_vs.z), float3(refl_dir_vs.xy, -refl_dir_vs.z),
       mul(mul(flip_z_mtx, per_view_cb.projMtx), cs_to_px_mtx), depth_tex, g_params.thickness_vs,
       -per_view_cb.near_clip_plane, -per_view_cb.far_clip_plane, g_params.stride, g_params.jitter,
       g_params.max_march_steps, g_params.max_trace_dist_vs, hit_pixel_coords, hit_pos_vs)) {

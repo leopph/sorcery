@@ -142,6 +142,11 @@ auto SettingsWindow::Draw() -> void {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
 
+    if (ImGui::DragFloat("Ray Start Bias", &ssr_params.ray_start_bias_vs, 0.01f, 0.0f,
+      std::numeric_limits<float>::max() / 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+      App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
+    }
+
     ImGui::Unindent();
     ImGui::EndDisabled();
     ImGui::TreePop();
