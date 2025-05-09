@@ -55,9 +55,14 @@ float distanceSquared(Point2 A, Point2 B) {
 
 
 void swap(in out float a, in out float b) {
-     float temp = a;
-     a = b;
-     b = temp;
+  float temp = a;
+  a = b;
+  b = temp;
+}
+
+
+bool DepthIntersects(float const depth, float const depth_min, float const depth_max, float const thickness) {
+  return (depth_max >= depth) && (depth_min - thickness <= depth);
 }
 
 
@@ -203,8 +208,7 @@ bool traceScreenSpaceRay
   for (Point2 P = P0;
        ((P.x * stepDirection) <= end) &&
        (stepCount < maxSteps) &&
-       ((rayZMax < sceneZMax) ||
-        (rayZMin - vsZThickness > sceneZMax)) &&
+       !DepthIntersects(sceneZMax, rayZMin, rayZMax, vsZThickness) &&
        (sceneZMax != 0.0);
        P += dP, Q.z += dQ.z, k += dk, stepCount += 1.0) {
     hitPixel = permute ? P.yx : P;
@@ -229,7 +233,7 @@ bool traceScreenSpaceRay
   vsHitPoint = Q * (1.0 / k);
 
   // Matches the new loop condition:
-  return (rayZMax >= sceneZMax) && (rayZMin - vsZThickness <= sceneZMax);
+  return DepthIntersects(sceneZMax, rayZMin, rayZMax, vsZThickness);
 }
 
 #endif
