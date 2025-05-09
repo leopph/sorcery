@@ -725,9 +725,6 @@ auto SceneRenderer::RecreatePipelines() -> void {
   CD3DX12_RT_FORMAT_ARRAY const color_format{
     D3D12_RT_FORMAT_ARRAY{.RTFormats = {color_buffer_format_}, .NumRenderTargets = 1}
   };
-  CD3DX12_RT_FORMAT_ARRAY const ssr_format{
-    D3D12_RT_FORMAT_ARRAY{.RTFormats = {DXGI_FORMAT_R32G32B32A32_FLOAT}, .NumRenderTargets = 1}
-  };
   CD3DX12_RT_FORMAT_ARRAY const ssao_format{
     D3D12_RT_FORMAT_ARRAY{.RTFormats = {ssao_buffer_format_}, .NumRenderTargets = 1}
   };
@@ -822,7 +819,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
     .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_ps_bytes, ARRAYSIZE(g_ssr_ps_bytes)},
     .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_,
-    .rt_formats = ssr_format
+    .rt_formats = color_format
   };
 
   ssr_pso_ = device_->CreatePipelineState(ssr_pso_desc, sizeof(SsrDrawParams) / 4);
@@ -1972,7 +1969,7 @@ auto SceneRenderer::Render() -> void {
         *std::bit_cast<UINT const*>(&frame_packet.ssr_params.ray_start_bias_vs));
 
       RenderTarget::Desc const ssr_rt_desc{
-        transient_rt_width, transient_rt_height, DXGI_FORMAT_R32G32B32A32_FLOAT, std::nullopt,
+        transient_rt_width, transient_rt_height, color_buffer_format_, std::nullopt,
         1, L"SSR RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
       };
 
