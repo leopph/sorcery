@@ -63,7 +63,7 @@ void swap(in out float a, in out float b) {
 
 /**
     \param vsOrigin Camera-space ray origin, which must be 
-    within the view volume and must have z < -0.01 and project within the valid screen rectangle
+    within the view volume and must have z > 0.01 and project within the valid screen rectangle
 
     \param vsDirection Unit length camera-space ray direction
 
@@ -73,9 +73,9 @@ void swap(in out float a, in out float b) {
 
     \param vsZThickness Camera space thickness to ascribe to each pixel in the depth buffer
 
-    \param nearPlaneZ Negative number
+    \param nearPlaneZ
 
-    \param farPlaneZ Negative number
+    \param farPlaneZ
 
     \param stride Step in horizontal or vertical pixels between samples. This is a float
      because integer math is slow on GPUs, but should be set to an integer >= 1
@@ -109,7 +109,7 @@ bool traceScreenSpaceRay
  out Point2 hitPixel,
  out Point3 vsHitPoint) {
   // Clip ray to a near plane in 3D (doesn't have to be *the* near plane, although that would be a good idea)
-  float rayLength = ((vsOrigin.z + vsDirection.z * maxRayTraceDistance) > nearPlaneZ)
+  float rayLength = ((vsOrigin.z + vsDirection.z * maxRayTraceDistance) < nearPlaneZ)
                       ? (nearPlaneZ - vsOrigin.z) / vsDirection.z
                       : maxRayTraceDistance;
   Point3 vsEndPoint = vsDirection * rayLength + vsOrigin;
@@ -203,8 +203,8 @@ bool traceScreenSpaceRay
   for (Point2 P = P0;
        ((P.x * stepDirection) <= end) &&
        (stepCount < maxSteps) &&
-       ((rayZMax < sceneZMax - vsZThickness) ||
-        (rayZMin > sceneZMax)) &&
+       ((rayZMax < sceneZMax) ||
+        (rayZMin - vsZThickness > sceneZMax)) &&
        (sceneZMax != 0.0);
        P += dP, Q.z += dQ.z, k += dk, stepCount += 1.0) {
     hitPixel = permute ? P.yx : P;
@@ -222,14 +222,14 @@ bool traceScreenSpaceRay
     if (rayZMin > rayZMax) { swap(rayZMin, rayZMax); }
 
     // Camera-space z of the background
-    sceneZMax = -LinearizeDepth(vsZBuffer.Load(int3(hitPixel, 0)).r, -nearPlaneZ, -farPlaneZ);
+    sceneZMax = LinearizeDepth(vsZBuffer.Load(int3(hitPixel, 0)).r, nearPlaneZ, farPlaneZ);
   } // pixel on ray
 
   Q.xy += dQ.xy * stepCount;
   vsHitPoint = Q * (1.0 / k);
 
   // Matches the new loop condition:
-  return (rayZMax >= sceneZMax - vsZThickness) && (rayZMin <= sceneZMax);
+  return (rayZMax >= sceneZMax) && (rayZMin - vsZThickness <= sceneZMax);
 }
 
 #endif
