@@ -262,6 +262,7 @@
     <None Include="src\rendering\shaders\mesh_shader_core.hlsli" />
     <None Include="src\rendering\shaders\deferred_lighting.hlsli" />
     <None Include="src\rendering\shaders\post_process.hlsli" />
+    <None Include="src\rendering\shaders\raytrace.hlsli" />
     <None Include="src\rendering\shaders\shader_interop.h" />
     <None Include="src\rendering\shaders\shadow_sampling.hlsli" />
     <None Include="src\rendering\shaders\skybox.hlsli" />

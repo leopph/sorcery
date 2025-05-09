@@ -54,9 +54,11 @@ struct ShadowParams {
 
 struct SsrParams {
   float max_roughness;
-  float depth_tolerance_ndc;
-  float ray_length_vs;
+  float thickness_vs;
+  float stride;
+  float jitter;
   unsigned max_march_steps;
+  float max_trace_dist_vs;
 };
 
 
@@ -316,7 +318,7 @@ private:
                                    Vector3 const& ambient_light, ShadowParams const& shadow_params) -> void;
   static auto SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
                                   Matrix4 const& proj_mtx, ShadowCascadeBoundaries const& cascade_bounds,
-                                  Vector3 const& view_pos) -> void;
+                                  Vector3 const& view_pos, float near_clip_plane, float far_clip_plane) -> void;
   static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
                                   Matrix4 const& view_mtx, Matrix4 const& proj_mtx) -> void;
 
@@ -431,8 +433,7 @@ private:
 
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
   SsrParams ssr_params_{
-    .max_roughness = 0.8f, .depth_tolerance_ndc = 0.001f, .ray_length_vs = 1000.0f,
-    .max_march_steps = 2000
+    .max_roughness = 0.8f, .thickness_vs = 1, .stride = 1, .jitter = 0, .max_march_steps = 25, .max_trace_dist_vs = 1000
   };
   ShadowParams shadow_params_{{0.1f, 0.3f, 0.6f}, 4, false, 100, ShadowFilteringMode::kPcfTent5X5};
 

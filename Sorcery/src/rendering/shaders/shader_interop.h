@@ -128,7 +128,10 @@ struct ShaderPerViewConstants {
 
   float4 shadowCascadeSplitDistances;
   float3 viewPos;
-  float pad;
+
+  float near_clip_plane;
+  float far_clip_plane;
+  float3 pad;
 };
 
 
@@ -288,10 +291,12 @@ struct SsrDrawParams {
   uint point_clamp_samp_idx;
   uint per_view_cb_idx;
   float max_roughness;
-  float ray_length_vs;
+  float thickness_vs;
 
+  float stride;
+  float jitter;
   uint max_march_steps;
-  float depth_tolerance_ndc;
+  float max_trace_dist_vs;
 };
 
 

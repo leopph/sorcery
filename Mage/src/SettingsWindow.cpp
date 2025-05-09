@@ -115,12 +115,17 @@ auto SettingsWindow::Draw() -> void {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
 
-    if (ImGui::DragFloat("Thickness Threshold", &ssr_params.depth_tolerance_ndc, 0.001f, 0,
-      std::numeric_limits<float>::max() / 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+    if (ImGui::DragFloat("Thickness", &ssr_params.thickness_vs, 1.0f, 0,
+      std::numeric_limits<float>::max() / 2.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
 
-    if (ImGui::DragFloat("Ray Length", &ssr_params.ray_length_vs, 0.001f, 0,
+    if (ImGui::DragFloat("Stride", &ssr_params.stride, 1.0f, 1.0f,
+      std::numeric_limits<float>::max() / 2.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
+      App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
+    }
+
+    if (ImGui::DragFloat("Jitter", &ssr_params.jitter, 0.001f, 0.f,
       std::numeric_limits<float>::max() / 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
@@ -129,6 +134,11 @@ auto SettingsWindow::Draw() -> void {
       ImGui::DragInt("Max Ray March Steps", &val, 1, 1, std::numeric_limits<int>::max() / 2, "%d",
         ImGuiSliderFlags_AlwaysClamp)) {
       ssr_params.max_march_steps = static_cast<unsigned>(val);
+      App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
+    }
+
+    if (ImGui::DragFloat("Max Trace Distance", &ssr_params.max_trace_dist_vs, 1.0f, 1.0f,
+      std::numeric_limits<float>::max() / 2.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
 

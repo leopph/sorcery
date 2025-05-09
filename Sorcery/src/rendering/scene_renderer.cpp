@@ -179,7 +179,8 @@ auto SceneRenderer::SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>
 
 auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
                                         Matrix4 const& proj_mtx, ShadowCascadeBoundaries const& cascade_bounds,
-                                        Vector3 const& view_pos) -> void {
+                                        Vector3 const& view_pos, float const near_clip_plane,
+                                        float const far_clip_plane) -> void {
   ShaderPerViewConstants data;
   data.viewMtx = view_mtx;
   data.invViewMtx = view_mtx.Inverse();
@@ -188,6 +189,8 @@ auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& 
   data.viewProjMtx = view_mtx * proj_mtx;
   data.invViewProjMtx = data.viewProjMtx.Inverse();
   data.viewPos = view_pos;
+  data.near_clip_plane = near_clip_plane;
+  data.far_clip_plane = far_clip_plane;
 
   for (auto i = 0; i < MAX_CASCADE_COUNT; i++) {
     data.shadowCascadeSplitDistances[i] = cascade_bounds[i].farClip;
@@ -501,10 +504,13 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
         // shadowViewMtx is only rotation, transpose is its inverse
         cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Transpose()};
 
+        auto const shadow_near_clip{-sphereRadius - light.shadow_extension};
+        auto const shadow_far_clip{sphereRadius};
+
         shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light.direction, Vector3::Up());
         auto const shadowProjMtx{
           TransformProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
-            sphereRadius, -sphereRadius, -sphereRadius - light.shadow_extension, sphereRadius))
+            sphereRadius, -sphereRadius, shadow_near_clip, shadow_far_clip))
         };
 
         shadow_view_proj_matrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
@@ -521,7 +527,8 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
         cmd.SetScissorRects(std::array{shadow_scissor});
 
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
-        SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, ShadowCascadeBoundaries{}, Vector3{});
+        SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, ShadowCascadeBoundaries{}, Vector3{},
+          shadow_near_clip, shadow_far_clip);
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
         Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
@@ -601,7 +608,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
         SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, ShadowCascadeBoundaries{},
-          Vector3{});
+          Vector3{}, 0, 0); // TODO pass proper near and far clip planes
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
         Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
@@ -718,6 +725,9 @@ auto SceneRenderer::RecreatePipelines() -> void {
   CD3DX12_RT_FORMAT_ARRAY const color_format{
     D3D12_RT_FORMAT_ARRAY{.RTFormats = {color_buffer_format_}, .NumRenderTargets = 1}
   };
+  CD3DX12_RT_FORMAT_ARRAY const ssr_format{
+    D3D12_RT_FORMAT_ARRAY{.RTFormats = {DXGI_FORMAT_R32G32B32A32_FLOAT}, .NumRenderTargets = 1}
+  };
   CD3DX12_RT_FORMAT_ARRAY const ssao_format{
     D3D12_RT_FORMAT_ARRAY{.RTFormats = {ssao_buffer_format_}, .NumRenderTargets = 1}
   };
@@ -812,7 +822,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
     .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_ps_bytes, ARRAYSIZE(g_ssr_ps_bytes)},
     .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_,
-    .rt_formats = color_format
+    .rt_formats = ssr_format
   };
 
   ssr_pso_ = device_->CreatePipelineState(ssr_pso_desc, sizeof(SsrDrawParams) / 4);
@@ -1726,7 +1736,8 @@ auto SceneRenderer::Render() -> void {
       frame_packet.instance_data, visible_static_submesh_instance_indices);
 
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer()};
-    SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, shadow_cascade_boundaries, cam_data.position);
+    SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, shadow_cascade_boundaries, cam_data.position,
+      cam_data.near_plane, cam_data.far_plane);
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
@@ -1947,15 +1958,19 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsrDrawParams, per_view_cb_idx), *cam_per_view_cb.GetBuffer());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_roughness),
         *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_roughness));
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, ray_length_vs),
-        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.ray_length_vs));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, thickness_vs),
+        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.thickness_vs));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, stride),
+        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.stride));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, jitter),
+        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.jitter));
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_march_steps),
         frame_packet.ssr_params.max_march_steps);
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, depth_tolerance_ndc),
-        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.depth_tolerance_ndc));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_trace_dist_vs),
+        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_trace_dist_vs));
 
       RenderTarget::Desc const ssr_rt_desc{
-        transient_rt_width, transient_rt_height, frame_packet.color_buffer_format, std::nullopt,
+        transient_rt_width, transient_rt_height, DXGI_FORMAT_R32G32B32A32_FLOAT, std::nullopt,
         1, L"SSR RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
       };
 

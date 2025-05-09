@@ -383,6 +383,7 @@
     <None Include="src\rendering\shaders\gbuffer_utils.hlsli" />
     <None Include="src\rendering\shaders\ssr.hlsli" />
     <None Include="src\rendering\shaders\fullscreen_tri.hlsli" />
+    <None Include="src\rendering\shaders\raytrace.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />
