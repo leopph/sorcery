@@ -115,8 +115,8 @@ auto SettingsWindow::Draw() -> void {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
 
-    if (ImGui::DragFloat("Thickness", &ssr_params.thickness_vs, 1.0f, 0,
-      std::numeric_limits<float>::max() / 2.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
+    if (ImGui::DragFloat("Thickness", &ssr_params.thickness_vs, 0.001f, 0,
+      std::numeric_limits<float>::max() / 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
 
