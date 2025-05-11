@@ -57,8 +57,8 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
     float3 const refl_start_vs = frag_pos_vs + g_params.ray_start_bias_vs * refl_dir_vs;
 
     if (traceScreenSpaceRay(refl_start_vs, refl_dir_vs, mul(per_view_cb.projMtx, cs_to_px_mtx), depth_tex,
-      g_params.thickness_vs, per_view_cb.near_clip_plane, per_view_cb.far_clip_plane, g_params.stride, g_params.jitter,
-      g_params.max_march_steps, g_params.max_trace_dist_vs, hit_pixel_coords, hit_pos_vs)) {
+      depth_tex_size, g_params.thickness_vs, per_view_cb.near_clip_plane, per_view_cb.far_clip_plane, g_params.stride,
+      g_params.jitter, g_params.max_march_steps, g_params.max_trace_dist_vs, hit_pixel_coords, hit_pos_vs)) {
       reflection_color = lit_scene_tex.Load(int3(int2(hit_pixel_coords), 0));
     }
   }

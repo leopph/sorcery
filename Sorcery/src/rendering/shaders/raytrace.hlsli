@@ -76,6 +76,8 @@ bool DepthIntersects(float const depth, float const depth_min, float const depth
 
     \param vsZBuffer The depth Z buffer
 
+    \param vsZBufferSize Dimensions of vsZBuffer
+
     \param vsZThickness Camera space thickness to ascribe to each pixel in the depth buffer
 
     \param nearPlaneZ
@@ -104,6 +106,7 @@ bool traceScreenSpaceRay
  Vector3 vsDirection,
  mat4x4 projectToPixelMatrix,
  Texture2D<float> vsZBuffer,
+ float2 vsZBufferSize,
  float vsZThickness,
  float nearPlaneZ,
  float farPlaneZ,
@@ -142,6 +145,21 @@ bool traceScreenSpaceRay
   Point2 P1 = H1.xy * k1;
 
   // [Optional clipping to frustum sides here]
+  float xMax = vsZBufferSize.x - 0.5, xMin = 0.5, yMax = vsZBufferSize.y - 0.5, yMin = 0.5;
+  float alpha = 0.0;
+
+  // Assume P0 is in the viewport (P1 - P0 is never zero when clipping)
+  if ((P1.y > yMax) || (P1.y < yMin)) {
+    alpha = (P1.y - ((P1.y > yMax) ? yMax : yMin)) / (P1.y - P0.y);
+  }
+
+  if ((P1.x > xMax) || (P1.x < xMin)) {
+    alpha = max(alpha, (P1.x - ((P1.x > xMax) ? xMax : xMin)) / (P1.x - P0.x));
+  }
+
+  P1 = lerp(P1, P0, alpha);
+  k1 = lerp(k1, k0, alpha);
+  Q1 = lerp(Q1, Q0, alpha);
 
   // Initialize to off screen
   hitPixel = Point2(-1.0, -1.0);
