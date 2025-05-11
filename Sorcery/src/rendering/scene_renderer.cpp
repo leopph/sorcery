@@ -1961,8 +1961,6 @@ auto SceneRenderer::Render() -> void {
         *std::bit_cast<UINT const*>(&frame_packet.ssr_params.stride));
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, jitter),
         *std::bit_cast<UINT const*>(&frame_packet.ssr_params.jitter));
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_march_steps),
-        frame_packet.ssr_params.max_march_steps);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_trace_dist_vs),
         *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_trace_dist_vs));
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, ray_start_bias_vs),

@@ -295,7 +295,6 @@ struct SsrDrawParams {
 
   float stride;
   float jitter;
-  uint max_march_steps;
   float max_trace_dist_vs;
   float ray_start_bias_vs;
 };

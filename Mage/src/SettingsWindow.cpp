@@ -130,13 +130,6 @@ auto SettingsWindow::Draw() -> void {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
 
-    if (auto val{static_cast<int>(ssr_params.max_march_steps)};
-      ImGui::DragInt("Max Ray March Steps", &val, 1, 1, std::numeric_limits<int>::max() / 2, "%d",
-        ImGuiSliderFlags_AlwaysClamp)) {
-      ssr_params.max_march_steps = static_cast<unsigned>(val);
-      App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
-    }
-
     if (ImGui::DragFloat("Max Trace Distance", &ssr_params.max_trace_dist_vs, 1.0f, 1.0f,
       std::numeric_limits<float>::max() / 2.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
