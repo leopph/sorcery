@@ -433,7 +433,7 @@ private:
 
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
   SsrParams ssr_params_{
-    .max_roughness = 0.8f, .thickness_vs = 0.35f, .stride = 1, .jitter = 0.501f, .max_trace_dist_vs = 1000,
+    .max_roughness = 0.3f, .thickness_vs = 0.35f, .stride = 1, .jitter = 0.501f, .max_trace_dist_vs = 1000,
     .ray_start_bias_vs = 0.f
   };
   ShadowParams shadow_params_{{0.1f, 0.3f, 0.6f}, 4, false, 100, ShadowFilteringMode::kPcfTent5X5};
