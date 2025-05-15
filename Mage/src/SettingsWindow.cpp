@@ -125,11 +125,6 @@ auto SettingsWindow::Draw() -> void {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
     }
 
-    if (ImGui::DragFloat("Jitter", &ssr_params.jitter, 0.001f, 0.f,
-      std::numeric_limits<float>::max() / 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
-      App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);
-    }
-
     if (ImGui::DragFloat("Max Trace Distance", &ssr_params.max_trace_dist_vs, 1.0f, 1.0f,
       std::numeric_limits<float>::max() / 2.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsrParams(ssr_params);

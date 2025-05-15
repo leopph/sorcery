@@ -36,8 +36,8 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
     float3 const frag_pos_vs = frag_pos4_vs.xyz / frag_pos4_vs.w;
 
     float3 const frag_norm_vs = mul(float4(frag_norm_ws, 0), per_view_cb.viewMtx).xyz;
-    float3 const dir_cam_to_frag_vs = normalize(frag_pos_vs);
-    float3 const refl_dir_vs = reflect(dir_cam_to_frag_vs, frag_norm_vs);
+    float3 const refl_start_vs = frag_pos_vs + g_params.ray_start_bias_vs * frag_norm_vs;
+    float3 const refl_dir_vs = reflect(normalize(frag_pos_vs), frag_norm_vs);
 
     float2 hit_pixel_coords;
     float3 hit_pos_vs;
@@ -54,11 +54,12 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
       half_depth_tex_size.x, half_depth_tex_size.y, 0, 1
     };
 
-    float3 const refl_start_vs = frag_pos_vs + g_params.ray_start_bias_vs * refl_dir_vs;
+    int2 const ifrag_pos = int2(ps_in.pos_cs.xy);
+    float const jitter = ((ifrag_pos.x + ifrag_pos.y) & 1) * 0.5;
 
     if (traceScreenSpaceRay(refl_start_vs, refl_dir_vs, mul(per_view_cb.projMtx, cs_to_px_mtx), depth_tex,
       depth_tex_size, g_params.thickness_vs, per_view_cb.near_clip_plane, per_view_cb.far_clip_plane, g_params.stride,
-      g_params.jitter, max(depth_tex_size.x, depth_tex_size.y), g_params.max_trace_dist_vs, hit_pixel_coords,
+      jitter, max(depth_tex_size.x, depth_tex_size.y), g_params.max_trace_dist_vs, hit_pixel_coords,
       hit_pos_vs)) {
       reflection_color = lit_scene_tex.Load(int3(int2(hit_pixel_coords), 0));
     }
