@@ -819,6 +819,8 @@ auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> void {
 
     CreateTextureViews(*buf.Get(), tex_desc, dsv, rtv, srv, uav);
 
+    global_resource_states_.Record(buf.Get(), {.layout = D3D12_BARRIER_LAYOUT_COMMON});
+
     swap_chain.textures_.emplace_back(new Texture{
       nullptr, std::move(buf), details::kInvalidResourceIndex, rtv, srv, details::kInvalidResourceIndex, tex_desc
     }, details::DeviceChildDeleter<Texture>{*this});
