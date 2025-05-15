@@ -117,8 +117,11 @@ auto App::Run() -> void {
     }
 
     if (window_resized_) {
-      graphics_device_.WaitIdle();
-      graphics_device_.ResizeSwapChain(*swap_chain_, 0, 0);
+      if (auto const [width, height]{window_.GetClientAreaSize()}; width != 0 && height != 0) {
+        graphics_device_.WaitIdle();
+        graphics_device_.ResizeSwapChain(*swap_chain_, 0, 0);
+      }
+
       window_resized_ = false;
     }
 
