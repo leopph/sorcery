@@ -182,10 +182,10 @@ auto ImGuiRenderer::Render() -> void {
 
   cmd.SetBlendFactor(std::array{0.f, 0.f, 0.f, 0.f});
   cmd.SetIndexBuffer(*ib, idx_format);
-  cmd.SetPipelineParameters(offsetof(ImGuiDrawParams, proj_mtx) / 4,
+  cmd.SetPipelineParameters(PIPELINE_PARAM_INDEX(ImGuiDrawParams, proj_mtx),
     std::span{std::bit_cast<UINT const*>(&proj_mtx), 16});
-  cmd.SetPipelineParameter(offsetof(ImGuiDrawParams, samp_idx) / 4, samp_.Get());
-  cmd.SetShaderResource(offsetof(ImGuiDrawParams, vb_idx) / 4, *vb);
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ImGuiDrawParams, samp_idx), samp_.Get());
+  cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ImGuiDrawParams, vb_idx), *vb);
   cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   cmd.SetRenderTargets(std::span{std::array{(&rt)}.data(), 1}, nullptr);
   cmd.SetViewports(std::array<D3D12_VIEWPORT, 1>{
@@ -230,7 +230,7 @@ auto ImGuiRenderer::Render() -> void {
           }
         });
 
-        cmd.SetShaderResource(offsetof(ImGuiDrawParams, tex_idx) / 4,
+        cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ImGuiDrawParams, tex_idx),
           *std::bit_cast<graphics::Texture*>(draw_cmd.GetTexID()));
 
         cmd.DrawIndexedInstanced(draw_cmd.ElemCount, 1, draw_cmd.IdxOffset + global_idx_offset,
