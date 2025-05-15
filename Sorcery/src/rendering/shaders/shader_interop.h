@@ -45,7 +45,7 @@ typedef bool BOOL;
 
 #define SKINNING_CS_THREADS 64
 
-//#define REVERSE_Z
+#define REVERSE_Z
 #ifdef REVERSE_Z
 #define DEPTH_CLEAR_VALUE 0.0f
 #else
