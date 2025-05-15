@@ -71,7 +71,7 @@ auto ImGuiRenderer::UpdateFonts() -> void {
     graphics::TextureDimension::k2D, static_cast<UINT>(fonts_tex_width), static_cast<UINT>(fonts_tex_height), 1, 1,
     DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
   }, graphics::CpuAccess::kNone, nullptr);
-
+  fonts_tex_->SetDebugName(L"UI Font Texture");
 
   render_manager_->UpdateTexture(*fonts_tex_, 0, std::array{
     D3D12_SUBRESOURCE_DATA{
@@ -126,7 +126,6 @@ auto ImGuiRenderer::Render() -> void {
     return;
   }
 
-
   auto const proj_mtx{
     Matrix4::OrthographicOffCenter(draw_data->DisplayPos.x, draw_data->DisplayPos.x + draw_data->DisplaySize.x,
       draw_data->DisplayPos.y, draw_data->DisplayPos.y + draw_data->DisplaySize.y, -1, 1)
@@ -140,6 +139,7 @@ auto ImGuiRenderer::Render() -> void {
     vb = device_->CreateBuffer(graphics::BufferDesc{
       vtx_data_byte_size, static_cast<UINT>(sizeof(ImDrawVert)), false, true, false
     }, graphics::CpuAccess::kWrite);
+    vb->SetDebugName(L"UI Vertex Buffer");
     vb_ptr = vb->Map();
   }
 
@@ -150,6 +150,7 @@ auto ImGuiRenderer::Render() -> void {
     !ib || ib->GetDesc().size < idx_data_byte_size) {
     ib = device_->CreateBuffer(graphics::BufferDesc{idx_data_byte_size, 0, false, false, false},
       graphics::CpuAccess::kWrite);
+    ib->SetDebugName(L"UI Index Buffer");
     ib_ptr = ib->Map();
   }
 
