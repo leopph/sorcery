@@ -439,7 +439,7 @@ private:
   float inv_gamma_{1.f / 2.2f};
 
   bool ssao_enabled_{true};
-  bool ssr_enabled_{true};
+  bool ssr_enabled_{false};
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 

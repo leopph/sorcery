@@ -101,7 +101,7 @@ auto SettingsWindow::Draw() -> void {
     ImGui::EndDisabled();
 
     if (auto ssr_enabled{App::Instance().GetSceneRenderer().IsSsrEnabled()};
-      ImGui::Checkbox("Screen Space Reflections", &ssr_enabled)) {
+      ImGui::Checkbox("Screen Space Reflections (WIP)", &ssr_enabled)) {
       App::Instance().GetSceneRenderer().SetSsrEnabled(ssr_enabled);
     }
 
