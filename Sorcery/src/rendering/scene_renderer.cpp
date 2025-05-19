@@ -1386,6 +1386,10 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.cam_data.reserve(cameras_.size());
 
   for (auto const cam : cameras_) {
+    if (!render_global_cameras_ && !cam->GetRenderTarget()) {
+      continue;
+    }
+
     unsigned rt_local_idx;
 
     if (auto const rt{cam->GetRenderTarget()}) {
@@ -2072,6 +2076,16 @@ auto SceneRenderer::Render() -> void {
 auto SceneRenderer::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void {
   gizmo_colors_.emplace_back(color);
   line_gizmo_vertex_data_.emplace_back(from, static_cast<std::uint32_t>(gizmo_colors_.size() - 1), to, 0.0f);
+}
+
+
+auto SceneRenderer::IsRenderingGlobalCameras() const noexcept -> bool {
+  return render_global_cameras_;
+}
+
+
+auto SceneRenderer::SetRenderGlobalCameras(bool const render) noexcept -> void {
+  render_global_cameras_ = render;
 }
 
 

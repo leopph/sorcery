@@ -77,6 +77,11 @@ public:
 
   LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
 
+  // Global cameras are the ones without a set render target.
+  [[nodiscard]] LEOPPHAPI auto IsRenderingGlobalCameras() const noexcept -> bool;
+  // Global cameras are the ones without a set render target.
+  LEOPPHAPI auto SetRenderGlobalCameras(bool render) noexcept -> void;
+
   // If a render target override is set, all cameras not targeting a specific render target
   // will render into the override RT.
   [[nodiscard]] LEOPPHAPI auto GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> const&;
@@ -440,6 +445,7 @@ private:
 
   bool ssao_enabled_{true};
   bool ssr_enabled_{false};
+  bool render_global_cameras_{true};
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
