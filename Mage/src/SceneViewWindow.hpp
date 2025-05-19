@@ -13,7 +13,7 @@ class EditorApp;
 
 class SceneViewWindow {
 public:
-  SceneViewWindow();
+  SceneViewWindow() = default;
   SceneViewWindow(SceneViewWindow const&) = delete;
   SceneViewWindow(SceneViewWindow&&) = delete;
 
@@ -60,5 +60,6 @@ private:
   int gizmo_mode_idx_{0};
   bool cam_moving_{false};
   bool show_grid_{false};
+  bool was_visible_{false};
 };
 }

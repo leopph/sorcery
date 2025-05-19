@@ -9,11 +9,6 @@
 
 
 namespace sorcery::mage {
-SceneViewWindow::SceneViewWindow() {
-  App::Instance().GetSceneRenderer().Register(cam_);
-}
-
-
 SceneViewWindow::~SceneViewWindow() {
   App::Instance().GetSceneRenderer().Unregister(cam_);
 }
@@ -25,7 +20,15 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
   });
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
-  if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
+  auto const is_visible{ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)};
+
+  if (is_visible && !was_visible_) {
+    App::Instance().GetSceneRenderer().Register(cam_);
+  } else if (!is_visible && was_visible_) {
+    App::Instance().GetSceneRenderer().Unregister(cam_);
+  }
+
+  if (is_visible) {
     ImGui::PopStyleVar();
 
     auto openCamSettings{false};
@@ -222,6 +225,9 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
   } else {
     ImGui::PopStyleVar();
   }
+
+  was_visible_ = is_visible;
+
   ImGui::End();
 }
 
