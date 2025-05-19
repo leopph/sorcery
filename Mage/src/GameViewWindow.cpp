@@ -7,6 +7,11 @@
 
 
 namespace sorcery::mage {
+GameViewWindow::GameViewWindow() {
+  App::Instance().GetSceneRenderer().SetRenderGlobalCameras(was_visible_);
+}
+
+
 auto GameViewWindow::Draw(bool const game_is_running) -> void {
   ImVec2 static constexpr game_viewport_min_size{480, 270};
 
@@ -21,7 +26,17 @@ auto GameViewWindow::Draw(bool const game_is_running) -> void {
     ImGui::SetNextWindowFocus();
   }
 
-  if (!ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
+  auto const is_visible{ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)};
+
+  if (is_visible && !was_visible_) {
+    App::Instance().GetSceneRenderer().SetRenderGlobalCameras(true);
+  } else if (!is_visible && was_visible_) {
+    App::Instance().GetSceneRenderer().SetRenderGlobalCameras(false);
+  }
+
+  was_visible_ = is_visible;
+
+  if (!is_visible) {
     ImGui::PopStyleVar();
 
     if (App::Instance().GetSceneRenderer().GetRenderTargetOverride() == rt_override_) {
