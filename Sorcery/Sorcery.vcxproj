@@ -177,16 +177,19 @@
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Resources\Scene.cpp" />
     <ClCompile Include="src\Util.cpp" />
+    <ClCompile Include="src\viewport.cpp" />
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
     <ClInclude Include="src\app.hpp" />
     <ClInclude Include="src\char_encoding_helpers.hpp" />
+    <ClInclude Include="src\extent.hpp" />
     <ClInclude Include="src\ExternalResource.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\job_system.hpp" />
     <ClInclude Include="src\mesh_data.hpp" />
     <ClInclude Include="src\mutex.hpp" />
     <ClInclude Include="src\observer_ptr.hpp" />
+    <ClInclude Include="src\point.hpp" />
     <ClInclude Include="src\random.hpp" />
     <ClInclude Include="src\rendering\graphics.hpp" />
     <ClInclude Include="src\MemoryAllocation.hpp" />
@@ -217,6 +220,7 @@
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\scene_objects\TransformComponent.cpp" />
     <ClInclude Include="src\SkyMode.hpp" />
+    <ClInclude Include="src\viewport.hpp" />
     <ClInclude Include="src\Window.hpp" />
     <ClInclude Include="src\WindowImpl.hpp" />
     <ClInclude Include="src\wsq.hpp" />

@@ -1,18 +1,8 @@
 #include "Util.hpp"
 
-#include "Reflection.hpp"
-
 #include <cctype>
 #include <format>
 #include <stdexcept>
-
-
-RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::NormalizedViewport>{"NormalizedViewport"}.
-    constructor()(rttr::policy::ctor::as_object).property("left", &sorcery::NormalizedViewport::left).
-    property("top", &sorcery::NormalizedViewport::top).property("right", &sorcery::NormalizedViewport::right).property(
-      "bottom", &sorcery::NormalizedViewport::bottom);
-}
 
 
 namespace sorcery {
@@ -55,7 +45,7 @@ auto CalculateNormals(std::span<Vector3 const> const positions, std::span<unsign
 
   out.resize(positions.size());
 
-  for (int i = 0; i < std::ssize(indices); i += 3) {
+  for (auto i = 0; i < std::ssize(indices); i += 3) {
     Vector3 const& vertex1{positions[indices[i]]};
     Vector3 const& vertex2{positions[indices[i + 1]]};
     Vector3 const& vertex3{positions[indices[i + 2]]};
@@ -64,7 +54,7 @@ auto CalculateNormals(std::span<Vector3 const> const positions, std::span<unsign
     Vector3 const edge2{Normalize(vertex3 - vertex1)};
     Vector3 const normal{Normalize(Cross(edge1, edge2))};
 
-    for (int j = 0; j < 3; j++) {
+    for (auto j = 0; j < 3; j++) {
       out[indices[i + j]] = normal;
     }
   }
@@ -85,7 +75,7 @@ auto CalculateTangents(std::span<Vector3 const> const positions, std::span<Vecto
 
   out.resize(positions.size());
 
-  for (int i = 0; i < std::ssize(indices); i += 3) {
+  for (auto i = 0; i < std::ssize(indices); i += 3) {
     Vector3 const& vertex1{positions[indices[i]]};
     Vector3 const& vertex2{positions[indices[i + 1]]};
     Vector3 const& vertex3{positions[indices[i + 2]]};
@@ -103,11 +93,11 @@ auto CalculateTangents(std::span<Vector3 const> const positions, std::span<Vecto
     float const f{1.0f / (deltaUv1[0] * deltaUv2[1] - deltaUv1[1] * deltaUv2[0])};
 
     Vector3 tangent;
-    for (int j = 0; j < 3; j++) {
+    for (auto j = 0; j < 3; j++) {
       tangent[j] = f * (deltaUv2[1] * edge1[j] - deltaUv1[1] * edge2[j]);
     }
 
-    for (int j = 0; j < 3; j++) {
+    for (auto j = 0; j < 3; j++) {
       out[indices[i + j]] = tangent;
     }
   }

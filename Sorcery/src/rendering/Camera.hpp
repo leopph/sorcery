@@ -3,7 +3,7 @@
 #include "render_target.hpp"
 #include "../Core.hpp"
 #include "../Math.hpp"
-#include "../Util.hpp"
+#include "../viewport.hpp"
 
 #include <cstdint>
 
@@ -68,10 +68,10 @@ public:
                                                                 float far_plane) -> Matrix4;
 
 private:
-  constexpr static float MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{0.01f};
-  constexpr static float MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET{0.1f};
-  constexpr static float MINIMUM_PERSPECTIVE_VERTICAL_FOV{5.0f};
-  constexpr static float MINIMUM_ORTHOGRAPHIC_VERTICAL_SIZE{0.1f};
+  constexpr static auto MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{0.01f};
+  constexpr static auto MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET{0.1f};
+  constexpr static auto MINIMUM_PERSPECTIVE_VERTICAL_FOV{5.0f};
+  constexpr static auto MINIMUM_ORTHOGRAPHIC_VERTICAL_SIZE{0.1f};
 
   float near_{MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE};
   float far_{100.f};

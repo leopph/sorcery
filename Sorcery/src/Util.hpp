@@ -16,34 +16,6 @@
 
 
 namespace sorcery {
-template<typename T>
-struct Extent2D {
-  T width;
-  T height;
-};
-
-
-template<typename T>
-struct Point2D {
-  T x;
-  T y;
-};
-
-
-struct Viewport {
-  Point2D<unsigned> position;
-  Extent2D<unsigned> extent;
-};
-
-
-struct NormalizedViewport {
-  float left;
-  float top;
-  float right;
-  float bottom;
-};
-
-
 template<std::integral To, std::integral From>
 [[nodiscard]] constexpr auto clamp_cast(From const what) -> To {
   if constexpr (std::cmp_less_equal(std::numeric_limits<To>::min(), std::numeric_limits<From>::min())) {

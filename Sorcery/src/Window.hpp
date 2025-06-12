@@ -2,9 +2,12 @@
 
 #include "Core.hpp"
 #include "Event.hpp"
-#include "Util.hpp"
+#include "extent.hpp"
+#include "point.hpp"
 
 #include <memory>
+#include <optional>
+#include <string_view>
 
 
 namespace sorcery {

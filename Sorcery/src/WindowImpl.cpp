@@ -1,12 +1,13 @@
 #include "WindowImpl.hpp"
 
-#include "Platform.hpp"
+#include <cassert>
+#include <stdexcept>
 
 #include <dwmapi.h>
 #include <hidusage.h>
 #include <Objbase.h>
 
-#include <cassert>
+#include "Platform.hpp"
 
 
 namespace sorcery {
