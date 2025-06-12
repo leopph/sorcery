@@ -76,4 +76,10 @@ constexpr auto AlignsTo(T const value, T const alignment) -> bool {
 
   return value % alignment == 0;
 }
+
+
+template<std::integral T>
+constexpr auto Mod(T dividend, T modulus) -> T {
+  return (dividend % modulus + modulus) % modulus;
+}
 }

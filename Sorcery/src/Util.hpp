@@ -51,6 +51,9 @@ template<std::unsigned_integral T>
 
 template<std::unsigned_integral T>
 [[nodiscard]] constexpr auto AlignsTo(T value, T alignment) -> bool;
+
+template<std::integral T>
+[[nodiscard]] constexpr auto Mod(T dividend, T modulus) -> T;
 }
 
 
