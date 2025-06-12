@@ -3,6 +3,7 @@
 #include "../Util.hpp"
 #include "shaders/shader_interop.h"
 
+#include <cstdint>
 #include <stdexcept>
 #include <utility>
 
@@ -28,6 +29,14 @@ auto RenderManager::GetCurrentFrameCount() const -> UINT64 {
 
 auto RenderManager::GetCurrentFrameIndex() const -> UINT {
   return frame_idx_;
+}
+
+
+auto RenderManager::GetPreviousFrameIndex() const -> UINT {
+  return static_cast<UINT>(Mod(
+    static_cast<std::int64_t>(frame_idx_) - 1,
+    static_cast<std::int64_t>(max_frames_in_flight_)
+  ));
 }
 
 

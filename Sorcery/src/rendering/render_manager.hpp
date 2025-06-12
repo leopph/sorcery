@@ -10,7 +10,6 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <mutex>
 #include <span>
 #include <variant>
@@ -34,6 +33,7 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetCurrentFrameCount() const -> UINT64;
   [[nodiscard]] LEOPPHAPI auto GetCurrentFrameIndex() const -> UINT;
+  [[nodiscard]] LEOPPHAPI auto GetPreviousFrameIndex() const -> UINT;
 
   [[nodiscard]] LEOPPHAPI auto AcquireCommandList() -> graphics::CommandList&;
   [[nodiscard]] LEOPPHAPI auto AcquireTemporaryRenderTarget(
