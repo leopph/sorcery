@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "builtin-baseline": "bc994510d2eb11aac7b43b03f67a7751d5bfe0e4",
+  "builtin-baseline": "ef7dbf94b9198bc58f45951adcf1f041fcbc5ea0",
   "dependencies": [
     {
       "name": "yaml-cpp",
@@ -33,7 +33,7 @@
     },
     {
       "name": "assimp",
-      "version>=": "5.4.3"
+      "version>=": "6.0.2"
     }
   ]
 }
