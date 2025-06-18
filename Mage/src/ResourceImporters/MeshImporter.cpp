@@ -136,7 +136,11 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   mesh_data.material_slots.resize(scene->mNumMaterials);
 
   for (unsigned i{0}; i < scene->mNumMaterials; i++) {
-    mesh_data.material_slots[i].name = scene->mMaterials[i]->GetName().C_Str();
+    if (auto const& mtl_name{scene->mMaterials[i]->GetName()}; mtl_name.length > 0) {
+      mesh_data.material_slots[i].name = mtl_name.C_Str();
+    } else {
+      mesh_data.material_slots[i].name = std::format("Material_{}", i);
+    }
   }
 
   // Collect mesh info
