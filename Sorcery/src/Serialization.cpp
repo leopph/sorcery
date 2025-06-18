@@ -420,9 +420,12 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v,
 
 auto SerializeToBinary(std::string_view const sv, std::vector<std::byte>& bytes) noexcept -> void {
   SerializeToBinary(std::size(sv), bytes);
-  auto const sizeBeforeChars{std::size(bytes)};
-  bytes.resize(sizeBeforeChars + std::size(sv));
-  std::memcpy(&bytes[sizeBeforeChars], sv.data(), std::size(sv));
+
+  if (!sv.empty()) {
+    auto const sizeBeforeChars{std::size(bytes)};
+    bytes.resize(sizeBeforeChars + std::size(sv));
+    std::memcpy(&bytes[sizeBeforeChars], sv.data(), std::size(sv));
+  }
 }
 
 
@@ -438,6 +441,11 @@ auto DeserializeFromBinary(std::span<std::byte const> const bytes, std::string& 
 
   if (std::size(bytes) - 8 < len) {
     return false;
+  }
+
+  if (len == 0) {
+    str.clear();
+    return true;
   }
 
   str.resize(len);
