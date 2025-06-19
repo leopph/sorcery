@@ -132,7 +132,7 @@ public:
   LEOPPHAPI auto Register(LightComponent const& light_component) noexcept -> void;
   LEOPPHAPI auto Unregister(LightComponent const& light_component) noexcept -> void;
 
-  LEOPPHAPI auto Register(Camera const& cam) noexcept -> void;
+  LEOPPHAPI auto Register(Camera& cam) noexcept -> void;
   LEOPPHAPI auto Unregister(Camera const& cam) noexcept -> void;
 
 private:
@@ -204,6 +204,7 @@ private:
     NormalizedViewport viewport;
 
     unsigned rt_local_idx;
+    unsigned accum_tex_local_idx;
   };
 
 
@@ -452,7 +453,7 @@ private:
   std::vector<StaticMeshComponent const*> static_mesh_components_;
   std::vector<SkinnedMeshComponent const*> skinned_mesh_components_;
   std::vector<LightComponent const*> lights_;
-  std::vector<Camera const*> cameras_;
+  std::vector<Camera*> cameras_;
 
   std::shared_ptr<RenderTarget> main_rt_;
   std::shared_ptr<RenderTarget> rt_override_;

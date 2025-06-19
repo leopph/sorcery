@@ -1387,21 +1387,38 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.cam_data.reserve(cameras_.size());
 
   for (auto const cam : cameras_) {
-    if (!render_global_cameras_ && !cam->GetRenderTarget()) {
+    auto const& cam_rt{cam->GetRenderTarget()};
+
+    if (!cam_rt && !render_global_cameras_) {
       continue;
     }
 
+    auto const& vp{cam->GetViewport()};
+
+    if (auto const accum_rt{cam->GetTaaAccumulationRt()};
+      !accum_rt || accum_rt->GetDesc().color_format != color_buffer_format_ ||
+      accum_rt->GetDesc().width != (cam_rt ? cam_rt : main_rt_)->GetDesc().width * GetWidth(vp) ||
+      accum_rt->GetDesc().height != (cam_rt ? cam_rt : main_rt_)->GetDesc().height * GetHeight(vp)) {
+      cam->RecreateTaaAccumulationRt(*device_, Extent2D{
+          static_cast<unsigned>((cam_rt ? cam_rt : main_rt_)->GetDesc().width * GetWidth(vp)),
+          static_cast<unsigned>((cam_rt ? cam_rt : main_rt_)->GetDesc().height * GetHeight(vp))
+        },
+        color_buffer_format_);
+    }
+
+    auto const accum_rt_local_idx{find_or_emplace_back_texture(cam->GetTaaAccumulationRt()->GetColorTex())};
+
     unsigned rt_local_idx;
 
-    if (auto const rt{cam->GetRenderTarget()}) {
-      rt_local_idx = find_or_emplace_back_rt(rt);
+    if (cam_rt) {
+      rt_local_idx = find_or_emplace_back_rt(cam_rt);
     } else {
       rt_local_idx = 0; // The global RT is always at index 0!
     }
 
     packet.cam_data.emplace_back(cam->GetPosition(), cam->GetRightAxis(), cam->GetUpAxis(), cam->GetForwardAxis(),
       cam->GetNearClipPlane(), cam->GetFarClipPlane(), cam->GetType(), cam->GetVerticalPerspectiveFov(),
-      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx);
+      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, accum_rt_local_idx);
   }
 
   packet.gizmo_colors = gizmo_colors_;
@@ -2291,7 +2308,7 @@ auto SceneRenderer::Unregister(LightComponent const& light_component) noexcept -
 }
 
 
-auto SceneRenderer::Register(Camera const& cam) noexcept -> void {
+auto SceneRenderer::Register(Camera& cam) noexcept -> void {
   cameras_.emplace_back(&cam);
 }
 
