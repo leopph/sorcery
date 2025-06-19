@@ -402,6 +402,7 @@
     <None Include="src\viewport.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="src\rendering\shaders\taa_resolve.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />
@@ -424,5 +425,6 @@
     <FxCompile Include="src\rendering\shaders\ssr_vs.hlsl" />
     <FxCompile Include="src\rendering\shaders\ssr_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\ssr_compose_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\taa_resolve_cs.hlsl" />
   </ItemGroup>
 </Project>

@@ -272,6 +272,7 @@
     <None Include="src\rendering\shaders\skybox.hlsli" />
     <None Include="src\rendering\shaders\ssao.hlsli" />
     <None Include="src\rendering\shaders\ssr.hlsli" />
+    <None Include="src\rendering\shaders\taa_resolve.hlsli" />
     <None Include="src\rendering\shaders\utility.hlsli" />
     <None Include="src\rendering\structured_buffer.inl" />
     <None Include="src\resources\native_resource.inl" />
@@ -525,6 +526,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VsMain</EntryPointName>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VsMain</EntryPointName>
+    </FxCompile>
+    <FxCompile Include="src\rendering\shaders\taa_resolve_cs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.6</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.6</ShaderModel>
     </FxCompile>
     <FxCompile Include="src\rendering\shaders\vtx_skinning_cs.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>

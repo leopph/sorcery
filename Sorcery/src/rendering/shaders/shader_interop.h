@@ -44,6 +44,8 @@ typedef bool BOOL;
 #define DEPTH_RESOLVE_CS_THREADS_Z 1
 
 #define SKINNING_CS_THREADS 64
+#define TAA_RESOLVE_CS_THREADS_X 8
+#define TAA_RESOLVE_CS_THREADS_Y 8
 
 #define REVERSE_Z
 #ifdef REVERSE_Z
@@ -303,6 +305,13 @@ struct SsrComposeDrawParams {
   uint lit_scene_tex_idx;
   uint ssr_tex_idx;
   uint point_clamp_samp_idx;
+};
+
+
+struct TaaResolveDrawParams {
+  uint accum_tex_idx;
+  uint in_tex_idx;
+  float blend_factor; // [0, 1]
 };
 
 #ifdef __cplusplus
