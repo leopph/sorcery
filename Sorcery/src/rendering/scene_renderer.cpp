@@ -36,6 +36,7 @@
 #include "shaders/generated/Debug/ssr_compose_ps.h"
 #include "shaders/generated/Debug/ssr_ps.h"
 #include "shaders/generated/Debug/ssr_vs.h"
+#include "shaders/generated/Debug/taa_resolve_cs.h"
 #include "shaders/generated/Debug/vtx_skinning_cs.h"
 #else
 #include "shaders/generated/Release/deferred_lighting_ps.h"
@@ -57,6 +58,7 @@
 #include "shaders/generated/Release/ssr_compose_ps.h"
 #include "shaders/generated/Release/ssr_ps.h"
 #include "shaders/generated/Release/ssr_vs.h"
+#include "shaders/generated/Release/taa_resolve_cs.h"
 #include "shaders/generated/Release/vtx_skinning_cs.h"
 #endif
 
@@ -825,6 +827,12 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   ssr_pso_ = device_->CreatePipelineState(ssr_pso_desc, sizeof(SsrDrawParams) / 4);
 
+  graphics::PipelineDesc const taa_resolve_pso_desc{
+    .cs = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_cs_bytes, ARRAYSIZE(g_taa_resolve_cs_bytes)}
+  };
+
+  taa_pso_ = device_->CreatePipelineState(taa_resolve_pso_desc, sizeof(TaaResolveDrawParams) / 4);
+
   graphics::PipelineDesc const vtx_skinning_pso_desc{
     .cs = CD3DX12_SHADER_BYTECODE{g_vtx_skinning_cs_bytes, ARRAYSIZE(g_vtx_skinning_cs_bytes)}
   };
@@ -1468,6 +1476,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.ssao_blur_pso = ssao_blur_pso_;
   packet.ssr_compose_pso = ssr_compose_pso_;
   packet.ssr_pso = ssr_pso_;
+  packet.taa_resolve_pso = taa_pso_;
   packet.vtx_skinning_pso = vtx_skinning_pso_;
 }
 
@@ -1706,7 +1715,7 @@ auto SceneRenderer::Render() -> void {
 
     RenderTarget::Desc const color_hdr_rt_desc{
       transient_rt_width, transient_rt_height, frame_packet.color_buffer_format, std::nullopt,
-      1, L"Camera HDR RenderTarget", false, frame_packet.background_color
+      1, L"Camera HDR RenderTarget", true, frame_packet.background_color
     };
 
     auto const depth_rt{render_manager_->AcquireTemporaryRenderTarget(depth_rt_desc)};
@@ -2071,16 +2080,38 @@ auto SceneRenderer::Render() -> void {
       DrawSubmesh(1, 0, 0, {}, {}, {}, {}, {}, cam_cmd);
     }
 
+    // TAA resolve
+    {
+      constexpr auto taa_blend_factor{0.1f};
+
+      cam_cmd.SetPipelineState(*frame_packet.taa_resolve_pso);
+      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, in_tex_idx), *color_hdr_rt->GetColorTex());
+      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, accum_tex_idx),
+        *frame_packet.textures[cam_data.accum_tex_local_idx]);
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, blend_factor),
+        *std::bit_cast<UINT*>(&taa_blend_factor));
+
+      auto const thread_group_count_x{
+        static_cast<int>(std::ceilf(
+          static_cast<float>(color_hdr_rt_desc.width) / static_cast<float>(TAA_RESOLVE_CS_THREADS_X)))
+      };
+      auto const thread_group_count_y{
+        static_cast<int>(std::ceilf(
+          static_cast<float>(color_hdr_rt_desc.height) / static_cast<float>(TAA_RESOLVE_CS_THREADS_Y)))
+      };
+
+      cam_cmd.Dispatch(thread_group_count_x, thread_group_count_y, 1);
+    }
+
     // Post-processing pass
 
-    auto const* const post_process_input_rt{color_hdr_rt.get()};
+    auto const* const post_process_input_tex{frame_packet.textures[cam_data.accum_tex_local_idx].get()};
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&cam_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
 
     cam_cmd.SetPipelineState(*frame_packet.post_process_pso);
-    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx),
-      *post_process_input_rt->GetColorTex());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx), *post_process_input_tex);
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, inv_gamma),
       *std::bit_cast<UINT*>(&frame_packet.inv_gamma));
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, bi_clamp_samp_idx), samp_bi_clamp_.Get());

@@ -302,6 +302,7 @@ private:
     graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_compose_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> taa_resolve_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso;
   };
 
@@ -400,6 +401,7 @@ private:
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_compose_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> taa_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso_;
 
   graphics::UniqueSamplerHandle samp_cmp_pcf_ge_;
