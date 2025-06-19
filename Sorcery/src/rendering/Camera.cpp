@@ -183,7 +183,7 @@ auto Camera::RecreateTaaAccumulationRt(graphics::GraphicsDevice& device, Extent2
     .depth_stencil_format = std::nullopt,
     .sample_count = 1,
     .debug_name = L"Camera TAA Accumulation RT",
-    .enable_unordered_access = false,
+    .enable_unordered_access = true,
     .color_clear_value = std::array{0.0f, 0.0f, 0.0f, 1.0f},
     .depth_clear_value = 0.0f,
     .stencil_clear_value = 0,
