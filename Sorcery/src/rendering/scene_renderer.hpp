@@ -374,6 +374,7 @@ private:
   static DXGI_FORMAT constexpr gbuffer0_format_{DXGI_FORMAT_R8G8B8A8_UNORM};
   static DXGI_FORMAT constexpr gbuffer1_format_{DXGI_FORMAT_R16G16_FLOAT};
   static DXGI_FORMAT constexpr gbuffer2_format_{DXGI_FORMAT_R8G8_UNORM};
+  static constexpr unsigned taa_subpixel_sample_count_{8};
 
   ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<Window> window_;
