@@ -205,6 +205,8 @@ private:
 
     unsigned rt_local_idx;
     unsigned accum_tex_local_idx;
+
+    void const* id; // Used to identify cameras between frames, e.g. for TAA accumulation
   };
 
 
@@ -323,8 +325,9 @@ private:
   static auto SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int rt_width, int rt_height,
                                    Vector3 const& ambient_light, ShadowParams const& shadow_params) -> void;
   static auto SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
-                                  Matrix4 const& proj_mtx, ShadowCascadeBoundaries const& cascade_bounds,
-                                  Vector3 const& view_pos, float near_clip_plane, float far_clip_plane) -> void;
+                                  Matrix4 const& proj_mtx, Matrix4 const& prev_view_proj_mtx,
+                                  ShadowCascadeBoundaries const& cascade_bounds, Vector3 const& view_pos,
+                                  float near_clip_plane, float far_clip_plane) -> void;
   static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
                                   Matrix4 const& view_mtx, Matrix4 const& proj_mtx) -> void;
 

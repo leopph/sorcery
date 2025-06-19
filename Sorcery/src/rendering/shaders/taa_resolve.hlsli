@@ -3,6 +3,7 @@
 
 #include "common.hlsli"
 #include "shader_interop.h"
+#include "utility.hlsli"
 
 DECLARE_PARAMS(TaaResolveDrawParams);
 
@@ -11,12 +12,21 @@ DECLARE_PARAMS(TaaResolveDrawParams);
 void main(uint3 const id : SV_DispatchThreadID) {
   Texture2D const in_tex = ResourceDescriptorHeap[g_params.in_tex_idx];
   RWTexture2D<float4> const accum_tex = ResourceDescriptorHeap[g_params.accum_tex_idx];
+  Texture2D const in_depth_tex = ResourceDescriptorHeap[g_params.in_depth_tex_idx];
+  ConstantBuffer<ShaderPerViewConstants> const per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
 
   uint2 in_tex_size;
   in_tex.GetDimensions(in_tex_size.x, in_tex_size.y);
 
   if (id.x >= in_tex_size.x || id.y >= in_tex_size.y) {
     return; // Out of bounds
+  }
+
+  uint2 in_depth_tex_size;
+  in_depth_tex.GetDimensions(in_depth_tex_size.x, in_depth_tex_size.y);
+
+  if (in_depth_tex_size.x != in_tex_size.x || in_depth_tex_size.y != in_tex_size.y) {
+    return; // Depth texture size must match input texture size
   }
 
   uint2 accum_tex_size;
@@ -26,8 +36,17 @@ void main(uint3 const id : SV_DispatchThreadID) {
     return; // Accumulation texture size must match input texture size
   }
 
+  float const depth = in_depth_tex[id.xy].r;
+  float2 const uv = float2(id.x, id.y) / float2(in_tex_size);
+
+  // Reproject
+  float4 const pos_ws = mul(float4(UvToNdc(uv), depth, 1.0), per_view_cb.invViewProjMtx);
+  float4 const reprojected_ndc4 = mul(pos_ws, per_view_cb.prev_view_proj_mtx);
+  float2 const reprojected_uv = NdcToUv(reprojected_ndc4.xy / reprojected_ndc4.w);
+  uint2 const reprojected_id = uint2(reprojected_uv * float2(in_tex_size));
+
   float3 const in_color = in_tex[id.xy].rgb;
-  float3 const accum_color = accum_tex[id.xy].rgb;
+  float3 const accum_color = accum_tex[reprojected_id.xy].rgb;
 
   accum_tex[id.xy] = float4(in_color * g_params.blend_factor + accum_color * (1.0 - g_params.blend_factor), 1.0);
 }

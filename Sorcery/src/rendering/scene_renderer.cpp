@@ -181,9 +181,9 @@ auto SceneRenderer::SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>
 
 
 auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
-                                        Matrix4 const& proj_mtx, ShadowCascadeBoundaries const& cascade_bounds,
-                                        Vector3 const& view_pos, float const near_clip_plane,
-                                        float const far_clip_plane) -> void {
+                                        Matrix4 const& proj_mtx, Matrix4 const& prev_view_proj_mtx,
+                                        ShadowCascadeBoundaries const& cascade_bounds, Vector3 const& view_pos,
+                                        float const near_clip_plane, float const far_clip_plane) -> void {
   ShaderPerViewConstants data;
   data.viewMtx = view_mtx;
   data.invViewMtx = view_mtx.Inverse();
@@ -191,6 +191,7 @@ auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& 
   data.invProjMtx = proj_mtx.Inverse();
   data.viewProjMtx = view_mtx * proj_mtx;
   data.invViewProjMtx = data.viewProjMtx.Inverse();
+  data.prev_view_proj_mtx = prev_view_proj_mtx;
   data.viewPos = view_pos;
   data.near_clip_plane = near_clip_plane;
   data.far_clip_plane = far_clip_plane;
@@ -530,8 +531,8 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
         cmd.SetScissorRects(std::array{shadow_scissor});
 
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
-        SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, ShadowCascadeBoundaries{}, Vector3{},
-          shadow_near_clip, shadow_far_clip);
+        SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, {}, ShadowCascadeBoundaries{},
+          Vector3{}, shadow_near_clip, shadow_far_clip);
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
         Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
@@ -610,8 +611,8 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
         cmd.SetScissorRects(std::array{scissor});
 
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
-        SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, ShadowCascadeBoundaries{},
-          Vector3{}, 0, 0); // TODO pass proper near and far clip planes
+        SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, {},
+          ShadowCascadeBoundaries{}, Vector3{}, 0, 0); // TODO pass proper near and far clip planes
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
         Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
@@ -1426,7 +1427,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
     packet.cam_data.emplace_back(cam->GetPosition(), cam->GetRightAxis(), cam->GetUpAxis(), cam->GetForwardAxis(),
       cam->GetNearClipPlane(), cam->GetFarClipPlane(), cam->GetType(), cam->GetVerticalPerspectiveFov(),
-      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, accum_rt_local_idx);
+      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, accum_rt_local_idx, cam);
   }
 
   packet.gizmo_colors = gizmo_colors_;
@@ -1488,6 +1489,7 @@ auto SceneRenderer::Render() -> void {
   auto const frame_idx{render_manager_->GetCurrentFrameIndex()};
 
   auto& frame_packet{frame_packets_[frame_idx]};
+  auto const& prev_frame_packet{frame_packets_[render_manager_->GetPreviousFrameIndex()]};
 
   gizmo_color_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.gizmo_colors)));
   std::ranges::copy(frame_packet.gizmo_colors, std::begin(gizmo_color_buffer_.GetData()));
@@ -1647,6 +1649,8 @@ auto SceneRenderer::Render() -> void {
   device_->ExecuteCommandLists(std::span{&prepare_cmd, 1});
 
   for (auto const& cam_data : frame_packet.cam_data) {
+    auto const prev_cam_it{std::ranges::find(prev_frame_packet.cam_data, cam_data.id, &CameraData::id)};
+
     // Compute render target dimensions
 
     auto& target_rt{*frame_packet.render_targets[cam_data.rt_local_idx]};
@@ -1698,6 +1702,11 @@ auto SceneRenderer::Render() -> void {
       {0.0f, 0.0f, 0.0f, 0.0f}, DEPTH_CLEAR_VALUE
     };
 
+    RenderTarget::Desc const depth_uav_rt_desc{
+      target_rt_width, target_rt_height, graphics::MakeDepthUnderlyingLinear(depth_format_), std::nullopt, 1,
+      L"Camera Depth UAV RenderTarget", true, {0.0f, 0.0f, 0.0f, 0.0f}
+    };
+
     RenderTarget::Desc const gbuffer0_rt_desc{
       transient_rt_width, transient_rt_height, gbuffer0_format_, std::nullopt, 1,
       L"Camera GBuffer0 RenderTarget", false, {0.0f, 0.0f, 0.0f, 0.0f}
@@ -1720,6 +1729,7 @@ auto SceneRenderer::Render() -> void {
 
     auto const depth_rt{render_manager_->AcquireTemporaryRenderTarget(depth_rt_desc)};
     auto const depth_sample_rt{render_manager_->AcquireTemporaryRenderTarget(depth_sample_rt_desc)};
+    auto const depth_uav_rt{render_manager_->AcquireTemporaryRenderTarget(depth_uav_rt_desc)};
     auto const gbuffer0_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer0_rt_desc)};
     auto const gbuffer1_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer1_rt_desc)};
     auto const gbuffer2_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer2_rt_desc)};
@@ -1733,6 +1743,11 @@ auto SceneRenderer::Render() -> void {
 
     auto const cam_view_mtx{
       Camera::CalculateViewMatrix(cam_data.position, cam_data.right, cam_data.up, cam_data.forward)
+    };
+    auto const prev_cam_view_mtx{
+      prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
+        ? Camera::CalculateViewMatrix(prev_cam_it->position, prev_cam_it->right, prev_cam_it->up, prev_cam_it->forward)
+        : cam_view_mtx
     };
 
     auto const [jitter_x, jitter_y]
@@ -1760,7 +1775,18 @@ auto SceneRenderer::Render() -> void {
                                               cam_data.size_vert, viewport_aspect, cam_data.near_plane,
                                               cam_data.far_plane) * Matrix4::Translate(Vector3{jitter_x, jitter_y, 0}))
     };
+    auto const prev_cam_proj_mtx{
+      prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
+        ? TransformProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(prev_cam_it->type,
+                                                  prev_cam_it->fov_vert_deg, prev_cam_it->size_vert, viewport_aspect,
+                                                  prev_cam_it->near_plane, prev_cam_it->far_plane) *
+                                                Matrix4::Translate(Vector3{jitter_x, jitter_y, 0}))
+        : cam_proj_mtx
+    };
+
     auto const cam_view_proj_mtx{cam_view_mtx * cam_proj_mtx};
+    auto const prev_cam_view_proj_mtx{prev_cam_view_mtx * prev_cam_proj_mtx};
+
     Frustum const cam_frust_ws{cam_view_proj_mtx};
 
     std::pmr::vector<unsigned> visible_light_indices;
@@ -1786,8 +1812,8 @@ auto SceneRenderer::Render() -> void {
       frame_packet.instance_data, visible_static_submesh_instance_indices);
 
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer()};
-    SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, shadow_cascade_boundaries, cam_data.position,
-      cam_data.near_plane, cam_data.far_plane);
+    SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, prev_cam_view_proj_mtx, shadow_cascade_boundaries,
+      cam_data.position, cam_data.near_plane, cam_data.far_plane);
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
@@ -2082,12 +2108,19 @@ auto SceneRenderer::Render() -> void {
 
     // TAA resolve
     {
+      // Duplicate the depth buffer so we can use it as UAV
+      cam_cmd.CopyTexture(*depth_uav_rt->GetColorTex(), *depth_rt->GetDepthStencilTex());
+
       constexpr auto taa_blend_factor{0.1f};
 
       cam_cmd.SetPipelineState(*frame_packet.taa_resolve_pso);
       cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, in_tex_idx), *color_hdr_rt->GetColorTex());
       cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, accum_tex_idx),
         *frame_packet.textures[cam_data.accum_tex_local_idx]);
+      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, in_depth_tex_idx),
+        *depth_uav_rt->GetColorTex());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, per_view_cb_idx),
+        *cam_per_view_cb.GetBuffer());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, blend_factor),
         *std::bit_cast<UINT*>(&taa_blend_factor));
 

@@ -128,6 +128,8 @@ struct ShaderPerViewConstants {
   row_major float4x4 viewProjMtx;
   row_major float4x4 invViewProjMtx;
 
+  row_major float4x4 prev_view_proj_mtx;
+
   float4 shadowCascadeSplitDistances;
   float3 viewPos;
 
@@ -311,6 +313,8 @@ struct SsrComposeDrawParams {
 struct TaaResolveDrawParams {
   uint accum_tex_idx;
   uint in_tex_idx;
+  uint in_depth_tex_idx;
+  uint per_view_cb_idx;
   float blend_factor; // [0, 1]
 };
 
