@@ -8,6 +8,7 @@
 #include "ShadowCascadeBoundary.hpp"
 #include "../app.hpp"
 #include "../MemoryAllocation.hpp"
+#include "../random.hpp"
 #include "../ResourceManager.hpp"
 #include "../Window.hpp"
 #include "../Resources/Scene.hpp"
@@ -1707,9 +1708,31 @@ auto SceneRenderer::Render() -> void {
     auto const cam_view_mtx{
       Camera::CalculateViewMatrix(cam_data.position, cam_data.right, cam_data.up, cam_data.forward)
     };
+
+    auto const [jitter_x, jitter_y]
+    {
+      [this, transient_rt_width, transient_rt_height] {
+        // TODO see if this improves TAA quality
+        /*auto const seq{PlasticSequence2d(render_manager_->GetCurrentFrameCount())};
+        return std::make_pair(
+          (2 * seq.first - 1) / static_cast<float>(transient_rt_width),
+          (2 * seq.second - 1) / static_cast<float>(transient_rt_height)
+        );*/
+
+        auto const jitter_idx{render_manager_->GetCurrentFrameCount() % taa_subpixel_sample_count_};
+        auto const halton_x{2 * HaltonSequence(jitter_idx + 1, 2) - 1};
+        auto const halton_y{2 * HaltonSequence(jitter_idx + 1, 3) - 1};
+        return std::make_pair(
+          halton_x / static_cast<float>(transient_rt_width),
+          halton_y / static_cast<float>(transient_rt_height)
+        );
+      }()
+    };
+
     auto const cam_proj_mtx{
       TransformProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(cam_data.type, cam_data.fov_vert_deg,
-        cam_data.size_vert, viewport_aspect, cam_data.near_plane, cam_data.far_plane))
+                                              cam_data.size_vert, viewport_aspect, cam_data.near_plane,
+                                              cam_data.far_plane) * Matrix4::Translate(Vector3{jitter_x, jitter_y, 0}))
     };
     auto const cam_view_proj_mtx{cam_view_mtx * cam_proj_mtx};
     Frustum const cam_frust_ws{cam_view_proj_mtx};
