@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <random>
+#include <utility>
 
 
 namespace sorcery {
@@ -26,4 +27,8 @@ public:
 private:
   std::uint64_t state_;
 };
+
+
+[[nodiscard]] auto PlasticSequence2d(std::size_t idx) -> std::pair<float, float>;
+[[nodiscard]] auto HaltonSequence(std::size_t idx, std::size_t base) -> float;
 }
