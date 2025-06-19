@@ -183,6 +183,48 @@ auto RootSignatureCache::Get(std::uint8_t const num_params) -> ComPtr<ID3D12Root
 }
 
 
+auto MakeDepthTypeless(DXGI_FORMAT const depth_format) -> DXGI_FORMAT {
+  if (depth_format == DXGI_FORMAT_D32_FLOAT_S8X24_UINT) {
+    return DXGI_FORMAT_R32G8X24_TYPELESS;
+  }
+
+  if (depth_format == DXGI_FORMAT_D32_FLOAT) {
+    return DXGI_FORMAT_R32_TYPELESS;
+  }
+
+  if (depth_format == DXGI_FORMAT_D24_UNORM_S8_UINT) {
+    return DXGI_FORMAT_R24G8_TYPELESS;
+  }
+
+  if (depth_format == DXGI_FORMAT_D16_UNORM) {
+    return DXGI_FORMAT_R16_TYPELESS;
+  }
+
+  return depth_format;
+}
+
+
+auto MakeDepthUnderlyingLinear(DXGI_FORMAT const depth_format) -> DXGI_FORMAT {
+  if (depth_format == DXGI_FORMAT_D32_FLOAT_S8X24_UINT) {
+    return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+  }
+
+  if (depth_format == DXGI_FORMAT_D32_FLOAT) {
+    return DXGI_FORMAT_R32_FLOAT;
+  }
+
+  if (depth_format == DXGI_FORMAT_D24_UNORM_S8_UINT) {
+    return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+  }
+
+  if (depth_format == DXGI_FORMAT_D16_UNORM) {
+    return DXGI_FORMAT_R16_UNORM;
+  }
+
+  return depth_format;
+}
+
+
 GraphicsDevice::GraphicsDevice(bool const enable_debug) {
   if (enable_debug) {
     ComPtr<ID3D12Debug6> debug;
@@ -338,17 +380,7 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc,
   auto res_desc{AsD3d12Desc(desc)};
 
   // If a depth format is specified, we have to determine the typeless resource format.
-  if (desc.format == DXGI_FORMAT_D32_FLOAT_S8X24_UINT) {
-    res_desc.Format = DXGI_FORMAT_R32G8X24_TYPELESS;
-  } else if (desc.format == DXGI_FORMAT_D32_FLOAT) {
-    res_desc.Format = DXGI_FORMAT_R32_TYPELESS;
-  } else if (desc.format == DXGI_FORMAT_D24_UNORM_S8_UINT) {
-    res_desc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-  } else if (desc.format == DXGI_FORMAT_D16_UNORM) {
-    res_desc.Format = DXGI_FORMAT_R16_TYPELESS;
-  } else {
-    res_desc.Format = desc.format;
-  }
+  res_desc.Format = MakeDepthTypeless(desc.format);
 
   D3D12MA::ALLOCATION_DESC const alloc_desc{
     D3D12MA::ALLOCATION_FLAG_NONE, MakeHeapType(cpu_access), D3D12_HEAP_FLAG_NONE, nullptr, nullptr
