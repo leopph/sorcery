@@ -1,9 +1,74 @@
 #include "Camera.hpp"
 
 #include <algorithm>
+#include <utility>
 
 
 namespace sorcery::rendering {
+Camera::Camera(Camera const& other) :
+  render_target_{other.render_target_},
+  taa_accum_target_{
+    other.taa_accum_target_
+      ? RenderTarget::New(*other.taa_rt_device_, other.taa_accum_target_->GetDesc())
+      : std::unique_ptr<RenderTarget>{}
+  },
+  taa_rt_device_{other.taa_rt_device_},
+  near_{other.near_},
+  far_{other.far_},
+  vert_orho_size_{other.vert_orho_size_},
+  vert_persp_fov_deg_{other.vert_persp_fov_deg_},
+  viewport_{other.viewport_},
+  type_{other.type_} {}
+
+
+Camera::Camera(Camera&& other) noexcept :
+  render_target_{std::move(other.render_target_)},
+  taa_accum_target_{std::move(other.taa_accum_target_)},
+  taa_rt_device_{other.taa_rt_device_},
+  near_{other.near_},
+  far_{other.far_},
+  vert_orho_size_{other.vert_orho_size_},
+  vert_persp_fov_deg_{other.vert_persp_fov_deg_},
+  viewport_{other.viewport_},
+  type_{other.type_} {}
+
+
+auto Camera::operator=(Camera const& other) -> Camera& {
+  if (this != &other) {
+    render_target_ = other.render_target_;
+    taa_accum_target_ = other.taa_accum_target_
+                          ? RenderTarget::New(*other.taa_rt_device_, other.taa_accum_target_->GetDesc())
+                          : std::unique_ptr<RenderTarget>{};
+    taa_rt_device_ = other.taa_rt_device_;
+    near_ = other.near_;
+    far_ = other.far_;
+    vert_orho_size_ = other.vert_orho_size_;
+    vert_persp_fov_deg_ = other.vert_persp_fov_deg_;
+    viewport_ = other.viewport_;
+    type_ = other.type_;
+  }
+
+  return *this;
+}
+
+
+auto Camera::operator=(Camera&& other) noexcept -> Camera& {
+  if (this != &other) {
+    render_target_ = std::move(other.render_target_);
+    taa_accum_target_ = std::move(other.taa_accum_target_);
+    taa_rt_device_ = other.taa_rt_device_;
+    near_ = other.near_;
+    far_ = other.far_;
+    vert_orho_size_ = other.vert_orho_size_;
+    vert_persp_fov_deg_ = other.vert_persp_fov_deg_;
+    viewport_ = other.viewport_;
+    type_ = other.type_;
+  }
+
+  return *this;
+}
+
+
 auto Camera::GetNearClipPlane() const noexcept -> float {
   return near_;
 }
@@ -100,6 +165,31 @@ auto Camera::CalculateViewMatrix() const noexcept -> Matrix4 {
 auto Camera::CalculateProjectionMatrix(float const aspect_ratio) const noexcept -> Matrix4 {
   return CalculateProjectionMatrix(GetType(), GetVerticalPerspectiveFov(), GetVerticalOrthographicSize(), aspect_ratio,
     GetNearClipPlane(), GetFarClipPlane());
+}
+
+
+auto Camera::GetTaaAccumulationRt() const -> RenderTarget const* {
+  return taa_accum_target_ ? &*taa_accum_target_ : nullptr;
+}
+
+
+auto Camera::RecreateTaaAccumulationRt(graphics::GraphicsDevice& device, Extent2D<unsigned> const size,
+                                       DXGI_FORMAT const format) -> void {
+  taa_rt_device_ = &device;
+  taa_accum_target_ = RenderTarget::New(device, RenderTarget::Desc{
+    .width = size.width,
+    .height = size.height,
+    .color_format = format,
+    .depth_stencil_format = std::nullopt,
+    .sample_count = 1,
+    .debug_name = L"Camera TAA Accumulation RT",
+    .enable_unordered_access = false,
+    .color_clear_value = std::array{0.0f, 0.0f, 0.0f, 1.0f},
+    .depth_clear_value = 0.0f,
+    .stencil_clear_value = 0,
+    .dimension = graphics::TextureDimension::k2D,
+    .depth_or_array_size = 1
+  });
 }
 
 

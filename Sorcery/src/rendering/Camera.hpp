@@ -18,14 +18,13 @@ public:
 
 
   Camera() = default;
-  Camera(Camera const& other) = default;
-  Camera(Camera&& other) noexcept = default;
+  Camera(Camera const& other);
+  Camera(Camera&& other) noexcept;
 
   virtual ~Camera() = default;
 
-  auto operator=(Camera const& other) -> Camera& = default;
-  auto operator=(Camera&& other) noexcept -> Camera& = default;
-
+  auto operator=(Camera const& other) -> Camera&;
+  auto operator=(Camera&& other) noexcept -> Camera&;
 
   [[nodiscard]] virtual auto GetPosition() const noexcept -> Vector3 = 0;
   [[nodiscard]] virtual auto GetRightAxis() const noexcept -> Vector3 = 0;
@@ -56,6 +55,10 @@ public:
   [[nodiscard]] LEOPPHAPI auto CalculateViewMatrix() const noexcept -> Matrix4;
   [[nodiscard]] LEOPPHAPI auto CalculateProjectionMatrix(float aspect_ratio) const noexcept -> Matrix4;
 
+  [[nodiscard]] LEOPPHAPI auto GetTaaAccumulationRt() const -> RenderTarget const*;
+  LEOPPHAPI auto RecreateTaaAccumulationRt(graphics::GraphicsDevice& device, Extent2D<unsigned> size,
+                                           DXGI_FORMAT format) -> void;
+
   [[nodiscard]] LEOPPHAPI static auto HorizontalPerspectiveFovToVertical(
     float fov_degrees, float aspect_ratio) noexcept -> float;
   [[nodiscard]] LEOPPHAPI static auto VerticalPerspectiveFovToHorizontal(
@@ -73,12 +76,14 @@ private:
   constexpr static auto MINIMUM_PERSPECTIVE_VERTICAL_FOV{5.0f};
   constexpr static auto MINIMUM_ORTHOGRAPHIC_VERTICAL_SIZE{0.1f};
 
+  std::shared_ptr<RenderTarget> render_target_{nullptr};
+  std::unique_ptr<RenderTarget> taa_accum_target_{nullptr};
+  graphics::GraphicsDevice* taa_rt_device_{nullptr};
   float near_{MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE};
   float far_{100.f};
   float vert_orho_size_{10};
   float vert_persp_fov_deg_{60};
-  Type type_{Type::Perspective};
-  std::shared_ptr<RenderTarget> render_target_{nullptr};
   NormalizedViewport viewport_{0, 0, 1, 1};
+  Type type_{Type::Perspective};
 };
 }
