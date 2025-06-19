@@ -278,6 +278,7 @@
     <None Include="src\resource_manager.inl" />
     <None Include="src\scene_objects\entity.inl" />
     <None Include="src\util.inl" />
+    <None Include="src\viewport.inl" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>

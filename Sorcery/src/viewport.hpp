@@ -18,3 +18,6 @@ struct NormalizedViewport {
   float bottom;
 };
 }
+
+
+#include "viewport.inl"

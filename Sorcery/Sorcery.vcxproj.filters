@@ -399,6 +399,9 @@
     <None Include="src\util.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="src\viewport.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />
