@@ -40,7 +40,7 @@ void main(uint3 const id : SV_DispatchThreadID) {
   float2 const uv = float2(id.x, id.y) / float2(in_tex_size);
 
   // Reproject
-  float4 const pos_ws = mul(float4(UvToNdc(uv), depth, 1.0), per_view_cb.invViewProjMtx);
+  float4 pos_ws = mul(float4(UvToNdc(uv), depth, 1.0), per_view_cb.invViewProjMtx);
   float4 const reprojected_ndc4 = mul(pos_ws, per_view_cb.prev_view_proj_mtx);
   float2 const reprojected_uv = NdcToUv(reprojected_ndc4.xy / reprojected_ndc4.w);
   uint2 const reprojected_id = uint2(reprojected_uv * float2(in_tex_size));
@@ -54,7 +54,10 @@ void main(uint3 const id : SV_DispatchThreadID) {
     for (int y = -1; y <= 1; ++y) {
       int2 const neighbor_id = (int2)id.xy + int2(x, y);
 
-      if (neighbor_id.x < in_tex_size.x && neighbor_id.y < in_tex_size.y) {
+      if (neighbor_id.x < in_tex_size.x &&
+          neighbor_id.x >= 0 &&
+          neighbor_id.y < in_tex_size.y &&
+          neighbor_id.y >= 0) {
         float3 const neighbor_color = in_tex[neighbor_id].rgb;
         min_color = min(min_color, neighbor_color);
         max_color = max(max_color, neighbor_color);
@@ -66,7 +69,8 @@ void main(uint3 const id : SV_DispatchThreadID) {
   float3 const clamped_accum_color = clamp(accum_color, min_color, max_color);
   float3 const in_color = in_tex[id.xy].rgb;
 
-  accum_tex[id.xy] = float4(in_color * g_params.blend_factor + clamped_accum_color * (1.0 - g_params.blend_factor), 1.0);
+  accum_tex[id.xy] = float4(in_color * g_params.blend_factor +
+                            clamped_accum_color * (1.0 - g_params.blend_factor), 1.0);
 }
 
 #endif
