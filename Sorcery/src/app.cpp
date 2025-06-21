@@ -101,7 +101,6 @@ auto App::GetResourceManager() -> ResourceManager& {
 
 auto App::Run() -> void {
   while (!IsQuitSignaled()) {
-    ProcessEvents();
     BeginFrame();
 
     try {
@@ -125,11 +124,9 @@ auto App::Run() -> void {
       window_resized_ = false;
     }
 
-    scene_renderer_.ExtractCurrentState();
     PrepareRender();
 
     render_job_ = job_system_.CreateJob([this] {
-      scene_renderer_.Render();
       Render();
       graphics_device_.Present(*swap_chain_);
       render_manager_.EndFrame();
@@ -155,6 +152,21 @@ auto App::WaitRenderJob() -> void {
   if (render_job_) {
     job_system_.Wait(render_job_);
   }
+}
+
+
+auto App::BeginFrame() -> void {
+  ProcessEvents();
+}
+
+
+auto App::PrepareRender() -> void {
+  scene_renderer_.ExtractCurrentState();
+}
+
+
+auto App::Render() -> void {
+  scene_renderer_.Render();
 }
 
 

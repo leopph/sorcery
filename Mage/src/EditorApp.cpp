@@ -109,6 +109,7 @@ EditorApp::~EditorApp() {
 
 
 auto EditorApp::BeginFrame() -> void {
+  App::BeginFrame();
   ImGui_ImplWin32_NewFrame();
   ImGui::NewFrame();
   ImGuizmo::BeginFrame();
@@ -178,11 +179,13 @@ auto EditorApp::EndFrame() -> void {
 
 
 auto EditorApp::PrepareRender() -> void {
+  App::PrepareRender();
   imgui_renderer_.ExtractDrawData();
 }
 
 
 auto EditorApp::Render() -> void {
+  App::Render();
   imgui_renderer_.Render();
 }
 

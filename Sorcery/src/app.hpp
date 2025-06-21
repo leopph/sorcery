@@ -40,11 +40,11 @@ public:
 protected:
   LEOPPHAPI auto WaitRenderJob() -> void;
 
-  virtual auto BeginFrame() -> void {}
+  LEOPPHAPI virtual auto BeginFrame() -> void;
   virtual auto Update() -> void {}
   virtual auto EndFrame() -> void {}
-  virtual auto PrepareRender() -> void {}
-  virtual auto Render() -> void {}
+  LEOPPHAPI virtual auto PrepareRender() -> void;
+  LEOPPHAPI virtual auto Render() -> void;
 
 private:
   JobSystem job_system_;
