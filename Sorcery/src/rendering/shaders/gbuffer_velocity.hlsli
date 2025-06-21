@@ -15,6 +15,8 @@ DECLARE_DRAW_CALL_PARAMS(g_draw_call_params);
 
 struct PsIn {
   float4 pos_cs : SV_POSITION;
+  float4 cur_pos_cs : CURPOSCS;
+  float4 prev_pos_cs : PREVPOSCS;
   float3 pos_ws : POSITIONWS;
   float3 pos_vs : POSITIONVS;
   float3 norm_ws : NORMAL;
@@ -34,6 +36,7 @@ class VertexProcessor {
     const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
     float4 const pos_vs = mul(pos_ws, per_view_cb.viewMtx);
     float4 const pos_cs = mul(pos_ws, per_view_cb.viewProjMtx);
+    float4 const prev_pos_cs = mul(pos_ws, per_view_cb.prev_view_proj_mtx);
 
     StructuredBuffer<float4> const normals = ResourceDescriptorHeap[g_params.norm_buf_idx];
     float4 const norm_os = normals[vertex_idx];
@@ -50,9 +53,11 @@ class VertexProcessor {
     float2 const uv = uvs[vertex_idx];
 
     PsIn ret;
+    ret.pos_cs = pos_cs;
+    ret.cur_pos_cs = pos_cs;
+    ret.prev_pos_cs = prev_pos_cs;
     ret.pos_ws = pos_ws.xyz;
     ret.pos_vs = pos_vs.xyz;
-    ret.pos_cs = pos_cs;
     ret.norm_ws = norm_ws;
     ret.uv = uv;
     ret.tbn_mtx_ws = tbn_mtx_ws;
@@ -70,9 +75,11 @@ DECLARE_MESH_SHADER_MAIN(MsMain) {
 
 
 void PsMain(PsIn const ps_in, out float4 out0 : SV_Target0, out float2 out1 : SV_Target1,
-            out float2 out2 : SV_Target2) {
+            out float2 out2 : SV_Target2, out float2 out3 : SV_Target3) {
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
   SamplerState const mtl_samp = SamplerDescriptorHeap[g_params.mtl_samp_idx];
+
+  // Read materials
 
   if (mtl.blendMode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {
     Texture2D<float> const opacity_map = ResourceDescriptorHeap[mtl.opacity_map_idx];
@@ -120,9 +127,18 @@ void PsMain(PsIn const ps_in, out float4 out0 : SV_Target0, out float2 out1 : SV
     norm_ws = normalize(mul(normalize(norm_ws), ps_in.tbn_mtx_ws));
   }
 
+  // Calculate velocity
+
+  float3 const cur_pos_ndc = ps_in.cur_pos_cs.xyz / ps_in.cur_pos_cs.w;
+  float3 const prev_pos_ndc = ps_in.prev_pos_cs.xyz / ps_in.prev_pos_cs.w;
+  float2 const velocity = cur_pos_ndc.xy - prev_pos_ndc.xy;
+
+  // Write output
+
   out0 = PackGBuffer0(albedo, ao);
   out1 = PackGBuffer1(norm_ws);
   out2 = PackGBuffer2(roughness, metallic);
+  out3 = velocity;
 }
 
 #endif

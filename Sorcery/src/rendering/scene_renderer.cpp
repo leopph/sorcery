@@ -22,8 +22,8 @@
 #include "shaders/generated/Debug/depth_only_ms.h"
 #include "shaders/generated/Debug/depth_only_ps.h"
 #include "shaders/generated/Debug/depth_resolve_cs.h"
-#include "shaders/generated/Debug/gbuffer_ms.h"
-#include "shaders/generated/Debug/gbuffer_ps.h"
+#include "shaders/generated/Debug/gbuffer_velocity_ms.h"
+#include "shaders/generated/Debug/gbuffer_velocity_ps.h"
 #include "shaders/generated/Debug/gizmos_line_vs.h"
 #include "shaders/generated/Debug/gizmos_ps.h"
 #include "shaders/generated/Debug/post_process_ps.h"
@@ -44,8 +44,8 @@
 #include "shaders/generated/Release/depth_only_ms.h"
 #include "shaders/generated/Release/depth_only_ps.h"
 #include "shaders/generated/Release/depth_resolve_cs.h"
-#include "shaders/generated/Release/gbuffer_ms.h"
-#include "shaders/generated/Release/gbuffer_ps.h"
+#include "shaders/generated/Release/gbuffer_velocity_ms.h"
+#include "shaders/generated/Release/gbuffer_velocity_ps.h"
 #include "shaders/generated/Release/gizmos_line_vs.h"
 #include "shaders/generated/Release/gizmos_ps.h"
 #include "shaders/generated/Release/post_process_ps.h"
@@ -732,8 +732,10 @@ auto SceneRenderer::RecreatePipelines() -> void {
   CD3DX12_RT_FORMAT_ARRAY const ssao_format{
     D3D12_RT_FORMAT_ARRAY{.RTFormats = {ssao_buffer_format_}, .NumRenderTargets = 1}
   };
-  CD3DX12_RT_FORMAT_ARRAY const gbuffer_format{
-    D3D12_RT_FORMAT_ARRAY{.RTFormats = {gbuffer0_format_, gbuffer1_format_, gbuffer2_format_}, .NumRenderTargets = 3}
+  CD3DX12_RT_FORMAT_ARRAY const gbuffer_velocity_format{
+    D3D12_RT_FORMAT_ARRAY{
+      .RTFormats = {gbuffer0_format_, gbuffer1_format_, gbuffer2_format_, velocity_format_}, .NumRenderTargets = 4
+    }
   };
 
   graphics::PipelineDesc const shadow_pso_desc{
@@ -760,14 +762,14 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
 
-  graphics::PipelineDesc const gbuffer_pso_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{g_gbuffer_ps_bytes, ARRAYSIZE(g_gbuffer_ps_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{g_gbuffer_ms_bytes, ARRAYSIZE(g_gbuffer_ms_bytes)},
+  graphics::PipelineDesc const gbuffer_velocity_pso_desc{
+    .ps = CD3DX12_SHADER_BYTECODE{g_gbuffer_velocity_ps_bytes, ARRAYSIZE(g_gbuffer_velocity_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{g_gbuffer_velocity_ms_bytes, ARRAYSIZE(g_gbuffer_velocity_ms_bytes)},
     .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
-    .rt_formats = gbuffer_format
+    .rt_formats = gbuffer_velocity_format
   };
 
-  gbuffer_pso_ = device_->CreatePipelineState(gbuffer_pso_desc, sizeof(GBufferDrawParams) / 4);
+  gbuffer_velocity_pso_ = device_->CreatePipelineState(gbuffer_velocity_pso_desc, sizeof(GBufferDrawParams) / 4);
 
   graphics::PipelineDesc const deferred_lighting_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{g_deferred_lighting_vs_bytes, ARRAYSIZE(g_deferred_lighting_vs_bytes)},
@@ -1467,7 +1469,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   }
 
   packet.shadow_pso = shadow_pso_;
-  packet.gbuffer_pso = gbuffer_pso_;
+  packet.gbuffer_velocity_pso = gbuffer_velocity_pso_;
   packet.depth_resolve_pso = depth_resolve_pso_;
   packet.line_gizmo_pso = line_gizmo_pso_;
   packet.deferred_lighting_pso = deferred_lighting_pso_;
@@ -1722,6 +1724,11 @@ auto SceneRenderer::Render() -> void {
       L"Camera GBuffer2 RenderTarget", false, {0.0f, 0.0f, 0.0f, 0.0f}
     };
 
+    RenderTarget::Desc const velocity_rt_desc{
+      transient_rt_width, transient_rt_height, velocity_format_, std::nullopt, 1,
+      L"Camera Velocity RenderTarget", true, {0.0f, 0.0f, 0.0f, 0.0f}
+    };
+
     RenderTarget::Desc const color_hdr_rt_desc{
       transient_rt_width, transient_rt_height, frame_packet.color_buffer_format, std::nullopt,
       1, L"Camera HDR RenderTarget", true, frame_packet.background_color
@@ -1733,6 +1740,7 @@ auto SceneRenderer::Render() -> void {
     auto const gbuffer0_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer0_rt_desc)};
     auto const gbuffer1_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer1_rt_desc)};
     auto const gbuffer2_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer2_rt_desc)};
+    auto const velocity_rt{render_manager_->AcquireTemporaryRenderTarget(velocity_rt_desc)};
     auto const color_hdr_rt{render_manager_->AcquireTemporaryRenderTarget(color_hdr_rt_desc)};
 
     // Fill constant buffers
@@ -1772,15 +1780,15 @@ auto SceneRenderer::Render() -> void {
 
     auto const cam_proj_mtx{
       TransformProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(cam_data.type, cam_data.fov_vert_deg,
-                                              cam_data.size_vert, viewport_aspect, cam_data.near_plane,
-                                              cam_data.far_plane) * Matrix4::Translate(Vector3{jitter_x, jitter_y, 0}))
+        cam_data.size_vert, viewport_aspect, cam_data.near_plane,
+        cam_data.far_plane) /* * Matrix4::Translate(Vector3{jitter_x, jitter_y, 0})*/)
     };
     auto const prev_cam_proj_mtx{
       prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
         ? TransformProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(prev_cam_it->type,
-                                                  prev_cam_it->fov_vert_deg, prev_cam_it->size_vert, viewport_aspect,
-                                                  prev_cam_it->near_plane, prev_cam_it->far_plane) *
-                                                Matrix4::Translate(Vector3{jitter_x, jitter_y, 0}))
+            prev_cam_it->fov_vert_deg, prev_cam_it->size_vert, viewport_aspect,
+            prev_cam_it->near_plane, prev_cam_it->far_plane) /* *
+                                                Matrix4::Translate(Vector3{jitter_x, jitter_y, 0})*/)
         : cam_proj_mtx
     };
 
@@ -1818,17 +1826,19 @@ auto SceneRenderer::Render() -> void {
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
 
-    // GBuffer pass
+    // GBuffer and velocity pass
 
-    cam_cmd.SetPipelineState(*frame_packet.gbuffer_pso);
-    std::array<graphics::Texture const*, 3> gbuffer_textures{
-      gbuffer0_rt->GetColorTex().get(), gbuffer1_rt->GetColorTex().get(), gbuffer2_rt->GetColorTex().get()
+    cam_cmd.SetPipelineState(*frame_packet.gbuffer_velocity_pso);
+    std::array<graphics::Texture const*, 4> gbuffer_velocity_textures{
+      gbuffer0_rt->GetColorTex().get(), gbuffer1_rt->GetColorTex().get(), gbuffer2_rt->GetColorTex().get(),
+      velocity_rt->GetColorTex().get()
     };
-    cam_cmd.SetRenderTargets(std::span{gbuffer_textures},
+    cam_cmd.SetRenderTargets(std::span{gbuffer_velocity_textures},
       depth_rt->GetDepthStencilTex().get());
     cam_cmd.ClearRenderTarget(*gbuffer0_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cam_cmd.ClearRenderTarget(*gbuffer1_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cam_cmd.ClearRenderTarget(*gbuffer2_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+    cam_cmd.ClearRenderTarget(*velocity_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cam_cmd.ClearDepthStencil(*depth_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
 
     for (auto const instance_idx : visible_static_submesh_instance_indices) {
@@ -2114,11 +2124,14 @@ auto SceneRenderer::Render() -> void {
       constexpr auto taa_blend_factor{0.1f};
 
       cam_cmd.SetPipelineState(*frame_packet.taa_resolve_pso);
-      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, in_tex_idx), *color_hdr_rt->GetColorTex());
+      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, color_tex_idx),
+        *color_hdr_rt->GetColorTex());
       cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, accum_tex_idx),
         *frame_packet.textures[cam_data.accum_tex_local_idx]);
-      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, in_depth_tex_idx),
+      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, depth_tex_idx),
         *depth_uav_rt->GetColorTex());
+      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, velocity_tex_idx),
+        *velocity_rt->GetColorTex());
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, per_view_cb_idx),
         *cam_per_view_cb.GetBuffer());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, blend_factor),

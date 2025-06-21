@@ -391,7 +391,7 @@
     <None Include="packages.config" />
     <None Include="src\rendering\shaders\lighting.hlsli" />
     <None Include="src\rendering\shaders\mesh_shader_core.hlsli" />
-    <None Include="src\rendering\shaders\gbuffer.hlsli" />
+    <None Include="src\rendering\shaders\gbuffer_velocity.hlsli" />
     <None Include="src\rendering\shaders\gbuffer_utils.hlsli" />
     <None Include="src\rendering\shaders\ssr.hlsli" />
     <None Include="src\rendering\shaders\fullscreen_tri.hlsli" />
@@ -420,8 +420,8 @@
     <FxCompile Include="src\rendering\shaders\deferred_lighting_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\ssao_vs.hlsl" />
     <FxCompile Include="src\rendering\shaders\vtx_skinning_cs.hlsl" />
-    <FxCompile Include="src\rendering\shaders\gbuffer_ms.hlsl" />
-    <FxCompile Include="src\rendering\shaders\gbuffer_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\gbuffer_velocity_ms.hlsl" />
+    <FxCompile Include="src\rendering\shaders\gbuffer_velocity_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\ssr_vs.hlsl" />
     <FxCompile Include="src\rendering\shaders\ssr_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\ssr_compose_ps.hlsl" />

@@ -294,7 +294,7 @@ private:
     Vector3 ambient_light;
 
     graphics::SharedDeviceChildHandle<graphics::PipelineState> shadow_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> gbuffer_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> gbuffer_velocity_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_resolve_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> line_gizmo_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> deferred_lighting_pso;
@@ -378,6 +378,7 @@ private:
   static DXGI_FORMAT constexpr gbuffer0_format_{DXGI_FORMAT_R8G8B8A8_UNORM};
   static DXGI_FORMAT constexpr gbuffer1_format_{DXGI_FORMAT_R16G16_FLOAT};
   static DXGI_FORMAT constexpr gbuffer2_format_{DXGI_FORMAT_R8G8_UNORM};
+  static DXGI_FORMAT constexpr velocity_format_{DXGI_FORMAT_R16G16_FLOAT};
   static constexpr unsigned taa_subpixel_sample_count_{8};
 
   ObserverPtr<RenderManager> render_manager_;
@@ -396,7 +397,7 @@ private:
   graphics::SharedDeviceChildHandle<graphics::PipelineState> shadow_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_resolve_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> line_gizmo_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> gbuffer_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> gbuffer_velocity_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> deferred_lighting_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> post_process_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso_;

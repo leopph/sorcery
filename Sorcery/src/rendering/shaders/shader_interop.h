@@ -44,6 +44,8 @@ typedef bool BOOL;
 #define DEPTH_RESOLVE_CS_THREADS_Z 1
 
 #define SKINNING_CS_THREADS 64
+#define MOTION_VECTOR_CS_THREADS_X 8
+#define MOTION_VECTOR_CS_THREADS_Y 8
 #define TAA_RESOLVE_CS_THREADS_X 8
 #define TAA_RESOLVE_CS_THREADS_Y 8
 
@@ -310,10 +312,18 @@ struct SsrComposeDrawParams {
 };
 
 
+struct MotionVectorDrawParams {
+  uint depth_tex_idx;
+  uint velocity_tex_idx;
+  uint per_view_cb_idx;
+};
+
+
 struct TaaResolveDrawParams {
   uint accum_tex_idx;
-  uint in_tex_idx;
-  uint in_depth_tex_idx;
+  uint color_tex_idx;
+  uint depth_tex_idx;
+  uint velocity_tex_idx;
   uint per_view_cb_idx;
   float blend_factor; // [0, 1]
 };
