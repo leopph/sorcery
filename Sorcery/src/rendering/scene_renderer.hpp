@@ -207,6 +207,8 @@ private:
     unsigned accum_tex_local_idx;
 
     void const* id; // Used to identify cameras between frames, e.g. for TAA accumulation
+
+    bool accum_tex_empty;
   };
 
 

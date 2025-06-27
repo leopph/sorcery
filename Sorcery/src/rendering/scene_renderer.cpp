@@ -1393,7 +1393,8 @@ auto SceneRenderer::ExtractCurrentState() -> void {
     }
   };
 
-  packet.render_targets.emplace_back(rt_override_ ? rt_override_ : main_rt_); // The global RT is always at index 0!
+  auto const& global_rt{rt_override_ ? rt_override_ : main_rt_};
+  packet.render_targets.emplace_back(global_rt); // The global RT is always at index 0!
 
   packet.cam_data.reserve(cameras_.size());
 
@@ -1406,15 +1407,18 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
     auto const& vp{cam->GetViewport()};
 
+    auto accum_tex_empty{false};
+
     if (auto const accum_rt{cam->GetTaaAccumulationRt()};
       !accum_rt || accum_rt->GetDesc().color_format != color_buffer_format_ ||
-      accum_rt->GetDesc().width != (cam_rt ? cam_rt : main_rt_)->GetDesc().width * GetWidth(vp) ||
-      accum_rt->GetDesc().height != (cam_rt ? cam_rt : main_rt_)->GetDesc().height * GetHeight(vp)) {
+      accum_rt->GetDesc().width != (cam_rt ? cam_rt : global_rt)->GetDesc().width * GetWidth(vp) ||
+      accum_rt->GetDesc().height != (cam_rt ? cam_rt : global_rt)->GetDesc().height * GetHeight(vp)) {
       cam->RecreateTaaAccumulationRt(*device_, Extent2D{
-          static_cast<unsigned>((cam_rt ? cam_rt : main_rt_)->GetDesc().width * GetWidth(vp)),
-          static_cast<unsigned>((cam_rt ? cam_rt : main_rt_)->GetDesc().height * GetHeight(vp))
+          static_cast<unsigned>((cam_rt ? cam_rt : global_rt)->GetDesc().width * GetWidth(vp)),
+          static_cast<unsigned>((cam_rt ? cam_rt : global_rt)->GetDesc().height * GetHeight(vp))
         },
         color_buffer_format_);
+      accum_tex_empty = true;
     }
 
     auto const accum_rt_local_idx{find_or_emplace_back_texture(cam->GetTaaAccumulationRt()->GetColorTex())};
@@ -1429,7 +1433,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
     packet.cam_data.emplace_back(cam->GetPosition(), cam->GetRightAxis(), cam->GetUpAxis(), cam->GetForwardAxis(),
       cam->GetNearClipPlane(), cam->GetFarClipPlane(), cam->GetType(), cam->GetVerticalPerspectiveFov(),
-      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, accum_rt_local_idx, cam);
+      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, accum_rt_local_idx, cam, accum_tex_empty);
   }
 
   packet.gizmo_colors = gizmo_colors_;
@@ -2117,7 +2121,12 @@ auto SceneRenderer::Render() -> void {
     }
 
     // TAA resolve
-    {
+    if (cam_data.accum_tex_empty) {
+      // We don't have an accumulation texture yet.
+      // We can just copy the color HDR render target to the accumulation texture.
+      cam_cmd.CopyTexture(*frame_packet.textures[cam_data.accum_tex_local_idx],
+        *color_hdr_rt->GetColorTex());
+    } else {
       // Duplicate the depth buffer so we can use it as UAV
       cam_cmd.CopyTexture(*depth_uav_rt->GetColorTex(), *depth_rt->GetDepthStencilTex());
 
