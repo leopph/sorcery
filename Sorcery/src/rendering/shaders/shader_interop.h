@@ -44,10 +44,6 @@ typedef bool BOOL;
 #define DEPTH_RESOLVE_CS_THREADS_Z 1
 
 #define SKINNING_CS_THREADS 64
-#define MOTION_VECTOR_CS_THREADS_X 8
-#define MOTION_VECTOR_CS_THREADS_Y 8
-#define TAA_RESOLVE_CS_THREADS_X 8
-#define TAA_RESOLVE_CS_THREADS_Y 8
 
 #define REVERSE_Z
 #ifdef REVERSE_Z
@@ -324,8 +320,7 @@ struct TaaResolveDrawParams {
   uint color_tex_idx;
   uint depth_tex_idx;
   uint velocity_tex_idx;
-  uint per_view_cb_idx;
-  float blend_factor; // [0, 1]
+  uint linear_samp_idx;
 };
 
 #ifdef __cplusplus

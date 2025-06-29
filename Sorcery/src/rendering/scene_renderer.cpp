@@ -36,7 +36,8 @@
 #include "shaders/generated/Debug/ssr_compose_ps.h"
 #include "shaders/generated/Debug/ssr_ps.h"
 #include "shaders/generated/Debug/ssr_vs.h"
-#include "shaders/generated/Debug/taa_resolve_cs.h"
+#include "shaders/generated/Debug/taa_resolve_ps.h"
+#include "shaders/generated/Debug/taa_resolve_vs.h"
 #include "shaders/generated/Debug/vtx_skinning_cs.h"
 #else
 #include "shaders/generated/Release/deferred_lighting_ps.h"
@@ -58,7 +59,8 @@
 #include "shaders/generated/Release/ssr_compose_ps.h"
 #include "shaders/generated/Release/ssr_ps.h"
 #include "shaders/generated/Release/ssr_vs.h"
-#include "shaders/generated/Release/taa_resolve_cs.h"
+#include "shaders/generated/Release/taa_resolve_ps.h"
+#include "shaders/generated/Release/taa_resolve_vs.h"
 #include "shaders/generated/Release/vtx_skinning_cs.h"
 #endif
 
@@ -831,7 +833,9 @@ auto SceneRenderer::RecreatePipelines() -> void {
   ssr_pso_ = device_->CreatePipelineState(ssr_pso_desc, sizeof(SsrDrawParams) / 4);
 
   graphics::PipelineDesc const taa_resolve_pso_desc{
-    .cs = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_cs_bytes, ARRAYSIZE(g_taa_resolve_cs_bytes)}
+    .vs = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_vs_bytes, ARRAYSIZE(g_taa_resolve_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_ps_bytes, ARRAYSIZE(g_taa_resolve_ps_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
   };
 
   taa_pso_ = device_->CreatePipelineState(taa_resolve_pso_desc, sizeof(TaaResolveDrawParams) / 4);
@@ -1708,11 +1712,6 @@ auto SceneRenderer::Render() -> void {
       {0.0f, 0.0f, 0.0f, 0.0f}, DEPTH_CLEAR_VALUE
     };
 
-    RenderTarget::Desc const depth_uav_rt_desc{
-      target_rt_width, target_rt_height, graphics::MakeDepthUnderlyingLinear(depth_format_), std::nullopt, 1,
-      L"Camera Depth UAV RenderTarget", true, {0.0f, 0.0f, 0.0f, 0.0f}
-    };
-
     RenderTarget::Desc const gbuffer0_rt_desc{
       transient_rt_width, transient_rt_height, gbuffer0_format_, std::nullopt, 1,
       L"Camera GBuffer0 RenderTarget", false, {0.0f, 0.0f, 0.0f, 0.0f}
@@ -1740,7 +1739,6 @@ auto SceneRenderer::Render() -> void {
 
     auto const depth_rt{render_manager_->AcquireTemporaryRenderTarget(depth_rt_desc)};
     auto const depth_sample_rt{render_manager_->AcquireTemporaryRenderTarget(depth_sample_rt_desc)};
-    auto const depth_uav_rt{render_manager_->AcquireTemporaryRenderTarget(depth_uav_rt_desc)};
     auto const gbuffer0_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer0_rt_desc)};
     auto const gbuffer1_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer1_rt_desc)};
     auto const gbuffer2_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer2_rt_desc)};
@@ -1883,7 +1881,7 @@ auto SceneRenderer::Render() -> void {
         PIPELINE_PARAM_INDEX(GBufferDrawParams, base_vertex), cam_cmd);
     }
 
-    // Duplicate depth texture so that we can sample it and use it for stencil test at the same time.
+    // Duplicate depth texture so that we can sample it and use it for depth test at the same time.
     // This is only a workaround, the ideal would be to transition the depth texture to a simultaneous
     // shader reource/depth read state, but the current architecture doesn't allow that.
     cam_cmd.CopyTexture(*depth_sample_rt->GetDepthStencilTex(), *depth_rt->GetDepthStencilTex());
@@ -2127,35 +2125,34 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.CopyTexture(*frame_packet.textures[cam_data.accum_tex_local_idx],
         *color_hdr_rt->GetColorTex());
     } else {
-      // Duplicate the depth buffer so we can use it as UAV
-      cam_cmd.CopyTexture(*depth_uav_rt->GetColorTex(), *depth_rt->GetDepthStencilTex());
+      auto& accum_tex{*frame_packet.textures[cam_data.accum_tex_local_idx]};
+      auto const& accum_tex_desc{accum_tex.GetDesc()};
 
-      constexpr auto taa_blend_factor{0.1f};
+      auto const taa_rt{
+        render_manager_->AcquireTemporaryRenderTarget(RenderTarget::Desc{
+          accum_tex_desc.width, accum_tex_desc.height, color_buffer_format_, std::nullopt, 1,
+          L"TAA Resolve RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
+        })
+      };
 
       cam_cmd.SetPipelineState(*frame_packet.taa_resolve_pso);
-      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, color_tex_idx),
+      cam_cmd.SetRenderTargets(std::span{
+        std::array{static_cast<graphics::Texture const*>(taa_rt->GetColorTex().get())}.data(), 1
+      }, nullptr);
+
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, color_tex_idx),
         *color_hdr_rt->GetColorTex());
-      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, accum_tex_idx),
-        *frame_packet.textures[cam_data.accum_tex_local_idx]);
-      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, depth_tex_idx),
-        *depth_uav_rt->GetColorTex());
-      cam_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, velocity_tex_idx),
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, accum_tex_idx),
+        accum_tex);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, depth_tex_idx),
+        *depth_sample_rt->GetDepthStencilTex());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, velocity_tex_idx),
         *velocity_rt->GetColorTex());
-      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, per_view_cb_idx),
-        *cam_per_view_cb.GetBuffer());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, blend_factor),
-        *std::bit_cast<UINT*>(&taa_blend_factor));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, linear_samp_idx),
+        samp_bi_clamp_.Get());
 
-      auto const thread_group_count_x{
-        static_cast<int>(std::ceilf(
-          static_cast<float>(color_hdr_rt_desc.width) / static_cast<float>(TAA_RESOLVE_CS_THREADS_X)))
-      };
-      auto const thread_group_count_y{
-        static_cast<int>(std::ceilf(
-          static_cast<float>(color_hdr_rt_desc.height) / static_cast<float>(TAA_RESOLVE_CS_THREADS_Y)))
-      };
-
-      cam_cmd.Dispatch(thread_group_count_x, thread_group_count_y, 1);
+      cam_cmd.DrawInstanced(3, 1, 0, 0);
+      cam_cmd.CopyTexture(accum_tex, *taa_rt->GetColorTex());
     }
 
     // Post-processing pass
