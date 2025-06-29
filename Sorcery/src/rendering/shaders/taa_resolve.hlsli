@@ -35,50 +35,21 @@ float FilterMitchell1D(float const x) {
 static float const FLT_EPS = 0.00000001f;
 
 // https://github.com/playdeadgames/temporal/blob/master/Assets/Shaders/TemporalReprojection.shader
-float4 clip_aabb(float3 aabb_min, float3 aabb_max, float4 p, float4 q) {
-#if USE_OPTIMIZATIONS
-		// note: only clips towards aabb center (but fast!)
-		float3 p_clip = 0.5 * (aabb_max + aabb_min);
-		float3 e_clip = 0.5 * (aabb_max - aabb_min) + FLT_EPS;
+float3 clip_aabb(float3 aabb_min, float3 aabb_max, float3 q) {
+  // note: only clips towards aabb center (but fast!)
+  float3 p_clip = 0.5 * (aabb_max + aabb_min);
+  float3 e_clip = 0.5 * (aabb_max - aabb_min) + FLT_EPS;
 
-		float4 v_clip = q - float4(p_clip, p.w);
-		float3 v_unit = v_clip.xyz / e_clip;
-		float3 a_unit = abs(v_unit);
-		float ma_unit = max(a_unit.x, max(a_unit.y, a_unit.z));
+  float3 v_clip = q - p_clip;
+  float3 v_unit = v_clip.xyz / e_clip;
+  float3 a_unit = abs(v_unit);
+  float ma_unit = max(a_unit.x, max(a_unit.y, a_unit.z));
 
-		if (ma_unit > 1.0)
-			return float4(p_clip, p.w) + v_clip / ma_unit;
-		else
-			return q;// point inside aabb
-#else
-  float4 r = q - p;
-  float3 rmax = aabb_max - p.xyz;
-  float3 rmin = aabb_min - p.xyz;
-
-  float const eps = FLT_EPS;
-
-  if (r.x > rmax.x + eps) {
-    r *= (rmax.x / r.x);
-  }
-  if (r.y > rmax.y + eps) {
-    r *= (rmax.y / r.y);
-  }
-  if (r.z > rmax.z + eps) {
-    r *= (rmax.z / r.z);
+  if (ma_unit > 1.0) {
+    return p_clip + v_clip / ma_unit;
   }
 
-  if (r.x < rmin.x - eps) {
-    r *= (rmin.x / r.x);
-  }
-  if (r.y < rmin.y - eps) {
-    r *= (rmin.y / r.y);
-  }
-  if (r.z < rmin.z - eps) {
-    r *= (rmin.z / r.z);
-  }
-
-  return p + r;
-#endif
+  return q; // point inside aabb
 }
 
 
@@ -155,8 +126,7 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
   float3 minc = mu - gamma * sigma;
   float3 maxc = mu + gamma * sigma;
 
-  //TODO historySample = clip_aabb(minc, maxc, clamp(historySample, neighborhoodMin, neighborhoodMax));
-  historySample = clamp(historySample, neighborhoodMin, neighborhoodMax);
+  historySample = clip_aabb(minc, maxc, clamp(historySample, neighborhoodMin, neighborhoodMax));
 
   float sourceWeight = 0.05;
   float historyWeight = 1.0 - sourceWeight;
