@@ -162,6 +162,7 @@
     <ClCompile Include="src\rendering\render_target.cpp" />
     <ClCompile Include="src\Resources\Resource.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
+    <ClCompile Include="src\scene_objects\OscillateComponent.cpp" />
     <ClCompile Include="src\scene_objects\SceneObject.cpp" />
     <ClCompile Include="src\scene_objects\SkinnedMeshComponent.cpp" />
     <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="src\rendering\render_target.hpp" />
     <ClInclude Include="src\scene_objects\CameraControllerComponent.hpp" />
     <ClInclude Include="src\scene_objects\MeshComponentBase.hpp" />
+    <ClInclude Include="src\scene_objects\OscillateComponent.h" />
     <ClInclude Include="src\scene_objects\SceneObject.hpp" />
     <ClInclude Include="src\scene_objects\SkinnedMeshComponent.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
