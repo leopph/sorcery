@@ -101,7 +101,12 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
       m2 += neighbor * neighbor;
 
       float currentDepth = depth_tex[pixelPosition].r;
+
+#ifdef REVERSE_Z
       if (currentDepth > closestDepth) {
+#else
+      if (currentDepth < closestDepth) {
+#endif
         closestDepth = currentDepth;
         closestDepthPixelPosition = pixelPosition;
       }
