@@ -5,6 +5,31 @@
 
 
 namespace sorcery::rendering {
+auto detail::GetTaaAccumulationRt(Camera const& cam) -> RenderTarget const* {
+  return cam.taa_accum_target_ ? &*cam.taa_accum_target_ : nullptr;
+}
+
+
+auto detail::RecreateTaaAccumulationRt(Camera& cam, graphics::GraphicsDevice& device, Extent2D<unsigned> const size,
+                                       DXGI_FORMAT format) -> void {
+  cam.taa_rt_device_ = &device;
+  cam.taa_accum_target_ = RenderTarget::New(device, RenderTarget::Desc{
+    .width = size.width,
+    .height = size.height,
+    .color_format = format,
+    .depth_stencil_format = std::nullopt,
+    .sample_count = 1,
+    .debug_name = L"Camera TAA Accumulation RT",
+    .enable_unordered_access = true,
+    .color_clear_value = std::array{0.0f, 0.0f, 0.0f, 1.0f},
+    .depth_clear_value = 0.0f,
+    .stencil_clear_value = 0,
+    .dimension = graphics::TextureDimension::k2D,
+    .depth_or_array_size = 1
+  });
+}
+
+
 Camera::Camera(Camera const& other) :
   render_target_{other.render_target_},
   taa_accum_target_{
@@ -165,31 +190,6 @@ auto Camera::CalculateViewMatrix() const noexcept -> Matrix4 {
 auto Camera::CalculateProjectionMatrix(float const aspect_ratio) const noexcept -> Matrix4 {
   return CalculateProjectionMatrix(GetType(), GetVerticalPerspectiveFov(), GetVerticalOrthographicSize(), aspect_ratio,
     GetNearClipPlane(), GetFarClipPlane());
-}
-
-
-auto Camera::GetTaaAccumulationRt() const -> RenderTarget const* {
-  return taa_accum_target_ ? &*taa_accum_target_ : nullptr;
-}
-
-
-auto Camera::RecreateTaaAccumulationRt(graphics::GraphicsDevice& device, Extent2D<unsigned> const size,
-                                       DXGI_FORMAT const format) -> void {
-  taa_rt_device_ = &device;
-  taa_accum_target_ = RenderTarget::New(device, RenderTarget::Desc{
-    .width = size.width,
-    .height = size.height,
-    .color_format = format,
-    .depth_stencil_format = std::nullopt,
-    .sample_count = 1,
-    .debug_name = L"Camera TAA Accumulation RT",
-    .enable_unordered_access = true,
-    .color_clear_value = std::array{0.0f, 0.0f, 0.0f, 1.0f},
-    .depth_clear_value = 0.0f,
-    .stencil_clear_value = 0,
-    .dimension = graphics::TextureDimension::k2D,
-    .depth_or_array_size = 1
-  });
 }
 
 

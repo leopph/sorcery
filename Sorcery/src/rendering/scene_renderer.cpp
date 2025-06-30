@@ -1413,11 +1413,11 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
     auto accum_tex_empty{false};
 
-    if (auto const accum_rt{cam->GetTaaAccumulationRt()};
+    if (auto const accum_rt{detail::GetTaaAccumulationRt(*cam)};
       !accum_rt || accum_rt->GetDesc().color_format != color_buffer_format_ ||
       accum_rt->GetDesc().width != (cam_rt ? cam_rt : global_rt)->GetDesc().width * GetWidth(vp) ||
       accum_rt->GetDesc().height != (cam_rt ? cam_rt : global_rt)->GetDesc().height * GetHeight(vp)) {
-      cam->RecreateTaaAccumulationRt(*device_, Extent2D{
+      detail::RecreateTaaAccumulationRt(*cam, *device_, Extent2D{
           static_cast<unsigned>((cam_rt ? cam_rt : global_rt)->GetDesc().width * GetWidth(vp)),
           static_cast<unsigned>((cam_rt ? cam_rt : global_rt)->GetDesc().height * GetHeight(vp))
         },
@@ -1425,7 +1425,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
       accum_tex_empty = true;
     }
 
-    auto const accum_rt_local_idx{find_or_emplace_back_texture(cam->GetTaaAccumulationRt()->GetColorTex())};
+    auto const accum_rt_local_idx{find_or_emplace_back_texture(detail::GetTaaAccumulationRt(*cam)->GetColorTex())};
 
     unsigned rt_local_idx;
 

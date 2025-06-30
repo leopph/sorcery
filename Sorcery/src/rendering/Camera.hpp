@@ -9,7 +9,23 @@
 
 
 namespace sorcery::rendering {
+class Camera;
+
+
+namespace detail {
+[[nodiscard]]
+auto GetTaaAccumulationRt(Camera const& cam) -> RenderTarget const*;
+auto RecreateTaaAccumulationRt(Camera& cam, graphics::GraphicsDevice& device, Extent2D<unsigned> size,
+                               DXGI_FORMAT format) -> void;
+}
+
+
 class Camera {
+  [[nodiscard]]
+  friend auto detail::GetTaaAccumulationRt(Camera const& cam) -> RenderTarget const*;
+  friend auto detail::RecreateTaaAccumulationRt(Camera& cam, graphics::GraphicsDevice& device, Extent2D<unsigned> size,
+                                                DXGI_FORMAT format) -> void;
+
 public:
   enum class Type : std::uint8_t {
     Perspective  = 0,
@@ -54,10 +70,6 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto CalculateViewMatrix() const noexcept -> Matrix4;
   [[nodiscard]] LEOPPHAPI auto CalculateProjectionMatrix(float aspect_ratio) const noexcept -> Matrix4;
-
-  [[nodiscard]] LEOPPHAPI auto GetTaaAccumulationRt() const -> RenderTarget const*;
-  LEOPPHAPI auto RecreateTaaAccumulationRt(graphics::GraphicsDevice& device, Extent2D<unsigned> size,
-                                           DXGI_FORMAT format) -> void;
 
   [[nodiscard]] LEOPPHAPI static auto HorizontalPerspectiveFovToVertical(
     float fov_degrees, float aspect_ratio) noexcept -> float;
