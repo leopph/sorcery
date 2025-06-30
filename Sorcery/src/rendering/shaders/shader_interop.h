@@ -205,6 +205,11 @@ struct GBufferDrawParams {
   uint per_draw_cb_idx;
 
   uint per_view_cb_idx;
+
+  float jitter_x;
+  float jitter_y;
+  float prev_jitter_x;
+  float prev_jitter_y;
 };
 
 
@@ -308,19 +313,14 @@ struct SsrComposeDrawParams {
 };
 
 
-struct MotionVectorDrawParams {
-  uint depth_tex_idx;
-  uint velocity_tex_idx;
-  uint per_view_cb_idx;
-};
-
-
 struct TaaResolveDrawParams {
   uint accum_tex_idx;
   uint color_tex_idx;
   uint depth_tex_idx;
   uint velocity_tex_idx;
   uint linear_samp_idx;
+  float jitter_x;
+  float jitter_y;
 };
 
 #ifdef __cplusplus

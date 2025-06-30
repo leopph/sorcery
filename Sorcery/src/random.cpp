@@ -25,7 +25,7 @@ auto Xorshift64::operator()() -> std::uint64_t {
 }
 
 
-auto PlasticSequence2d(std::size_t const idx) -> std::pair<float, float> {
+auto R2Sequence2d(std::size_t const idx) -> std::pair<float, float> {
   // https://observablehq.com/@jrus/plastic-sequence
   // https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
 

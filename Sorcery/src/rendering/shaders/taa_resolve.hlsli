@@ -88,7 +88,7 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
       pixelPosition = clamp(pixelPosition, 0, color_tex_size - 1);
 
       float3 neighbor = max(0, color_tex[pixelPosition].rgb);
-      float subSampleDistance = length(float2(x, y));
+      float subSampleDistance = length(float2(x, y) - float2(g_params.jitter_x, g_params.jitter_y));
       float subSampleWeight = FilterMitchell1D(subSampleDistance);
 
       sourceSampleTotal += neighbor * subSampleWeight;

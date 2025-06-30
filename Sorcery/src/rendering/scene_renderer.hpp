@@ -209,6 +209,9 @@ private:
     void const* id; // Used to identify cameras between frames, e.g. for TAA accumulation
 
     bool accum_tex_empty;
+
+    float jitter_x;
+    float jitter_y;
   };
 
 

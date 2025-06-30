@@ -131,7 +131,8 @@ void PsMain(PsIn const ps_in, out float4 out0 : SV_Target0, out float2 out1 : SV
 
   float3 const cur_pos_ndc = ps_in.cur_pos_cs.xyz / ps_in.cur_pos_cs.w;
   float3 const prev_pos_ndc = ps_in.prev_pos_cs.xyz / ps_in.prev_pos_cs.w;
-  float2 const velocity = cur_pos_ndc.xy - prev_pos_ndc.xy;
+  float2 const velocity = cur_pos_ndc.xy - float2(g_params.jitter_x, g_params.jitter_y) -
+                          (prev_pos_ndc.xy - float2(g_params.prev_jitter_x, g_params.prev_jitter_y));
 
   // Write output
 

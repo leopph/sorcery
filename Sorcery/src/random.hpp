@@ -29,6 +29,6 @@ private:
 };
 
 
-[[nodiscard]] auto PlasticSequence2d(std::size_t idx) -> std::pair<float, float>;
+[[nodiscard]] auto R2Sequence2d(std::size_t idx) -> std::pair<float, float>;
 [[nodiscard]] auto HaltonSequence(std::size_t idx, std::size_t base) -> float;
 }

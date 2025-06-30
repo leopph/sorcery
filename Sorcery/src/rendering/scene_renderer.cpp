@@ -1658,7 +1658,7 @@ auto SceneRenderer::Render() -> void {
   prepare_cmd.End();
   device_->ExecuteCommandLists(std::span{&prepare_cmd, 1});
 
-  for (auto const& cam_data : frame_packet.cam_data) {
+  for (auto& cam_data : frame_packet.cam_data) {
     auto const prev_cam_it{std::ranges::find(prev_frame_packet.cam_data, cam_data.id, &CameraData::id)};
 
     // Compute render target dimensions
@@ -1763,34 +1763,40 @@ auto SceneRenderer::Render() -> void {
     auto const [jitter_x, jitter_y]
     {
       [this, transient_rt_width, transient_rt_height] {
-        // TODO see if this improves TAA quality
-        /*auto const seq{PlasticSequence2d(render_manager_->GetCurrentFrameCount())};
-        return std::make_pair(
-          (2 * seq.first - 1) / static_cast<float>(transient_rt_width),
-          (2 * seq.second - 1) / static_cast<float>(transient_rt_height)
-        );*/
-
         auto const jitter_idx{render_manager_->GetCurrentFrameCount() % taa_subpixel_sample_count_};
-        auto const halton_x{2 * HaltonSequence(jitter_idx + 1, 2) - 1};
-        auto const halton_y{2 * HaltonSequence(jitter_idx + 1, 3) - 1};
-        return std::make_pair(
-          halton_x / static_cast<float>(transient_rt_width),
-          halton_y / static_cast<float>(transient_rt_height)
-        );
+
+        if constexpr (true) {
+          auto const [r2_x, r2_y]{R2Sequence2d(jitter_idx)};
+          return std::make_pair(
+            (2 * r2_x - 1) / static_cast<float>(transient_rt_width),
+            (2 * r2_y - 1) / static_cast<float>(transient_rt_height)
+          );
+        } else {
+          auto const halton_x{HaltonSequence(jitter_idx + 1, 2)};
+          auto const halton_y{HaltonSequence(jitter_idx + 1, 3)};
+          return std::make_pair(
+            (2 * halton_x - 1) / static_cast<float>(transient_rt_width),
+            (2 * halton_y - 1) / static_cast<float>(transient_rt_height)
+          );
+        }
       }()
     };
 
+    // We store this in the cam data so that we can use it in the next frame
+    cam_data.jitter_x = jitter_x;
+    cam_data.jitter_y = jitter_y;
+
     auto const cam_proj_mtx{
       TransformProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(cam_data.type, cam_data.fov_vert_deg,
-        cam_data.size_vert, viewport_aspect, cam_data.near_plane,
-        cam_data.far_plane) /* * Matrix4::Translate(Vector3{jitter_x, jitter_y, 0})*/)
+                                              cam_data.size_vert, viewport_aspect, cam_data.near_plane,
+                                              cam_data.far_plane) * Matrix4::Translate(Vector3{jitter_x, jitter_y, 0}))
     };
     auto const prev_cam_proj_mtx{
       prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
         ? TransformProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(prev_cam_it->type,
-            prev_cam_it->fov_vert_deg, prev_cam_it->size_vert, viewport_aspect,
-            prev_cam_it->near_plane, prev_cam_it->far_plane) /* *
-                                                Matrix4::Translate(Vector3{jitter_x, jitter_y, 0})*/)
+                                                  prev_cam_it->fov_vert_deg, prev_cam_it->size_vert, viewport_aspect,
+                                                  prev_cam_it->near_plane, prev_cam_it->far_plane) * Matrix4::Translate(
+                                                  Vector3{prev_cam_it->jitter_x, prev_cam_it->jitter_y, 0}))
         : cam_proj_mtx
     };
 
@@ -1849,6 +1855,8 @@ auto SceneRenderer::Render() -> void {
       auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
       auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
+      auto constexpr zero{0.0f};
+
       auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
       SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, cam_view_mtx, cam_proj_mtx);
 
@@ -1873,6 +1881,18 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_buf_idx),
         *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, idx32), mesh.idx32);
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, jitter_x),
+        *std::bit_cast<UINT const*>(&jitter_x));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, jitter_y),
+        *std::bit_cast<UINT const*>(&jitter_y));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_jitter_x),
+        *std::bit_cast<UINT const*>(prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
+                                      ? &prev_cam_it->jitter_x
+                                      : &zero));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_jitter_y),
+        *std::bit_cast<UINT const*>(prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
+                                      ? &prev_cam_it->jitter_y
+                                      : &zero));
 
       DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_count),
         PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_offset),
@@ -2150,6 +2170,10 @@ auto SceneRenderer::Render() -> void {
         *velocity_rt->GetColorTex());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, linear_samp_idx),
         samp_bi_clamp_.Get());
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, jitter_x),
+        *std::bit_cast<UINT const*>(&jitter_x));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, jitter_y),
+        *std::bit_cast<UINT const*>(&jitter_y));
 
       cam_cmd.DrawInstanced(3, 1, 0, 0);
       cam_cmd.CopyTexture(accum_tex, *taa_rt->GetColorTex());
