@@ -123,10 +123,10 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetGamma() const noexcept -> float;
   LEOPPHAPI auto SetGamma(float gamma) noexcept -> void;
 
-  LEOPPHAPI auto Register(StaticMeshComponent const& static_mesh_component) noexcept -> void;
+  LEOPPHAPI auto Register(StaticMeshComponent& static_mesh_component) noexcept -> void;
   LEOPPHAPI auto Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void;
 
-  LEOPPHAPI auto Register(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void;
+  LEOPPHAPI auto Register(SkinnedMeshComponent& skinned_mesh_component) noexcept -> void;
   LEOPPHAPI auto Unregister(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void;
 
   LEOPPHAPI auto Register(LightComponent const& light_component) noexcept -> void;
@@ -185,6 +185,7 @@ private:
   struct InstanceData {
     unsigned submesh_local_idx;
     Matrix4 local_to_world_mtx;
+    Matrix4 prev_local_to_world_mtx;
   };
 
 
@@ -334,7 +335,8 @@ private:
                                   ShadowCascadeBoundaries const& cascade_bounds, Vector3 const& view_pos,
                                   float near_clip_plane, float far_clip_plane) -> void;
   static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
-                                  Matrix4 const& view_mtx, Matrix4 const& proj_mtx) -> void;
+                                  Matrix4 const& view_mtx, Matrix4 const& proj_mtx,
+                                  Matrix4 const& prev_model_mtx) -> void;
 
 
   auto UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas, std::span<LightData const> lights,
@@ -462,8 +464,8 @@ private:
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
-  std::vector<StaticMeshComponent const*> static_mesh_components_;
-  std::vector<SkinnedMeshComponent const*> skinned_mesh_components_;
+  std::vector<StaticMeshComponent*> static_mesh_components_;
+  std::vector<SkinnedMeshComponent*> skinned_mesh_components_;
   std::vector<LightComponent const*> lights_;
   std::vector<Camera*> cameras_;
 

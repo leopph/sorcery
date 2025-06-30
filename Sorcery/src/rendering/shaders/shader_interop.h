@@ -143,6 +143,8 @@ struct ShaderPerDrawConstants {
 
   row_major float4x4 model_view_mtx;
   row_major float4x4 model_view_proj_mtx;
+
+  row_major float4x4 prev_model_mtx;
 };
 
 

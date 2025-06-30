@@ -207,10 +207,11 @@ auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& 
 
 
 auto SceneRenderer::SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
-                                        Matrix4 const& view_mtx, Matrix4 const& proj_mtx) -> void {
+                                        Matrix4 const& view_mtx, Matrix4 const& proj_mtx,
+                                        Matrix4 const& prev_model_mtx) -> void {
   cb.Update(ShaderPerDrawConstants{
     .modelMtx = model_mtx, .invTranspModelMtx = model_mtx.Inverse().Transpose(), .model_view_mtx = model_mtx * view_mtx,
-    .model_view_proj_mtx = model_mtx * view_mtx * proj_mtx
+    .model_view_proj_mtx = model_mtx * view_mtx * proj_mtx, .prev_model_mtx = prev_model_mtx
   });
 }
 
@@ -550,7 +551,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
           auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
-          SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, shadowViewMtx, shadowProjMtx);
+          SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, shadowViewMtx, shadowProjMtx, {});
 
           cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
             *frame_packet.buffers[mesh.pos_buf_local_idx]);
@@ -631,7 +632,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 
           auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
           SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, Matrix4::Identity(),
-            subcell->shadowViewProjMtx);
+            subcell->shadowViewProjMtx, {});
 
           cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
             *frame_packet.buffers[mesh.pos_buf_local_idx]);
@@ -1236,7 +1237,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   };
 
   auto const extract_from_mesh_comp{
-    [&find_or_emplace_back_buffer, &packet, &find_or_emplace_back_texture](MeshComponentBase const* const comp) {
+    [&find_or_emplace_back_buffer, &packet, &find_or_emplace_back_texture](MeshComponentBase* const comp) {
       auto const mesh{comp->GetMesh()};
 
       if (!mesh) {
@@ -1277,8 +1278,12 @@ auto SceneRenderer::ExtractCurrentState() -> void {
         packet.submesh_data.emplace_back(static_cast<unsigned>(packet.mesh_data.size() - 1), submesh.GetFirstMeshlet(),
           submesh.GetMeshletCount(), submesh.GetBaseVertex(), mtl_buf_local_idx, submesh.GetBounds());
 
+        auto const local_to_world_mtx{comp->GetEntity()->GetTransform().GetLocalToWorldMatrix()};
+
         packet.instance_data.emplace_back(static_cast<unsigned>(packet.submesh_data.size() - 1),
-          comp->GetEntity()->GetTransform().GetLocalToWorldMatrix());
+          local_to_world_mtx, sorcery::detail::GetPrevModelMtx(*comp));
+
+        sorcery::detail::SetPrevModelMtx(*comp, local_to_world_mtx);
       }
     }
   };
@@ -1286,7 +1291,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   std::ranges::for_each(static_mesh_components_, extract_from_mesh_comp);
 
   std::ranges::for_each(skinned_mesh_components_,
-    [&extract_from_mesh_comp, &packet, this](SkinnedMeshComponent const* const comp) {
+    [&extract_from_mesh_comp, &packet, this](SkinnedMeshComponent* const comp) {
       auto const mesh{comp->GetMesh()};
 
       if (!mesh) {
@@ -1858,7 +1863,8 @@ auto SceneRenderer::Render() -> void {
       auto constexpr zero{0.0f};
 
       auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
-      SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, cam_view_mtx, cam_proj_mtx);
+      SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, cam_view_mtx, cam_proj_mtx,
+        instance.prev_local_to_world_mtx);
 
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, pos_buf_idx),
         *frame_packet.buffers[mesh.pos_buf_local_idx]);
@@ -2385,7 +2391,7 @@ auto SceneRenderer::SetGamma(f32 const gamma) noexcept -> void {
 }
 
 
-auto SceneRenderer::Register(StaticMeshComponent const& static_mesh_component) noexcept -> void {
+auto SceneRenderer::Register(StaticMeshComponent& static_mesh_component) noexcept -> void {
   static_mesh_components_.emplace_back(std::addressof(static_mesh_component));
 }
 
@@ -2395,7 +2401,7 @@ auto SceneRenderer::Unregister(StaticMeshComponent const& static_mesh_component)
 }
 
 
-auto SceneRenderer::Register(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void {
+auto SceneRenderer::Register(SkinnedMeshComponent& skinned_mesh_component) noexcept -> void {
   skinned_mesh_components_.emplace_back(std::addressof(skinned_mesh_component));
 }
 

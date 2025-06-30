@@ -8,9 +8,23 @@
 
 
 namespace sorcery {
+class MeshComponentBase;
+
+
+namespace detail {
+[[nodiscard]]
+auto GetPrevModelMtx(MeshComponentBase const& mesh_component) noexcept -> Matrix4 const&;
+auto SetPrevModelMtx(MeshComponentBase& mesh_component, Matrix4 const& mtx) noexcept -> void;
+}
+
+
 class MeshComponentBase : public Component {
   RTTR_ENABLE(Component)
   RTTR_REGISTRATION_FRIEND
+
+  [[nodiscard]]
+  friend auto detail::GetPrevModelMtx(MeshComponentBase const& mesh_component) noexcept -> Matrix4 const&;
+  friend auto detail::SetPrevModelMtx(MeshComponentBase& mesh_component, Matrix4 const& mtx) noexcept -> void;
 
 public:
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
@@ -32,6 +46,7 @@ private:
 
   std::vector<Material*> materials_;
   Mesh* mesh_;
+  Matrix4 prev_model_mtx_{Matrix4::Identity()};
 
   static bool show_bounding_boxes_; // TODO this should be stripped when not compiling for Mage
 };
