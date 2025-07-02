@@ -65,6 +65,6 @@ private:
 
   Cubemap* skybox_{nullptr};
   SkyMode sky_mode_{SkyMode::Color};
-  Vector3 sky_color_{10.0f / 255.0f};
+  Vector3 sky_color_{41.F / 255.F, 195.F / 255.F, 243.F / 255.F};
 };
 }
