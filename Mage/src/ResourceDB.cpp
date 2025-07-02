@@ -208,6 +208,10 @@ auto ResourceDB::Refresh() -> void {
 
 
 auto ResourceDB::ChangeProjectDir(std::filesystem::path const& projDirAbs) -> void {
+  if (!exists(projDirAbs)) {
+    create_directory(projDirAbs);
+  }
+
   mResDirAbs = projDirAbs / RESOURCE_DIR_PROJ_REL;
   mCacheDirAbs = projDirAbs / CACHE_DIR_PROJ_REL;
 
