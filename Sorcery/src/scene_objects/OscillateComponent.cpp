@@ -66,7 +66,7 @@ auto OscillateComponent::Update() -> void {
     cur_dist_ += this_frame_progress;
   }
 
-  transform.Translate(direction_ * this_frame_progress * (going_backward_ ? -1.f : 1.f));
+  transform.Translate(direction_ * this_frame_progress * (going_backward_ ? -1.f : 1.f), Space::Local);
 
   if (std::abs(cur_dist_) >= distance_) {
     going_backward_ = !going_backward_;
