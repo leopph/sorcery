@@ -253,6 +253,7 @@ private:
     unsigned bone_weight_buf_local_idx;
     unsigned bone_index_buf_local_idx;
     unsigned bone_matrix_buf_local_idx;
+    unsigned prev_frame_vertex_buf_local_idx;
 
     float cur_animation_time;
 

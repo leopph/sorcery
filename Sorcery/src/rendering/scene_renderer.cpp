@@ -1325,6 +1325,9 @@ auto SceneRenderer::ExtractCurrentState() -> void {
       packet.buffers.emplace_back(comp->GetSkinnedVertexBuffers()[render_manager_->GetCurrentFrameIndex()]);
       auto const skinned_pos_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
+      packet.buffers.emplace_back(comp->GetSkinnedVertexBuffers()[render_manager_->GetPreviousFrameIndex()]);
+      auto const prev_skinned_pos_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
+
       packet.buffers.emplace_back(comp->GetSkinnedNormalBuffers()[render_manager_->GetCurrentFrameIndex()]);
       auto const skinned_norm_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
@@ -1381,9 +1384,9 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
       packet.skinned_mesh_data.emplace_back(static_cast<unsigned>(packet.mesh_data.size() - 1),
         orig_pos_buf_local_idx, orig_norm_buf_local_idx, orig_tan_buf_local_idx, bone_weight_buf_local_idx,
-        bone_index_buf_local_idx, bone_mtx_buf_local_idx, comp->GetCurrentAnimationTime(), node_anim_begin_local_idx,
-        static_cast<unsigned>(anim->node_anims.size()), skeleton_begin_local_idx,
-        static_cast<unsigned>(mesh->GetSkeleton().size()), bone_begin_local_idx,
+        bone_index_buf_local_idx, bone_mtx_buf_local_idx, prev_skinned_pos_buf_local_idx,
+        comp->GetCurrentAnimationTime(), node_anim_begin_local_idx, static_cast<unsigned>(anim->node_anims.size()),
+        skeleton_begin_local_idx, static_cast<unsigned>(mesh->GetSkeleton().size()), bone_begin_local_idx,
         static_cast<unsigned>(mesh->GetBones().size()));
     });
 
@@ -1526,8 +1529,8 @@ auto SceneRenderer::Render() -> void {
 
   for (auto& [mesh_data_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
          original_tangent_buf_local_idx, bone_weight_buf_local_idx, bone_index_buf_local_idx, bone_matrix_buf_local_idx,
-         cur_animation_time, node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size,
-         bone_begin_local_idx, bone_count] : frame_packet.skinned_mesh_data) {
+         prev_frame_vertex_buf_local_idx, cur_animation_time, node_anim_begin_local_idx, node_anim_count,
+         skeleton_begin_local_idx, skeleton_size, bone_begin_local_idx, bone_count] : frame_packet.skinned_mesh_data) {
     // Skip skinning when we are sitting at 0 time.
     // This happens for example in the editor scene view.
     if (cur_animation_time == 0) {
@@ -1899,6 +1902,15 @@ auto SceneRenderer::Render() -> void {
         *std::bit_cast<UINT const*>(prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
                                       ? &prev_cam_it->jitter_y
                                       : &zero));
+
+      if (auto const skinned_mesh_it{
+        std::ranges::find(frame_packet.skinned_mesh_data, submesh.mesh_local_idx, &SkinnedMeshData::mesh_data_local_idx)
+      }; skinned_mesh_it != std::ranges::end(frame_packet.skinned_mesh_data)) {
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_frame_pos_buf_idx),
+          *frame_packet.buffers[skinned_mesh_it->prev_frame_vertex_buf_local_idx]);
+      } else {
+        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_frame_pos_buf_idx), INVALID_RES_IDX);
+      }
 
       DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_count),
         PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_offset),

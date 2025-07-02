@@ -30,9 +30,18 @@ class VertexProcessor {
     StructuredBuffer<float4> const positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
     float4 const pos_os = positions[vertex_idx];
 
+    float4 prev_pos_os;
+
+    if (g_params.prev_frame_pos_buf_idx != INVALID_RES_IDX) {
+      StructuredBuffer<float4> const prev_positions = ResourceDescriptorHeap[g_params.prev_frame_pos_buf_idx];
+      prev_pos_os = prev_positions[vertex_idx];
+    } else {
+      prev_pos_os = pos_os;
+    }
+
     const ConstantBuffer<ShaderPerDrawConstants> per_draw_cb = ResourceDescriptorHeap[g_params.per_draw_cb_idx];
     float4 const pos_ws = mul(pos_os, per_draw_cb.modelMtx);
-    float4 const prev_pos_ws = mul(pos_os, per_draw_cb.prev_model_mtx);
+    float4 const prev_pos_ws = mul(prev_pos_os, per_draw_cb.prev_model_mtx);
 
     const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
     float4 const pos_vs = mul(pos_ws, per_view_cb.viewMtx);
