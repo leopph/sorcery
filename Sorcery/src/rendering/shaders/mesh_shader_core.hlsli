@@ -251,45 +251,29 @@ MESH_SHADER_BODY(gid, gtid, meshlet_buf_idx, vertex_idx_buf_idx, prim_idx_buf_id
 
 
 #ifdef MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES
-#ifdef MESH_SHADER_NO_PAYLOAD
-#define DECLARE_MESH_SHADER_MAIN(MainFuncName) [outputtopology("triangle")]\
-[numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]\
-void MainFuncName(\
-  const uint gid : SV_GroupID, \
-  const uint gtid : SV_GroupThreadID, \
-  out vertices PsIn out_vertices[MESHLET_MAX_VERTS], \
-  out indices uint3 out_indices[MESHLET_MAX_PRIMS])
+#define MESH_SHADER_PRIMITIVE_PARAM
 #else
-#define DECLARE_MESH_SHADER_MAIN(MainFuncName) [outputtopology("triangle")]\
-[numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]\
-void MainFuncName(\
-  const uint gid : SV_GroupID, \
-  const uint gtid : SV_GroupThreadID, \
-  in payload CullingPayload payload, \
-  out vertices PsIn out_vertices[MESHLET_MAX_VERTS], \
-  out indices uint3 out_indices[MESHLET_MAX_PRIMS])
+#define MESH_SHADER_PRIMITIVE_PARAM out primitives PrimitiveAttributes out_primitives[MESHLET_MAX_PRIMS],
 #endif
-#else
+
+
 #ifdef MESH_SHADER_NO_PAYLOAD
-#define DECLARE_MESH_SHADER_MAIN(MainFuncName, PrimitiveDataType) [outputtopology("triangle")]\
+#define MESH_SHADER_PAYLOAD_PARAM
+#else
+#define MESH_SHADER_PAYLOAD_PARAM in payload CullingPayload payload,
+#endif
+
+
+#define DECLARE_MESH_SHADER_MAIN(MainFuncName)\
+[outputtopology("triangle")]\
 [numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]\
 void MainFuncName(\
   const uint gid : SV_GroupID,\
   const uint gtid : SV_GroupThreadID,\
+  MESH_SHADER_PAYLOAD_PARAM\
   out vertices PsIn out_vertices[MESHLET_MAX_VERTS],\
-  out primitives PrimitiveDataType out_primitives[MESHLET_MAX_PRIMS],\
+  MESH_SHADER_PRIMITIVE_PARAM\
   out indices uint3 out_indices[MESHLET_MAX_PRIMS])
-#else
-#define DECLARE_MESH_SHADER_MAIN(MainFuncName, PrimitiveDataType) [outputtopology("triangle")]\
-[numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]\
-void MainFuncName(\
-  const uint gid : SV_GroupID,\
-  const uint gtid : SV_GroupThreadID,\
-  in payload CullingPayload payload,\
-  out vertices PsIn out_vertices[MESHLET_MAX_VERTS],\
-  out primitives PrimitiveDataType out_primitives[MESHLET_MAX_PRIMS],\
-  out indices uint3 out_indices[MESHLET_MAX_PRIMS])
-#endif
-#endif
+
 
 #endif
