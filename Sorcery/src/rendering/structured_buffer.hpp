@@ -8,7 +8,7 @@
 
 
 namespace sorcery::rendering {
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 class StructuredBuffer {
 public:
   [[nodiscard]] static auto New(graphics::GraphicsDevice& device, RenderManager& render_manager,

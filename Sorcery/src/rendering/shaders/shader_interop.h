@@ -162,8 +162,9 @@ struct DepthOnlyDrawParams {
   uint vertex_idx_buf_idx;
   uint prim_idx_buf_idx;
   uint meshlet_buf_idx;
-  BOOL idx32;
+  uint cull_data_buf_idx;
 
+  BOOL idx32;
   uint samp_idx;
   uint rt_idx;
   uint per_draw_cb_idx;
@@ -206,11 +207,12 @@ struct GBufferDrawParams {
   uint mtl_samp_idx;
   uint per_draw_cb_idx;
 
+  uint cull_data_buf_idx;
   uint per_view_cb_idx;
   uint prev_frame_pos_buf_idx;
   float jitter_x;
-  float jitter_y;
 
+  float jitter_y;
   float prev_jitter_x;
   float prev_jitter_y;
 };

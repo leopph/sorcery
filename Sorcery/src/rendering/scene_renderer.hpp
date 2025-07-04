@@ -166,6 +166,7 @@ private:
     unsigned meshlet_buf_local_idx;
     unsigned vtx_idx_buf_local_idx;
     unsigned prim_idx_buf_local_idx;
+    unsigned cull_data_buf_local_idx;
     AABB bounds;
     unsigned vtx_count;
     bool idx32;

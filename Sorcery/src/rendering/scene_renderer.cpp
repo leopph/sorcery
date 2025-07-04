@@ -566,6 +566,8 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
             *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
           cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
             *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, cull_data_buf_idx),
+            *frame_packet.buffers[mesh.cull_data_buf_local_idx]);
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), mesh.idx32);
 
           DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
@@ -647,6 +649,8 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
             *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
           cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
             *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, cull_data_buf_idx),
+            *frame_packet.buffers[mesh.cull_data_buf_local_idx]);
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), mesh.idx32);
 
           DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
@@ -1251,9 +1255,10 @@ auto SceneRenderer::ExtractCurrentState() -> void {
       auto const meshlet_buf_local_idx{find_or_emplace_back_buffer(mesh->GetMeshletBuffer())};
       auto const vtx_idx_buf_local_idx{find_or_emplace_back_buffer(mesh->GetVertexIndexBuffer())};
       auto const prim_idx_buf_local_idx{find_or_emplace_back_buffer(mesh->GetPrimitiveIndexBuffer())};
+      auto const cull_data_buf_local_idx{find_or_emplace_back_buffer(mesh->GetCullDataBuffer())};
       packet.mesh_data.emplace_back(pos_buf_local_idx, norm_buf_local_idx, tan_buf_local_idx, uv_buf_local_idx,
-        meshlet_buf_local_idx, vtx_idx_buf_local_idx, prim_idx_buf_local_idx, mesh->GetBounds(),
-        static_cast<unsigned>(mesh->GetVertexCount()), mesh->Has32BitVertexIndices());
+        meshlet_buf_local_idx, vtx_idx_buf_local_idx, prim_idx_buf_local_idx, cull_data_buf_local_idx,
+        mesh->GetBounds(), static_cast<unsigned>(mesh->GetVertexCount()), mesh->Has32BitVertexIndices());
 
       packet.submesh_data.reserve(packet.submesh_data.size() + mesh->GetSubmeshes().size());
 
@@ -1889,6 +1894,8 @@ auto SceneRenderer::Render() -> void {
         *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_buf_idx),
         *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, cull_data_buf_idx),
+        *frame_packet.buffers[mesh.cull_data_buf_local_idx]);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, idx32), mesh.idx32);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, jitter_x),
         *std::bit_cast<UINT const*>(&jitter_x));

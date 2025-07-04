@@ -2,7 +2,7 @@
 
 
 namespace sorcery::rendering {
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, RenderManager& render_manager,
                               bool const cpu_accessible, bool const shader_resource,
                               bool const unordered_access) -> StructuredBuffer {
@@ -10,7 +10,7 @@ auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, RenderManager& r
 }
 
 
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, RenderManager& render_manager,
                               std::span<T const> const data, bool const cpu_accessible, bool const shader_resource,
                               bool const unordered_access) -> StructuredBuffer {
@@ -18,31 +18,31 @@ auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, RenderManager& r
 }
 
 
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 auto StructuredBuffer<T>::GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
   return buffer_;
 }
 
 
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 auto StructuredBuffer<T>::GetData() const noexcept -> std::span<T> {
   return std::span<T>{mapped_ptr_, size_};
 }
 
 
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 auto StructuredBuffer<T>::GetSize() const -> UINT {
   return size_;
 }
 
 
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 auto StructuredBuffer<T>::GetCapacity() const -> UINT {
   return capacity_;
 }
 
 
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 auto StructuredBuffer<T>::Resize(UINT const new_size) -> void {
   auto new_capacity = capacity_;
 
@@ -60,7 +60,7 @@ auto StructuredBuffer<T>::Resize(UINT const new_size) -> void {
 }
 
 
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice& device, RenderManager& render_manager,
                                       UINT const initial_capacity, bool const cpu_accessible,
                                       bool const shader_resource, bool const unordered_access) :
@@ -74,7 +74,7 @@ StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice& device, RenderMa
 }
 
 
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice& device, RenderManager& render_manager,
                                       std::span<T const> const data, bool const cpu_accessible,
                                       bool const shader_resource, bool const unordered_access) :
@@ -91,7 +91,7 @@ StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice& device, RenderMa
 }
 
 
-template<typename T> requires (AlignsTo(sizeof(T), 16ull))
+template<typename T>
 auto StructuredBuffer<T>::RecreateBuffer() -> void {
   if (buffer_) {
     render_manager_->KeepAliveWhileInUse(buffer_);

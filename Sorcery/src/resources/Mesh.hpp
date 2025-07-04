@@ -53,6 +53,7 @@ class Mesh final : public Resource {
   rendering::StructuredBuffer<MeshletData> meshlet_buf_;
   graphics::SharedDeviceChildHandle<graphics::Buffer> vertex_idx_buf_;
   rendering::StructuredBuffer<MeshletTriangleData> prim_idx_buf_;
+  rendering::StructuredBuffer<MeshletCullData> cull_data_buf_;
 
   // CPU info
 
@@ -86,14 +87,15 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
   [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
   [[nodiscard]] LEOPPHAPI auto GetUvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto
-  GetBoneWeightBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetBoneWeightBuffer() const
+    -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
   [[nodiscard]] LEOPPHAPI auto GetBoneIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
   [[nodiscard]] LEOPPHAPI auto GetMeshletBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto
-  GetVertexIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
-  [[nodiscard]] LEOPPHAPI auto
-  GetPrimitiveIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetVertexIndexBuffer() const
+    -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetPrimitiveIndexBuffer() const
+    -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] LEOPPHAPI auto GetCullDataBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
 
   [[nodiscard]] LEOPPHAPI auto GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const>;
   [[nodiscard]] LEOPPHAPI auto GetSubmeshes() const noexcept -> std::span<Submesh const>;

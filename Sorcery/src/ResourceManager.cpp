@@ -289,6 +289,10 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
     prim_idx_count * sizeof(MeshletTriangleData));
   cur_bytes = cur_bytes.subspan(prim_idx_count * sizeof(MeshletTriangleData));
 
+  mesh_data.cull_data.resize(meshlet_count);
+  std::memcpy(mesh_data.cull_data.data(), cur_bytes.data(), meshlet_count * sizeof(MeshletCullData));
+  cur_bytes = cur_bytes.subspan(meshlet_count * sizeof(MeshletCullData));
+
   // Material slots
 
   mesh_data.material_slots.resize(material_slot_count);

@@ -107,6 +107,7 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
   vertex_idx_buf_ = gd.CreateBuffer(graphics::BufferDesc{data.vertex_indices.size(), 1, false, true, false},
     graphics::CpuAccess::kNone);
   prim_idx_buf_ = StructuredBuffer<MeshletTriangleData>::New(gd, rm, data.triangle_indices, false, true, false);
+  cull_data_buf_ = StructuredBuffer<MeshletCullData>::New(gd, rm, data.cull_data, false, true, false);
 
   rm.UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{data.vertex_indices}));
 
@@ -176,6 +177,11 @@ auto Mesh::GetVertexIndexBuffer() const -> graphics::SharedDeviceChildHandle<gra
 
 auto Mesh::GetPrimitiveIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
   return prim_idx_buf_.GetBuffer();
+}
+
+
+auto Mesh::GetCullDataBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+  return cull_data_buf_.GetBuffer();
 }
 
 

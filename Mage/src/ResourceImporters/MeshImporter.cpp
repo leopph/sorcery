@@ -431,7 +431,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
         if (success) {
           meshletized_meshes[i] = MeshletizedMesh{
             std::move(meshlets), std::move(unique_vertex_indices),
-            std::move(primitive_indices)
+            std::move(primitive_indices), std::move(cull_data)
           };
         }
       }));
@@ -504,6 +504,9 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
     mesh_data.triangle_indices.reserve(mesh_data.triangle_indices.size() + primitive_indices.size());
     std::ranges::copy(primitive_indices, std::back_inserter(mesh_data.triangle_indices));
+
+    mesh_data.cull_data.reserve(mesh_data.cull_data.size() + cull_data.size());
+    std::ranges::copy(cull_data, std::back_inserter(mesh_data.cull_data));
   }
 
   // Create and store submeshes
@@ -644,11 +647,12 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   auto const meshlet_bytes{as_bytes(std::span{mesh_data.meshlets})};
   auto const vtx_idx_bytes{as_bytes(std::span{mesh_data.vertex_indices})};
   auto const prim_idx_bytes{as_bytes(std::span{mesh_data.triangle_indices})};
+  auto const cull_data_bytes{as_bytes(std::span{mesh_data.cull_data})};
 
   bytes.reserve(
     std::size(bytes) + std::size(pos_bytes) + std::size(norm_bytes) + std::size(tan_bytes) + std::size(uv_bytes) +
     std::size(bone_weight_bytes) + std::size(bone_idx_bytes) + std::size(meshlet_bytes) + std::size(vtx_idx_bytes) +
-    std::size(prim_idx_bytes));
+    std::size(prim_idx_bytes) + std::size(cull_data_bytes));
 
   std::ranges::copy(pos_bytes, std::back_inserter(bytes));
   std::ranges::copy(norm_bytes, std::back_inserter(bytes));
@@ -659,6 +663,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
   std::ranges::copy(meshlet_bytes, std::back_inserter(bytes));
   std::ranges::copy(vtx_idx_bytes, std::back_inserter(bytes));
   std::ranges::copy(prim_idx_bytes, std::back_inserter(bytes));
+  std::ranges::copy(cull_data_bytes, std::back_inserter(bytes));
 
   // Material slots
 
