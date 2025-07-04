@@ -18,9 +18,13 @@ struct Meshlet {
 };
 
 
+#if !defined(MESH_SHADER_NO_PAYLOAD)
 struct CullingPayload {
   uint meshlet_indices[AS_GROUP_SIZE];
 };
+
+
+groupshared CullingPayload g_payload;
 
 
 void AmpShaderCore(
@@ -28,8 +32,7 @@ void AmpShaderCore(
   uint const meshlet_count,
   uint const cull_data_buf_idx,
   uint const per_draw_cb_idx,
-  uint const per_view_cb_idx,
-  CullingPayload payload) {
+  uint const per_view_cb_idx) {
   bool visible = false;
 
   StructuredBuffer<MeshletCullData> const cull_data = ResourceDescriptorHeap[cull_data_buf_idx];
@@ -46,13 +49,14 @@ void AmpShaderCore(
   // Compact visible meshlets into the export payload array
   if (visible) {
     uint index = WavePrefixCountBits(visible);
-    payload.meshlet_indices[index] = dtid;
+    g_payload.meshlet_indices[index] = dtid;
   }
 
   // Dispatch the required number of MS threadgroups to render the visible meshlets
   uint const visible_count = WaveActiveCountBits(visible);
-  DispatchMesh(visible_count, 1, 1, payload);
+  DispatchMesh(visible_count, 1, 1, g_payload);
 }
+#endif
 
 
 #define MS_THREAD_GROUP_SIZE 128
