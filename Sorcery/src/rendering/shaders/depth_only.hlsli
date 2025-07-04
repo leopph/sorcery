@@ -59,7 +59,7 @@ DECLARE_AMP_SHADER_MAIN(AsMain) {
 
 
 DECLARE_MESH_SHADER_MAIN(MsMain, PrimitiveAttributes) {
-  MeshShaderCore<VertexProcessor, PrimitiveProcessor>(gid, gtid, g_params.meshlet_buf_idx, g_params.vertex_idx_buf_idx,
+  MESH_SHADER_CORE(gid, gtid, g_params.meshlet_buf_idx, g_params.vertex_idx_buf_idx,
     g_params.prim_idx_buf_idx, g_params.meshlet_offset, g_params.meshlet_count, g_params.instance_offset,
     g_params.instance_count, g_params.base_vertex, g_params.idx32, payload, out_vertices, out_primitives, out_indices);
 }
