@@ -3,6 +3,7 @@
 
 #include "common.hlsli"
 #define MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES
+#define MESH_SHADER_NO_PAYLOAD
 #include "mesh_shader_core.hlsli"
 #include "shader_interop.h"
 

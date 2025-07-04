@@ -187,6 +187,7 @@ private:
     unsigned submesh_local_idx;
     Matrix4 local_to_world_mtx;
     Matrix4 prev_local_to_world_mtx;
+    float max_abs_scaling;
   };
 
 
@@ -334,11 +335,11 @@ private:
                                    Vector3 const& ambient_light, ShadowParams const& shadow_params) -> void;
   static auto SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
                                   Matrix4 const& proj_mtx, Matrix4 const& prev_view_proj_mtx,
-                                  ShadowCascadeBoundaries const& cascade_bounds, Vector3 const& view_pos,
-                                  float near_clip_plane, float far_clip_plane) -> void;
+                                  ShadowCascadeBoundaries const& cascade_bounds, Frustum const& frustum_ws,
+                                  Vector3 const& view_pos, float near_clip_plane, float far_clip_plane) -> void;
   static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
                                   Matrix4 const& view_mtx, Matrix4 const& proj_mtx,
-                                  Matrix4 const& prev_model_mtx) -> void;
+                                  Matrix4 const& prev_model_mtx, float max_abs_scaling) -> void;
 
 
   auto UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas, std::span<LightData const> lights,

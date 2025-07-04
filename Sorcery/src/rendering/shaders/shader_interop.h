@@ -31,6 +31,8 @@ typedef bool BOOL;
 #define MESHLET_MAX_VERTS 128
 #define MESHLET_MAX_PRIMS 128
 
+#define AS_GROUP_SIZE 32
+
 #define MAX_CASCADE_COUNT (uint) 4
 #define MAX_PER_LIGHT_SHADOW_MAP_COUNT 6
 
@@ -129,6 +131,9 @@ struct ShaderPerViewConstants {
   row_major float4x4 prev_view_proj_mtx;
 
   float4 shadowCascadeSplitDistances;
+
+  float4 frustum_planes_ws[6];
+
   float3 viewPos;
 
   float near_clip_plane;
@@ -145,6 +150,8 @@ struct ShaderPerDrawConstants {
   row_major float4x4 model_view_proj_mtx;
 
   row_major float4x4 prev_model_mtx;
+
+  float max_abs_scaling;
 };
 
 

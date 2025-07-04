@@ -19,9 +19,11 @@
 #ifndef NDEBUG
 #include "shaders/generated/Debug/deferred_lighting_ps.h"
 #include "shaders/generated/Debug/deferred_lighting_vs.h"
+#include "shaders/generated/Debug/depth_only_as.h"
 #include "shaders/generated/Debug/depth_only_ms.h"
 #include "shaders/generated/Debug/depth_only_ps.h"
 #include "shaders/generated/Debug/depth_resolve_cs.h"
+#include "shaders/generated/Debug/gbuffer_velocity_as.h"
 #include "shaders/generated/Debug/gbuffer_velocity_ms.h"
 #include "shaders/generated/Debug/gbuffer_velocity_ps.h"
 #include "shaders/generated/Debug/gizmos_line_vs.h"
@@ -42,9 +44,11 @@
 #else
 #include "shaders/generated/Release/deferred_lighting_ps.h"
 #include "shaders/generated/Release/deferred_lighting_vs.h"
+#include "shaders/generated/Release/depth_only_as.h"
 #include "shaders/generated/Release/depth_only_ms.h"
 #include "shaders/generated/Release/depth_only_ps.h"
 #include "shaders/generated/Release/depth_resolve_cs.h"
+#include "shaders/generated/Release/gbuffer_velocity_as.h"
 #include "shaders/generated/Release/gbuffer_velocity_ms.h"
 #include "shaders/generated/Release/gbuffer_velocity_ps.h"
 #include "shaders/generated/Release/gizmos_line_vs.h"
@@ -184,8 +188,9 @@ auto SceneRenderer::SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>
 
 auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
                                         Matrix4 const& proj_mtx, Matrix4 const& prev_view_proj_mtx,
-                                        ShadowCascadeBoundaries const& cascade_bounds, Vector3 const& view_pos,
-                                        float const near_clip_plane, float const far_clip_plane) -> void {
+                                        ShadowCascadeBoundaries const& cascade_bounds, Frustum const& frustum_ws,
+                                        Vector3 const& view_pos, float const near_clip_plane,
+                                        float const far_clip_plane) -> void {
   ShaderPerViewConstants data;
   data.viewMtx = view_mtx;
   data.invViewMtx = view_mtx.Inverse();
@@ -194,6 +199,11 @@ auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& 
   data.viewProjMtx = view_mtx * proj_mtx;
   data.invViewProjMtx = data.viewProjMtx.Inverse();
   data.prev_view_proj_mtx = prev_view_proj_mtx;
+
+  for (auto i = 0; i < 6; i++) {
+    data.frustum_planes_ws[i] = frustum_ws.GetPlanes()[i];
+  }
+
   data.viewPos = view_pos;
   data.near_clip_plane = near_clip_plane;
   data.far_clip_plane = far_clip_plane;
@@ -208,10 +218,11 @@ auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& 
 
 auto SceneRenderer::SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
                                         Matrix4 const& view_mtx, Matrix4 const& proj_mtx,
-                                        Matrix4 const& prev_model_mtx) -> void {
+                                        Matrix4 const& prev_model_mtx, float const max_abs_scaling) -> void {
   cb.Update(ShaderPerDrawConstants{
     .modelMtx = model_mtx, .invTranspModelMtx = model_mtx.Inverse().Transpose(), .model_view_mtx = model_mtx * view_mtx,
-    .model_view_proj_mtx = model_mtx * view_mtx * proj_mtx, .prev_model_mtx = prev_model_mtx
+    .model_view_proj_mtx = model_mtx * view_mtx * proj_mtx, .prev_model_mtx = prev_model_mtx,
+    .max_abs_scaling = max_abs_scaling
   });
 }
 
@@ -533,12 +544,12 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
         cmd.SetViewports(std::array{shadowViewport});
         cmd.SetScissorRects(std::array{shadow_scissor});
 
+        Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
+
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
         SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, {}, ShadowCascadeBoundaries{},
-          Vector3{}, shadow_near_clip, shadow_far_clip);
+          shadow_frustum_ws, Vector3{}, shadow_near_clip, shadow_far_clip);
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
-
-        Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
 
         std::pmr::vector<unsigned> visible_static_submesh_instance_indices;
         CullStaticSubmeshInstances(shadow_frustum_ws, frame_packet.mesh_data, frame_packet.submesh_data,
@@ -551,7 +562,8 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
           auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
-          SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, shadowViewMtx, shadowProjMtx, {});
+          SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, shadowViewMtx, shadowProjMtx, {},
+            instance.max_abs_scaling);
 
           cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
             *frame_packet.buffers[mesh.pos_buf_local_idx]);
@@ -615,12 +627,12 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
         cmd.SetViewports(std::span{&viewport, 1});
         cmd.SetScissorRects(std::array{scissor});
 
+        Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
+
         auto& per_view_cb{AcquirePerViewConstantBuffer()};
         SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, {},
-          ShadowCascadeBoundaries{}, Vector3{}, 0, 0); // TODO pass proper near and far clip planes
+          ShadowCascadeBoundaries{}, shadow_frustum_ws, Vector3{}, 0, 0); // TODO pass proper near and far clip planes
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
-
-        Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
 
         std::pmr::vector<unsigned> visible_static_submesh_instance_indices;
         CullStaticSubmeshInstances(shadow_frustum_ws, frame_packet.mesh_data, frame_packet.submesh_data,
@@ -634,7 +646,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 
           auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
           SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, Matrix4::Identity(),
-            subcell->shadowViewProjMtx, {});
+            subcell->shadowViewProjMtx, {}, instance.max_abs_scaling);
 
           cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
             *frame_packet.buffers[mesh.pos_buf_local_idx]);
@@ -747,6 +759,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   graphics::PipelineDesc const shadow_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
+    .as = CD3DX12_SHADER_BYTECODE{g_depth_only_as_bytes, ARRAYSIZE(g_depth_only_as_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{g_depth_only_ms_bytes, ARRAYSIZE(g_depth_only_ms_bytes)},
     .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
     .rasterizer_state = shadow_rasterizer_desc
@@ -769,13 +782,14 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
 
+
   graphics::PipelineDesc const gbuffer_velocity_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{g_gbuffer_velocity_ps_bytes, ARRAYSIZE(g_gbuffer_velocity_ps_bytes)},
+    .as = CD3DX12_SHADER_BYTECODE{g_gbuffer_velocity_as_bytes, ARRAYSIZE(g_gbuffer_velocity_as_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{g_gbuffer_velocity_ms_bytes, ARRAYSIZE(g_gbuffer_velocity_ms_bytes)},
     .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
     .rt_formats = gbuffer_velocity_format
   };
-
   gbuffer_velocity_pso_ = device_->CreatePipelineState(gbuffer_velocity_pso_desc, sizeof(GBufferDrawParams) / 4);
 
   graphics::PipelineDesc const deferred_lighting_pso_desc{
@@ -801,7 +815,6 @@ auto SceneRenderer::RecreatePipelines() -> void {
     .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_, .rasterizer_state = skybox_rasterizer_desc,
     .rt_formats = color_format
   };
-
   skybox_pso_ = device_->CreatePipelineState(skybox_pso_desc, sizeof(SkyboxDrawParams) / 4);
 
   graphics::PipelineDesc const ssao_pso_desc{
@@ -1283,10 +1296,13 @@ auto SceneRenderer::ExtractCurrentState() -> void {
         packet.submesh_data.emplace_back(static_cast<unsigned>(packet.mesh_data.size() - 1), submesh.GetFirstMeshlet(),
           submesh.GetMeshletCount(), submesh.GetBaseVertex(), mtl_buf_local_idx, submesh.GetBounds());
 
-        auto const local_to_world_mtx{comp->GetEntity()->GetTransform().GetLocalToWorldMatrix()};
+        auto const& transform{comp->GetEntity()->GetTransform()};
+        auto const local_to_world_mtx{transform.GetLocalToWorldMatrix()};
+        auto const scaling{transform.GetWorldScale()};
+        auto const max_abs_scale{std::max({std::abs(scaling[0]), std::abs(scaling[1]), std::abs(scaling[2])})};
 
         packet.instance_data.emplace_back(static_cast<unsigned>(packet.submesh_data.size() - 1),
-          local_to_world_mtx, sorcery::detail::GetPrevModelMtx(*comp));
+          local_to_world_mtx, sorcery::detail::GetPrevModelMtx(*comp), max_abs_scale);
 
         sorcery::detail::SetPrevModelMtx(*comp, local_to_world_mtx);
       }
@@ -1842,7 +1858,7 @@ auto SceneRenderer::Render() -> void {
 
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer()};
     SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, prev_cam_view_proj_mtx, shadow_cascade_boundaries,
-      cam_data.position, cam_data.near_plane, cam_data.far_plane);
+      cam_frust_ws, cam_data.position, cam_data.near_plane, cam_data.far_plane);
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
@@ -1872,7 +1888,7 @@ auto SceneRenderer::Render() -> void {
 
       auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
       SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, cam_view_mtx, cam_proj_mtx,
-        instance.prev_local_to_world_mtx);
+        instance.prev_local_to_world_mtx, instance.max_abs_scaling);
 
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, pos_buf_idx),
         *frame_packet.buffers[mesh.pos_buf_local_idx]);

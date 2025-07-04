@@ -24,24 +24,16 @@ struct AABB {
 };
 
 
-struct Plane {
-  float a, b, c, d;
-
-  LEOPPHAPI auto Normalize() noexcept -> void;
-  [[nodiscard]] LEOPPHAPI auto Normalized() const noexcept -> Plane;
-
-  [[nodiscard]] LEOPPHAPI auto DistanceToPoint(Vector3 const& p) const noexcept -> float;
-};
-
-
 class Frustum {
   // Their normals point inward
-  std::array<Plane, 6> mPlanes{};
+  std::array<Vector4, 6> planes_{};
 
 public:
   LEOPPHAPI explicit Frustum(Matrix4 const& mtx);
 
-  [[nodiscard]] LEOPPHAPI auto Intersects(BoundingSphere const& boundingSphere) const noexcept -> bool;
+  [[nodiscard]] auto GetPlanes() const noexcept -> std::span<Vector4 const, 6>;
+
+  [[nodiscard]] LEOPPHAPI auto Intersects(BoundingSphere const& bounding_sphere) const noexcept -> bool;
   [[nodiscard]] LEOPPHAPI auto Intersects(AABB const& aabb) const noexcept -> bool;
 };
 }

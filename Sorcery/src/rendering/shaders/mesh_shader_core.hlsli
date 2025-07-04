@@ -1,6 +1,7 @@
 #ifndef MESH_SHADER_CORE_HLSLI
 #define MESH_SHADER_CORE_HLSLI
 
+#include "meshlet_culling.hlsli"
 #include "shader_interop.h"
 
 
@@ -15,6 +16,43 @@ struct Meshlet {
   uint primitive_count;
   uint primitive_offset;
 };
+
+
+struct CullingPayload {
+  uint meshlet_indices[AS_GROUP_SIZE];
+};
+
+
+void AmpShaderCore(
+  uint const dtid,
+  uint const meshlet_count,
+  uint const cull_data_buf_idx,
+  uint const per_draw_cb_idx,
+  uint const per_view_cb_idx,
+  CullingPayload payload) {
+  bool visible = false;
+
+  StructuredBuffer<MeshletCullData> const cull_data = ResourceDescriptorHeap[cull_data_buf_idx];
+  ConstantBuffer<ShaderPerDrawConstants> const per_draw_cb = ResourceDescriptorHeap[per_draw_cb_idx];
+  ConstantBuffer<ShaderPerViewConstants> const per_view_cb = ResourceDescriptorHeap[per_view_cb_idx];
+
+  // Check bounds of meshlet cull data resource
+  if (dtid < meshlet_count) {
+    // Do visibility testing for this thread
+    visible = IsMeshletVisible(cull_data[dtid], per_draw_cb.modelMtx, per_view_cb.frustum_planes_ws,
+      per_draw_cb.max_abs_scaling, per_view_cb.viewPos);
+  }
+
+  // Compact visible meshlets into the export payload array
+  if (visible) {
+    uint index = WavePrefixCountBits(visible);
+    payload.meshlet_indices[index] = dtid;
+  }
+
+  // Dispatch the required number of MS threadgroups to render the visible meshlets
+  uint const visible_count = WaveActiveCountBits(visible);
+  DispatchMesh(visible_count, 1, 1, payload);
+}
 
 
 #define MS_THREAD_GROUP_SIZE 128
@@ -41,12 +79,19 @@ void MeshShaderCore(
   uint const dispatch_instance_count,
   uint const base_vertex,
   bool const idx32,
+#if !defined(MESH_SHADER_NO_PAYLOAD)
+  CullingPayload const payload,
+#endif
   out PsIn out_vertices[MESHLET_MAX_VERTS],
 #if !defined(MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES)
   out PerTriData out_primitives[MESHLET_MAX_PRIMS],
 #endif
   out uint3 out_indices[MESHLET_MAX_PRIMS]) {
+#if !defined(MESH_SHADER_NO_PAYLOAD)
+  uint const meshlet_idx = payload.meshlet_indices[gid];
+#else
   uint const meshlet_idx = gid / dispatch_instance_count;
+#endif
   StructuredBuffer<Meshlet> const meshlets = ResourceDescriptorHeap[meshlet_buf_idx];
   Meshlet const meshlet = meshlets[meshlet_idx + dispatch_meshlet_offset];
 
@@ -119,7 +164,12 @@ void MeshShaderCore(
 }
 
 
+#define DECLARE_AMP_SHADER_MAIN(MainFuncName) [numthreads(AS_GROUP_SIZE, 1, 1)]\
+  void MainFuncName(const uint dtid : SV_DispatchThreadID)
+
+
 #ifdef MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES
+#ifdef MESH_SHADER_NO_PAYLOAD
 #define DECLARE_MESH_SHADER_MAIN(MainFuncName) [outputtopology("triangle")]\
 [numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]\
 void MainFuncName(\
@@ -128,6 +178,17 @@ void MainFuncName(\
   out vertices PsIn out_vertices[MESHLET_MAX_VERTS], \
   out indices uint3 out_indices[MESHLET_MAX_PRIMS])
 #else
+#define DECLARE_MESH_SHADER_MAIN(MainFuncName) [outputtopology("triangle")]\
+[numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]\
+void MainFuncName(\
+  const uint gid : SV_GroupID, \
+  const uint gtid : SV_GroupThreadID, \
+  in payload CullingPayload payload, \
+  out vertices PsIn out_vertices[MESHLET_MAX_VERTS], \
+  out indices uint3 out_indices[MESHLET_MAX_PRIMS])
+#endif
+#else
+#ifdef MESH_SHADER_NO_PAYLOAD
 #define DECLARE_MESH_SHADER_MAIN(MainFuncName, PrimitiveDataType) [outputtopology("triangle")]\
 [numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]\
 void MainFuncName(\
@@ -136,6 +197,17 @@ void MainFuncName(\
   out vertices PsIn out_vertices[MESHLET_MAX_VERTS],\
   out primitives PrimitiveDataType out_primitives[MESHLET_MAX_PRIMS],\
   out indices uint3 out_indices[MESHLET_MAX_PRIMS])
+#else
+#define DECLARE_MESH_SHADER_MAIN(MainFuncName, PrimitiveDataType) [outputtopology("triangle")]\
+[numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]\
+void MainFuncName(\
+  const uint gid : SV_GroupID,\
+  const uint gtid : SV_GroupThreadID,\
+  in payload CullingPayload payload,\
+  out vertices PsIn out_vertices[MESHLET_MAX_VERTS],\
+  out primitives PrimitiveDataType out_primitives[MESHLET_MAX_PRIMS],\
+  out indices uint3 out_indices[MESHLET_MAX_PRIMS])
+#endif
 #endif
 
 #endif
