@@ -1,12 +1,12 @@
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <span>
 #include <string>
-#include <variant>
 #include <vector>
 
 #include "Resource.hpp"
@@ -120,20 +120,17 @@ struct SubmeshMeshletRange {
 };
 
 
-[[nodiscard]] LEOPPHAPI auto ComputeMeshlets(
-  std::variant<std::span<std::uint16_t const>, std::span<std::uint32_t const>> const& indices,
-  std::variant<std::span<Vector3 const>, std::span<Vector4 const>> const& positions,
-  std::span<SubmeshFaceRange const> submeshes, std::vector<MeshletData>& out_meshlets,
-  std::vector<std::uint8_t>& out_unique_vertex_indices, std::vector<MeshletTriangleData>& out_primitive_indices,
-  std::vector<SubmeshMeshletRange>& out_submeshes, std::uint16_t max_verts_per_meshlet = kMeshletMaxVerts,
-  std::uint16_t max_prims_per_meshlet = kMeshletMaxPrims) -> bool;
-
-[[nodiscard]] LEOPPHAPI auto ComputeMeshlets(
-  std::variant<std::span<std::uint16_t const>, std::span<std::uint32_t const>> const& indices,
-  std::variant<std::span<Vector3 const>, std::span<Vector4 const>> const& positions,
-  std::vector<MeshletData>& out_meshlets,
-  std::vector<std::uint8_t>& out_unique_vertex_indices,
-  std::vector<MeshletTriangleData>& out_primitive_indices,
-  std::uint16_t max_verts_per_meshlet = kMeshletMaxVerts,
-  std::uint16_t max_prims_per_meshlet = kMeshletMaxPrims) -> bool;
+template<typename IdxType, typename PosType>
+  requires (std::same_as<IdxType, std::uint16_t> || std::same_as<IdxType, std::uint32_t>)
+           && (std::same_as<PosType, Vector3> || std::same_as<PosType, Vector4>)
+[[nodiscard]] auto ComputeMeshlets(std::span<IdxType const> indices, std::span<PosType const> positions,
+                                   std::vector<MeshletData>& out_meshlets,
+                                   std::vector<std::uint8_t>& out_unique_vertex_indices,
+                                   std::vector<MeshletTriangleData>& out_primitive_indices,
+                                   std::vector<MeshletCullData>& out_cull_data,
+                                   std::uint16_t max_verts_per_meshlet = kMeshletMaxVerts,
+                                   std::uint16_t max_prims_per_meshlet = kMeshletMaxPrims) -> bool;
 }
+
+
+#include "mesh.inl"

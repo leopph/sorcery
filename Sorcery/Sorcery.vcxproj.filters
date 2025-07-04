@@ -410,6 +410,9 @@
     </None>
     <None Include="src\rendering\shaders\taa_resolve.hlsli" />
     <None Include="src\rendering\shaders\CatmullRom.hlsli" />
+    <None Include="src\resources\mesh.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />

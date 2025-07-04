@@ -20,6 +20,11 @@
       "version>=": "1.91.9"
     },
     {
+      "name": "directxmesh",
+      "features": [ "dx12", "spectre" ],
+      "version>=": "2025-03-24"
+    },
+    {
       "name": "nativefiledialog-extended",
       "version>=": "1.2.1"
     },

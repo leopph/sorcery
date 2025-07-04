@@ -634,8 +634,8 @@ auto ResourceManager::CreateDefaultResources() -> void {
     CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cube_data.tangents);
     cube_data.uvs = kCubeUvs;
 
-    if (!ComputeMeshlets(kCubeIndices, kCubePositions, cube_data.meshlets,
-      cube_data.vertex_indices, cube_data.triangle_indices)) {
+    if (!ComputeMeshlets<std::uint32_t, Vector3>(kCubeIndices, kCubePositions, cube_data.meshlets,
+      cube_data.vertex_indices, cube_data.triangle_indices, cube_data.cull_data)) {
       throw std::runtime_error{"Failed to compute meshlets for default cube mesh."};
     }
 
@@ -659,8 +659,8 @@ auto ResourceManager::CreateDefaultResources() -> void {
     CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, plane_data.tangents);
     plane_data.uvs = kQuadUvs;
 
-    if (!ComputeMeshlets(kQuadIndices, kQuadPositions, plane_data.meshlets,
-      plane_data.vertex_indices, plane_data.triangle_indices)) {
+    if (!ComputeMeshlets<std::uint32_t, Vector3>(kQuadIndices, kQuadPositions, plane_data.meshlets,
+      plane_data.vertex_indices, plane_data.triangle_indices, plane_data.cull_data)) {
       throw std::runtime_error{"Failed to compute meshlets for default plane mesh."};
     }
 
@@ -685,8 +685,8 @@ auto ResourceManager::CreateDefaultResources() -> void {
     CalculateTangents(sphere_data.positions, sphere_data.uvs, sphere_indices,
       sphere_data.tangents);
 
-    if (!ComputeMeshlets(sphere_indices, sphere_data.positions, sphere_data.meshlets,
-      sphere_data.vertex_indices, sphere_data.triangle_indices)) {
+    if (!ComputeMeshlets<std::uint32_t, Vector3>(sphere_indices, sphere_data.positions, sphere_data.meshlets,
+      sphere_data.vertex_indices, sphere_data.triangle_indices, sphere_data.cull_data)) {
       throw std::runtime_error{"Failed to compute meshlets for default sphere mesh."};
     }
 

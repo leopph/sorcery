@@ -72,6 +72,14 @@ struct MeshletData {
 };
 
 
+// Cull data for meshlets, used for frustum culling or other optimizations
+struct MeshletCullData {
+  BoundingSphere bounding_sphere;
+  Vector<std::uint8_t, 4> normal_cone;
+  float apex_offset;
+};
+
+
 // Describes a triangle in a meshlet
 struct MeshletTriangleData {
   std::uint32_t idx0 : 10;
@@ -102,6 +110,7 @@ struct MeshData {
   std::vector<MeshletData> meshlets;
   std::vector<std::uint8_t> vertex_indices;
   std::vector<MeshletTriangleData> triangle_indices;
+  std::vector<MeshletCullData> cull_data;
   std::vector<MaterialSlotInfo> material_slots;
   std::vector<SubmeshData> submeshes;
   std::vector<Animation> animations;
