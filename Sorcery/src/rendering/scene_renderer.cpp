@@ -1021,7 +1021,7 @@ auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const sub
           group_count_per_instance * batch_instance_count))
       };
 
-      cmd.DispatchMesh(group_count, 1, 1);
+      cmd.DispatchMesh(DivRoundUp<std::uint32_t>(group_count, AS_GROUP_SIZE), 1, 1);
     }
   }
 }
