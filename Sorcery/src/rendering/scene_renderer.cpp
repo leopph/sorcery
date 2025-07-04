@@ -167,10 +167,14 @@ auto SceneRenderer::CullStaticSubmeshInstances(Frustum const& frustum_ws, std::s
     auto const& submesh{submeshes[instance.submesh_local_idx]};
     auto const& mesh{meshes[submesh.mesh_local_idx]};
 
-    if (frustum_ws.Intersects(mesh.bounds.Transform(instance.local_to_world_mtx)) && frustum_ws.Intersects(
+    // We deem all instances visible on the CPU side because we cull the meshlets on the GPU.
+    // TODO remove this code to reduce CPU overhead.
+    visible_static_submesh_instance_indices.emplace_back(i);
+
+    /*if (frustum_ws.Intersects(mesh.bounds.Transform(instance.local_to_world_mtx)) && frustum_ws.Intersects(
           submesh.bounds.Transform(instance.local_to_world_mtx))) {
       visible_static_submesh_instance_indices.emplace_back(i);
-    }
+    }*/
   }
 }
 
