@@ -1,17 +1,5 @@
 #pragma once
 
-#include "../Core.hpp"
-
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <d3d12.h>
-#include <d3dx12.h>
-#include <dxgi1_6.h>
-#include <wrl/client.h>
-
-#include <D3D12MemAlloc.h>
-#include <mimalloc.h>
-
 #include <atomic>
 #include <concepts>
 #include <cstdint>
@@ -23,6 +11,19 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <d3d12.h>
+#include <d3dx12.h>
+#include <dxgi1_6.h>
+#include <wrl/client.h>
+
+#include <D3D12MemAlloc.h>
+#include <mimalloc.h>
+
+#include "../Core.hpp"
+#include "../fast_vector.hpp"
 
 // Returns the index of the member if all the pipeline parameters are considered a single buffer of the specified type.
 #define PIPELINE_PARAM_INDEX(BufferType, MemberName) static_cast<UINT>(offsetof(BufferType, MemberName) / 4)
@@ -200,7 +201,7 @@ public:
 
 private:
   Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> heap_;
-  std::vector<UINT> free_indices_;
+  FastVector<UINT> free_indices_;
   std::mutex mutex_;
   UINT increment_size_;
   UINT reserved_idx_count_;
@@ -315,8 +316,8 @@ public:
   LEOPPHAPI auto CreateAliasingResources(std::span<BufferDesc const> buffer_descs,
                                          std::span<AliasedTextureCreateInfo const> texture_infos,
                                          CpuAccess cpu_access,
-                                         std::pmr::vector<SharedDeviceChildHandle<Buffer>>* buffers,
-                                         std::pmr::vector<SharedDeviceChildHandle<Texture>>* textures) -> void;
+                                         FastVector<SharedDeviceChildHandle<Buffer>>* buffers,
+                                         FastVector<SharedDeviceChildHandle<Texture>>* textures) -> void;
 
   LEOPPHAPI auto DestroyBuffer(Buffer const* buffer) const -> void;
   LEOPPHAPI auto DestroyTexture(Texture const* texture) const -> void;
@@ -375,7 +376,7 @@ private:
   SharedDeviceChildHandle<Fence> idle_fence_;
   SharedDeviceChildHandle<Fence> execute_barrier_fence_;
 
-  std::vector<details::ExecuteBarrierCmdListRecord> execute_barrier_cmd_lists_;
+  FastVector<details::ExecuteBarrierCmdListRecord> execute_barrier_cmd_lists_;
   std::mutex execute_barrier_mutex_;
 
   CD3DX12FeatureSupport supported_features_;
@@ -519,7 +520,7 @@ private:
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list_;
   details::PipelineResourceStateTracker local_resource_states_;
-  std::vector<details::PendingBarrier, mi_stl_allocator<details::PendingBarrier>> pending_barriers_;
+  FastVector<details::PendingBarrier> pending_barriers_;
   details::DescriptorHeap const* dsv_heap_;
   details::DescriptorHeap const* rtv_heap_;
   details::DescriptorHeap const* res_desc_heap_;
@@ -562,7 +563,7 @@ private:
   explicit SwapChain(Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain, UINT present_flags);
 
   Microsoft::WRL::ComPtr<IDXGISwapChain4> swap_chain_;
-  std::vector<SharedDeviceChildHandle<Texture>> textures_;
+  FastVector<SharedDeviceChildHandle<Texture>> textures_;
   std::atomic<UINT> sync_interval_{0};
   UINT present_flags_;
 

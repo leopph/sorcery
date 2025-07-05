@@ -540,8 +540,8 @@ auto GraphicsDevice::CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamp
 auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const buffer_descs,
                                              std::span<AliasedTextureCreateInfo const> const texture_infos,
                                              CpuAccess cpu_access,
-                                             std::pmr::vector<SharedDeviceChildHandle<Buffer>>* buffers,
-                                             std::pmr::vector<SharedDeviceChildHandle<Texture>>* textures) -> void {
+                                             FastVector<SharedDeviceChildHandle<Buffer>>* buffers,
+                                             FastVector<SharedDeviceChildHandle<Texture>>* textures) -> void {
   D3D12_RESOURCE_ALLOCATION_INFO buf_alloc_info{0, 0};
   D3D12_RESOURCE_ALLOCATION_INFO rt_ds_alloc_info{0, 0};
   D3D12_RESOURCE_ALLOCATION_INFO non_rt_ds_alloc_info{0, 0};
@@ -724,7 +724,7 @@ auto GraphicsDevice::SignalFence(Fence& fence) const -> void {
 
 
 auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) -> void {
-  std::vector<D3D12_TEXTURE_BARRIER, mi_stl_allocator<D3D12_TEXTURE_BARRIER>> pending_tex_barriers;
+  FastVector<D3D12_TEXTURE_BARRIER> pending_tex_barriers;
 
   for (auto const& cmd_list : cmd_lists) {
     for (auto const& pending_barrier : cmd_list.pending_barriers_) {
@@ -759,7 +759,7 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
     std::array{static_cast<ID3D12CommandList*>(pending_barrier_cmd.cmd_list_.Get())}.data());
   SignalFence(*execute_barrier_fence_);
 
-  std::vector<ID3D12CommandList*, mi_stl_allocator<ID3D12CommandList*>> submit_list;
+  FastVector<ID3D12CommandList*> submit_list;
   submit_list.reserve(cmd_lists.size());
   std::ranges::transform(cmd_lists, std::back_inserter(submit_list), [](CommandList const& cmd_list) {
     return cmd_list.cmd_list_.Get();
@@ -1447,7 +1447,7 @@ auto CommandList::SetRenderTargets(std::span<Texture const*> render_targets, Tex
       pipeline_allows_ds_write_ ? D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE : D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ);
   }
 
-  std::vector<D3D12_CPU_DESCRIPTOR_HANDLE, mi_stl_allocator<D3D12_CPU_DESCRIPTOR_HANDLE>> rt;
+  FastVector<D3D12_CPU_DESCRIPTOR_HANDLE> rt;
   rt.reserve(render_targets.size());
   std::ranges::transform(render_targets, std::back_inserter(rt), [this](Texture const* const tex) {
     return tex ? rtv_heap_->GetDescriptorCpuHandle(tex->rtv_) : D3D12_CPU_DESCRIPTOR_HANDLE{};
