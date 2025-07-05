@@ -31,7 +31,7 @@ Some screenshots from Sorcery's editor, Mage!
   * Depth and normal shadow bias
   * HDR Skybox
   * Mipmapping
-  * Frustum culling for cameras and shadows
+  * Meshlet culling on GPU for cameras and shadows
   * Screen Space Ambient Occlusion (SSAO)
   * Multi-camera support with custom viewports and render targets
   * Skeletal animations with compute skinning
