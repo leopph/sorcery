@@ -1433,7 +1433,8 @@ auto CommandList::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY const primitive_
 }
 
 
-auto CommandList::SetRenderTargets(std::span<Texture const*> render_targets, Texture const* depth_stencil) -> void {
+auto CommandList::SetRenderTargets(std::span<Texture const* const> const render_targets,
+                                   Texture const* const depth_stencil) -> void {
   std::ranges::for_each(render_targets, [this](Texture const* const tex) {
     if (tex) {
       GenerateBarrier(*tex, D3D12_BARRIER_SYNC_RENDER_TARGET, D3D12_BARRIER_ACCESS_RENDER_TARGET,
