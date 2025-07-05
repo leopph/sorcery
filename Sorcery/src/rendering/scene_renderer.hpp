@@ -325,10 +325,6 @@ private:
 
   static auto CullLights(Frustum const& frustum_ws, std::span<LightData const> lights,
                          std::pmr::vector<unsigned>& visible_light_indices) -> void;
-  static auto CullStaticSubmeshInstances(Frustum const& frustum_ws, std::span<MeshData const> meshes,
-                                         std::span<SubmeshData const> submeshes,
-                                         std::span<InstanceData const> instances,
-                                         std::pmr::vector<unsigned>& visible_static_submesh_instance_indices) -> void;
 
 
   static auto SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int rt_width, int rt_height,

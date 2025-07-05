@@ -155,30 +155,6 @@ auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData co
 }
 
 
-auto SceneRenderer::CullStaticSubmeshInstances(Frustum const& frustum_ws, std::span<MeshData const> const meshes,
-                                               std::span<SubmeshData const> const submeshes,
-                                               std::span<InstanceData const> const instances,
-                                               std::pmr::vector<unsigned>& visible_static_submesh_instance_indices) ->
-  void {
-  visible_static_submesh_instance_indices.clear();
-
-  for (unsigned i{0}; i < static_cast<unsigned>(instances.size()); i++) {
-    auto const& instance{instances[i]};
-    auto const& submesh{submeshes[instance.submesh_local_idx]};
-    auto const& mesh{meshes[submesh.mesh_local_idx]};
-
-    // We deem all instances visible on the CPU side because we cull the meshlets on the GPU.
-    // TODO remove this code to reduce CPU overhead.
-    visible_static_submesh_instance_indices.emplace_back(i);
-
-    /*if (frustum_ws.Intersects(mesh.bounds.Transform(instance.local_to_world_mtx)) && frustum_ws.Intersects(
-          submesh.bounds.Transform(instance.local_to_world_mtx))) {
-      visible_static_submesh_instance_indices.emplace_back(i);
-    }*/
-  }
-}
-
-
 auto SceneRenderer::SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int const rt_width,
                                          int const rt_height, Vector3 const& ambient_light,
                                          ShadowParams const& shadow_params) -> void {
@@ -555,12 +531,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           shadow_frustum_ws, Vector3{}, shadow_near_clip, shadow_far_clip);
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
-        std::pmr::vector<unsigned> visible_static_submesh_instance_indices;
-        CullStaticSubmeshInstances(shadow_frustum_ws, frame_packet.mesh_data, frame_packet.submesh_data,
-          frame_packet.instance_data, visible_static_submesh_instance_indices);
-
-        for (auto const instance_idx : visible_static_submesh_instance_indices) {
-          auto const& instance{frame_packet.instance_data[instance_idx]};
+        for (auto const& instance : frame_packet.instance_data) {
           auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
           auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
           auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
@@ -637,12 +608,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
           ShadowCascadeBoundaries{}, shadow_frustum_ws, Vector3{}, 0, 0); // TODO pass proper near and far clip planes
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
-        std::pmr::vector<unsigned> visible_static_submesh_instance_indices;
-        CullStaticSubmeshInstances(shadow_frustum_ws, frame_packet.mesh_data, frame_packet.submesh_data,
-          frame_packet.instance_data, visible_static_submesh_instance_indices);
-
-        for (auto const instance_idx : visible_static_submesh_instance_indices) {
-          auto const& instance{frame_packet.instance_data[instance_idx]};
+        for (auto const& instance : frame_packet.instance_data) {
           auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
           auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
           auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
@@ -1801,10 +1767,6 @@ auto SceneRenderer::Render() -> void {
       cam_view_proj_mtx, frame_packet.shadow_params.distance);
     DrawPunctualShadowMaps(*punctual_shadow_atlas_, frame_packet, cam_cmd);
 
-    std::pmr::vector<unsigned> visible_static_submesh_instance_indices;
-    CullStaticSubmeshInstances(cam_frust_ws, frame_packet.mesh_data, frame_packet.submesh_data,
-      frame_packet.instance_data, visible_static_submesh_instance_indices);
-
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer()};
     SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, prev_cam_view_proj_mtx, shadow_cascade_boundaries,
       cam_frust_ws, cam_data.position, cam_data.near_plane, cam_data.far_plane);
@@ -1827,8 +1789,7 @@ auto SceneRenderer::Render() -> void {
     cam_cmd.ClearRenderTarget(*velocity_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cam_cmd.ClearDepthStencil(*depth_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
 
-    for (auto const instance_idx : visible_static_submesh_instance_indices) {
-      auto const& instance{frame_packet.instance_data[instance_idx]};
+    for (auto const& instance : frame_packet.instance_data) {
       auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
       auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
       auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
