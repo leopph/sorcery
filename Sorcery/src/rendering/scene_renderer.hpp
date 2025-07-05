@@ -299,6 +299,8 @@ private:
     std::array<float, 4> background_color;
 
     graphics::SharedDeviceChildHandle<graphics::Texture> skybox_cubemap;
+    graphics::SharedDeviceChildHandle<graphics::Texture> irradiance_map;
+    bool draw_irradiance_map;
 
     Vector3 ambient_light;
 

@@ -24,6 +24,35 @@ Scene* Scene::active_scene_{nullptr};
 std::vector<Scene*> Scene::all_scenes_;
 
 
+auto detail::GetIrradianceMap(Scene const& scene) -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+  return scene.irradiance_map_;
+}
+
+
+auto detail::RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT const format) -> void {
+  if (!scene.skybox_) {
+    return;
+  }
+
+  auto const& skybox_desc{scene.skybox_->GetTex()->GetDesc()};
+
+  scene.irradiance_map_ = device.CreateTexture(graphics::TextureDesc{
+      .dimension = graphics::TextureDimension::kCube,
+      .width = skybox_desc.width,
+      .height = skybox_desc.height,
+      .depth_or_array_size = 6,
+      .mip_levels = 1,
+      .format = format,
+      .sample_count = 1,
+      .depth_stencil = false,
+      .render_target = true,
+      .shader_resource = true,
+      .unordered_access = false
+    }, graphics::CpuAccess::kNone,
+    std::array{D3D12_CLEAR_VALUE{.Format = format, .Color = {0.0F, 0.0F, 0.0F, 1.0F}}}.data());
+}
+
+
 auto Scene::GetActiveScene() noexcept -> Scene* {
   return active_scene_;
 }
@@ -364,5 +393,6 @@ auto Scene::GetSkybox() const noexcept -> Cubemap* {
 
 auto Scene::SetSkybox(Cubemap* const skybox) noexcept -> void {
   skybox_ = skybox;
+  irradiance_map_ = nullptr;
 }
 }

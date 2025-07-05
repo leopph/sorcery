@@ -1429,6 +1429,16 @@ auto SceneRenderer::ExtractCurrentState() -> void {
     if (active_scene->GetSkyMode() == SkyMode::Skybox) {
       if (auto const cubemap{active_scene->GetSkybox()}) {
         packet.skybox_cubemap = cubemap->GetTex();
+
+        if (auto const irradiance_map{sorcery::detail::GetIrradianceMap(*active_scene)};
+          !irradiance_map || irradiance_map->GetDesc().format != color_buffer_format_) {
+          sorcery::detail::RecreateIrradianceMap(*active_scene, *device_, color_buffer_format_);
+          packet.draw_irradiance_map = true;
+        } else {
+          packet.draw_irradiance_map = false;
+        }
+
+        packet.irradiance_map = sorcery::detail::GetIrradianceMap(*active_scene);
       }
     }
   }
@@ -1613,29 +1623,23 @@ auto SceneRenderer::Render() -> void {
       1, 1);
   }
 
-  if (frame_packet.skybox_cubemap) {
-    RenderTarget::Desc const irradiance_rt_desc{
-      512, 512, frame_packet.color_buffer_format, std::nullopt, 1,
-      L"Irradiance Map RenderTarget", false, {0.0F, 0.0F, 0.0F, 1.0F}, DEPTH_CLEAR_VALUE, 0,
-      graphics::TextureDimension::kCube, 6
-    };
-
-    auto const irradiance_rt{render_manager_->AcquireTemporaryRenderTarget(irradiance_rt_desc)};
+  if (frame_packet.draw_irradiance_map) {
+    auto const& irradiance_map_desc{frame_packet.irradiance_map->GetDesc()};
 
     CD3DX12_VIEWPORT const irradiance_viewport{
-      0.0F, 0.0F, static_cast<FLOAT>(irradiance_rt_desc.width), static_cast<FLOAT>(irradiance_rt_desc.height)
+      0.0F, 0.0F, static_cast<FLOAT>(irradiance_map_desc.width), static_cast<FLOAT>(irradiance_map_desc.height)
     };
 
     D3D12_RECT const irradiance_scissor{
-      0, 0, static_cast<LONG>(irradiance_rt_desc.width), static_cast<LONG>(irradiance_rt_desc.height)
+      0, 0, static_cast<LONG>(irradiance_map_desc.width), static_cast<LONG>(irradiance_map_desc.height)
     };
 
     prepare_cmd.SetPipelineState(*frame_packet.irradiance_pso);
     prepare_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    prepare_cmd.SetRenderTargets(std::array{irradiance_rt->GetColorTex().get()}, nullptr);
+    prepare_cmd.SetRenderTargets(std::array{frame_packet.irradiance_map.get()}, nullptr);
     prepare_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&irradiance_viewport), 1});
     prepare_cmd.SetScissorRects(std::span{&irradiance_scissor, 1});
-    prepare_cmd.ClearRenderTarget(*irradiance_rt->GetColorTex(), std::array{0.F, 0.F, 0.F, 1.F}, {});
+    prepare_cmd.ClearRenderTarget(*frame_packet.irradiance_map, std::array{0.F, 0.F, 0.F, 1.F}, {});
 
     auto const cube_mesh{App::Instance().GetResourceManager().GetCubeMesh()};
     prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, meshlet_buf_idx),
