@@ -1,11 +1,12 @@
 #include "render_manager.hpp"
 
-#include "../Util.hpp"
-#include "shaders/shader_interop.h"
-
 #include <cstdint>
 #include <stdexcept>
 #include <utility>
+
+#include "../fast_vector.hpp"
+#include "../Util.hpp"
+#include "shaders/shader_interop.h"
 
 
 namespace sorcery::rendering {
@@ -119,13 +120,13 @@ auto RenderManager::UpdateTexture(graphics::Texture const& tex, UINT const subre
     }
   }
 
-  std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts;
+  FastVector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts;
   layouts.resize(data.size());
 
-  std::vector<UINT> row_counts;
+  FastVector<UINT> row_counts;
   row_counts.resize(data.size());
 
-  std::vector<UINT64> row_sizes;
+  FastVector<UINT64> row_sizes;
   row_sizes.resize(data.size());
 
   device_->GetCopyableFootprints(tex.GetDesc(), subresource_offset, static_cast<UINT>(data.size()),
@@ -189,7 +190,7 @@ auto RenderManager::CreateReadOnlyTexture(
 
   auto tex{device_->CreateTexture(desc, graphics::CpuAccess::kNone, nullptr)};
 
-  std::vector<D3D12_SUBRESOURCE_DATA> subresource_data;
+  FastVector<D3D12_SUBRESOURCE_DATA> subresource_data;
   subresource_data.reserve(img.GetImageCount());
 
   for (std::size_t i{0}; i < img.GetImageCount(); i++) {
