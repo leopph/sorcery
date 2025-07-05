@@ -23,6 +23,10 @@
 			"name": "directxmesh",
 			"features": [ "dx12", "spectre" ],
 			"version>=": "2025-03-24"
+		},
+		{
+			"name": "mimalloc",
+			"version>=": "2.2.3"
 		}
 	]
 }

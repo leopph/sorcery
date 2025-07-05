@@ -10,6 +10,7 @@
 #include <wrl/client.h>
 
 #include <D3D12MemAlloc.h>
+#include <mimalloc.h>
 
 #include <atomic>
 #include <concepts>
@@ -214,7 +215,9 @@ public:
   [[nodiscard]] auto Get(std::uint8_t num_params) -> Microsoft::WRL::ComPtr<ID3D12RootSignature>;
 
 private:
-  std::unordered_map<std::uint8_t, Microsoft::WRL::ComPtr<ID3D12RootSignature>> root_signatures_;
+  std::unordered_map<std::uint8_t, Microsoft::WRL::ComPtr<ID3D12RootSignature>, std::hash<std::uint8_t>, std::equal_to<
+                       std::uint8_t>, mi_stl_allocator<std::pair<
+                       std::uint8_t const, Microsoft::WRL::ComPtr<ID3D12RootSignature>>>> root_signatures_;
   std::mutex mutex_;
 };
 
@@ -251,7 +254,8 @@ public:
   }
 
 private:
-  std::unordered_map<ID3D12Resource*, ResourceStateType> resource_states_;
+  std::unordered_map<ID3D12Resource*, ResourceStateType, std::hash<ID3D12Resource*>, std::equal_to<ID3D12Resource*>,
+                     mi_stl_allocator<std::pair<ID3D12Resource* const, ResourceStateType>>> resource_states_;
 };
 
 
@@ -515,7 +519,7 @@ private:
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_;
   Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> cmd_list_;
   details::PipelineResourceStateTracker local_resource_states_;
-  std::vector<details::PendingBarrier> pending_barriers_;
+  std::vector<details::PendingBarrier, mi_stl_allocator<details::PendingBarrier>> pending_barriers_;
   details::DescriptorHeap const* dsv_heap_;
   details::DescriptorHeap const* rtv_heap_;
   details::DescriptorHeap const* res_desc_heap_;
