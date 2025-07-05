@@ -1417,6 +1417,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
   packet.background_color = {0, 0, 0, 1};
   packet.skybox_cubemap = nullptr;
+  packet.irradiance_map = nullptr;
 
   if (auto const active_scene{Scene::GetActiveScene()}) {
     packet.ambient_light = active_scene->GetAmbientLightVector();
