@@ -588,9 +588,8 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
           DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
             PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
-            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, instance_count),
-            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, instance_offset),
-            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex), cmd);
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex),
+            cmd);
         }
       }
 
@@ -671,9 +670,8 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 
           DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
             PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
-            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, instance_count),
-            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, instance_offset),
-            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex), cmd);
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex),
+            cmd);
         }
       }
     }
@@ -930,35 +928,35 @@ auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
 
 auto SceneRenderer::DrawSubmesh(SubmeshData const& submesh, std::optional<UINT> const meshlet_count_param_idx,
                                 std::optional<UINT> const meshlet_offset_param_idx,
-                                std::optional<UINT> const instance_count_param_idx,
-                                std::optional<UINT> const instance_offset_param_idx,
                                 std::optional<UINT> const base_vertex_param_idx,
                                 graphics::CommandList const& cmd) -> void {
   DrawSubmesh(submesh.meshlet_count, submesh.first_meshlet, submesh.base_vertex, meshlet_count_param_idx,
-    meshlet_offset_param_idx, instance_count_param_idx, instance_offset_param_idx, base_vertex_param_idx, cmd);
+    meshlet_offset_param_idx, base_vertex_param_idx, cmd);
 }
 
 
 auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const submesh_meshlet_offset,
-                                UINT submesh_base_vertex,
+                                UINT const submesh_base_vertex,
                                 std::optional<UINT> const meshlet_count_param_idx,
                                 std::optional<UINT> const meshlet_offset_param_idx,
-                                std::optional<UINT> const instance_count_param_idx,
-                                std::optional<UINT> const instance_offset_param_idx,
                                 std::optional<UINT> const base_vertex_param_idx,
                                 graphics::CommandList const& cmd) -> void {
   UINT constexpr max_dispatch_thread_group_count{65535};
+  UINT constexpr max_meshlet_count_per_dispatch{AS_GROUP_SIZE * max_dispatch_thread_group_count};
 
   auto const submesh_meshlet_end{submesh_meshlet_offset + submesh_meshlet_count};
 
-  for (auto meshlet_offset{submesh_meshlet_offset}; meshlet_offset < submesh_meshlet_end;
-       meshlet_offset += max_dispatch_thread_group_count) {
-    auto const meshlet_count{
-      std::min(submesh_meshlet_end - meshlet_offset, max_dispatch_thread_group_count)
+  for (auto meshlet_offset{submesh_meshlet_offset};
+       meshlet_offset < submesh_meshlet_end;
+       meshlet_offset += max_meshlet_count_per_dispatch) {
+    auto const this_dispatch_meshlet_count{
+      std::min(submesh_meshlet_end - meshlet_offset, max_meshlet_count_per_dispatch)
     };
 
+    auto const this_dispatch_thread_group_count{DivRoundUp<UINT>(this_dispatch_meshlet_count, AS_GROUP_SIZE)};
+
     if (meshlet_count_param_idx) {
-      cmd.SetPipelineParameter(*meshlet_count_param_idx, meshlet_count);
+      cmd.SetPipelineParameter(*meshlet_count_param_idx, this_dispatch_meshlet_count);
     }
 
     if (meshlet_offset_param_idx) {
@@ -969,60 +967,7 @@ auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const sub
       cmd.SetPipelineParameter(*base_vertex_param_idx, submesh_base_vertex);
     }
 
-    // Parts commented out are needed for instancing
-
-    /* auto const& last_meshlet{
-       mesh.meshlets[meshlet_offset + meshlet_count - 1]
-     };*/
-
-    auto const pack_count{
-      /*std::min(MESHLET_MAX_VERTS / last_meshlet.vert_count,
-        MESHLET_MAX_PRIMS / last_meshlet.prim_count)*/
-      1u
-    };
-
-    auto const group_count_per_instance{
-      static_cast<float>(meshlet_count - 1) + 1.0f / static_cast<float>(
-        pack_count)
-    };
-
-    auto const max_instance_count_per_batch{
-      static_cast<std::uint32_t>(static_cast<float>(
-                                   max_dispatch_thread_group_count) / group_count_per_instance)
-    };
-
-    auto const dispatch_count{
-      //DivRoundUp(mesh.instance_count, max_instance_count_per_batch)
-      DivRoundUp(1u, max_instance_count_per_batch)
-    };
-
-    for (std::size_t i{0}; i < dispatch_count; i++) {
-      auto const batch_instance_offset{
-        static_cast<UINT>(i * max_instance_count_per_batch)
-      };
-
-      auto const batch_instance_count{
-        /*std::min(mesh.instance_count - batch_instance_offset,
-          max_instance_count_per_batch)*/
-        std::min(1 - batch_instance_offset,
-          max_instance_count_per_batch)
-      };
-
-      if (instance_count_param_idx) {
-        cmd.SetPipelineParameter(*instance_count_param_idx, batch_instance_count);
-      }
-
-      if (instance_offset_param_idx) {
-        cmd.SetPipelineParameter(*instance_offset_param_idx, batch_instance_offset);
-      }
-
-      auto const group_count{
-        static_cast<std::uint32_t>(std::ceilf(
-          group_count_per_instance * batch_instance_count))
-      };
-
-      cmd.DispatchMesh(DivRoundUp<std::uint32_t>(group_count, AS_GROUP_SIZE), 1, 1);
-    }
+    cmd.DispatchMesh(this_dispatch_thread_group_count, 1, 1);
   }
 }
 
@@ -1941,9 +1886,8 @@ auto SceneRenderer::Render() -> void {
 
       DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_count),
         PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_offset),
-        PIPELINE_PARAM_INDEX(GBufferDrawParams, instance_count),
-        PIPELINE_PARAM_INDEX(GBufferDrawParams, instance_offset),
-        PIPELINE_PARAM_INDEX(GBufferDrawParams, base_vertex), cam_cmd);
+        PIPELINE_PARAM_INDEX(GBufferDrawParams, base_vertex),
+        cam_cmd);
     }
 
     // Duplicate depth texture so that we can sample it and use it for depth test at the same time.
@@ -2180,7 +2124,7 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, meshlet_buf_idx),
         *cube_mesh->GetMeshletBuffer());
 
-      DrawSubmesh(1, 0, 0, {}, {}, {}, {}, {}, cam_cmd);
+      DrawSubmesh(1, 0, 0, {}, {}, {}, cam_cmd);
     }
 
     // TAA resolve

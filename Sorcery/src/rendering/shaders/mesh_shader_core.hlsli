@@ -71,9 +71,9 @@ void AmpShaderCore(
 #endif
 
 #ifdef MESH_SHADER_NO_PAYLOAD
-#define MESH_SHADER_BODY_GET_MESHLET_INDEX(gid, dispatch_instance_count, payload) gid / dispatch_instance_count
+#define MESH_SHADER_BODY_GET_MESHLET_INDEX(gid, payload) gid
 #else
-#define MESH_SHADER_BODY_GET_MESHLET_INDEX(gid, dispatch_instance_count, payload) payload.meshlet_indices[gid]
+#define MESH_SHADER_BODY_GET_MESHLET_INDEX(gid, payload) payload.meshlet_indices[gid]
 #endif
 
 
@@ -85,41 +85,22 @@ void AmpShaderCore(
   prim_idx_buf_idx,\
   dispatch_meshlet_offset,\
   dispatch_meshlet_count,\
-  dispatch_instance_offset,\
-  dispatch_instance_count,\
   base_vertex,\
   idx32,\
   payload,\
   out_vertices,\
   out_primitives,\
   out_indices)\
-uint const meshlet_idx = MESH_SHADER_BODY_GET_MESHLET_INDEX(gid, dispatch_instance_count, payload);\
+uint const meshlet_idx = MESH_SHADER_BODY_GET_MESHLET_INDEX(gid, payload);\
 StructuredBuffer<Meshlet> const meshlets = ResourceDescriptorHeap[meshlet_buf_idx];\
 Meshlet const meshlet = meshlets[meshlet_idx + dispatch_meshlet_offset];\
 \
-uint start_instance = gid % dispatch_instance_count;\
-uint instance_count = 1;\
-\
-if (meshlet_idx == dispatch_meshlet_count - 1) {\
-  uint const instances_per_group = min(MESHLET_MAX_VERTS / meshlet.vertex_count,\
-    MESHLET_MAX_PRIMS / meshlet.primitive_count);\
-    \
-  uint const unpacked_group_count = (dispatch_meshlet_count - 1) * dispatch_instance_count;\
-  uint const packed_index = gid - unpacked_group_count;\
-  \
-  start_instance = packed_index * instances_per_group;\
-  instance_count = min(dispatch_instance_count - start_instance, instances_per_group);\
-}\
-\
-uint const vert_count = meshlet.vertex_count * instance_count;\
-uint const prim_count = meshlet.primitive_count * instance_count;\
-\
-SetMeshOutputCounts(vert_count, prim_count);\
+SetMeshOutputCounts(meshlet.vertex_count, meshlet.primitive_count);\
 \
 for (uint i = 0; i < MS_VERTEX_LOOP_COUNT; i++) {\
   uint const vertex_id = gtid + i * MS_VERTEX_PRIMITIVE_LOOP_STRIDE;\
   \
-  if (vertex_id < vert_count) {\
+  if (vertex_id < meshlet.vertex_count) {\
     uint const read_index = vertex_id % meshlet.vertex_count;\
     uint const instance_id = vertex_id / meshlet.vertex_count;\
     \
@@ -140,16 +121,14 @@ for (uint i = 0; i < MS_VERTEX_LOOP_COUNT; i++) {\
     \
     vertex_index += base_vertex;\
     \
-    uint const instance_index = dispatch_instance_offset + start_instance + instance_id;\
-    \
-    out_vertices[vertex_id] = VertexProcessor::CalculateVertex(vertex_index, instance_index);\
+    out_vertices[vertex_id] = VertexProcessor::CalculateVertex(vertex_index, instance_id);\
   }\
 }\
 \
 for (uint i = 0; i < MS_PRIMITIVE_LOOP_COUNT; i++) {\
   uint const primitive_id = gtid + i * MS_VERTEX_PRIMITIVE_LOOP_STRIDE;\
   \
-  if (primitive_id < prim_count) {\
+  if (primitive_id < meshlet.primitive_count) {\
     uint const read_index = primitive_id % meshlet.primitive_count;\
     uint const instance_id = primitive_id / meshlet.primitive_count;\
     \
@@ -173,15 +152,12 @@ for (uint i = 0; i < MS_PRIMITIVE_LOOP_COUNT; i++) {\
   prim_idx_buf_idx,\
   dispatch_meshlet_offset,\
   dispatch_meshlet_count,\
-  dispatch_instance_offset,\
-  dispatch_instance_count,\
   base_vertex,\
   idx32,\
   out_vertices,\
   out_indices)\
 MESH_SHADER_BODY(gid, gtid, meshlet_buf_idx, vertex_idx_buf_idx, prim_idx_buf_idx, dispatch_meshlet_offset,\
-  dispatch_meshlet_count, dispatch_instance_offset, dispatch_instance_count, base_vertex, idx32, placeholder1,\
-  out_vertices, placeholder2, out_indices)
+  dispatch_meshlet_count, base_vertex, idx32, placeholder1, out_vertices, placeholder2, out_indices)
 #else
 #define MESH_SHADER_CORE(\
   gid,\
@@ -191,16 +167,13 @@ MESH_SHADER_BODY(gid, gtid, meshlet_buf_idx, vertex_idx_buf_idx, prim_idx_buf_id
   prim_idx_buf_idx,\
   dispatch_meshlet_offset,\
   dispatch_meshlet_count,\
-  dispatch_instance_offset,\
-  dispatch_instance_count,\
   base_vertex,\
   idx32,\
   out_vertices,\
   out_primitives,\
   out_indices)\
 MESH_SHADER_BODY(gid, gtid, meshlet_buf_idx, vertex_idx_buf_idx, prim_idx_buf_idx, dispatch_meshlet_offset,\
-  dispatch_meshlet_count, dispatch_instance_offset, dispatch_instance_count, base_vertex, idx32, placeholder1,\
-  out_vertices, out_primitives, out_indices)
+  dispatch_meshlet_count, base_vertex, idx32, placeholder1, out_vertices, out_primitives, out_indices)
 #endif
 #else
 #ifdef MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES
@@ -212,16 +185,13 @@ MESH_SHADER_BODY(gid, gtid, meshlet_buf_idx, vertex_idx_buf_idx, prim_idx_buf_id
   prim_idx_buf_idx,\
   dispatch_meshlet_offset,\
   dispatch_meshlet_count,\
-  dispatch_instance_offset,\
-  dispatch_instance_count,\
   base_vertex,\
   idx32,\
   payload,\
   out_vertices,\
   out_indices)\
 MESH_SHADER_BODY(gid, gtid, meshlet_buf_idx, vertex_idx_buf_idx, prim_idx_buf_idx, dispatch_meshlet_offset,\
-  dispatch_meshlet_count, dispatch_instance_offset, dispatch_instance_count, base_vertex, idx32, payload,\
-  out_vertices, placeholder2, out_indices)
+  dispatch_meshlet_count, base_vertex, idx32, payload, out_vertices, placeholder2, out_indices)
 #else
 #define MESH_SHADER_CORE(\
   gid,\
@@ -231,8 +201,6 @@ MESH_SHADER_BODY(gid, gtid, meshlet_buf_idx, vertex_idx_buf_idx, prim_idx_buf_id
   prim_idx_buf_idx,\
   dispatch_meshlet_offset,\
   dispatch_meshlet_count,\
-  dispatch_instance_offset,\
-  dispatch_instance_count,\
   base_vertex,\
   idx32,\
   payload,\
@@ -240,8 +208,7 @@ MESH_SHADER_BODY(gid, gtid, meshlet_buf_idx, vertex_idx_buf_idx, prim_idx_buf_id
   out_primitives,\
   out_indices)\
 MESH_SHADER_BODY(gid, gtid, meshlet_buf_idx, vertex_idx_buf_idx, prim_idx_buf_idx, dispatch_meshlet_offset,\
-  dispatch_meshlet_count, dispatch_instance_offset, dispatch_instance_count, base_vertex, idx32, payload,\
-  out_vertices, out_primitives, out_indices)
+  dispatch_meshlet_count, base_vertex, idx32, payload, out_vertices, out_primitives, out_indices)
 #endif
 #endif
 

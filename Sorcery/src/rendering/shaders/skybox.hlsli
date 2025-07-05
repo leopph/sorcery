@@ -39,7 +39,7 @@ class VertexProcessor {
 
 DECLARE_MESH_SHADER_MAIN(MsMain) {
   MESH_SHADER_CORE(gid, gtid, g_params.meshlet_buf_idx, g_params.vertex_idx_buf_idx,
-    g_params.prim_idx_buf_idx, 0, 1, 0, 1, 0, true, out_vertices, out_indices);
+    g_params.prim_idx_buf_idx, 0, 1, 0, true, out_vertices, out_indices);
 }
 
 
