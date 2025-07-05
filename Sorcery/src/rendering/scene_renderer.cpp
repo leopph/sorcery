@@ -1418,6 +1418,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.background_color = {0, 0, 0, 1};
   packet.skybox_cubemap = nullptr;
   packet.irradiance_map = nullptr;
+  packet.draw_irradiance_map = false;
 
   if (auto const active_scene{Scene::GetActiveScene()}) {
     packet.ambient_light = active_scene->GetAmbientLightVector();
@@ -1435,8 +1436,6 @@ auto SceneRenderer::ExtractCurrentState() -> void {
           !irradiance_map || irradiance_map->GetDesc().format != color_buffer_format_) {
           sorcery::detail::RecreateIrradianceMap(*active_scene, *device_, color_buffer_format_);
           packet.draw_irradiance_map = true;
-        } else {
-          packet.draw_irradiance_map = false;
         }
 
         packet.irradiance_map = sorcery::detail::GetIrradianceMap(*active_scene);
