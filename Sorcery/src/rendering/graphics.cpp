@@ -292,6 +292,10 @@ GraphicsDevice::GraphicsDevice(bool const enable_debug) {
     throw std::runtime_error{"Mesh Shader Tier 1 is required but not supported."};
   }
 
+  if (supported_features_.ViewInstancingTier() == D3D12_VIEW_INSTANCING_TIER_NOT_SUPPORTED) {
+    throw std::runtime_error{"View instancing is required but not supported."};
+  }
+
   D3D12MA::ALLOCATOR_DESC const allocator_desc{D3D12MA::ALLOCATOR_FLAG_NONE, device_.Get(), 0, nullptr, adapter.Get()};
   ThrowIfFailed(CreateAllocator(&allocator_desc, &allocator_), "Failed to create D3D12 memory allocator.");
 
