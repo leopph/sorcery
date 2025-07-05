@@ -1,9 +1,10 @@
 #ifndef SKYBOX_HLSLI
 #define SKYBOX_HLSLI
 
-#include "common.hlsli"
 #define MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES
 #define MESH_SHADER_NO_PAYLOAD
+
+#include "common.hlsli"
 #include "mesh_shader_core.hlsli"
 #include "shader_interop.h"
 
@@ -44,8 +45,8 @@ void MsMain(uint const gid : SV_GroupID,
             out vertices VertexAttributes out_vertices[MESHLET_MAX_VERTS],
             out indices uint3 out_indices[MESHLET_MAX_PRIMS]) {
   MeshShaderCore<VertexProcessor>(gtid, gid, 0, true,
-    ResourceDescriptorHeap[g_params.meshlet_buf_idx], ResourceDescriptorHeap[g_params.vertex_idx_buf_idx],
-    ResourceDescriptorHeap[g_params.prim_idx_buf_idx], out_vertices, out_indices);
+    GetResource(g_params.meshlet_buf_idx), GetResource(g_params.vertex_idx_buf_idx),
+    GetResource(g_params.prim_idx_buf_idx), out_vertices, out_indices);
 }
 
 

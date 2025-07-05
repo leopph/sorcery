@@ -315,6 +315,7 @@ private:
     graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> taa_resolve_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> irradiance_pso;
   };
 
 
@@ -413,6 +414,7 @@ private:
   graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> taa_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> irradiance_pso_;
 
   graphics::UniqueSamplerHandle samp_cmp_pcf_ge_;
   graphics::UniqueSamplerHandle samp_cmp_pcf_le_;

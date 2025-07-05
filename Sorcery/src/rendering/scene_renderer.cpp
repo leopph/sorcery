@@ -28,6 +28,8 @@
 #include "shaders/generated/Debug/gbuffer_velocity_ps.h"
 #include "shaders/generated/Debug/gizmos_line_vs.h"
 #include "shaders/generated/Debug/gizmos_ps.h"
+#include "shaders/generated/Debug/irradiance_ms.h"
+#include "shaders/generated/Debug/irradiance_ps.h"
 #include "shaders/generated/Debug/post_process_ps.h"
 #include "shaders/generated/Debug/post_process_vs.h"
 #include "shaders/generated/Debug/skybox_ms.h"
@@ -53,6 +55,8 @@
 #include "shaders/generated/Release/gbuffer_velocity_ps.h"
 #include "shaders/generated/Release/gizmos_line_vs.h"
 #include "shaders/generated/Release/gizmos_ps.h"
+#include "shaders/generated/Release/irradiance_ms.h"
+#include "shaders/generated/Release/irradiance_ps.h"
 #include "shaders/generated/Release/post_process_ps.h"
 #include "shaders/generated/Release/post_process_vs.h"
 #include "shaders/generated/Release/skybox_ms.h"
@@ -831,6 +835,14 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
 
   vtx_skinning_pso_ = device_->CreatePipelineState(vtx_skinning_pso_desc, sizeof(VertexSkinningDrawParams) / 4);
+
+  graphics::PipelineDesc const irradiance_pso_desc{
+    .ps = CD3DX12_SHADER_BYTECODE{&g_irradiance_ps_bytes, ARRAYSIZE(g_irradiance_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{&g_irradiance_ms_bytes, ARRAYSIZE(g_irradiance_ms_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format,
+  };
+
+  irradiance_pso_ = device_->CreatePipelineState(irradiance_pso_desc, sizeof(IrradianceDrawParams) / 4);
 }
 
 
@@ -1433,6 +1445,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.ssr_pso = ssr_pso_;
   packet.taa_resolve_pso = taa_pso_;
   packet.vtx_skinning_pso = vtx_skinning_pso_;
+  packet.irradiance_pso = irradiance_pso_;
 }
 
 
