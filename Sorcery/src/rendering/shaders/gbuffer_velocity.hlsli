@@ -78,8 +78,8 @@ class VertexProcessor {
 
 
 DECLARE_AMP_SHADER_MAIN(AsMain) {
-  AmpShaderCore(dtid, g_params.meshlet_count, g_params.cull_data_buf_idx, g_params.per_draw_cb_idx,
-    g_params.per_view_cb_idx);
+  AmpShaderCore(dtid, g_params.meshlet_offset, g_params.meshlet_count, g_params.cull_data_buf_idx,
+    g_params.per_draw_cb_idx, g_params.per_view_cb_idx);
 }
 
 

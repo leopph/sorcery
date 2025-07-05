@@ -29,7 +29,8 @@ groupshared CullingPayload g_payload;
 
 void AmpShaderCore(
   uint const dtid,
-  uint const meshlet_count,
+  uint const dispatch_meshlet_offset,
+  uint const dispatch_meshlet_count,
   uint const cull_data_buf_idx,
   uint const per_draw_cb_idx,
   uint const per_view_cb_idx) {
@@ -40,9 +41,12 @@ void AmpShaderCore(
   ConstantBuffer<ShaderPerViewConstants> const per_view_cb = ResourceDescriptorHeap[per_view_cb_idx];
 
   // Check bounds of meshlet cull data resource
-  if (dtid < meshlet_count) {
+  if (dtid < dispatch_meshlet_count) {
+    // The actual index of the meshlet we are testing visibility for
+    uint const meshlet_idx = dtid + dispatch_meshlet_offset;
+
     // Do visibility testing for this thread
-    visible = IsMeshletVisible(cull_data[dtid], per_draw_cb.modelMtx, per_view_cb.frustum_planes_ws,
+    visible = IsMeshletVisible(cull_data[meshlet_idx], per_draw_cb.modelMtx, per_view_cb.frustum_planes_ws,
       per_draw_cb.max_abs_scaling, per_view_cb.viewPos);
   }
 
@@ -56,6 +60,8 @@ void AmpShaderCore(
   uint const visible_count = WaveActiveCountBits(visible);
   DispatchMesh(visible_count, 1, 1, g_payload);
 }
+
+
 #endif
 
 
