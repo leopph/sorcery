@@ -45,9 +45,19 @@ float3 FresnelSchlick(const float cosTheta, const float3 F0) {
 }
 
 
+float3 FresnelSchlickRoughness(float const cosTheta, float3 const F0, float roughness) {
+  return F0 + (max((float3)(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+float3 CalcF0(float3 const albedo, float const metallic) {
+  // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
+  // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
+  return lerp((float3)0.04, albedo, metallic);
+}
+
+
 float3 CookTorrance(const float3 N, const float3 V, const float3 L, const float3 albedo, const float metallic, const float roughness, const float3 lightColor, const float lightIntensity, const float lightAtten) {
-    float3 F0 = 0.04;
-    F0 = lerp(F0, albedo, metallic);
+    float3 const F0 = CalcF0(albedo, metallic);
 
     // calculate per-light radiance
     const float3 H = normalize(V + L);

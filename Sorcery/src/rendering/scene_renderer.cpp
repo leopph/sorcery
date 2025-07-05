@@ -2065,6 +2065,14 @@ auto SceneRenderer::Render() -> void {
     cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_frame_cb_idx),
       *per_frame_cb.GetBuffer());
 
+    if (frame_packet.irradiance_map) {
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, irradiance_map_idx),
+        *frame_packet.irradiance_map);
+    } else {
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, irradiance_map_idx),
+        INVALID_RES_IDX);
+    }
+
     cam_cmd.SetRenderTargets(std::span{
       std::array{static_cast<graphics::Texture const*>(color_hdr_rt->GetColorTex().get())}.data(), 1
     }, depth_rt->GetDepthStencilTex().get());

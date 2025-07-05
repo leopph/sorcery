@@ -43,7 +43,21 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
   float3 const dir_to_cam_ws = normalize(per_view_cb.viewPos - pos_ws);
 
   const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_params.per_frame_cb_idx];
-  float3 out_color = per_frame_cb.ambientLightColor * albedo * ao;
+
+  float3 ambient = per_frame_cb.ambientLightColor * albedo;
+
+  if (g_params.irradiance_map_idx != INVALID_RES_IDX) {
+    TextureCube const irradiance_map = GetResource(g_params.irradiance_map_idx);
+    float3 const irradiance = irradiance_map.Sample(point_clamp_samp, norm_ws).rgb;
+
+    float3 const F0 = CalcF0(albedo, metallic);
+    float3 const kS = FresnelSchlickRoughness(max(dot(norm_ws, dir_to_cam_ws), 0), F0, roughness);
+    float3 const kD = 1 - kS;
+    float3 const diffuse = irradiance * albedo;
+    ambient = kD * diffuse;
+  }
+
+  float3 out_color = ambient * ao;
 
   StructuredBuffer<ShaderLight> const lights = ResourceDescriptorHeap[g_params.light_buf_idx];
 

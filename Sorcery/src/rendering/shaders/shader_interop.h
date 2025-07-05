@@ -237,6 +237,7 @@ struct DeferredLightingDrawParams {
   uint per_view_cb_idx;
 
   uint per_frame_cb_idx;
+  uint irradiance_map_idx;
 };
 
 
