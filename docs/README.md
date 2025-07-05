@@ -84,6 +84,7 @@ Non-exhaustive list of core components:
 - Assimp for model asset importing
 - DirectXTex for texture preprocessing
 - DirectXMesh for mesh preprocessing
+- mimalloc for general memory allocation
 
 ## Building and Usage
 ### Build requirements
