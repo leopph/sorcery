@@ -31,7 +31,7 @@ typedef bool BOOL;
 #define MESHLET_MAX_VERTS 128
 #define MESHLET_MAX_PRIMS 128
 
-#define AS_GROUP_SIZE 32
+#define AS_THREAD_GROUP_SIZE 32
 
 #define MAX_CASCADE_COUNT (uint) 4
 #define MAX_PER_LIGHT_SHADOW_MAP_COUNT 6

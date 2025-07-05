@@ -10,7 +10,7 @@ DECLARE_PARAMS(DepthOnlyDrawParams);
 DECLARE_DRAW_CALL_PARAMS(g_draw_call_params);
 
 
-struct PsIn {
+struct VertexAttributes {
   float4 pos_cs : SV_POSITION;
   float2 uv : TEXCOORD;
 };
@@ -22,7 +22,7 @@ struct PrimitiveAttributes {
 
 
 class VertexProcessor {
-  static PsIn CalculateVertex(uint const vertex_idx, uint const instance_idx) {
+  static VertexAttributes GetVertexAttributes(uint const vertex_idx) {
     StructuredBuffer<float4> const positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
     float4 const pos_os = positions[vertex_idx];
 
@@ -35,7 +35,7 @@ class VertexProcessor {
     StructuredBuffer<float2> const uvs = ResourceDescriptorHeap[g_params.uv_buf_idx];
     float2 const uv = uvs[vertex_idx];
 
-    PsIn ret;
+    VertexAttributes ret;
     ret.pos_cs = pos_cs;
     ret.uv = uv;
     return ret;
@@ -44,7 +44,7 @@ class VertexProcessor {
 
 
 class PrimitiveProcessor {
-  static PrimitiveAttributes CalculatePrimitive(uint const prim_idx) {
+  static PrimitiveAttributes GetPrimitiveAttributes(uint const prim_idx) {
     PrimitiveAttributes ret;
     ret.rt_idx = g_params.rt_idx;
     return ret;
@@ -52,20 +52,29 @@ class PrimitiveProcessor {
 };
 
 
-DECLARE_AMP_SHADER_MAIN(AsMain) {
+[numthreads(AS_THREAD_GROUP_SIZE, 1, 1)]
+void AsMain(uint const dtid : SV_DispatchThreadID) {
   AmpShaderCore(dtid, g_params.meshlet_offset, g_params.meshlet_count, g_params.cull_data_buf_idx,
     g_params.per_draw_cb_idx, g_params.per_view_cb_idx);
 }
 
 
-DECLARE_MESH_SHADER_MAIN(MsMain) {
-  MESH_SHADER_CORE(gid, gtid, g_params.meshlet_buf_idx, g_params.vertex_idx_buf_idx, g_params.prim_idx_buf_idx,
-    g_params.meshlet_offset, g_params.meshlet_count, g_params.base_vertex, g_params.idx32, payload, out_vertices,
-    out_primitives, out_indices);
+[outputtopology("triangle")]
+[numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]
+void MsMain(uint const gid : SV_GroupID,
+            uint const gtid : SV_GroupThreadID,
+            in payload CullingPayload payload,
+            out vertices VertexAttributes out_vertices[MESHLET_MAX_VERTS],
+            out primitives PrimitiveAttributes out_primitives[MESHLET_MAX_PRIMS],
+            out indices uint3 out_indices[MESHLET_MAX_PRIMS]) {
+  MeshShaderCore<VertexProcessor, PrimitiveProcessor>(gtid, payload.GetMeshletIndex(gid) + g_params.meshlet_offset,
+    g_params.base_vertex, g_params.idx32, GetResource(g_params.meshlet_buf_idx),
+    GetResource(g_params.vertex_idx_buf_idx), GetResource(g_params.prim_idx_buf_idx), out_vertices, out_primitives,
+    out_indices);
 }
 
 
-void PsMain(PsIn const ps_in) {
+void PsMain(VertexAttributes const ps_in) {
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
 
   if (mtl.blendMode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {

@@ -908,7 +908,7 @@ auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const sub
                                 std::optional<UINT> const base_vertex_param_idx,
                                 graphics::CommandList const& cmd) -> void {
   UINT constexpr max_dispatch_thread_group_count{65535};
-  UINT constexpr max_meshlet_count_per_dispatch{AS_GROUP_SIZE * max_dispatch_thread_group_count};
+  UINT constexpr max_meshlet_count_per_dispatch{AS_THREAD_GROUP_SIZE * max_dispatch_thread_group_count};
 
   auto const submesh_meshlet_end{submesh_meshlet_offset + submesh_meshlet_count};
 
@@ -919,7 +919,7 @@ auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const sub
       std::min(submesh_meshlet_end - meshlet_offset, max_meshlet_count_per_dispatch)
     };
 
-    auto const this_dispatch_thread_group_count{DivRoundUp<UINT>(this_dispatch_meshlet_count, AS_GROUP_SIZE)};
+    auto const this_dispatch_thread_group_count{DivRoundUp<UINT>(this_dispatch_meshlet_count, AS_THREAD_GROUP_SIZE)};
 
     if (meshlet_count_param_idx) {
       cmd.SetPipelineParameter(*meshlet_count_param_idx, this_dispatch_meshlet_count);

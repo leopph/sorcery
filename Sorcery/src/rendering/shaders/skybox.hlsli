@@ -11,20 +11,20 @@
 DECLARE_PARAMS(SkyboxDrawParams);
 
 
-struct PsIn {
+struct VertexAttributes {
   float4 pos_cs : SV_Position;
   float3 uv : TEXCOORD;
 };
 
 
 class VertexProcessor {
-  static PsIn CalculateVertex(uint const vertex_id, uint const instance_id) {
+  static VertexAttributes GetVertexAttributes(uint const vertex_id) {
     StructuredBuffer<float4> const positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
     float4 const pos_os = positions[vertex_id];
 
     const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
 
-    PsIn ret;
+    VertexAttributes ret;
     ret.pos_cs = mul(float4(mul(pos_os.xyz, (float3x3)per_view_cb.viewMtx), 1), per_view_cb.projMtx);
     ret.uv = pos_os.xyz;
 #ifdef REVERSE_Z
@@ -37,13 +37,19 @@ class VertexProcessor {
 };
 
 
-DECLARE_MESH_SHADER_MAIN(MsMain) {
-  MESH_SHADER_CORE(gid, gtid, g_params.meshlet_buf_idx, g_params.vertex_idx_buf_idx,
-    g_params.prim_idx_buf_idx, 0, 1, 0, true, out_vertices, out_indices);
+[outputtopology("triangle")]
+[numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]
+void MsMain(uint const gid : SV_GroupID,
+            uint const gtid : SV_GroupThreadID,
+            out vertices VertexAttributes out_vertices[MESHLET_MAX_VERTS],
+            out indices uint3 out_indices[MESHLET_MAX_PRIMS]) {
+  MeshShaderCore<VertexProcessor>(gtid, gid, 0, true,
+    ResourceDescriptorHeap[g_params.meshlet_buf_idx], ResourceDescriptorHeap[g_params.vertex_idx_buf_idx],
+    ResourceDescriptorHeap[g_params.prim_idx_buf_idx], out_vertices, out_indices);
 }
 
 
-float4 PsMain(PsIn const vs_out) : SV_Target {
+float4 PsMain(VertexAttributes const vs_out) : SV_Target {
   TextureCube const cubemap = ResourceDescriptorHeap[g_params.cubemap_idx];
   SamplerState const samp = SamplerDescriptorHeap[g_params.samp_idx];
   return float4(cubemap.Sample(samp, vs_out.uv).rgb, 1);
