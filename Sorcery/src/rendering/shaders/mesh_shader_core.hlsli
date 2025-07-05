@@ -5,17 +5,48 @@
 #include "shader_interop.h"
 
 
-uint3 UnpackTriangleIndices(uint const packed_indices) {
-  return uint3(packed_indices & 0x3FF, (packed_indices >> 10) & 0x3FF, (packed_indices >> 20) & 0x3FF);
-}
-
-
 struct Meshlet {
   uint vertex_count;
   uint vertex_offset;
   uint primitive_count;
   uint primitive_offset;
 };
+
+
+uint3 UnpackTriangleIndices(uint const packed_indices) {
+  return uint3(packed_indices & 0x3FF, (packed_indices >> 10) & 0x3FF, (packed_indices >> 20) & 0x3FF);
+}
+
+
+uint3 GetPrimitive(Meshlet const meshlet, uint const idx, StructuredBuffer<uint> const primitive_indices) {
+  return UnpackTriangleIndices(primitive_indices[meshlet.primitive_offset + idx]);
+}
+
+
+uint GetVertexIndex(Meshlet const meshlet, uint const local_idx, uint const base_vertex, bool const idx32,
+                    ByteAddressBuffer const vertex_indices) {
+  uint const vertex_index_idx = meshlet.vertex_offset + local_idx;
+
+  uint vertex_index;
+
+  if (idx32) {
+    vertex_index = vertex_indices.Load(vertex_index_idx * 4);
+  } else {
+    uint const word_offset = vertex_index_idx & 0x1;
+    uint const byte_offset = (vertex_index_idx / 2) * 4;
+
+    uint const index_pair = vertex_indices.Load(byte_offset);
+    vertex_index = (index_pair >> (word_offset * 16)) & 0xFFFF;
+  }
+
+  return vertex_index + base_vertex;
+}
+
+
+void foo(uint vertex_idx_buf_idx) {
+  Meshlet m;
+  GetVertexIndex(m, 0, 0, true, ResourceDescriptorHeap[vertex_idx_buf_idx]);
+}
 
 
 #if !defined(MESH_SHADER_NO_PAYLOAD)
@@ -107,27 +138,8 @@ for (uint i = 0; i < MS_VERTEX_LOOP_COUNT; i++) {\
   uint const vertex_id = gtid + i * MS_VERTEX_PRIMITIVE_LOOP_STRIDE;\
   \
   if (vertex_id < meshlet.vertex_count) {\
-    uint const read_index = vertex_id % meshlet.vertex_count;\
-    uint const instance_id = vertex_id / meshlet.vertex_count;\
-    \
-    ByteAddressBuffer const vertex_indices = ResourceDescriptorHeap[vertex_idx_buf_idx];\
-    uint const vertex_index_idx = meshlet.vertex_offset + read_index;\
-    \
-    uint vertex_index;\
-    \
-    if (idx32) {\
-      vertex_index = vertex_indices.Load(vertex_index_idx * 4);\
-    } else {\
-      uint const word_offset = vertex_index_idx & 0x1;\
-      uint const byte_offset = (vertex_index_idx / 2) * 4;\
-      \
-      uint const index_pair = vertex_indices.Load(byte_offset);\
-      vertex_index = (index_pair >> (word_offset * 16)) & 0xFFFF;\
-    }\
-    \
-    vertex_index += base_vertex;\
-    \
-    out_vertices[vertex_id] = VertexProcessor::CalculateVertex(vertex_index, instance_id);\
+    uint const vertex_index = GetVertexIndex(meshlet, vertex_id, base_vertex, idx32, ResourceDescriptorHeap[vertex_idx_buf_idx]);\
+    out_vertices[vertex_id] = VertexProcessor::CalculateVertex(vertex_index);\
   }\
 }\
 \
@@ -135,14 +147,7 @@ for (uint i = 0; i < MS_PRIMITIVE_LOOP_COUNT; i++) {\
   uint const primitive_id = gtid + i * MS_VERTEX_PRIMITIVE_LOOP_STRIDE;\
   \
   if (primitive_id < meshlet.primitive_count) {\
-    uint const read_index = primitive_id % meshlet.primitive_count;\
-    uint const instance_id = primitive_id / meshlet.primitive_count;\
-    \
-    StructuredBuffer<uint> const primitive_indices = ResourceDescriptorHeap[prim_idx_buf_idx];\
-    \
-    out_indices[primitive_id] = UnpackTriangleIndices(primitive_indices[meshlet.primitive_offset + read_index])\
-                                + (meshlet.vertex_count * instance_id);\
-                                \
+    out_indices[primitive_id] = GetPrimitive(meshlet, primitive_id, ResourceDescriptorHeap[prim_idx_buf_idx]);\
     MESH_SHADER_BODY_PROCESS_PRIMITIVE\
   }\
 }
