@@ -185,6 +185,7 @@
     <ClInclude Include="src\char_encoding_helpers.hpp" />
     <ClInclude Include="src\extent.hpp" />
     <ClInclude Include="src\ExternalResource.hpp" />
+    <ClInclude Include="src\fast_vector.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\job_system.hpp" />
     <ClInclude Include="src\mesh_data.hpp" />

@@ -3,7 +3,6 @@
 #include <array>
 #include <cstdint>
 #include <memory>
-#include <vector>
 
 #include "Camera.hpp"
 #include "constant_buffer.hpp"
@@ -14,6 +13,7 @@
 #include "render_target.hpp"
 #include "structured_buffer.hpp"
 #include "../Color.hpp"
+#include "../fast_vector.hpp"
 #include "../Math.hpp"
 #include "../Util.hpp"
 #include "../Window.hpp"
@@ -269,25 +269,25 @@ private:
 
 
   struct FramePacket {
-    std::vector<graphics::SharedDeviceChildHandle<graphics::Buffer>> buffers;
-    std::vector<graphics::SharedDeviceChildHandle<graphics::Texture>> textures;
-    std::vector<LightData> light_data;
-    std::vector<MeshData> mesh_data;
-    std::vector<SubmeshData> submesh_data;
-    std::vector<InstanceData> instance_data;
-    std::vector<CameraData> cam_data;
-    std::vector<std::shared_ptr<RenderTarget>> render_targets;
+    FastVector<graphics::SharedDeviceChildHandle<graphics::Buffer>> buffers;
+    FastVector<graphics::SharedDeviceChildHandle<graphics::Texture>> textures;
+    FastVector<LightData> light_data;
+    FastVector<MeshData> mesh_data;
+    FastVector<SubmeshData> submesh_data;
+    FastVector<InstanceData> instance_data;
+    FastVector<CameraData> cam_data;
+    FastVector<std::shared_ptr<RenderTarget>> render_targets;
 
-    std::vector<AnimPositionKey> anim_pos_keys;
-    std::vector<AnimRotationKey> anim_rot_keys;
-    std::vector<AnimScalingKey> anim_scaling_keys;
-    std::vector<NodeAnimationData> node_anim_data;
-    std::vector<SkeletonNodeData> skeleton_node_data;
-    std::vector<BoneData> bone_data;
-    std::vector<SkinnedMeshData> skinned_mesh_data;
+    FastVector<AnimPositionKey> anim_pos_keys;
+    FastVector<AnimRotationKey> anim_rot_keys;
+    FastVector<AnimScalingKey> anim_scaling_keys;
+    FastVector<NodeAnimationData> node_anim_data;
+    FastVector<SkeletonNodeData> skeleton_node_data;
+    FastVector<BoneData> bone_data;
+    FastVector<SkinnedMeshData> skinned_mesh_data;
 
-    std::vector<Vector4> gizmo_colors;
-    std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data;
+    FastVector<Vector4> gizmo_colors;
+    FastVector<ShaderLineGizmoVertexData> line_gizmo_vertex_data;
 
     SsaoParams ssao_params;
     SsrParams ssr_params;
@@ -324,7 +324,7 @@ private:
 
 
   static auto CullLights(Frustum const& frustum_ws, std::span<LightData const> lights,
-                         std::pmr::vector<unsigned>& visible_light_indices) -> void;
+                         FastVector<unsigned>& visible_light_indices) -> void;
 
 
   static auto SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int rt_width, int rt_height,
@@ -393,8 +393,8 @@ private:
   ObserverPtr<graphics::GraphicsDevice> device_;
 
   std::array<ConstantBuffer<ShaderPerFrameConstants>, RenderManager::GetMaxFramesInFlight()> per_frame_cbs_;
-  std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, RenderManager::GetMaxFramesInFlight()>> per_view_cbs_;
-  std::vector<std::array<ConstantBuffer<ShaderPerDrawConstants>, RenderManager::GetMaxFramesInFlight()>> per_draw_cbs_;
+  FastVector<std::array<ConstantBuffer<ShaderPerViewConstants>, RenderManager::GetMaxFramesInFlight()>> per_view_cbs_;
+  FastVector<std::array<ConstantBuffer<ShaderPerDrawConstants>, RenderManager::GetMaxFramesInFlight()>> per_draw_cbs_;
   StructuredBuffer<ShaderLight> light_buffer_;
 
   graphics::SharedDeviceChildHandle<graphics::Texture> white_tex_;
@@ -441,10 +441,10 @@ private:
   std::unique_ptr<DirectionalShadowMapArray> dir_shadow_map_arr_;
   std::unique_ptr<PunctualShadowAtlas> punctual_shadow_atlas_;
 
-  std::vector<Vector4> gizmo_colors_;
+  FastVector<Vector4> gizmo_colors_;
   StructuredBuffer<Vector4> gizmo_color_buffer_;
 
-  std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;
+  FastVector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;
   StructuredBuffer<ShaderLineGizmoVertexData> line_gizmo_vertex_data_buffer_;
 
   StructuredBuffer<Vector4> ssao_samples_buffer_;
@@ -463,10 +463,10 @@ private:
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
-  std::vector<StaticMeshComponent*> static_mesh_components_;
-  std::vector<SkinnedMeshComponent*> skinned_mesh_components_;
-  std::vector<LightComponent const*> lights_;
-  std::vector<Camera*> cameras_;
+  FastVector<StaticMeshComponent*> static_mesh_components_;
+  FastVector<SkinnedMeshComponent*> skinned_mesh_components_;
+  FastVector<LightComponent const*> lights_;
+  FastVector<Camera*> cameras_;
 
   std::shared_ptr<RenderTarget> main_rt_;
   std::shared_ptr<RenderTarget> rt_override_;

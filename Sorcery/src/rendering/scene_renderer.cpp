@@ -114,7 +114,7 @@ auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(CameraData const& cam
 
 
 auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData const> const lights,
-                               std::pmr::vector<unsigned>& visible_light_indices) -> void {
+                               FastVector<unsigned>& visible_light_indices) -> void {
   visible_light_indices.clear();
 
   for (unsigned light_idx = 0; light_idx < static_cast<unsigned>(lights.size()); light_idx++) {
@@ -218,8 +218,8 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
   };
 
   std::array lightIndexIndicesInCell{
-    std::vector<LightCascadeIndex>{}, std::vector<LightCascadeIndex>{},
-    std::vector<LightCascadeIndex>{}, std::vector<LightCascadeIndex>{}
+    FastVector<LightCascadeIndex>{}, FastVector<LightCascadeIndex>{},
+    FastVector<LightCascadeIndex>{}, FastVector<LightCascadeIndex>{}
   };
 
   auto const& camPos{cam_data.position};
@@ -1074,7 +1074,7 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   }, graphics::CpuAccess::kNone, nullptr);
   ssao_noise_tex_->SetDebugName(L"SSAO Noise");
 
-  std::vector<Vector4> ssao_noise;
+  FastVector<Vector4> ssao_noise;
   std::uniform_real_distribution dist{0.0f, 1.0f};
   std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
 
@@ -1562,7 +1562,7 @@ auto SceneRenderer::Render() -> void {
 
     // Update bone matrices
 
-    std::vector<Matrix4> bone_matrices(bone_count);
+    FastVector<Matrix4> bone_matrices(bone_count);
 
     for (unsigned i{0}; i < bone_count; i++) {
       bone_matrices[i] = frame_packet.bone_data[bone_begin_local_idx + i].offset_mtx * frame_packet.skeleton_node_data[
@@ -1749,7 +1749,7 @@ auto SceneRenderer::Render() -> void {
 
     Frustum const cam_frust_ws{cam_view_proj_mtx};
 
-    std::pmr::vector<unsigned> visible_light_indices;
+    FastVector<unsigned> visible_light_indices;
     CullLights(cam_frust_ws, frame_packet.light_data, visible_light_indices);
 
     // Command list for the camera
@@ -1920,7 +1920,7 @@ auto SceneRenderer::Render() -> void {
     // Deferred lighting pass
 
     auto const light_count{std::ssize(visible_light_indices)};
-    std::vector<ShaderLight> light_data(light_count);
+    FastVector<ShaderLight> light_data(light_count);
 
     for (auto i = 0; i < light_count; i++) {
       light_data[i].color = frame_packet.light_data[visible_light_indices[i]].color;
