@@ -839,7 +839,8 @@ auto SceneRenderer::RecreatePipelines() -> void {
   graphics::PipelineDesc const irradiance_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{&g_irradiance_ps_bytes, ARRAYSIZE(g_irradiance_ps_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{&g_irradiance_ms_bytes, ARRAYSIZE(g_irradiance_ms_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format,
+    .depth_stencil_state = depth_stencil_disabled, .rasterizer_state = skybox_rasterizer_desc,
+    .rt_formats = color_format,
   };
 
   irradiance_pso_ = device_->CreatePipelineState(irradiance_pso_desc, sizeof(IrradianceDrawParams) / 4);
@@ -1464,7 +1465,7 @@ auto SceneRenderer::Render() -> void {
   line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.line_gizmo_vertex_data)));
   std::ranges::copy(frame_packet.line_gizmo_vertex_data, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
-  // Clears all render targets and dispatches skinning
+  // Clears all render targets, dispatches skinning and prepares irradiance map if needed.
   auto& prepare_cmd{render_manager_->AcquireCommandList()};
   prepare_cmd.Begin(nullptr);
 
@@ -1610,6 +1611,57 @@ auto SceneRenderer::Render() -> void {
     prepare_cmd.Dispatch(
       static_cast<UINT>(std::ceil(static_cast<float>(mesh_data.vtx_count) / static_cast<float>(SKINNING_CS_THREADS))),
       1, 1);
+  }
+
+  if (frame_packet.skybox_cubemap) {
+    RenderTarget::Desc const irradiance_rt_desc{
+      512, 512, frame_packet.color_buffer_format, std::nullopt, 1,
+      L"Irradiance Map RenderTarget", false, {0.0F, 0.0F, 0.0F, 1.0F}, DEPTH_CLEAR_VALUE, 0,
+      graphics::TextureDimension::kCube, 6
+    };
+
+    auto const irradiance_rt{render_manager_->AcquireTemporaryRenderTarget(irradiance_rt_desc)};
+
+    CD3DX12_VIEWPORT const irradiance_viewport{
+      0.0F, 0.0F, static_cast<FLOAT>(irradiance_rt_desc.width), static_cast<FLOAT>(irradiance_rt_desc.height)
+    };
+
+    D3D12_RECT const irradiance_scissor{
+      0, 0, static_cast<LONG>(irradiance_rt_desc.width), static_cast<LONG>(irradiance_rt_desc.height)
+    };
+
+    prepare_cmd.SetPipelineState(*frame_packet.irradiance_pso);
+    prepare_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    prepare_cmd.SetRenderTargets(std::array{irradiance_rt->GetColorTex().get()}, nullptr);
+    prepare_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&irradiance_viewport), 1});
+    prepare_cmd.SetScissorRects(std::span{&irradiance_scissor, 1});
+    prepare_cmd.ClearRenderTarget(*irradiance_rt->GetColorTex(), std::array{0.F, 0.F, 0.F, 1.F}, {});
+
+    auto const cube_mesh{App::Instance().GetResourceManager().GetCubeMesh()};
+    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, meshlet_buf_idx),
+      *cube_mesh->GetMeshletBuffer());
+    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, vertex_idx_buf_idx),
+      *cube_mesh->GetVertexIndexBuffer());
+    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, prim_idx_buf_idx),
+      *cube_mesh->GetPrimitiveIndexBuffer());
+    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, pos_buf_idx),
+      *cube_mesh->GetPositionBuffer());
+    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, environment_map_idx),
+      *frame_packet.skybox_cubemap);
+    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(IrradianceDrawParams, point_clamp_samp_idx),
+      samp_point_clamp_.Get());
+
+    auto const view_matrices{MakeCubeFaceViewMatrices(Vector3::Zero())};
+    auto const proj_mtx{TransformProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, .1F, 10.F))};
+
+    for (auto i{0U}; i < 6U; i++) {
+      prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(IrradianceDrawParams, rt_idx), i);
+      auto const view_proj_mtx{view_matrices[i] * proj_mtx};
+      prepare_cmd.SetPipelineParameters(PIPELINE_PARAM_INDEX(IrradianceDrawParams, view_proj_mtx),
+        std::span{std::bit_cast<UINT const*>(view_proj_mtx.GetData()), 16});
+
+      DrawSubmesh(1, 0, 0, {}, {}, {}, prepare_cmd);
+    }
   }
 
   prepare_cmd.End();

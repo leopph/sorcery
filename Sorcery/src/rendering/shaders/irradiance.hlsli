@@ -56,14 +56,35 @@ void MsMain(uint const gid : SV_GroupID,
 }
 
 
+static float const kPi = 3.14159265359;
+
+
 float4 PsMain(VertexAttributes const ps_in) : SV_Target {
-  Texture2D const environment_map = GetResource(g_params.environment_map_idx);
+  TextureCube const environment_map = GetResource(g_params.environment_map_idx);
+  SamplerState const samp = GetSampler(g_params.point_clamp_samp_idx);
 
   float3 const normal = normalize(ps_in.pos_os);
 
   float3 irradiance = float3(0, 0, 0);
 
-  // ...
+  float3 up = float3(0, 1, 0);
+  float3 const right = normalize(cross(up, normal));
+  up = normalize(cross(normal, right));
+
+  float const sample_delta = 0.025;
+  float sample_count = 0;
+
+  for (float phi = 0; phi < 2 * kPi; phi += sample_delta) {
+    for (float theta = 0; theta < 0.5 * kPi; theta += sample_delta) {
+      float3 const tangent_sample = float3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+      float3 const sample_vec = tangent_sample.x * right + tangent_sample.y * up + tangent_sample.z * normal;
+
+      irradiance += environment_map.Sample(samp, sample_vec).rgb * cos(theta) * sin(theta);
+      sample_count++;
+    }
+  }
+
+  irradiance = kPi * irradiance / sample_count;
 
   return float4(irradiance, 1);
 }

@@ -332,15 +332,16 @@ struct TaaResolveDrawParams {
 
 
 struct IrradianceDrawParams {
+  row_major float4x4 view_proj_mtx;
+
+  uint rt_idx;
   uint meshlet_buf_idx;
   uint vertex_idx_buf_idx;
   uint prim_idx_buf_idx;
+
   uint pos_buf_idx;
-
-  float4x4 view_proj_mtx;
-
   uint environment_map_idx;
-  uint rt_idx;
+  uint point_clamp_samp_idx;
 };
 
 #ifdef __cplusplus
