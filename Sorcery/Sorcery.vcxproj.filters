@@ -417,6 +417,7 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\rendering\shaders\meshlet_culling.hlsli" />
+    <None Include="src\rendering\shaders\irradiance.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />
@@ -443,5 +444,7 @@
     <FxCompile Include="src\rendering\shaders\taa_resolve_ps.hlsl" />
     <FxCompile Include="src\rendering\shaders\gbuffer_velocity_as.hlsl" />
     <FxCompile Include="src\rendering\shaders\depth_only_as.hlsl" />
+    <FxCompile Include="src\rendering\shaders\irradiance_vs.hlsl" />
+    <FxCompile Include="src\rendering\shaders\irradiance_ps.hlsl" />
   </ItemGroup>
 </Project>

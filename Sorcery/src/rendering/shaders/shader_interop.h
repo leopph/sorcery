@@ -330,6 +330,12 @@ struct TaaResolveDrawParams {
   float jitter_y;
 };
 
+
+struct IrradianceDrawParams {
+  uint environment_map_idx;
+  uint view_id_offset;
+};
+
 #ifdef __cplusplus
 } // namespace sorcery
 #endif
