@@ -48,7 +48,8 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
 
   if (g_params.irradiance_map_idx != INVALID_RES_IDX) {
     TextureCube const irradiance_map = GetResource(g_params.irradiance_map_idx);
-    float3 const irradiance = irradiance_map.Sample(point_clamp_samp, norm_ws).rgb;
+    SamplerState const bi_clamp_samp = GetSampler(g_params.bi_clamp_samp_idx);
+    float3 const irradiance = irradiance_map.Sample(bi_clamp_samp, norm_ws).rgb;
 
     float3 const F0 = CalcF0(albedo, metallic);
     float3 const kS = FresnelSchlickRoughness(max(dot(norm_ws, dir_to_cam_ws), 0), F0, roughness);

@@ -1652,8 +1652,8 @@ auto SceneRenderer::Render() -> void {
       *cube_mesh->GetPositionBuffer());
     prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, environment_map_idx),
       *frame_packet.skybox_cubemap);
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(IrradianceDrawParams, point_clamp_samp_idx),
-      samp_point_clamp_.Get());
+    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(IrradianceDrawParams, bi_clamp_samp_idx),
+      samp_bi_clamp_.Get());
 
     auto const view_matrices{MakeCubeFaceViewMatrices(Vector3::Zero())};
     auto const proj_mtx{TransformProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, .1F, 10.F))};
@@ -2064,6 +2064,8 @@ auto SceneRenderer::Render() -> void {
       *cam_per_view_cb.GetBuffer());
     cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_frame_cb_idx),
       *per_frame_cb.GetBuffer());
+    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, bi_clamp_samp_idx),
+      samp_bi_clamp_.Get());
 
     if (frame_packet.irradiance_map) {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, irradiance_map_idx),

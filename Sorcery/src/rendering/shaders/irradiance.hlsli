@@ -61,7 +61,7 @@ static float const kPi = 3.14159265359;
 
 float4 PsMain(VertexAttributes const ps_in) : SV_Target {
   TextureCube const environment_map = GetResource(g_params.environment_map_idx);
-  SamplerState const samp = GetSampler(g_params.point_clamp_samp_idx);
+  SamplerState const samp = GetSampler(g_params.bi_clamp_samp_idx);
 
   float3 const normal = normalize(ps_in.pos_os);
 

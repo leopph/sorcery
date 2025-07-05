@@ -238,6 +238,7 @@ struct DeferredLightingDrawParams {
 
   uint per_frame_cb_idx;
   uint irradiance_map_idx;
+  uint bi_clamp_samp_idx;
 };
 
 
@@ -342,7 +343,7 @@ struct IrradianceDrawParams {
 
   uint pos_buf_idx;
   uint environment_map_idx;
-  uint point_clamp_samp_idx;
+  uint bi_clamp_samp_idx;
 };
 
 #ifdef __cplusplus
