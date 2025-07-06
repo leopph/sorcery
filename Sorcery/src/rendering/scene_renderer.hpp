@@ -389,6 +389,8 @@ private:
   static DXGI_FORMAT constexpr gbuffer2_format_{DXGI_FORMAT_R8G8_UNORM};
   static DXGI_FORMAT constexpr velocity_format_{DXGI_FORMAT_R16G16_FLOAT};
   static constexpr unsigned taa_subpixel_sample_count_{8};
+  static constexpr UINT irradiance_map_size_{128};
+  static constexpr UINT prefiltered_env_map_size_{128};
 
   ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<Window> window_;

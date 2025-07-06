@@ -1420,21 +1420,24 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.irradiance_map = nullptr;
   packet.draw_irradiance_map = false;
 
-  if (auto const active_scene{Scene::GetActiveScene()}) {
+  if (auto* const active_scene{Scene::GetActiveScene()}) {
     packet.ambient_light = active_scene->GetAmbientLightVector();
 
     if (active_scene->GetSkyMode() == SkyMode::Color) {
       auto const sky_color{active_scene->GetSkyColor()};
-      packet.background_color = {sky_color[0], sky_color[1], sky_color[2], 1.0f};
+      packet.background_color = {sky_color[0], sky_color[1], sky_color[2], 1.0F};
     }
 
     if (active_scene->GetSkyMode() == SkyMode::Skybox) {
-      if (auto const cubemap{active_scene->GetSkybox()}) {
+      if (auto const* const cubemap{active_scene->GetSkybox()}) {
         packet.skybox_cubemap = cubemap->GetTex();
 
         if (auto const irradiance_map{sorcery::detail::GetIrradianceMap(*active_scene)};
-          !irradiance_map || irradiance_map->GetDesc().format != color_buffer_format_) {
-          sorcery::detail::RecreateIrradianceMap(*active_scene, *device_, color_buffer_format_);
+          !irradiance_map ||
+          irradiance_map->GetDesc().format != color_buffer_format_ ||
+          irradiance_map->GetDesc().width != irradiance_map_size_ ||
+          irradiance_map->GetDesc().height != irradiance_map_size_) {
+          sorcery::detail::RecreateIrradianceMap(*active_scene, *device_, color_buffer_format_, irradiance_map_size_);
           packet.draw_irradiance_map = true;
         }
 

@@ -13,7 +13,7 @@ namespace sorcery {
 namespace detail {
 [[nodiscard]]
 auto GetIrradianceMap(Scene const& scene) -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
-auto RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT format) -> void;
+auto RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT format, UINT size) -> void;
 }
 
 
@@ -21,7 +21,8 @@ class Scene final : public NativeResource {
   RTTR_ENABLE(NativeResource)
   friend auto detail::GetIrradianceMap(Scene const& scene)
     -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
-  friend auto detail::RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT format) -> void;
+  friend auto detail::RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT format,
+                                            UINT size) -> void;
 
 public:
   // The active scene is the one that other systems take global information (such as sky settings) from.

@@ -29,7 +29,8 @@ auto detail::GetIrradianceMap(Scene const& scene) -> graphics::SharedDeviceChild
 }
 
 
-auto detail::RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT const format) -> void {
+auto detail::RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT const format,
+                                   UINT const size) -> void {
   if (!scene.skybox_) {
     return;
   }
@@ -38,8 +39,8 @@ auto detail::RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& devic
 
   scene.irradiance_map_ = device.CreateTexture(graphics::TextureDesc{
       .dimension = graphics::TextureDimension::kCube,
-      .width = skybox_desc.width,
-      .height = skybox_desc.height,
+      .width = size,
+      .height = size,
       .depth_or_array_size = 6,
       .mip_levels = 1,
       .format = format,
