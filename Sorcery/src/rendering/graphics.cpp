@@ -226,6 +226,13 @@ auto MakeDepthUnderlyingLinear(DXGI_FORMAT const depth_format) -> DXGI_FORMAT {
 }
 
 
+auto GetActualMipLevels(TextureDesc const& desc) -> UINT {
+  return desc.mip_levels == 0
+           ? static_cast<UINT16>(std::ceil(std::max(std::log2(desc.width), std::log2(desc.height)) + 1))
+           : desc.mip_levels;
+}
+
+
 GraphicsDevice::GraphicsDevice(bool const enable_debug) {
   if (enable_debug) {
     ComPtr<ID3D12Debug6> debug;
@@ -947,11 +954,7 @@ auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc co
     rtv_srv_uav_format = desc.format;
   }
 
-  auto const actual_mip_levels{
-    desc.mip_levels == 0
-      ? static_cast<UINT16>(std::ceil(std::max(std::log2(desc.width), std::log2(desc.height))))
-      : desc.mip_levels
-  };
+  auto const actual_mip_levels{GetActualMipLevels(desc)};
 
   if (desc.depth_stencil) {
     dsvs.reserve(actual_mip_levels);

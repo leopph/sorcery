@@ -44,6 +44,10 @@ class CommandList;
 class Fence;
 class SwapChain;
 using Sampler = UINT;
+struct TextureDesc;
+
+// Get the actual mip level count of the texture. In TextureDesc, mip_levels can be 0, which means that the mip level count is auto calculated.
+[[nodiscard]] auto GetActualMipLevels(TextureDesc const& desc) -> UINT;
 
 
 namespace details {
