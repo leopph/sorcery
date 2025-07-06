@@ -35,14 +35,36 @@ auto detail::RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& devic
     return;
   }
 
-  auto const& skybox_desc{scene.skybox_->GetTex()->GetDesc()};
-
   scene.irradiance_map_ = device.CreateTexture(graphics::TextureDesc{
       .dimension = graphics::TextureDimension::kCube,
       .width = size,
       .height = size,
       .depth_or_array_size = 6,
       .mip_levels = 1,
+      .format = format,
+      .sample_count = 1,
+      .depth_stencil = false,
+      .render_target = true,
+      .shader_resource = true,
+      .unordered_access = false
+    }, graphics::CpuAccess::kNone,
+    std::array{D3D12_CLEAR_VALUE{.Format = format, .Color = {0.0F, 0.0F, 0.0F, 1.0F}}}.data());
+}
+
+
+auto detail::GetPrefilteredEnvMap(Scene const& scene) -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+  return scene.prefiltered_env_map_;
+}
+
+
+auto detail::RecreatePrefilteredEnvMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT const format,
+                                       UINT const size) -> void {
+  scene.prefiltered_env_map_ = device.CreateTexture(graphics::TextureDesc{
+      .dimension = graphics::TextureDimension::kCube,
+      .width = size,
+      .height = size,
+      .depth_or_array_size = 6,
+      .mip_levels = 0,
       .format = format,
       .sample_count = 1,
       .depth_stencil = false,
@@ -395,5 +417,6 @@ auto Scene::GetSkybox() const noexcept -> Cubemap* {
 auto Scene::SetSkybox(Cubemap* const skybox) noexcept -> void {
   skybox_ = skybox;
   irradiance_map_ = nullptr;
+  prefiltered_env_map_ = nullptr;
 }
 }

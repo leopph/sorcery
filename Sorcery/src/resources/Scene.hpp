@@ -14,6 +14,10 @@ namespace detail {
 [[nodiscard]]
 auto GetIrradianceMap(Scene const& scene) -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
 auto RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT format, UINT size) -> void;
+
+[[nodiscard]]
+auto GetPrefilteredEnvMap(Scene const& scene) -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
+auto RecreatePrefilteredEnvMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT format, UINT size) -> void;
 }
 
 
@@ -23,6 +27,11 @@ class Scene final : public NativeResource {
     -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
   friend auto detail::RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT format,
                                             UINT size) -> void;
+
+  friend auto detail::GetPrefilteredEnvMap(Scene const& scene)
+    -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
+  friend auto detail::RecreatePrefilteredEnvMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT format,
+                                                UINT size) -> void;
 
 public:
   // The active scene is the one that other systems take global information (such as sky settings) from.
@@ -78,5 +87,6 @@ private:
   SkyMode sky_mode_{SkyMode::Color};
   Vector3 sky_color_{41.F / 255.F, 195.F / 255.F, 243.F / 255.F};
   graphics::SharedDeviceChildHandle<graphics::Texture> irradiance_map_{};
+  graphics::SharedDeviceChildHandle<graphics::Texture> prefiltered_env_map_{};
 };
 }
