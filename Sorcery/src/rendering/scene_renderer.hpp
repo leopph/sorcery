@@ -300,7 +300,9 @@ private:
 
     graphics::SharedDeviceChildHandle<graphics::Texture> skybox_cubemap;
     graphics::SharedDeviceChildHandle<graphics::Texture> irradiance_map;
+    graphics::SharedDeviceChildHandle<graphics::Texture> prefiltered_env_map;
     bool draw_irradiance_map;
+    bool draw_prefiltered_env_map;
 
     Vector3 ambient_light;
 
@@ -318,6 +320,7 @@ private:
     graphics::SharedDeviceChildHandle<graphics::PipelineState> taa_resolve_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso;
     graphics::SharedDeviceChildHandle<graphics::PipelineState> irradiance_pso;
+    graphics::SharedDeviceChildHandle<graphics::PipelineState> envmap_prefilter_pso;
   };
 
 
@@ -419,6 +422,7 @@ private:
   graphics::SharedDeviceChildHandle<graphics::PipelineState> taa_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> irradiance_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> envmap_prefilter_pso_;
 
   graphics::UniqueSamplerHandle samp_cmp_pcf_ge_;
   graphics::UniqueSamplerHandle samp_cmp_pcf_le_;

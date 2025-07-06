@@ -1,6 +1,7 @@
 #include "scene_renderer.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <iterator>
 #include <random>
@@ -23,6 +24,8 @@
 #include "shaders/generated/Debug/depth_only_ms.h"
 #include "shaders/generated/Debug/depth_only_ps.h"
 #include "shaders/generated/Debug/depth_resolve_cs.h"
+#include "shaders/generated/Debug/envmap_prefilter_ms.h"
+#include "shaders/generated/Debug/envmap_prefilter_ps.h"
 #include "shaders/generated/Debug/gbuffer_velocity_as.h"
 #include "shaders/generated/Debug/gbuffer_velocity_ms.h"
 #include "shaders/generated/Debug/gbuffer_velocity_ps.h"
@@ -44,6 +47,8 @@
 #include "shaders/generated/Debug/taa_resolve_vs.h"
 #include "shaders/generated/Debug/vtx_skinning_cs.h"
 #else
+#include "shaders/generated/Release//envmap_prefilter_ms.h"
+#include "shaders/generated/Release//envmap_prefilter_ps.h"
 #include "shaders/generated/Release/deferred_lighting_ps.h"
 #include "shaders/generated/Release/deferred_lighting_vs.h"
 #include "shaders/generated/Release/depth_only_as.h"
@@ -844,6 +849,16 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
 
   irradiance_pso_ = device_->CreatePipelineState(irradiance_pso_desc, sizeof(IrradianceDrawParams) / 4);
+
+  graphics::PipelineDesc const envmap_prefilter_pso_desc{
+    .ps = CD3DX12_SHADER_BYTECODE{&g_envmap_prefilter_ps_bytes, ARRAYSIZE(g_envmap_prefilter_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{&g_envmap_prefilter_ms_bytes, ARRAYSIZE(g_envmap_prefilter_ms_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rasterizer_state = skybox_rasterizer_desc,
+    .rt_formats = color_format,
+  };
+
+  envmap_prefilter_pso_ = device_->
+    CreatePipelineState(envmap_prefilter_pso_desc, sizeof(EnvmapPrefilterDrawParams) / 4);
 }
 
 
@@ -1418,7 +1433,9 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.background_color = {0, 0, 0, 1};
   packet.skybox_cubemap = nullptr;
   packet.irradiance_map = nullptr;
+  packet.prefiltered_env_map = nullptr;
   packet.draw_irradiance_map = false;
+  packet.draw_prefiltered_env_map = false;
 
   if (auto* const active_scene{Scene::GetActiveScene()}) {
     packet.ambient_light = active_scene->GetAmbientLightVector();
@@ -1441,7 +1458,18 @@ auto SceneRenderer::ExtractCurrentState() -> void {
           packet.draw_irradiance_map = true;
         }
 
+        if (auto const prefiltered_env_map{sorcery::detail::GetPrefilteredEnvMap(*active_scene)};
+          !prefiltered_env_map ||
+          prefiltered_env_map->GetDesc().format != color_buffer_format_ ||
+          prefiltered_env_map->GetDesc().width != prefiltered_env_map_size_ ||
+          prefiltered_env_map->GetDesc().height != prefiltered_env_map_size_) {
+          sorcery::detail::RecreatePrefilteredEnvMap(*active_scene, *device_, color_buffer_format_,
+            prefiltered_env_map_size_);
+          packet.draw_prefiltered_env_map = true;
+        }
+
         packet.irradiance_map = sorcery::detail::GetIrradianceMap(*active_scene);
+        packet.prefiltered_env_map = sorcery::detail::GetPrefilteredEnvMap(*active_scene);
       }
     }
   }
@@ -1460,6 +1488,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.taa_resolve_pso = taa_pso_;
   packet.vtx_skinning_pso = vtx_skinning_pso_;
   packet.irradiance_pso = irradiance_pso_;
+  packet.envmap_prefilter_pso = envmap_prefilter_pso_;
 }
 
 
@@ -1478,7 +1507,7 @@ auto SceneRenderer::Render() -> void {
   line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.line_gizmo_vertex_data)));
   std::ranges::copy(frame_packet.line_gizmo_vertex_data, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
-  // Clears all render targets, dispatches skinning and prepares irradiance map if needed.
+  // Clears all render targets, dispatches skinning and prepares irradiance and prefiltered env maps if needed.
   auto& prepare_cmd{render_manager_->AcquireCommandList()};
   prepare_cmd.Begin(nullptr);
 
@@ -1668,6 +1697,62 @@ auto SceneRenderer::Render() -> void {
         std::span{std::bit_cast<UINT const*>(view_proj_mtx.GetData()), 16});
 
       DrawSubmesh(1, 0, 0, {}, {}, {}, prepare_cmd);
+    }
+  }
+
+  if (frame_packet.draw_prefiltered_env_map) {
+    prepare_cmd.SetPipelineState(*frame_packet.envmap_prefilter_pso);
+    prepare_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    auto const cube_mesh{App::Instance().GetResourceManager().GetCubeMesh()};
+    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, meshlet_buf_idx),
+      *cube_mesh->GetMeshletBuffer());
+    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, vertex_idx_buf_idx),
+      *cube_mesh->GetVertexIndexBuffer());
+    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, prim_idx_buf_idx),
+      *cube_mesh->GetPrimitiveIndexBuffer());
+    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, pos_buf_idx),
+      *cube_mesh->GetPositionBuffer());
+    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, env_map_idx),
+      *frame_packet.skybox_cubemap);
+    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, tri_clamp_samp_idx),
+      samp_tri_clamp_.Get());
+
+    auto const& envmap_desc{frame_packet.prefiltered_env_map->GetDesc()};
+    auto const mip_count{graphics::GetActualMipLevels(envmap_desc)};
+
+    for (UINT16 mip{0}; mip < mip_count; mip++) {
+      auto const mip_scale{std::pow(0.5, mip)};
+      auto const mip_width{static_cast<UINT>(envmap_desc.width * mip_scale)};
+      auto const mip_height{static_cast<UINT>(envmap_desc.height * mip_scale)};
+
+      CD3DX12_VIEWPORT const envmap_viewport{
+        0.0F, 0.0F, static_cast<FLOAT>(mip_width), static_cast<FLOAT>(mip_height)
+      };
+
+      D3D12_RECT const envmap_scissor{
+        0, 0, static_cast<LONG>(mip_width), static_cast<LONG>(mip_height)
+      };
+
+      prepare_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&envmap_viewport), 1});
+      prepare_cmd.SetScissorRects(std::span{&envmap_scissor, 1});
+      prepare_cmd.SetRenderTargets(std::array{frame_packet.prefiltered_env_map.get()}, nullptr, mip);
+      prepare_cmd.ClearRenderTarget(*frame_packet.prefiltered_env_map, std::array{0.F, 0.F, 0.F, 1.F}, {}, mip);
+
+      auto const roughness{static_cast<float>(mip) / static_cast<float>(mip_count - 1)};
+      prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, roughness),
+        *std::bit_cast<UINT const*>(&roughness));
+
+      auto const view_matrices{MakeCubeFaceViewMatrices(Vector3::Zero())};
+      auto const proj_mtx{TransformProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, .1F, 10.F))};
+
+      for (auto i{0U}; i < 6U; i++) {
+        prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, rt_idx), i);
+        auto const view_proj_mtx{view_matrices[i] * proj_mtx};
+        prepare_cmd.SetPipelineParameters(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, view_proj_mtx),
+          std::span{std::bit_cast<UINT const*>(view_proj_mtx.GetData()), 16});
+
+        DrawSubmesh(1, 0, 0, {}, {}, {}, prepare_cmd);
+      }
     }
   }
 
