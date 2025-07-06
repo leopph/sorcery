@@ -344,8 +344,9 @@ private:
 
   auto CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const& desc, UINT& cbv, UINT& srv,
                          UINT& uav) const -> void;
-  auto CreateTextureViews(ID3D12Resource2& texture, TextureDesc const& desc, UINT& dsv, UINT& rtv, UINT& srv,
-                          UINT& uav) const -> void;
+  auto CreateTextureViews(ID3D12Resource2& texture, TextureDesc const& desc, FastVector<UINT>& dsvs,
+                          FastVector<UINT>& rtvs, std::optional<UINT>& srv,
+                          std::optional<UINT>& uav) const -> void;
 
   [[nodiscard]] auto AcquirePendingBarrierCmdList() -> CommandList&;
 
@@ -386,14 +387,19 @@ private:
 class Resource {
 public:
   LEOPPHAPI auto SetDebugName(std::wstring_view name) const -> void;
-  [[nodiscard]] LEOPPHAPI auto Map() const -> void*;
+  [[nodiscard]]
+  LEOPPHAPI auto Map() const -> void*;
   LEOPPHAPI auto Unmap() const -> void;
-  [[nodiscard]] LEOPPHAPI auto GetShaderResource() const -> UINT;
-  [[nodiscard]] LEOPPHAPI auto GetUnorderedAccess() const -> UINT;
+  [[nodiscard]]
+  LEOPPHAPI auto GetShaderResource() const -> UINT;
+  [[nodiscard]]
+  LEOPPHAPI auto GetUnorderedAccess() const -> UINT;
+  [[nodiscard]]
+  LEOPPHAPI auto GetInternalResource() const -> ID3D12Resource2*;
 
 protected:
   Resource(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
-           UINT srv, UINT uav);
+           std::optional<UINT> srv, std::optional<UINT> uav);
 
   [[nodiscard]] auto InternalMap(UINT subresource, D3D12_RANGE const* read_range) const -> void*;
   auto InternalUnmap(UINT subresource, D3D12_RANGE const* written_range) const -> void;
@@ -402,47 +408,55 @@ private:
   Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation_;
   Microsoft::WRL::ComPtr<ID3D12Resource2> resource_;
 
-  UINT srv_;
-  UINT uav_;
+  std::optional<UINT> srv_;
+  std::optional<UINT> uav_;
 
   friend GraphicsDevice;
-  friend CommandList;
 };
 
 
 class Buffer : public Resource {
 public:
-  [[nodiscard]] LEOPPHAPI auto GetDesc() const -> BufferDesc const&;
-  [[nodiscard]] LEOPPHAPI auto GetConstantBuffer() const -> UINT;
+  [[nodiscard]]
+  LEOPPHAPI auto GetDesc() const -> BufferDesc const&;
+  [[nodiscard]]
+  LEOPPHAPI auto GetConstantBuffer() const -> UINT;
 
 private:
   Buffer(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
-         UINT cbv, UINT srv, UINT uav, BufferDesc const& desc);
+         std::optional<UINT> cbv, std::optional<UINT> srv, std::optional<UINT> uav, BufferDesc const& desc);
 
   BufferDesc desc_;
-  UINT cbv_;
+  std::optional<UINT> cbv_;
 
   friend GraphicsDevice;
-  friend CommandList;
 };
 
 
 class Texture : public Resource {
 public:
-  [[nodiscard]] LEOPPHAPI auto GetDesc() const -> TextureDesc const&;
-  [[nodiscard]] LEOPPHAPI auto Map(UINT subresource) const -> void*;
+  [[nodiscard]]
+  LEOPPHAPI auto GetDesc() const -> TextureDesc const&;
+  [[nodiscard]]
+  LEOPPHAPI auto Map(UINT subresource) const -> void*;
   LEOPPHAPI auto Unmap(UINT subresource) const -> void;
+  [[nodiscard]]
+  LEOPPHAPI auto GetDepthStencilView(UINT mip_index) const -> UINT;
+  [[nodiscard]]
+  LEOPPHAPI auto GetRenderTargetView(UINT mip_index) const -> UINT;
 
 private:
   Texture(Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation, Microsoft::WRL::ComPtr<ID3D12Resource2> resource,
-          UINT dsv, UINT rtv, UINT srv, UINT uav, TextureDesc const& desc);
+          FastVector<UINT> dsvs, FastVector<UINT> rtvs, std::optional<UINT> srv, std::optional<UINT> uav,
+          TextureDesc const& desc);
 
   TextureDesc desc_;
-  UINT dsv_;
-  UINT rtv_;
+  // One per mip
+  FastVector<UINT> dsvs_;
+  // One per mip
+  FastVector<UINT> rtvs_;
 
   friend GraphicsDevice;
-  friend CommandList;
 };
 
 
@@ -467,9 +481,9 @@ public:
   LEOPPHAPI auto Begin(PipelineState const* pipeline_state) -> void;
   LEOPPHAPI auto End() const -> void;
   LEOPPHAPI auto ClearDepthStencil(Texture const& tex, D3D12_CLEAR_FLAGS clear_flags, FLOAT depth, UINT8 stencil,
-                                   std::span<D3D12_RECT const> rects) -> void;
+                                   std::span<D3D12_RECT const> rects, UINT16 mip_level = 0) -> void;
   LEOPPHAPI auto ClearRenderTarget(Texture const& tex, std::span<FLOAT const, 4> color_rgba,
-                                   std::span<D3D12_RECT const> rects) -> void;
+                                   std::span<D3D12_RECT const> rects, UINT16 mip_level = 0) -> void;
   LEOPPHAPI auto CopyBuffer(Buffer const& dst, Buffer const& src) -> void;
   LEOPPHAPI auto CopyBufferRegion(Buffer const& dst, UINT64 dst_offset, Buffer const& src, UINT64 src_offset,
                                   UINT64 num_bytes) -> void;
