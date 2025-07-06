@@ -46,16 +46,37 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
 
   float3 ambient = per_frame_cb.ambientLightColor * albedo;
 
-  if (g_params.irradiance_map_idx != INVALID_RES_IDX) {
+  if (g_params.irradiance_map_idx != INVALID_RES_IDX && g_params.prefiltered_env_map_idx != INVALID_RES_IDX) {
     TextureCube const irradiance_map = GetResource(g_params.irradiance_map_idx);
     SamplerState const bi_clamp_samp = GetSampler(g_params.bi_clamp_samp_idx);
-    float3 const irradiance = irradiance_map.Sample(bi_clamp_samp, norm_ws).rgb;
+
+    TextureCube const prefiltered_env_map = GetResource(g_params.prefiltered_env_map_idx);
+    SamplerState const tri_clamp_samp = GetSampler(g_params.tri_clamp_samp_idx);
+
+
+    Texture2D<float2> const brdf_lut = GetResource(g_params.brdf_integration_map_idx);
+
+    float const NdotV = max(dot(norm_ws, dir_to_cam_ws), 0);
 
     float3 const F0 = CalcF0(albedo, metallic);
-    float3 const kS = FresnelSchlickRoughness(max(dot(norm_ws, dir_to_cam_ws), 0), F0, roughness);
-    float3 const kD = 1 - kS;
+    float3 const F = FresnelSchlickRoughness(NdotV, F0, roughness);
+    float3 const kS = F;
+    float3 const kD = (1 - kS) * (1 - metallic);
+
+    float3 const irradiance = irradiance_map.Sample(bi_clamp_samp, norm_ws).rgb;
     float3 const diffuse = irradiance * albedo;
-    ambient = kD * diffuse;
+
+    float3 const R = reflect(-dir_to_cam_ws, norm_ws);
+    float2 prefiltered_env_map_size;
+    uint prefiltered_env_map_mip_count;
+    prefiltered_env_map.GetDimensions(0, prefiltered_env_map_size.x, prefiltered_env_map_size.y,
+      prefiltered_env_map_mip_count);
+    float3 const prefiltered_color = prefiltered_env_map.SampleLevel(tri_clamp_samp, R,
+      roughness * (prefiltered_env_map_mip_count - 1)).rgb;
+    float2 const env_brdf = brdf_lut.Sample(bi_clamp_samp, float2(NdotV, roughness));
+    float3 const specular = prefiltered_color * (F * env_brdf.x + env_brdf.y);
+
+    ambient = (kD * diffuse + specular);
   }
 
   float3 out_color = ambient * ao;

@@ -18,6 +18,8 @@
 #include "shaders/shader_interop.h"
 
 #ifndef NDEBUG
+#include "shaders/generated/Debug/brdf_integration_ps.h"
+#include "shaders/generated/Debug/brdf_integration_vs.h"
 #include "shaders/generated/Debug/deferred_lighting_ps.h"
 #include "shaders/generated/Debug/deferred_lighting_vs.h"
 #include "shaders/generated/Debug/depth_only_as.h"
@@ -47,6 +49,8 @@
 #include "shaders/generated/Debug/taa_resolve_vs.h"
 #include "shaders/generated/Debug/vtx_skinning_cs.h"
 #else
+#include "shaders/generated/Release/brdf_integration_ps.h"
+#include "shaders/generated/Release/brdf_integration_vs.h"
 #include "shaders/generated/Release//envmap_prefilter_ms.h"
 #include "shaders/generated/Release//envmap_prefilter_ps.h"
 #include "shaders/generated/Release/deferred_lighting_ps.h"
@@ -863,6 +867,16 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   envmap_prefilter_pso_ = device_->
     CreatePipelineState(envmap_prefilter_pso_desc, sizeof(EnvmapPrefilterDrawParams) / 4);
+
+  graphics::PipelineDesc const brdf_integration_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_brdf_integration_vs_bytes, ARRAYSIZE(g_brdf_integration_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_brdf_integration_ps_bytes, ARRAYSIZE(g_brdf_integration_ps_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
+      D3D12_RT_FORMAT_ARRAY{.RTFormats = {brdf_integration_map_format_}, .NumRenderTargets = 1}
+    },
+  };
+
+  brdf_integration_pso_ = device_->CreatePipelineState(brdf_integration_pso_desc, 0);
 }
 
 
@@ -1120,7 +1134,6 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
     }
   });
 
-
   white_tex_ = device_->CreateTexture(graphics::TextureDesc{
     graphics::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
   }, graphics::CpuAccess::kNone, nullptr);
@@ -1130,6 +1143,31 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   render_manager_->UpdateTexture(*white_tex_, 0, std::array{
     D3D12_SUBRESOURCE_DATA{white_tex_data.data(), sizeof(white_tex_data), sizeof(white_tex_data)}
   });
+
+  brdf_integration_map_ = device_->CreateTexture(graphics::TextureDesc{
+    graphics::TextureDimension::k2D, brdf_integration_map_size_, brdf_integration_map_size_, 1, 1,
+    brdf_integration_map_format_, 1, false, true, true, false
+  }, graphics::CpuAccess::kNone, std::array{
+    D3D12_CLEAR_VALUE{.Format = brdf_integration_map_format_, .Color = {0.F, 0.F, 0.F, 1.F}}
+  }.data());
+
+  D3D12_VIEWPORT const brdf_integration_viewport{
+    0.F, 0.F, static_cast<FLOAT>(brdf_integration_map_size_), static_cast<FLOAT>(brdf_integration_map_size_), 0.F, 1.F
+  };
+
+  D3D12_RECT const brdf_integration_scissor_rect{
+    0, 0, static_cast<LONG>(brdf_integration_map_size_), static_cast<LONG>(brdf_integration_map_size_)
+  };
+
+  auto& cmd{render_manager.AcquireCommandList()};
+  cmd.Begin(brdf_integration_pso_.get());
+  cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  cmd.SetRenderTargets(std::array{static_cast<graphics::Texture const*>(brdf_integration_map_.get())}, nullptr);
+  cmd.SetViewports(std::span{&brdf_integration_viewport, 1});
+  cmd.SetScissorRects(std::span{&brdf_integration_scissor_rect, 1});
+  cmd.DrawInstanced(3, 1, 0, 0);
+  cmd.End();
+  device_->ExecuteCommandLists(std::span{&cmd, 1});
 }
 
 
@@ -2158,12 +2196,24 @@ auto SceneRenderer::Render() -> void {
       *per_frame_cb.GetBuffer());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, bi_clamp_samp_idx),
       samp_bi_clamp_.Get());
+    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, tri_clamp_samp_idx),
+      samp_tri_clamp_.Get());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, brdf_integration_map_idx),
+      *brdf_integration_map_);
 
     if (frame_packet.irradiance_map) {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, irradiance_map_idx),
         *frame_packet.irradiance_map);
     } else {
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, irradiance_map_idx),
+        INVALID_RES_IDX);
+    }
+
+    if (frame_packet.prefiltered_env_map) {
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, prefiltered_env_map_idx),
+        *frame_packet.prefiltered_env_map);
+    } else {
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, prefiltered_env_map_idx),
         INVALID_RES_IDX);
     }
 

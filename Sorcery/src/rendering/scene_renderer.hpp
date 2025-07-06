@@ -397,6 +397,7 @@ private:
   static constexpr unsigned taa_subpixel_sample_count_{8};
   static constexpr UINT irradiance_map_size_{512};
   static constexpr UINT prefiltered_env_map_size_{512};
+  static constexpr UINT brdf_integration_map_size_{512};
 
   ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<Window> window_;
@@ -426,6 +427,7 @@ private:
   graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> irradiance_pso_;
   graphics::SharedDeviceChildHandle<graphics::PipelineState> envmap_prefilter_pso_;
+  graphics::SharedDeviceChildHandle<graphics::PipelineState> brdf_integration_pso_;
 
   graphics::UniqueSamplerHandle samp_cmp_pcf_ge_;
   graphics::UniqueSamplerHandle samp_cmp_pcf_le_;
@@ -461,6 +463,8 @@ private:
   StructuredBuffer<ShaderLineGizmoVertexData> line_gizmo_vertex_data_buffer_;
 
   StructuredBuffer<Vector4> ssao_samples_buffer_;
+
+  graphics::SharedDeviceChildHandle<graphics::Texture> brdf_integration_map_;
 
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
   SsrParams ssr_params_{

@@ -238,7 +238,10 @@ struct DeferredLightingDrawParams {
 
   uint per_frame_cb_idx;
   uint irradiance_map_idx;
+  uint prefiltered_env_map_idx;
+  uint brdf_integration_map_idx;
   uint bi_clamp_samp_idx;
+  uint tri_clamp_samp_idx;
 };
 
 

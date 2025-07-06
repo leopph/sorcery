@@ -1,5 +1,6 @@
 #ifndef BRDF_HLSLI
 #define BRDF_HLSLI
+#include "common.hlsli"
 
 
 static float const PI = 3.14159265359;
@@ -108,6 +109,29 @@ float3 CookTorrance(float3 const N, float3 const V, float3 const L, float3 const
 
   // outgoing radiance
   return (kD * albedo / PI + specular) * radiance * NdotL;
+}
+
+
+float3 ImportanceSampleGGX(float2 const Xi, float3 const N, float const roughness) {
+  float a = roughness * roughness;
+
+  float phi = 2.0 * kPi * Xi.x;
+  float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
+  float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+  // from spherical coordinates to cartesian coordinates
+  float3 H;
+  H.x = cos(phi) * sinTheta;
+  H.y = sin(phi) * sinTheta;
+  H.z = cosTheta;
+
+  // from tangent-space floattor to world-space sample floattor
+  float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+  float3 tangent = normalize(cross(up, N));
+  float3 bitangent = cross(N, tangent);
+
+  float3 samplefloat = tangent * H.x + bitangent * H.y + N * H.z;
+  return normalize(samplefloat);
 }
 
 #endif
