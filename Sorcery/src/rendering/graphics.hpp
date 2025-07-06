@@ -506,7 +506,8 @@ public:
   LEOPPHAPI auto SetBlendFactor(std::span<FLOAT const, 4> blend_factor) const -> void;
   LEOPPHAPI auto SetIndexBuffer(Buffer const& buf, DXGI_FORMAT index_format) -> void;
   LEOPPHAPI auto SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY primitive_topology) const -> void;
-  LEOPPHAPI auto SetRenderTargets(std::span<Texture const* const> render_targets, Texture const* depth_stencil) -> void;
+  LEOPPHAPI auto SetRenderTargets(std::span<Texture const* const> render_targets, Texture const* depth_stencil,
+                                  UINT16 mip_level = 0) -> void;
   LEOPPHAPI auto SetStencilRef(UINT stencil_ref) const -> void;
   LEOPPHAPI auto SetScissorRects(std::span<D3D12_RECT const> rects) const -> void;
   LEOPPHAPI auto SetViewports(std::span<D3D12_VIEWPORT const> viewports) const -> void;
