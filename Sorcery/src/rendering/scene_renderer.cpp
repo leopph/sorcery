@@ -710,7 +710,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
 
   CD3DX12_RASTERIZER_DESC const shadow_rasterizer_desc{
-    D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, FALSE, depth_bias_multiplier * 1, 0.f, depth_bias_multiplier * 2.5f,
+    D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, FALSE, depth_bias_multiplier * 1, 0.F, depth_bias_multiplier * 2.5F,
     TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF
   };
 
@@ -735,9 +735,9 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
 
   graphics::PipelineDesc const shadow_pso_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
-    .as = CD3DX12_SHADER_BYTECODE{g_depth_only_as_bytes, ARRAYSIZE(g_depth_only_as_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{g_depth_only_ms_bytes, ARRAYSIZE(g_depth_only_ms_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
+    .as = CD3DX12_SHADER_BYTECODE{&g_depth_only_as_bytes, ARRAYSIZE(g_depth_only_as_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{&g_depth_only_ms_bytes, ARRAYSIZE(g_depth_only_ms_bytes)},
     .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
     .rasterizer_state = shadow_rasterizer_desc
   };
@@ -745,15 +745,15 @@ auto SceneRenderer::RecreatePipelines() -> void {
   shadow_pso_ = device_->CreatePipelineState(shadow_pso_desc, sizeof(DepthOnlyDrawParams) / 4);
 
   graphics::PipelineDesc const depth_resolve_pso_desc{
-    .cs = CD3DX12_SHADER_BYTECODE{g_depth_resolve_cs_bytes, ARRAYSIZE(g_depth_resolve_cs_bytes)}
+    .cs = CD3DX12_SHADER_BYTECODE{&g_depth_resolve_cs_bytes, ARRAYSIZE(g_depth_resolve_cs_bytes)}
   };
 
   depth_resolve_pso_ = device_->CreatePipelineState(depth_resolve_pso_desc, sizeof(DepthResolveDrawParams) / 4);
 
   graphics::PipelineDesc const line_gizmo_pso_desc{
     .primitive_topology_type = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
-    .vs = CD3DX12_SHADER_BYTECODE{g_gizmos_line_vs_bytes, ARRAYSIZE(g_gizmos_line_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{g_gizmos_ps_bytes, ARRAYSIZE(g_gizmos_ps_bytes)},
+    .vs = CD3DX12_SHADER_BYTECODE{&g_gizmos_line_vs_bytes, ARRAYSIZE(g_gizmos_line_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_gizmos_ps_bytes, ARRAYSIZE(g_gizmos_ps_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rt_formats = render_target_format
   };
 
@@ -761,17 +761,17 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
 
   graphics::PipelineDesc const gbuffer_velocity_pso_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{g_gbuffer_velocity_ps_bytes, ARRAYSIZE(g_gbuffer_velocity_ps_bytes)},
-    .as = CD3DX12_SHADER_BYTECODE{g_gbuffer_velocity_as_bytes, ARRAYSIZE(g_gbuffer_velocity_as_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{g_gbuffer_velocity_ms_bytes, ARRAYSIZE(g_gbuffer_velocity_ms_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_ps_bytes, ARRAYSIZE(g_gbuffer_velocity_ps_bytes)},
+    .as = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_as_bytes, ARRAYSIZE(g_gbuffer_velocity_as_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_ms_bytes, ARRAYSIZE(g_gbuffer_velocity_ms_bytes)},
     .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
     .rt_formats = gbuffer_velocity_format
   };
   gbuffer_velocity_pso_ = device_->CreatePipelineState(gbuffer_velocity_pso_desc, sizeof(GBufferDrawParams) / 4);
 
   graphics::PipelineDesc const deferred_lighting_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{g_deferred_lighting_vs_bytes, ARRAYSIZE(g_deferred_lighting_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{g_deferred_lighting_ps_bytes, ARRAYSIZE(g_deferred_lighting_ps_bytes)},
+    .vs = CD3DX12_SHADER_BYTECODE{&g_deferred_lighting_vs_bytes, ARRAYSIZE(g_deferred_lighting_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_deferred_lighting_ps_bytes, ARRAYSIZE(g_deferred_lighting_ps_bytes)},
     .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_, .rt_formats = color_format
   };
 
@@ -836,7 +836,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   taa_pso_ = device_->CreatePipelineState(taa_resolve_pso_desc, sizeof(TaaResolveDrawParams) / 4);
 
   graphics::PipelineDesc const vtx_skinning_pso_desc{
-    .cs = CD3DX12_SHADER_BYTECODE{g_vtx_skinning_cs_bytes, ARRAYSIZE(g_vtx_skinning_cs_bytes)}
+    .cs = CD3DX12_SHADER_BYTECODE{&g_vtx_skinning_cs_bytes, ARRAYSIZE(g_vtx_skinning_cs_bytes)}
   };
 
   vtx_skinning_pso_ = device_->CreatePipelineState(vtx_skinning_pso_desc, sizeof(VertexSkinningDrawParams) / 4);
@@ -845,7 +845,9 @@ auto SceneRenderer::RecreatePipelines() -> void {
     .ps = CD3DX12_SHADER_BYTECODE{&g_irradiance_ps_bytes, ARRAYSIZE(g_irradiance_ps_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{&g_irradiance_ms_bytes, ARRAYSIZE(g_irradiance_ms_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rasterizer_state = skybox_rasterizer_desc,
-    .rt_formats = color_format,
+    .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
+      D3D12_RT_FORMAT_ARRAY{.RTFormats = {irradiance_map_format_}, .NumRenderTargets = 1}
+    },
   };
 
   irradiance_pso_ = device_->CreatePipelineState(irradiance_pso_desc, sizeof(IrradianceDrawParams) / 4);
@@ -854,7 +856,9 @@ auto SceneRenderer::RecreatePipelines() -> void {
     .ps = CD3DX12_SHADER_BYTECODE{&g_envmap_prefilter_ps_bytes, ARRAYSIZE(g_envmap_prefilter_ps_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{&g_envmap_prefilter_ms_bytes, ARRAYSIZE(g_envmap_prefilter_ms_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rasterizer_state = skybox_rasterizer_desc,
-    .rt_formats = color_format,
+    .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
+      D3D12_RT_FORMAT_ARRAY{.RTFormats = {prefiltered_env_map_format_}, .NumRenderTargets = 1}
+    },
   };
 
   envmap_prefilter_pso_ = device_->
@@ -1451,19 +1455,19 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
         if (auto const irradiance_map{sorcery::detail::GetIrradianceMap(*active_scene)};
           !irradiance_map ||
-          irradiance_map->GetDesc().format != color_buffer_format_ ||
+          irradiance_map->GetDesc().format != irradiance_map_format_ ||
           irradiance_map->GetDesc().width != irradiance_map_size_ ||
           irradiance_map->GetDesc().height != irradiance_map_size_) {
-          sorcery::detail::RecreateIrradianceMap(*active_scene, *device_, color_buffer_format_, irradiance_map_size_);
+          sorcery::detail::RecreateIrradianceMap(*active_scene, *device_, irradiance_map_format_, irradiance_map_size_);
           packet.draw_irradiance_map = true;
         }
 
         if (auto const prefiltered_env_map{sorcery::detail::GetPrefilteredEnvMap(*active_scene)};
           !prefiltered_env_map ||
-          prefiltered_env_map->GetDesc().format != color_buffer_format_ ||
+          prefiltered_env_map->GetDesc().format != prefiltered_env_map_format_ ||
           prefiltered_env_map->GetDesc().width != prefiltered_env_map_size_ ||
           prefiltered_env_map->GetDesc().height != prefiltered_env_map_size_) {
-          sorcery::detail::RecreatePrefilteredEnvMap(*active_scene, *device_, color_buffer_format_,
+          sorcery::detail::RecreatePrefilteredEnvMap(*active_scene, *device_, prefiltered_env_map_format_,
             prefiltered_env_map_size_);
           packet.draw_prefiltered_env_map = true;
         }

@@ -391,6 +391,9 @@ private:
   static DXGI_FORMAT constexpr gbuffer1_format_{DXGI_FORMAT_R16G16_FLOAT};
   static DXGI_FORMAT constexpr gbuffer2_format_{DXGI_FORMAT_R8G8_UNORM};
   static DXGI_FORMAT constexpr velocity_format_{DXGI_FORMAT_R16G16_FLOAT};
+  static DXGI_FORMAT constexpr irradiance_map_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
+  static DXGI_FORMAT constexpr prefiltered_env_map_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
+  static DXGI_FORMAT constexpr brdf_integration_map_format_{DXGI_FORMAT_R16G16_FLOAT};
   static constexpr unsigned taa_subpixel_sample_count_{8};
   static constexpr UINT irradiance_map_size_{128};
   static constexpr UINT prefiltered_env_map_size_{128};
