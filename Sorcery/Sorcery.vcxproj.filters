@@ -418,6 +418,8 @@
     </None>
     <None Include="src\rendering\shaders\meshlet_culling.hlsli" />
     <None Include="src\rendering\shaders\irradiance.hlsli" />
+    <None Include="src\rendering\shaders\sequences.hlsli" />
+    <None Include="src\rendering\shaders\envmap_prefilter.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />
@@ -446,5 +448,7 @@
     <FxCompile Include="src\rendering\shaders\depth_only_as.hlsl" />
     <FxCompile Include="src\rendering\shaders\irradiance_ms.hlsl" />
     <FxCompile Include="src\rendering\shaders\irradiance_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\envmap_prefilter_ps.hlsl" />
+    <FxCompile Include="src\rendering\shaders\envmap_prefilter_ms.hlsl" />
   </ItemGroup>
 </Project>

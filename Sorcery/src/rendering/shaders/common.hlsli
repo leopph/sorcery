@@ -17,4 +17,7 @@ struct SorceryDrawCallParams {
 
 #pragma pack_matrix(row_major)
 
+static float const kPi = 3.14159265359;
+
+
 #endif

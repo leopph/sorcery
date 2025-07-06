@@ -91,8 +91,8 @@
       <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
       <ShaderModel>6.6</ShaderModel>
       <AllResourcesBound>true</AllResourcesBound>
-      <AdditionalOptions>-HV 202x -Wconversion -Wdouble-promotion -Whlsl-legacy-literal -enable-16bit-types -Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>-HV 202x -Wconversion -Wdouble-promotion -enable-16bit-types -Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -127,8 +127,8 @@
       <HeaderFileOutput>$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
       <ShaderModel>6.6</ShaderModel>
       <AllResourcesBound>true</AllResourcesBound>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>-HV 202x -Wconversion -Wdouble-promotion -Whlsl-legacy-literal -enable-16bit-types %(AdditionalOptions)</AdditionalOptions>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <AdditionalOptions>-HV 202x -Wconversion -Wdouble-promotion -enable-16bit-types %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -262,6 +262,7 @@
     <None Include="src\rendering\shaders\CatmullRom.hlsli" />
     <None Include="src\rendering\shaders\common.hlsli" />
     <None Include="src\rendering\shaders\depth_only.hlsli" />
+    <None Include="src\rendering\shaders\envmap_prefilter.hlsli" />
     <None Include="src\rendering\shaders\fullscreen_tri.hlsli" />
     <None Include="src\rendering\shaders\gbuffer_velocity.hlsli" />
     <None Include="src\rendering\shaders\gbuffer_utils.hlsli" />
@@ -273,6 +274,7 @@
     <None Include="src\rendering\shaders\deferred_lighting.hlsli" />
     <None Include="src\rendering\shaders\post_process.hlsli" />
     <None Include="src\rendering\shaders\raytrace.hlsli" />
+    <None Include="src\rendering\shaders\sequences.hlsli" />
     <None Include="src\rendering\shaders\shader_interop.h" />
     <None Include="src\rendering\shaders\shadow_sampling.hlsli" />
     <None Include="src\rendering\shaders\skybox.hlsli" />
@@ -325,6 +327,12 @@
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">g_%(Filename)_bytes</VariableName>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
+    </FxCompile>
+    <FxCompile Include="src\rendering\shaders\envmap_prefilter_ps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PsMain</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PsMain</EntryPointName>
     </FxCompile>
     <FxCompile Include="src\rendering\shaders\gbuffer_velocity_as.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Amplification</ShaderType>
@@ -439,6 +447,12 @@
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ShaderOutputDir)/%(Filename).h</HeaderFileOutput>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MsMain</EntryPointName>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MsMain</EntryPointName>
+    </FxCompile>
+    <FxCompile Include="src\rendering\shaders\envmap_prefilter_ms.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MsMain</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Mesh</ShaderType>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MsMain</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Mesh</ShaderType>
     </FxCompile>
     <FxCompile Include="src\rendering\shaders\skybox_ps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

@@ -346,6 +346,21 @@ struct IrradianceDrawParams {
   uint bi_clamp_samp_idx;
 };
 
+
+struct EnvmapPrefilterDrawParams {
+  row_major float4x4 view_proj_mtx;
+
+  uint rt_idx;
+  float roughness;
+  uint meshlet_buf_idx;
+  uint vertex_idx_buf_idx;
+
+  uint prim_idx_buf_idx;
+  uint pos_buf_idx;
+  uint env_map_idx;
+  uint tri_clamp_samp_idx;
+};
+
 #ifdef __cplusplus
 } // namespace sorcery
 #endif
