@@ -423,7 +423,8 @@ auto GraphicsDevice::CreatePipelineState(PipelineDesc const& desc,
   if (!root_signature) {
     std::array<CD3DX12_ROOT_PARAMETER1, 2> root_params;
     root_params[0].InitAsConstants(num_32_bit_params, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
-    root_params[1].InitAsConstants(num_32_bit_params, 1, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+    // 2 params: base vertex and base instance. Make sure this aligns with the shader code!
+    root_params[1].InitAsConstants(2, 1, 0, D3D12_SHADER_VISIBILITY_VERTEX);
 
     D3D12_VERSIONED_ROOT_SIGNATURE_DESC const root_signature_desc{
       .Version = D3D_ROOT_SIGNATURE_VERSION_1_1,
