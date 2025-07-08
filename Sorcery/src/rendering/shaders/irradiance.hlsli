@@ -10,6 +10,9 @@
 DECLARE_PARAMS(IrradianceDrawParams);
 
 
+static float const kSampleDelta = 0.025F;
+
+
 struct VertexAttributes {
   float4 pos_cs : SV_Position;
   float3 pos_os : POSITIONOS;
@@ -68,11 +71,10 @@ float4 PsMain(VertexAttributes const ps_in) : SV_Target {
   float3 const right = normalize(cross(up, normal));
   up = normalize(cross(normal, right));
 
-  float const sample_delta = 0.025;
   float sample_count = 0;
 
-  for (float phi = 0; phi < 2 * kPi; phi += sample_delta) {
-    for (float theta = 0; theta < 0.5 * kPi; theta += sample_delta) {
+  for (float phi = 0; phi < 2 * kPi; phi += kSampleDelta) {
+    for (float theta = 0; theta < 0.5 * kPi; theta += kSampleDelta) {
       float3 const tangent_sample = float3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
       float3 const sample_vec = tangent_sample.x * right + tangent_sample.y * up + tangent_sample.z * normal;
 
