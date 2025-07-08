@@ -13,6 +13,9 @@
 DECLARE_PARAMS(EnvmapPrefilterDrawParams);
 
 
+static uint const kSampleCount = 1024u;
+
+
 struct VertexAttributes {
   float4 pos_cs : SV_Position;
   float3 pos_os : POSITIONOS;
@@ -67,13 +70,11 @@ float4 PsMain(VertexAttributes const attr) : SV_Target {
   float3 const R = N;
   float3 const V = R;
 
-  uint const sample_count = 1024u;
-
   float total_weight = 0.0;
   float3 prefiltered_color = 0;
 
-  for (uint i = 0u; i < sample_count; ++i) {
-    float2 const Xi = Hammersley(i, sample_count);
+  for (uint i = 0u; i < kSampleCount; ++i) {
+    float2 const Xi = Hammersley(i, kSampleCount);
     float3 const H = ImportanceSampleGGX(Xi, N, g_params.roughness);
     float3 const L = normalize(2.0 * dot(V, H) * H - V);
 
@@ -88,11 +89,11 @@ float4 PsMain(VertexAttributes const attr) : SV_Target {
 
       float2 cubemap_size;
       env_map.GetDimensions(cubemap_size.x, cubemap_size.y);
-      float resolution = max(cubemap_size.x, cubemap_size.y); // resolution of source cubemap (per face)
-      float sa_texel = 4.0 * PI / (6.0 * resolution * resolution);
-      float sa_sample = 1.0 / (float(sample_count) * pdf + 0.0001);
+      float const resolution = max(cubemap_size.x, cubemap_size.y); // resolution of source cubemap (per face)
+      float const sa_texel = 4.0 * PI / (6.0 * resolution * resolution);
+      float const sa_sample = 1.0 / (float(kSampleCount) * pdf + 0.0001);
 
-      float mip_level = g_params.roughness == 0.0 ? 0.0 : 0.5 * log2(sa_sample / sa_texel);
+      float const mip_level = g_params.roughness == 0.0 ? 0.0 : 0.5 * log2(sa_sample / sa_texel);
 
       prefiltered_color += env_map.SampleLevel(tri_clamp_samp, L, mip_level).rgb * NdotL;
       total_weight += NdotL;
