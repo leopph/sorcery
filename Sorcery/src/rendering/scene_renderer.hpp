@@ -395,9 +395,9 @@ private:
   static DXGI_FORMAT constexpr prefiltered_env_map_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
   static DXGI_FORMAT constexpr brdf_integration_map_format_{DXGI_FORMAT_R16G16_FLOAT};
   static constexpr unsigned taa_subpixel_sample_count_{8};
-  static constexpr UINT irradiance_map_size_{512};
-  static constexpr UINT prefiltered_env_map_size_{512};
-  static constexpr UINT brdf_integration_map_size_{512};
+  static constexpr UINT irradiance_map_size_{1024};
+  static constexpr UINT prefiltered_env_map_size_{1024};
+  static constexpr UINT brdf_integration_map_size_{128};
 
   ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<Window> window_;
