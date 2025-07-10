@@ -49,10 +49,10 @@
 #include "shaders/generated/Debug/taa_resolve_vs.h"
 #include "shaders/generated/Debug/vtx_skinning_cs.h"
 #else
-#include "shaders/generated/Release/brdf_integration_ps.h"
-#include "shaders/generated/Release/brdf_integration_vs.h"
 #include "shaders/generated/Release//envmap_prefilter_ms.h"
 #include "shaders/generated/Release//envmap_prefilter_ps.h"
+#include "shaders/generated/Release/brdf_integration_ps.h"
+#include "shaders/generated/Release/brdf_integration_vs.h"
 #include "shaders/generated/Release/deferred_lighting_ps.h"
 #include "shaders/generated/Release/deferred_lighting_vs.h"
 #include "shaders/generated/Release/depth_only_as.h"
@@ -506,7 +506,18 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
         auto const shadowMapSize{dir_shadow_map_arr_->GetSize()};
         auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
 
-        Matrix4 shadowViewMtx{Matrix4::LookTo(Vector3::Zero(), light.direction, Vector3::Up())};
+        auto const up{
+          [&light] {
+            auto const dot{Dot(light.direction, Vector3::Up())};
+            return Approximately(dot, 1.0F)
+                     ? Vector3::Backward()
+                     : Approximately(dot, -1.0F)
+                         ? Vector3::Forward()
+                         : Vector3::Up();
+          }()
+        };
+
+        Matrix4 shadowViewMtx{Matrix4::LookTo(Vector3::Zero(), light.direction, up)};
         cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
         cascadeCenterWS /= worldUnitsPerTexel;
         cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
@@ -518,7 +529,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
         auto const shadow_near_clip{-sphereRadius - light.shadow_extension};
         auto const shadow_far_clip{sphereRadius};
 
-        shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light.direction, Vector3::Up());
+        shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light.direction, up);
         auto const shadowProjMtx{
           TransformProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
             sphereRadius, -sphereRadius, shadow_near_clip, shadow_far_clip))
