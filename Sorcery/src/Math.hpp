@@ -40,6 +40,8 @@ float constexpr PI{std::numbers::pi_v<float>};
 template<typename T>
 [[nodiscard]] constexpr auto Pow(T base, T exp) noexcept;
 
+[[nodiscard]] inline auto Approximately(float lhs, float rhs) noexcept -> bool;
+
 
 template<typename T, int N> requires(N > 1)
 class Vector {
@@ -520,6 +522,11 @@ constexpr auto Pow(T const base, T const exp) noexcept {
   }
 
   return ret;
+}
+
+
+inline auto Approximately(float const lhs, float const rhs) noexcept -> bool {
+  return std::abs(lhs - rhs) < 0.000001F;
 }
 
 
