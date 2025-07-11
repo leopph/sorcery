@@ -250,11 +250,14 @@ auto EditorApp::SaveCurrentSceneToFile() -> void {
     if (NFD::UniquePath dst;
       SaveDialog(dst, &filter, 1,
         ToUntypedStrView(resource_db_.GetResourceDirectoryAbsolutePath().u8string()).data()) == NFD_OKAY) {
-      if (auto const dstResDirRel{
-        relative(std::filesystem::path{dst.get()}, resource_db_.GetResourceDirectoryAbsolutePath()) +=
-        ResourceManager::SCENE_RESOURCE_EXT
-      }; !dstResDirRel.empty()) {
-        resource_db_.CreateResource(GetResourceManager().Remove<Scene>(scene_->GetGuid()), dstResDirRel);
+      auto dst_res_dir_rel{relative(std::filesystem::path{dst.get()}, resource_db_.GetResourceDirectoryAbsolutePath())};
+
+      if (dst_res_dir_rel.extension() != ResourceManager::SCENE_RESOURCE_EXT) {
+        dst_res_dir_rel += ResourceManager::SCENE_RESOURCE_EXT;
+      }
+
+      if (!dst_res_dir_rel.empty()) {
+        resource_db_.CreateResource(GetResourceManager().Remove<Scene>(scene_->GetGuid()), dst_res_dir_rel);
       }
     }
   }
