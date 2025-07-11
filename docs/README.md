@@ -36,6 +36,7 @@ Some screenshots from Sorcery's editor, Mage!
   * Multi-camera support with custom viewports and render targets
   * Skeletal animations with compute skinning
   * Temporal Anti-Aliasing (TAA)
+  * Image Based Lighting based on skybox (IBL)
 * Entity-Component model
   * Camera, Static Mesh, Light, Skybox, and Transform components
   * Transform hierarchy
