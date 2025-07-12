@@ -29,10 +29,13 @@ App::App(std::span<std::string_view const> const args) :
   },
   graphics_device_{
 #ifndef NDEBUG
-    true
+    true,
 #else
-    false
+    false,
 #endif
+    std::ranges::any_of(args, [](std::string_view const arg) {
+      return arg == "-swrendering";
+    })
   },
   swap_chain_{
     graphics_device_.CreateSwapChain(graphics::SwapChainDesc{

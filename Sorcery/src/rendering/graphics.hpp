@@ -295,7 +295,7 @@ struct ExecuteBarrierCmdListRecord {
 
 class GraphicsDevice {
 public:
-  LEOPPHAPI explicit GraphicsDevice(bool enable_debug);
+  LEOPPHAPI explicit GraphicsDevice(bool enable_debug, bool use_sw_rendering);
   GraphicsDevice(GraphicsDevice const&) = delete;
   GraphicsDevice(GraphicsDevice&&) = delete;
 

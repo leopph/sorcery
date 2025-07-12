@@ -233,7 +233,7 @@ auto GetActualMipLevels(TextureDesc const& desc) -> UINT {
 }
 
 
-GraphicsDevice::GraphicsDevice(bool const enable_debug) {
+GraphicsDevice::GraphicsDevice(bool const enable_debug, bool const use_sw_rendering) {
   if (enable_debug) {
     ComPtr<ID3D12Debug6> debug;
     ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debug)), "Failed to get D3D12 debug interface.");
@@ -257,8 +257,13 @@ GraphicsDevice::GraphicsDevice(bool const enable_debug) {
   ThrowIfFailed(CreateDXGIFactory2(factory_create_flags, IID_PPV_ARGS(&factory_)), "Failed to create DXGI factory.");
 
   ComPtr<IDXGIAdapter4> adapter;
-  ThrowIfFailed(factory_->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)),
-    "Failed to get high performance adapter.");
+
+  if (use_sw_rendering) {
+    ThrowIfFailed(factory_->EnumWarpAdapter(IID_PPV_ARGS(&adapter)), "Failed to get WARP adapter.");
+  } else {
+    ThrowIfFailed(factory_->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)),
+      "Failed to get high performance adapter.");
+  }
 
   ThrowIfFailed(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device_)),
     "Failed to create D3D12 device.");
