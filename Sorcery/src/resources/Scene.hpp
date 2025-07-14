@@ -85,7 +85,7 @@ private:
 
   Cubemap* skybox_{nullptr};
   SkyMode sky_mode_{SkyMode::Color};
-  Vector3 sky_color_{41.F / 255.F, 195.F / 255.F, 243.F / 255.F};
+  Vector3 sky_color_{0.F, 36.F / 255.F, 1.F};
   graphics::SharedDeviceChildHandle<graphics::Texture> irradiance_map_{};
   graphics::SharedDeviceChildHandle<graphics::Texture> prefiltered_env_map_{};
 };
