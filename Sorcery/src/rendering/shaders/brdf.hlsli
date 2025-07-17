@@ -1,9 +1,7 @@
 #ifndef BRDF_HLSLI
 #define BRDF_HLSLI
+
 #include "common.hlsli"
-
-
-static float const PI = 3.14159265359;
 
 
 float DistributionTrowbridgeReitz(float const n_dot_h, float const roughness) {
@@ -11,7 +9,7 @@ float DistributionTrowbridgeReitz(float const n_dot_h, float const roughness) {
   float const a2 = a * a;
   float const n_dot_h2 = n_dot_h * n_dot_h;
   float denom = n_dot_h2 * (a2 - 1.0) + 1.0;
-  denom = PI * denom * denom;
+  denom = kPi * denom * denom;
   return a2 / denom;
 }
 
@@ -106,7 +104,7 @@ float3 CookTorrance(float3 const N, float3 const V, float3 const L, float3 const
   float const NdotL = max(dot(N, L), 0.0);
 
   // outgoing radiance
-  return (kD * albedo / PI + specular) * radiance * NdotL;
+  return (kD * albedo / kPi + specular) * radiance * NdotL;
 }
 
 

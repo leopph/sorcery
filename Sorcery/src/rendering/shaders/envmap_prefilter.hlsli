@@ -90,7 +90,7 @@ float4 PsMain(VertexAttributes const attr) : SV_Target {
       float2 cubemap_size;
       env_map.GetDimensions(cubemap_size.x, cubemap_size.y);
       float const resolution = max(cubemap_size.x, cubemap_size.y); // resolution of source cubemap (per face)
-      float const sa_texel = 4.0 * PI / (6.0 * resolution * resolution);
+      float const sa_texel = 4.0 * kPi / (6.0 * resolution * resolution);
       float const sa_sample = 1.0 / (float(kSampleCount) * pdf + 0.0001);
 
       float const mip_level = g_params.roughness == 0.0 ? 0.0 : 0.5 * log2(sa_sample / sa_texel);
