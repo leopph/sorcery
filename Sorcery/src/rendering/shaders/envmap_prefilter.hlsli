@@ -81,9 +81,9 @@ float4 PsMain(VertexAttributes const attr) : SV_Target {
     float const NdotL = max(dot(N, L), 0.0);
 
     if (NdotL > 0.0) {
+      float const NdotH = saturate(dot(N, H));
       // sample from the environment's mip level based on roughness/pdf
-      float const D = DistributionTrowbridgeReitz(N, H, g_params.roughness);
-      float const NdotH = max(dot(N, H), 0.0);
+      float const D = DistributionTrowbridgeReitz(NdotH, g_params.roughness);
       float const HdotV = max(dot(H, V), 0.0);
       float const pdf = D * NdotH / (4.0 * HdotV) + 0.0001;
 

@@ -6,17 +6,13 @@
 static float const PI = 3.14159265359;
 
 
-float DistributionTrowbridgeReitz(float3 const N, float3 const H, float const roughness) {
-  float const a = pow(roughness, 2);
-  float const a2 = pow(a, 2);
-  float const NdotH = max(dot(N, H), 0.0);
-  float const NdotH2 = pow(NdotH, 2);
-
-  float const num = a2;
-  float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-  denom = PI * pow(denom, 2);
-
-  return num / denom;
+float DistributionTrowbridgeReitz(float const n_dot_h, float const roughness) {
+  float const a = roughness * roughness;
+  float const a2 = a * a;
+  float const n_dot_h2 = n_dot_h * n_dot_h;
+  float denom = n_dot_h2 * (a2 - 1.0) + 1.0;
+  denom = PI * denom * denom;
+  return a2 / denom;
 }
 
 
@@ -92,8 +88,10 @@ float3 CookTorrance(float3 const N, float3 const V, float3 const L, float3 const
   float3 const H = normalize(V + L);
   float3 const radiance = lightColor * lightIntensity * lightAtten;
 
+  float const n_dot_h = saturate(dot(N, H));
+
   // cook-torrance brdf
-  float const NDF = DistributionTrowbridgeReitz(N, H, roughness);
+  float const NDF = DistributionTrowbridgeReitz(n_dot_h, roughness);
   float const G = GeomertySmithDirect(N, V, L, roughness);
   float3 const F = FresnelSchlick(max(dot(H, V), 0.0), F0);
 
