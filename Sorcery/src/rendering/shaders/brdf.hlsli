@@ -139,11 +139,11 @@ float3 PrefilterEnvMap(float3 const R, float const roughness, TextureCube const 
     precise float3 const L = normalize(2 * dot(V, H) * H - V);
 
     float const n_dot_l = saturate(dot(N, L));
+    float const n_dot_h = saturate(dot(N, H));
+    float const v_dot_h = saturate(dot(V, H));
 
     if (n_dot_l > 0) {
       // sample from the environment's mip level based on roughness/pdf
-      float const n_dot_h = saturate(dot(N, H));
-      float const v_dot_h = saturate(dot(V, H));
 
       float const D = DistributionTrowbridgeReitz(n_dot_h, roughness);
       float const pdf = D * n_dot_h / (4.0 * v_dot_h) + 0.0001;
