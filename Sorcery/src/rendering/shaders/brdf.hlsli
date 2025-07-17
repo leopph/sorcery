@@ -15,58 +15,45 @@ float DistributionTrowbridgeReitz(float const n_dot_h, float const roughness) {
 
 
 // Use for direct lighting
-float GeometrySchlickTrowbridgeReitzDirect(float const NdotV, float const roughness) {
+float GeometrySchlickTrowbridgeReitzDirect(float const n_dot_v, float const roughness) {
   float const r = roughness + 1.0;
-  float const k = pow(r, 2) / 8.0;
-
-  float const num = NdotV;
-  float const denom = NdotV * (1.0 - k) + k;
-
-  return num / denom;
+  float const k = r * r / 8.0;
+  return n_dot_v / (n_dot_v * (1.0 - k) + k);
 }
 
 
 // Use for IBL
-float GeometrySchlickTrowbridgeReitzIBL(float const NdotV, float const roughness) {
-  float const a = roughness;
-  float const k = (a * a) / 2.0;
-
-  float const nom = NdotV;
-  float const denom = NdotV * (1.0 - k) + k;
-
-  return nom / denom;
+float GeometrySchlickTrowbridgeReitzIbl(float const n_dot_v, float const roughness) {
+  float const k = (roughness * roughness) / 2.0;
+  return n_dot_v / (n_dot_v * (1.0 - k) + k);
 }
 
 
 // Use for direct lighting
-float GeomertySmithDirect(float3 const N, float3 const V, float3 const L, float const roughness) {
-  float const NdotV = max(dot(N, V), 0.0);
-  float const NdotL = max(dot(N, L), 0.0);
-  float const ggx2 = GeometrySchlickTrowbridgeReitzDirect(NdotV, roughness);
-  float const ggx1 = GeometrySchlickTrowbridgeReitzDirect(NdotL, roughness);
+float GeomertySmithDirect(float const n_dot_v, float const n_dot_l, float const roughness) {
+  float const ggx2 = GeometrySchlickTrowbridgeReitzDirect(n_dot_v, roughness);
+  float const ggx1 = GeometrySchlickTrowbridgeReitzDirect(n_dot_l, roughness);
 
   return ggx1 * ggx2;
 }
 
 
 // Use for IBL
-float GeometrySmithIBL(float3 const N, float3 const V, float3 const L, float const roughness) {
-  float const NdotV = max(dot(N, V), 0.0);
-  float const NdotL = max(dot(N, L), 0.0);
-  float const ggx2 = GeometrySchlickTrowbridgeReitzIBL(NdotV, roughness);
-  float const ggx1 = GeometrySchlickTrowbridgeReitzIBL(NdotL, roughness);
+float GeometrySmithIbl(float const n_dot_v, float const n_dot_l, float const roughness) {
+  float const ggx2 = GeometrySchlickTrowbridgeReitzIbl(n_dot_v, roughness);
+  float const ggx1 = GeometrySchlickTrowbridgeReitzIbl(n_dot_l, roughness);
 
   return ggx1 * ggx2;
 }
 
 
-float3 FresnelSchlick(float const cosTheta, float3 const F0) {
-  return F0 + (1.0 - F0) * pow(saturate(1.0 - cosTheta), 5.0);
+float3 FresnelSchlick(float const v_dot_h, float3 const f0) {
+  return f0 + (1.0 - f0) * pow(saturate(1.0 - v_dot_h), 5.0);
 }
 
 
-float3 FresnelSchlickRoughness(float const cosTheta, float3 const F0, float roughness) {
-  return F0 + (max((float3)(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+float3 FresnelSchlickRoughness(float const v_dot_h, float3 const f0, float roughness) {
+  return f0 + (max((float3)(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - v_dot_h, 0.0, 1.0), 5.0);
 }
 
 
@@ -87,24 +74,25 @@ float3 CookTorrance(float3 const N, float3 const V, float3 const L, float3 const
   float3 const radiance = lightColor * lightIntensity * lightAtten;
 
   float const n_dot_h = saturate(dot(N, H));
+  float const n_dot_v = saturate(dot(N, V));
+  float const n_dot_l = saturate(dot(N, L));
+  float const v_dot_h = saturate(dot(V, H));
 
   // cook-torrance brdf
   float const NDF = DistributionTrowbridgeReitz(n_dot_h, roughness);
-  float const G = GeomertySmithDirect(N, V, L, roughness);
-  float3 const F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+  float const G = GeomertySmithDirect(n_dot_v, n_dot_l, roughness);
+  float3 const F = FresnelSchlick(v_dot_h, F0);
 
   float3 const numerator = NDF * G * F;
-  float const denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+  float const denominator = 4.0 * n_dot_v * n_dot_l + 0.0001;
   float3 const specular = numerator / denominator;
 
   float3 const kS = F;
   float3 kD = 1.0 - kS;
   kD *= 1.0 - metallic;
 
-  float const NdotL = max(dot(N, L), 0.0);
-
   // outgoing radiance
-  return (kD * albedo / kPi + specular) * radiance * NdotL;
+  return (kD * albedo / kPi + specular) * radiance * n_dot_l;
 }
 
 

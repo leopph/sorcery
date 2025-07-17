@@ -9,11 +9,11 @@
 static uint const kSampleCount = 1024u;
 
 
-float2 IntegrateBRDF(float const NdotV, float const roughness) {
+float2 IntegrateBRDF(float const n_dot_v, float const roughness) {
   float3 V;
-  V.x = sqrt(1.0 - NdotV * NdotV);
+  V.x = sqrt(1.0 - n_dot_v * n_dot_v);
   V.y = 0.0;
-  V.z = NdotV;
+  V.z = n_dot_v;
 
   float A = 0.0;
   float B = 0.0;
@@ -23,28 +23,26 @@ float2 IntegrateBRDF(float const NdotV, float const roughness) {
   for (uint i = 0u; i < kSampleCount; ++i) {
     float2 const Xi = Hammersley(i, kSampleCount);
     float3 const H = ImportanceSampleGGX(Xi, N, roughness);
+
     // Very important to keep the precise qualifier here
     // Otherwise optimizations will lead to incorrect results
     precise float3 const L = normalize(2.0 * dot(V, H) * H - V);
 
-    float const NdotL = max(L.z, 0.0);
-    float const NdotH = max(H.z, 0.0);
-    float const VdotH = max(dot(V, H), 0.0);
+    float const n_dot_l = saturate(L.z);
+    float const n_dot_h = saturate(H.z);
+    float const v_dot_h = saturate(dot(V, H));
 
-    if (NdotL > 0.0) {
-      float const G = GeometrySmithIBL(N, V, L, roughness);
-      float const G_Vis = (G * VdotH) / (NdotH * NdotV);
-      float const Fc = pow(1.0 - VdotH, 5.0);
+    if (n_dot_l > 0.0) {
+      float const G = GeometrySmithIbl(n_dot_v, n_dot_l, roughness);
 
+      float const G_Vis = (G * v_dot_h) / (n_dot_h * n_dot_v);
+      float const Fc = pow(1.0 - v_dot_h, 5.0);
       A += (1.0 - Fc) * G_Vis;
       B += Fc * G_Vis;
     }
   }
 
-  A /= float(kSampleCount);
-  B /= float(kSampleCount);
-
-  return float2(A, B);
+  return float2(A, B) / kSampleCount;
 }
 
 
