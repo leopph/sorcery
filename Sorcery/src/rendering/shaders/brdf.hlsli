@@ -113,8 +113,7 @@ float3 ImportanceSampleGGX(float2 const Xi, float3 const N, float const roughnes
   float3 tangent = normalize(cross(up, N));
   float3 bitangent = cross(N, tangent);
 
-  float3 samplefloat = tangent * H.x + bitangent * H.y + N * H.z;
-  return normalize(samplefloat);
+  return normalize(tangent * H.x + bitangent * H.y + N * H.z);
 }
 
 
