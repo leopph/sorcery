@@ -80,13 +80,11 @@ float3 CookTorrance(float3 const N, float3 const V, float3 const L, float3 const
   float const v_dot_h = saturate(dot(V, H));
 
   // cook-torrance brdf
-  float const NDF = DistributionTrowbridgeReitz(n_dot_h, roughness);
+  float const D = DistributionTrowbridgeReitz(n_dot_h, roughness);
   float const G = GeomertySmithDirect(n_dot_v, n_dot_l, roughness);
   float3 const F = FresnelSchlick(v_dot_h, F0);
 
-  float3 const numerator = NDF * G * F;
-  float const denominator = 4.0 * n_dot_v * n_dot_l + 0.0001;
-  float3 const specular = numerator / denominator;
+  float3 const specular = (D * G * F) / (4.0 * n_dot_v * n_dot_l + 0.0001);
 
   float3 const kS = F;
   float3 kD = 1.0 - kS;
