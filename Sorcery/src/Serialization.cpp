@@ -1,7 +1,7 @@
 #include "Serialization.hpp"
 
 #include "app.hpp"
-#include "ResourceManager.hpp"
+#include "resource_manager.hpp"
 #include "Resources/Resource.hpp"
 
 #include <cassert>
@@ -45,6 +45,28 @@ auto convert<sorcery::Guid>::decode(Node const& node, sorcery::Guid& guid) -> bo
     return false;
   }
   guid = sorcery::Guid::Parse(node.as<std::string>());
+  return true;
+}
+
+
+auto convert<sorcery::ResourceId>::encode(sorcery::ResourceId const& res_id) -> Node {
+  Node node;
+  node["guid"] = res_id.GetGuid();
+  node["fileIdx"] = res_id.GetIdxInFile();
+  return node;
+}
+
+
+auto convert<sorcery::ResourceId>::decode(Node const& node, sorcery::ResourceId& res_id) -> bool {
+  if (!node.IsMap()) {
+    return false;
+  }
+
+  res_id = sorcery::ResourceId{
+    node["guid"].as<sorcery::Guid>(),
+    node["fileIdx"].as<int>()
+  };
+
   return true;
 }
 }
@@ -139,7 +161,7 @@ auto ReflectionSerializeToYaml(rttr::variant const& v,
 
   if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
     auto const res{v.get_value<Resource*>()};
-    return YAML::Node{res ? res->GetGuid() : Guid::Invalid()};
+    return YAML::Node{res ? res->GetId() : ResourceId::Invalid()};
   }
 
   if (v.is_sequential_container()) {
@@ -343,7 +365,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
 
   if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
     try {
-      if (auto const res{App::Instance().GetResourceManager().GetOrLoad(node.as<Guid>())}) {
+      if (auto const res{App::Instance().GetResourceManager().GetOrLoad(node.as<ResourceId>())}) {
         if (rttr::variant resVar{res}; resVar.can_convert(v.get_type())) {
           [[maybe_unused]] auto const success{resVar.convert(v.get_type())};
           assert(success);

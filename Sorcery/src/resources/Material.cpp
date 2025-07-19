@@ -5,7 +5,7 @@
 #undef FindResource
 #include "../GUI.hpp"
 #include "../job_system.hpp"
-#include "../ResourceManager.hpp"
+#include "../resource_manager.hpp"
 #include "../rendering/render_manager.hpp"
 
 #include <imgui.h>
@@ -218,22 +218,22 @@ auto Material::Serialize() const noexcept -> YAML::Node {
   ret["alphaThresh"] = GetAlphaThreshold();
 
   auto const albedoMap{GetAlbedoMap()};
-  ret["albedoMap"] = albedoMap ? albedoMap->GetGuid() : Guid::Invalid();
+  ret["albedoMap"] = albedoMap ? albedoMap->GetId() : ResourceId::Invalid();
 
   auto const metallicMap{GetMetallicMap()};
-  ret["metallicMap"] = metallicMap ? metallicMap->GetGuid() : Guid::Invalid();
+  ret["metallicMap"] = metallicMap ? metallicMap->GetId() : ResourceId::Invalid();
 
   auto const roughnessMap{GetRoughnessMap()};
-  ret["roughnessMap"] = roughnessMap ? roughnessMap->GetGuid() : Guid::Invalid();
+  ret["roughnessMap"] = roughnessMap ? roughnessMap->GetId() : ResourceId::Invalid();
 
   auto const aoMap{GetAoMap()};
-  ret["aoMap"] = aoMap ? aoMap->GetGuid() : Guid::Invalid();
+  ret["aoMap"] = aoMap ? aoMap->GetId() : ResourceId::Invalid();
 
   auto const normalMap{GetNormalMap()};
-  ret["normalMap"] = normalMap ? normalMap->GetGuid() : Guid::Invalid();
+  ret["normalMap"] = normalMap ? normalMap->GetId() : ResourceId::Invalid();
 
   auto const opacityMask{GetOpacityMask()};
-  ret["opacityMask"] = opacityMask ? opacityMask->GetGuid() : Guid::Invalid();
+  ret["opacityMask"] = opacityMask ? opacityMask->GetId() : ResourceId::Invalid();
 
   return ret;
 }
@@ -248,13 +248,13 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   SetAlphaThreshold(yamlNode["alphaThresh"].as<float>(GetAlphaThreshold()));
 
   struct JobData {
-    Guid guid;
+    ResourceId res_id;
     Texture2D* tex;
   };
 
   auto const loader_job_func{
     [](JobData* const data) {
-      data->tex = App::Instance().GetResourceManager().GetOrLoad<Texture2D>(data->guid);
+      data->tex = App::Instance().GetResourceManager().GetOrLoad<Texture2D>(data->res_id);
     }
   };
 
@@ -276,38 +276,38 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   ObserverPtr<Job> opacity_mask_job{};
   JobData opacity_mask_job_data{};
 
-  if (auto const guid{yamlNode["albedoMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    albedo_map_job_data.guid = guid;
+  if (auto const res_id{yamlNode["albedoMap"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
+    albedo_map_job_data.res_id = res_id;
     albedo_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &albedo_map_job_data);
     App::Instance().GetJobSystem().Run(albedo_map_job);
   }
 
-  if (auto const guid{yamlNode["metallicMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    metallic_map_job_data.guid = guid;
+  if (auto const res_id{yamlNode["metallicMap"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
+    metallic_map_job_data.res_id = res_id;
     metallic_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &metallic_map_job_data);
     App::Instance().GetJobSystem().Run(metallic_map_job);
   }
 
-  if (auto const guid{yamlNode["roughnessMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    roughness_map_job_data.guid = guid;
+  if (auto const res_id{yamlNode["roughnessMap"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
+    roughness_map_job_data.res_id = res_id;
     roughness_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &roughness_map_job_data);
     App::Instance().GetJobSystem().Run(roughness_map_job);
   }
 
-  if (auto const guid{yamlNode["aoMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    ao_map_job_data.guid = guid;
+  if (auto const res_id{yamlNode["aoMap"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
+    ao_map_job_data.res_id = res_id;
     ao_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &ao_map_job_data);
     App::Instance().GetJobSystem().Run(ao_map_job);
   }
 
-  if (auto const guid{yamlNode["normalMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    normal_map_job_data.guid = guid;
+  if (auto const res_id{yamlNode["normalMap"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
+    normal_map_job_data.res_id = res_id;
     normal_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &normal_map_job_data);
     App::Instance().GetJobSystem().Run(normal_map_job);
   }
 
-  if (auto const guid{yamlNode["opacityMask"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-    opacity_mask_job_data.guid = guid;
+  if (auto const res_id{yamlNode["opacityMask"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
+    opacity_mask_job_data.res_id = res_id;
     opacity_mask_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &opacity_mask_job_data);
     App::Instance().GetJobSystem().Run(opacity_mask_job);
   }
@@ -332,7 +332,8 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
 auto Material::OnDrawProperties(bool& changed) -> void {
   NativeResource::OnDrawProperties(changed);
 
-  if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+  if (ImGui::BeginTable(std::format("{}", GetId().GetGuid().ToString()).c_str(), 2,
+    ImGuiTableFlags_SizingStretchSame)) {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::PushItemWidth(FLT_MIN);

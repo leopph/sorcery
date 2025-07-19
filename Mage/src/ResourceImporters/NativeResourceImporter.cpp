@@ -1,6 +1,6 @@
 #include "NativeResourceImporter.hpp"
 
-#include "ResourceManager.hpp"
+#include "resource_manager.hpp"
 #include "../Resources/Material.hpp"
 #include "../Resources/Scene.hpp"
 

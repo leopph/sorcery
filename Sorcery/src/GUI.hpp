@@ -3,7 +3,7 @@
 #include "app.hpp"
 #include "Core.hpp"
 #include "Object.hpp"
-#include "ResourceManager.hpp"
+#include "resource_manager.hpp"
 #include "Util.hpp"
 #include "Resources/Resource.hpp"
 
@@ -75,7 +75,7 @@ auto ObjectPicker<T>::QueryObjects(bool const insertNull) noexcept -> void {
 
     if (insertNull) {
       mObjects.insert(std::begin(mObjects),
-        ResourceManager::ResourceInfo{Guid::Invalid(), std::string{}, rttr::type::get<T>()});
+        ResourceManager::ResourceInfo{ResourceId::Invalid(), std::string{}, rttr::type::get<T>()});
     }
   } else {
     Object::FindObjectsOfType(mObjects);
@@ -112,9 +112,9 @@ auto ObjectPicker<T>::Draw(T*& targetObj, bool const allowNull) noexcept -> bool
       auto constexpr fmt{"{}##SelectableObjectPicker{}"};
 
       if constexpr (std::derived_from<T, Resource>) {
-        if (ImGui::Selectable(std::format(fmt, obj.guid.IsValid() ? obj.name : NULL_DISPLAY_NAME,
+        if (ImGui::Selectable(std::format(fmt, obj.id.IsValid() ? obj.name : NULL_DISPLAY_NAME,
           mPopupId).c_str())) {
-          targetObj = App::Instance().GetResourceManager().GetOrLoad<T>(obj.guid);
+          targetObj = App::Instance().GetResourceManager().GetOrLoad<T>(obj.id);
           ret = true;
         }
       } else {

@@ -2,16 +2,16 @@
 
 
 namespace sorcery {
-auto Resource::GetGuid() const -> Guid const& {
-  return mGuid;
+auto Resource::GetId() const noexcept -> ResourceId const& {
+  return id_;
 }
 
 
-auto Resource::SetGuid(Guid const& guid) -> void {
-  if (!guid.IsValid()) {
-    throw std::runtime_error{ "Cannot set invalid Guid on Object." };
+auto Resource::SetId(ResourceId const& res_id) -> void {
+  if (!res_id.IsValid()) {
+    throw std::runtime_error{"Cannot set invalid ResourceId on Resource."};
   }
 
-  mGuid = guid;
+  id_ = res_id;
 }
 }

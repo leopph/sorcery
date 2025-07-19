@@ -36,7 +36,7 @@ auto MainMenuBar::Draw() -> void {
           OpenDialog(dst_path_abs, &filter_item, 1, default_path_str.c_str()) == NFD_OKAY) {
           if (auto const dst_path_res_dir_rel{relative(ToU8StrView(dst_path_abs.get()), res_dir_abs_path)};
             !dst_path_res_dir_rel.empty()) {
-            app_->OpenScene(res_db.PathToGuid(dst_path_res_dir_rel));
+            app_->OpenScene(ResourceId{res_db.PathToGuid(dst_path_res_dir_rel), 0});
           }
         }
       }

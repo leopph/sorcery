@@ -10,7 +10,7 @@
 #include "../app.hpp"
 #include "../MemoryAllocation.hpp"
 #include "../random.hpp"
-#include "../ResourceManager.hpp"
+#include "../resource_manager.hpp"
 #include "../Window.hpp"
 #include "../Resources/Scene.hpp"
 #include "../scene_objects/Entity.hpp"
