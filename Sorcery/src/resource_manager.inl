@@ -7,10 +7,10 @@
 
 namespace sorcery {
 template<std::derived_from<Resource> ResType>
-auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
+auto ResourceManager::GetOrLoad(ResourceId const& res_id) -> ResType* {
   // Check default resources
   for (auto const& def_res : default_resources_) {
-    if (def_res->GetGuid() == guid) {
+    if (def_res->GetId() == res_id) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
         return rttr::rttr_cast<ResType*>(def_res.Get());
       } else {
@@ -23,7 +23,7 @@ auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
   {
     auto const resources{loaded_resources_.LockShared()};
 
-    if (auto const it{resources->find(guid)}; it != std::end(*resources)) {
+    if (auto const it{resources->find(res_id)}; it != std::end(*resources)) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
         return rttr::rttr_cast<ResType*>(it->get());
       } else {
@@ -38,7 +38,7 @@ auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
 
   {
     auto const mappings{mappings_.LockShared()};
-    if (auto const it{mappings->find(guid)}; it != std::end(*mappings)) {
+    if (auto const it{mappings->find(res_id)}; it != std::end(*mappings)) {
       desc = it->second;
     }
   }
@@ -46,7 +46,7 @@ auto ResourceManager::GetOrLoad(Guid const& guid) -> ResType* {
   // Load resource
 
   if (desc) {
-    if (auto const res{InternalLoadResource(guid, *desc)}) {
+    if (auto const res{InternalLoadResource(res_id, *desc)}) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
         return rttr::rttr_cast<ResType*>(res.Get());
       } else {
@@ -70,15 +70,15 @@ auto ResourceManager::Add(std::unique_ptr<ResType> resource) -> ObserverPtr<ResT
 
 
 template<std::derived_from<Resource> ResType>
-auto ResourceManager::Remove(Guid const& guid) -> std::unique_ptr<ResType> {
+auto ResourceManager::Remove(ResourceId const& res_id) -> std::unique_ptr<ResType> {
   auto resources{loaded_resources_.Lock()};
 
   if (auto const it{
-    std::ranges::find_if(*resources, [&guid](std::unique_ptr<Resource> const& res) {
+    std::ranges::find_if(*resources, [&res_id](std::unique_ptr<Resource> const& res) {
       if constexpr (std::is_same_v<ResType, Resource>) {
-        return res->GetGuid() == guid;
+        return res->GetId() == res_id;
       } else {
-        return res->GetGuid() == guid && rttr::type::get(*res).get_raw_type().is_derived_from<ResType>();
+        return res->GetId() == res_id && rttr::type::get(*res).get_raw_type().is_derived_from<ResType>();
       }
     })
   }; it != std::end(*resources)) {
@@ -87,12 +87,6 @@ auto ResourceManager::Remove(Guid const& guid) -> std::unique_ptr<ResType> {
   }
 
   return nullptr;
-}
-
-
-template<std::derived_from<Resource> T>
-auto ResourceManager::GetGuidsForResourcesOfType(std::vector<Guid>& out) noexcept -> void {
-  GetGuidsForResourcesOfType(rttr::type::get<T>(), out);
 }
 
 

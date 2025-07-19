@@ -4,7 +4,7 @@
 #include "NativeResource.hpp"
 #include "observer_ptr.hpp"
 #include "ResourceImporters/ResourceImporter.hpp"
-#include "ResourceManager.hpp"
+#include "resource_manager.hpp"
 
 #include <filesystem>
 #include <map>

@@ -31,7 +31,7 @@ public:
 
 
   struct ResourceInfo {
-    Guid guid;
+    ResourceId id;
     std::string name;
     rttr::type type;
   };
@@ -40,24 +40,20 @@ public:
   LEOPPHAPI explicit ResourceManager(JobSystem& job_system);
 
   template<std::derived_from<Resource> ResType = Resource>
-  auto GetOrLoad(Guid const& guid) -> ResType*;
+  auto GetOrLoad(ResourceId const& res_id) -> ResType*;
 
-  LEOPPHAPI auto Unload(Guid const& guid) -> void;
+  LEOPPHAPI auto Unload(ResourceId const& res_id) -> void;
   LEOPPHAPI auto UnloadAll() -> void;
 
-  [[nodiscard]] LEOPPHAPI auto IsLoaded(Guid const& guid) -> bool;
+  [[nodiscard]] LEOPPHAPI auto IsLoaded(ResourceId const& res_id) -> bool;
 
   template<std::derived_from<Resource> ResType>
   auto Add(std::unique_ptr<ResType> resource) -> ObserverPtr<ResType>;
 
   template<std::derived_from<Resource> ResType = Resource>
-  [[nodiscard]] auto Remove(Guid const& guid) -> std::unique_ptr<ResType>;
+  [[nodiscard]] auto Remove(ResourceId const& res_id) -> std::unique_ptr<ResType>;
 
   LEOPPHAPI auto UpdateMappings(std::map<Guid, ResourceDescription> mappings) -> void;
-
-  template<std::derived_from<Resource> T>
-  auto GetGuidsForResourcesOfType(std::vector<Guid>& out) noexcept -> void;
-  auto LEOPPHAPI GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) noexcept -> void;
 
   template<std::derived_from<Resource> T>
   auto GetInfoForResourcesOfType(std::vector<ResourceInfo>& out) -> void;
@@ -76,21 +72,21 @@ public:
   constexpr static std::string_view MATERIAL_RESOURCE_EXT{".mtl"};
 
 private:
-  struct ResourceGuidLess {
+  struct ResourceIdLess {
     using is_transparent = void;
 
     [[nodiscard]] LEOPPHAPI auto operator()(std::unique_ptr<Resource> const& lhs,
                                             std::unique_ptr<Resource> const& rhs) const noexcept -> bool;
 
     [[nodiscard]] LEOPPHAPI auto operator()(std::unique_ptr<Resource> const& lhs,
-                                            Guid const& rhs) const noexcept -> bool;
+                                            ResourceId const& rhs) const noexcept -> bool;
 
-    [[nodiscard]] LEOPPHAPI auto operator()(Guid const& lhs,
+    [[nodiscard]] LEOPPHAPI auto operator()(ResourceId const& lhs,
                                             std::unique_ptr<Resource> const& rhs) const noexcept -> bool;
   };
 
 
-  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(Guid const& guid,
+  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(ResourceId const& res_id,
                                                     ResourceDescription const& desc) -> ObserverPtr<Resource>;
   [[nodiscard]] static auto LoadTexture(
     std::span<std::byte const> bytes) noexcept -> MaybeNull<std::unique_ptr<Resource>>;
@@ -101,11 +97,11 @@ private:
   inline static Guid const plane_mesh_guid_{3, 0};
   inline static Guid const sphere_mesh_guid_{4, 0};
 
-  Mutex<std::set<std::unique_ptr<Resource>, ResourceGuidLess>, true> loaded_resources_;
+  Mutex<std::set<std::unique_ptr<Resource>, ResourceIdLess>, true> loaded_resources_;
   std::vector<ObserverPtr<Resource>> default_resources_;
   Mutex<std::map<Guid, ResourceDescription>, true> mappings_;
 
-  Mutex<std::map<Guid, ObserverPtr<Job>>, true> loader_jobs_;
+  Mutex<std::map<ResourceId, ObserverPtr<Job>>, true> loader_jobs_;
 
   std::unique_ptr<Material> default_mtl_;
   std::unique_ptr<Mesh> cube_mesh_;

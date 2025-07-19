@@ -150,6 +150,7 @@
     <ClCompile Include="src\rendering\directional_shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\scene_renderer.cpp" />
     <ClCompile Include="src\rendering\render_manager.cpp" />
+    <ClCompile Include="src\resource_id.cpp" />
     <ClCompile Include="src\scene_objects\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\scene_objects\CameraControllerComponent.cpp" />
@@ -161,7 +162,7 @@
     <ClCompile Include="src\rendering\punctual_shadow_atlas.cpp" />
     <ClCompile Include="src\rendering\render_target.cpp" />
     <ClCompile Include="src\Resources\Resource.cpp" />
-    <ClCompile Include="src\ResourceManager.cpp" />
+    <ClCompile Include="src\resource_manager.cpp" />
     <ClCompile Include="src\scene_objects\OscillateComponent.cpp" />
     <ClCompile Include="src\scene_objects\SceneObject.cpp" />
     <ClCompile Include="src\scene_objects\SkinnedMeshComponent.cpp" />
@@ -205,13 +206,14 @@
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\Reflection.hpp" />
     <ClInclude Include="src\Resources\Resource.hpp" />
-    <ClInclude Include="src\ResourceManager.hpp" />
+    <ClInclude Include="src\resource_manager.hpp" />
     <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp" />
     <ClInclude Include="src\rendering\Camera.hpp" />
     <ClInclude Include="src\Resources\Cubemap.hpp" />
     <ClInclude Include="src\GridLike.hpp" />
     <ClInclude Include="src\rendering\punctual_shadow_atlas.hpp" />
     <ClInclude Include="src\rendering\render_target.hpp" />
+    <ClInclude Include="src\resource_id.hpp" />
     <ClInclude Include="src\scene_objects\CameraControllerComponent.hpp" />
     <ClInclude Include="src\scene_objects\MeshComponentBase.hpp" />
     <ClInclude Include="src\scene_objects\OscillateComponent.h" />

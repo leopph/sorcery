@@ -3,7 +3,7 @@
 #include "Core.hpp"
 #include "job_system.hpp"
 #include "observer_ptr.hpp"
-#include "ResourceManager.hpp"
+#include "resource_manager.hpp"
 #include "Window.hpp"
 #include "rendering/graphics.hpp"
 #include "rendering/render_manager.hpp"
