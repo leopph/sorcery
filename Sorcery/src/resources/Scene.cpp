@@ -7,7 +7,7 @@
 #undef FindResource
 #include "../job_system.hpp"
 #include "../Reflection.hpp"
-#include "../ResourceManager.hpp"
+#include "../resource_manager.hpp"
 
 #include <algorithm>
 #include <ranges>

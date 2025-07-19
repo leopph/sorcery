@@ -3,7 +3,7 @@
 #include "app.hpp"
 #include "Core.hpp"
 #include "Object.hpp"
-#include "ResourceManager.hpp"
+#include "resource_manager.hpp"
 #include "Util.hpp"
 #include "Resources/Resource.hpp"
 

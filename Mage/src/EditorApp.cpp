@@ -10,7 +10,7 @@
 #include "LoadingScreen.hpp"
 #include "PerformanceCounterWindow.hpp"
 #include "Platform.hpp"
-#include "ResourceManager.hpp"
+#include "resource_manager.hpp"
 #include "StartupScreen.hpp"
 #include "Timing.hpp"
 #include "Window.hpp"
