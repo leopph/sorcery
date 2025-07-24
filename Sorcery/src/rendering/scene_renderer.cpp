@@ -1176,6 +1176,7 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   cmd.SetRenderTargets(std::array{static_cast<graphics::Texture const*>(brdf_integration_map_.get())}, nullptr);
   cmd.SetViewports(std::span{&brdf_integration_viewport, 1});
   cmd.SetScissorRects(std::span{&brdf_integration_scissor_rect, 1});
+  cmd.ClearRenderTarget(*brdf_integration_map_, std::array{0.F, 0.F, 0.F, 1.F}, {});
   cmd.DrawInstanced(3, 1, 0, 0);
   cmd.End();
   device_->ExecuteCommandLists(std::span{&cmd, 1});
@@ -2357,6 +2358,7 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, jitter_y),
         *std::bit_cast<UINT const*>(&jitter_y));
 
+      cam_cmd.ClearRenderTarget(*taa_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cam_cmd.DrawInstanced(3, 1, 0, 0);
       cam_cmd.CopyTexture(accum_tex, *taa_rt->GetColorTex());
     }
