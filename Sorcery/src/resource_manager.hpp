@@ -53,7 +53,7 @@ public:
   template<std::derived_from<Resource> ResType = Resource>
   [[nodiscard]] auto Remove(ResourceId const& res_id) -> std::unique_ptr<ResType>;
 
-  LEOPPHAPI auto UpdateMappings(std::map<Guid, ResourceDescription> mappings) -> void;
+  LEOPPHAPI auto UpdateMappings(std::map<ResourceId, ResourceDescription> mappings) -> void;
 
   template<std::derived_from<Resource> T>
   auto GetInfoForResourcesOfType(std::vector<ResourceInfo>& out) -> void;
@@ -99,7 +99,7 @@ private:
 
   Mutex<std::set<std::unique_ptr<Resource>, ResourceIdLess>, true> loaded_resources_;
   std::vector<ObserverPtr<Resource>> default_resources_;
-  Mutex<std::map<Guid, ResourceDescription>, true> mappings_;
+  Mutex<std::map<ResourceId, ResourceDescription>, true> mappings_;
 
   Mutex<std::map<ResourceId, ObserverPtr<Job>>, true> loader_jobs_;
 

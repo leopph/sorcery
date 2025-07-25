@@ -72,7 +72,7 @@
     <ClCompile Include="src\Util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Serialization.cpp">
+    <ClCompile Include="src\serialization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\shadow_atlas.cpp">
@@ -278,7 +278,7 @@
     <ClInclude Include="src\GUI.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Serialization.hpp">
+    <ClInclude Include="src\serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\directional_shadow_map_array.hpp">
@@ -427,6 +427,9 @@
     <None Include="src\rendering\shaders\sequences.hlsli" />
     <None Include="src\rendering\shaders\envmap_prefilter.hlsli" />
     <None Include="src\rendering\shaders\brdf_integration.hlsli" />
+    <None Include="src\serialization.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />

@@ -159,7 +159,7 @@ auto Scene::Save() -> void {
   yaml_data_["ambientLight"] = ambient_light_;
   yaml_data_["skyMode"] = static_cast<int>(sky_mode_);
   yaml_data_["skyColor"] = sky_color_;
-  yaml_data_["skybox"] = skybox_ ? skybox_->GetGuid() : Guid::Invalid();
+  yaml_data_["skybox"] = skybox_ ? skybox_->GetId() : ResourceId::Invalid();
 
   for (auto const& entity : entities_) {
     tmpThisSceneObjects.emplace_back(entity.get());
@@ -221,18 +221,18 @@ auto Scene::Load() -> void {
   // Start a job to load the skybox
 
   struct SkyboxJobData {
-    Guid guid;
+    ResourceId res_id;
     Cubemap* cubemap;
   } skybox_job_data;
 
   ObserverPtr<Job> skybox_job;
 
   if (auto const node{yaml_data_["skybox"]}) {
-    if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-      skybox_job_data.guid = guid;
+    if (auto const res_id{node.as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
+      skybox_job_data.res_id = res_id;
 
       skybox_job = App::Instance().GetJobSystem().CreateJob([](SkyboxJobData* const data) {
-        data->cubemap = App::Instance().GetResourceManager().GetOrLoad<Cubemap>(data->guid);
+        data->cubemap = App::Instance().GetResourceManager().GetOrLoad<Cubemap>(data->res_id);
       }, &skybox_job_data);
 
       App::Instance().GetJobSystem().Run(skybox_job);
@@ -241,10 +241,10 @@ auto Scene::Load() -> void {
 
   // Discover all resource references in the scene objects and preload them
 
-  std::vector<Guid> required_resource_guids;
+  std::vector<ResourceId> required_resource_ids;
 
   std::function<void(YAML::Node const&, rttr::type const&)> discover_resource_references;
-  discover_resource_references = [&discover_resource_references, &required_resource_guids](
+  discover_resource_references = [&discover_resource_references, &required_resource_ids](
     YAML::Node const& node, rttr::type const& type) -> void {
       if (!node.IsDefined()) {
         return;
@@ -254,8 +254,8 @@ auto Scene::Load() -> void {
 
       if (node.IsScalar() && actual_type.is_pointer() && actual_type.get_raw_type().is_derived_from(
             rttr::type::get<Resource>())) {
-        if (auto const guid{node.as<Guid>(Guid::Invalid())}; guid.IsValid()) {
-          required_resource_guids.emplace_back(guid);
+        if (auto const res_id{node.as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
+          required_resource_ids.emplace_back(res_id);
           return;
         }
       }
@@ -297,21 +297,17 @@ auto Scene::Load() -> void {
 
   // Preload all resources used by the new scene objects
 
-  std::ranges::sort(required_resource_guids, [](Guid const& lhs, Guid const& rhs) {
-    return lhs < rhs;
-  });
+  std::ranges::sort(required_resource_ids, std::less{});
 
-  required_resource_guids.erase(std::ranges::unique(required_resource_guids, [](Guid const& lhs, Guid const& rhs) {
-    return lhs == rhs;
-  }).begin(), required_resource_guids.end());
+  required_resource_ids.erase(std::ranges::unique(required_resource_ids).begin(), required_resource_ids.end());
 
   std::vector<ObserverPtr<Job>> resource_loading_jobs;
-  resource_loading_jobs.reserve(required_resource_guids.size());
+  resource_loading_jobs.reserve(required_resource_ids.size());
 
-  for (auto const& guid : required_resource_guids) {
-    resource_loading_jobs.emplace_back(App::Instance().GetJobSystem().CreateJob([](Guid const& target_guid) {
-      App::Instance().GetResourceManager().GetOrLoad<Resource>(target_guid);
-    }, guid));
+  for (auto const& res_id : required_resource_ids) {
+    resource_loading_jobs.emplace_back(App::Instance().GetJobSystem().CreateJob([](ResourceId const& target_res_id) {
+      App::Instance().GetResourceManager().GetOrLoad<Resource>(target_res_id);
+    }, res_id));
 
     App::Instance().GetJobSystem().Run(resource_loading_jobs.back());
   }

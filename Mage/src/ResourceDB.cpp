@@ -3,7 +3,7 @@
 #include "app.hpp"
 #include "MemoryAllocation.hpp"
 #include "Reflection.hpp"
-#include "ResourceManager.hpp"
+#include "resource_manager.hpp"
 #include "Util.hpp"
 #include "ResourceImporters/NativeResourceImporter.hpp"
 

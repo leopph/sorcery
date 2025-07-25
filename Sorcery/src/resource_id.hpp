@@ -7,6 +7,8 @@
 namespace sorcery {
 class ResourceId {
 public:
+  [[nodiscard]] LEOPPHAPI static auto Invalid() noexcept -> ResourceId;
+
   ResourceId() = default;
   LEOPPHAPI ResourceId(Guid guid, int idx_in_file);
 

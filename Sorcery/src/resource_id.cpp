@@ -2,6 +2,11 @@
 
 
 namespace sorcery {
+auto ResourceId::Invalid() noexcept -> ResourceId {
+  return ResourceId{};
+}
+
+
 ResourceId::ResourceId(Guid const guid, int const idx_in_file) :
   guid_{guid},
   idx_in_file_{idx_in_file} {}
@@ -26,5 +31,10 @@ auto operator<=>(ResourceId const& lhs, ResourceId const& rhs) noexcept -> std::
   return lhs.GetGuid() <=> rhs.GetGuid() != std::strong_ordering::equivalent
            ? lhs.GetGuid() <=> rhs.GetGuid()
            : lhs.GetIdxInFile() <=> rhs.GetIdxInFile();
+}
+
+
+auto operator==(ResourceId const& lhs, ResourceId const& rhs) noexcept -> bool {
+  return lhs.GetGuid() == rhs.GetGuid() && lhs.GetIdxInFile() == rhs.GetIdxInFile();
 }
 }

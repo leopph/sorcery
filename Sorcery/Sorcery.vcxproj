@@ -167,7 +167,7 @@
     <ClCompile Include="src\scene_objects\SceneObject.cpp" />
     <ClCompile Include="src\scene_objects\SkinnedMeshComponent.cpp" />
     <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp" />
-    <ClCompile Include="src\Serialization.cpp" />
+    <ClCompile Include="src\serialization.cpp" />
     <ClCompile Include="src\rendering\shadow_atlas.cpp" />
     <ClCompile Include="src\scene_objects\MeshComponentBase.cpp" />
     <ClCompile Include="src\Guid.cpp" />
@@ -219,7 +219,7 @@
     <ClInclude Include="src\scene_objects\OscillateComponent.h" />
     <ClInclude Include="src\scene_objects\SceneObject.hpp" />
     <ClInclude Include="src\scene_objects\SkinnedMeshComponent.hpp" />
-    <ClInclude Include="src\Serialization.hpp" />
+    <ClInclude Include="src\serialization.hpp" />
     <ClCompile Include="src\Resources\Texture2D.cpp" />
     <ClCompile Include="src\Timing.cpp" />
     <ClCompile Include="src\Platform.cpp" />
@@ -290,6 +290,7 @@
     <None Include="src\resource_manager.inl" />
     <None Include="src\scene_objects\entity.inl" />
     <None Include="src\resources\mesh.inl" />
+    <None Include="src\serialization.inl" />
     <None Include="src\util.inl" />
     <None Include="src\viewport.inl" />
     <None Include="vcpkg.json" />
