@@ -12,38 +12,6 @@
 
 namespace sorcery::mage {
 class ResourceDB {
-  std::filesystem::path mResDirAbs;
-  std::filesystem::path mCacheDirAbs;
-  std::map<Guid, rttr::type> mGuidToType;
-  std::map<Guid, std::filesystem::path> mGuidToSrcAbsPath; // Maps resource Guids to the source file of the resource
-  std::map<Guid, std::filesystem::path> mGuidToResAbsPath; // Maps resource Guids to the loadable file of the resource
-  std::map<std::filesystem::path, Guid> mSrcAbsPathToGuid; // Maps resource source files to the guid of the resource
-  Object** mSelectedObjectPtr;
-
-public:
-  constexpr static std::string_view RESOURCE_META_FILE_EXT{".mojo"};
-
-private:
-  constexpr static std::string_view RESOURCE_DIR_PROJ_REL{"Resources"};
-  constexpr static std::string_view CACHE_DIR_PROJ_REL{"Cache"};
-
-  // Uses the passed mappings to store the results and does not update the ResourceManager's mappings.
-  // Writes the passed importer into the target meta file.
-  // Assigns the passed Guid to the resource.
-  [[nodiscard]] auto InternalImportResource(std::filesystem::path const& resPathResDirRel,
-                                            std::map<Guid, std::filesystem::path>& guidToSrcAbsPath,
-                                            std::map<Guid, std::filesystem::path>& guidToResAbsPath,
-                                            std::map<std::filesystem::path, Guid>& srcAbsPathToGuid,
-                                            std::map<Guid, rttr::type>& guidToType, ResourceImporter& importer,
-                                            Guid const& guid) const -> bool;
-  [[nodiscard]] auto CreateMappings() const noexcept -> std::map<Guid, ResourceManager::ResourceDescription>;
-
-  [[nodiscard]] auto GetExternalResourceBinaryPathAbs(Guid const& guid) const noexcept -> std::filesystem::path;
-
-  // Assembles and writes an external resource binary file to the path returned by GetExternalResourceBinaryPathAbs(guid)
-  [[nodiscard]] auto WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory categ,
-                                                 std::span<std::byte const> resBytes) const noexcept -> bool;
-
 public:
   explicit ResourceDB(Object*& selectedObjectPtr);
 
@@ -84,5 +52,42 @@ public:
 
   [[nodiscard]] static auto GetNewImporterForResourceFile(
     std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter>;
+
+  constexpr static std::string_view RESOURCE_META_FILE_EXT{".mojo"};
+
+private:
+  constexpr static std::string_view RESOURCE_DIR_PROJ_REL{"Resources"};
+  constexpr static std::string_view CACHE_DIR_PROJ_REL{"Cache"};
+
+  // Uses the passed mappings to store the results and does not update the ResourceManager's mappings.
+  // Writes the passed importer into the target meta file.
+  // Assigns the passed Guid to the resource.
+  [[nodiscard]] auto InternalImportResource(std::filesystem::path const& resPathResDirRel,
+                                            std::map<Guid, std::filesystem::path>& guidToSrcAbsPath,
+                                            std::map<Guid, std::filesystem::path>& guidToResAbsPath,
+                                            std::map<std::filesystem::path, Guid>& srcAbsPathToGuid,
+                                            std::map<Guid, rttr::type>& guidToType, ResourceImporter& importer,
+                                            Guid const& guid) const -> bool;
+  [[nodiscard]] auto CreateMappings() const noexcept ->
+    std::pair<std::map<ResourceId, ResourceManager::ResourceDescription>, std::map<Guid, std::filesystem::path>>;
+
+  [[nodiscard]] auto GetExternalResourceBinaryPathAbs(Guid const& guid) const noexcept -> std::filesystem::path;
+
+  // Assembles and writes an external resource binary file to the path returned by GetExternalResourceBinaryPathAbs(guid)
+  [[nodiscard]] auto WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory categ,
+                                                 std::span<std::byte const> resBytes) const noexcept -> bool;
+
+  std::filesystem::path res_dir_abs_;
+  std::filesystem::path cache_dir_abs_;
+
+  std::map<Guid, rttr::type> guid_to_type_;
+
+  // Maps resource Guids to the source file of the resource
+  std::map<Guid, std::filesystem::path> guid_to_src_abs_path_;
+  // Maps resource source files to the guid of the resource
+  std::map<std::filesystem::path, Guid> src_abs_path_to_guid_;
+  // Maps resource Guids to the loadable file of the resource
+  std::map<Guid, std::filesystem::path> guid_to_load_abs_path_;
+  Object** selected_object_ptr_;
 };
 }

@@ -86,7 +86,7 @@ EditorApp::EditorApp(std::span<std::string_view const> const args) :
   if (project_loaded) {
     for (auto const arg : args) {
       if (arg.starts_with("-scene=")) {
-        OpenScene(GetResourceDatabase().PathToGuid(arg.substr(7)));
+        OpenScene(ResourceId{GetResourceDatabase().PathToGuid(arg.substr(7)), 0});
         break;
       }
     }
@@ -210,16 +210,16 @@ auto EditorApp::GetResourceDatabase() noexcept -> ResourceDB& {
 }
 
 
-auto EditorApp::OpenScene(Guid const& guid) -> void {
-  if (!guid.IsValid() || (scene_ && scene_->GetGuid() == guid)) {
+auto EditorApp::OpenScene(ResourceId const& res_id) -> void {
+  if (!res_id.IsValid() || (scene_ && scene_->GetId() == res_id)) {
     return;
   }
 
-  if (auto const new_scene{GetResourceManager().GetOrLoad<Scene>(guid)}) {
+  if (auto const new_scene{GetResourceManager().GetOrLoad<Scene>(res_id)}) {
     new_scene->Load();
 
     if (scene_) {
-      GetResourceManager().Unload(scene_->GetGuid());
+      GetResourceManager().Unload(scene_->GetId());
     }
 
     scene_.Reset(new_scene);
@@ -231,7 +231,7 @@ auto EditorApp::OpenScene(Guid const& guid) -> void {
 
 auto EditorApp::OpenNewScene() -> void {
   if (scene_) {
-    GetResourceManager().Unload(scene_->GetGuid());
+    GetResourceManager().Unload(scene_->GetId());
   }
 
   scene_ = GetResourceManager().Add(Create<Scene>());
@@ -257,7 +257,7 @@ auto EditorApp::SaveCurrentSceneToFile() -> void {
       }
 
       if (!dst_res_dir_rel.empty()) {
-        resource_db_.CreateResource(GetResourceManager().Remove<Scene>(scene_->GetGuid()), dst_res_dir_rel);
+        resource_db_.CreateResource(GetResourceManager().Remove<Scene>(scene_->GetId()), dst_res_dir_rel);
       }
     }
   }

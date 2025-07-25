@@ -21,7 +21,7 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResD
                                         std::map<std::filesystem::path, Guid>& srcAbsPathToGuid,
                                         std::map<Guid, rttr::type>& guidToType, ResourceImporter& importer,
                                         Guid const& guid) const -> bool {
-  auto const resPathAbs{mResDirAbs / resPathResDirRel};
+  auto const resPathAbs{res_dir_abs_ / resPathResDirRel};
 
   if (!WriteMeta(resPathAbs, guid, importer)) {
     return false;
@@ -50,23 +50,27 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResD
 }
 
 
-auto ResourceDB::CreateMappings() const noexcept -> std::map<Guid, ResourceManager::ResourceDescription> {
-  std::map<Guid, ResourceManager::ResourceDescription> mappings;
-  std::ranges::transform(mGuidToResAbsPath, std::inserter(mappings, std::end(mappings)),
-    [this](std::pair<Guid const, std::filesystem::path> const& pair) {
-      return std::pair{
-        pair.first,
-        ResourceManager::ResourceDescription{
-          pair.second, mGuidToSrcAbsPath.at(pair.first).stem().string(), mGuidToType.at(pair.first)
-        }
-      };
-    });
-  return mappings;
+auto ResourceDB::CreateMappings() const noexcept -> std::pair<
+  std::map<ResourceId, ResourceManager::ResourceDescription>, std::map<Guid, std::filesystem::path>> {
+  std::map<ResourceId, ResourceManager::ResourceDescription> res_mappings;
+  std::map<Guid, std::filesystem::path> file_mappings;
+
+  for (auto const& [guid, src_abs_path] : guid_to_src_abs_path_) {
+    res_mappings.emplace(std::piecewise_construct, std::forward_as_tuple(ResourceId{guid, 0}),
+      std::forward_as_tuple(src_abs_path.stem().string(), guid_to_type_.at(guid)));
+
+    if (auto const load_abs_path{guid_to_load_abs_path_.find(guid)};
+      load_abs_path != std::end(guid_to_load_abs_path_)) {
+      file_mappings.emplace(guid, load_abs_path->second);
+    }
+  }
+
+  return std::make_pair(std::move(res_mappings), std::move(file_mappings));
 }
 
 
 auto ResourceDB::GetExternalResourceBinaryPathAbs(Guid const& guid) const noexcept -> std::filesystem::path {
-  return mCacheDirAbs / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT;
+  return cache_dir_abs_ / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT;
 }
 
 
@@ -79,8 +83,8 @@ auto ResourceDB::WriteExternalResourceBinary(Guid const& guid, ExternalResourceC
   std::vector<std::byte> fileBytes;
   PackExternalResource(categ, resBytes, fileBytes);
 
-  if (!exists(mCacheDirAbs)) {
-    create_directory(mCacheDirAbs);
+  if (!exists(cache_dir_abs_)) {
+    create_directory(cache_dir_abs_);
   }
 
   std::ofstream outStream{GetExternalResourceBinaryPathAbs(guid), std::ios::binary | std::ios::out | std::ios::trunc};
@@ -95,7 +99,7 @@ auto ResourceDB::WriteExternalResourceBinary(Guid const& guid, ExternalResourceC
 
 
 ResourceDB::ResourceDB(Object*& selectedObjectPtr) :
-  mSelectedObjectPtr{std::addressof(selectedObjectPtr)} {}
+  selected_object_ptr_{std::addressof(selectedObjectPtr)} {}
 
 
 auto ResourceDB::Refresh() -> void {
@@ -104,7 +108,7 @@ auto ResourceDB::Refresh() -> void {
   std::map<Guid, std::filesystem::path> newGuidToResAbsPath;
   std::map<std::filesystem::path, Guid> newSrcAbsPathToGuid;
 
-  for (auto& entry : std::filesystem::recursive_directory_iterator{mResDirAbs}) {
+  for (auto& entry : std::filesystem::recursive_directory_iterator{res_dir_abs_}) {
     if (!entry.exists() || entry.is_directory()) {
       continue;
     }
@@ -142,7 +146,7 @@ auto ResourceDB::Refresh() -> void {
         if (!exists(cacheFilePathAbs) || last_write_time(resPathAbs) > last_write_time(cacheFilePathAbs) ||
             last_write_time(entry.path()) > last_write_time(cacheFilePathAbs)) {
           // If we fail, we just remove the the files
-          if (!InternalImportResource(relative(resPathAbs, mResDirAbs), newGuidToSrcAbsPath,
+          if (!InternalImportResource(relative(resPathAbs, res_dir_abs_), newGuidToSrcAbsPath,
             newGuidToResAbsPath, newSrcAbsPathToGuid, newGuidToType, *importer, guid)) {
             remove(resPathAbs);
             remove(entry.path());
@@ -167,7 +171,7 @@ auto ResourceDB::Refresh() -> void {
     // If we find a file that is not a meta file, we attempt to import it as a resource
     if (auto const metaPathAbs{GetMetaPath(entry.path())}; !exists(metaPathAbs)) {
       if (auto const importer{GetNewImporterForResourceFile(entry.path())}) {
-        if (auto const guid{Guid::Generate()}; InternalImportResource(relative(entry.path(), mResDirAbs),
+        if (auto const guid{Guid::Generate()}; InternalImportResource(relative(entry.path(), res_dir_abs_),
           newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, newGuidToType, *importer, guid)) {
           continue;
         }
@@ -180,30 +184,31 @@ auto ResourceDB::Refresh() -> void {
   }
 
   // We unload resources that are no longer present in the current file system directory.
-  for (auto const& guid : mGuidToSrcAbsPath | std::views::keys) {
-    if (!newGuidToSrcAbsPath.contains(guid) && App::Instance().GetResourceManager().IsLoaded(guid)) {
-      if (*mSelectedObjectPtr == App::Instance().GetResourceManager().GetOrLoad(guid)) {
-        *mSelectedObjectPtr = nullptr;
+  for (auto const& guid : guid_to_src_abs_path_ | std::views::keys) {
+    if (!newGuidToSrcAbsPath.contains(guid) && App::Instance().GetResourceManager().IsLoaded(ResourceId{guid, 0})) {
+      if (*selected_object_ptr_ == App::Instance().GetResourceManager().GetOrLoad(ResourceId{guid, 0})) {
+        *selected_object_ptr_ = nullptr;
       }
-      App::Instance().GetResourceManager().Unload(guid);
+      App::Instance().GetResourceManager().Unload(ResourceId{guid, 0});
     }
   }
 
   // We rename loaded resources that have been moved in the file system
   for (auto const& [guid, pathAbs] : newGuidToSrcAbsPath) {
-    if (auto const it{mGuidToSrcAbsPath.find(guid)};
-      it != std::end(mGuidToSrcAbsPath) && it->second != pathAbs && App::Instance().GetResourceManager().
-      IsLoaded(guid)) {
-      App::Instance().GetResourceManager().GetOrLoad(guid)->SetName(pathAbs.stem().string());
+    if (auto const it{guid_to_src_abs_path_.find(guid)};
+      it != std::end(guid_to_src_abs_path_) && it->second != pathAbs && App::Instance().GetResourceManager().
+      IsLoaded(ResourceId{guid, 0})) {
+      App::Instance().GetResourceManager().GetOrLoad(ResourceId{guid, 0})->SetName(pathAbs.stem().string());
     }
   }
 
-  mGuidToSrcAbsPath = std::move(newGuidToSrcAbsPath);
-  mGuidToResAbsPath = std::move(newGuidToResAbsPath);
-  mGuidToType = std::move(newGuidToType);
-  mSrcAbsPathToGuid = std::move(newSrcAbsPathToGuid);
+  guid_to_src_abs_path_ = std::move(newGuidToSrcAbsPath);
+  guid_to_load_abs_path_ = std::move(newGuidToResAbsPath);
+  guid_to_type_ = std::move(newGuidToType);
+  src_abs_path_to_guid_ = std::move(newSrcAbsPathToGuid);
 
-  App::Instance().GetResourceManager().UpdateMappings(CreateMappings());
+  auto [res_mappings, file_mappings]{CreateMappings()};
+  App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
 }
 
 
@@ -212,32 +217,32 @@ auto ResourceDB::ChangeProjectDir(std::filesystem::path const& projDirAbs) -> vo
     create_directory(projDirAbs);
   }
 
-  mResDirAbs = projDirAbs / RESOURCE_DIR_PROJ_REL;
-  mCacheDirAbs = projDirAbs / CACHE_DIR_PROJ_REL;
+  res_dir_abs_ = projDirAbs / RESOURCE_DIR_PROJ_REL;
+  cache_dir_abs_ = projDirAbs / CACHE_DIR_PROJ_REL;
 
-  if (!exists(mResDirAbs)) {
-    create_directory(mResDirAbs);
+  if (!exists(res_dir_abs_)) {
+    create_directory(res_dir_abs_);
   }
 
-  if (!exists(mCacheDirAbs)) {
-    create_directory(mCacheDirAbs);
+  if (!exists(cache_dir_abs_)) {
+    create_directory(cache_dir_abs_);
   }
 
-  for (auto const& guid : mGuidToSrcAbsPath | std::views::keys) {
-    App::Instance().GetResourceManager().Unload(guid);
+  for (auto const& guid : guid_to_src_abs_path_ | std::views::keys) {
+    App::Instance().GetResourceManager().Unload(ResourceId{guid, 0});
   }
 
-  mGuidToSrcAbsPath.clear();
-  mGuidToResAbsPath.clear();
-  mGuidToType.clear();
-  mSrcAbsPathToGuid.clear();
+  guid_to_src_abs_path_.clear();
+  guid_to_load_abs_path_.clear();
+  guid_to_type_.clear();
+  src_abs_path_to_guid_.clear();
 
   Refresh();
 }
 
 
 auto ResourceDB::GetResourceDirectoryAbsolutePath() -> std::filesystem::path const& {
-  return mResDirAbs;
+  return res_dir_abs_;
 }
 
 
@@ -247,35 +252,36 @@ auto ResourceDB::CreateResource(std::unique_ptr<NativeResource>&& res,
     return nullptr;
   }
 
-  if (!res->GetGuid().IsValid()) {
-    res->SetGuid(Guid::Generate());
+  if (!res->GetId().IsValid()) {
+    res->SetId(ResourceId{Guid::Generate(), 0});
   }
 
   auto const resNode{res->Serialize()};
-  auto const resPathAbs{mResDirAbs / target_path_res_dir_rel};
+  auto const resPathAbs{res_dir_abs_ / target_path_res_dir_rel};
   std::ofstream outResStream{resPathAbs};
   YAML::Emitter resEmitter{outResStream};
   resEmitter << resNode;
 
-  if (!WriteMeta(resPathAbs, res->GetGuid(), NativeResourceImporter{})) {
+  if (!WriteMeta(resPathAbs, res->GetId().GetGuid(), NativeResourceImporter{})) {
     return nullptr;
   }
 
   res->SetName(target_path_res_dir_rel.stem().string());
 
-  mGuidToSrcAbsPath.insert_or_assign(res->GetGuid(), resPathAbs);
-  mGuidToType.insert_or_assign(res->GetGuid(), rttr::type::get(res));
-  mGuidToResAbsPath.insert_or_assign(res->GetGuid(), resPathAbs);
-  mSrcAbsPathToGuid.insert_or_assign(resPathAbs, res->GetGuid());
+  guid_to_src_abs_path_.insert_or_assign(res->GetId().GetGuid(), resPathAbs);
+  guid_to_type_.insert_or_assign(res->GetId().GetGuid(), rttr::type::get(res));
+  guid_to_load_abs_path_.insert_or_assign(res->GetId().GetGuid(), resPathAbs);
+  src_abs_path_to_guid_.insert_or_assign(resPathAbs, res->GetId().GetGuid());
 
   auto const ret{App::Instance().GetResourceManager().Add(std::move(res))};
-  App::Instance().GetResourceManager().UpdateMappings(CreateMappings());
+  auto [res_mappings, file_mappings]{CreateMappings()};
+  App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
   return ret;
 }
 
 
 auto ResourceDB::SaveResource(NativeResource const& res) -> void {
-  if (auto const it{mGuidToSrcAbsPath.find(res.GetGuid())}; it != std::end(mGuidToSrcAbsPath)) {
+  if (auto const it{guid_to_src_abs_path_.find(res.GetId().GetGuid())}; it != std::end(guid_to_src_abs_path_)) {
     std::ofstream outStream{it->second};
     YAML::Emitter emitter{outStream};
     emitter << res.Serialize();
@@ -302,12 +308,12 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, R
 
   // If a meta file already exists for the resource, we attempt to reimport it and keep its Guid.
   if (LoadMeta(GetResourceDirectoryAbsolutePath() / resPathResDirRel, std::addressof(guid), nullptr) && App::Instance()
-      .GetResourceManager().IsLoaded(guid)) {
-    if (*mSelectedObjectPtr == App::Instance().GetResourceManager().GetOrLoad(guid)) {
-      *mSelectedObjectPtr = nullptr;
+    .GetResourceManager().IsLoaded(ResourceId{guid, 0})) {
+    if (*selected_object_ptr_ == App::Instance().GetResourceManager().GetOrLoad(ResourceId{guid, 0})) {
+      *selected_object_ptr_ = nullptr;
     }
 
-    App::Instance().GetResourceManager().Unload(guid);
+    App::Instance().GetResourceManager().Unload(ResourceId{guid, 0});
   }
 
   // If there is no meta file, we proceed with a regular import.
@@ -315,26 +321,28 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, R
     guid = Guid::Generate();
   }
 
-  if (!InternalImportResource(resPathResDirRel, mGuidToSrcAbsPath, mGuidToResAbsPath, mSrcAbsPathToGuid, mGuidToType,
+  if (!InternalImportResource(resPathResDirRel, guid_to_src_abs_path_, guid_to_load_abs_path_, src_abs_path_to_guid_,
+    guid_to_type_,
     *importer, guid)) {
     return false;
   }
 
-  App::Instance().GetResourceManager().UpdateMappings(CreateMappings());
+  auto [res_mappings, file_mappings]{CreateMappings()};
+  App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
   return true;
 }
 
 
 auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> bool {
-  auto const it{mGuidToSrcAbsPath.find(guid)};
+  auto const it{guid_to_src_abs_path_.find(guid)};
 
-  if (it == std::end(mGuidToSrcAbsPath)) {
+  if (it == std::end(guid_to_src_abs_path_)) {
     return false;
   }
 
   auto const srcPathAbs{it->second};
   auto const srcMetaPathAbs{GetMetaPath(srcPathAbs)};
-  auto const dstPathAbs{mResDirAbs / targetPathResDirRel};
+  auto const dstPathAbs{res_dir_abs_ / targetPathResDirRel};
   auto const dstMetaPathAbs{GetMetaPath(dstPathAbs)};
 
   if (!exists(srcPathAbs) || !exists(srcMetaPathAbs) || exists(dstPathAbs) || exists(dstMetaPathAbs)) {
@@ -367,18 +375,20 @@ auto ResourceDB::MoveDirectory(std::filesystem::path const& srcPathResDirRel,
 
 
 auto ResourceDB::DeleteResource(Guid const& guid) -> void {
-  App::Instance().GetResourceManager().Unload(guid);
+  App::Instance().GetResourceManager().Unload(ResourceId{guid, 0});
 
-  if (auto const it{mGuidToSrcAbsPath.find(guid)}; it != std::end(mGuidToSrcAbsPath)) {
+  if (auto const it{guid_to_src_abs_path_.find(guid)}; it != std::end(guid_to_src_abs_path_)) {
     std::filesystem::remove(it->second);
     std::filesystem::remove(GetMetaPath(it->second));
-    mSrcAbsPathToGuid.erase(it->second);
-    mGuidToSrcAbsPath.erase(it);
+    src_abs_path_to_guid_.erase(it->second);
+    guid_to_src_abs_path_.erase(it);
   }
 
-  mGuidToResAbsPath.erase(guid);
-  mGuidToType.erase(guid);
-  App::Instance().GetResourceManager().UpdateMappings(CreateMappings());
+  guid_to_load_abs_path_.erase(guid);
+  guid_to_type_.erase(guid);
+
+  auto [res_mappings, file_mappings]{CreateMappings()};
+  App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
 }
 
 
@@ -392,7 +402,7 @@ auto ResourceDB::DeleteDirectory(std::filesystem::path const& pathResDirRel) -> 
   std::vector<Guid> resourcesToDelete;
 
   for (auto const& entry : std::filesystem::recursive_directory_iterator{pathAbs}) {
-    if (auto const it{mSrcAbsPathToGuid.find(entry.path())}; it != std::end(mSrcAbsPathToGuid)) {
+    if (auto const it{src_abs_path_to_guid_.find(entry.path())}; it != std::end(src_abs_path_to_guid_)) {
       resourcesToDelete.emplace_back(it->second);
     }
   }
@@ -407,13 +417,13 @@ auto ResourceDB::DeleteDirectory(std::filesystem::path const& pathResDirRel) -> 
 
 
 auto ResourceDB::IsSavedResource(NativeResource const& res) const -> bool {
-  return mGuidToSrcAbsPath.contains(res.GetGuid());
+  return guid_to_src_abs_path_.contains(res.GetId().GetGuid());
 }
 
 
 auto ResourceDB::PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid {
-  if (auto const it{mSrcAbsPathToGuid.find(GetResourceDirectoryAbsolutePath() / pathResDirRel)};
-    it != std::end(mSrcAbsPathToGuid)) {
+  if (auto const it{src_abs_path_to_guid_.find(GetResourceDirectoryAbsolutePath() / pathResDirRel)};
+    it != std::end(src_abs_path_to_guid_)) {
     return it->second;
   }
 
@@ -422,7 +432,7 @@ auto ResourceDB::PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid 
 
 
 auto ResourceDB::GuidToPath(Guid const& guid) -> std::filesystem::path {
-  if (auto const it{mGuidToSrcAbsPath.find(guid)}; it != std::end(mGuidToSrcAbsPath)) {
+  if (auto const it{guid_to_src_abs_path_.find(guid)}; it != std::end(guid_to_src_abs_path_)) {
     return relative(it->second, GetResourceDirectoryAbsolutePath());
   }
 
@@ -432,7 +442,7 @@ auto ResourceDB::GuidToPath(Guid const& guid) -> std::filesystem::path {
 
 auto ResourceDB::GenerateUniqueResourceDirectoryRelativePath(
   std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path {
-  return GenerateUniquePath(mResDirAbs / targetPathResDirRel);
+  return GenerateUniquePath(res_dir_abs_ / targetPathResDirRel);
 }
 
 

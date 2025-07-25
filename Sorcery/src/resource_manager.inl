@@ -61,7 +61,7 @@ auto ResourceManager::GetOrLoad(ResourceId const& res_id) -> ResType* {
 
 template<std::derived_from<Resource> ResType>
 auto ResourceManager::Add(std::unique_ptr<ResType> resource) -> ObserverPtr<ResType> {
-  if (resource && resource->GetGuid().IsValid()) {
+  if (resource && resource->GetId().IsValid()) {
     return ObserverPtr{loaded_resources_.Lock()->emplace(std::move(resource)).first->get()};
   }
 

@@ -94,7 +94,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
       ImGui::SetDragDropPayload(DIR_NODE_DRAG_DROP_TYPE_STR.data(), thisPathResDirRelStr.c_str(),
         thisPathResDirRelStr.size() + 1);
     } else {
-      auto const res{App::Instance().GetResourceManager().GetOrLoad(resDb.PathToGuid(thisPathResDirRel))};
+      auto const res{App::Instance().GetResourceManager().GetOrLoad(ResourceId{resDb.PathToGuid(thisPathResDirRel), 0})};
       ImGui::SetDragDropPayload(ObjectDragDropData::TYPE_STR.data(), &res, sizeof(decltype(res)));
     }
     ImGui::EndDragDropSource();
@@ -115,8 +115,8 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
       if (auto const objectDragDropData{static_cast<ObjectDragDropData*>(payload->Data)};
         objectDragDropData && objectDragDropData->ptr && rttr::type::get(*objectDragDropData->ptr).is_derived_from(
           rttr::type::get<Resource>())) {
-        if (auto const res{static_cast<Resource*>(objectDragDropData->ptr)}; resDb.MoveResource(res->GetGuid(),
-          thisPathResDirRel / resDb.GuidToPath(res->GetGuid()).filename())) {
+        if (auto const res{static_cast<Resource*>(objectDragDropData->ptr)}; resDb.MoveResource(res->GetId().GetGuid(),
+          thisPathResDirRel / resDb.GuidToPath(res->GetId().GetGuid()).filename())) {
           ret = true;
         }
       }
@@ -129,7 +129,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
         ImGuiMouseButton_Right)) {
     mSelectedPathResDirRel = thisPathResDirRel;
     selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
-    mApp->SetSelectedObject(App::Instance().GetResourceManager().GetOrLoad(resDb.PathToGuid(thisPathResDirRel)));
+    mApp->SetSelectedObject(App::Instance().GetResourceManager().GetOrLoad(ResourceId{resDb.PathToGuid(thisPathResDirRel), 0}));
   }
 
   if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {

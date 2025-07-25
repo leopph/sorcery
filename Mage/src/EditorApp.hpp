@@ -45,7 +45,7 @@ public:
   [[nodiscard]] auto GetResourceDatabase() const noexcept -> ResourceDB const&;
   [[nodiscard]] auto GetResourceDatabase() noexcept -> ResourceDB&;
 
-  auto OpenScene(Guid const& guid) -> void;
+  auto OpenScene(ResourceId const& res_id) -> void;
   auto OpenNewScene() -> void;
   auto SaveCurrentSceneToFile() -> void;
   [[nodiscard]] auto GetScene() const noexcept -> Scene&;
