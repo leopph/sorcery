@@ -1,7 +1,6 @@
 #include "resource_manager.hpp"
 
 #include <cassert>
-#include <iostream>
 #include <ranges>
 #include <utility>
 
@@ -80,58 +79,72 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
                                            ResourceDescription const& desc) -> ObserverPtr<Resource> {
   ObserverPtr<Job> loader_job;
 
-  std::cout << "loading " << desc.name << '\n';
+  struct JobData {
+    ResourceId const* res_id;
+    ResourceDescription const* desc;
+    std::filesystem::path path_abs;
+  };
+
+  JobData job_data;
 
   {
     auto loader_jobs{loader_jobs_.Lock()};
 
-    if (auto const it{loader_jobs->find(res_id)}; it != loader_jobs->end()) {
-      loader_job = it->second;
+    if (auto const job_it{loader_jobs->find(res_id)}; job_it != loader_jobs->end()) {
+      loader_job = job_it->second;
     } else {
-      loader_job = job_system_->CreateJob([this, &res_id, &desc] {
-        std::unique_ptr<Resource> res;
+      auto const file_mappings{file_mappings_.LockShared()};
 
-        if (desc.pathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
-          std::vector<std::uint8_t> fileBytes;
+      if (auto const file_it{file_mappings->find(res_id.GetGuid())}; file_it != file_mappings->end()) {
+        job_data.res_id = &res_id;
+        job_data.desc = &desc;
+        job_data.path_abs = file_it->second;
 
-          if (!ReadFileBinary(desc.pathAbs, fileBytes)) {
-            return;
-          }
+        loader_job = job_system_->CreateJob([this, &job_data] {
+          std::unique_ptr<Resource> res;
 
-          ExternalResourceCategory resCat;
-          std::vector<std::byte> resBytes;
+          if (job_data.path_abs.extension() == EXTERNAL_RESOURCE_EXT) {
+            std::vector<std::uint8_t> file_bytes;
 
-          if (!UnpackExternalResource(as_bytes(std::span{fileBytes}), resCat, resBytes)) {
-            return;
-          }
-
-          switch (resCat) {
-            case ExternalResourceCategory::Texture: {
-              res = LoadTexture(resBytes);
-              break;
+            if (!ReadFileBinary(job_data.path_abs, file_bytes)) {
+              return;
             }
 
-            case ExternalResourceCategory::Mesh: {
-              res = LoadMesh(resBytes);
-              break;
+            ExternalResourceCategory resCat;
+            std::vector<std::byte> resBytes;
+
+            if (!UnpackExternalResource(as_bytes(std::span{file_bytes}), resCat, resBytes)) {
+              return;
             }
+
+            switch (resCat) {
+              case ExternalResourceCategory::Texture: {
+                res = LoadTexture(resBytes);
+                break;
+              }
+
+              case ExternalResourceCategory::Mesh: {
+                res = LoadMesh(resBytes);
+                break;
+              }
+            }
+          } else if (job_data.path_abs.extension() == SCENE_RESOURCE_EXT) {
+            res = CreateDeserialize<Scene>(YAML::LoadFile(job_data.path_abs.string()));
+          } else if (job_data.path_abs.extension() == MATERIAL_RESOURCE_EXT) {
+            res = CreateDeserialize<Material>(YAML::LoadFile(job_data.path_abs.string()));
           }
-        } else if (desc.pathAbs.extension() == SCENE_RESOURCE_EXT) {
-          res = CreateDeserialize<Scene>(YAML::LoadFile(desc.pathAbs.string()));
-        } else if (desc.pathAbs.extension() == MATERIAL_RESOURCE_EXT) {
-          res = CreateDeserialize<Material>(YAML::LoadFile(desc.pathAbs.string()));
-        }
 
-        if (res) {
-          res->SetId(res_id);
-          res->SetName(desc.name);
+          if (res) {
+            res->SetId(*job_data.res_id);
+            res->SetName(job_data.desc->name);
 
-          auto const [it, inserted]{loaded_resources_.Lock()->emplace(std::move(res))};
-          assert(inserted);
-        }
-      });
-      job_system_->Run(loader_job);
-      loader_jobs->emplace(res_id, loader_job);
+            auto const [it, inserted]{loaded_resources_.Lock()->emplace(std::move(res))};
+            assert(inserted);
+          }
+        });
+        job_system_->Run(loader_job);
+        loader_jobs->emplace(res_id, loader_job);
+      }
     }
   }
 
@@ -528,10 +541,15 @@ auto ResourceManager::IsLoaded(ResourceId const& res_id) -> bool {
 }
 
 
-auto ResourceManager::UpdateMappings(std::map<ResourceId, ResourceDescription> mappings) -> void {
+auto ResourceManager::UpdateMappings(std::map<ResourceId, ResourceDescription> res_mappings,
+                                     std::map<Guid, std::filesystem::path> file_mappings) -> void {
   while (true) {
-    if (auto self_mappings{mappings_.TryLock()}) {
-      **self_mappings = std::move(mappings);
+    auto self_res_mappings{res_mappings_.TryLock()};
+    auto self_file_mappings{file_mappings_.TryLock()};
+
+    if (self_res_mappings && self_file_mappings) {
+      **self_res_mappings = std::move(res_mappings);
+      **self_file_mappings = std::move(file_mappings);
       break;
     }
   }
@@ -547,7 +565,7 @@ auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vec
   }
 
   // File mappings
-  for (auto const& [guid, desc] : *mappings_.LockShared()) {
+  for (auto const& [guid, desc] : *res_mappings_.LockShared()) {
     if (desc.type.is_derived_from(type)) {
       out.emplace_back(guid, desc.name, desc.type);
     }

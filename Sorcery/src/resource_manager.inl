@@ -37,7 +37,7 @@ auto ResourceManager::GetOrLoad(ResourceId const& res_id) -> ResType* {
   std::optional<ResourceDescription> desc;
 
   {
-    auto const mappings{mappings_.LockShared()};
+    auto const mappings{res_mappings_.LockShared()};
     if (auto const it{mappings->find(res_id)}; it != std::end(*mappings)) {
       desc = it->second;
     }
