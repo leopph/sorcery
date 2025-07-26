@@ -1,22 +1,18 @@
 #include "FileIo.hpp"
 
-#include <fstream>
+#include <fast_io.h>
 
 
 namespace sorcery {
 auto ReadFileBinary(std::filesystem::path const& src, std::vector<unsigned char>& out) -> bool {
-  std::ifstream is{src, std::ios::in | std::ios::binary};
+  fast_io::native_file_loader loader{src};
 
-  if (!is.is_open()) {
+  if (loader.empty()) {
     return false;
   }
 
-  is.seekg(0, std::ios::end);
-  out.resize(is.tellg());
-
-  is.seekg(0, std::ios::beg);
-  is.read(reinterpret_cast<char*>(out.data()), std::size(out));
-
+  out.resize(loader.size());
+  out.assign(loader.begin(), loader.end());
   return true;
 }
 }

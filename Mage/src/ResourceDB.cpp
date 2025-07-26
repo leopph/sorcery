@@ -15,89 +15,6 @@
 
 
 namespace sorcery::mage {
-auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResDirRel,
-                                        std::map<Guid, std::filesystem::path>& guidToSrcAbsPath,
-                                        std::map<Guid, std::filesystem::path>& guidToResAbsPath,
-                                        std::map<std::filesystem::path, Guid>& srcAbsPathToGuid,
-                                        std::map<Guid, rttr::type>& guidToType, ResourceImporter& importer,
-                                        Guid const& guid) const -> bool {
-  auto const resPathAbs{res_dir_abs_ / resPathResDirRel};
-
-  if (!WriteMeta(resPathAbs, guid, importer)) {
-    return false;
-  }
-
-  std::vector<std::byte> resBytes;
-  ExternalResourceCategory categ;
-
-  if (!importer.Import(resPathAbs, resBytes, categ)) {
-    return false;
-  }
-
-  if (!importer.IsNativeImporter()) {
-    if (!WriteExternalResourceBinary(guid, categ, resBytes)) {
-      return false;
-    }
-    guidToResAbsPath.insert_or_assign(guid, GetExternalResourceBinaryPathAbs(guid));
-  } else {
-    guidToResAbsPath.insert_or_assign(guid, resPathAbs);
-  }
-
-  guidToSrcAbsPath.insert_or_assign(guid, resPathAbs);
-  guidToType.insert_or_assign(guid, importer.GetImportedType(resPathAbs));
-  srcAbsPathToGuid.insert_or_assign(resPathAbs, guid);
-  return true;
-}
-
-
-auto ResourceDB::CreateMappings() const noexcept -> std::pair<
-  std::map<ResourceId, ResourceManager::ResourceDescription>, std::map<Guid, std::filesystem::path>> {
-  std::map<ResourceId, ResourceManager::ResourceDescription> res_mappings;
-  std::map<Guid, std::filesystem::path> file_mappings;
-
-  for (auto const& [guid, src_abs_path] : guid_to_src_abs_path_) {
-    res_mappings.emplace(std::piecewise_construct, std::forward_as_tuple(ResourceId{guid, 0}),
-      std::forward_as_tuple(src_abs_path.stem().string(), guid_to_type_.at(guid)));
-
-    if (auto const load_abs_path{guid_to_load_abs_path_.find(guid)};
-      load_abs_path != std::end(guid_to_load_abs_path_)) {
-      file_mappings.emplace(guid, load_abs_path->second);
-    }
-  }
-
-  return std::make_pair(std::move(res_mappings), std::move(file_mappings));
-}
-
-
-auto ResourceDB::GetExternalResourceBinaryPathAbs(Guid const& guid) const noexcept -> std::filesystem::path {
-  return cache_dir_abs_ / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT;
-}
-
-
-auto ResourceDB::WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory const categ,
-                                             std::span<std::byte const> const resBytes) const noexcept -> bool {
-  if (!guid.IsValid()) {
-    return false;
-  }
-
-  std::vector<std::byte> fileBytes;
-  PackExternalResource(categ, resBytes, fileBytes);
-
-  if (!exists(cache_dir_abs_)) {
-    create_directory(cache_dir_abs_);
-  }
-
-  std::ofstream outStream{GetExternalResourceBinaryPathAbs(guid), std::ios::binary | std::ios::out | std::ios::trunc};
-
-  if (!outStream.is_open()) {
-    return false;
-  }
-
-  outStream.write(reinterpret_cast<char*>(fileBytes.data()), std::ssize(fileBytes));
-  return true;
-}
-
-
 ResourceDB::ResourceDB(Object*& selectedObjectPtr) :
   selected_object_ptr_{std::addressof(selectedObjectPtr)} {}
 
@@ -308,7 +225,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, R
 
   // If a meta file already exists for the resource, we attempt to reimport it and keep its Guid.
   if (LoadMeta(GetResourceDirectoryAbsolutePath() / resPathResDirRel, std::addressof(guid), nullptr) && App::Instance()
-    .GetResourceManager().IsLoaded(ResourceId{guid, 0})) {
+      .GetResourceManager().IsLoaded(ResourceId{guid, 0})) {
     if (*selected_object_ptr_ == App::Instance().GetResourceManager().GetOrLoad(ResourceId{guid, 0})) {
       *selected_object_ptr_ = nullptr;
     }
@@ -582,5 +499,88 @@ auto ResourceDB::GetNewImporterForResourceFile(std::filesystem::path const& path
   }
 
   return {};
+}
+
+
+auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResDirRel,
+                                        std::map<Guid, std::filesystem::path>& guidToSrcAbsPath,
+                                        std::map<Guid, std::filesystem::path>& guidToResAbsPath,
+                                        std::map<std::filesystem::path, Guid>& srcAbsPathToGuid,
+                                        std::map<Guid, rttr::type>& guidToType, ResourceImporter& importer,
+                                        Guid const& guid) const -> bool {
+  auto const resPathAbs{res_dir_abs_ / resPathResDirRel};
+
+  if (!WriteMeta(resPathAbs, guid, importer)) {
+    return false;
+  }
+
+  std::vector<std::byte> resBytes;
+  ExternalResourceCategory categ;
+
+  if (!importer.Import(resPathAbs, resBytes, categ)) {
+    return false;
+  }
+
+  if (!importer.IsNativeImporter()) {
+    if (!WriteExternalResourceBinary(guid, categ, resBytes)) {
+      return false;
+    }
+    guidToResAbsPath.insert_or_assign(guid, GetExternalResourceBinaryPathAbs(guid));
+  } else {
+    guidToResAbsPath.insert_or_assign(guid, resPathAbs);
+  }
+
+  guidToSrcAbsPath.insert_or_assign(guid, resPathAbs);
+  guidToType.insert_or_assign(guid, importer.GetImportedType(resPathAbs));
+  srcAbsPathToGuid.insert_or_assign(resPathAbs, guid);
+  return true;
+}
+
+
+auto ResourceDB::CreateMappings() const noexcept -> std::pair<
+  std::map<ResourceId, ResourceManager::ResourceDescription>, std::map<Guid, std::filesystem::path>> {
+  std::map<ResourceId, ResourceManager::ResourceDescription> res_mappings;
+  std::map<Guid, std::filesystem::path> file_mappings;
+
+  for (auto const& [guid, src_abs_path] : guid_to_src_abs_path_) {
+    res_mappings.emplace(std::piecewise_construct, std::forward_as_tuple(ResourceId{guid, 0}),
+      std::forward_as_tuple(src_abs_path.stem().string(), guid_to_type_.at(guid)));
+
+    if (auto const load_abs_path{guid_to_load_abs_path_.find(guid)};
+      load_abs_path != std::end(guid_to_load_abs_path_)) {
+      file_mappings.emplace(guid, load_abs_path->second);
+    }
+  }
+
+  return std::make_pair(std::move(res_mappings), std::move(file_mappings));
+}
+
+
+auto ResourceDB::GetExternalResourceBinaryPathAbs(Guid const& guid) const noexcept -> std::filesystem::path {
+  return cache_dir_abs_ / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT;
+}
+
+
+auto ResourceDB::WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory const categ,
+                                             std::span<std::byte const> const resBytes) const noexcept -> bool {
+  if (!guid.IsValid()) {
+    return false;
+  }
+
+  std::vector<std::byte> fileBytes;
+  PackExternalResource(categ, resBytes, fileBytes);
+
+  if (!exists(cache_dir_abs_)) {
+    create_directory(cache_dir_abs_);
+  }
+
+  std::ofstream outStream{GetExternalResourceBinaryPathAbs(guid), std::ios::binary | std::ios::out | std::ios::trunc};
+
+  if (!outStream.is_open()) {
+    return false;
+  }
+
+  outStream.write(reinterpret_cast<char*>(fileBytes.data()), std::ssize(fileBytes));
+  return true;
 }
 }
