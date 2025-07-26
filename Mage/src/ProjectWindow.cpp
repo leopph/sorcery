@@ -94,7 +94,9 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
       ImGui::SetDragDropPayload(DIR_NODE_DRAG_DROP_TYPE_STR.data(), thisPathResDirRelStr.c_str(),
         thisPathResDirRelStr.size() + 1);
     } else {
-      auto const res{App::Instance().GetResourceManager().GetOrLoad(ResourceId{resDb.PathToGuid(thisPathResDirRel), 0})};
+      auto const res{
+        App::Instance().GetResourceManager().GetOrLoad(ResourceId{resDb.PathToGuid(thisPathResDirRel), 0})
+      };
       ImGui::SetDragDropPayload(ObjectDragDropData::TYPE_STR.data(), &res, sizeof(decltype(res)));
     }
     ImGui::EndDragDropSource();
@@ -129,7 +131,9 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
         ImGuiMouseButton_Right)) {
     mSelectedPathResDirRel = thisPathResDirRel;
     selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
-    mApp->SetSelectedObject(App::Instance().GetResourceManager().GetOrLoad(ResourceId{resDb.PathToGuid(thisPathResDirRel), 0}));
+    mApp->SetSelectedObject(App::Instance().GetResourceManager().GetOrLoad(ResourceId{
+      resDb.PathToGuid(thisPathResDirRel), 0
+    }));
   }
 
   if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
@@ -139,7 +143,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
   if (nodeIsOpen) {
     if (isDirectory) {
       for (auto const& entry : std::filesystem::directory_iterator{thisPathAbs}) {
-        if (entry.path().extension() != ResourceDB::RESOURCE_META_FILE_EXT) {
+        if (entry.path().extension() != ResourceDB::kResourceMetaFileExt) {
           if (DrawFilesystemTree(entry.path(), thisPathResDirRel / entry.path().filename(), entry.is_directory())) {
             // The directory_iterator does not guarantee anything when the directory tree changes, it's safer to skip the rest of the frame.
             break;
@@ -206,7 +210,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
               NFD::PathSet::GetPath(dst_paths, i, src_path_abs_str) == NFD_OKAY) {
               std::filesystem::path const src_path_abs{src_path_abs_str.get()};
 
-              if (auto importer{ResourceDB::GetNewImporterForResourceFile(src_path_abs)}) {
+              if (auto importer{ResourceDB::CreateNewImporterForResourceFile(src_path_abs)}) {
                 mFilesToImport.emplace_back(std::move(importer), src_path_abs,
                   GenerateUniquePath(workingDirAbs / src_path_abs.filename()));
                 mOpenImportModal = true;
@@ -225,7 +229,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
     ImGui::Separator();
 
     if (ImGui::MenuItem("Import Settings", nullptr, nullptr, !is_directory(selectedPathAbs))) {
-      if (std::unique_ptr<ResourceImporter> importer; ResourceDB::LoadMeta(selectedPathAbs, nullptr,
+      if (std::unique_ptr<ResourceImporter> importer; ResourceDB::ReadMeta(selectedPathAbs, nullptr,
         std::addressof(importer))) {
         mFilesToImport.emplace_back(std::move(importer), selectedPathAbs, selectedPathAbs);
         mOpenImportModal = true;
