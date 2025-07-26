@@ -16,6 +16,7 @@ public:
   explicit ResourceDB(Object*& selectedObjectPtr);
 
   auto Refresh() -> void;
+
   auto ChangeProjectDir(std::filesystem::path const& projDirAbs) -> void;
   [[nodiscard]] auto GetResourceDirectoryAbsolutePath() -> std::filesystem::path const&;
 
@@ -32,6 +33,7 @@ public:
   auto DeleteResource(Guid const& guid) -> void;
   [[nodiscard]] auto DeleteDirectory(std::filesystem::path const& pathResDirRel) -> bool;
   [[nodiscard]] auto IsSavedResource(NativeResource const& res) const -> bool;
+
   [[nodiscard]] auto PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid;
   // Returns a resource directory relative path, or empty if not found.
   [[nodiscard]] auto GuidToPath(Guid const& guid) -> std::filesystem::path;

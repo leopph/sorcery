@@ -110,21 +110,20 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
               return;
             }
 
-            ExternalResourceCategory resCat;
-            std::vector<std::byte> resBytes;
+            const auto unpacked{UnpackExternalResource(as_bytes(std::span{file_bytes}))};
 
-            if (!UnpackExternalResource(as_bytes(std::span{file_bytes}), resCat, resBytes)) {
+            if (!unpacked) {
               return;
             }
 
-            switch (resCat) {
+            switch (unpacked->category) {
               case ExternalResourceCategory::Texture: {
-                res = LoadTexture(resBytes);
+                res = LoadTexture(unpacked->bytes);
                 break;
               }
 
               case ExternalResourceCategory::Mesh: {
-                res = LoadMesh(resBytes);
+                res = LoadMesh(unpacked->bytes);
                 break;
               }
             }
