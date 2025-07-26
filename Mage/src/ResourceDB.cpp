@@ -356,6 +356,17 @@ auto ResourceDB::GuidToPath(Guid const& guid) -> std::filesystem::path {
 }
 
 
+auto ResourceDB::GetImporterForResourceFile(
+  std::filesystem::path const& res_path_abs) noexcept -> std::unique_ptr<ResourceImporter> {
+  if (std::unique_ptr<ResourceImporter> importer;
+    ReadMeta(res_path_abs, nullptr, &importer)) {
+    return importer;
+  }
+
+  return nullptr;
+}
+
+
 auto ResourceDB::MakeMetaPath(std::filesystem::path const& path) -> std::filesystem::path {
   return std::filesystem::path{path} += kResourceMetaFileExt;
 }
