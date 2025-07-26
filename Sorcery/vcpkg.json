@@ -27,6 +27,10 @@
 		{
 			"name": "mimalloc",
 			"version>=": "2.2.3"
+		},
+		{
+			"name": "fastio",
+			"version>=": "2024-12-05"
 		}
 	]
 }
