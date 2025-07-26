@@ -229,8 +229,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
     ImGui::Separator();
 
     if (ImGui::MenuItem("Import Settings", nullptr, nullptr, !is_directory(selectedPathAbs))) {
-      if (std::unique_ptr<ResourceImporter> importer; ResourceDB::ReadMeta(selectedPathAbs, nullptr,
-        std::addressof(importer))) {
+      if (std::unique_ptr importer{ResourceDB::GetImporterForResourceFile(selectedPathAbs)}) {
         mFilesToImport.emplace_back(std::move(importer), selectedPathAbs, selectedPathAbs);
         mOpenImportModal = true;
       }

@@ -118,38 +118,11 @@ public:
 
 
   /**
-   * Returns the path where the meta file for the file at the given path would be stored if it were a resource file.
-   * The function will not validate the given path, nor will it check if the file exists or if it is even a resource.
+   * Returns an importer object for the resource file at the given path.
+   * If the file does not exist, or it is not a resource file, or the importer cannot be retrieved, the function will return nullptr.
    */
-  [[nodiscard]] static auto MakeMetaPath(std::filesystem::path const& path) -> std::filesystem::path;
-
-
-  /**
-   * Returns if the given path is a plausible path to a meta file, that is, if its format is that of a valid meta file path.
-   * The function will not validate the file's existence or contents.
-   */
-  [[nodiscard]] static auto IsMetaFile(std::filesystem::path const& path) -> bool;
-
-
-  /**
-   * Reads the meta file of the resource at the given path.
-   * Optional arguments may be passed to retrieve the contents of the meta file.
-   * If the file failed to load for any reason, the optional arguments will not be modified.
-   * Returns whether the meta file was read successfully.
-   */
-  [[nodiscard]] static auto ReadMeta(std::filesystem::path const& resPathAbs, Guid* guid,
-                                     std::unique_ptr<ResourceImporter>* importer) noexcept -> bool;
-
-
-  /**
-   * Creates a meta file for the resource at the given path.
-   * If the Guid is invalid or the importer cannot be recognized, the meta file will not be created.
-   * If the meta file already exists, it will be overwritten.
-   * The function will not validate the resource file's existence or contents.
-   * Returns whether the meta file was written successfully.
-   */
-  [[nodiscard]] static auto WriteMeta(std::filesystem::path const& resPathAbs, Guid const& guid,
-                                      ResourceImporter const& importer) noexcept -> bool;
+  [[nodiscard]] static auto GetImporterForResourceFile(
+    std::filesystem::path const& res_path_abs) noexcept -> std::unique_ptr<ResourceImporter>;
 
 
   /**
@@ -166,6 +139,41 @@ public:
 private:
   constexpr static std::string_view kResourceDirProjRel{"Resources"};
   constexpr static std::string_view kCacheDirProjRel{"Cache"};
+
+
+  /**
+ * Returns the path where the meta file for the file at the given path would be stored if it were a resource file.
+ * The function will not validate the given path, nor will it check if the file exists or if it is even a resource.
+ */
+  [[nodiscard]] static auto MakeMetaPath(std::filesystem::path const& path) -> std::filesystem::path;
+
+
+  /**
+   * Returns if the given path is a plausible path to a meta file, that is, if its format is that of a valid meta file path.
+   * The function will not validate the file's existence or contents.
+   */
+  [[nodiscard]] static auto IsMetaFile(std::filesystem::path const& path) -> bool;
+
+
+  /**
+ * Reads the meta file of the resource at the given path.
+ * Optional arguments may be passed to retrieve the contents of the meta file.
+ * If the file failed to load for any reason, the optional arguments will not be modified.
+ * Returns whether the meta file was read successfully.
+ */
+  [[nodiscard]] static auto ReadMeta(std::filesystem::path const& resPathAbs, Guid* guid,
+                                     std::unique_ptr<ResourceImporter>* importer) noexcept -> bool;
+
+
+  /**
+   * Creates a meta file for the resource at the given path.
+   * If the Guid is invalid or the importer cannot be recognized, the meta file will not be created.
+   * If the meta file already exists, it will be overwritten.
+   * The function will not validate the resource file's existence or contents.
+   * Returns whether the meta file was written successfully.
+   */
+  [[nodiscard]] static auto WriteMeta(std::filesystem::path const& resPathAbs, Guid const& guid,
+                                      ResourceImporter const& importer) noexcept -> bool;
 
 
   /**
