@@ -50,33 +50,33 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
     TextureCube const irradiance_map = GetResource(g_params.irradiance_map_idx);
     SamplerState const bi_clamp_samp = GetSampler(g_params.bi_clamp_samp_idx);
 
-    TextureCube const prefiltered_env_map = GetResource(g_params.prefiltered_env_map_idx);
-    SamplerState const tri_clamp_samp = GetSampler(g_params.tri_clamp_samp_idx);
-
-
-    Texture2D<float2> const brdf_lut = GetResource(g_params.brdf_integration_map_idx);
-
-    float const NdotV = max(dot(norm_ws, dir_to_cam_ws), 0);
-
-    float3 const F0 = CalcF0(albedo, metallic);
-    float3 const F = FresnelSchlickRoughness(NdotV, F0, roughness);
-    float3 const kS = F;
-    float3 const kD = (1 - kS) * (1 - metallic);
-
     float3 const irradiance = irradiance_map.Sample(bi_clamp_samp, norm_ws).rgb;
     float3 const diffuse = irradiance * albedo;
 
-    float3 const R = reflect(-dir_to_cam_ws, norm_ws);
+    TextureCube const prefiltered_env_map = GetResource(g_params.prefiltered_env_map_idx);
+    SamplerState const tri_clamp_samp = GetSampler(g_params.tri_clamp_samp_idx);
+
+    Texture2D<float2> const brdf_lut = GetResource(g_params.brdf_integration_map_idx);
+
     float2 prefiltered_env_map_size;
     uint prefiltered_env_map_mip_count;
     prefiltered_env_map.GetDimensions(0, prefiltered_env_map_size.x, prefiltered_env_map_size.y,
       prefiltered_env_map_mip_count);
-    float3 const prefiltered_color = prefiltered_env_map.SampleLevel(tri_clamp_samp, R,
-      roughness * (prefiltered_env_map_mip_count - 1)).rgb;
-    float2 const env_brdf = brdf_lut.Sample(bi_clamp_samp, float2(NdotV, roughness));
-    float3 const specular = prefiltered_color * (F * env_brdf.x + env_brdf.y);
 
-    ambient = (kD * diffuse + specular);
+    float const n_dot_v = saturate(dot(norm_ws, dir_to_cam_ws));
+    float3 const in_light_dir_ws = reflect(-dir_to_cam_ws, norm_ws);
+
+    float3 const prefiltered_color = prefiltered_env_map.SampleLevel(
+      tri_clamp_samp, in_light_dir_ws, roughness * (prefiltered_env_map_mip_count - 1)).rgb;
+    float2 const env_brdf = brdf_lut.Sample(bi_clamp_samp, float2(n_dot_v, roughness));
+
+    float3 const f0 = CalcF0(albedo, metallic);
+    float3 const fresnel = FresnelSchlickRoughness(n_dot_v, f0, roughness);
+    float3 const specular = prefiltered_color * (fresnel * env_brdf.x + env_brdf.y);
+    
+    float3 const diffuse_factor = (1 - fresnel) * (1 - metallic);
+
+    ambient = (diffuse_factor * diffuse + specular);
   }
 
   float3 out_color = ambient * ao;
