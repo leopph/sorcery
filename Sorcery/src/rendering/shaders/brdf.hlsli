@@ -6,45 +6,35 @@
 
 
 float DistributionTrowbridgeReitz(float const n_dot_h, float const roughness) {
-  float const a = roughness * roughness;
-  float const a2 = a * a;
+  float const alpha = roughness * roughness;
+  float const alpha2 = alpha * alpha;
   float const n_dot_h2 = n_dot_h * n_dot_h;
-  float denom = n_dot_h2 * (a2 - 1.0) + 1.0;
+  float denom = n_dot_h2 * (alpha2 - 1.0) + 1.0;
   denom = kPi * denom * denom;
-  return a2 / denom;
+  return alpha2 / denom;
 }
 
 
-// Use for direct lighting
-float GeometrySchlickTrowbridgeReitzDirect(float const n_dot_v, float const roughness) {
-  float const r = roughness + 1.0;
-  float const k = r * r / 8.0;
+float GeometrySchlickTrowbridgeReitz(float const n_dot_v, float const roughness) {
+  float const alpha = roughness * roughness;
+  float const k = alpha / 2.0;
   return n_dot_v / (n_dot_v * (1.0 - k) + k);
-}
-
-
-// Use for IBL
-float GeometrySchlickTrowbridgeReitzIbl(float const n_dot_v, float const roughness) {
-  float const k = (roughness * roughness) / 2.0;
-  return n_dot_v / (n_dot_v * (1.0 - k) + k);
-}
-
-
-// Use for direct lighting
-float GeomertySmithDirect(float const n_dot_v, float const n_dot_l, float const roughness) {
-  float const ggx2 = GeometrySchlickTrowbridgeReitzDirect(n_dot_v, roughness);
-  float const ggx1 = GeometrySchlickTrowbridgeReitzDirect(n_dot_l, roughness);
-
-  return ggx1 * ggx2;
 }
 
 
 // Use for IBL
 float GeometrySmithIbl(float const n_dot_v, float const n_dot_l, float const roughness) {
-  float const ggx2 = GeometrySchlickTrowbridgeReitzIbl(n_dot_v, roughness);
-  float const ggx1 = GeometrySchlickTrowbridgeReitzIbl(n_dot_l, roughness);
-
+  float const ggx2 = GeometrySchlickTrowbridgeReitz(n_dot_v, roughness);
+  float const ggx1 = GeometrySchlickTrowbridgeReitz(n_dot_l, roughness);
   return ggx1 * ggx2;
+}
+
+
+// Use for direct lighting
+float GeomertySmithDirect(float const n_dot_v, float const n_dot_l, float const roughness) {
+  // Remap roughness to [0.5, 1.0] to avoid "hotness" at low roughness values
+  float const r = (roughness + 1.0) / 2.0;
+  return GeometrySmithIbl(n_dot_v, n_dot_l, r);
 }
 
 
@@ -54,7 +44,7 @@ float3 FresnelSchlick(float const v_dot_h, float3 const f0) {
 
 
 float3 FresnelSchlickRoughness(float const v_dot_h, float3 const f0, float roughness) {
-  return f0 + (max((float3)(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - v_dot_h, 0.0, 1.0), 5.0);
+  return f0 + (max((float3) (1.0 - roughness), f0) - f0) * pow(saturate(1.0 - v_dot_h), 5.0);
 }
 
 
