@@ -1,6 +1,10 @@
 #ifndef BRDF_HLSLI
 #define BRDF_HLSLI
 
+/* Most of the code here is based on "Real Shading in Unreal Engine 4" from Siggraph 2013.
+ * https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
+ */
+
 #include "common.hlsli"
 #include "sequences.hlsli"
 
@@ -44,7 +48,7 @@ float3 FresnelSchlick(float const v_dot_h, float3 const f0) {
 
 
 float3 FresnelSchlickRoughness(float const v_dot_h, float3 const f0, float roughness) {
-  return f0 + (max((float3) (1.0 - roughness), f0) - f0) * pow(saturate(1.0 - v_dot_h), 5.0);
+  return f0 + (max(1.0 - roughness, f0) - f0) * pow(saturate(1.0 - v_dot_h), 5.0);
 }
 
 
