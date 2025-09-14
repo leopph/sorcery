@@ -24,18 +24,25 @@
 
 #include "../Core.hpp"
 #include "../fast_vector.hpp"
+#include "../observer_ptr.hpp"
 
 // Returns the index of the member if all the pipeline parameters are considered a single buffer of the specified type.
 #define PIPELINE_PARAM_INDEX(BufferType, MemberName) static_cast<UINT>(offsetof(BufferType, MemberName) / 4)
 
 
 namespace sorcery::graphics {
+class GraphicsDevice;
+
+
+namespace internal {
+[[nodiscard]] auto GetInternalDevicePtr(GraphicsDevice const& device) -> ObserverPtr<ID3D12Device10>;
+}
+
+
 // Convert a depth format to its typeless equivalent.
 [[nodiscard]] auto MakeDepthTypeless(DXGI_FORMAT depth_format) -> DXGI_FORMAT;
 // Convert a depth format to its underlying linear equivalent.
 [[nodiscard]] auto MakeDepthUnderlyingLinear(DXGI_FORMAT depth_format) -> DXGI_FORMAT;
-
-class GraphicsDevice;
 
 class Buffer;
 class Texture;
@@ -385,6 +392,8 @@ private:
   std::mutex execute_barrier_mutex_;
 
   CD3DX12FeatureSupport supported_features_;
+
+  friend auto internal::GetInternalDevicePtr(GraphicsDevice const& device) -> ObserverPtr<ID3D12Device10>;
 };
 
 
@@ -604,7 +613,7 @@ private:
 
 
 template<DeviceChild T>
-DeviceChildDeleter<T>::DeviceChildDeleter(GraphicsDevice& device):
+DeviceChildDeleter<T>::DeviceChildDeleter(GraphicsDevice& device) :
   device_{&device} {}
 
 

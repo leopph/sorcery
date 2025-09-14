@@ -184,6 +184,11 @@ auto RootSignatureCache::Get(std::uint8_t const num_params) -> ComPtr<ID3D12Root
 }
 
 
+auto internal::GetInternalDevicePtr(GraphicsDevice const& device) -> ObserverPtr<ID3D12Device10> {
+  return ObserverPtr{device.device_.Get()};
+}
+
+
 auto MakeDepthTypeless(DXGI_FORMAT const depth_format) -> DXGI_FORMAT {
   if (depth_format == DXGI_FORMAT_D32_FLOAT_S8X24_UINT) {
     return DXGI_FORMAT_R32G8X24_TYPELESS;

@@ -6,6 +6,9 @@
 #include <iterator>
 #include <random>
 
+#include <FidelityFX/host/ffx_sssr.h>
+#include <FidelityFX/host/backends/dx12/ffx_dx12.h>
+
 #include "ShadowCascadeBoundary.hpp"
 #include "../app.hpp"
 #include "../MemoryAllocation.hpp"
@@ -97,6 +100,16 @@ namespace {
   };
 }
 }
+
+
+struct SsrRenderData {
+  FfxInterface iface;
+  FfxSssrContext ctx;
+  std::unique_ptr<char[]> scratch_buf;
+  std::size_t scratch_buf_size;
+
+  static std::size_t constexpr kMaxFfxContextCount{2};
+};
 
 
 auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,
@@ -1180,6 +1193,30 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   cmd.DrawInstanced(3, 1, 0, 0);
   cmd.End();
   device_->ExecuteCommandLists(std::span{&cmd, 1});
+
+  ssr_data_ = std::make_unique<SsrRenderData>();
+  ssr_data_->scratch_buf_size = ffxGetScratchMemorySizeDX12(SsrRenderData::kMaxFfxContextCount);
+  ssr_data_->scratch_buf = std::make_unique_for_overwrite<char[]>(ssr_data_->scratch_buf_size);
+
+  if (ffxGetInterfaceDX12(&ssr_data_->iface, graphics::internal::GetInternalDevicePtr(*device_).Get(),
+        ssr_data_->scratch_buf.get(), ssr_data_->scratch_buf_size, SsrRenderData::kMaxFfxContextCount) != FFX_OK) {
+    throw std::runtime_error{"Failed to create FidelityFX interface."};
+  }
+
+  FfxSssrContextDescription const sssr_desc{
+    .flags = FFX_SSSR_ENABLE_DEPTH_INVERTED,
+    .renderSize = {
+      static_cast<std::uint32_t>(window_->GetClientAreaSize().width),
+      static_cast<std::uint32_t>(window_->GetClientAreaSize().height)
+    },
+    .normalsHistoryBufferFormat = FFX_SURFACE_FORMAT_R8G8B8A8_UNORM,
+    .backendInterface = ssr_data_->iface,
+
+  };
+
+  if (ffxSssrContextCreate(&ssr_data_->ctx, &sssr_desc) != FFX_OK) {
+    throw std::runtime_error{"Failed to create FidelityFX SSSR context."};
+  }
 }
 
 

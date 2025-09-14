@@ -61,6 +61,9 @@ struct SsrParams {
 };
 
 
+struct SsrRenderData;
+
+
 class SceneRenderer {
 public:
   LEOPPHAPI SceneRenderer(Window& window, graphics::GraphicsDevice& device, RenderManager& render_manager);
@@ -489,6 +492,8 @@ private:
   std::shared_ptr<RenderTarget> rt_override_;
 
   EventListenerHandle<Extent2D<unsigned>> window_size_event_listener_{};
+
+  std::unique_ptr<SsrRenderData> ssr_data_;
 };
 
 
