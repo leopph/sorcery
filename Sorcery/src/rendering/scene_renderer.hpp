@@ -372,6 +372,8 @@ private:
   auto AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>&;
   auto AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>&;
 
+  auto RecreateSssrContext(Extent2D<std::uint32_t> size) const -> void;
+
   auto OnWindowSize(Extent2D<std::uint32_t> size) -> void;
 
   static auto DrawSubmesh(SubmeshData const& submesh, std::optional<UINT> meshlet_count_param_idx,

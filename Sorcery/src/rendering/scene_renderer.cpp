@@ -103,6 +103,7 @@ namespace {
 
 
 struct SsrRenderData {
+  FfxDevice dev;
   FfxInterface iface;
   FfxSssrContext ctx;
   std::unique_ptr<char[]> scratch_buf;
@@ -952,12 +953,29 @@ auto SceneRenderer::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDr
 }
 
 
+auto SceneRenderer::RecreateSssrContext(Extent2D<std::uint32_t> const size) const -> void {
+  FfxSssrContextDescription const sssr_desc{
+    .flags = FFX_SSSR_ENABLE_DEPTH_INVERTED,
+    .renderSize = {size.width, size.height},
+    .normalsHistoryBufferFormat = FFX_SURFACE_FORMAT_R16G16B16A16_FLOAT,
+    .backendInterface = ssr_data_->iface,
+
+  };
+
+  if (ffxSssrContextCreate(&ssr_data_->ctx, &sssr_desc) != FFX_OK) {
+    throw std::runtime_error{"Failed to create FidelityFX SSSR context."};
+  }
+}
+
+
 auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
   if (size.width != 0 && size.height != 0) {
     RenderTarget::Desc desc{main_rt_->GetDesc()};
     desc.width = size.width;
     desc.height = size.height;
     main_rt_ = RenderTarget::New(*device_, desc);
+
+    RecreateSssrContext(size);
   }
 }
 
@@ -1196,27 +1214,19 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
 
   ssr_data_ = std::make_unique<SsrRenderData>();
   ssr_data_->scratch_buf_size = ffxGetScratchMemorySizeDX12(SsrRenderData::kMaxFfxContextCount);
-  ssr_data_->scratch_buf = std::make_unique_for_overwrite<char[]>(ssr_data_->scratch_buf_size);
+  ssr_data_->scratch_buf = std::make_unique<char[]>(ssr_data_->scratch_buf_size);
 
-  if (ffxGetInterfaceDX12(&ssr_data_->iface, graphics::internal::GetInternalDevicePtr(*device_).Get(),
-        ssr_data_->scratch_buf.get(), ssr_data_->scratch_buf_size, SsrRenderData::kMaxFfxContextCount) != FFX_OK) {
+  ssr_data_->dev = ffxGetDeviceDX12(graphics::internal::GetInternalDevicePtr(*device_).Get());
+
+  if (ffxGetInterfaceDX12(&ssr_data_->iface, ssr_data_->dev, ssr_data_->scratch_buf.get(), ssr_data_->scratch_buf_size,
+      SsrRenderData::kMaxFfxContextCount)) {
     throw std::runtime_error{"Failed to create FidelityFX interface."};
   }
 
-  FfxSssrContextDescription const sssr_desc{
-    .flags = FFX_SSSR_ENABLE_DEPTH_INVERTED,
-    .renderSize = {
-      static_cast<std::uint32_t>(window_->GetClientAreaSize().width),
-      static_cast<std::uint32_t>(window_->GetClientAreaSize().height)
-    },
-    .normalsHistoryBufferFormat = FFX_SURFACE_FORMAT_R8G8B8A8_UNORM,
-    .backendInterface = ssr_data_->iface,
-
-  };
-
-  if (ffxSssrContextCreate(&ssr_data_->ctx, &sssr_desc) != FFX_OK) {
-    throw std::runtime_error{"Failed to create FidelityFX SSSR context."};
-  }
+  RecreateSssrContext(Extent2D{
+    .width = static_cast<std::uint32_t>(window_->GetClientAreaSize().width),
+    .height = static_cast<std::uint32_t>(window_->GetClientAreaSize().height)
+  });
 }
 
 
