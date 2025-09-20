@@ -15,8 +15,8 @@
 
 
 namespace sorcery::mage {
-ResourceDB::ResourceDB(Object*& selectedObjectPtr) :
-  selected_object_ptr_{std::addressof(selectedObjectPtr)} {}
+ResourceDB::ResourceDB(Object*& selected_object_ptr) :
+  selected_object_ptr_{std::addressof(selected_object_ptr)} {}
 
 
 auto ResourceDB::Refresh() -> void {
@@ -129,13 +129,13 @@ auto ResourceDB::Refresh() -> void {
 }
 
 
-auto ResourceDB::ChangeProjectDir(std::filesystem::path const& projDirAbs) -> void {
-  if (!exists(projDirAbs)) {
-    create_directory(projDirAbs);
+auto ResourceDB::ChangeProjectDir(std::filesystem::path const& proj_dir_abs) -> void {
+  if (!exists(proj_dir_abs)) {
+    create_directory(proj_dir_abs);
   }
 
-  res_dir_abs_ = projDirAbs / kResourceDirProjRel;
-  cache_dir_abs_ = projDirAbs / kCacheDirProjRel;
+  res_dir_abs_ = proj_dir_abs / kResourceDirProjRel;
+  cache_dir_abs_ = proj_dir_abs / kCacheDirProjRel;
 
   if (!exists(res_dir_abs_)) {
     create_directory(res_dir_abs_);
@@ -206,14 +206,14 @@ auto ResourceDB::SaveResource(NativeResource const& res) -> void {
 }
 
 
-auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, ResourceImporter* importer) -> bool {
+auto ResourceDB::ImportResource(std::filesystem::path const& res_path_res_dir_rel, ResourceImporter* importer) -> bool {
   // Temporary to keep a potentially freshly created importer alive in this stack frame.
   // Use the observer ptr, do not access this directly.
   std::unique_ptr<ResourceImporter> ownedImporter;
 
   if (!importer) {
     // If we weren't passed an importer instance, we use a new default one.
-    ownedImporter = CreateNewImporterForResourceFile(resPathResDirRel);
+    ownedImporter = CreateNewImporterForResourceFile(res_path_res_dir_rel);
     importer = ownedImporter.get();
 
     if (!importer) {
@@ -224,7 +224,8 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, R
   auto guid{Guid::Invalid()};
 
   // If a meta file already exists for the resource, we attempt to reimport it and keep its Guid.
-  if (ReadMeta(GetResourceDirectoryAbsolutePath() / resPathResDirRel, std::addressof(guid), nullptr) && App::Instance()
+  if (ReadMeta(GetResourceDirectoryAbsolutePath() / res_path_res_dir_rel, std::addressof(guid), nullptr) &&
+      App::Instance()
       .GetResourceManager().IsLoaded(ResourceId{guid, 0})) {
     if (*selected_object_ptr_ == App::Instance().GetResourceManager().GetOrLoad(ResourceId{guid, 0})) {
       *selected_object_ptr_ = nullptr;
@@ -238,7 +239,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, R
     guid = Guid::Generate();
   }
 
-  if (!InternalImportResource(res_dir_abs_ / resPathResDirRel, guid_to_src_abs_path_, guid_to_load_abs_path_,
+  if (!InternalImportResource(res_dir_abs_ / res_path_res_dir_rel, guid_to_src_abs_path_, guid_to_load_abs_path_,
     src_abs_path_to_guid_, guid_to_type_, *importer, guid)) {
     return false;
   }
@@ -249,7 +250,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, R
 }
 
 
-auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> bool {
+auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& target_path_res_dir_rel) -> bool {
   auto const it{guid_to_src_abs_path_.find(guid)};
 
   if (it == std::end(guid_to_src_abs_path_)) {
@@ -258,7 +259,7 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
 
   auto const srcPathAbs{it->second};
   auto const srcMetaPathAbs{MakeMetaPath(srcPathAbs)};
-  auto const dstPathAbs{res_dir_abs_ / targetPathResDirRel};
+  auto const dstPathAbs{res_dir_abs_ / target_path_res_dir_rel};
   auto const dstMetaPathAbs{MakeMetaPath(dstPathAbs)};
 
   if (!exists(srcPathAbs) || !exists(srcMetaPathAbs) || exists(dstPathAbs) || exists(dstMetaPathAbs)) {
@@ -273,10 +274,10 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
 }
 
 
-auto ResourceDB::MoveDirectory(std::filesystem::path const& srcPathResDirRel,
-                               std::filesystem::path const& dstPathResDirRel) -> bool {
-  auto const srcPathAbs{weakly_canonical(GetResourceDirectoryAbsolutePath() / srcPathResDirRel)};
-  auto const dstPathAbs{weakly_canonical(GetResourceDirectoryAbsolutePath() / dstPathResDirRel)};
+auto ResourceDB::MoveDirectory(std::filesystem::path const& src_path_res_dir_rel,
+                               std::filesystem::path const& dst_path_res_dir_rel) -> bool {
+  auto const srcPathAbs{weakly_canonical(GetResourceDirectoryAbsolutePath() / src_path_res_dir_rel)};
+  auto const dstPathAbs{weakly_canonical(GetResourceDirectoryAbsolutePath() / dst_path_res_dir_rel)};
 
   if (!exists(srcPathAbs) || exists(dstPathAbs) || !is_directory(srcPathAbs) || equivalent(srcPathAbs,
         GetResourceDirectoryAbsolutePath())) {
@@ -308,8 +309,8 @@ auto ResourceDB::DeleteResource(Guid const& guid) -> void {
 }
 
 
-auto ResourceDB::DeleteDirectory(std::filesystem::path const& pathResDirRel) -> bool {
-  auto const pathAbs{weakly_canonical(GetResourceDirectoryAbsolutePath() / pathResDirRel)};
+auto ResourceDB::DeleteDirectory(std::filesystem::path const& path_res_dir_rel) -> bool {
+  auto const pathAbs{weakly_canonical(GetResourceDirectoryAbsolutePath() / path_res_dir_rel)};
 
   if (!exists(pathAbs) || !is_directory(pathAbs)) {
     return false;
@@ -337,8 +338,8 @@ auto ResourceDB::IsSavedResource(NativeResource const& res) const -> bool {
 }
 
 
-auto ResourceDB::PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid {
-  if (auto const it{src_abs_path_to_guid_.find(GetResourceDirectoryAbsolutePath() / pathResDirRel)};
+auto ResourceDB::PathToGuid(std::filesystem::path const& path_res_dir_rel) -> Guid {
+  if (auto const it{src_abs_path_to_guid_.find(GetResourceDirectoryAbsolutePath() / path_res_dir_rel)};
     it != std::end(src_abs_path_to_guid_)) {
     return it->second;
   }
@@ -377,9 +378,9 @@ auto ResourceDB::IsMetaFile(std::filesystem::path const& path) -> bool {
 }
 
 
-auto ResourceDB::ReadMeta(std::filesystem::path const& resPathAbs, Guid* const guid,
+auto ResourceDB::ReadMeta(std::filesystem::path const& res_path_abs, Guid* const guid,
                           std::unique_ptr<ResourceImporter>* const importer) noexcept -> bool {
-  auto const metaPathAbs{MakeMetaPath(resPathAbs)};
+  auto const metaPathAbs{MakeMetaPath(res_path_abs)};
 
   if (!exists(metaPathAbs)) {
     return false;
@@ -453,7 +454,7 @@ auto ResourceDB::ReadMeta(std::filesystem::path const& resPathAbs, Guid* const g
 }
 
 
-auto ResourceDB::WriteMeta(std::filesystem::path const& resPathAbs, Guid const& guid,
+auto ResourceDB::WriteMeta(std::filesystem::path const& res_path_abs, Guid const& guid,
                            ResourceImporter const& importer) noexcept -> bool {
   if (!guid.IsValid()) {
     return false;
@@ -473,7 +474,7 @@ auto ResourceDB::WriteMeta(std::filesystem::path const& resPathAbs, Guid const& 
   metaNode["guid"] = guid;
   metaNode["importer"] = importerNode;
 
-  auto const metaPathAbs{MakeMetaPath(resPathAbs)};
+  auto const metaPathAbs{MakeMetaPath(res_path_abs)};
 
   std::ofstream outStream{metaPathAbs, std::ios::out | std::ios::trunc};
 
@@ -508,10 +509,10 @@ auto ResourceDB::CreateNewImporterForResourceFile(
 
 
 auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_abs,
-                                        std::map<Guid, std::filesystem::path>& guidToSrcAbsPath,
-                                        std::map<Guid, std::filesystem::path>& guidToResAbsPath,
-                                        std::map<std::filesystem::path, Guid>& srcAbsPathToGuid,
-                                        std::map<Guid, rttr::type>& guidToType, ResourceImporter& importer,
+                                        std::map<Guid, std::filesystem::path>& guid_to_src_abs_path,
+                                        std::map<Guid, std::filesystem::path>& guid_to_res_abs_path,
+                                        std::map<std::filesystem::path, Guid>& src_abs_path_to_guid,
+                                        std::map<Guid, rttr::type>& guid_to_type, ResourceImporter& importer,
                                         Guid const& guid) const -> bool {
   if (!WriteMeta(res_path_abs, guid, importer)) {
     return false;
@@ -528,14 +529,14 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
     if (!WriteExternalResourceBinary(guid, categ, resBytes)) {
       return false;
     }
-    guidToResAbsPath.insert_or_assign(guid, MakeExternalResourceBinaryPathAbs(guid));
+    guid_to_res_abs_path.insert_or_assign(guid, MakeExternalResourceBinaryPathAbs(guid));
   } else {
-    guidToResAbsPath.insert_or_assign(guid, res_path_abs);
+    guid_to_res_abs_path.insert_or_assign(guid, res_path_abs);
   }
 
-  guidToSrcAbsPath.insert_or_assign(guid, res_path_abs);
-  guidToType.insert_or_assign(guid, importer.GetImportedType(res_path_abs));
-  srcAbsPathToGuid.insert_or_assign(res_path_abs, guid);
+  guid_to_src_abs_path.insert_or_assign(guid, res_path_abs);
+  guid_to_type.insert_or_assign(guid, importer.GetImportedType(res_path_abs));
+  src_abs_path_to_guid.insert_or_assign(res_path_abs, guid);
   return true;
 }
 
@@ -565,13 +566,13 @@ auto ResourceDB::MakeExternalResourceBinaryPathAbs(Guid const& guid) const noexc
 
 
 auto ResourceDB::WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory const categ,
-                                             std::span<std::byte const> const resBytes) const noexcept -> bool {
+                                             std::span<std::byte const> const res_bytes) const noexcept -> bool {
   if (!guid.IsValid()) {
     return false;
   }
 
   std::vector<std::byte> fileBytes;
-  PackExternalResource(categ, resBytes, fileBytes);
+  PackExternalResource(categ, res_bytes, fileBytes);
 
   if (!exists(cache_dir_abs_)) {
     create_directory(cache_dir_abs_);

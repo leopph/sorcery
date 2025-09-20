@@ -13,7 +13,7 @@
 namespace sorcery::mage {
 class ResourceDB {
 public:
-  explicit ResourceDB(Object*& selectedObjectPtr);
+  explicit ResourceDB(Object*& selected_object_ptr);
 
   /**
    * Refreshes the database by scanning the resource directory.
@@ -30,7 +30,7 @@ public:
    * If it does not exist, it will be created.
    * The database will be cleared and refreshed.
    */
-  auto ChangeProjectDir(std::filesystem::path const& projDirAbs) -> void;
+  auto ChangeProjectDir(std::filesystem::path const& proj_dir_abs) -> void;
 
 
   /**
@@ -60,7 +60,7 @@ public:
    * If the importer is not passed, a new one will be created based on the file extension.
    * Returns whether the import was successful.
    */
-  [[nodiscard]] auto ImportResource(std::filesystem::path const& resPathResDirRel,
+  [[nodiscard]] auto ImportResource(std::filesystem::path const& res_path_res_dir_rel,
                                     ResourceImporter* importer = nullptr) -> bool;
 
 
@@ -69,7 +69,7 @@ public:
    * If the resource file does not exist, or the target path already exists, the move will fail.
    * Returns whether the move was successful.
    */
-  [[nodiscard]] auto MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> bool;
+  [[nodiscard]] auto MoveResource(Guid const& guid, std::filesystem::path const& target_path_res_dir_rel) -> bool;
 
 
   /**
@@ -77,8 +77,8 @@ public:
    * If the source directory does not exist, or the destination directory already exists, the move will fail.
    * Returns whether the move was successful.
    */
-  [[nodiscard]] auto MoveDirectory(std::filesystem::path const& srcPathResDirRel,
-                                   std::filesystem::path const& dstPathResDirRel) -> bool;
+  [[nodiscard]] auto MoveDirectory(std::filesystem::path const& src_path_res_dir_rel,
+                                   std::filesystem::path const& dst_path_res_dir_rel) -> bool;
 
 
   /**
@@ -93,7 +93,7 @@ public:
    * If the path is not a directory, or does not exist, the deletion will fail.
    * Returns whether the deletion was successful.
    */
-  [[nodiscard]] auto DeleteDirectory(std::filesystem::path const& pathResDirRel) -> bool;
+  [[nodiscard]] auto DeleteDirectory(std::filesystem::path const& path_res_dir_rel) -> bool;
 
 
   /**
@@ -107,7 +107,7 @@ public:
    * Returns the Guid of the resource file associated with the given path.
    * If the resource file does not exist, or is not associated with a Guid, an invalid Guid will be returned.
    */
-  [[nodiscard]] auto PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid;
+  [[nodiscard]] auto PathToGuid(std::filesystem::path const& path_res_dir_rel) -> Guid;
 
 
   /**
@@ -161,7 +161,7 @@ private:
  * If the file failed to load for any reason, the optional arguments will not be modified.
  * Returns whether the meta file was read successfully.
  */
-  [[nodiscard]] static auto ReadMeta(std::filesystem::path const& resPathAbs, Guid* guid,
+  [[nodiscard]] static auto ReadMeta(std::filesystem::path const& res_path_abs, Guid* guid,
                                      std::unique_ptr<ResourceImporter>* importer) noexcept -> bool;
 
 
@@ -172,7 +172,7 @@ private:
    * The function will not validate the resource file's existence or contents.
    * Returns whether the meta file was written successfully.
    */
-  [[nodiscard]] static auto WriteMeta(std::filesystem::path const& resPathAbs, Guid const& guid,
+  [[nodiscard]] static auto WriteMeta(std::filesystem::path const& res_path_abs, Guid const& guid,
                                       ResourceImporter const& importer) noexcept -> bool;
 
 
@@ -182,10 +182,10 @@ private:
    * Returns whether the import was successful.
    */
   [[nodiscard]] auto InternalImportResource(std::filesystem::path const& res_path_abs,
-                                            std::map<Guid, std::filesystem::path>& guidToSrcAbsPath,
-                                            std::map<Guid, std::filesystem::path>& guidToResAbsPath,
-                                            std::map<std::filesystem::path, Guid>& srcAbsPathToGuid,
-                                            std::map<Guid, rttr::type>& guidToType, ResourceImporter& importer,
+                                            std::map<Guid, std::filesystem::path>& guid_to_src_abs_path,
+                                            std::map<Guid, std::filesystem::path>& guid_to_res_abs_path,
+                                            std::map<std::filesystem::path, Guid>& src_abs_path_to_guid,
+                                            std::map<Guid, rttr::type>& guid_to_type, ResourceImporter& importer,
                                             Guid const& guid) const -> bool;
 
 
@@ -210,7 +210,7 @@ private:
    * Returns whether the file was written successfully.
    */
   [[nodiscard]] auto WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory categ,
-                                                 std::span<std::byte const> resBytes) const noexcept -> bool;
+                                                 std::span<std::byte const> res_bytes) const noexcept -> bool;
 
 
   std::filesystem::path res_dir_abs_;
