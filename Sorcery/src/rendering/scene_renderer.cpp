@@ -1216,7 +1216,7 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   ssr_data_->scratch_buf_size = ffxGetScratchMemorySizeDX12(SsrRenderData::kMaxFfxContextCount);
   ssr_data_->scratch_buf = std::make_unique<char[]>(ssr_data_->scratch_buf_size);
 
-  ssr_data_->dev = ffxGetDeviceDX12(graphics::internal::GetInternalDevicePtr(*device_).Get());
+  ssr_data_->dev = ffxGetDeviceDX12(graphics::internal::GetApiHandle(*device_).Get());
 
   if (ffxGetInterfaceDX12(&ssr_data_->iface, ssr_data_->dev, ssr_data_->scratch_buf.get(), ssr_data_->scratch_buf_size,
       SsrRenderData::kMaxFfxContextCount)) {
@@ -2285,62 +2285,111 @@ auto SceneRenderer::Render() -> void {
 
     // SSR pass
     if (frame_packet.ssr_enabled) {
-      cam_cmd.SetPipelineState(*frame_packet.ssr_pso);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, depth_tex_idx),
-        *depth_sample_rt->GetDepthStencilTex());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, lit_scene_tex_idx), *color_hdr_rt->GetColorTex());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, gbuffer1_tex_idx), *gbuffer1_rt->GetColorTex());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, gbuffer2_tex_idx), *gbuffer2_rt->GetColorTex());
+      if (false) {
+        cam_cmd.SetPipelineState(*frame_packet.ssr_pso);
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, depth_tex_idx),
+          *depth_sample_rt->GetDepthStencilTex());
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, lit_scene_tex_idx), *color_hdr_rt->GetColorTex());
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, gbuffer1_tex_idx), *gbuffer1_rt->GetColorTex());
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, gbuffer2_tex_idx), *gbuffer2_rt->GetColorTex());
 
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsrDrawParams, per_view_cb_idx), *cam_per_view_cb.GetBuffer());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_roughness),
-        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_roughness));
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, thickness_vs),
-        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.thickness_vs));
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, stride),
-        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.stride));
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_trace_dist_vs),
-        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_trace_dist_vs));
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, ray_start_bias_vs),
-        *std::bit_cast<UINT const*>(&frame_packet.ssr_params.ray_start_bias_vs));
+        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, point_clamp_samp_idx),
+          samp_point_clamp_.Get());
+        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsrDrawParams, per_view_cb_idx), *cam_per_view_cb.GetBuffer());
+        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_roughness),
+          *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_roughness));
+        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, thickness_vs),
+          *std::bit_cast<UINT const*>(&frame_packet.ssr_params.thickness_vs));
+        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, stride),
+          *std::bit_cast<UINT const*>(&frame_packet.ssr_params.stride));
+        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_trace_dist_vs),
+          *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_trace_dist_vs));
+        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, ray_start_bias_vs),
+          *std::bit_cast<UINT const*>(&frame_packet.ssr_params.ray_start_bias_vs));
 
-      RenderTarget::Desc const ssr_rt_desc{
-        transient_rt_width, transient_rt_height, color_buffer_format_, std::nullopt,
-        1, L"SSR RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
-      };
+        RenderTarget::Desc const ssr_rt_desc{
+          transient_rt_width, transient_rt_height, color_buffer_format_, std::nullopt,
+          1, L"SSR RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
+        };
 
-      auto const ssr_rt{render_manager_->AcquireTemporaryRenderTarget(ssr_rt_desc)};
+        auto const ssr_rt{render_manager_->AcquireTemporaryRenderTarget(ssr_rt_desc)};
 
-      cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<graphics::Texture const*>(ssr_rt->GetColorTex().get())}.data(), 1
-      }, depth_rt->GetDepthStencilTex().get());
-      cam_cmd.ClearRenderTarget(*ssr_rt->GetColorTex(), ssr_rt_desc.color_clear_value, {});
+        cam_cmd.SetRenderTargets(std::span{
+          std::array{static_cast<graphics::Texture const*>(ssr_rt->GetColorTex().get())}.data(), 1
+        }, depth_rt->GetDepthStencilTex().get());
+        cam_cmd.ClearRenderTarget(*ssr_rt->GetColorTex(), ssr_rt_desc.color_clear_value, {});
 
-      cam_cmd.DrawInstanced(3, 1, 0, 0);
+        cam_cmd.DrawInstanced(3, 1, 0, 0);
 
-      cam_cmd.SetPipelineState(*frame_packet.ssr_compose_pso);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrComposeDrawParams, ssr_tex_idx),
-        *ssr_rt->GetColorTex());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrComposeDrawParams, lit_scene_tex_idx),
-        *color_hdr_rt->GetColorTex());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrComposeDrawParams, point_clamp_samp_idx),
-        samp_point_clamp_.Get());
+        cam_cmd.SetPipelineState(*frame_packet.ssr_compose_pso);
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrComposeDrawParams, ssr_tex_idx),
+          *ssr_rt->GetColorTex());
+        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrComposeDrawParams, lit_scene_tex_idx),
+          *color_hdr_rt->GetColorTex());
+        cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrComposeDrawParams, point_clamp_samp_idx),
+          samp_point_clamp_.Get());
 
-      RenderTarget::Desc const ssr_compose_rt_desc{
-        transient_rt_width, transient_rt_height, frame_packet.color_buffer_format, std::nullopt,
-        1, L"SSR Compose RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
-      };
+        RenderTarget::Desc const ssr_compose_rt_desc{
+          transient_rt_width, transient_rt_height, frame_packet.color_buffer_format, std::nullopt,
+          1, L"SSR Compose RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
+        };
 
-      auto const ssr_compose_rt{render_manager_->AcquireTemporaryRenderTarget(ssr_compose_rt_desc)};
-      cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<graphics::Texture const*>(ssr_compose_rt->GetColorTex().get())}.data(), 1
-      }, nullptr);
-      cam_cmd.ClearRenderTarget(*ssr_compose_rt->GetColorTex(), ssr_compose_rt_desc.color_clear_value, {});
+        auto const ssr_compose_rt{render_manager_->AcquireTemporaryRenderTarget(ssr_compose_rt_desc)};
+        cam_cmd.SetRenderTargets(std::span{
+          std::array{static_cast<graphics::Texture const*>(ssr_compose_rt->GetColorTex().get())}.data(), 1
+        }, nullptr);
+        cam_cmd.ClearRenderTarget(*ssr_compose_rt->GetColorTex(), ssr_compose_rt_desc.color_clear_value, {});
 
-      cam_cmd.DrawInstanced(3, 1, 0, 0);
+        cam_cmd.DrawInstanced(3, 1, 0, 0);
 
-      cam_cmd.CopyTexture(*color_hdr_rt->GetColorTex(), *ssr_compose_rt->GetColorTex());
+        cam_cmd.CopyTexture(*color_hdr_rt->GetColorTex(), *ssr_compose_rt->GetColorTex());
+      } else {
+        auto const makeFfxRes{
+          [](graphics::Resource const& res) -> FfxResource {
+            FfxResource ret{};
+						ret.resource = graphics::internal::GetApiHandle(res).Get();
+            return ret;
+          }
+        };
+
+        FfxSssrDispatchDescription desc{
+          .commandList = graphics::internal::GetApiHandle(cam_cmd).Get(),
+          .color = makeFfxRes(*color_hdr_rt->GetColorTex()),
+          .depth = makeFfxRes(*depth_rt->GetDepthStencilTex()),
+          .motionVectors = makeFfxRes(*velocity_rt->GetColorTex()),
+          .normal = makeFfxRes(*gbuffer0_rt->GetColorTex()),
+          .materialParameters = ,
+          .environmentMap = ,
+          .brdfTexture = ,
+          .output = ,
+          .invViewProjection = ,
+          .projection = ,
+          .invProjection = ,
+          .view = ,
+          .invView = ,
+          .prevViewProjection = ,
+          .renderSize = ,
+          .motionVectorScale = ,
+          .iblFactor = ,
+          .normalUnPackMul = ,
+          .normalUnPackAdd = ,
+          .roughnessChannel = ,
+          .isRoughnessPerceptual = ,
+          .temporalStabilityFactor = ,
+          .depthBufferThickness = ,
+          .roughnessThreshold = ,
+          .varianceThreshold = ,
+          .maxTraversalIntersections = ,
+          .minTraversalOccupancy = ,
+          .mostDetailedMip = ,
+          .samplesPerQuad = ,
+          .temporalVarianceGuidedTracingEnabled = 
+        };
+
+        if (ffxSssrContextDispatch(&ssr_data_->ctx, &desc) != FFX_OK) {
+          throw std::runtime_error{"ffxSssrContextDispatch failed"};
+        }
+      }
     }
 
     // Skybox pass
