@@ -184,8 +184,18 @@ auto RootSignatureCache::Get(std::uint8_t const num_params) -> ComPtr<ID3D12Root
 }
 
 
-auto internal::GetInternalDevicePtr(GraphicsDevice const& device) -> ObserverPtr<ID3D12Device10> {
-  return ObserverPtr{device.device_.Get()};
+auto internal::GetApiHandle(GraphicsDevice const& device) -> ComPtr<ID3D12Device10> const& {
+  return device.device_;
+}
+
+
+auto internal::GetApiHandle(CommandList const& cmd) -> ComPtr<ID3D12GraphicsCommandList7> const& {
+  return cmd.cmd_list_;
+}
+
+
+auto internal::GetApiHandle(Resource const& res) -> ComPtr<ID3D12Resource2> const& {
+  return res.resource_;
 }
 
 

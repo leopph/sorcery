@@ -32,10 +32,14 @@
 
 namespace sorcery::graphics {
 class GraphicsDevice;
+class CommandList;
+class Resource;
 
 
 namespace internal {
-[[nodiscard]] auto GetInternalDevicePtr(GraphicsDevice const& device) -> ObserverPtr<ID3D12Device10>;
+[[nodiscard]] auto GetApiHandle(GraphicsDevice const& device) -> Microsoft::WRL::ComPtr<ID3D12Device10> const&;
+[[nodiscard]] auto GetApiHandle(CommandList const& cmd) -> Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> const&;
+[[nodiscard]] auto GetApiHandle(Resource const& res) -> Microsoft::WRL::ComPtr<ID3D12Resource2> const&;
 }
 
 
@@ -47,7 +51,6 @@ namespace internal {
 class Buffer;
 class Texture;
 class PipelineState;
-class CommandList;
 class Fence;
 class SwapChain;
 using Sampler = UINT;
@@ -393,7 +396,7 @@ private:
 
   CD3DX12FeatureSupport supported_features_;
 
-  friend auto internal::GetInternalDevicePtr(GraphicsDevice const& device) -> ObserverPtr<ID3D12Device10>;
+  friend auto internal::GetApiHandle(GraphicsDevice const& device) -> Microsoft::WRL::ComPtr<ID3D12Device10> const&;
 };
 
 
@@ -425,6 +428,8 @@ private:
   std::optional<UINT> uav_;
 
   friend GraphicsDevice;
+
+  friend auto internal::GetApiHandle(Resource const& res) -> Microsoft::WRL::ComPtr<ID3D12Resource2> const&;
 };
 
 
@@ -558,6 +563,9 @@ private:
   bool pipeline_allows_ds_write_{false};
 
   friend GraphicsDevice;
+
+  friend auto internal::GetApiHandle(
+    CommandList const& cmd) -> Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> const&;
 };
 
 
