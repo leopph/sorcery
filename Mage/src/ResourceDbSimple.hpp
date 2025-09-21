@@ -1,6 +1,8 @@
 #pragma once
 
 #include <filesystem>
+#include <string_view>
+#include <map>
 
 #include "Guid.hpp"
 #include "NativeResource.hpp"
@@ -126,5 +128,9 @@ public:
 private:
   Object** selected_obj_ptr_;
   std::filesystem::path res_dir_path_abs_;
+  std::map<Guid, std::filesystem::path> guid_to_path_abs_;
+  std::map<std::filesystem::path, Guid> path_abs_to_guid_;
+
+  constexpr static std::string_view kResourceDirProjRel{"Resources"};
 };
 }
