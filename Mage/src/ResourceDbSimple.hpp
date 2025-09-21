@@ -8,6 +8,7 @@
 #include "NativeResource.hpp"
 #include "Object.hpp"
 #include "observer_ptr.hpp"
+#include "ResourceManager.hpp"
 #include "ResourceImporters/ResourceImporter.hpp"
 
 
@@ -126,6 +127,9 @@ public:
   auto GuidToPath(Guid const& guid) -> std::filesystem::path;
 
 private:
+  [[nodiscard]]
+  auto CreateMappings() const noexcept -> std::map<Guid, ResourceManager::ResourceDescription>;
+
   Object** selected_obj_ptr_;
   std::filesystem::path res_dir_path_abs_;
   std::map<Guid, std::filesystem::path> guid_to_path_abs_;

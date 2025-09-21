@@ -40,6 +40,82 @@ auto ResourceDbSimple::GetResourceDirectoryAbsolutePath() -> std::filesystem::pa
 }
 
 
+auto ResourceDbSimple::MoveResource(Guid const& guid, std::filesystem::path const& target_path_res_dir_rel) -> bool {
+  auto const it{guid_to_path_abs_.find(guid)};
+
+  if (it == std::end(guid_to_path_abs_)) {
+    return false;
+  }
+
+  auto const src_path_abs{it->second};
+  auto const dst_path_abs{res_dir_path_abs_ / target_path_res_dir_rel};
+
+  if (!exists(src_path_abs) || exists(dst_path_abs)) {
+    return false;
+  }
+
+  rename(src_path_abs, dst_path_abs);
+  Refresh();
+
+  return true;
+}
+
+
+auto ResourceDbSimple::MoveDirectory(std::filesystem::path const& src_path_res_dir_rel,
+                                     std::filesystem::path const& dst_path_res_dir_rel) -> bool {
+  auto const src_path_abs{weakly_canonical(GetResourceDirectoryAbsolutePath() / src_path_res_dir_rel)};
+  auto const dst_path_abs{weakly_canonical(GetResourceDirectoryAbsolutePath() / dst_path_res_dir_rel)};
+
+  if (!exists(src_path_abs) || exists(dst_path_abs) || !is_directory(src_path_abs) || equivalent(src_path_abs,
+        GetResourceDirectoryAbsolutePath())) {
+    return false;
+  }
+
+  rename(src_path_abs, dst_path_abs);
+  Refresh();
+
+  return true;
+}
+
+
+auto ResourceDbSimple::DeleteResource(Guid const& guid) -> void {
+  App::Instance().GetResourceManager().Unload(guid);
+
+  if (auto const it{guid_to_path_abs_.find(guid)}; it != std::end(guid_to_path_abs_)) {
+    std::filesystem::remove(it->second);
+    path_abs_to_guid_.erase(it->second);
+    guid_to_path_abs_.erase(it);
+  }
+
+  guid_to_path_abs_.erase(guid);
+  App::Instance().GetResourceManager().UpdateMappings(CreateMappings());
+}
+
+
+auto ResourceDbSimple::DeleteDirectory(std::filesystem::path const& path_res_dir_rel) -> bool {
+  auto const pathAbs{weakly_canonical(GetResourceDirectoryAbsolutePath() / path_res_dir_rel)};
+
+  if (!exists(pathAbs) || !is_directory(pathAbs)) {
+    return false;
+  }
+
+  std::vector<Guid> resourcesToDelete;
+
+  for (auto const& entry : std::filesystem::recursive_directory_iterator{pathAbs}) {
+    if (auto const it{path_abs_to_guid_.find(entry.path())}; it != std::end(path_abs_to_guid_)) {
+      resourcesToDelete.emplace_back(it->second);
+    }
+  }
+
+  for (auto const& guid : resourcesToDelete) {
+    DeleteResource(guid);
+  }
+
+  remove_all(pathAbs);
+  return true;
+}
+
+
 auto ResourceDbSimple::IsSavedResource(NativeResource const& res) const -> bool {
   return guid_to_path_abs_.contains(res.GetGuid());
 }
@@ -60,6 +136,11 @@ auto ResourceDbSimple::GuidToPath(Guid const& guid) -> std::filesystem::path {
     return relative(it->second, GetResourceDirectoryAbsolutePath());
   }
 
+  return {};
+}
+
+
+auto ResourceDbSimple::CreateMappings() const noexcept -> std::map<Guid, ResourceManager::ResourceDescription> {
   return {};
 }
 }
