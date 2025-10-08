@@ -421,6 +421,7 @@
     <None Include="src\rendering\shaders\sequences.hlsli" />
     <None Include="src\rendering\shaders\envmap_prefilter.hlsli" />
     <None Include="src\rendering\shaders\brdf_integration.hlsli" />
+    <None Include="src\rendering\shaders\tonemapping.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />

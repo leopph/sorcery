@@ -282,6 +282,7 @@
     <None Include="src\rendering\shaders\ssao.hlsli" />
     <None Include="src\rendering\shaders\ssr.hlsli" />
     <None Include="src\rendering\shaders\taa_resolve.hlsli" />
+    <None Include="src\rendering\shaders\tonemapping.hlsli" />
     <None Include="src\rendering\shaders\utility.hlsli" />
     <None Include="src\rendering\structured_buffer.inl" />
     <None Include="src\resources\native_resource.inl" />
