@@ -213,8 +213,9 @@ auto SettingsWindow::Draw() -> void {
     }
 
     if (activeScene.GetSkyMode() == SkyMode::Color) {
-      if (auto skyColor{activeScene.GetSkyColor()}; ImGui::ColorEdit3("##skyColor", skyColor.GetData())) {
-        activeScene.SetSkyColor(skyColor);
+      if (auto sky_color_srgb{Pow(activeScene.GetSkyColor(), 1.0f / App::Instance().GetSceneRenderer().GetGamma())};
+        ImGui::ColorEdit3("##skyColor", sky_color_srgb.GetData())) {
+        activeScene.SetSkyColor(Pow(sky_color_srgb, App::Instance().GetSceneRenderer().GetGamma()));
       }
     } else if (activeScene.GetSkyMode() == SkyMode::Skybox) {
       if (auto skybox{activeScene.GetSkybox()}; mSkyboxPicker.Draw(skybox)) {
