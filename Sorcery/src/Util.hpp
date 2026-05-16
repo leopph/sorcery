@@ -54,6 +54,15 @@ template<std::unsigned_integral T>
 
 template<std::integral T>
 [[nodiscard]] constexpr auto Mod(T dividend, T modulus) -> T;
+
+// Returns an untyped string_view with the same content as the given u8string_view.
+// Does NOT perform any encoding conversions or checks.
+// Consider this a "static_cast".
+[[nodiscard]] LEOPPHAPI auto ToUntypedStdSv(std::u8string_view sv) -> std::string_view;
+// Returns an UTF8-typed string_view with the same content as the given string_view.
+// Does NOT perform any encoding conversions or checks.
+// Consider this a "static_cast".
+[[nodiscard]] LEOPPHAPI auto ToUtf8StdSv(std::string_view sv) -> std::u8string_view;
 }
 
 
