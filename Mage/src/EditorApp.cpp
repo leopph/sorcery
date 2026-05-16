@@ -4,6 +4,8 @@
 #include <imgui_impl_win32.h>
 #include <implot.h>
 #include <nfd.hpp>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/msvc_sink.h>
 
 #include "char_encoding_helpers.hpp"
 #include "GUI.hpp"
@@ -19,26 +21,6 @@ extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, L
 
 
 namespace sorcery::mage {
-std::string_view const EditorApp::window_title_base_{"Mage"};
-
-
-auto EditorApp::OnWindowFocusGain() -> void {
-  if (!proj_dir_abs_.empty()) {
-    resource_db_.Refresh();
-  }
-}
-
-
-auto EditorApp::HandleBackgroundThreadException(std::exception const& ex) -> void {
-  DisplayError(ex.what());
-}
-
-
-auto EditorApp::HandleUnknownBackgroundThreadException() -> void {
-  DisplayError("Unknown error.");
-}
-
-
 EditorApp::EditorApp(std::span<std::string_view const> const args) :
   App{args},
   imgui_ctx_{ImGui::CreateContext()},
@@ -49,6 +31,39 @@ EditorApp::EditorApp(std::span<std::string_view const> const args) :
   window_focus_gain_listener_{
     GetWindow().OnWindowFocusGain.add_listener([this] { OnWindowFocusGain(); })
   } {
+#ifndef NDEBUG
+  spdlog::set_level(spdlog::level::debug);
+#else
+  auto const msvc_sink{std::make_shared<spdlog::sinks::msvc_sink_mt>()};
+  auto const logger{std::make_shared<spdlog::logger>("vs_logger", msvc_sink)};
+  spdlog::set_default_logger(logger);
+  spdlog::set_level(spdlog::level::info);
+#endif
+
+  if (auto const it{std::ranges::find_if(args, [](auto const arg) { return arg.starts_with("--log-level="); })};
+    it != args.end()) {
+    if (auto const log_level_arg{it->substr(12)};
+      log_level_arg == "trace") {
+      spdlog::set_level(spdlog::level::trace);
+    } else if (log_level_arg == "debug") {
+      spdlog::set_level(spdlog::level::debug);
+    } else if (log_level_arg == "info") {
+      spdlog::set_level(spdlog::level::info);
+    } else if (log_level_arg == "warn") {
+      spdlog::set_level(spdlog::level::warn);
+    } else if (log_level_arg == "error") {
+      spdlog::set_level(spdlog::level::err);
+    } else if (log_level_arg == "critical") {
+      spdlog::set_level(spdlog::level::critical);
+    } else if (log_level_arg == "off") {
+      spdlog::set_level(spdlog::level::off);
+    }
+  }
+
+  if (std::ranges::any_of(args, [](std::string_view const arg) { return arg == "-debug"; })) {
+    spdlog::set_level(spdlog::level::debug);
+  }
+
   imgui_io_->FontDefault = imgui_io_->Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 14);
   imgui_io_->IniFilename = imgui_io_ini_path_.c_str();
   imgui_io_->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -405,4 +420,24 @@ auto EditorApp::OnFinishBusyExecution(BusyExecutionContext const& busyExecutionC
   imgui_io_->ConfigFlags = busyExecutionContext.imGuiConfigFlagsBackup;
   busy_ = false;
 }
+
+
+auto EditorApp::OnWindowFocusGain() -> void {
+  if (!proj_dir_abs_.empty()) {
+    resource_db_.Refresh();
+  }
+}
+
+
+auto EditorApp::HandleBackgroundThreadException(std::exception const& ex) -> void {
+  DisplayError(ex.what());
+}
+
+
+auto EditorApp::HandleUnknownBackgroundThreadException() -> void {
+  DisplayError("Unknown error.");
+}
+
+
+std::string_view const EditorApp::window_title_base_{"Mage"};
 }

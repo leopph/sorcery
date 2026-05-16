@@ -43,6 +43,10 @@
     {
       "name": "mimalloc",
       "version>=": "2.2.3"
+    },
+    {
+      "name": "spdlog",
+      "version>=": "1.17.0"
     }
   ]
 }
