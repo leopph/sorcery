@@ -8,7 +8,7 @@
 #include <wrl/client.h>
 
 #include "app.hpp"
-#include "ExternalResource.hpp"
+#include "external_resource.hpp"
 #include "FileIo.hpp"
 #include "job_system.hpp"
 #include "MemoryAllocation.hpp"
@@ -117,12 +117,12 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
             }
 
             switch (unpacked->category) {
-              case ExternalResourceCategory::Texture: {
+              case ExternalResourceCategory::kTexture: {
                 res = LoadTexture(unpacked->bytes);
                 break;
               }
 
-              case ExternalResourceCategory::Mesh: {
+              case ExternalResourceCategory::kMesh: {
                 res = LoadMesh(unpacked->bytes);
                 break;
               }

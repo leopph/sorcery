@@ -1,4 +1,4 @@
-#include "MeshImporter.hpp"
+#include "mesh_importer.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -16,21 +16,21 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
+#include "App.hpp"
+#include "FileIo.hpp"
 #include "Serialization.hpp"
-#include "../EditorApp.hpp"
-#include "../FileIo.hpp"
-#include "../Resources/Mesh.hpp"
+#include "Resources/Mesh.hpp"
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::MeshImporter>{"Mesh Importer"}
+  rttr::registration::class_<sorcery::mage::MeshImporter>{"Mesh Importer"}
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR
-    .property("Fuse submeshes", &sorcery::MeshImporter::fuse_submeshes_)
-    .property("Force 32-bit indices", &sorcery::MeshImporter::force_idx32_);
+    .property("Fuse submeshes", &sorcery::mage::MeshImporter::fuse_submeshes_)
+    .property("Force 32-bit indices", &sorcery::mage::MeshImporter::force_idx32_);
 }
 
 
-namespace sorcery {
+namespace sorcery::mage {
 struct Node {
   std::string name;
   Matrix4 transform;
@@ -102,8 +102,7 @@ auto MeshImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out
 }
 
 
-auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes,
-                          ExternalResourceCategory& categ) -> bool {
+auto MeshImporter::Import(std::filesystem::path const& src, std::vector<ResourceImportResult>& results) -> bool {
   std::vector<unsigned char> meshBytes;
 
   if (!ReadFileBinary(src, meshBytes)) {
@@ -624,6 +623,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   // Serialize
 
+  std::vector<std::byte> bytes;
+
   // Element counts
 
   SerializeToBinary(mesh_data.positions.size(), bytes);
@@ -749,12 +750,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
 
   SerializeToBinary(mesh_data.idx32, bytes);
 
-  categ = ExternalResourceCategory::Mesh;
+  results.emplace_back(ResourceDesc{rttr::type::get<Mesh>(), ExternalResourceCategory::kMesh}, std::move(bytes));
   return true;
-}
-
-
-auto MeshImporter::GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type {
-  return rttr::type::get<Mesh>();
 }
 }

@@ -11,8 +11,9 @@
 
 namespace sorcery {
 enum class ExternalResourceCategory : std::int32_t {
-  Texture = 0,
-  Mesh    = 1
+  kTexture  = 0,
+  kMesh     = 1,
+  kMaterial = 2,
 };
 
 

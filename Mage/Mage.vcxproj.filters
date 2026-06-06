@@ -60,16 +60,16 @@
     <ClCompile Include="src\ResourceDB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceImporters\MeshImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\mesh_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\native_resourec_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceImporters\ResourceImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\resource_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceImporters\TextureImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\texture_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\imgui_renderer.cpp">
@@ -133,16 +133,16 @@
     <ClInclude Include="src\ReflectionDisplayProperties.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceImporters\MeshImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\mesh_importer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceImporters\NativeResourceImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\native_resource_importer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceImporters\ResourceImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\resource_importer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceImporters\TextureImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\texture_importer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\imgui_renderer.hpp">
@@ -155,6 +155,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\command_line_processor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resource_desc.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ResourceImporters\resource_import_result.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

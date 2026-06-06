@@ -1,12 +1,12 @@
 #pragma once
 
-#include "ResourceImporter.hpp"
+#include "resource_importer.hpp"
 
 #include <array>
 #include <string_view>
 
 
-namespace sorcery {
+namespace sorcery::mage {
 class TextureImporter final : public ResourceImporter {
   constexpr static std::string_view DDS_FILE_EXT{".dds"};
   constexpr static std::string_view HDR_FILE_EXT{".hdr"};
@@ -31,7 +31,7 @@ private:
 
 public:
   auto GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void override;
-  [[nodiscard]] auto Import(std::filesystem::path const& src, std::vector<std::byte>& bytes, ExternalResourceCategory& categ) -> bool override;
-  [[nodiscard]] auto GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type override;
+  [[nodiscard]] auto Import(std::filesystem::path const& src,
+                            std::vector<ResourceImportResult>& results) -> bool override;
 };
 }

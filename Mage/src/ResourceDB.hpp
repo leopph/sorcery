@@ -3,8 +3,8 @@
 #include "Guid.hpp"
 #include "NativeResource.hpp"
 #include "observer_ptr.hpp"
-#include "ResourceImporters/ResourceImporter.hpp"
 #include "resource_manager.hpp"
+#include "ResourceImporters/resource_importer.hpp"
 
 #include <filesystem>
 #include <map>

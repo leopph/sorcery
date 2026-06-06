@@ -1,4 +1,4 @@
-#include "TextureImporter.hpp"
+#include "texture_importer.hpp"
 #include "../FileIo.hpp"
 #include "../Resources/Cubemap.hpp"
 #include "../Resources/Texture2D.hpp"
@@ -9,22 +9,22 @@
 #include <cassert>
 
 RTTR_REGISTRATION {
-  rttr::registration::enumeration<sorcery::TextureImporter::TextureType>("Texture Import Type")(
-    rttr::value("Texture2D", sorcery::TextureImporter::TextureType::Texture2D),
-    rttr::value("Cubemap", sorcery::TextureImporter::TextureType::Cubemap)
+  rttr::registration::enumeration<sorcery::mage::TextureImporter::TextureType>("Texture Import Type")(
+    rttr::value("Texture2D", sorcery::mage::TextureImporter::TextureType::Texture2D),
+    rttr::value("Cubemap", sorcery::mage::TextureImporter::TextureType::Cubemap)
   );
 
-  rttr::registration::class_<sorcery::TextureImporter>("Texture Importer")
+  rttr::registration::class_<sorcery::mage::TextureImporter>("Texture Importer")
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR
-    .property("Texture Type", &sorcery::TextureImporter::mTexType)
-    .property("Keep in CPU Memory", &sorcery::TextureImporter::mKeepInCpuMemory)
-    .property("Allow Block Compression", &sorcery::TextureImporter::mAllowBlockCompression)
-    .property("Color Texture (sRGB)", &sorcery::TextureImporter::mIsSrgb)
-    .property("Generate Mipmaps", &sorcery::TextureImporter::mGenerateMips);
+    .property("Texture Type", &sorcery::mage::TextureImporter::mTexType)
+    .property("Keep in CPU Memory", &sorcery::mage::TextureImporter::mKeepInCpuMemory)
+    .property("Allow Block Compression", &sorcery::mage::TextureImporter::mAllowBlockCompression)
+    .property("Color Texture (sRGB)", &sorcery::mage::TextureImporter::mIsSrgb)
+    .property("Generate Mipmaps", &sorcery::mage::TextureImporter::mGenerateMips);
 }
 
 
-namespace sorcery {
+namespace sorcery::mage {
 namespace {
 [[nodiscard]] auto CompressTexture(DirectX::ScratchImage const& src, bool const isSrgb,
                                    DirectX::ScratchImage& out) noexcept -> bool {
@@ -73,8 +73,8 @@ auto TextureImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& 
 }
 
 
-auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes,
-                             ExternalResourceCategory& categ) -> bool {
+auto TextureImporter::Import(std::filesystem::path const& src,
+                             std::vector<ResourceImportResult>& results) -> bool {
   std::vector<unsigned char> fileBytes;
 
   if (!ReadFileBinary(src, fileBytes)) {
@@ -240,23 +240,20 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
     return false;
   }
 
+  std::vector<std::byte> bytes;
   bytes.reserve(std::size(bytes) + blob.GetBufferSize());
   std::ranges::copy(std::span{std::bit_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()},
     std::back_inserter(bytes));
-  categ = ExternalResourceCategory::Texture;
+
+  auto const imported_type{
+    mTexType == TextureType::Texture2D
+      ? rttr::type::get<Texture2D>()
+      : mTexType == TextureType::Cubemap
+          ? rttr::type::get<Cubemap>()
+          : rttr::type::get_by_name("")
+  };
+
+  results.emplace_back(ResourceDesc{imported_type, ExternalResourceCategory::kTexture}, std::move(bytes));
   return true;
-}
-
-
-auto TextureImporter::GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type {
-  switch (mTexType) {
-    case TextureType::Texture2D: {
-      return rttr::type::get<Texture2D>();
-    }
-    case TextureType::Cubemap: {
-      return rttr::type::get<Cubemap>();
-    }
-  }
-  return rttr::type::get_by_name("");
 }
 }

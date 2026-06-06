@@ -122,10 +122,10 @@
   <ItemGroup>
     <ClCompile Include="src\command_line_processor.cpp" />
     <ClCompile Include="src\rendering\imgui_renderer.cpp" />
-    <ClCompile Include="src\ResourceImporters\MeshImporter.cpp" />
-    <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp" />
-    <ClCompile Include="src\ResourceImporters\ResourceImporter.cpp" />
-    <ClCompile Include="src\ResourceImporters\TextureImporter.cpp" />
+    <ClCompile Include="src\ResourceImporters\mesh_importer.cpp" />
+    <ClCompile Include="src\ResourceImporters\native_resourec_importer.cpp" />
+    <ClCompile Include="src\ResourceImporters\resource_importer.cpp" />
+    <ClCompile Include="src\ResourceImporters\texture_importer.cpp" />
     <ClCompile Include="src\StandaloneCamera.cpp" />
     <ClCompile Include="src\EditorApp.cpp" />
     <ClCompile Include="src\SettingsWindow.cpp" />
@@ -153,10 +153,12 @@
     <ClInclude Include="src\editor_gui.hpp" />
     <ClInclude Include="src\rendering\shaders\imgui_shader_interop.h" />
     <ClInclude Include="src\rendering\imgui_renderer.hpp" />
-    <ClInclude Include="src\ResourceImporters\MeshImporter.hpp" />
-    <ClInclude Include="src\ResourceImporters\NativeResourceImporter.hpp" />
-    <ClInclude Include="src\ResourceImporters\ResourceImporter.hpp" />
-    <ClInclude Include="src\ResourceImporters\TextureImporter.hpp" />
+    <ClInclude Include="src\ResourceImporters\mesh_importer.hpp" />
+    <ClInclude Include="src\ResourceImporters\native_resource_importer.hpp" />
+    <ClInclude Include="src\ResourceImporters\resource_importer.hpp" />
+    <ClInclude Include="src\ResourceImporters\resource_import_result.hpp" />
+    <ClInclude Include="src\ResourceImporters\texture_importer.hpp" />
+    <ClInclude Include="src\resource_desc.hpp" />
     <ClInclude Include="src\StandaloneCamera.hpp" />
     <ClInclude Include="src\EditorApp.hpp" />
     <ClInclude Include="src\SettingsWindow.hpp" />

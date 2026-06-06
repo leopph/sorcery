@@ -108,7 +108,7 @@
     <ClCompile Include="src\rendering\directional_shadow_map_array.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ExternalResource.cpp">
+    <ClCompile Include="src\external_resource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\FileIo.cpp">
@@ -284,7 +284,7 @@
     <ClInclude Include="src\rendering\directional_shadow_map_array.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ExternalResource.hpp">
+    <ClInclude Include="src\external_resource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\FileIo.hpp">

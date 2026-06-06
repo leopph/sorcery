@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ResourceImporters/ResourceImporter.hpp"
+#include "ResourceImporters/resource_importer.hpp"
 
 #include <filesystem>
 #include <memory>

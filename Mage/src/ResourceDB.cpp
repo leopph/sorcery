@@ -7,12 +7,12 @@
 #include <spdlog/spdlog.h>
 
 #include "app.hpp"
-#include "ExternalResource.hpp"
+#include "external_resource.hpp"
 #include "MemoryAllocation.hpp"
 #include "Reflection.hpp"
 #include "resource_manager.hpp"
 #include "Util.hpp"
-#include "ResourceImporters/NativeResourceImporter.hpp"
+#include "ResourceImporters/native_resource_importer.hpp"
 
 
 namespace sorcery::mage {
@@ -169,19 +169,21 @@ auto ResourceDB::Refresh() -> void {
         continue;
       }
 
+      auto const guid{Guid::Generate()};
+
       // If we couldn't import, we clean the files up
-      if (auto const guid{Guid::Generate()};
-        !InternalImportResource(entry.path(), new_guid_to_src_abs_path, new_guid_to_res_abs_path,
-          new_src_abs_path_to_guid, new_guid_to_type, *importer, guid)) {
+      if (!InternalImportResource(entry.path(), new_guid_to_src_abs_path, new_guid_to_res_abs_path,
+        new_src_abs_path_to_guid, new_guid_to_type, *importer, guid)) {
         spdlog::trace("Failed to import resource at file [{}]. Removing both files.",
           ToUntypedStdSv(entry.path().u8string()));
         cleanup_meta_and_res_files();
         continue;
       }
 
+
       spdlog::trace("Imported resource of type [{}] with guid [{}] from resource file [{}] as new.",
-        importer->GetImportedType(entry.path()).get_name().to_string(),
-        new_src_abs_path_to_guid[entry.path()].ToString(), ToUntypedStdSv(entry.path().u8string()));
+        new_guid_to_type[guid].get_name().to_string(), new_src_abs_path_to_guid[entry.path()].ToString(),
+        ToUntypedStdSv(entry.path().u8string()));
       continue;
     }
 
@@ -618,15 +620,15 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
     return false;
   }
 
-  std::vector<std::byte> resBytes;
-  ExternalResourceCategory categ;
+  // TODO implement multi-resource support
+  std::vector<ResourceImportResult> import_results;
 
-  if (!importer.Import(res_path_abs, resBytes, categ)) {
+  if (!importer.Import(res_path_abs, import_results)) {
     return false;
   }
 
   if (!importer.IsNativeImporter()) {
-    if (!WriteExternalResourceBinary(guid, categ, resBytes)) {
+    if (!WriteExternalResourceBinary(guid, *import_results[0].desc.category, import_results[0].bytes)) {
       return false;
     }
     guid_to_res_abs_path.insert_or_assign(guid, MakeExternalResourceBinaryPathAbs(guid));
@@ -635,7 +637,7 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
   }
 
   guid_to_src_abs_path.insert_or_assign(guid, res_path_abs);
-  guid_to_type.insert_or_assign(guid, importer.GetImportedType(res_path_abs));
+  guid_to_type.insert_or_assign(guid, import_results[0].desc.type);
   src_abs_path_to_guid.insert_or_assign(res_path_abs, guid);
   return true;
 }

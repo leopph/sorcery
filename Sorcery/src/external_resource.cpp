@@ -1,6 +1,4 @@
-#include "ExternalResource.hpp"
-
-#include <type_traits>
+#include "external_resource.hpp"
 
 #include "Serialization.hpp"
 
