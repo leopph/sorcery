@@ -173,20 +173,6 @@ auto ResourceDB::Refresh() -> void {
     new_src_abs_path_to_guid.emplace(res_path_abs, guid);
   }
 
-  /*
- * We can break down the refresh procedure to a couple of distinct steps.
- * If the entry is a directory, we can safely skip it and the loop will recursively enter it at a later iteration.
- * If the entry is not a meta file, then it is a resource file, and the following steps are to be done:
- *   1) Check if there is a meta file for this resource. If not, try to import it as a new resource. If this fails, remove both files.
- *   2) If there is a meta file, we can skip this resource file since it will be handled when we encounter the meta file in the iteration.
- * If the entry is a meta file, we go through the following steps:
- *   1) Check if there is a resource file associated with this meta file. If not, remove the meta file.
- *   2) Make sure the meta is readable, otherwise try to reimport the associated resource. If this fails too, remove both files.
- *   3) If it's an external resource, check if the binary cache is up to date. If not, try to reimport. If this fails, remove all three files.
- *   4) If everything is fine, we store the resource in the new mappings.
- */
-
-
   spdlog::trace("Unloading removed resources.");
 
   // We unload resources that are no longer present in the current file system directory.
