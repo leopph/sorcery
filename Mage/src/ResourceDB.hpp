@@ -213,6 +213,11 @@ private:
   [[nodiscard]] auto WriteBinaryResourcePackage(Guid const& guid,
                                                 std::span<ResourceImportResult const> imports) const noexcept -> bool;
 
+  /**
+   * Unloads all resources that were loaded from the resource file associated with the given Guid.
+   */
+  auto UnloadResourcesFromFile(Guid const& guid) -> void;
+
 
   std::filesystem::path res_dir_abs_;
   std::filesystem::path cache_dir_abs_;

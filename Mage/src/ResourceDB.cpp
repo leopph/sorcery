@@ -124,7 +124,7 @@ auto ResourceDB::Refresh() -> void {
       };
 
       if (!exists(cache_file_path_abs) || last_write_time(res_path_abs) > last_write_time(cache_file_path_abs) ||
-          last_write_time(res_path_abs) > last_write_time(cache_file_path_abs)) {
+          last_write_time(meta_path_abs) > last_write_time(cache_file_path_abs)) {
         spdlog::trace("Binary cache for external resource at file [{}] is out of date. Attempting to reimport.",
           ToUntypedStdSv(res_path_abs.u8string()));
 
@@ -195,7 +195,7 @@ auto ResourceDB::Refresh() -> void {
       if (*selected_object_ptr_ == App::Instance().GetResourceManager().GetOrLoad(ResourceId{guid, 0})) {
         *selected_object_ptr_ = nullptr;
       }
-      App::Instance().GetResourceManager().Unload(ResourceId{guid, 0});
+      UnloadResourcesFromFile(guid);
     }
   }
 
@@ -243,7 +243,7 @@ auto ResourceDB::ChangeProjectDir(std::filesystem::path const& proj_dir_abs) -> 
   }
 
   for (auto const& guid : guid_to_src_abs_path_ | std::views::keys) {
-    App::Instance().GetResourceManager().Unload(ResourceId{guid, 0});
+    UnloadResourcesFromFile(guid);
   }
 
   guid_to_src_abs_path_.clear();
@@ -328,7 +328,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& res_path_res_dir_re
       *selected_object_ptr_ = nullptr;
     }
 
-    App::Instance().GetResourceManager().Unload(ResourceId{guid, 0});
+    UnloadResourcesFromFile(guid);
   }
 
   // If there is no meta file, we proceed with a regular import.
@@ -389,7 +389,7 @@ auto ResourceDB::MoveDirectory(std::filesystem::path const& src_path_res_dir_rel
 
 
 auto ResourceDB::DeleteResourceFile(Guid const& guid) -> void {
-  App::Instance().GetResourceManager().Unload(ResourceId{guid, 0});
+  UnloadResourcesFromFile(guid);
 
   if (auto const it{guid_to_src_abs_path_.find(guid)}; it != std::end(guid_to_src_abs_path_)) {
     std::filesystem::remove(it->second);
@@ -663,11 +663,10 @@ auto ResourceDB::CreateMappings() const noexcept -> std::pair<
       spdlog::error("Resource with ID [{}, {}] has no source path in the resource database.",
         guid.ToString(), id.GetIdxInFile());
     }
+  }
 
-    if (auto const load_abs_path{guid_to_load_abs_path_.find(guid)};
-      load_abs_path != std::end(guid_to_load_abs_path_)) {
-      file_mappings.emplace(guid, load_abs_path->second);
-    }
+  for (auto const& [guid, load_abs_path] : guid_to_load_abs_path_) {
+    file_mappings.emplace(guid, load_abs_path);
   }
 
   return std::make_pair(std::move(res_mappings), std::move(file_mappings));
@@ -705,5 +704,14 @@ auto ResourceDB::WriteBinaryResourcePackage(
 
   out_stream.write(reinterpret_cast<char const*>(package_bytes->data()), std::ssize(*package_bytes));
   return true;
+}
+
+
+auto ResourceDB::UnloadResourcesFromFile(Guid const& guid) -> void {
+  for (auto const& id : id_to_type_ | std::views::keys) {
+    if (id.GetGuid() == guid) {
+      App::Instance().GetResourceManager().Unload(id);
+    }
+  }
 }
 }

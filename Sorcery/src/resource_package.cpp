@@ -76,6 +76,11 @@ auto PackBinaryResourcePackage(
 
   std::vector<resource_package::Entry> entries;
 
+  constexpr auto header_size{3 * sizeof(std::uint32_t)};
+  constexpr auto entry_size{
+    sizeof(ResourcePackagePayloadKind) + sizeof(ResourceRuntimeType) + 4 * sizeof(std::uint64_t)
+  };
+
   std::uint64_t name_table_size{0};
 
   for (auto const& import_data : imports) {
@@ -87,7 +92,8 @@ auto PackBinaryResourcePackage(
     }
 
     // Data offsets will be filled in later when we know the size of the name table
-    entries.emplace_back(import_data.payload_kind, *runtime_type, name_table_size, import_data.name.size(), 0,
+    entries.emplace_back(import_data.payload_kind, *runtime_type,
+      header_size + entry_size * imports.size() + name_table_size, import_data.name.size(), 0,
       import_data.bytes.size());
     name_table_size += import_data.name.size();
   }
@@ -95,15 +101,8 @@ auto PackBinaryResourcePackage(
   std::uint64_t data_table_size{0};
 
   for (std::size_t i{0}; i < imports.size(); ++i) {
-    auto& entry = entries[i];
-
-    constexpr auto header_size{3 * sizeof(std::uint32_t)};
-    constexpr auto entry_size{
-      sizeof(ResourcePackagePayloadKind) + sizeof(ResourceRuntimeType) + 4 * sizeof(std::uint64_t)
-    };
-
-    entry.data_offset = header_size + entry_size * imports.size() + name_table_size + data_table_size;
-    data_table_size += entry.data_size;
+    entries[i].data_offset = header_size + entry_size * imports.size() + name_table_size + data_table_size;
+    data_table_size += entries[i].data_size;
   }
 
   for (auto const& entry : entries) {
