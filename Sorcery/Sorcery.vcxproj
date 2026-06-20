@@ -139,7 +139,6 @@
     <ClCompile Include="src\app.cpp" />
     <ClCompile Include="src\Bounds.cpp" />
     <ClCompile Include="src\char_encoding_helpers.cpp" />
-    <ClCompile Include="src\external_resource.cpp" />
     <ClCompile Include="src\FileIo.cpp" />
     <ClCompile Include="src\job_system.cpp" />
     <ClCompile Include="src\mesh_data.cpp" />
@@ -151,6 +150,7 @@
     <ClCompile Include="src\rendering\scene_renderer.cpp" />
     <ClCompile Include="src\rendering\render_manager.cpp" />
     <ClCompile Include="src\resource_id.cpp" />
+    <ClCompile Include="src\resource_stuff.cpp" />
     <ClCompile Include="src\scene_objects\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\scene_objects\CameraControllerComponent.cpp" />
@@ -185,7 +185,6 @@
     <ClInclude Include="src\app.hpp" />
     <ClInclude Include="src\char_encoding_helpers.hpp" />
     <ClInclude Include="src\extent.hpp" />
-    <ClInclude Include="src\external_resource.hpp" />
     <ClInclude Include="src\fast_vector.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\job_system.hpp" />
@@ -214,6 +213,7 @@
     <ClInclude Include="src\rendering\punctual_shadow_atlas.hpp" />
     <ClInclude Include="src\rendering\render_target.hpp" />
     <ClInclude Include="src\resource_id.hpp" />
+    <ClInclude Include="src\resource_stuff.hpp" />
     <ClInclude Include="src\scene_objects\CameraControllerComponent.hpp" />
     <ClInclude Include="src\scene_objects\MeshComponentBase.hpp" />
     <ClInclude Include="src\scene_objects\OscillateComponent.h" />

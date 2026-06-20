@@ -157,12 +157,6 @@
     <ClInclude Include="src\command_line_processor.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_desc.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ResourceImporters\resource_import_result.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\imgui_vs.hlsl" />

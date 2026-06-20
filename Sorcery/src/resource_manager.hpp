@@ -89,8 +89,16 @@ private:
   [[nodiscard]] LEOPPHAPI auto InternalLoadResource(ResourceId const& res_id,
                                                     ResourceDescription const& desc) -> ObserverPtr<Resource>;
   [[nodiscard]] static auto LoadTexture(
-    std::span<std::byte const> bytes) noexcept -> MaybeNull<std::unique_ptr<Resource>>;
-  [[nodiscard]] static auto LoadMesh(std::span<std::byte const> bytes) -> MaybeNull<std::unique_ptr<Resource>>;
+    std::span<std::byte const> bytes
+  ) noexcept -> MaybeNull<std::unique_ptr<Resource>>;
+
+  [[nodiscard]] static auto LoadMesh(
+    std::span<std::byte const> bytes
+  ) -> MaybeNull<std::unique_ptr<Resource>>;
+
+  [[nodiscard]] static auto LoadMaterial(
+    std::span<std::byte const> bytes
+  ) -> MaybeNull<std::unique_ptr<Resource>>;
 
   inline static Guid const default_mtl_guid_{1, 0};
   inline static Guid const cube_mesh_guid_{2, 0};

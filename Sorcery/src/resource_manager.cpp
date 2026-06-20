@@ -8,11 +8,10 @@
 #include <wrl/client.h>
 
 #include "app.hpp"
-#include "external_resource.hpp"
 #include "FileIo.hpp"
 #include "job_system.hpp"
-#include "MemoryAllocation.hpp"
 #include "Reflection.hpp"
+#include "resource_stuff.hpp"
 #include "rendering/render_manager.hpp"
 #include "Resources/Scene.hpp"
 
@@ -54,6 +53,188 @@ std::vector<std::uint32_t> const kCubeIndices{
   15, 3, 6, 6, 18, 15
 };
 }
+}
+
+
+ResourceManager::ResourceManager(JobSystem& job_system) :
+  job_system_{&job_system} {}
+
+
+auto ResourceManager::Unload(ResourceId const& res_id) -> void {
+  auto resources{loaded_resources_.Lock()};
+
+  if (auto const it{resources->find(res_id)}; it != std::end(*resources)) {
+    resources->erase(it);
+  }
+}
+
+
+auto ResourceManager::UnloadAll() -> void {
+  loaded_resources_.Lock()->clear();
+}
+
+
+auto ResourceManager::IsLoaded(ResourceId const& res_id) -> bool {
+  for (auto const& res : default_resources_) {
+    if (res->GetId() == res_id) {
+      return true;
+    }
+  }
+
+  return loaded_resources_.LockShared()->contains(res_id);
+}
+
+
+auto ResourceManager::UpdateMappings(std::map<ResourceId, ResourceDescription> res_mappings,
+                                     std::map<Guid, std::filesystem::path> file_mappings) -> void {
+  while (true) {
+    auto self_res_mappings{res_mappings_.TryLock()};
+    auto self_file_mappings{file_mappings_.TryLock()};
+
+    if (self_res_mappings && self_file_mappings) {
+      **self_res_mappings = std::move(res_mappings);
+      **self_file_mappings = std::move(file_mappings);
+      break;
+    }
+  }
+}
+
+
+auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) -> void {
+  // Default resources
+  for (auto const& res : default_resources_) {
+    if (auto const res_type{rttr::type::get(*res)}; res_type.is_derived_from(type)) {
+      out.emplace_back(res->GetId(), res->GetName(), res_type);
+    }
+  }
+
+  // File mappings
+  for (auto const& [guid, desc] : *res_mappings_.LockShared()) {
+    if (desc.type.is_derived_from(type)) {
+      out.emplace_back(guid, desc.name, desc.type);
+    }
+  }
+
+  // Other, loaded resources that don't come from files
+  for (auto const& res : *loaded_resources_.LockShared()) {
+    auto contains{false};
+    for (auto const& res_info : out) {
+      if (res_info.id == res->GetId()) {
+        contains = true;
+        break;
+      }
+    }
+
+    if (!contains && rttr::type::get(*res).is_derived_from(type)) {
+      out.emplace_back(res->GetId(), res->GetName(), res->get_type());
+    }
+  }
+}
+
+
+auto ResourceManager::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
+  return ObserverPtr{default_mtl_.get()};
+}
+
+
+auto ResourceManager::GetCubeMesh() const noexcept -> ObserverPtr<Mesh> {
+  return ObserverPtr{cube_mesh_.get()};
+}
+
+
+auto ResourceManager::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
+  return ObserverPtr{plane_mesh_.get()};
+}
+
+
+auto ResourceManager::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
+  return ObserverPtr{sphere_mesh_.get()};
+}
+
+
+auto ResourceManager::CreateDefaultResources() -> void {
+  if (!default_mtl_) {
+    default_mtl_ = Create<Material>();
+    default_mtl_->SetId({default_mtl_guid_, 0});
+    default_mtl_->SetName("Default Material");
+    default_resources_.emplace_back(default_mtl_.get());
+  }
+
+  if (!cube_mesh_) {
+    MeshData cube_data;
+
+    cube_data.positions = kCubePositions;
+    CalculateNormals(kCubePositions, kCubeIndices, cube_data.normals);
+    CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cube_data.tangents);
+    cube_data.uvs = kCubeUvs;
+
+    if (!ComputeMeshlets<std::uint32_t, Vector3>(kCubeIndices, kCubePositions, cube_data.meshlets,
+      cube_data.vertex_indices, cube_data.triangle_indices, cube_data.cull_data)) {
+      throw std::runtime_error{"Failed to compute meshlets for default cube mesh."};
+    }
+
+    cube_data.material_slots.emplace_back("Material");
+    cube_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(cube_data.meshlets.size()), 0, 0,
+      AABB::FromVertices(kCubePositions));
+    cube_data.bounds = cube_data.submeshes[0].bounds;
+    cube_data.idx32 = true;
+
+    cube_mesh_ = Create<Mesh>(cube_data);
+    cube_mesh_->SetId({cube_mesh_guid_, 0});
+    cube_mesh_->SetName("Cube");
+    default_resources_.emplace_back(cube_mesh_.get());
+  }
+
+  if (!plane_mesh_) {
+    MeshData plane_data;
+
+    plane_data.positions = kQuadPositions;
+    CalculateNormals(kQuadPositions, kQuadIndices, plane_data.normals);
+    CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, plane_data.tangents);
+    plane_data.uvs = kQuadUvs;
+
+    if (!ComputeMeshlets<std::uint32_t, Vector3>(kQuadIndices, kQuadPositions, plane_data.meshlets,
+      plane_data.vertex_indices, plane_data.triangle_indices, plane_data.cull_data)) {
+      throw std::runtime_error{"Failed to compute meshlets for default plane mesh."};
+    }
+
+    plane_data.material_slots.emplace_back("Material");
+    plane_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(plane_data.meshlets.size()), 0, 0,
+      AABB::FromVertices(kQuadPositions));
+    plane_data.bounds = plane_data.submeshes[0].bounds;
+    plane_data.idx32 = true;
+
+    plane_mesh_ = Create<Mesh>(plane_data);
+    plane_mesh_->SetId({plane_mesh_guid_, 0});
+    plane_mesh_->SetName("Plane");
+    default_resources_.emplace_back(plane_mesh_.get());
+  }
+
+  if (!sphere_mesh_) {
+    MeshData sphere_data;
+    std::vector<std::uint32_t> sphere_indices;
+
+    rendering::GenerateSphereMesh(1, 50, 50, sphere_data.positions, sphere_data.normals,
+      sphere_data.uvs, sphere_indices);
+    CalculateTangents(sphere_data.positions, sphere_data.uvs, sphere_indices,
+      sphere_data.tangents);
+
+    if (!ComputeMeshlets<std::uint32_t, Vector3>(sphere_indices, sphere_data.positions, sphere_data.meshlets,
+      sphere_data.vertex_indices, sphere_data.triangle_indices, sphere_data.cull_data)) {
+      throw std::runtime_error{"Failed to compute meshlets for default sphere mesh."};
+    }
+
+    sphere_data.material_slots.emplace_back("Material");
+    sphere_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(sphere_data.meshlets.size()), 0, 0,
+      AABB::FromVertices(sphere_data.positions));
+    sphere_data.bounds = sphere_data.submeshes[0].bounds;
+    sphere_data.idx32 = true;
+
+    sphere_mesh_ = Create<Mesh>(sphere_data);
+    sphere_mesh_->SetId({sphere_mesh_guid_, 0});
+    sphere_mesh_->SetName("Sphere");
+    default_resources_.emplace_back(sphere_mesh_.get());
+  }
 }
 
 
@@ -104,26 +285,36 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
           std::unique_ptr<Resource> res;
 
           if (job_data.path_abs.extension() == EXTERNAL_RESOURCE_EXT) {
-            std::vector<std::uint8_t> file_bytes;
+            std::vector<std::uint8_t> file_data;
 
-            if (!ReadFileBinary(job_data.path_abs, file_bytes)) {
+            if (!ReadFileBinary(job_data.path_abs, file_data)) {
               return;
             }
 
-            const auto unpacked{UnpackExternalResource(as_bytes(std::span{file_bytes}))};
+            auto const file_bytes{as_bytes(std::span{file_data})};
+            auto const entries{UnpackBinaryResourcePackage(file_bytes)};
+            auto const res_file_idx = job_data.res_id->GetIdxInFile();
 
-            if (!unpacked) {
+            if (!entries || res_file_idx >= entries->size()) {
               return;
             }
 
-            switch (unpacked->category) {
-              case ExternalResourceCategory::kTexture: {
-                res = LoadTexture(unpacked->bytes);
+            auto const& entry{(*entries)[res_file_idx]};
+            auto const payload_bytes{file_bytes.subspan(entry.data_offset, entry.data_size)};
+
+            switch (entry.payload_kind) {
+              case ResourcePackagePayloadKind::kTexture: {
+                res = LoadTexture(payload_bytes);
                 break;
               }
 
-              case ExternalResourceCategory::kMesh: {
-                res = LoadMesh(unpacked->bytes);
+              case ResourcePackagePayloadKind::kMesh: {
+                res = LoadMesh(payload_bytes);
+                break;
+              }
+
+              case ResourcePackagePayloadKind::kMaterial: {
+                res = LoadMaterial(payload_bytes);
                 break;
               }
             }
@@ -511,184 +702,10 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 }
 
 
-ResourceManager::ResourceManager(JobSystem& job_system) :
-  job_system_{&job_system} {}
-
-
-auto ResourceManager::Unload(ResourceId const& res_id) -> void {
-  auto resources{loaded_resources_.Lock()};
-
-  if (auto const it{resources->find(res_id)}; it != std::end(*resources)) {
-    resources->erase(it);
-  }
-}
-
-
-auto ResourceManager::UnloadAll() -> void {
-  loaded_resources_.Lock()->clear();
-}
-
-
-auto ResourceManager::IsLoaded(ResourceId const& res_id) -> bool {
-  for (auto const& res : default_resources_) {
-    if (res->GetId() == res_id) {
-      return true;
-    }
-  }
-
-  return loaded_resources_.LockShared()->contains(res_id);
-}
-
-
-auto ResourceManager::UpdateMappings(std::map<ResourceId, ResourceDescription> res_mappings,
-                                     std::map<Guid, std::filesystem::path> file_mappings) -> void {
-  while (true) {
-    auto self_res_mappings{res_mappings_.TryLock()};
-    auto self_file_mappings{file_mappings_.TryLock()};
-
-    if (self_res_mappings && self_file_mappings) {
-      **self_res_mappings = std::move(res_mappings);
-      **self_file_mappings = std::move(file_mappings);
-      break;
-    }
-  }
-}
-
-
-auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) -> void {
-  // Default resources
-  for (auto const& res : default_resources_) {
-    if (auto const res_type{rttr::type::get(*res)}; res_type.is_derived_from(type)) {
-      out.emplace_back(res->GetId(), res->GetName(), res_type);
-    }
-  }
-
-  // File mappings
-  for (auto const& [guid, desc] : *res_mappings_.LockShared()) {
-    if (desc.type.is_derived_from(type)) {
-      out.emplace_back(guid, desc.name, desc.type);
-    }
-  }
-
-  // Other, loaded resources that don't come from files
-  for (auto const& res : *loaded_resources_.LockShared()) {
-    auto contains{false};
-    for (auto const& res_info : out) {
-      if (res_info.id == res->GetId()) {
-        contains = true;
-        break;
-      }
-    }
-
-    if (!contains && rttr::type::get(*res).is_derived_from(type)) {
-      out.emplace_back(res->GetId(), res->GetName(), res->get_type());
-    }
-  }
-}
-
-
-auto ResourceManager::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
-  return ObserverPtr{default_mtl_.get()};
-}
-
-
-auto ResourceManager::GetCubeMesh() const noexcept -> ObserverPtr<Mesh> {
-  return ObserverPtr{cube_mesh_.get()};
-}
-
-
-auto ResourceManager::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
-  return ObserverPtr{plane_mesh_.get()};
-}
-
-
-auto ResourceManager::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
-  return ObserverPtr{sphere_mesh_.get()};
-}
-
-
-auto ResourceManager::CreateDefaultResources() -> void {
-  if (!default_mtl_) {
-    default_mtl_ = Create<Material>();
-    default_mtl_->SetId({default_mtl_guid_, 0});
-    default_mtl_->SetName("Default Material");
-    default_resources_.emplace_back(default_mtl_.get());
-  }
-
-  if (!cube_mesh_) {
-    MeshData cube_data;
-
-    cube_data.positions = kCubePositions;
-    CalculateNormals(kCubePositions, kCubeIndices, cube_data.normals);
-    CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cube_data.tangents);
-    cube_data.uvs = kCubeUvs;
-
-    if (!ComputeMeshlets<std::uint32_t, Vector3>(kCubeIndices, kCubePositions, cube_data.meshlets,
-      cube_data.vertex_indices, cube_data.triangle_indices, cube_data.cull_data)) {
-      throw std::runtime_error{"Failed to compute meshlets for default cube mesh."};
-    }
-
-    cube_data.material_slots.emplace_back("Material");
-    cube_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(cube_data.meshlets.size()), 0, 0,
-      AABB::FromVertices(kCubePositions));
-    cube_data.bounds = cube_data.submeshes[0].bounds;
-    cube_data.idx32 = true;
-
-    cube_mesh_ = Create<Mesh>(cube_data);
-    cube_mesh_->SetId({cube_mesh_guid_, 0});
-    cube_mesh_->SetName("Cube");
-    default_resources_.emplace_back(cube_mesh_.get());
-  }
-
-  if (!plane_mesh_) {
-    MeshData plane_data;
-
-    plane_data.positions = kQuadPositions;
-    CalculateNormals(kQuadPositions, kQuadIndices, plane_data.normals);
-    CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, plane_data.tangents);
-    plane_data.uvs = kQuadUvs;
-
-    if (!ComputeMeshlets<std::uint32_t, Vector3>(kQuadIndices, kQuadPositions, plane_data.meshlets,
-      plane_data.vertex_indices, plane_data.triangle_indices, plane_data.cull_data)) {
-      throw std::runtime_error{"Failed to compute meshlets for default plane mesh."};
-    }
-
-    plane_data.material_slots.emplace_back("Material");
-    plane_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(plane_data.meshlets.size()), 0, 0,
-      AABB::FromVertices(kQuadPositions));
-    plane_data.bounds = plane_data.submeshes[0].bounds;
-    plane_data.idx32 = true;
-
-    plane_mesh_ = Create<Mesh>(plane_data);
-    plane_mesh_->SetId({plane_mesh_guid_, 0});
-    plane_mesh_->SetName("Plane");
-    default_resources_.emplace_back(plane_mesh_.get());
-  }
-
-  if (!sphere_mesh_) {
-    MeshData sphere_data;
-    std::vector<std::uint32_t> sphere_indices;
-
-    rendering::GenerateSphereMesh(1, 50, 50, sphere_data.positions, sphere_data.normals,
-      sphere_data.uvs, sphere_indices);
-    CalculateTangents(sphere_data.positions, sphere_data.uvs, sphere_indices,
-      sphere_data.tangents);
-
-    if (!ComputeMeshlets<std::uint32_t, Vector3>(sphere_indices, sphere_data.positions, sphere_data.meshlets,
-      sphere_data.vertex_indices, sphere_data.triangle_indices, sphere_data.cull_data)) {
-      throw std::runtime_error{"Failed to compute meshlets for default sphere mesh."};
-    }
-
-    sphere_data.material_slots.emplace_back("Material");
-    sphere_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(sphere_data.meshlets.size()), 0, 0,
-      AABB::FromVertices(sphere_data.positions));
-    sphere_data.bounds = sphere_data.submeshes[0].bounds;
-    sphere_data.idx32 = true;
-
-    sphere_mesh_ = Create<Mesh>(sphere_data);
-    sphere_mesh_->SetId({sphere_mesh_guid_, 0});
-    sphere_mesh_->SetName("Sphere");
-    default_resources_.emplace_back(sphere_mesh_.get());
-  }
+auto ResourceManager::LoadMaterial(std::span<std::byte const> const bytes) -> MaybeNull<std::unique_ptr<Resource>> {
+  // TODO rewrite this to spanstream when upgrading to C++23
+  return CreateDeserialize<Material>(YAML::Load(std::string{
+    reinterpret_cast<char const*>(bytes.data()), bytes.size()
+  }));
 }
 }

@@ -1,13 +1,14 @@
 #pragma once
 
+#include <filesystem>
+#include <map>
+
 #include "Guid.hpp"
 #include "NativeResource.hpp"
 #include "observer_ptr.hpp"
 #include "resource_manager.hpp"
+#include "resource_stuff.hpp"
 #include "ResourceImporters/resource_importer.hpp"
-
-#include <filesystem>
-#include <map>
 
 
 namespace sorcery::mage {
@@ -185,7 +186,7 @@ private:
                                             std::map<Guid, std::filesystem::path>& guid_to_src_abs_path,
                                             std::map<Guid, std::filesystem::path>& guid_to_res_abs_path,
                                             std::map<std::filesystem::path, Guid>& src_abs_path_to_guid,
-                                            std::map<Guid, rttr::type>& guid_to_type, ResourceImporter& importer,
+                                            std::map<ResourceId, rttr::type>& id_to_type, ResourceImporter& importer,
                                             Guid const& guid) const -> bool;
 
 
@@ -209,14 +210,14 @@ private:
    * If the file already exists, it will be overwritten.
    * Returns whether the file was written successfully.
    */
-  [[nodiscard]] auto WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory categ,
-                                                 std::span<std::byte const> res_bytes) const noexcept -> bool;
+  [[nodiscard]] auto WriteBinaryResourcePackage(Guid const& guid,
+                                                std::span<ResourceImportResult const> imports) const noexcept -> bool;
 
 
   std::filesystem::path res_dir_abs_;
   std::filesystem::path cache_dir_abs_;
 
-  std::map<Guid, rttr::type> guid_to_type_;
+  std::map<ResourceId, rttr::type> id_to_type_;
 
   // Maps resource Guids to the source file of the resource
   std::map<Guid, std::filesystem::path> guid_to_src_abs_path_;

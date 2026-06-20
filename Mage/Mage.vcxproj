@@ -156,9 +156,7 @@
     <ClInclude Include="src\ResourceImporters\mesh_importer.hpp" />
     <ClInclude Include="src\ResourceImporters\native_resource_importer.hpp" />
     <ClInclude Include="src\ResourceImporters\resource_importer.hpp" />
-    <ClInclude Include="src\ResourceImporters\resource_import_result.hpp" />
     <ClInclude Include="src\ResourceImporters\texture_importer.hpp" />
-    <ClInclude Include="src\resource_desc.hpp" />
     <ClInclude Include="src\StandaloneCamera.hpp" />
     <ClInclude Include="src\EditorApp.hpp" />
     <ClInclude Include="src\SettingsWindow.hpp" />

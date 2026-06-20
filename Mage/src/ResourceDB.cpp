@@ -7,8 +7,6 @@
 #include <spdlog/spdlog.h>
 
 #include "app.hpp"
-#include "external_resource.hpp"
-#include "MemoryAllocation.hpp"
 #include "Reflection.hpp"
 #include "resource_manager.hpp"
 #include "Util.hpp"
@@ -23,7 +21,7 @@ ResourceDB::ResourceDB(Object*& selected_object_ptr) :
 auto ResourceDB::Refresh() -> void {
   spdlog::debug("Starting resource database refresh.");
 
-  std::map<Guid, rttr::type> new_guid_to_type;
+  std::map<ResourceId, rttr::type> new_id_to_type;
   std::map<Guid, std::filesystem::path> new_guid_to_src_abs_path;
   std::map<Guid, std::filesystem::path> new_guid_to_res_abs_path;
   std::map<std::filesystem::path, Guid> new_src_abs_path_to_guid;
@@ -110,7 +108,7 @@ auto ResourceDB::Refresh() -> void {
           // If we fail, we just remove the the files
           if (!InternalImportResource(res_path_abs, new_guid_to_src_abs_path, new_guid_to_res_abs_path,
             new_src_abs_path_to_guid,
-            new_guid_to_type, *importer, guid)) {
+            new_id_to_type, *importer, guid)) {
             spdlog::trace(
               "Failed to recreate binary cache for external resource at file [{}]. Removing resource, meta, and binary cache files.",
               ToUntypedStdSv(entry.path().u8string()));
@@ -138,7 +136,7 @@ auto ResourceDB::Refresh() -> void {
         imported_type.get_name().to_string(), guid.ToString(), ToUntypedStdSv(entry.path().u8string()));
 
       new_guid_to_src_abs_path.emplace(guid, res_path_abs);
-      new_guid_to_type.emplace(guid, imported_type);
+      new_id_to_type.emplace(guid, imported_type);
       new_src_abs_path_to_guid.emplace(res_path_abs, guid);
 
       continue;
@@ -173,7 +171,7 @@ auto ResourceDB::Refresh() -> void {
 
       // If we couldn't import, we clean the files up
       if (!InternalImportResource(entry.path(), new_guid_to_src_abs_path, new_guid_to_res_abs_path,
-        new_src_abs_path_to_guid, new_guid_to_type, *importer, guid)) {
+        new_src_abs_path_to_guid, new_id_to_type, *importer, guid)) {
         spdlog::trace("Failed to import resource at file [{}]. Removing both files.",
           ToUntypedStdSv(entry.path().u8string()));
         cleanup_meta_and_res_files();
@@ -182,7 +180,7 @@ auto ResourceDB::Refresh() -> void {
 
 
       spdlog::trace("Imported resource of type [{}] with guid [{}] from resource file [{}] as new.",
-        new_guid_to_type[guid].get_name().to_string(), new_src_abs_path_to_guid[entry.path()].ToString(),
+        new_id_to_type[guid].get_name().to_string(), new_src_abs_path_to_guid[entry.path()].ToString(),
         ToUntypedStdSv(entry.path().u8string()));
       continue;
     }
@@ -219,7 +217,7 @@ auto ResourceDB::Refresh() -> void {
 
   guid_to_src_abs_path_ = std::move(new_guid_to_src_abs_path);
   guid_to_load_abs_path_ = std::move(new_guid_to_res_abs_path);
-  guid_to_type_ = std::move(new_guid_to_type);
+  id_to_type_ = std::move(new_id_to_type);
   src_abs_path_to_guid_ = std::move(new_src_abs_path_to_guid);
 
   spdlog::trace("Updating resource mappings.");
@@ -253,7 +251,7 @@ auto ResourceDB::ChangeProjectDir(std::filesystem::path const& proj_dir_abs) -> 
 
   guid_to_src_abs_path_.clear();
   guid_to_load_abs_path_.clear();
-  guid_to_type_.clear();
+  id_to_type_.clear();
   src_abs_path_to_guid_.clear();
 
   Refresh();
@@ -275,22 +273,22 @@ auto ResourceDB::CreateResource(std::unique_ptr<NativeResource>&& res,
     res->SetId(ResourceId{Guid::Generate(), 0});
   }
 
-  auto const resNode{res->Serialize()};
-  auto const resPathAbs{res_dir_abs_ / target_path_res_dir_rel};
-  std::ofstream outResStream{resPathAbs};
-  YAML::Emitter resEmitter{outResStream};
-  resEmitter << resNode;
+  auto const res_node{res->Serialize()};
+  auto const res_path_abs{res_dir_abs_ / target_path_res_dir_rel};
+  std::ofstream out_res_stream{res_path_abs};
+  YAML::Emitter res_emitter{out_res_stream};
+  res_emitter << res_node;
 
-  if (!WriteMeta(resPathAbs, res->GetId().GetGuid(), NativeResourceImporter{})) {
+  if (!WriteMeta(res_path_abs, res->GetId().GetGuid(), NativeResourceImporter{})) {
     return nullptr;
   }
 
   res->SetName(target_path_res_dir_rel.stem().string());
 
-  guid_to_src_abs_path_.insert_or_assign(res->GetId().GetGuid(), resPathAbs);
-  guid_to_type_.insert_or_assign(res->GetId().GetGuid(), rttr::type::get(res));
-  guid_to_load_abs_path_.insert_or_assign(res->GetId().GetGuid(), resPathAbs);
-  src_abs_path_to_guid_.insert_or_assign(resPathAbs, res->GetId().GetGuid());
+  guid_to_src_abs_path_.insert_or_assign(res->GetId().GetGuid(), res_path_abs);
+  id_to_type_.insert_or_assign(res->GetId(), rttr::type::get(res));
+  guid_to_load_abs_path_.insert_or_assign(res->GetId().GetGuid(), res_path_abs);
+  src_abs_path_to_guid_.insert_or_assign(res_path_abs, res->GetId().GetGuid());
 
   auto const ret{App::Instance().GetResourceManager().Add(std::move(res))};
   auto [res_mappings, file_mappings]{CreateMappings()};
@@ -342,7 +340,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& res_path_res_dir_re
   }
 
   if (!InternalImportResource(res_dir_abs_ / res_path_res_dir_rel, guid_to_src_abs_path_, guid_to_load_abs_path_,
-    src_abs_path_to_guid_, guid_to_type_, *importer, guid)) {
+    src_abs_path_to_guid_, id_to_type_, *importer, guid)) {
     return false;
   }
 
@@ -404,7 +402,7 @@ auto ResourceDB::DeleteResource(Guid const& guid) -> void {
   }
 
   guid_to_load_abs_path_.erase(guid);
-  guid_to_type_.erase(guid);
+  id_to_type_.erase(guid);
 
   auto [res_mappings, file_mappings]{CreateMappings()};
   App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
@@ -614,7 +612,7 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
                                         std::map<Guid, std::filesystem::path>& guid_to_src_abs_path,
                                         std::map<Guid, std::filesystem::path>& guid_to_res_abs_path,
                                         std::map<std::filesystem::path, Guid>& src_abs_path_to_guid,
-                                        std::map<Guid, rttr::type>& guid_to_type, ResourceImporter& importer,
+                                        std::map<ResourceId, rttr::type>& id_to_type, ResourceImporter& importer,
                                         Guid const& guid) const -> bool {
   if (!WriteMeta(res_path_abs, guid, importer)) {
     return false;
@@ -628,7 +626,7 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
   }
 
   if (!importer.IsNativeImporter()) {
-    if (!WriteExternalResourceBinary(guid, *import_results[0].desc.category, import_results[0].bytes)) {
+    if (!WriteBinaryResourcePackage(guid, import_results)) {
       return false;
     }
     guid_to_res_abs_path.insert_or_assign(guid, MakeExternalResourceBinaryPathAbs(guid));
@@ -637,8 +635,11 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
   }
 
   guid_to_src_abs_path.insert_or_assign(guid, res_path_abs);
-  guid_to_type.insert_or_assign(guid, import_results[0].desc.type);
   src_abs_path_to_guid.insert_or_assign(res_path_abs, guid);
+
+  for (std::size_t i{0}; i < import_results.size(); ++i) {
+    id_to_type.insert_or_assign(ResourceId{guid, static_cast<int>(i)}, import_results[i].runtime_type);
+  }
   return true;
 }
 
@@ -650,7 +651,7 @@ auto ResourceDB::CreateMappings() const noexcept -> std::pair<
 
   for (auto const& [guid, src_abs_path] : guid_to_src_abs_path_) {
     res_mappings.emplace(std::piecewise_construct, std::forward_as_tuple(ResourceId{guid, 0}),
-      std::forward_as_tuple(src_abs_path.stem().string(), guid_to_type_.at(guid)));
+      std::forward_as_tuple(src_abs_path.stem().string(), id_to_type_.at(guid)));
 
     if (auto const load_abs_path{guid_to_load_abs_path_.find(guid)};
       load_abs_path != std::end(guid_to_load_abs_path_)) {
@@ -667,26 +668,31 @@ auto ResourceDB::MakeExternalResourceBinaryPathAbs(Guid const& guid) const noexc
 }
 
 
-auto ResourceDB::WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory const categ,
-                                             std::span<std::byte const> const res_bytes) const noexcept -> bool {
+auto ResourceDB::WriteBinaryResourcePackage(
+  Guid const& guid,
+  std::span<ResourceImportResult const> const imports
+) const noexcept -> bool {
   if (!guid.IsValid()) {
     return false;
   }
 
-  std::vector<std::byte> fileBytes;
-  PackExternalResource(categ, res_bytes, fileBytes);
+  auto const package_bytes{PackBinaryResourcePackage(imports)};
+
+  if (!package_bytes) {
+    return false;
+  }
 
   if (!exists(cache_dir_abs_)) {
     create_directory(cache_dir_abs_);
   }
 
-  std::ofstream outStream{MakeExternalResourceBinaryPathAbs(guid), std::ios::binary | std::ios::out | std::ios::trunc};
+  std::ofstream out_stream{MakeExternalResourceBinaryPathAbs(guid), std::ios::binary | std::ios::out | std::ios::trunc};
 
-  if (!outStream.is_open()) {
+  if (!out_stream.is_open()) {
     return false;
   }
 
-  outStream.write(reinterpret_cast<char*>(fileBytes.data()), std::ssize(fileBytes));
+  out_stream.write(reinterpret_cast<char const*>(package_bytes->data()), std::ssize(*package_bytes));
   return true;
 }
 }

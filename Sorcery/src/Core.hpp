@@ -5,10 +5,12 @@
 #endif
 
 #ifdef SORCERY_BUILD
-#define LEOPPHAPI __declspec(dllexport)
+#define SORCERYAPI __declspec(dllexport)
 #else
-#define LEOPPHAPI __declspec(dllimport)
+#define SORCERYAPI __declspec(dllimport)
 #endif
+
+#define LEOPPHAPI SORCERYAPI
 
 
 namespace sorcery {
