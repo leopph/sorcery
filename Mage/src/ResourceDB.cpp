@@ -387,7 +387,7 @@ auto ResourceDB::MoveDirectory(std::filesystem::path const& src_path_res_dir_rel
 }
 
 
-auto ResourceDB::DeleteResources(Guid const& guid) -> void {
+auto ResourceDB::DeleteResourceFile(Guid const& guid) -> void {
   App::Instance().GetResourceManager().Unload(ResourceId{guid, 0});
 
   if (auto const it{guid_to_src_abs_path_.find(guid)}; it != std::end(guid_to_src_abs_path_)) {
@@ -421,7 +421,7 @@ auto ResourceDB::DeleteDirectory(std::filesystem::path const& path_res_dir_rel) 
   }
 
   for (auto const& guid : resourcesToDelete) {
-    DeleteResources(guid);
+    DeleteResourceFile(guid);
   }
 
   remove_all(pathAbs);

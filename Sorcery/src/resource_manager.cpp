@@ -300,12 +300,6 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
             }
 
             auto const& entry{(*entries)[res_file_idx]};
-
-            if (entry.data_offset + entry.data_size > file_bytes.size()) {
-              // TODO log error
-              return;
-            }
-
             auto const payload_bytes{file_bytes.subspan(entry.data_offset, entry.data_size)};
 
             switch (entry.payload_kind) {

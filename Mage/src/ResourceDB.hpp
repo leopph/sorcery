@@ -86,7 +86,7 @@ public:
    * Deletes the resource file associated with the guid.
    * If the resource file does not exist, or the guid is invalid, the deletion will fail.
    */
-  auto DeleteResources(Guid const& guid) -> void;
+  auto DeleteResourceFile(Guid const& guid) -> void;
 
 
   /**

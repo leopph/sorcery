@@ -246,7 +246,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
           mSelectedPathResDirRel.clear();
         }
       } else {
-        mApp->GetResourceDatabase().DeleteResources(mApp->GetResourceDatabase().PathToGuid(mSelectedPathResDirRel));
+        mApp->GetResourceDatabase().DeleteResourceFile(mApp->GetResourceDatabase().PathToGuid(mSelectedPathResDirRel));
         mApp->SetSelectedObject(nullptr);
         mSelectedPathResDirRel.clear();
       }

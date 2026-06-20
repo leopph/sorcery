@@ -76,8 +76,13 @@ auto PackBinaryResourcePackage(
 
   for (std::size_t i{0}; i < imports.size(); ++i) {
     auto& entry = entries[i];
-    entry.data_offset = sizeof(resource_package::Header) + sizeof(resource_package::Entry) * imports.size() +
-                        name_table_size + data_table_size;
+
+    constexpr auto header_size{3 * sizeof(std::uint32_t)};
+    constexpr auto entry_size{
+      sizeof(ResourcePackagePayloadKind) + sizeof(ResourceRuntimeType) + 4 * sizeof(std::uint64_t)
+    };
+
+    entry.data_offset = header_size + entry_size * imports.size() + name_table_size + data_table_size;
     data_table_size += entry.data_size;
   }
 
@@ -106,6 +111,8 @@ auto PackBinaryResourcePackage(
 auto UnpackBinaryResourcePackage(
   std::span<std::byte const> file_bytes
 ) noexcept -> std::optional<std::vector<resource_package::Entry>> {
+  auto const file_byte_size{file_bytes.size()};
+
   resource_package::Header header;
 
   if (!DeserializeFromBinary(file_bytes, header.magic) || header.magic != resource_package::kMagic) {
@@ -123,6 +130,8 @@ auto UnpackBinaryResourcePackage(
   if (!DeserializeFromBinary(file_bytes, header.resource_count)) {
     return std::nullopt;
   }
+
+  file_bytes = file_bytes.subspan(sizeof(resource_package::Header::resource_count));
 
   std::vector<resource_package::Entry> entries;
   entries.reserve(header.resource_count);
@@ -161,6 +170,15 @@ auto UnpackBinaryResourcePackage(
     file_bytes = file_bytes.subspan(sizeof(entry.data_offset));
 
     if (!DeserializeFromBinary(file_bytes, entry.data_size)) {
+      return std::nullopt;
+    }
+
+    file_bytes = file_bytes.subspan(sizeof(entry.data_size));
+
+    if (entry.name_offset > file_byte_size ||
+        entry.name_size > file_byte_size - entry.name_offset ||
+        entry.data_offset > file_byte_size ||
+        entry.data_size > file_byte_size - entry.data_offset) {
       return std::nullopt;
     }
 

@@ -123,7 +123,7 @@
     <ClCompile Include="src\command_line_processor.cpp" />
     <ClCompile Include="src\rendering\imgui_renderer.cpp" />
     <ClCompile Include="src\ResourceImporters\mesh_importer.cpp" />
-    <ClCompile Include="src\ResourceImporters\native_resourec_importer.cpp" />
+    <ClCompile Include="src\ResourceImporters\native_resource_importer.cpp" />
     <ClCompile Include="src\ResourceImporters\resource_importer.cpp" />
     <ClCompile Include="src\ResourceImporters\texture_importer.cpp" />
     <ClCompile Include="src\StandaloneCamera.cpp" />

@@ -63,7 +63,7 @@
     <ClCompile Include="src\ResourceImporters\mesh_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceImporters\native_resourec_importer.cpp">
+    <ClCompile Include="src\ResourceImporters\native_resource_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ResourceImporters\resource_importer.cpp">
