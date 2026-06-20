@@ -1,6 +1,8 @@
 #include "resource_package.hpp"
 
 #include <algorithm>
+#include <exception>
+#include <fstream>
 
 #include "Serialization.hpp"
 #include "resources/Cubemap.hpp"
@@ -35,6 +37,24 @@ namespace {
   }
 
   return std::nullopt;
+}
+
+
+[[nodiscard]] auto ToRttrType(ResourceRuntimeType const type) noexcept -> std::optional<rttr::type> {
+  switch (type) {
+    case ResourceRuntimeType::kMaterial:
+      return rttr::type::get<Material>();
+    case ResourceRuntimeType::kMesh:
+      return rttr::type::get<Mesh>();
+    case ResourceRuntimeType::kScene:
+      return rttr::type::get<Scene>();
+    case ResourceRuntimeType::kTexture2D:
+      return rttr::type::get<Texture2D>();
+    case ResourceRuntimeType::kCubemap:
+      return rttr::type::get<Cubemap>();
+    default:
+      return std::nullopt;
+  }
 }
 }
 
@@ -108,7 +128,7 @@ auto PackBinaryResourcePackage(
 }
 
 
-auto UnpackBinaryResourcePackage(
+auto UnpackBinaryResourcePackageEntries(
   std::span<std::byte const> file_bytes
 ) noexcept -> std::optional<std::vector<resource_package::Entry>> {
   auto const file_byte_size{file_bytes.size()};
@@ -186,5 +206,64 @@ auto UnpackBinaryResourcePackage(
   }
 
   return entries;
+}
+
+
+auto PeekBinaryResourcePackage(
+  std::filesystem::path const& file_path_abs
+) noexcept -> std::optional<ResourcePackageInfo> {
+  try {
+    std::ifstream file{file_path_abs, std::ios::binary};
+
+    resource_package::Header header;
+
+    file.read(reinterpret_cast<char*>(&header.magic), sizeof(header.magic));
+
+    if (header.magic != resource_package::kMagic) {
+      return std::nullopt;
+    }
+
+    file.read(reinterpret_cast<char*>(&header.version), sizeof(header.version));
+
+    if (header.version != 1) {
+      return std::nullopt;
+    }
+
+    file.read(reinterpret_cast<char*>(&header.resource_count), sizeof(header.resource_count));
+
+    ResourcePackageInfo package_info;
+    package_info.entries.reserve(header.resource_count);
+
+    for (std::uint32_t i{0}; i < header.resource_count; i++) {
+      resource_package::Entry entry;
+
+      file.read(reinterpret_cast<char*>(&entry.payload_kind), sizeof(entry.payload_kind));
+      file.read(reinterpret_cast<char*>(&entry.runtime_type), sizeof(entry.runtime_type));
+      file.read(reinterpret_cast<char*>(&entry.name_offset), sizeof(entry.name_offset));
+      file.read(reinterpret_cast<char*>(&entry.name_size), sizeof(entry.name_size));
+      file.read(reinterpret_cast<char*>(&entry.data_offset), sizeof(entry.data_offset));
+      file.read(reinterpret_cast<char*>(&entry.data_size), sizeof(entry.data_size));
+
+      auto const type{ToRttrType(entry.runtime_type)};
+
+      if (!type) {
+        return std::nullopt;
+      }
+
+      auto const last_pos = file.tellg();
+      file.seekg(entry.name_offset, std::ios::beg);
+
+      std::string name(entry.name_size, '\0');
+      file.read(name.data(), entry.name_size);
+
+      file.seekg(last_pos, std::ios::beg);
+
+      package_info.entries.emplace_back(*type, std::move(name));
+    }
+
+    return package_info;
+  } catch ([[maybe_unused]] std::exception const& e) {
+    return std::nullopt;
+  }
 }
 }

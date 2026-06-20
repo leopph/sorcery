@@ -292,7 +292,7 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
             }
 
             auto const file_bytes{as_bytes(std::span{file_data})};
-            auto const entries{UnpackBinaryResourcePackage(file_bytes)};
+            auto const entries{UnpackBinaryResourcePackageEntries(file_bytes)};
             auto const res_file_idx = job_data.res_id->GetIdxInFile();
 
             if (!entries || res_file_idx >= entries->size()) {

@@ -28,162 +28,163 @@ auto ResourceDB::Refresh() -> void {
 
   spdlog::trace("Scanning resource directory at [{}].", ToUntypedStdSv(res_dir_abs_.u8string()));
 
-  for (auto& entry : std::filesystem::recursive_directory_iterator{res_dir_abs_}) {
-    /*
-     * We can break down the refresh procedure to a couple of distinct steps.
-     * If the entry is a directory, we can safely skip it and the loop will recursively enter it at a later iteration.
-     * If the entry is a resource file, the following steps are to be done:
-     *   1) Check if there is a meta file for this resource. If not, try to import it as a new resource. If this fails, remove both files.
-     *   2) If there is a meta file, we can skip it since it will be handled when we encounter the meta file in the iteration.
-     * If the entry is a meta file, we have to go through the following steps:
-     *   1) Make sure it's readable, otherwise try to reimport the associated resource. If this fails too, remove both files.
-     *   2) If it's an external resource, check if the binary cache is up to date. If not, try to reimport. If this fails, remove all three files.
-     *   3) If everything is fine, we store the resource in the new mappings.
-     */
+  std::vector<std::filesystem::path> meta_file_paths;
+  std::vector<std::filesystem::path> res_file_paths;
 
+  // It is undefined whether recursive_directory_iterator sees filesystem changes after its creation
+  // It is safer to first collect all the files and then process them in a second loop
+
+  for (auto& entry : std::filesystem::recursive_directory_iterator{res_dir_abs_}) {
     if (!entry.exists() || entry.is_directory()) {
       continue;
     }
 
     if (IsMetaFile(entry.path())) {
+      meta_file_paths.emplace_back(entry.path());
       spdlog::trace("Found meta file at [{}].", ToUntypedStdSv(entry.path().u8string()));
-
-      auto const res_path_abs{std::filesystem::path{entry.path()}.replace_extension()};
-
-      // If it's an orphaned meta file, we remove it
-      if (!exists(res_path_abs)) {
-        spdlog::trace("Removing orphaned meta file at [{}].", ToUntypedStdSv(entry.path().u8string()));
-        remove(entry.path());
-        continue;
-      }
-
-      Guid guid;
-      std::unique_ptr<ResourceImporter> importer;
-
-      auto const cleanup_meta_and_res_files{
-        [&] {
-          remove(res_path_abs);
-          remove(entry.path());
-        }
-      };
-
-      // If we couldn't read the meta file (e.g. it's corrupted) we attempt to create a new one
-      if (!ReadMeta(res_path_abs, &guid, &importer)) {
-        spdlog::trace("Failed to read meta file at [{}]. Attempting to recreate.",
-          ToUntypedStdSv(entry.path().u8string()));
-
-        importer = CreateNewImporterForResourceFile(res_path_abs);
-        guid = Guid::Generate();
-
-        //  If we couldn't find an importer, we clean the files up
-        if (!importer) {
-          spdlog::trace("Couldn't find importer for resource file at [{}]. Removing along with meta.",
-            ToUntypedStdSv(res_path_abs.u8string()));
-          cleanup_meta_and_res_files();
-          continue;
-        }
-
-        // If we for some reason couldn't write the new meta, we clean the files up
-        if (!WriteMeta(res_path_abs, guid, *importer)) {
-          spdlog::trace("Failed to write new meta file for resource file at [{}]. Removing both files.",
-            ToUntypedStdSv(entry.path().u8string()));
-          cleanup_meta_and_res_files();
-          continue;
-        }
-      }
-
-      // If its an external resource, we check for the processed binary
-      if (!importer->IsNativeImporter()) {
-        spdlog::trace("Resource at file [{}] is not a native resource. Checking for binary cache.",
-          ToUntypedStdSv(entry.path().u8string()));
-
-        auto const cache_file_path_abs{MakeExternalResourceBinaryPathAbs(guid)};
-
-        // If it's out of date we attempt to recreate it
-        if (!exists(cache_file_path_abs) || last_write_time(res_path_abs) > last_write_time(cache_file_path_abs) ||
-            last_write_time(entry.path()) > last_write_time(cache_file_path_abs)) {
-          spdlog::trace("Binary cache for external resource at file [{}] is out of date. Attempting to recreate.",
-            ToUntypedStdSv(entry.path().u8string()));
-
-          // If we fail, we just remove the the files
-          if (!InternalImportResource(res_path_abs, new_guid_to_src_abs_path, new_guid_to_res_abs_path,
-            new_src_abs_path_to_guid,
-            new_id_to_type, *importer, guid)) {
-            spdlog::trace(
-              "Failed to recreate binary cache for external resource at file [{}]. Removing resource, meta, and binary cache files.",
-              ToUntypedStdSv(entry.path().u8string()));
-            cleanup_meta_and_res_files();
-            remove(cache_file_path_abs);
-            continue;
-          }
-        }
-
-        spdlog::trace("Storing binary cache path for external resource at file [{}] in resource database.",
-          ToUntypedStdSv(entry.path().u8string()));
-
-        // In case the resource is external, the processed binary is the path to load
-        new_guid_to_res_abs_path.emplace(guid, cache_file_path_abs);
-      } else {
-        spdlog::trace("Storing resource path for native resource at file [{}] in resource database.",
-          ToUntypedStdSv(entry.path().u8string()));
-        // If the resource is native, the source is the path to load
-        new_guid_to_res_abs_path.emplace(guid, res_path_abs);
-      }
-
-      spdlog::trace("Imported resource file [{}] with guid [{}].",
-        ToUntypedStdSv(entry.path().u8string()), guid.ToString());
-
-      new_guid_to_src_abs_path.emplace(guid, res_path_abs);
-      new_id_to_type.emplace(guid, imported_type);
-      new_src_abs_path_to_guid.emplace(res_path_abs, guid);
-
-      continue;
+    } else {
+      res_file_paths.emplace_back(entry.path());
+      spdlog::trace("Found resource file at [{}].", ToUntypedStdSv(entry.path().u8string()));
     }
-
-    // If we find a file that is not a meta file, we attempt to import it as a resource
-    spdlog::trace("Found resource file at [{}]. Attempting to import.", ToUntypedStdSv(entry.path().u8string()));
-
-    // If there is no meta file for this resource, we attempt to import it as a new resource.
-    if (auto const meta_path_abs{MakeMetaPath(entry.path())}; !exists(meta_path_abs)) {
-      spdlog::trace("Couldn't find meta file for resource at [{}]. Attempting to import as new.",
-        ToUntypedStdSv(entry.path().u8string()));
-
-      auto const importer{CreateNewImporterForResourceFile(entry.path())};
-
-      auto const cleanup_meta_and_res_files{
-        [&] {
-          remove(entry.path());
-          remove(meta_path_abs);
-        }
-      };
-
-      // If we couldn't find an importer, we clean the files up
-      if (!importer) {
-        spdlog::trace("Couldn't find importer for resource file at [{}]. Removing along with meta.",
-          ToUntypedStdSv(entry.path().u8string()));
-        cleanup_meta_and_res_files();
-        continue;
-      }
-
-      auto const guid{Guid::Generate()};
-
-      // If we couldn't import, we clean the files up
-      if (!InternalImportResource(entry.path(), new_guid_to_src_abs_path, new_guid_to_res_abs_path,
-        new_src_abs_path_to_guid, new_id_to_type, *importer, guid)) {
-        spdlog::trace("Failed to import resource at file [{}]. Removing both files.",
-          ToUntypedStdSv(entry.path().u8string()));
-        cleanup_meta_and_res_files();
-        continue;
-      }
-
-      spdlog::trace("Imported resource file [{}] with guid [{}] as new.",
-        ToUntypedStdSv(entry.path().u8string()), new_src_abs_path_to_guid[entry.path()].ToString());
-      continue;
-    }
-
-    spdlog::trace("Resource file at [{}] already has a meta file. Nothing to do.",
-      ToUntypedStdSv(entry.path().u8string()));
   }
+
+  // Remove orphaned meta files first so we can focus on the resources files later.
+
+  for (auto const& meta_path_abs : meta_file_paths) {
+    if (auto const res_path_abs{std::filesystem::path{meta_path_abs}.replace_extension()}; !exists(res_path_abs)) {
+      spdlog::trace("Removing orphaned meta file at [{}].", ToUntypedStdSv(meta_path_abs.u8string()));
+      remove(meta_path_abs);
+    }
+  }
+
+  // Process resource files.
+
+  for (auto const& res_path_abs : res_file_paths) {
+    auto const meta_path_abs{MakeMetaPath(res_path_abs)};
+
+    Guid guid;
+    std::unique_ptr<ResourceImporter> importer;
+
+    auto const cleanup_res_and_meta_files{
+      [&] {
+        remove(meta_path_abs);
+        remove(res_path_abs);
+      }
+    };
+
+    // If there is no meta file, or we couldn't read it, we attempt to reimport the resource as new.
+
+    if (!exists(meta_path_abs) || !ReadMeta(res_path_abs, &guid, &importer)) {
+      spdlog::trace("Couldn't read meta file for resource at [{}]. Attempting to import as new.",
+        ToUntypedStdSv(res_path_abs.u8string()));
+
+      importer = CreateNewImporterForResourceFile(res_path_abs);
+
+      if (!importer) {
+        spdlog::trace("Couldn't create importer for resource file at [{}]. Removing resource and meta files.",
+          ToUntypedStdSv(res_path_abs.u8string()));
+        cleanup_res_and_meta_files();
+        continue;
+      }
+
+      guid = Guid::Generate();
+
+      if (!WriteMeta(res_path_abs, guid, *importer)) {
+        spdlog::trace("Failed to write new meta file for resource file at [{}]. Removing resource and meta files.",
+          ToUntypedStdSv(res_path_abs.u8string()));
+        cleanup_res_and_meta_files();
+        continue;
+      }
+
+      if (!InternalImportResource(res_path_abs, new_guid_to_src_abs_path, new_guid_to_res_abs_path,
+        new_src_abs_path_to_guid, new_id_to_type, *importer, guid)) {
+        spdlog::trace("Failed to import resource at file [{}]. Removing resource and meta files.",
+          ToUntypedStdSv(res_path_abs.u8string()));
+        cleanup_res_and_meta_files();
+        continue;
+      }
+
+      spdlog::trace("Imported resource file [{}] with guid [{}] as new.", ToUntypedStdSv(res_path_abs.u8string()),
+        new_src_abs_path_to_guid[res_path_abs].ToString());
+    }
+
+    // Check if there is a binary cache for this resource and if it's up to date. If not, we attempt to reimport it.
+
+    if (!importer->IsNativeImporter()) {
+      spdlog::trace("Resource at file [{}] is not a native resource. Checking for binary cache.",
+        ToUntypedStdSv(res_path_abs.u8string()));
+
+      auto const cache_file_path_abs{MakeExternalResourceBinaryPathAbs(guid)};
+
+      auto const cleanup_res_meta_and_cache_files{
+        [&] {
+          cleanup_res_and_meta_files();
+          remove(cache_file_path_abs);
+        }
+      };
+
+      if (!exists(cache_file_path_abs) || last_write_time(res_path_abs) > last_write_time(cache_file_path_abs) ||
+          last_write_time(res_path_abs) > last_write_time(cache_file_path_abs)) {
+        spdlog::trace("Binary cache for external resource at file [{}] is out of date. Attempting to reimport.",
+          ToUntypedStdSv(res_path_abs.u8string()));
+
+        if (!InternalImportResource(res_path_abs, new_guid_to_src_abs_path, new_guid_to_res_abs_path,
+          new_src_abs_path_to_guid, new_id_to_type, *importer, guid)) {
+          spdlog::trace(
+            "Failed to reimport external resource at file [{}]. Removing resource, meta, and binary cache files.",
+            ToUntypedStdSv(res_path_abs.u8string()));
+          cleanup_res_meta_and_cache_files();
+          continue;
+        }
+      }
+
+      spdlog::trace("Storing binary cache path for external resource at file [{}] in resource database.",
+        ToUntypedStdSv(res_path_abs.u8string()));
+      new_guid_to_res_abs_path.emplace(guid, cache_file_path_abs);
+    } else {
+      spdlog::trace("Storing resource path for native resource at file [{}] in resource database.",
+        ToUntypedStdSv(res_path_abs.u8string()));
+      new_guid_to_res_abs_path.emplace(guid, res_path_abs);
+    }
+
+    spdlog::trace("Done processing resource file [{}] with guid [{}].", ToUntypedStdSv(res_path_abs.u8string()),
+      guid.ToString());
+
+    if (importer->IsNativeImporter()) {
+      // Native import is basically no-op, we can use it to determine the type
+      if (std::vector<ResourceImportResult> results; importer->Import(res_path_abs, results) && !results.empty()) {
+        new_id_to_type.emplace(ResourceId{guid, 0}, results[0].runtime_type);
+      } else {
+        spdlog::error("Failed to query native resource type from file [{}].", ToUntypedStdSv(res_path_abs.u8string()));
+      }
+    } else {
+      if (auto const info{PeekBinaryResourcePackage(MakeExternalResourceBinaryPathAbs(guid))}) {
+        for (std::size_t i{0}; i < info->entries.size(); ++i) {
+          new_id_to_type.emplace(ResourceId{guid, static_cast<int>(i)}, info->entries[i].runtime_type);
+        }
+      } else {
+        spdlog::error("Failed to query resource type for external resource at file [{}].",
+          ToUntypedStdSv(res_path_abs.u8string()));
+      }
+    }
+
+    new_guid_to_src_abs_path.emplace(guid, res_path_abs);
+    new_src_abs_path_to_guid.emplace(res_path_abs, guid);
+  }
+
+  /*
+ * We can break down the refresh procedure to a couple of distinct steps.
+ * If the entry is a directory, we can safely skip it and the loop will recursively enter it at a later iteration.
+ * If the entry is not a meta file, then it is a resource file, and the following steps are to be done:
+ *   1) Check if there is a meta file for this resource. If not, try to import it as a new resource. If this fails, remove both files.
+ *   2) If there is a meta file, we can skip this resource file since it will be handled when we encounter the meta file in the iteration.
+ * If the entry is a meta file, we go through the following steps:
+ *   1) Check if there is a resource file associated with this meta file. If not, remove the meta file.
+ *   2) Make sure the meta is readable, otherwise try to reimport the associated resource. If this fails too, remove both files.
+ *   3) If it's an external resource, check if the binary cache is up to date. If not, try to reimport. If this fails, remove all three files.
+ *   4) If everything is fine, we store the resource in the new mappings.
+ */
+
 
   spdlog::trace("Unloading removed resources.");
 
@@ -398,7 +399,7 @@ auto ResourceDB::DeleteResourceFile(Guid const& guid) -> void {
   }
 
   guid_to_load_abs_path_.erase(guid);
-  id_to_type_.erase(guid);
+  std::erase_if(id_to_type_, [&guid](auto const& pair) { return pair.first.GetGuid() == guid; });
 
   auto [res_mappings, file_mappings]{CreateMappings()};
   App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
@@ -645,9 +646,23 @@ auto ResourceDB::CreateMappings() const noexcept -> std::pair<
   std::map<ResourceId, ResourceManager::ResourceDescription> res_mappings;
   std::map<Guid, std::filesystem::path> file_mappings;
 
-  for (auto const& [guid, src_abs_path] : guid_to_src_abs_path_) {
-    res_mappings.emplace(std::piecewise_construct, std::forward_as_tuple(ResourceId{guid, 0}),
-      std::forward_as_tuple(src_abs_path.stem().string(), id_to_type_.at(guid)));
+  for (auto const& [id, type] : id_to_type_) {
+    auto const guid{id.GetGuid()};
+
+    if (auto const it{guid_to_src_abs_path_.find(guid)};
+      it != std::end(guid_to_src_abs_path_)) {
+      // TODO add proper name extraction
+      auto name{it->second.stem().string()};
+
+      if (id.GetIdxInFile() != 0) {
+        name += "[" + std::to_string(id.GetIdxInFile()) + "]";
+      }
+
+      res_mappings.emplace(id, ResourceManager::ResourceDescription{name, type});
+    } else {
+      spdlog::error("Resource with ID [{}, {}] has no source path in the resource database.",
+        guid.ToString(), id.GetIdxInFile());
+    }
 
     if (auto const load_abs_path{guid_to_load_abs_path_.find(guid)};
       load_abs_path != std::end(guid_to_load_abs_path_)) {

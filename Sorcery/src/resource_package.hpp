@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <span>
 #include <string>
@@ -61,13 +62,29 @@ struct ResourceImportResult {
 };
 
 
+struct ResourceEntryInfo {
+  rttr::type runtime_type;
+  std::string name;
+};
+
+
+struct ResourcePackageInfo {
+  std::vector<ResourceEntryInfo> entries;
+};
+
+
 [[nodiscard]] SORCERYAPI
 auto PackBinaryResourcePackage(
   std::span<ResourceImportResult const> imports
 ) noexcept -> std::optional<std::vector<std::byte>>;
 
 [[nodiscard]] SORCERYAPI
-auto UnpackBinaryResourcePackage(
+auto UnpackBinaryResourcePackageEntries(
   std::span<std::byte const> file_bytes
 ) noexcept -> std::optional<std::vector<resource_package::Entry>>;
+
+[[nodiscard]] SORCERYAPI
+auto PeekBinaryResourcePackage(
+  std::filesystem::path const& file_path_abs
+) noexcept -> std::optional<ResourcePackageInfo>;
 }
