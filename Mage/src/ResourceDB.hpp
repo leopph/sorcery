@@ -142,6 +142,12 @@ private:
   constexpr static std::string_view kCacheDirProjRel{"Cache"};
 
 
+  struct ResourceEntry {
+    rttr::type type;
+    std::string name;
+  };
+
+
   /**
  * Returns the path where the meta file for the file at the given path would be stored if it were a resource file.
  * The function will not validate the given path, nor will it check if the file exists or if it is even a resource.
@@ -186,7 +192,8 @@ private:
                                             std::map<Guid, std::filesystem::path>& guid_to_src_abs_path,
                                             std::map<Guid, std::filesystem::path>& guid_to_res_abs_path,
                                             std::map<std::filesystem::path, Guid>& src_abs_path_to_guid,
-                                            std::map<ResourceId, rttr::type>& id_to_type, ResourceImporter& importer,
+                                            std::map<ResourceId, ResourceEntry>& id_to_entry,
+                                            ResourceImporter& importer,
                                             Guid const& guid) const -> bool;
 
 
@@ -213,16 +220,23 @@ private:
   [[nodiscard]] auto WriteBinaryResourcePackage(Guid const& guid,
                                                 std::span<ResourceImportResult const> imports) const noexcept -> bool;
 
+
   /**
    * Unloads all resources that were loaded from the resource file associated with the given Guid.
    */
   auto UnloadResourcesFromFile(Guid const& guid) -> void;
 
 
+  /**
+   * Clear object selection if the selected object's guid matches the given guid.
+   */
+  auto ClearSelectionIfGuid(Guid const& guid) const -> void;
+
+
   std::filesystem::path res_dir_abs_;
   std::filesystem::path cache_dir_abs_;
 
-  std::map<ResourceId, rttr::type> id_to_type_;
+  std::map<ResourceId, ResourceEntry> id_to_entry_;
 
   // Maps resource Guids to the source file of the resource
   std::map<Guid, std::filesystem::path> guid_to_src_abs_path_;

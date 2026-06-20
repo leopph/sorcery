@@ -21,7 +21,7 @@ ResourceDB::ResourceDB(Object*& selected_object_ptr) :
 auto ResourceDB::Refresh() -> void {
   spdlog::debug("Starting resource database refresh.");
 
-  std::map<ResourceId, rttr::type> new_id_to_type;
+  std::map<ResourceId, ResourceEntry> new_id_to_entry;
   std::map<Guid, std::filesystem::path> new_guid_to_src_abs_path;
   std::map<Guid, std::filesystem::path> new_guid_to_res_abs_path;
   std::map<std::filesystem::path, Guid> new_src_abs_path_to_guid;
@@ -97,7 +97,7 @@ auto ResourceDB::Refresh() -> void {
       }
 
       if (!InternalImportResource(res_path_abs, new_guid_to_src_abs_path, new_guid_to_res_abs_path,
-        new_src_abs_path_to_guid, new_id_to_type, *importer, guid)) {
+        new_src_abs_path_to_guid, new_id_to_entry, *importer, guid)) {
         spdlog::trace("Failed to import resource at file [{}]. Removing resource and meta files.",
           ToUntypedStdSv(res_path_abs.u8string()));
         cleanup_res_and_meta_files();
@@ -129,7 +129,7 @@ auto ResourceDB::Refresh() -> void {
           ToUntypedStdSv(res_path_abs.u8string()));
 
         if (!InternalImportResource(res_path_abs, new_guid_to_src_abs_path, new_guid_to_res_abs_path,
-          new_src_abs_path_to_guid, new_id_to_type, *importer, guid)) {
+          new_src_abs_path_to_guid, new_id_to_entry, *importer, guid)) {
           spdlog::trace(
             "Failed to reimport external resource at file [{}]. Removing resource, meta, and binary cache files.",
             ToUntypedStdSv(res_path_abs.u8string()));
@@ -153,14 +153,15 @@ auto ResourceDB::Refresh() -> void {
     if (importer->IsNativeImporter()) {
       // Native import is basically no-op, we can use it to determine the type
       if (std::vector<ResourceImportResult> results; importer->Import(res_path_abs, results) && !results.empty()) {
-        new_id_to_type.emplace(ResourceId{guid, 0}, results[0].runtime_type);
+        new_id_to_entry.emplace(ResourceId{guid, 0}, ResourceEntry{results[0].runtime_type, results[0].name});
       } else {
         spdlog::error("Failed to query native resource type from file [{}].", ToUntypedStdSv(res_path_abs.u8string()));
       }
     } else {
       if (auto const info{PeekBinaryResourcePackage(MakeExternalResourceBinaryPathAbs(guid))}) {
         for (std::size_t i{0}; i < info->entries.size(); ++i) {
-          new_id_to_type.emplace(ResourceId{guid, static_cast<int>(i)}, info->entries[i].runtime_type);
+          new_id_to_entry.emplace(ResourceId{guid, static_cast<int>(i)},
+            ResourceEntry{info->entries[i].runtime_type, info->entries[i].name});
         }
       } else {
         spdlog::error("Failed to query resource type for external resource at file [{}].",
@@ -190,11 +191,8 @@ auto ResourceDB::Refresh() -> void {
 
   // We unload resources that are no longer present in the current file system directory.
   for (auto const& guid : guid_to_src_abs_path_ | std::views::keys) {
-    if (!new_guid_to_src_abs_path.contains(guid) && App::Instance().GetResourceManager().
-                                                                    IsLoaded(ResourceId{guid, 0})) {
-      if (*selected_object_ptr_ == App::Instance().GetResourceManager().GetOrLoad(ResourceId{guid, 0})) {
-        *selected_object_ptr_ = nullptr;
-      }
+    if (!new_guid_to_src_abs_path.contains(guid)) {
+      ClearSelectionIfGuid(guid);
       UnloadResourcesFromFile(guid);
     }
   }
@@ -214,7 +212,7 @@ auto ResourceDB::Refresh() -> void {
 
   guid_to_src_abs_path_ = std::move(new_guid_to_src_abs_path);
   guid_to_load_abs_path_ = std::move(new_guid_to_res_abs_path);
-  id_to_type_ = std::move(new_id_to_type);
+  id_to_entry_ = std::move(new_id_to_entry);
   src_abs_path_to_guid_ = std::move(new_src_abs_path_to_guid);
 
   spdlog::trace("Updating resource mappings.");
@@ -248,7 +246,7 @@ auto ResourceDB::ChangeProjectDir(std::filesystem::path const& proj_dir_abs) -> 
 
   guid_to_src_abs_path_.clear();
   guid_to_load_abs_path_.clear();
-  id_to_type_.clear();
+  id_to_entry_.clear();
   src_abs_path_to_guid_.clear();
 
   Refresh();
@@ -283,7 +281,7 @@ auto ResourceDB::CreateResource(std::unique_ptr<NativeResource>&& res,
   res->SetName(target_path_res_dir_rel.stem().string());
 
   guid_to_src_abs_path_.insert_or_assign(res->GetId().GetGuid(), res_path_abs);
-  id_to_type_.insert_or_assign(res->GetId(), rttr::type::get(res));
+  id_to_entry_.insert_or_assign(res->GetId(), ResourceEntry{rttr::type::get(res), res->GetName()});
   guid_to_load_abs_path_.insert_or_assign(res->GetId().GetGuid(), res_path_abs);
   src_abs_path_to_guid_.insert_or_assign(res_path_abs, res->GetId().GetGuid());
 
@@ -321,13 +319,8 @@ auto ResourceDB::ImportResource(std::filesystem::path const& res_path_res_dir_re
   auto guid{Guid::Invalid()};
 
   // If a meta file already exists for the resource, we attempt to reimport it and keep its Guid.
-  if (ReadMeta(GetResourceDirectoryAbsolutePath() / res_path_res_dir_rel, std::addressof(guid), nullptr) &&
-      App::Instance()
-      .GetResourceManager().IsLoaded(ResourceId{guid, 0})) {
-    if (*selected_object_ptr_ == App::Instance().GetResourceManager().GetOrLoad(ResourceId{guid, 0})) {
-      *selected_object_ptr_ = nullptr;
-    }
-
+  if (ReadMeta(GetResourceDirectoryAbsolutePath() / res_path_res_dir_rel, std::addressof(guid), nullptr)) {
+    ClearSelectionIfGuid(guid);
     UnloadResourcesFromFile(guid);
   }
 
@@ -337,7 +330,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& res_path_res_dir_re
   }
 
   if (!InternalImportResource(res_dir_abs_ / res_path_res_dir_rel, guid_to_src_abs_path_, guid_to_load_abs_path_,
-    src_abs_path_to_guid_, id_to_type_, *importer, guid)) {
+    src_abs_path_to_guid_, id_to_entry_, *importer, guid)) {
     return false;
   }
 
@@ -399,7 +392,7 @@ auto ResourceDB::DeleteResourceFile(Guid const& guid) -> void {
   }
 
   guid_to_load_abs_path_.erase(guid);
-  std::erase_if(id_to_type_, [&guid](auto const& pair) { return pair.first.GetGuid() == guid; });
+  std::erase_if(id_to_entry_, [&guid](auto const& pair) { return pair.first.GetGuid() == guid; });
 
   auto [res_mappings, file_mappings]{CreateMappings()};
   App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
@@ -609,13 +602,12 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
                                         std::map<Guid, std::filesystem::path>& guid_to_src_abs_path,
                                         std::map<Guid, std::filesystem::path>& guid_to_res_abs_path,
                                         std::map<std::filesystem::path, Guid>& src_abs_path_to_guid,
-                                        std::map<ResourceId, rttr::type>& id_to_type, ResourceImporter& importer,
+                                        std::map<ResourceId, ResourceEntry>& id_to_entry, ResourceImporter& importer,
                                         Guid const& guid) const -> bool {
   if (!WriteMeta(res_path_abs, guid, importer)) {
     return false;
   }
 
-  // TODO implement multi-resource support
   std::vector<ResourceImportResult> import_results;
 
   if (!importer.Import(res_path_abs, import_results)) {
@@ -635,7 +627,8 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
   src_abs_path_to_guid.insert_or_assign(res_path_abs, guid);
 
   for (std::size_t i{0}; i < import_results.size(); ++i) {
-    id_to_type.insert_or_assign(ResourceId{guid, static_cast<int>(i)}, import_results[i].runtime_type);
+    id_to_entry.insert_or_assign(ResourceId{guid, static_cast<int>(i)},
+      ResourceEntry{import_results[i].runtime_type, import_results[i].name});
   }
   return true;
 }
@@ -646,19 +639,11 @@ auto ResourceDB::CreateMappings() const noexcept -> std::pair<
   std::map<ResourceId, ResourceManager::ResourceDescription> res_mappings;
   std::map<Guid, std::filesystem::path> file_mappings;
 
-  for (auto const& [id, type] : id_to_type_) {
+  for (auto const& [id, entry] : id_to_entry_) {
     auto const guid{id.GetGuid()};
 
-    if (auto const it{guid_to_src_abs_path_.find(guid)};
-      it != std::end(guid_to_src_abs_path_)) {
-      // TODO add proper name extraction
-      auto name{it->second.stem().string()};
-
-      if (id.GetIdxInFile() != 0) {
-        name += "[" + std::to_string(id.GetIdxInFile()) + "]";
-      }
-
-      res_mappings.emplace(id, ResourceManager::ResourceDescription{name, type});
+    if (auto const it{guid_to_src_abs_path_.find(guid)}; it != std::end(guid_to_src_abs_path_)) {
+      res_mappings.emplace(id, ResourceManager::ResourceDescription{entry.name, entry.type});
     } else {
       spdlog::error("Resource with ID [{}, {}] has no source path in the resource database.",
         guid.ToString(), id.GetIdxInFile());
@@ -708,9 +693,18 @@ auto ResourceDB::WriteBinaryResourcePackage(
 
 
 auto ResourceDB::UnloadResourcesFromFile(Guid const& guid) -> void {
-  for (auto const& id : id_to_type_ | std::views::keys) {
+  for (auto const& id : id_to_entry_ | std::views::keys) {
     if (id.GetGuid() == guid) {
       App::Instance().GetResourceManager().Unload(id);
+    }
+  }
+}
+
+
+auto ResourceDB::ClearSelectionIfGuid(Guid const& guid) const -> void {
+  if (*selected_object_ptr_) {
+    if (auto const res{dynamic_cast<Resource*>(*selected_object_ptr_)}; res && res->GetId().GetGuid() == guid) {
+      *selected_object_ptr_ = nullptr;
     }
   }
 }

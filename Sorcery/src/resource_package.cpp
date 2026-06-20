@@ -1,7 +1,6 @@
 #include "resource_package.hpp"
 
 #include <algorithm>
-#include <exception>
 #include <fstream>
 
 #include "Serialization.hpp"
@@ -214,21 +213,31 @@ auto PeekBinaryResourcePackage(
   try {
     std::ifstream file{file_path_abs, std::ios::binary};
 
+    if (!file) {
+      return std::nullopt;
+    }
+
     resource_package::Header header;
 
-    file.read(reinterpret_cast<char*>(&header.magic), sizeof(header.magic));
+    if (!file.read(reinterpret_cast<char*>(&header.magic), sizeof(header.magic))) {
+      return std::nullopt;
+    }
 
     if (header.magic != resource_package::kMagic) {
       return std::nullopt;
     }
 
-    file.read(reinterpret_cast<char*>(&header.version), sizeof(header.version));
+    if (!file.read(reinterpret_cast<char*>(&header.version), sizeof(header.version))) {
+      return std::nullopt;
+    }
 
     if (header.version != 1) {
       return std::nullopt;
     }
 
-    file.read(reinterpret_cast<char*>(&header.resource_count), sizeof(header.resource_count));
+    if (!file.read(reinterpret_cast<char*>(&header.resource_count), sizeof(header.resource_count))) {
+      return std::nullopt;
+    }
 
     ResourcePackageInfo package_info;
     package_info.entries.reserve(header.resource_count);
@@ -236,12 +245,29 @@ auto PeekBinaryResourcePackage(
     for (std::uint32_t i{0}; i < header.resource_count; i++) {
       resource_package::Entry entry;
 
-      file.read(reinterpret_cast<char*>(&entry.payload_kind), sizeof(entry.payload_kind));
-      file.read(reinterpret_cast<char*>(&entry.runtime_type), sizeof(entry.runtime_type));
-      file.read(reinterpret_cast<char*>(&entry.name_offset), sizeof(entry.name_offset));
-      file.read(reinterpret_cast<char*>(&entry.name_size), sizeof(entry.name_size));
-      file.read(reinterpret_cast<char*>(&entry.data_offset), sizeof(entry.data_offset));
-      file.read(reinterpret_cast<char*>(&entry.data_size), sizeof(entry.data_size));
+      if (!file.read(reinterpret_cast<char*>(&entry.payload_kind), sizeof(entry.payload_kind))) {
+        return std::nullopt;
+      }
+
+      if (!file.read(reinterpret_cast<char*>(&entry.runtime_type), sizeof(entry.runtime_type))) {
+        return std::nullopt;
+      }
+
+      if (!file.read(reinterpret_cast<char*>(&entry.name_offset), sizeof(entry.name_offset))) {
+        return std::nullopt;
+      }
+
+      if (!file.read(reinterpret_cast<char*>(&entry.name_size), sizeof(entry.name_size))) {
+        return std::nullopt;
+      }
+
+      if (!file.read(reinterpret_cast<char*>(&entry.data_offset), sizeof(entry.data_offset))) {
+        return std::nullopt;
+      }
+
+      if (!file.read(reinterpret_cast<char*>(&entry.data_size), sizeof(entry.data_size))) {
+        return std::nullopt;
+      }
 
       auto const type{ToRttrType(entry.runtime_type)};
 
@@ -261,7 +287,7 @@ auto PeekBinaryResourcePackage(
     }
 
     return package_info;
-  } catch ([[maybe_unused]] std::exception const& e) {
+  } catch (...) {
     return std::nullopt;
   }
 }
