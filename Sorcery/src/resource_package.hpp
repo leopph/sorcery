@@ -13,9 +13,10 @@
 
 namespace sorcery {
 enum class ResourcePackagePayloadKind: std::uint8_t {
-  kTexture  = 0,
-  kMesh     = 1,
-  kMaterial = 2,
+  kInvalid  = 0,
+  kTexture  = 1,
+  kMesh     = 2,
+  kMaterial = 3,
 };
 
 

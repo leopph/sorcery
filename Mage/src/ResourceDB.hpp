@@ -7,7 +7,7 @@
 #include "NativeResource.hpp"
 #include "observer_ptr.hpp"
 #include "resource_manager.hpp"
-#include "resource_stuff.hpp"
+#include "resource_package.hpp"
 #include "ResourceImporters/resource_importer.hpp"
 
 
@@ -86,7 +86,7 @@ public:
    * Deletes the resource file associated with the guid.
    * If the resource file does not exist, or the guid is invalid, the deletion will fail.
    */
-  auto DeleteResource(Guid const& guid) -> void;
+  auto DeleteResources(Guid const& guid) -> void;
 
 
   /**

@@ -253,7 +253,7 @@ auto TextureImporter::Import(std::filesystem::path const& src,
           : rttr::type::get_by_name("")
   };
 
-  results.emplace_back(ResourceDesc{imported_type, ExternalResourceCategory::kTexture}, std::move(bytes));
+  results.emplace_back(ResourcePackagePayloadKind::kTexture, imported_type, src.filename().string(), std::move(bytes));
   return true;
 }
 }

@@ -750,7 +750,8 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<Resource
 
   SerializeToBinary(mesh_data.idx32, bytes);
 
-  results.emplace_back(ResourceDesc{rttr::type::get<Mesh>(), ExternalResourceCategory::kMesh}, std::move(bytes));
+  results.emplace_back(ResourcePackagePayloadKind::kMesh, rttr::type::get<Mesh>(), "Placeholder Mesh Name",
+    std::move(bytes));
   return true;
 }
 }

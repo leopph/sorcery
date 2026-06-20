@@ -130,10 +130,8 @@ auto ResourceDB::Refresh() -> void {
         new_guid_to_res_abs_path.emplace(guid, res_path_abs);
       }
 
-      auto const imported_type{importer->GetImportedType(res_path_abs)};
-
-      spdlog::trace("Imported resource of type [{}] with guid [{}] from resource file [{}].",
-        imported_type.get_name().to_string(), guid.ToString(), ToUntypedStdSv(entry.path().u8string()));
+      spdlog::trace("Imported resource file [{}] with guid [{}].",
+        ToUntypedStdSv(entry.path().u8string()), guid.ToString());
 
       new_guid_to_src_abs_path.emplace(guid, res_path_abs);
       new_id_to_type.emplace(guid, imported_type);
@@ -178,10 +176,8 @@ auto ResourceDB::Refresh() -> void {
         continue;
       }
 
-
-      spdlog::trace("Imported resource of type [{}] with guid [{}] from resource file [{}] as new.",
-        new_id_to_type[guid].get_name().to_string(), new_src_abs_path_to_guid[entry.path()].ToString(),
-        ToUntypedStdSv(entry.path().u8string()));
+      spdlog::trace("Imported resource file [{}] with guid [{}] as new.",
+        ToUntypedStdSv(entry.path().u8string()), new_src_abs_path_to_guid[entry.path()].ToString());
       continue;
     }
 
@@ -391,7 +387,7 @@ auto ResourceDB::MoveDirectory(std::filesystem::path const& src_path_res_dir_rel
 }
 
 
-auto ResourceDB::DeleteResource(Guid const& guid) -> void {
+auto ResourceDB::DeleteResources(Guid const& guid) -> void {
   App::Instance().GetResourceManager().Unload(ResourceId{guid, 0});
 
   if (auto const it{guid_to_src_abs_path_.find(guid)}; it != std::end(guid_to_src_abs_path_)) {
@@ -425,7 +421,7 @@ auto ResourceDB::DeleteDirectory(std::filesystem::path const& path_res_dir_rel) 
   }
 
   for (auto const& guid : resourcesToDelete) {
-    DeleteResource(guid);
+    DeleteResources(guid);
   }
 
   remove_all(pathAbs);

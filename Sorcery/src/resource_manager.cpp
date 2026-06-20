@@ -11,7 +11,7 @@
 #include "FileIo.hpp"
 #include "job_system.hpp"
 #include "Reflection.hpp"
-#include "resource_stuff.hpp"
+#include "resource_package.hpp"
 #include "rendering/render_manager.hpp"
 #include "Resources/Scene.hpp"
 
@@ -300,6 +300,12 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
             }
 
             auto const& entry{(*entries)[res_file_idx]};
+
+            if (entry.data_offset + entry.data_size > file_bytes.size()) {
+              // TODO log error
+              return;
+            }
+
             auto const payload_bytes{file_bytes.subspan(entry.data_offset, entry.data_size)};
 
             switch (entry.payload_kind) {
@@ -315,6 +321,11 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
 
               case ResourcePackagePayloadKind::kMaterial: {
                 res = LoadMaterial(payload_bytes);
+                break;
+              }
+
+              case ResourcePackagePayloadKind::kInvalid: {
+                // TODO Log error
                 break;
               }
             }

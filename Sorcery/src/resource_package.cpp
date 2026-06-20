@@ -1,4 +1,4 @@
-#include "resource_stuff.hpp"
+#include "resource_package.hpp"
 
 #include <algorithm>
 
@@ -49,7 +49,10 @@ auto PackBinaryResourcePackage(
     .version = 1,
     .resource_count = static_cast<std::uint32_t>(imports.size())
   };
-  std::ranges::copy_n(reinterpret_cast<std::byte const*>(&header), sizeof(header), std::back_inserter(package_bytes));
+
+  SerializeToBinary(header.magic, package_bytes);
+  SerializeToBinary(header.version, package_bytes);
+  SerializeToBinary(header.resource_count, package_bytes);
 
   std::vector<resource_package::Entry> entries;
 
@@ -79,7 +82,12 @@ auto PackBinaryResourcePackage(
   }
 
   for (auto const& entry : entries) {
-    std::ranges::copy_n(reinterpret_cast<std::byte const*>(&entry), sizeof(entry), std::back_inserter(package_bytes));
+    SerializeToBinary(entry.payload_kind, package_bytes);
+    SerializeToBinary(entry.runtime_type, package_bytes);
+    SerializeToBinary(entry.name_offset, package_bytes);
+    SerializeToBinary(entry.name_size, package_bytes);
+    SerializeToBinary(entry.data_offset, package_bytes);
+    SerializeToBinary(entry.data_size, package_bytes);
   }
 
   for (auto const& import_data : imports) {

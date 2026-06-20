@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Reflection.hpp"
-#include "resource_import_result.hpp"
+#include "resource_package.hpp"
 
 #include <filesystem>
 #include <string>

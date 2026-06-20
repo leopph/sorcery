@@ -33,7 +33,8 @@ auto NativeResourceImporter::Import(std::filesystem::path const& src,
           : rttr::type::get_by_name("")
   };
 
-  results.emplace_back(ResourceDesc{imported_type, std::nullopt});
+  results.emplace_back(ResourcePackagePayloadKind::kInvalid, imported_type, src.filename().string(),
+    std::vector<std::byte>{});
   return true;
 }
 
