@@ -211,6 +211,8 @@ auto PeekBinaryResourcePackage(
   std::filesystem::path const& file_path_abs
 ) noexcept -> std::optional<ResourcePackageInfo> {
   try {
+    auto const file_size{std::filesystem::file_size(file_path_abs)};
+
     std::ifstream file{file_path_abs, std::ios::binary};
 
     if (!file) {
@@ -275,13 +277,27 @@ auto PeekBinaryResourcePackage(
         return std::nullopt;
       }
 
+      if (entry.name_offset > file_size ||
+          entry.name_size > file_size - entry.name_offset ||
+          entry.data_offset > file_size ||
+          entry.data_size > file_size - entry.data_offset) {
+        return std::nullopt;
+      }
+
       auto const last_pos = file.tellg();
-      file.seekg(entry.name_offset, std::ios::beg);
+      if (!file.seekg(entry.name_offset, std::ios::beg)) {
+        return std::nullopt;
+      }
 
       std::string name(entry.name_size, '\0');
-      file.read(name.data(), entry.name_size);
 
-      file.seekg(last_pos, std::ios::beg);
+      if (!file.read(name.data(), entry.name_size)) {
+        return std::nullopt;
+      }
+
+      if (!file.seekg(last_pos, std::ios::beg)) {
+        return std::nullopt;
+      }
 
       package_info.entries.emplace_back(*type, std::move(name));
     }
