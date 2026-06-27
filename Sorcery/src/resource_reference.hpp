@@ -15,12 +15,6 @@
 
 
 namespace sorcery {
-enum class SerializedResourceRefScope : std::uint8_t {
-  kLocal,
-  kGlobal
-};
-
-
 struct YamlDeserializeContext {
   Guid current_guid{Guid::Invalid()};
 };

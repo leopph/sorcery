@@ -238,7 +238,7 @@ auto Scene::Load() -> void {
 
       auto const actual_type{type.is_wrapper() ? type.get_wrapped_type() : type};
 
-      if (node.IsScalar() && actual_type.is_pointer() && actual_type.get_raw_type().is_derived_from(
+      if (node.IsMap() && actual_type.is_pointer() && actual_type.get_raw_type().is_derived_from(
             rttr::type::get<Resource>())) {
         if (auto const res_id{DeserializeResourceId(node, yaml_ctx_).value_or(ResourceId::Invalid())};
           res_id.IsValid()) {
