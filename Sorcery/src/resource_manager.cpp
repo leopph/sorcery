@@ -284,6 +284,10 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
         loader_job = job_system_->CreateJob([this, &job_data] {
           std::unique_ptr<Resource> res;
 
+          YamlDeserializeContext const ctx{
+            .current_guid = job_data.res_id->GetGuid()
+          };
+
           if (job_data.path_abs.extension() == EXTERNAL_RESOURCE_EXT) {
             std::vector<std::uint8_t> file_data;
 
@@ -314,7 +318,7 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
               }
 
               case ResourcePackagePayloadKind::kMaterial: {
-                res = LoadMaterial(payload_bytes);
+                res = LoadMaterial(payload_bytes, ctx);
                 break;
               }
 
@@ -324,9 +328,9 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
               }
             }
           } else if (job_data.path_abs.extension() == SCENE_RESOURCE_EXT) {
-            res = CreateDeserialize<Scene>(YAML::LoadFile(job_data.path_abs.string()));
+            res = CreateDeserialize<Scene>(YAML::LoadFile(job_data.path_abs.string()), ctx);
           } else if (job_data.path_abs.extension() == MATERIAL_RESOURCE_EXT) {
-            res = CreateDeserialize<Material>(YAML::LoadFile(job_data.path_abs.string()));
+            res = CreateDeserialize<Material>(YAML::LoadFile(job_data.path_abs.string()), ctx);
           }
 
           if (res) {
@@ -707,10 +711,13 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 }
 
 
-auto ResourceManager::LoadMaterial(std::span<std::byte const> const bytes) -> MaybeNull<std::unique_ptr<Resource>> {
+auto ResourceManager::LoadMaterial(
+  std::span<std::byte const> const bytes,
+  YamlDeserializeContext const& ctx
+) -> MaybeNull<std::unique_ptr<Resource>> {
   // TODO rewrite this to spanstream when upgrading to C++23
   return CreateDeserialize<Material>(YAML::Load(std::string{
     reinterpret_cast<char const*>(bytes.data()), bytes.size()
-  }));
+  }), ctx);
 }
 }

@@ -151,6 +151,7 @@
     <ClCompile Include="src\rendering\render_manager.cpp" />
     <ClCompile Include="src\resource_id.cpp" />
     <ClCompile Include="src\resource_package.cpp" />
+    <ClCompile Include="src\resource_reference.cpp" />
     <ClCompile Include="src\scene_objects\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\scene_objects\CameraControllerComponent.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="src\rendering\render_target.hpp" />
     <ClInclude Include="src\resource_id.hpp" />
     <ClInclude Include="src\resource_package.hpp" />
+    <ClInclude Include="src\resource_reference.hpp" />
     <ClInclude Include="src\scene_objects\CameraControllerComponent.hpp" />
     <ClInclude Include="src\scene_objects\MeshComponentBase.hpp" />
     <ClInclude Include="src\scene_objects\OscillateComponent.h" />

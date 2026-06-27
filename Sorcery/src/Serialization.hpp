@@ -2,9 +2,7 @@
 
 #include <algorithm>
 #include <bit>
-#include <cassert>
 #include <concepts>
-#include <cstdint>
 #include <limits>
 #include <span>
 #include <string_view>
@@ -17,12 +15,12 @@
 #include <yaml-cpp/yaml.h>
 #pragma warning (pop)
 
-#include "resource_id.hpp"
 #include "Core.hpp"
-#include "Math.hpp"
 #include "Guid.hpp"
-#include "Reflection.hpp"
+#include "Math.hpp"
 #include "Object.hpp"
+#include "Reflection.hpp"
+#include "resource_reference.hpp"
 
 
 namespace YAML {
@@ -35,61 +33,109 @@ struct convert<sorcery::Vector<T, N>> {
 
 template<>
 struct convert<sorcery::Quaternion> {
-  LEOPPHAPI static auto encode(sorcery::Quaternion const& q) -> Node;
-  LEOPPHAPI static auto decode(Node const& node, sorcery::Quaternion& q) -> bool;
+  SORCERYAPI static auto encode(sorcery::Quaternion const& q) -> Node;
+  SORCERYAPI static auto decode(Node const& node, sorcery::Quaternion& q) -> bool;
 };
 
 
 template<>
 struct convert<sorcery::Guid> {
-  LEOPPHAPI static auto encode(sorcery::Guid const& guid) -> Node;
-  LEOPPHAPI static auto decode(Node const& node, sorcery::Guid& guid) -> bool;
-};
-
-
-template<>
-struct convert<sorcery::ResourceId> {
-  LEOPPHAPI static auto encode(sorcery::ResourceId const& res_id) -> Node;
-  LEOPPHAPI static auto decode(Node const& node, sorcery::ResourceId& res_id) -> bool;
+  SORCERYAPI static auto encode(sorcery::Guid const& guid) -> Node;
+  SORCERYAPI static auto decode(Node const& node, sorcery::Guid& guid) -> bool;
 };
 }
 
 
 namespace sorcery {
-template<typename T> requires (!std::derived_from<T, Object>)
-[[nodiscard]] auto ReflectionSerializeToYaml(T const& obj,
-                                             std::function<YAML::Node(rttr::variant const&)> const& extensionFunc = {})
-  noexcept -> YAML::Node;
-[[nodiscard]] LEOPPHAPI auto ReflectionSerializeToYaml(Object const& obj,
-                                                       std::function<YAML::Node(rttr::variant const&)> const&
-                                                         extensionFunc = {}) noexcept -> YAML::Node;
-[[nodiscard]] LEOPPHAPI auto ReflectionSerializeToYaml(rttr::variant const& v,
-                                                       std::function<YAML::Node(rttr::variant const&)> const&
-                                                         extensionFunc = {}) noexcept -> YAML::Node;
+// Reflection-based serialization to YAML
 
 template<typename T> requires (!std::derived_from<T, Object>)
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj,
-                                   std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {})
-  noexcept -> void;
-LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj,
-                                             std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc
-                                               = {}) noexcept -> void;
-LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
-                                             std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc
-                                               = {}) noexcept -> void;
-LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v,
-                                             std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc
-                                               = {}) noexcept -> void;
+[[nodiscard]]
+auto ReflectionSerializeToYaml(
+  T const& obj,
+  std::function<YAML::Node(rttr::variant const&)> const& extension_func = {}
+) noexcept -> YAML::Node;
 
-template<typename T> requires std::is_integral_v<T> || (
-                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559) || std::is_enum_v<T>
-auto SerializeToBinary(T val, std::vector<std::byte>& bytes) noexcept -> void;
-LEOPPHAPI auto SerializeToBinary(std::string_view sv, std::vector<std::byte>& bytes) noexcept -> void;
+[[nodiscard]] SORCERYAPI
+auto ReflectionSerializeToYaml(
+  Object const& obj,
+  std::function<YAML::Node(rttr::variant const&)> const& extension_func = {}
+) noexcept -> YAML::Node;
 
-template<typename T> requires std::is_integral_v<T> || (
-                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559) || std::is_enum_v<T>
-[[nodiscard]] auto DeserializeFromBinary(std::span<std::byte const> bytes, T& val) noexcept -> bool;
-[[nodiscard]] LEOPPHAPI auto DeserializeFromBinary(std::span<std::byte const> bytes, std::string& str) noexcept -> bool;
+[[nodiscard]] SORCERYAPI
+auto ReflectionSerializeToYaml(
+  rttr::variant const& v,
+  std::function<YAML::Node(rttr::variant const&)> const& extension_func = {}
+) noexcept -> YAML::Node;
+
+// Reflection-based deserialization from YAML
+
+template<typename T> requires (!std::derived_from<T, Object>)
+auto ReflectionDeserializeFromYaml(
+  YAML::Node const& node,
+  T& obj,
+  YamlDeserializeContext const& ctx,
+  std::function<void(YAML::Node const&, rttr::variant&, YamlDeserializeContext const&)> const& extension_func = {}
+) noexcept -> void;
+
+SORCERYAPI
+auto ReflectionDeserializeFromYaml(
+  YAML::Node const& node,
+  Object& obj,
+  YamlDeserializeContext const& ctx,
+  std::function<void(YAML::Node const&, rttr::variant&, YamlDeserializeContext const&)> const& extension_func = {}
+) noexcept -> void;
+
+SORCERYAPI
+auto ReflectionDeserializeFromYaml(
+  YAML::Node const& node,
+  rttr::variant& v,
+  YamlDeserializeContext const& ctx,
+  std::function<void(YAML::Node const&, rttr::variant&, YamlDeserializeContext const&)> const& extension_func = {}
+) noexcept -> void;
+
+SORCERYAPI
+auto ReflectionDeserializeFromYaml(
+  YAML::Node const& node,
+  rttr::variant&& v,
+  YamlDeserializeContext const& ctx,
+  std::function<void(YAML::Node const&, rttr::variant&, YamlDeserializeContext const&)> const& extension_func = {}
+) noexcept -> void;
+
+// Serialization to binary
+
+template<typename T>
+  requires std::is_integral_v<T>
+           || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559)
+           || std::is_enum_v<T>
+auto SerializeToBinary(
+  T val,
+  std::vector<std::byte>& bytes
+) noexcept -> void;
+
+SORCERYAPI
+auto SerializeToBinary(
+  std::string_view sv,
+  std::vector<std::byte>& bytes
+) noexcept -> void;
+
+// Deserialization from binary
+
+template<typename T>
+  requires std::is_integral_v<T>
+           || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559)
+           || std::is_enum_v<T>
+[[nodiscard]]
+auto DeserializeFromBinary(
+  std::span<std::byte const> bytes,
+  T& val
+) noexcept -> bool;
+
+[[nodiscard]] SORCERYAPI
+auto DeserializeFromBinary(
+  std::span<std::byte const> bytes,
+  std::string& str
+) noexcept -> bool;
 }
 
 

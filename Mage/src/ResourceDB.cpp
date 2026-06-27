@@ -542,7 +542,7 @@ auto ResourceDB::ReadMeta(std::filesystem::path const& res_path_abs, Guid* const
       return false;
     }
 
-    ReflectionDeserializeFromYaml(importer_props_node, *importer_ptr);
+    ReflectionDeserializeFromYaml(importer_props_node, *importer_ptr, {});
     importer->reset(importer_ptr);
   }
 

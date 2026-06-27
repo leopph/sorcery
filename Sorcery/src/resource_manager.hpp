@@ -97,7 +97,7 @@ private:
   ) -> MaybeNull<std::unique_ptr<Resource>>;
 
   [[nodiscard]] static auto LoadMaterial(
-    std::span<std::byte const> bytes
+    std::span<std::byte const> bytes, YamlDeserializeContext const& ctx
   ) -> MaybeNull<std::unique_ptr<Resource>>;
 
   inline static Guid const default_mtl_guid_{1, 0};

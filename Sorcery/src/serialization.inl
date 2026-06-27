@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cassert>
+
+
 namespace YAML {
 template<typename T, std::size_t N>
 auto convert<sorcery::Vector<T, N>>::encode(sorcery::Vector<T, N> const& v) -> Node {
@@ -27,16 +30,17 @@ auto convert<sorcery::Vector<T, N>>::decode(Node const& node, sorcery::Vector<T,
 
 namespace sorcery {
 template<typename T> requires (!std::derived_from<T, Object>)
-auto ReflectionSerializeToYaml(T const& obj,
-                               std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) noexcept ->
-  YAML::Node {
+auto ReflectionSerializeToYaml(
+  T const& obj,
+  std::function<YAML::Node(rttr::variant const&)> const& extension_func
+) noexcept -> YAML::Node {
   if constexpr (std::is_arithmetic_v<T> || std::is_enum_v<T>) {
-    return ReflectionSerializeToYaml(rttr::variant{obj}, extensionFunc);
+    return ReflectionSerializeToYaml(rttr::variant{obj}, extension_func);
   } else {
     auto const type{rttr::type::get(obj)};
     assert(type.is_valid());
     if (type.is_sequential_container()) {
-      return ReflectionSerializeToYaml(rttr::variant{std::ref(obj)}, extensionFunc);
+      return ReflectionSerializeToYaml(rttr::variant{std::ref(obj)}, extension_func);
     }
 
     if (type.is_associative_container() || type.is_pointer() || type.is_wrapper()) {
@@ -48,7 +52,7 @@ auto ReflectionSerializeToYaml(T const& obj,
       for (auto const& prop : type.get_properties()) {
         auto propValue{prop.get_value(obj)};
         assert(propValue.is_valid());
-        ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(propValue, extensionFunc);
+        ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(propValue, extension_func);
       }
       return ret;
     }
@@ -59,13 +63,16 @@ auto ReflectionSerializeToYaml(T const& obj,
 
 
 template<typename T> requires (!std::derived_from<T, Object>)
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj,
-                                   std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept
-  -> void {
+auto ReflectionDeserializeFromYaml(
+  YAML::Node const& node,
+  T& obj,
+  YamlDeserializeContext const& ctx,
+  std::function<void(YAML::Node const&, rttr::variant&, YamlDeserializeContext const&)> const& extension_func
+) noexcept -> void {
   if constexpr (std::is_arithmetic_v<T> || std::is_enum_v<T>) {
     rttr::variant v{obj};
     assert(v.is_valid());
-    ReflectionDeserializeFromYaml(node, v, extensionFunc);
+    ReflectionDeserializeFromYaml(node, v, ctx, extension_func);
     assert(v.is_valid());
     obj = v.get_value<T>();
   } else {
@@ -73,7 +80,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj,
     assert(type.is_valid());
 
     if (type.is_sequential_container()) {
-      ReflectionDeserializeFromYaml(node, rttr::variant{std::ref(obj)}, extensionFunc);
+      ReflectionDeserializeFromYaml(node, rttr::variant{std::ref(obj)}, ctx, extension_func);
       return;
     }
 
@@ -85,7 +92,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj,
       for (auto const& prop : type.get_properties()) {
         auto propValue{prop.get_value(obj)};
         assert(propValue.is_valid());
-        ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], propValue, extensionFunc);
+        ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], propValue, ctx, extension_func);
         assert(propValue.is_valid());
         [[maybe_unused]] auto const success{prop.set_value(obj, propValue)};
         assert(success);
@@ -95,15 +102,19 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj,
 }
 
 
-template<typename T> requires std::is_integral_v<T> || (
-                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559) || std::is_enum_v<T>
+template<typename T>
+  requires std::is_integral_v<T>
+           || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559)
+           || std::is_enum_v<T>
 auto SerializeToBinary(T const val, std::vector<std::byte>& bytes) noexcept -> void {
   std::ranges::copy_n(reinterpret_cast<std::byte const*>(&val), sizeof(val), std::back_inserter(bytes));
 }
 
 
-template<typename T> requires std::is_integral_v<T> || (
-                                std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559) || std::is_enum_v<T>
+template<typename T>
+  requires std::is_integral_v<T>
+           || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559)
+           || std::is_enum_v<T>
 auto DeserializeFromBinary(std::span<std::byte const> bytes, T& val) noexcept -> bool {
   if (sizeof(T) > std::size(bytes)) {
     return false;

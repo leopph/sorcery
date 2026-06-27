@@ -1,18 +1,17 @@
 #include "Material.hpp"
 
+#include <bit>
+
+#include <imgui.h>
+
 #include "../app.hpp"
 #include "../Serialization.hpp"
 #undef FindResource
 #include "../GUI.hpp"
 #include "../job_system.hpp"
 #include "../resource_manager.hpp"
+#include "../resource_reference.hpp"
 #include "../rendering/render_manager.hpp"
-
-#include <imgui.h>
-
-#include <bit>
-#include <cstdint>
-#include <tuple>
 
 
 RTTR_REGISTRATION {
@@ -30,6 +29,269 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
+auto Material::OnDrawProperties(bool& changed) -> void {
+  NativeResource::OnDrawProperties(changed);
+
+  if (ImGui::BeginTable(std::format("{}", GetId().GetGuid().ToString()).c_str(), 2,
+    ImGuiTableFlags_SizingStretchSame)) {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::PushItemWidth(FLT_MIN);
+    ImGui::TableSetColumnIndex(1);
+    ImGui::PushItemWidth(-FLT_MIN);
+
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Text("Albedo Color");
+    ImGui::TableNextColumn();
+
+    if (Vector3 albedoColor{GetAlbedoVector()}; ImGui::ColorEdit3("##matAlbedoColor", albedoColor.GetData())) {
+      SetAlbedoVector(albedoColor);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Metallic");
+    ImGui::TableNextColumn();
+
+    if (f32 metallic{GetMetallic()}; ImGui::SliderFloat("##matMetallic", &metallic, 0.0f, 1.0f)) {
+      SetMetallic(metallic);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Roughness");
+    ImGui::TableNextColumn();
+
+    if (f32 roughness{GetRoughness()}; ImGui::SliderFloat("##matRoughness", &roughness, 0.0f, 1.0f)) {
+      SetRoughness(roughness);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Ambient Occlusion");
+    ImGui::TableNextColumn();
+
+    if (f32 ao{GetAo()}; ImGui::SliderFloat("##matAo", &ao, 0.0f, 1.0f)) {
+      SetAo(ao);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Albedo Map");
+    ImGui::TableNextColumn();
+    static ObjectPicker<Texture2D> albedoMapPicker;
+    if (auto albedoMap{GetAlbedoMap()}; albedoMapPicker.Draw(albedoMap)) {
+      SetAlbedoMap(albedoMap);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Metallic Map");
+    ImGui::TableNextColumn();
+    static ObjectPicker<Texture2D> metallicMapPicker;
+    if (auto metallicMap{GetMetallicMap()}; metallicMapPicker.Draw(metallicMap)) {
+      SetMetallicMap(metallicMap);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Roughness Map");
+    ImGui::TableNextColumn();
+    static ObjectPicker<Texture2D> roughnessMapPicker;
+    if (auto roughnessMap{GetRoughnessMap()}; roughnessMapPicker.Draw(roughnessMap)) {
+      SetRoughnessMap(roughnessMap);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Ambient Occlusion Map");
+    ImGui::TableNextColumn();
+    static ObjectPicker<Texture2D> aoMapPicker;
+    if (auto aoMap{GetAoMap()}; aoMapPicker.Draw(aoMap)) {
+      SetAoMap(aoMap);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Normal Map");
+    ImGui::TableNextColumn();
+    static ObjectPicker<Texture2D> normalMapPicker;
+    if (auto normalMap{GetNormalMap()}; normalMapPicker.Draw(normalMap)) {
+      SetNormalMap(normalMap);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Blend Mode");
+    ImGui::TableNextColumn();
+    if (char const* blendModeNames[]{"Opaque", "Alpha Clipping"}; ImGui::BeginCombo("##blendMode",
+      blendModeNames[static_cast<int>(GetBlendMode())])) {
+      for (auto i = 0; i < 2; i++) {
+        if (ImGui::Selectable(blendModeNames[i], i == static_cast<int>(GetBlendMode()))) {
+          SetBlendMode(static_cast<BlendMode>(i));
+          changed = true;
+        }
+      }
+      ImGui::EndCombo();
+    }
+
+    if (GetBlendMode() == BlendMode::AlphaClip) {
+      ImGui::TableNextColumn();
+      ImGui::Text("%s", "Alpha Threshold");
+      ImGui::TableNextColumn();
+      if (auto thresh{GetAlphaThreshold()}; ImGui::SliderFloat("##AlphaThresh", &thresh, 0, 1)) {
+        SetAlphaThreshold(thresh);
+        changed = true;
+      }
+
+      ImGui::TableNextColumn();
+      ImGui::Text("%s", "Opacity Mask");
+      ImGui::TableNextColumn();
+      static ObjectPicker<Texture2D> opacityMaskPicker;
+      if (auto opacityMask{GetOpacityMask()}; opacityMaskPicker.Draw(opacityMask)) {
+        SetOpacityMask(opacityMask);
+        changed = true;
+      }
+    }
+
+    ImGui::EndTable();
+  }
+}
+
+
+auto Material::Serialize() const noexcept -> YAML::Node {
+  YAML::Node ret;
+
+  ret["albedo"] = GetAlbedoVector();
+  ret["metallic"] = GetMetallic();
+  ret["roughness"] = GetRoughness();
+  ret["ao"] = GetAo();
+  ret["blendMode"] = static_cast<int>(GetBlendMode());
+  ret["alphaThresh"] = GetAlphaThreshold();
+
+  auto const albedoMap{GetAlbedoMap()};
+  ret["albedoMap"] = SerializeGlobalResourceId(albedoMap ? albedoMap->GetId() : ResourceId::Invalid());
+
+  auto const metallicMap{GetMetallicMap()};
+  ret["metallicMap"] = SerializeGlobalResourceId(metallicMap ? metallicMap->GetId() : ResourceId::Invalid());
+
+  auto const roughnessMap{GetRoughnessMap()};
+  ret["roughnessMap"] = SerializeGlobalResourceId(roughnessMap ? roughnessMap->GetId() : ResourceId::Invalid());
+
+  auto const aoMap{GetAoMap()};
+  ret["aoMap"] = SerializeGlobalResourceId(aoMap ? aoMap->GetId() : ResourceId::Invalid());
+
+  auto const normalMap{GetNormalMap()};
+  ret["normalMap"] = SerializeGlobalResourceId(normalMap ? normalMap->GetId() : ResourceId::Invalid());
+
+  auto const opacityMask{GetOpacityMask()};
+  ret["opacityMask"] = SerializeGlobalResourceId(opacityMask ? opacityMask->GetId() : ResourceId::Invalid());
+
+  return ret;
+}
+
+
+auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext const& ctx) noexcept -> void {
+  SetAlbedoVector(yaml_node["albedo"].as<Vector3>(GetAlbedoVector()));
+  SetMetallic(yaml_node["metallic"].as<float>(GetMetallic()));
+  SetRoughness(yaml_node["roughness"].as<float>(GetRoughness()));
+  SetAo(yaml_node["ao"].as<float>(GetAo()));
+  SetBlendMode(static_cast<BlendMode>(yaml_node["blendMode"].as<int>(static_cast<int>(GetBlendMode()))));
+  SetAlphaThreshold(yaml_node["alphaThresh"].as<float>(GetAlphaThreshold()));
+
+  struct JobData {
+    ResourceId res_id;
+    Texture2D* tex;
+  };
+
+  auto const loader_job_func{
+    [](JobData* const data) {
+      data->tex = App::Instance().GetResourceManager().GetOrLoad<Texture2D>(data->res_id);
+    }
+  };
+
+  ObserverPtr<Job> albedo_map_job{};
+  JobData albedo_map_job_data{};
+
+  ObserverPtr<Job> metallic_map_job{};
+  JobData metallic_map_job_data{};
+
+  ObserverPtr<Job> roughness_map_job{};
+  JobData roughness_map_job_data{};
+
+  ObserverPtr<Job> ao_map_job{};
+  JobData ao_map_job_data{};
+
+  ObserverPtr<Job> normal_map_job{};
+  JobData normal_map_job_data{};
+
+  ObserverPtr<Job> opacity_mask_job{};
+  JobData opacity_mask_job_data{};
+
+  if (auto const res_id{
+    DeserializeResourceId(yaml_node["albedoMap"], ctx).value_or(ResourceId::Invalid())
+  }; res_id.IsValid()) {
+    albedo_map_job_data.res_id = res_id;
+    albedo_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &albedo_map_job_data);
+    App::Instance().GetJobSystem().Run(albedo_map_job);
+  }
+
+  if (auto const res_id{
+    DeserializeResourceId(yaml_node["metallicMap"], ctx).value_or(ResourceId::Invalid())
+  }; res_id.IsValid()) {
+    metallic_map_job_data.res_id = res_id;
+    metallic_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &metallic_map_job_data);
+    App::Instance().GetJobSystem().Run(metallic_map_job);
+  }
+
+  if (auto const res_id{
+    DeserializeResourceId(yaml_node["roughnessMap"], ctx).value_or(ResourceId::Invalid())
+  }; res_id.IsValid()) {
+    roughness_map_job_data.res_id = res_id;
+    roughness_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &roughness_map_job_data);
+    App::Instance().GetJobSystem().Run(roughness_map_job);
+  }
+
+  if (auto const res_id{DeserializeResourceId(yaml_node["aoMap"], ctx).value_or(ResourceId::Invalid())}; res_id.
+    IsValid()) {
+    ao_map_job_data.res_id = res_id;
+    ao_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &ao_map_job_data);
+    App::Instance().GetJobSystem().Run(ao_map_job);
+  }
+
+  if (auto const res_id{
+    DeserializeResourceId(yaml_node["normalMap"], ctx).value_or(ResourceId::Invalid())
+  }; res_id.IsValid()) {
+    normal_map_job_data.res_id = res_id;
+    normal_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &normal_map_job_data);
+    App::Instance().GetJobSystem().Run(normal_map_job);
+  }
+
+  if (auto const res_id{
+    DeserializeResourceId(yaml_node["opacityMask"], ctx).value_or(ResourceId::Invalid())
+  }; res_id.IsValid()) {
+    opacity_mask_job_data.res_id = res_id;
+    opacity_mask_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &opacity_mask_job_data);
+    App::Instance().GetJobSystem().Run(opacity_mask_job);
+  }
+
+  for (auto const job : {
+         albedo_map_job, metallic_map_job, roughness_map_job, ao_map_job, normal_map_job, opacity_mask_job
+       }) {
+    if (job) {
+      App::Instance().GetJobSystem().Wait(job);
+    }
+  }
+
+  SetAlbedoMap(albedo_map_job_data.tex);
+  SetMetallicMap(metallic_map_job_data.tex);
+  SetRoughnessMap(roughness_map_job_data.tex);
+  SetAoMap(ao_map_job_data.tex);
+  SetNormalMap(normal_map_job_data.tex);
+  SetOpacityMask(opacity_mask_job_data.tex);
+}
+
+
 Material::Material() :
   cb_{rendering::ConstantBuffer<ShaderMaterial>::New(App::Instance().GetGraphicsDevice(), false).value()} {
   Update();
@@ -204,257 +466,5 @@ auto Material::Update() const -> void {
 
 auto Material::GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
   return cb_.GetBuffer();
-}
-
-
-auto Material::Serialize() const noexcept -> YAML::Node {
-  YAML::Node ret;
-
-  ret["albedo"] = GetAlbedoVector();
-  ret["metallic"] = GetMetallic();
-  ret["roughness"] = GetRoughness();
-  ret["ao"] = GetAo();
-  ret["blendMode"] = static_cast<int>(GetBlendMode());
-  ret["alphaThresh"] = GetAlphaThreshold();
-
-  auto const albedoMap{GetAlbedoMap()};
-  ret["albedoMap"] = albedoMap ? albedoMap->GetId() : ResourceId::Invalid();
-
-  auto const metallicMap{GetMetallicMap()};
-  ret["metallicMap"] = metallicMap ? metallicMap->GetId() : ResourceId::Invalid();
-
-  auto const roughnessMap{GetRoughnessMap()};
-  ret["roughnessMap"] = roughnessMap ? roughnessMap->GetId() : ResourceId::Invalid();
-
-  auto const aoMap{GetAoMap()};
-  ret["aoMap"] = aoMap ? aoMap->GetId() : ResourceId::Invalid();
-
-  auto const normalMap{GetNormalMap()};
-  ret["normalMap"] = normalMap ? normalMap->GetId() : ResourceId::Invalid();
-
-  auto const opacityMask{GetOpacityMask()};
-  ret["opacityMask"] = opacityMask ? opacityMask->GetId() : ResourceId::Invalid();
-
-  return ret;
-}
-
-
-auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
-  SetAlbedoVector(yamlNode["albedo"].as<Vector3>(GetAlbedoVector()));
-  SetMetallic(yamlNode["metallic"].as<float>(GetMetallic()));
-  SetRoughness(yamlNode["roughness"].as<float>(GetRoughness()));
-  SetAo(yamlNode["ao"].as<float>(GetAo()));
-  SetBlendMode(static_cast<BlendMode>(yamlNode["blendMode"].as<int>(static_cast<int>(GetBlendMode()))));
-  SetAlphaThreshold(yamlNode["alphaThresh"].as<float>(GetAlphaThreshold()));
-
-  struct JobData {
-    ResourceId res_id;
-    Texture2D* tex;
-  };
-
-  auto const loader_job_func{
-    [](JobData* const data) {
-      data->tex = App::Instance().GetResourceManager().GetOrLoad<Texture2D>(data->res_id);
-    }
-  };
-
-  ObserverPtr<Job> albedo_map_job{};
-  JobData albedo_map_job_data{};
-
-  ObserverPtr<Job> metallic_map_job{};
-  JobData metallic_map_job_data{};
-
-  ObserverPtr<Job> roughness_map_job{};
-  JobData roughness_map_job_data{};
-
-  ObserverPtr<Job> ao_map_job{};
-  JobData ao_map_job_data{};
-
-  ObserverPtr<Job> normal_map_job{};
-  JobData normal_map_job_data{};
-
-  ObserverPtr<Job> opacity_mask_job{};
-  JobData opacity_mask_job_data{};
-
-  if (auto const res_id{yamlNode["albedoMap"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
-    albedo_map_job_data.res_id = res_id;
-    albedo_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &albedo_map_job_data);
-    App::Instance().GetJobSystem().Run(albedo_map_job);
-  }
-
-  if (auto const res_id{yamlNode["metallicMap"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
-    metallic_map_job_data.res_id = res_id;
-    metallic_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &metallic_map_job_data);
-    App::Instance().GetJobSystem().Run(metallic_map_job);
-  }
-
-  if (auto const res_id{yamlNode["roughnessMap"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
-    roughness_map_job_data.res_id = res_id;
-    roughness_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &roughness_map_job_data);
-    App::Instance().GetJobSystem().Run(roughness_map_job);
-  }
-
-  if (auto const res_id{yamlNode["aoMap"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
-    ao_map_job_data.res_id = res_id;
-    ao_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &ao_map_job_data);
-    App::Instance().GetJobSystem().Run(ao_map_job);
-  }
-
-  if (auto const res_id{yamlNode["normalMap"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
-    normal_map_job_data.res_id = res_id;
-    normal_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &normal_map_job_data);
-    App::Instance().GetJobSystem().Run(normal_map_job);
-  }
-
-  if (auto const res_id{yamlNode["opacityMask"].as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
-    opacity_mask_job_data.res_id = res_id;
-    opacity_mask_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &opacity_mask_job_data);
-    App::Instance().GetJobSystem().Run(opacity_mask_job);
-  }
-
-  for (auto const job : {
-         albedo_map_job, metallic_map_job, roughness_map_job, ao_map_job, normal_map_job, opacity_mask_job
-       }) {
-    if (job) {
-      App::Instance().GetJobSystem().Wait(job);
-    }
-  }
-
-  SetAlbedoMap(albedo_map_job_data.tex);
-  SetMetallicMap(metallic_map_job_data.tex);
-  SetRoughnessMap(roughness_map_job_data.tex);
-  SetAoMap(ao_map_job_data.tex);
-  SetNormalMap(normal_map_job_data.tex);
-  SetOpacityMask(opacity_mask_job_data.tex);
-}
-
-
-auto Material::OnDrawProperties(bool& changed) -> void {
-  NativeResource::OnDrawProperties(changed);
-
-  if (ImGui::BeginTable(std::format("{}", GetId().GetGuid().ToString()).c_str(), 2,
-    ImGuiTableFlags_SizingStretchSame)) {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::PushItemWidth(FLT_MIN);
-    ImGui::TableSetColumnIndex(1);
-    ImGui::PushItemWidth(-FLT_MIN);
-
-    ImGui::TableSetColumnIndex(0);
-    ImGui::Text("Albedo Color");
-    ImGui::TableNextColumn();
-
-    if (Vector3 albedoColor{GetAlbedoVector()}; ImGui::ColorEdit3("##matAlbedoColor", albedoColor.GetData())) {
-      SetAlbedoVector(albedoColor);
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Metallic");
-    ImGui::TableNextColumn();
-
-    if (f32 metallic{GetMetallic()}; ImGui::SliderFloat("##matMetallic", &metallic, 0.0f, 1.0f)) {
-      SetMetallic(metallic);
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Roughness");
-    ImGui::TableNextColumn();
-
-    if (f32 roughness{GetRoughness()}; ImGui::SliderFloat("##matRoughness", &roughness, 0.0f, 1.0f)) {
-      SetRoughness(roughness);
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Ambient Occlusion");
-    ImGui::TableNextColumn();
-
-    if (f32 ao{GetAo()}; ImGui::SliderFloat("##matAo", &ao, 0.0f, 1.0f)) {
-      SetAo(ao);
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Albedo Map");
-    ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> albedoMapPicker;
-    if (auto albedoMap{GetAlbedoMap()}; albedoMapPicker.Draw(albedoMap)) {
-      SetAlbedoMap(albedoMap);
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Metallic Map");
-    ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> metallicMapPicker;
-    if (auto metallicMap{GetMetallicMap()}; metallicMapPicker.Draw(metallicMap)) {
-      SetMetallicMap(metallicMap);
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Roughness Map");
-    ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> roughnessMapPicker;
-    if (auto roughnessMap{GetRoughnessMap()}; roughnessMapPicker.Draw(roughnessMap)) {
-      SetRoughnessMap(roughnessMap);
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Ambient Occlusion Map");
-    ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> aoMapPicker;
-    if (auto aoMap{GetAoMap()}; aoMapPicker.Draw(aoMap)) {
-      SetAoMap(aoMap);
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Normal Map");
-    ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> normalMapPicker;
-    if (auto normalMap{GetNormalMap()}; normalMapPicker.Draw(normalMap)) {
-      SetNormalMap(normalMap);
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Blend Mode");
-    ImGui::TableNextColumn();
-    if (char const* blendModeNames[]{"Opaque", "Alpha Clipping"}; ImGui::BeginCombo("##blendMode",
-      blendModeNames[static_cast<int>(GetBlendMode())])) {
-      for (int i = 0; i < 2; i++) {
-        if (ImGui::Selectable(blendModeNames[i], i == static_cast<int>(GetBlendMode()))) {
-          SetBlendMode(static_cast<BlendMode>(i));
-          changed = true;
-        }
-      }
-      ImGui::EndCombo();
-    }
-
-    if (GetBlendMode() == BlendMode::AlphaClip) {
-      ImGui::TableNextColumn();
-      ImGui::Text("%s", "Alpha Threshold");
-      ImGui::TableNextColumn();
-      if (auto thresh{GetAlphaThreshold()}; ImGui::SliderFloat("##AlphaThresh", &thresh, 0, 1)) {
-        SetAlphaThreshold(thresh);
-        changed = true;
-      }
-
-      ImGui::TableNextColumn();
-      ImGui::Text("%s", "Opacity Mask");
-      ImGui::TableNextColumn();
-      static ObjectPicker<Texture2D> opacityMaskPicker;
-      if (auto opacityMask{GetOpacityMask()}; opacityMaskPicker.Draw(opacityMask)) {
-        SetOpacityMask(opacityMask);
-        changed = true;
-      }
-    }
-
-    ImGui::EndTable();
-  }
 }
 }

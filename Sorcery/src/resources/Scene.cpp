@@ -1,16 +1,16 @@
 #include "Scene.hpp"
 
+#include <algorithm>
+#include <ranges>
+
 #include "../app.hpp"
-#include "../Platform.hpp"
+#include "../resource_reference.hpp"
 #include "../Serialization.hpp"
 #include "../scene_objects/SceneObject.hpp"
 #undef FindResource
 #include "../job_system.hpp"
 #include "../Reflection.hpp"
 #include "../resource_manager.hpp"
-
-#include <algorithm>
-#include <ranges>
 
 
 RTTR_REGISTRATION {
@@ -20,10 +20,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Scene* Scene::active_scene_{nullptr};
-std::vector<Scene*> Scene::all_scenes_;
-
-
 auto detail::GetIrradianceMap(Scene const& scene) -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
   return scene.irradiance_map_;
 }
@@ -105,16 +101,6 @@ Scene::~Scene() {
 }
 
 
-auto Scene::Serialize() const noexcept -> YAML::Node {
-  return yaml_data_;
-}
-
-
-auto Scene::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
-  yaml_data_ = Clone(yamlNode);
-}
-
-
 auto Scene::AddEntity(std::unique_ptr<Entity> entity) -> void {
   if (entity) {
     entities_.emplace_back(std::move(entity));
@@ -159,7 +145,7 @@ auto Scene::Save() -> void {
   yaml_data_["ambientLight"] = ambient_light_;
   yaml_data_["skyMode"] = static_cast<int>(sky_mode_);
   yaml_data_["skyColor"] = sky_color_;
-  yaml_data_["skybox"] = skybox_ ? skybox_->GetId() : ResourceId::Invalid();
+  yaml_data_["skybox"] = SerializeGlobalResourceId(skybox_ ? skybox_->GetId() : ResourceId::Invalid());
 
   for (auto const& entity : entities_) {
     tmpThisSceneObjects.emplace_back(entity.get());
@@ -228,7 +214,7 @@ auto Scene::Load() -> void {
   ObserverPtr<Job> skybox_job;
 
   if (auto const node{yaml_data_["skybox"]}) {
-    if (auto const res_id{node.as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
+    if (auto const res_id{DeserializeResourceId(node, yaml_ctx_).value_or(ResourceId::Invalid())}; res_id.IsValid()) {
       skybox_job_data.res_id = res_id;
 
       skybox_job = App::Instance().GetJobSystem().CreateJob([](SkyboxJobData* const data) {
@@ -244,7 +230,7 @@ auto Scene::Load() -> void {
   std::vector<ResourceId> required_resource_ids;
 
   std::function<void(YAML::Node const&, rttr::type const&)> discover_resource_references;
-  discover_resource_references = [&discover_resource_references, &required_resource_ids](
+  discover_resource_references = [this, &discover_resource_references, &required_resource_ids](
     YAML::Node const& node, rttr::type const& type) -> void {
       if (!node.IsDefined()) {
         return;
@@ -254,7 +240,8 @@ auto Scene::Load() -> void {
 
       if (node.IsScalar() && actual_type.is_pointer() && actual_type.get_raw_type().is_derived_from(
             rttr::type::get<Resource>())) {
-        if (auto const res_id{node.as<ResourceId>(ResourceId::Invalid())}; res_id.IsValid()) {
+        if (auto const res_id{DeserializeResourceId(node, yaml_ctx_).value_or(ResourceId::Invalid())};
+          res_id.IsValid()) {
           required_resource_ids.emplace_back(res_id);
           return;
         }
@@ -315,9 +302,9 @@ auto Scene::Load() -> void {
   // Deserialize the scene objects
 
   auto const deserialize_scene_obj_ptr{
-    [](YAML::Node const& objNode, rttr::variant& v) -> void {
+    [](YAML::Node const& obj_node, rttr::variant& v, [[maybe_unused]] YamlDeserializeContext const& ctx) -> void {
       if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
-        if (auto const it{ptr_fix_up.find(objNode.as<int>(0))}; it != std::end(ptr_fix_up)) {
+        if (auto const it{ptr_fix_up.find(obj_node.as<int>(0))}; it != std::end(ptr_fix_up)) {
           auto const type{v.get_type()};
           v = it->second;
           [[maybe_unused]] auto const success{v.convert(type)};
@@ -329,7 +316,7 @@ auto Scene::Load() -> void {
 
   for (auto const& [fileId, obj] : ptr_fix_up) {
     ReflectionDeserializeFromYaml(yaml_data_["sceneObjects"][fileId - 1]["properties"], *obj,
-      deserialize_scene_obj_ptr);
+      yaml_ctx_, deserialize_scene_obj_ptr);
   }
 
   if (skybox_job) {
@@ -362,6 +349,20 @@ auto Scene::Clear() -> void {
   }
 
   entities_.clear();
+}
+
+
+auto Scene::Serialize() const noexcept -> YAML::Node {
+  return yaml_data_;
+}
+
+
+auto Scene::Deserialize(
+  YAML::Node const& yaml_node,
+  YamlDeserializeContext const& ctx
+) noexcept -> void {
+  yaml_data_ = Clone(yaml_node);
+  yaml_ctx_ = ctx;
 }
 
 
@@ -415,4 +416,10 @@ auto Scene::SetSkybox(Cubemap* const skybox) noexcept -> void {
   irradiance_map_ = nullptr;
   prefiltered_env_map_ = nullptr;
 }
+
+
+Scene* Scene::active_scene_{nullptr};
+
+
+std::vector<Scene*> Scene::all_scenes_;
 }

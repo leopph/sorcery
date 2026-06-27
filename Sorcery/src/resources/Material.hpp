@@ -4,9 +4,9 @@
 #include "Texture2D.hpp"
 #include "../Color.hpp"
 #include "../Util.hpp"
-#include "../rendering/shaders/shader_interop.h"
-#include "../rendering/graphics.hpp"
 #include "../rendering/constant_buffer.hpp"
+#include "../rendering/graphics.hpp"
+#include "../rendering/shaders/shader_interop.h"
 
 
 namespace sorcery {
@@ -40,7 +40,7 @@ public:
   LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 
   [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
-  LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;
+  LEOPPHAPI auto Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext const& ctx) noexcept -> void override;
 
   LEOPPHAPI Material();
   Material(Material const&) = delete;

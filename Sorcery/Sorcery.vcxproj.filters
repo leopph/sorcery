@@ -168,6 +168,9 @@
     <ClCompile Include="src\resource_package.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\resource_reference.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\scene_objects\Entity.hpp">
@@ -369,6 +372,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\resource_package.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resource_reference.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

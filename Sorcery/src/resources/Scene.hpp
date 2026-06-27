@@ -56,7 +56,7 @@ public:
   LEOPPHAPI auto Clear() -> void;
 
   [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
-  LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;
+  LEOPPHAPI auto Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext const& ctx) noexcept -> void override;
 
   [[nodiscard]] LEOPPHAPI auto GetAmbientLightVector() const noexcept -> Vector3 const&;
   LEOPPHAPI auto SetAmbientLightVector(Vector3 const& vector) noexcept -> void;
@@ -80,6 +80,7 @@ private:
   std::vector<std::unique_ptr<Entity>> entities_;
 
   YAML::Node yaml_data_;
+  YamlDeserializeContext yaml_ctx_;
 
   Vector3 ambient_light_{20.0f / 255.0f};
 

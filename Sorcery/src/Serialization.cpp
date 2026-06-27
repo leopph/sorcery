@@ -2,6 +2,7 @@
 
 #include "app.hpp"
 #include "resource_manager.hpp"
+#include "resource_reference.hpp"
 #include "Resources/Resource.hpp"
 
 #include <cassert>
@@ -47,46 +48,26 @@ auto convert<sorcery::Guid>::decode(Node const& node, sorcery::Guid& guid) -> bo
   guid = sorcery::Guid::Parse(node.as<std::string>());
   return true;
 }
-
-
-auto convert<sorcery::ResourceId>::encode(sorcery::ResourceId const& res_id) -> Node {
-  Node node;
-  node["guid"] = res_id.GetGuid();
-  node["fileIdx"] = res_id.GetIdxInFile();
-  return node;
-}
-
-
-auto convert<sorcery::ResourceId>::decode(Node const& node, sorcery::ResourceId& res_id) -> bool {
-  if (!node.IsMap()) {
-    return false;
-  }
-
-  res_id = sorcery::ResourceId{
-    node["guid"].as<sorcery::Guid>(),
-    node["fileIdx"].as<int>()
-  };
-
-  return true;
-}
 }
 
 
 namespace sorcery {
-auto ReflectionSerializeToYaml(Object const& obj,
-                               std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) noexcept ->
-  YAML::Node {
+auto ReflectionSerializeToYaml(
+  Object const& obj,
+  std::function<YAML::Node(rttr::variant const&)> const& extension_func
+) noexcept -> YAML::Node {
   YAML::Node ret;
   for (auto const& prop : rttr::type::get(obj).get_properties()) {
-    ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(obj), extensionFunc);
+    ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(obj), extension_func);
   }
   return ret;
 }
 
 
-auto ReflectionSerializeToYaml(rttr::variant const& v,
-                               std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) noexcept ->
-  YAML::Node {
+auto ReflectionSerializeToYaml(
+  rttr::variant const& v,
+  std::function<YAML::Node(rttr::variant const&)> const& extension_func
+) noexcept -> YAML::Node {
   if (v.get_type() == rttr::type::get<bool>()) {
     return YAML::Node{v.get_value<bool>()};
   }
@@ -156,12 +137,12 @@ auto ReflectionSerializeToYaml(rttr::variant const& v,
     auto underlying{v};
     [[maybe_unused]] auto const success{underlying.convert(enumeration.get_underlying_type())};
     assert(success);
-    return ReflectionSerializeToYaml(underlying, extensionFunc);
+    return ReflectionSerializeToYaml(underlying, extension_func);
   }
 
   if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
     auto const res{v.get_value<Resource*>()};
-    return YAML::Node{res ? res->GetId() : ResourceId::Invalid()};
+    return SerializeGlobalResourceId(res ? res->GetId() : ResourceId::Invalid());
   }
 
   if (v.is_sequential_container()) {
@@ -173,7 +154,7 @@ auto ReflectionSerializeToYaml(rttr::variant const& v,
     for (auto const& elem : container) {
       auto const value{elem.extract_wrapped_value()};
       assert(value.is_valid());
-      node.push_back(ReflectionSerializeToYaml(value, extensionFunc));
+      node.push_back(ReflectionSerializeToYaml(value, extension_func));
     }
 
     return node;
@@ -189,7 +170,7 @@ auto ReflectionSerializeToYaml(rttr::variant const& v,
     for (auto const& prop : v.get_type().get_properties()) {
       auto const value{prop.get_value(v)};
       assert(value.is_valid());
-      node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, extensionFunc);
+      node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, extension_func);
     }
 
     return node;
@@ -201,27 +182,30 @@ auto ReflectionSerializeToYaml(rttr::variant const& v,
     for (auto const& prop : v.get_type().get_wrapped_type().get_properties()) {
       auto const value{prop.get_value(v)};
       assert(value.is_valid());
-      node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, extensionFunc);
+      node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, extension_func);
     }
 
     return node;
   }
 
-  if (extensionFunc) {
-    return extensionFunc(v);
+  if (extension_func) {
+    return extension_func(v);
   }
 
   return {};
 }
 
 
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj,
-                                   std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept
-  -> void {
+auto ReflectionDeserializeFromYaml(
+  YAML::Node const& node,
+  Object& obj,
+  YamlDeserializeContext const& ctx,
+  std::function<void(YAML::Node const&, rttr::variant&, YamlDeserializeContext const&)> const& extension_func
+) noexcept -> void {
   for (auto const& prop : rttr::type::get(obj).get_properties()) {
     auto value{prop.get_value(obj)};
     assert(value.is_valid());
-    ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, extensionFunc);
+    ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, ctx, extension_func);
     assert(value.is_valid());
     [[maybe_unused]] auto const success{prop.set_value(obj, value)};
     assert(success);
@@ -229,9 +213,12 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj,
 }
 
 
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
-                                   std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept
-  -> void {
+auto ReflectionDeserializeFromYaml(
+  YAML::Node const& node,
+  rttr::variant& v,
+  YamlDeserializeContext const& ctx,
+  std::function<void(YAML::Node const&, rttr::variant&, YamlDeserializeContext const&)> const& extension_func
+) noexcept -> void {
   if (!node.IsDefined() || node.IsNull() || !v.get_type().is_valid()) {
     return;
   }
@@ -355,7 +342,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
     assert(copy.is_valid());
     auto success{copy.convert(enumeration.get_underlying_type())};
     assert(success);
-    ReflectionDeserializeFromYaml(node, copy, extensionFunc);
+    ReflectionDeserializeFromYaml(node, copy, ctx, extension_func);
     assert(copy.is_valid());
     success = copy.convert(enumeration.get_type());
     assert(success);
@@ -365,7 +352,10 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
 
   if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
     try {
-      if (auto const res{App::Instance().GetResourceManager().GetOrLoad(node.as<ResourceId>())}) {
+      if (auto const res{
+        App::Instance().GetResourceManager().GetOrLoad(
+          DeserializeResourceId(node, ctx).value_or<ResourceId>(ResourceId::Invalid()))
+      }) {
         if (rttr::variant resVar{res}; resVar.can_convert(v.get_type())) {
           [[maybe_unused]] auto const success{resVar.convert(v.get_type())};
           assert(success);
@@ -388,7 +378,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
     for (std::size_t i{0}; i < node.size() && container.get_size(); i++) {
       auto value{container.get_value(i).extract_wrapped_value()};
       assert(value.is_valid());
-      ReflectionDeserializeFromYaml(node[i], value, extensionFunc);
+      ReflectionDeserializeFromYaml(node[i], value, ctx, extension_func);
       assert(value.is_valid());
       [[maybe_unused]] auto const success{container.set_value(i, value)};
       assert(success);
@@ -405,7 +395,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
     for (auto const& prop : v.get_type().get_properties()) {
       auto value{prop.get_value(v)};
       assert(value.is_valid());
-      ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, extensionFunc);
+      ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, ctx, extension_func);
       assert(value.is_valid());
       [[maybe_unused]] auto const success{prop.set_value(v, value)};
       assert(success);
@@ -418,7 +408,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
     for (auto const& prop : v.get_type().get_wrapped_type().get_properties()) {
       auto value{prop.get_value(v)};
       assert(value.is_valid());
-      ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, extensionFunc);
+      ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, ctx, extension_func);
       assert(value.is_valid());
       [[maybe_unused]] auto const success{prop.set_value(v, value)};
       assert(success);
@@ -427,16 +417,19 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v,
     return;
   }
 
-  if (extensionFunc) {
-    extensionFunc(node, v);
+  if (extension_func) {
+    extension_func(node, v, ctx);
   }
 }
 
 
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v,
-                                   std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept
-  -> void {
-  ReflectionDeserializeFromYaml(node, v, extensionFunc);
+auto ReflectionDeserializeFromYaml(
+  YAML::Node const& node,
+  rttr::variant&& v,
+  YamlDeserializeContext const& ctx,
+  std::function<void(YAML::Node const&, rttr::variant&, YamlDeserializeContext const&)> const& extension_func
+) noexcept -> void {
+  ReflectionDeserializeFromYaml(node, v, ctx, extension_func);
 }
 
 
