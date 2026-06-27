@@ -1,4 +1,4 @@
-#include "mesh_importer.hpp"
+#include "model_importer.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -18,15 +18,18 @@
 
 #include "App.hpp"
 #include "FileIo.hpp"
+#include "material_resource.hpp"
 #include "Serialization.hpp"
 #include "Resources/Mesh.hpp"
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::mage::MeshImporter>{"Mesh Importer"}
+  rttr::registration::class_<sorcery::mage::ModelImporter>{"Model Importer"}
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR
-    .property("Fuse submeshes", &sorcery::mage::MeshImporter::fuse_submeshes_)
-    .property("Force 32-bit indices", &sorcery::mage::MeshImporter::force_idx32_);
+    .property("Fuse submeshes", &sorcery::mage::ModelImporter::fuse_submeshes_)
+    .property("Force 32-bit indices", &sorcery::mage::ModelImporter::force_idx32_)
+    .property("Import materials", &sorcery::mage::ModelImporter::import_materials_)
+    .property("Import textures", &sorcery::mage::ModelImporter::import_textures_);
 }
 
 
@@ -90,7 +93,7 @@ namespace {
 }
 
 
-auto MeshImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
+auto ModelImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
   std::string extensions;
   Assimp::Importer const importer;
   importer.GetExtensionList(extensions);
@@ -102,7 +105,7 @@ auto MeshImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out
 }
 
 
-auto MeshImporter::Import(std::filesystem::path const& src, std::vector<ResourceImportResult>& results) -> bool {
+auto ModelImporter::Import(std::filesystem::path const& src, std::vector<ResourceImportResult>& results) -> bool {
   std::vector<unsigned char> meshBytes;
 
   if (!ReadFileBinary(src, meshBytes)) {
@@ -129,17 +132,53 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<Resource
   }
 
   MeshData mesh_data;
+  std::vector<MaterialResourceData> material_data;
 
   // Collect material info
 
   mesh_data.material_slots.resize(scene->mNumMaterials);
+  material_data.resize(scene->mNumMaterials);
 
   for (unsigned i{0}; i < scene->mNumMaterials; i++) {
-    if (auto const& mtl_name{scene->mMaterials[i]->GetName()}; mtl_name.length > 0) {
+    auto const& mtl{scene->mMaterials[i]};
+
+    if (auto const& mtl_name{mtl->GetName()}; mtl_name.length > 0) {
       mesh_data.material_slots[i].name = mtl_name.C_Str();
     } else {
       mesh_data.material_slots[i].name = std::format("Material_{}", i);
     }
+
+    if (aiColor3D base_color; mtl->Get(AI_MATKEY_BASE_COLOR, base_color) == aiReturn_SUCCESS) {
+      material_data[i].base_color = Vector3{base_color.r, base_color.g, base_color.b};
+    }
+
+    if (float metallic; mtl->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == aiReturn_SUCCESS) {
+      material_data[i].metallic = metallic;
+    }
+
+    if (float roughness; mtl->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == aiReturn_SUCCESS) {
+      material_data[i].roughness = roughness;
+    }
+
+    /*if (aiString tex_path; mtl->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &tex_path) == aiReturn_SUCCESS) {
+      material_data[i].base_color_map_idx = tex_paths_to_idx.try_emplace(tex_path.C_Str(),
+        static_cast<unsigned>(tex_paths_to_idx.size())).first->second;
+    }
+
+    if (aiString tex_path; mtl->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &tex_path) == aiReturn_SUCCESS) {
+      material_data[i].metallic_map_idx = tex_paths_to_idx.try_emplace(tex_path.C_Str(),
+        static_cast<unsigned>(tex_paths_to_idx.size())).first->second;
+    }
+
+    if (aiString tex_path; mtl->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &tex_path) == aiReturn_SUCCESS) {
+      material_data[i].roughness_map_idx = tex_paths_to_idx.try_emplace(tex_path.C_Str(),
+        static_cast<unsigned>(tex_paths_to_idx.size())).first->second;
+    }
+
+    if (aiString tex_path; mtl->GetTexture(aiTextureType_NORMALS, 0, &tex_path) == aiReturn_SUCCESS) {
+      material_data[i].normal_map_idx = tex_paths_to_idx.try_emplace(tex_path.C_Str(),
+        static_cast<unsigned>(tex_paths_to_idx.size())).first->second;
+    }*/
   }
 
   // Collect mesh info
@@ -621,7 +660,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<Resource
 
   mesh_data.bounds = AABB::FromVertices(mesh_data.positions);
 
-  // Serialize
+  // Serialize mesh
 
   std::vector<std::byte> bytes;
 
@@ -750,8 +789,33 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<Resource
 
   SerializeToBinary(mesh_data.idx32, bytes);
 
-  results.emplace_back(ResourcePackagePayloadKind::kMesh, rttr::type::get<Mesh>(), "Placeholder Mesh Name",
-    std::move(bytes));
+  // Write mesh bytes to output
+
+  results.emplace_back(ResourcePackagePayloadKind::kMesh, rttr::type::get<Mesh>(),
+    std::string{ToUntypedStdSv(src.stem().u8string())}, std::move(bytes));
+
+  // Serialize materials
+
+  std::vector<YAML::Node> material_nodes;
+  material_nodes.reserve(material_data.size());
+  std::ranges::transform(material_data, std::back_inserter(material_nodes), [](auto const& mtl) {
+    return SerializeMaterialResourceData(mtl, ResourceRefSerialization::kLocal);
+  });
+
+  // Write material bytes to output
+
+  for (std::size_t i{0}; i < material_nodes.size(); i++) {
+    auto const yaml_str{YAML::Dump(material_nodes[i])};
+
+    std::vector<std::byte> mtl_bytes;
+    mtl_bytes.resize(yaml_str.size());
+    std::ranges::copy(yaml_str | std::views::transform([](char c) { return static_cast<std::byte>(c); }),
+      mtl_bytes.begin());
+
+    results.emplace_back(ResourcePackagePayloadKind::kMaterial, rttr::type::get<Material>(),
+      mesh_data.material_slots[i].name, std::move(mtl_bytes));
+  }
+
   return true;
 }
 }

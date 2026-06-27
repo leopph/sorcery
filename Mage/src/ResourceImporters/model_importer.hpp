@@ -4,7 +4,7 @@
 
 
 namespace sorcery::mage {
-class MeshImporter final : public ResourceImporter {
+class ModelImporter final : public ResourceImporter {
   RTTR_ENABLE(ResourceImporter)
   RTTR_REGISTRATION_FRIEND
 
@@ -16,5 +16,7 @@ public:
 private:
   bool fuse_submeshes_{false};
   bool force_idx32_{false};
+  bool import_materials_{true};
+  bool import_textures_{true};
 };
 }

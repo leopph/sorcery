@@ -60,7 +60,7 @@
     <ClCompile Include="src\ResourceDB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceImporters\mesh_importer.cpp">
+    <ClCompile Include="src\ResourceImporters\model_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ResourceImporters\native_resource_importer.cpp">
@@ -133,7 +133,7 @@
     <ClInclude Include="src\ReflectionDisplayProperties.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceImporters\mesh_importer.hpp">
+    <ClInclude Include="src\ResourceImporters\model_importer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ResourceImporters\native_resource_importer.hpp">

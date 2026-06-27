@@ -20,6 +20,12 @@ struct YamlDeserializeContext {
 };
 
 
+enum class ResourceRefSerialization : std::uint8_t {
+  kGlobal,
+  kLocal
+};
+
+
 [[nodiscard]] SORCERYAPI
 auto SerializeGlobalResourceId(ResourceId const& id) -> YAML::Node;
 

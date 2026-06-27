@@ -1,6 +1,7 @@
 #include "Material.hpp"
 
 #include <bit>
+#include <cassert>
 
 #include <imgui.h>
 
@@ -9,6 +10,7 @@
 #undef FindResource
 #include "../GUI.hpp"
 #include "../job_system.hpp"
+#include "../material_resource.hpp"
 #include "../resource_manager.hpp"
 #include "../resource_reference.hpp"
 #include "../rendering/render_manager.hpp"
@@ -135,7 +137,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
       ImGui::EndCombo();
     }
 
-    if (GetBlendMode() == BlendMode::AlphaClip) {
+    if (GetBlendMode() == BlendMode::kAlphaClip) {
       ImGui::TableNextColumn();
       ImGui::Text("%s", "Alpha Threshold");
       ImGui::TableNextColumn();
@@ -160,44 +162,42 @@ auto Material::OnDrawProperties(bool& changed) -> void {
 
 
 auto Material::Serialize() const noexcept -> YAML::Node {
-  YAML::Node ret;
+  auto const get_res_id = [](Texture2D const* const tex) -> ResourceId {
+    return tex ? tex->GetId() : ResourceId::Invalid();
+  };
 
-  ret["albedo"] = GetAlbedoVector();
-  ret["metallic"] = GetMetallic();
-  ret["roughness"] = GetRoughness();
-  ret["ao"] = GetAo();
-  ret["blendMode"] = static_cast<int>(GetBlendMode());
-  ret["alphaThresh"] = GetAlphaThreshold();
-
-  auto const albedoMap{GetAlbedoMap()};
-  ret["albedoMap"] = SerializeGlobalResourceId(albedoMap ? albedoMap->GetId() : ResourceId::Invalid());
-
-  auto const metallicMap{GetMetallicMap()};
-  ret["metallicMap"] = SerializeGlobalResourceId(metallicMap ? metallicMap->GetId() : ResourceId::Invalid());
-
-  auto const roughnessMap{GetRoughnessMap()};
-  ret["roughnessMap"] = SerializeGlobalResourceId(roughnessMap ? roughnessMap->GetId() : ResourceId::Invalid());
-
-  auto const aoMap{GetAoMap()};
-  ret["aoMap"] = SerializeGlobalResourceId(aoMap ? aoMap->GetId() : ResourceId::Invalid());
-
-  auto const normalMap{GetNormalMap()};
-  ret["normalMap"] = SerializeGlobalResourceId(normalMap ? normalMap->GetId() : ResourceId::Invalid());
-
-  auto const opacityMask{GetOpacityMask()};
-  ret["opacityMask"] = SerializeGlobalResourceId(opacityMask ? opacityMask->GetId() : ResourceId::Invalid());
-
-  return ret;
+  return SerializeMaterialResourceData(MaterialResourceData{
+    .base_color = GetAlbedoVector(),
+    .metallic = GetMetallic(),
+    .roughness = GetRoughness(),
+    .ao = GetAo(),
+    .blend_mode = GetBlendMode(),
+    .alpha_threshold = GetAlphaThreshold(),
+    .base_color_map = get_res_id(GetAlbedoMap()),
+    .metallic_map = get_res_id(GetMetallicMap()),
+    .roughness_map = get_res_id(GetRoughnessMap()),
+    .ao_map = get_res_id(GetAoMap()),
+    .normal_map = get_res_id(GetNormalMap()),
+    .opacity_map = get_res_id(GetOpacityMask())
+  }, ResourceRefSerialization::kGlobal);
 }
 
 
 auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext const& ctx) noexcept -> void {
-  SetAlbedoVector(yaml_node["albedo"].as<Vector3>(GetAlbedoVector()));
-  SetMetallic(yaml_node["metallic"].as<float>(GetMetallic()));
-  SetRoughness(yaml_node["roughness"].as<float>(GetRoughness()));
-  SetAo(yaml_node["ao"].as<float>(GetAo()));
-  SetBlendMode(static_cast<BlendMode>(yaml_node["blendMode"].as<int>(static_cast<int>(GetBlendMode()))));
-  SetAlphaThreshold(yaml_node["alphaThresh"].as<float>(GetAlphaThreshold()));
+  auto const data{DeserializeMaterialResourceData(yaml_node, ctx)};
+
+  if (!data) {
+    // TODO log or something?
+    assert("Failed to deserialize material resource data!" && false);
+    return;
+  }
+
+  SetAlbedoVector(data->base_color);
+  SetMetallic(data->metallic);
+  SetRoughness(data->roughness);
+  SetAo(data->ao);
+  SetBlendMode(data->blend_mode);
+  SetAlphaThreshold(data->alpha_threshold);
 
   struct JobData {
     ResourceId res_id;
@@ -228,49 +228,38 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   ObserverPtr<Job> opacity_mask_job{};
   JobData opacity_mask_job_data{};
 
-  if (auto const res_id{
-    DeserializeResourceId(yaml_node["albedoMap"], ctx).value_or(ResourceId::Invalid())
-  }; res_id.IsValid()) {
-    albedo_map_job_data.res_id = res_id;
+  if (data->base_color_map.IsValid()) {
+    albedo_map_job_data.res_id = data->base_color_map;
     albedo_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &albedo_map_job_data);
     App::Instance().GetJobSystem().Run(albedo_map_job);
   }
 
-  if (auto const res_id{
-    DeserializeResourceId(yaml_node["metallicMap"], ctx).value_or(ResourceId::Invalid())
-  }; res_id.IsValid()) {
-    metallic_map_job_data.res_id = res_id;
+  if (data->metallic_map.IsValid()) {
+    metallic_map_job_data.res_id = data->metallic_map;
     metallic_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &metallic_map_job_data);
     App::Instance().GetJobSystem().Run(metallic_map_job);
   }
 
-  if (auto const res_id{
-    DeserializeResourceId(yaml_node["roughnessMap"], ctx).value_or(ResourceId::Invalid())
-  }; res_id.IsValid()) {
-    roughness_map_job_data.res_id = res_id;
+  if (data->roughness_map.IsValid()) {
+    roughness_map_job_data.res_id = data->roughness_map;
     roughness_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &roughness_map_job_data);
     App::Instance().GetJobSystem().Run(roughness_map_job);
   }
 
-  if (auto const res_id{DeserializeResourceId(yaml_node["aoMap"], ctx).value_or(ResourceId::Invalid())}; res_id.
-    IsValid()) {
-    ao_map_job_data.res_id = res_id;
+  if (data->ao_map.IsValid()) {
+    ao_map_job_data.res_id = data->ao_map;
     ao_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &ao_map_job_data);
     App::Instance().GetJobSystem().Run(ao_map_job);
   }
 
-  if (auto const res_id{
-    DeserializeResourceId(yaml_node["normalMap"], ctx).value_or(ResourceId::Invalid())
-  }; res_id.IsValid()) {
-    normal_map_job_data.res_id = res_id;
+  if (data->normal_map.IsValid()) {
+    normal_map_job_data.res_id = data->normal_map;
     normal_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &normal_map_job_data);
     App::Instance().GetJobSystem().Run(normal_map_job);
   }
 
-  if (auto const res_id{
-    DeserializeResourceId(yaml_node["opacityMask"], ctx).value_or(ResourceId::Invalid())
-  }; res_id.IsValid()) {
-    opacity_mask_job_data.res_id = res_id;
+  if (data->opacity_map.IsValid()) {
+    opacity_mask_job_data.res_id = data->opacity_map;
     opacity_mask_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &opacity_mask_job_data);
     App::Instance().GetJobSystem().Run(opacity_mask_job);
   }

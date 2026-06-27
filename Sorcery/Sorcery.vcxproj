@@ -141,6 +141,7 @@
     <ClCompile Include="src\char_encoding_helpers.cpp" />
     <ClCompile Include="src\FileIo.cpp" />
     <ClCompile Include="src\job_system.cpp" />
+    <ClCompile Include="src\material_resource.cpp" />
     <ClCompile Include="src\mesh_data.cpp" />
     <ClCompile Include="src\random.cpp" />
     <ClCompile Include="src\rendering\graphics.cpp" />
@@ -184,11 +185,13 @@
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
     <ClInclude Include="src\app.hpp" />
+    <ClInclude Include="src\material_blend_mode.hpp" />
     <ClInclude Include="src\char_encoding_helpers.hpp" />
     <ClInclude Include="src\extent.hpp" />
     <ClInclude Include="src\fast_vector.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\job_system.hpp" />
+    <ClInclude Include="src\material_resource.hpp" />
     <ClInclude Include="src\mesh_data.hpp" />
     <ClInclude Include="src\mutex.hpp" />
     <ClInclude Include="src\observer_ptr.hpp" />

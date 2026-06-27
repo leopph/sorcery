@@ -3,7 +3,7 @@
 #include "NativeResource.hpp"
 #include "Texture2D.hpp"
 #include "../Color.hpp"
-#include "../Util.hpp"
+#include "../material_blend_mode.hpp"
 #include "../rendering/constant_buffer.hpp"
 #include "../rendering/graphics.hpp"
 #include "../rendering/shaders/shader_interop.h"
@@ -14,10 +14,7 @@ class Material final : public NativeResource {
   RTTR_ENABLE(NativeResource)
 
 public:
-  enum class BlendMode : int {
-    Opaque    = BLEND_MODE_OPAQUE,
-    AlphaClip = BLEND_MODE_ALPHA_CLIP
-  };
+  using BlendMode = MaterialBlendMode;
 
 private:
   ShaderMaterial mShaderMtl{
