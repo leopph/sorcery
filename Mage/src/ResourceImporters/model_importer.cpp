@@ -134,13 +134,20 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
   MeshData mesh_data;
   std::vector<MaterialResourceData> material_data;
 
-  // Collect material info
+  struct TextureInfo {
+    aiString path;
+    aiTextureType type;
+  };
+
+  std::vector<TextureInfo> tex_infos;
+
+  // Collect material and texture info
 
   mesh_data.material_slots.resize(scene->mNumMaterials);
   material_data.resize(scene->mNumMaterials);
 
   for (unsigned i{0}; i < scene->mNumMaterials; i++) {
-    auto const& mtl{scene->mMaterials[i]};
+    auto const mtl{scene->mMaterials[i]};
 
     if (auto const& mtl_name{mtl->GetName()}; mtl_name.length > 0) {
       mesh_data.material_slots[i].name = mtl_name.C_Str();
@@ -160,25 +167,78 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
       material_data[i].roughness = roughness;
     }
 
-    /*if (aiString tex_path; mtl->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &tex_path) == aiReturn_SUCCESS) {
-      material_data[i].base_color_map_idx = tex_paths_to_idx.try_emplace(tex_path.C_Str(),
-        static_cast<unsigned>(tex_paths_to_idx.size())).first->second;
-    }
+    auto const discover_embedded_tex = [scene, mtl, &tex_infos](
+      aiTextureType const type, unsigned const idx, ResourceId& id_to_set) {
+      if (aiString tex_path; mtl->GetTexture(type, idx, &tex_path) == aiReturn_SUCCESS &&
+                             scene->GetEmbeddedTexture(tex_path.C_Str())) {
+        // We store the textures' array index now as their package index.
+        // For this to work, they need to be the first resources in the package.
+        // If they are not, these resource IDs need to be updated later.
+        id_to_set = ResourceId{Guid::Invalid(), static_cast<int>(tex_infos.size())};
+        tex_infos.emplace_back(tex_path, type);
+        return true;
+      }
+      return false;
+    };
 
-    if (aiString tex_path; mtl->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &tex_path) == aiReturn_SUCCESS) {
-      material_data[i].metallic_map_idx = tex_paths_to_idx.try_emplace(tex_path.C_Str(),
-        static_cast<unsigned>(tex_paths_to_idx.size())).first->second;
-    }
+    discover_embedded_tex(aiTextureType_BASE_COLOR, 0, material_data[i].base_color_map);
+    discover_embedded_tex(aiTextureType_METALNESS, 0, material_data[i].metallic_map);
+    discover_embedded_tex(aiTextureType_DIFFUSE_ROUGHNESS, 0, material_data[i].roughness_map);
+    discover_embedded_tex(aiTextureType_AMBIENT_OCCLUSION, 0, material_data[i].ao_map);
+    discover_embedded_tex(aiTextureType_NORMALS, 0, material_data[i].normal_map);
 
-    if (aiString tex_path; mtl->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &tex_path) == aiReturn_SUCCESS) {
-      material_data[i].roughness_map_idx = tex_paths_to_idx.try_emplace(tex_path.C_Str(),
-        static_cast<unsigned>(tex_paths_to_idx.size())).first->second;
+    /* TODO test if (discover_embedded_tex(aiTextureType_OPACITY, 0, material_data[i].opacity_map))*/
+    {
+      // If it has an opacity map, set its blend mode to threshold
+      material_data[i].blend_mode = MaterialBlendMode::kAlphaClip;
+      material_data[i].alpha_threshold = 0.5f;
     }
+  }
 
-    if (aiString tex_path; mtl->GetTexture(aiTextureType_NORMALS, 0, &tex_path) == aiReturn_SUCCESS) {
-      material_data[i].normal_map_idx = tex_paths_to_idx.try_emplace(tex_path.C_Str(),
-        static_cast<unsigned>(tex_paths_to_idx.size())).first->second;
-    }*/
+  // Load textures
+
+  for (auto const& [path, type] : tex_infos) {
+    auto const tex{scene->GetEmbeddedTexture(path.C_Str())};
+    // We only collect embedded textures in the previous step so this should never trigger
+    assert(tex);
+
+    TextureImportSettings const settings{
+      .type = TextureImportType::kTexture2D,
+      .allow_block_compression = false, // TODO for testing true,
+      .is_srgb = type == aiTextureType_BASE_COLOR,
+      .generate_mips = false // TODO for testing true
+    };
+
+    // The texture is compressed
+    if (tex->mHeight == 0) {
+      auto const ext{std::u8string{u8'.'} += reinterpret_cast<char8_t const*>(&tex->achFormatHint)};
+
+      TextureImportSource const import_src{
+        .file_bytes = std::span{reinterpret_cast<std::byte const*>(tex->pcData), tex->mWidth},
+        .ext = ext
+      };
+
+      auto tex_result{ImportTexture(import_src, settings)};
+      // TODO
+      assert(tex_result);
+
+      // Textures are the first resources we export, so their index in the textures array corresponds
+      // to their index in the resource package. If materials reference their textures using their
+      // array index, they'll properly resolve from the resource package too.
+      results.emplace_back(tex_result->payload_kind, tex_result->runtime_type, path.C_Str(),
+        std::move(tex_result->bytes));
+    } else {
+      // TODO implement this path
+      assert("Found uncompressed embedded texture." && false);
+      //auto& tex_data{
+      //  scene_data.textures.emplace_back(tex->mWidth, tex->mHeight,
+      //    std::make_unique_for_overwrite<
+      //      std::uint8_t[]>(
+      //      tex->mWidth * tex->mHeight * 4))
+      //};
+      //std::memcpy(tex_data.bytes.get(), tex->pcData,
+      //  tex->mWidth * tex->mHeight * 4);
+    }
   }
 
   // Collect mesh info
