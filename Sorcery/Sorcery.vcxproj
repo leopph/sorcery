@@ -183,6 +183,7 @@
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Resources\Scene.cpp" />
     <ClCompile Include="src\Util.cpp" />
+    <ClCompile Include="src\vector_stream.cpp" />
     <ClCompile Include="src\viewport.cpp" />
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
@@ -234,6 +235,7 @@
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\scene_objects\TransformComponent.cpp" />
     <ClInclude Include="src\SkyMode.hpp" />
+    <ClInclude Include="src\vector_stream.hpp" />
     <ClInclude Include="src\viewport.hpp" />
     <ClInclude Include="src\Window.hpp" />
     <ClInclude Include="src\WindowImpl.hpp" />

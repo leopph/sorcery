@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "Serialization.hpp"
+#include "vector_stream.hpp"
 #include "resources/Cubemap.hpp"
 #include "resources/Material.hpp"
 #include "resources/Mesh.hpp"
@@ -55,6 +56,118 @@ namespace {
       return std::nullopt;
   }
 }
+
+
+struct HeaderSerializer {
+  static
+  auto Write(resource_package::Header const& header, std::ostream& os) -> bool {
+    return os.write(reinterpret_cast<char const* const>(&header.magic), sizeof(header.magic)) &&
+           os.write(reinterpret_cast<char const* const>(&header.version), sizeof(header.version)) &&
+           os.write(reinterpret_cast<char const* const>(&header.resource_count), sizeof(header.resource_count));
+  }
+
+
+  [[nodiscard]] static
+  auto Read(std::istream& is) -> std::optional<resource_package::Header> {
+    if (!is.seekg(0, std::ios::beg)) {
+      return std::nullopt;
+    }
+
+    resource_package::Header header;
+
+    if (!is.read(reinterpret_cast<char*>(&header.magic), sizeof(header.magic))) {
+      return std::nullopt;
+    }
+
+    if (header.magic != resource_package::kMagic) {
+      return std::nullopt;
+    }
+
+    if (!is.read(reinterpret_cast<char*>(&header.version), sizeof(header.version))) {
+      return std::nullopt;
+    }
+
+    if (header.version != 1) {
+      return std::nullopt;
+    }
+
+    if (!is.read(reinterpret_cast<char*>(&header.resource_count), sizeof(header.resource_count))) {
+      return std::nullopt;
+    }
+
+    return header;
+  }
+
+
+  constexpr static auto kHeaderSize{3 * sizeof(std::uint32_t)};
+};
+
+
+struct EntrySerializer {
+  static
+  auto Write(resource_package::Entry const& entry, std::ostream& os) -> bool {
+    return os.write(reinterpret_cast<char const* const>(&entry.payload_kind), sizeof(entry.payload_kind)) &&
+           os.write(reinterpret_cast<char const* const>(&entry.runtime_type), sizeof(entry.runtime_type)) &&
+           os.write(reinterpret_cast<char const* const>(&entry.name_offset), sizeof(entry.name_offset)) &&
+           os.write(reinterpret_cast<char const* const>(&entry.name_size), sizeof(entry.name_size)) &&
+           os.write(reinterpret_cast<char const* const>(&entry.data_offset), sizeof(entry.data_offset)) &&
+           os.write(reinterpret_cast<char const* const>(&entry.data_size), sizeof(entry.data_size));
+  }
+
+
+  [[nodiscard]] static
+  auto Read(std::istream& is, std::size_t const idx) -> std::optional<resource_package::Entry> {
+    if (!is.seekg(HeaderSerializer::kHeaderSize + idx * kEntrySize, std::ios::beg)) {
+      return std::nullopt;
+    }
+
+    resource_package::Entry entry;
+
+    if (!is.read(reinterpret_cast<char*>(&entry.payload_kind), sizeof(entry.payload_kind))) {
+      return std::nullopt;
+    }
+
+    if (!is.read(reinterpret_cast<char*>(&entry.runtime_type), sizeof(entry.runtime_type))) {
+      return std::nullopt;
+    }
+
+    if (!is.read(reinterpret_cast<char*>(&entry.name_offset), sizeof(entry.name_offset))) {
+      return std::nullopt;
+    }
+
+    if (!is.read(reinterpret_cast<char*>(&entry.name_size), sizeof(entry.name_size))) {
+      return std::nullopt;
+    }
+
+    if (!is.read(reinterpret_cast<char*>(&entry.data_offset), sizeof(entry.data_offset))) {
+      return std::nullopt;
+    }
+
+    if (!is.read(reinterpret_cast<char*>(&entry.data_size), sizeof(entry.data_size))) {
+      return std::nullopt;
+    }
+
+    return entry;
+  }
+
+
+  constexpr static auto kEntrySize{
+    sizeof(ResourcePackagePayloadKind) + sizeof(ResourceRuntimeType) + 4 * sizeof(std::uint64_t)
+  };
+};
+
+
+[[nodiscard]] auto ComputeNameTableOffset(std::size_t const subresource_count) noexcept -> std::size_t {
+  return HeaderSerializer::kHeaderSize + EntrySerializer::kEntrySize * subresource_count;
+}
+
+
+[[nodiscard]] auto IsEntryValid(resource_package::Entry const& entry, std::size_t const package_size) -> bool {
+  return !(entry.name_offset > package_size ||
+           entry.name_size > package_size - entry.name_offset ||
+           entry.data_offset > package_size ||
+           entry.data_size > package_size - entry.data_offset);
+}
 }
 
 
@@ -62,6 +175,7 @@ auto PackBinaryResourcePackage(
   std::span<ResourceImportResult const> const imports
 ) noexcept -> std::optional<std::vector<std::byte>> {
   std::vector<std::byte> package_bytes;
+  ByteVectorOstream os{package_bytes};
 
   resource_package::Header const header{
     .magic = resource_package::kMagic,
@@ -69,17 +183,13 @@ auto PackBinaryResourcePackage(
     .resource_count = static_cast<std::uint32_t>(imports.size())
   };
 
-  SerializeToBinary(header.magic, package_bytes);
-  SerializeToBinary(header.version, package_bytes);
-  SerializeToBinary(header.resource_count, package_bytes);
+  if (!HeaderSerializer::Write(header, os)) {
+    return std::nullopt;
+  }
 
   std::vector<resource_package::Entry> entries;
 
-  constexpr auto header_size{3 * sizeof(std::uint32_t)};
-  constexpr auto entry_size{
-    sizeof(ResourcePackagePayloadKind) + sizeof(ResourceRuntimeType) + 4 * sizeof(std::uint64_t)
-  };
-
+  auto const name_table_offset{ComputeNameTableOffset(imports.size())};
   std::uint64_t name_table_size{0};
 
   for (auto const& import_data : imports) {
@@ -91,26 +201,21 @@ auto PackBinaryResourcePackage(
     }
 
     // Data offsets will be filled in later when we know the size of the name table
-    entries.emplace_back(import_data.payload_kind, *runtime_type,
-      header_size + entry_size * imports.size() + name_table_size, import_data.name.size(), 0,
-      import_data.bytes.size());
+    entries.emplace_back(import_data.payload_kind, *runtime_type, name_table_offset + name_table_size,
+      import_data.name.size(), 0, import_data.bytes.size());
     name_table_size += import_data.name.size();
   }
 
+  auto const data_table_offset{name_table_offset + name_table_size};
   std::uint64_t data_table_size{0};
 
   for (std::size_t i{0}; i < imports.size(); ++i) {
-    entries[i].data_offset = header_size + entry_size * imports.size() + name_table_size + data_table_size;
+    entries[i].data_offset = data_table_offset + data_table_size;
     data_table_size += entries[i].data_size;
   }
 
   for (auto const& entry : entries) {
-    SerializeToBinary(entry.payload_kind, package_bytes);
-    SerializeToBinary(entry.runtime_type, package_bytes);
-    SerializeToBinary(entry.name_offset, package_bytes);
-    SerializeToBinary(entry.name_size, package_bytes);
-    SerializeToBinary(entry.data_offset, package_bytes);
-    SerializeToBinary(entry.data_size, package_bytes);
+    EntrySerializer::Write(entry, os);
   }
 
   for (auto const& import_data : imports) {
@@ -129,78 +234,26 @@ auto PackBinaryResourcePackage(
 auto UnpackBinaryResourcePackageEntries(
   std::span<std::byte const> file_bytes
 ) noexcept -> std::optional<std::vector<resource_package::Entry>> {
-  auto const file_byte_size{file_bytes.size()};
+  auto const package_size{file_bytes.size()};
+  ByteSpanIstream is{file_bytes};
 
-  resource_package::Header header;
+  auto const header{HeaderSerializer::Read(is)};
 
-  if (!DeserializeFromBinary(file_bytes, header.magic) || header.magic != resource_package::kMagic) {
+  if (!header) {
     return std::nullopt;
   }
-
-  file_bytes = file_bytes.subspan(sizeof(resource_package::Header::magic));
-
-  if (!DeserializeFromBinary(file_bytes, header.version) || header.version != 1) {
-    return std::nullopt;
-  }
-
-  file_bytes = file_bytes.subspan(sizeof(resource_package::Header::version));
-
-  if (!DeserializeFromBinary(file_bytes, header.resource_count)) {
-    return std::nullopt;
-  }
-
-  file_bytes = file_bytes.subspan(sizeof(resource_package::Header::resource_count));
 
   std::vector<resource_package::Entry> entries;
-  entries.reserve(header.resource_count);
+  entries.reserve(header->resource_count);
 
-  for (std::uint32_t i{0}; i < header.resource_count; ++i) {
-    resource_package::Entry entry;
+  for (std::size_t i{0}; i < header->resource_count; ++i) {
+    auto const entry{EntrySerializer::Read(is, i)};
 
-    if (!DeserializeFromBinary(file_bytes, entry.payload_kind)) {
+    if (!entry || !IsEntryValid(*entry, package_size)) {
       return std::nullopt;
     }
 
-    file_bytes = file_bytes.subspan(sizeof(entry.payload_kind));
-
-    if (!DeserializeFromBinary(file_bytes, entry.runtime_type)) {
-      return std::nullopt;
-    }
-
-    file_bytes = file_bytes.subspan(sizeof(entry.runtime_type));
-
-    if (!DeserializeFromBinary(file_bytes, entry.name_offset)) {
-      return std::nullopt;
-    }
-
-    file_bytes = file_bytes.subspan(sizeof(entry.name_offset));
-
-    if (!DeserializeFromBinary(file_bytes, entry.name_size)) {
-      return std::nullopt;
-    }
-
-    file_bytes = file_bytes.subspan(sizeof(entry.name_size));
-
-    if (!DeserializeFromBinary(file_bytes, entry.data_offset)) {
-      return std::nullopt;
-    }
-
-    file_bytes = file_bytes.subspan(sizeof(entry.data_offset));
-
-    if (!DeserializeFromBinary(file_bytes, entry.data_size)) {
-      return std::nullopt;
-    }
-
-    file_bytes = file_bytes.subspan(sizeof(entry.data_size));
-
-    if (entry.name_offset > file_byte_size ||
-        entry.name_size > file_byte_size - entry.name_offset ||
-        entry.data_offset > file_byte_size ||
-        entry.data_size > file_byte_size - entry.data_offset) {
-      return std::nullopt;
-    }
-
-    entries.push_back(entry);
+    entries.push_back(*entry);
   }
 
   return entries;
@@ -211,91 +264,47 @@ auto PeekBinaryResourcePackage(
   std::filesystem::path const& file_path_abs
 ) noexcept -> std::optional<ResourcePackageInfo> {
   try {
-    auto const file_size{std::filesystem::file_size(file_path_abs)};
+    auto const package_size{std::filesystem::file_size(file_path_abs)};
+    std::ifstream is{file_path_abs, std::ios::binary};
 
-    std::ifstream file{file_path_abs, std::ios::binary};
-
-    if (!file) {
+    if (!is) {
       return std::nullopt;
     }
 
-    resource_package::Header header;
+    auto const header{HeaderSerializer::Read(is)};
 
-    if (!file.read(reinterpret_cast<char*>(&header.magic), sizeof(header.magic))) {
-      return std::nullopt;
-    }
-
-    if (header.magic != resource_package::kMagic) {
-      return std::nullopt;
-    }
-
-    if (!file.read(reinterpret_cast<char*>(&header.version), sizeof(header.version))) {
-      return std::nullopt;
-    }
-
-    if (header.version != 1) {
-      return std::nullopt;
-    }
-
-    if (!file.read(reinterpret_cast<char*>(&header.resource_count), sizeof(header.resource_count))) {
+    if (!header) {
       return std::nullopt;
     }
 
     ResourcePackageInfo package_info;
-    package_info.entries.reserve(header.resource_count);
+    package_info.entries.reserve(header->resource_count);
 
-    for (std::uint32_t i{0}; i < header.resource_count; i++) {
-      resource_package::Entry entry;
+    for (std::size_t i{0}; i < header->resource_count; i++) {
+      auto const entry{EntrySerializer::Read(is, i)};
 
-      if (!file.read(reinterpret_cast<char*>(&entry.payload_kind), sizeof(entry.payload_kind))) {
+      if (!entry || !IsEntryValid(*entry, package_size)) {
         return std::nullopt;
       }
 
-      if (!file.read(reinterpret_cast<char*>(&entry.runtime_type), sizeof(entry.runtime_type))) {
-        return std::nullopt;
-      }
-
-      if (!file.read(reinterpret_cast<char*>(&entry.name_offset), sizeof(entry.name_offset))) {
-        return std::nullopt;
-      }
-
-      if (!file.read(reinterpret_cast<char*>(&entry.name_size), sizeof(entry.name_size))) {
-        return std::nullopt;
-      }
-
-      if (!file.read(reinterpret_cast<char*>(&entry.data_offset), sizeof(entry.data_offset))) {
-        return std::nullopt;
-      }
-
-      if (!file.read(reinterpret_cast<char*>(&entry.data_size), sizeof(entry.data_size))) {
-        return std::nullopt;
-      }
-
-      auto const type{ToRttrType(entry.runtime_type)};
+      auto const type{ToRttrType(entry->runtime_type)};
 
       if (!type) {
         return std::nullopt;
       }
 
-      if (entry.name_offset > file_size ||
-          entry.name_size > file_size - entry.name_offset ||
-          entry.data_offset > file_size ||
-          entry.data_size > file_size - entry.data_offset) {
+      auto const last_pos = is.tellg();
+      if (!is.seekg(entry->name_offset, std::ios::beg)) {
         return std::nullopt;
       }
 
-      auto const last_pos = file.tellg();
-      if (!file.seekg(entry.name_offset, std::ios::beg)) {
+      std::string name(entry->name_size, '\0');
+
+      if (!is.read(name.data(), entry->name_size)) {
         return std::nullopt;
       }
 
-      std::string name(entry.name_size, '\0');
-
-      if (!file.read(name.data(), entry.name_size)) {
-        return std::nullopt;
-      }
-
-      if (!file.seekg(last_pos, std::ios::beg)) {
+      if (!is.seekg(last_pos, std::ios::beg)) {
         return std::nullopt;
       }
 
@@ -306,5 +315,51 @@ auto PeekBinaryResourcePackage(
   } catch (...) {
     return std::nullopt;
   }
+}
+
+
+auto LoadBinaryResourcePackageSubresource(
+  std::filesystem::path const& file_path_abs,
+  std::size_t const entry_idx
+) -> std::optional<ResourcePackageSubresource> {
+  std::ifstream is{file_path_abs, std::ios::binary};
+
+  if (!is || !is.seekg(0, std::ios::end)) {
+    return std::nullopt;
+  }
+
+  auto const package_size{is.tellg()};
+
+  auto const header{HeaderSerializer::Read(is)};
+
+  if (!header || header->resource_count <= entry_idx) {
+    return std::nullopt;
+  }
+
+  auto const entry{EntrySerializer::Read(is, entry_idx)};
+
+  if (!entry || !IsEntryValid(*entry, package_size)) {
+    return std::nullopt;
+  }
+
+  ResourcePackageSubresource subresource;
+  subresource.payload_kind = entry->payload_kind;
+
+  if (!is.seekg(entry->name_offset, std::ios::beg)) {
+    return std::nullopt;
+  }
+
+  subresource.name.resize(entry->name_size);
+  is.read(subresource.name.data(), static_cast<std::streamsize>(subresource.name.size()));
+
+
+  if (!is.seekg(entry->data_offset, std::ios::beg)) {
+    return std::nullopt;
+  }
+
+  subresource.bytes.resize(entry->data_size);
+  is.read(reinterpret_cast<char*>(subresource.bytes.data()), static_cast<std::streamsize>(subresource.bytes.size()));
+
+  return subresource;
 }
 }

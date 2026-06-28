@@ -290,36 +290,27 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
           };
 
           if (job_data.path_abs.extension() == EXTERNAL_RESOURCE_EXT) {
-            std::vector<std::uint8_t> file_data;
+            auto const subresource{
+              LoadBinaryResourcePackageSubresource(job_data.path_abs, job_data.res_id->GetIdxInFile())
+            };
 
-            if (!ReadFileBinary(job_data.path_abs, file_data)) {
+            if (!subresource) {
               return;
             }
 
-            auto const file_bytes{as_bytes(std::span{file_data})};
-            auto const entries{UnpackBinaryResourcePackageEntries(file_bytes)};
-            auto const res_file_idx = job_data.res_id->GetIdxInFile();
-
-            if (!entries || res_file_idx >= entries->size()) {
-              return;
-            }
-
-            auto const& entry{(*entries)[res_file_idx]};
-            auto const payload_bytes{file_bytes.subspan(entry.data_offset, entry.data_size)};
-
-            switch (entry.payload_kind) {
+            switch (subresource->payload_kind) {
               case ResourcePackagePayloadKind::kTexture: {
-                res = LoadTexture(payload_bytes);
+                res = LoadTexture(subresource->bytes);
                 break;
               }
 
               case ResourcePackagePayloadKind::kMesh: {
-                res = LoadMesh(payload_bytes);
+                res = LoadMesh(subresource->bytes);
                 break;
               }
 
               case ResourcePackagePayloadKind::kMaterial: {
-                res = LoadMaterial(payload_bytes, ctx);
+                res = LoadMaterial(subresource->bytes, ctx);
                 break;
               }
 
