@@ -75,16 +75,16 @@ auto ImportTexture(
 
   HRESULT hr;
 
-  if (src.path.extension() == ".dds") {
+  if (src.ext == u8".dds") {
     hr = LoadFromDDSMemory(src.file_bytes.data(), src.file_bytes.size(), DirectX::DDS_FLAGS_NONE, nullptr, img);
-  } else if (src.path.extension() == ".hdr") {
+  } else if (src.ext == u8".hdr") {
     hr = LoadFromHDRMemory(src.file_bytes.data(), src.file_bytes.size(), nullptr, img);
-  } else if (src.path.extension() == ".tga") {
+  } else if (src.ext == u8".tga") {
     hr = LoadFromTGAMemory(reinterpret_cast<std::uint8_t const*>(src.file_bytes.data()), src.file_bytes.size(), nullptr,
       img);
-  } else if (std::ranges::any_of(std::array{".bmp", ".png", ".gif", ".tiff", ".jpeg", ".jpg"},
-    [&src](char const* const ext) {
-      return src.path.extension() == ext;
+  } else if (std::ranges::any_of(std::array{u8".bmp", u8".png", u8".gif", u8".tiff", u8".jpeg", u8".jpg"},
+    [&src](char8_t const* const ext) {
+      return src.ext == ext;
     })) {
     hr = LoadFromWICMemory(src.file_bytes.data(), src.file_bytes.size(), DirectX::WIC_FLAGS_NONE, nullptr, img);
   } else {

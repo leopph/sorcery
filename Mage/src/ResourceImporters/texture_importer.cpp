@@ -1,4 +1,6 @@
 #include "texture_importer.hpp"
+
+#include "Util.hpp"
 #include "../FileIo.hpp"
 
 RTTR_REGISTRATION {
@@ -31,13 +33,16 @@ auto TextureImporter::Import(
     return false;
   }
 
-  auto result{ImportTexture(TextureImportSource{.file_bytes = file_bytes, .path = src}, settings_)};
+  auto result{
+    ImportTexture(TextureImportSource{.file_bytes = file_bytes, .ext = src.extension().u8string()}, settings_)
+  };
 
   if (!result) {
     return false;
   }
 
-  results.emplace_back(result->payload_kind, result->runtime_type, src.filename().string(), std::move(result->bytes));
+  results.emplace_back(result->payload_kind, result->runtime_type,
+    std::string{ToUntypedStdSv(src.filename().u8string())}, std::move(result->bytes));
   return true;
 }
 }

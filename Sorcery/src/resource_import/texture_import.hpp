@@ -2,9 +2,9 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <optional>
 #include <span>
+#include <string_view>
 #include <vector>
 
 #include "../Core.hpp"
@@ -28,7 +28,7 @@ struct TextureImportSettings {
 
 struct TextureImportSource {
   std::span<std::byte const> file_bytes;
-  std::filesystem::path path;
+  std::u8string_view ext; // with dot, e.g., ".jpg"
 };
 
 
