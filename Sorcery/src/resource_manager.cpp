@@ -259,6 +259,7 @@ auto ResourceManager::ResourceIdLess::operator()(ResourceId const& lhs,
 auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
                                            ResourceDescription const& desc) -> ObserverPtr<Resource> {
   ObserverPtr<Job> loader_job;
+  auto created_job{false};
 
   struct JobData {
     ResourceId const* res_id;
@@ -341,8 +342,9 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
             assert(inserted);
           }
         });
-        job_system_->Run(loader_job);
+        created_job = true;
         loader_jobs->emplace(res_id, loader_job);
+        job_system_->Run(loader_job);
       }
     }
   }
@@ -350,7 +352,7 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
   assert(loader_job);
   job_system_->Wait(loader_job);
 
-  {
+  if (created_job) {
     loader_jobs_.Lock()->erase(res_id);
   }
 
