@@ -204,9 +204,9 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
 
     TextureImportSettings const settings{
       .type = TextureImportType::kTexture2D,
-      .allow_block_compression = false, // TODO for testing true,
+      .allow_block_compression = true,
       .is_srgb = type == aiTextureType_BASE_COLOR,
-      .generate_mips = false // TODO for testing true
+      .generate_mips = true
     };
 
     // The texture is compressed
@@ -219,8 +219,10 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
       };
 
       auto tex_result{ImportTexture(import_src, settings)};
-      // TODO
-      assert(tex_result);
+
+      if (!tex_result) {
+        return false;
+      }
 
       // Textures are the first resources we export, so their index in the textures array corresponds
       // to their index in the resource package. If materials reference their textures using their
