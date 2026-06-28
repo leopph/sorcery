@@ -11,6 +11,7 @@
 #include <string_view>
 #include <utility>
 
+#include <assimp/GltfMaterial.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -181,17 +182,32 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
       return false;
     };
 
-    discover_embedded_tex(aiTextureType_BASE_COLOR, 0, material_data[i].base_color_map);
+    auto const has_base_color_map{discover_embedded_tex(aiTextureType_BASE_COLOR, 0, material_data[i].base_color_map)};
     discover_embedded_tex(aiTextureType_METALNESS, 0, material_data[i].metallic_map);
     discover_embedded_tex(aiTextureType_DIFFUSE_ROUGHNESS, 0, material_data[i].roughness_map);
     discover_embedded_tex(aiTextureType_AMBIENT_OCCLUSION, 0, material_data[i].ao_map);
     discover_embedded_tex(aiTextureType_NORMALS, 0, material_data[i].normal_map);
+    auto const has_opacity_map{discover_embedded_tex(aiTextureType_OPACITY, 0, material_data[i].opacity_map)};
 
-    /* TODO test if (discover_embedded_tex(aiTextureType_OPACITY, 0, material_data[i].opacity_map))*/
-    {
-      // If it has an opacity map, set its blend mode to threshold
+    auto mtl_not_opaque{has_opacity_map};
+    auto mtl_alpha_threshold{0.5f};
+
+    if (int flags; has_base_color_map && mtl->Get(AI_MATKEY_TEXFLAGS(aiTextureType_BASE_COLOR, 0), flags) ==
+                   aiReturn_SUCCESS) {
+      mtl_not_opaque = mtl_not_opaque || flags & aiTextureFlags_UseAlpha;
+    }
+
+    if (aiString alpha_mode; mtl->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode) == AI_SUCCESS) {
+      if (std::strcmp(alpha_mode.C_Str(), "MASK") == 0) {
+        mtl_not_opaque = true;
+        mtl->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mtl_alpha_threshold);
+      }
+    }
+
+    if (mtl_not_opaque) {
+      // If the material is not opaque, set its blend mode to threshold
       material_data[i].blend_mode = MaterialBlendMode::kAlphaClip;
-      material_data[i].alpha_threshold = 0.5f;
+      material_data[i].alpha_threshold = mtl_alpha_threshold;
     }
   }
 
