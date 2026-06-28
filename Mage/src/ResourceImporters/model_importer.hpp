@@ -9,9 +9,15 @@ class ModelImporter final : public ResourceImporter {
   RTTR_REGISTRATION_FRIEND
 
 public:
-  auto GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void override;
-  [[nodiscard]] auto Import(std::filesystem::path const& src,
-                            std::vector<ResourceImportResult>& results) -> bool override;
+  auto GetSupportedFileExtensions(
+    std::pmr::vector<std::string>& out
+  ) -> void override;
+
+  [[nodiscard]]
+  auto Import(
+    std::filesystem::path const& src,
+    std::vector<ResourceImportResult>& results
+  ) -> bool override;
 
 private:
   bool fuse_submeshes_{false};

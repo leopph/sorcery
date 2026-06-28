@@ -151,6 +151,8 @@
     <ClCompile Include="src\rendering\scene_renderer.cpp" />
     <ClCompile Include="src\rendering\render_manager.cpp" />
     <ClCompile Include="src\resource_id.cpp" />
+    <ClCompile Include="src\resource_import\material_import.cpp" />
+    <ClCompile Include="src\resource_import\texture_import.cpp" />
     <ClCompile Include="src\resource_package.cpp" />
     <ClCompile Include="src\resource_reference.cpp" />
     <ClCompile Include="src\scene_objects\CameraComponent.cpp" />
@@ -209,6 +211,8 @@
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\Reflection.hpp" />
     <ClInclude Include="src\Resources\Resource.hpp" />
+    <ClInclude Include="src\resource_import\material_import.hpp" />
+    <ClInclude Include="src\resource_import\texture_import.hpp" />
     <ClInclude Include="src\resource_manager.hpp" />
     <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp" />
     <ClInclude Include="src\rendering\Camera.hpp" />

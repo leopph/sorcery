@@ -1,7 +1,6 @@
 #include "model_importer.hpp"
 
 #include <algorithm>
-#include <bit>
 #include <cassert>
 #include <format>
 #include <iterator>
@@ -18,9 +17,10 @@
 
 #include "App.hpp"
 #include "FileIo.hpp"
-#include "material_resource.hpp"
 #include "Serialization.hpp"
 #include "Resources/Mesh.hpp"
+#include "resource_import/material_import.hpp"
+#include "resource_import/texture_import.hpp"
 
 
 RTTR_REGISTRATION {
@@ -796,24 +796,10 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
 
   // Serialize materials
 
-  std::vector<YAML::Node> material_nodes;
-  material_nodes.reserve(material_data.size());
-  std::ranges::transform(material_data, std::back_inserter(material_nodes), [](auto const& mtl) {
-    return SerializeMaterialResourceData(mtl, ResourceRefSerialization::kLocal);
-  });
-
-  // Write material bytes to output
-
-  for (std::size_t i{0}; i < material_nodes.size(); i++) {
-    auto const yaml_str{YAML::Dump(material_nodes[i])};
-
-    std::vector<std::byte> mtl_bytes;
-    mtl_bytes.resize(yaml_str.size());
-    std::ranges::copy(yaml_str | std::views::transform([](char c) { return static_cast<std::byte>(c); }),
-      mtl_bytes.begin());
-
-    results.emplace_back(ResourcePackagePayloadKind::kMaterial, rttr::type::get<Material>(),
-      mesh_data.material_slots[i].name, std::move(mtl_bytes));
+  for (std::size_t i{0}; i < material_data.size(); i++) {
+    auto mtl_result{ImportMaterial(material_data[i], {})};
+    results.emplace_back(mtl_result.payload_kind, mtl_result.runtime_type, mesh_data.material_slots[i].name,
+      std::move(mtl_result.bytes));
   }
 
   return true;

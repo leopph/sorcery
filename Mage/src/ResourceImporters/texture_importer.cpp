@@ -1,259 +1,43 @@
 #include "texture_importer.hpp"
 #include "../FileIo.hpp"
-#include "../Resources/Cubemap.hpp"
-#include "../Resources/Texture2D.hpp"
-
-#include <DirectXTex.h>
-
-#include <algorithm>
-#include <cassert>
 
 RTTR_REGISTRATION {
-  rttr::registration::enumeration<sorcery::mage::TextureImporter::TextureType>("Texture Import Type")(
-    rttr::value("Texture2D", sorcery::mage::TextureImporter::TextureType::Texture2D),
-    rttr::value("Cubemap", sorcery::mage::TextureImporter::TextureType::Cubemap)
-  );
-
   rttr::registration::class_<sorcery::mage::TextureImporter>("Texture Importer")
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR
-    .property("Texture Type", &sorcery::mage::TextureImporter::mTexType)
-    .property("Keep in CPU Memory", &sorcery::mage::TextureImporter::mKeepInCpuMemory)
-    .property("Allow Block Compression", &sorcery::mage::TextureImporter::mAllowBlockCompression)
-    .property("Color Texture (sRGB)", &sorcery::mage::TextureImporter::mIsSrgb)
-    .property("Generate Mipmaps", &sorcery::mage::TextureImporter::mGenerateMips);
+    .property("Import Settings", &sorcery::mage::TextureImporter::settings_);
 }
 
 
 namespace sorcery::mage {
-namespace {
-[[nodiscard]] auto CompressTexture(DirectX::ScratchImage const& src, bool const isSrgb,
-                                   DirectX::ScratchImage& out) noexcept -> bool {
-  DXGI_FORMAT compressionFormat;
-
-  auto const getFormatChannelCount{
-    [](DXGI_FORMAT const format) {
-      return DirectX::BitsPerPixel(format) / DirectX::BitsPerColor(format);
-    }
-  };
-
-  if (DirectX::FormatDataType(src.GetMetadata().format) == DirectX::FORMAT_TYPE_FLOAT) {
-    compressionFormat = DXGI_FORMAT_BC6H_UF16;
-  } else if (auto const channelCount{getFormatChannelCount(src.GetMetadata().format)}; channelCount == 1) {
-    compressionFormat = DXGI_FORMAT_BC4_UNORM;
-  } else if (channelCount == 2) {
-    compressionFormat = DXGI_FORMAT_BC5_UNORM;
-  } else if (channelCount == 4) {
-    compressionFormat = src.IsAlphaAllOpaque() ? DXGI_FORMAT_BC1_UNORM : DXGI_FORMAT_BC3_UNORM;
-  } else {
-    return false;
-  }
-
-  DirectX::ScratchImage compressed;
-
-  if (FAILED(
-    Compress(src.GetImages(), src.GetImageCount(), src.GetMetadata(), compressionFormat, DirectX::TEX_COMPRESS_PARALLEL
-      | (isSrgb ? DirectX::TEX_COMPRESS_SRGB : DirectX::TEX_COMPRESS_DEFAULT), DirectX::TEX_THRESHOLD_DEFAULT,
-      compressed))) {
-    return false;
-  }
-
-  out = std::move(compressed);
-  return true;
-}
-}
-
-
-auto TextureImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
-  out.emplace_back(DDS_FILE_EXT);
-  out.emplace_back(HDR_FILE_EXT);
-  out.emplace_back(TGA_FILE_EXT);
-  std::ranges::transform(WIC_FILE_EXTS, std::back_inserter(out), [](std::string_view const sv) {
+auto TextureImporter::GetSupportedFileExtensions(
+  std::pmr::vector<std::string>& out
+) -> void {
+  out.emplace_back(kDdsFileExt);
+  out.emplace_back(kHdrFileExt);
+  out.emplace_back(kTgaFileExt);
+  std::ranges::transform(kWicFileExts, std::back_inserter(out), [](std::string_view const sv) {
     return std::string{sv};
   });
 }
 
 
-auto TextureImporter::Import(std::filesystem::path const& src,
-                             std::vector<ResourceImportResult>& results) -> bool {
-  std::vector<unsigned char> fileBytes;
+auto TextureImporter::Import(
+  std::filesystem::path const& src,
+  std::vector<ResourceImportResult>& results
+) -> bool {
+  std::vector<std::byte> file_bytes;
 
-  if (!ReadFileBinary(src, fileBytes)) {
+  if (!ReadFileBinary(src, file_bytes)) {
     return false;
   }
 
-  DirectX::ScratchImage img;
+  auto result{ImportTexture(TextureImportSource{.file_bytes = file_bytes, .path = src}, settings_)};
 
-  // Parse image file bytes
-
-  HRESULT hr;
-
-  if (src.extension() == ".dds") {
-    hr = LoadFromDDSMemory(fileBytes.data(), fileBytes.size(), DirectX::DDS_FLAGS_NONE, nullptr, img);
-  } else if (src.extension() == ".hdr") {
-    hr = LoadFromHDRMemory(fileBytes.data(), fileBytes.size(), nullptr, img);
-  } else if (src.extension() == ".tga") {
-    hr = LoadFromTGAMemory(fileBytes.data(), fileBytes.size(), nullptr, img);
-  } else if (std::ranges::any_of(std::array{".bmp", ".png", ".gif", ".tiff", ".jpeg", ".jpg"},
-    [&src](char const* const ext) {
-      return src.extension() == ext;
-    })) {
-    hr = LoadFromWICMemory(fileBytes.data(), fileBytes.size(), DirectX::WIC_FLAGS_NONE, nullptr, img);
-  } else {
+  if (!result) {
     return false;
   }
 
-  if (FAILED(hr)) {
-    return false;
-  }
-
-  // Extract first 2D image if necessary
-  if (mTexType == TextureType::Texture2D && (img.GetMetadata().IsCubemap() || img.GetMetadata().arraySize != 1)) {
-    DirectX::ScratchImage extracted;
-
-    if (FAILED(extracted.InitializeFromImage(*img.GetImage(0, 0, 0)))) {
-      return false;
-    }
-
-    img = std::move(extracted);
-  }
-
-  // Assemble cubemap if necessary
-  if (mTexType == TextureType::Cubemap && !img.GetMetadata().IsCubemap()) {
-    if (auto const meta{img.GetMetadata()}; !meta.IsCubemap()) {
-      if (img.GetImageCount() == 1 && meta.mipLevels == 1 && meta.arraySize == 1 && meta.depth == 1) {
-        std::array<DirectX::Image, 6> faceImgs;
-        auto const bytesPerPixel{DirectX::BitsPerPixel(meta.format) / 8};
-
-        // [+X, -X, +Y, -Y, +Z, -Z]
-        if (meta.width == 6 * meta.height) {
-          for (auto i{0}; i < 6; i++) {
-            faceImgs[i].width = meta.width / 6;
-            faceImgs[i].height = meta.height;
-            faceImgs[i].format = meta.format;
-            faceImgs[i].rowPitch = img.GetImage(0, 0, 0)->rowPitch;
-            faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
-            faceImgs[i].pixels = &img.GetPixels()[i * faceImgs[i].width * bytesPerPixel];
-          }
-          // [+X, -X, +Y, -Y, +Z, -Z] ^ T
-        } else if (6 * meta.width == meta.height) {
-          for (auto i{0}; i < 6; i++) {
-            faceImgs[i].width = meta.width;
-            faceImgs[i].height = meta.height / 6;
-            faceImgs[i].format = meta.format;
-            faceImgs[i].rowPitch = img.GetImage(0, 0, 0)->rowPitch;
-            faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
-            faceImgs[i].pixels = &img.GetPixels()[i * faceImgs[i].height * faceImgs[i].rowPitch];
-          }
-          //     [+Y]
-          // [-X, +Z, +X, -Z]
-          //     [-Y]
-        } else if (meta.width * 3 == meta.height * 4) {
-          auto const faceSize{meta.width / 4};
-
-          for (auto i{0}; i < 6; i++) {
-            faceImgs[i].width = faceSize;
-            faceImgs[i].height = faceSize;
-            faceImgs[i].format = meta.format;
-            faceImgs[i].rowPitch = img.GetImage(0, 0, 0)->rowPitch;
-            faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
-          }
-
-          faceImgs[0].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch + 2 * faceSize * bytesPerPixel];
-          faceImgs[1].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch];
-          faceImgs[2].pixels = &img.GetPixels()[faceSize * bytesPerPixel];
-          faceImgs[3].pixels = &img.GetPixels()[2 * faceSize * faceImgs[0].rowPitch + faceSize * bytesPerPixel];
-          faceImgs[4].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch + faceSize * bytesPerPixel];
-          faceImgs[5].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch + 3 * faceSize * bytesPerPixel];
-          //     [+Y]
-          // [-X, +Z, +X]
-          //     [-Y]
-          //     [-Z]
-        } else if (meta.width * 4 == meta.height * 3) {
-          auto const faceSize{meta.width / 3};
-
-          for (auto i{0}; i < 6; i++) {
-            faceImgs[i].width = faceSize;
-            faceImgs[i].height = faceSize;
-            faceImgs[i].format = meta.format;
-            faceImgs[i].rowPitch = img.GetImage(0, 0, 0)->rowPitch;
-            faceImgs[i].slicePitch = img.GetImage(0, 0, 0)->slicePitch;
-          }
-
-          faceImgs[0].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch + 2 * faceSize * bytesPerPixel];
-          faceImgs[1].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch];
-          faceImgs[2].pixels = &img.GetPixels()[faceSize * bytesPerPixel];
-          faceImgs[3].pixels = &img.GetPixels()[2 * faceSize * faceImgs[0].rowPitch + faceSize * bytesPerPixel];
-          faceImgs[4].pixels = &img.GetPixels()[faceSize * faceImgs[0].rowPitch + faceSize * bytesPerPixel];
-          faceImgs[5].pixels = &img.GetPixels()[3 * faceSize * faceImgs[0].rowPitch + faceSize * bytesPerPixel];
-        } else {
-          return false;
-        }
-
-        DirectX::ScratchImage cube;
-
-        if (FAILED(cube.InitializeCubeFromImages(faceImgs.data(), 6))) {
-          return false;
-        }
-
-        img = std::move(cube);
-      } else {
-        // TODO
-        return false;
-      }
-    }
-  }
-
-  // Generate cubemaps if necessary
-  if (mGenerateMips && img.GetMetadata().mipLevels == 1) {
-    DirectX::ScratchImage mipChain;
-
-    if (FAILED(
-      GenerateMipMaps(img.GetImages(), img.GetImageCount(), img.GetMetadata(), DirectX::TEX_FILTER_DEFAULT, 0, mipChain
-      ))) {
-      return false;
-    }
-
-    img = std::move(mipChain);
-  }
-
-  // Compress if allowed
-  if (mAllowBlockCompression && !DirectX::IsCompressed(img.GetMetadata().format)) {
-    DirectX::ScratchImage compressed;
-
-    if (!CompressTexture(img, mIsSrgb, compressed)) {
-      return false;
-    }
-
-    img = std::move(compressed);
-  }
-
-  // Mark image as linear or sRGB based on user setting
-  img.OverrideFormat(mIsSrgb
-                       ? DirectX::MakeSRGB(img.GetMetadata().format)
-                       : DirectX::MakeLinear(img.GetMetadata().format));
-
-  // Save processed image
-
-  DirectX::Blob blob;
-
-  if (FAILED(SaveToDDSMemory(img.GetImages(), img.GetImageCount(), img.GetMetadata(), DirectX::DDS_FLAGS_NONE, blob))) {
-    return false;
-  }
-
-  std::vector<std::byte> bytes;
-  bytes.reserve(std::size(bytes) + blob.GetBufferSize());
-  std::ranges::copy(std::span{std::bit_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()},
-    std::back_inserter(bytes));
-
-  auto const imported_type{
-    mTexType == TextureType::Texture2D
-      ? rttr::type::get<Texture2D>()
-      : mTexType == TextureType::Cubemap
-          ? rttr::type::get<Cubemap>()
-          : rttr::type::get_by_name("")
-  };
-
-  results.emplace_back(ResourcePackagePayloadKind::kTexture, imported_type, src.filename().string(), std::move(bytes));
+  results.emplace_back(result->payload_kind, result->runtime_type, src.filename().string(), std::move(result->bytes));
   return true;
 }
 }
