@@ -33,6 +33,9 @@ auto SerializeGlobalResourceId(ResourceId const& id) -> YAML::Node;
 auto SerializeLocalResourceId(int idx) -> YAML::Node;
 
 [[nodiscard]] SORCERYAPI
+auto SerializeNullResourceId() -> YAML::Node;
+
+[[nodiscard]] SORCERYAPI
 auto DeserializeResourceId(
   YAML::Node const& node,
   YamlDeserializeContext const& ctx

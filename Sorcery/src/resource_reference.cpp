@@ -5,24 +5,33 @@
 
 namespace sorcery {
 auto SerializeGlobalResourceId(ResourceId const& id) -> YAML::Node {
-  YAML::Node node;
-
-  if (id.IsValid()) {
-    node["scope"] = "Global";
-    node["guid"] = id.GetGuid();
-    node["fileIdx"] = id.GetIdxInFile();
-  } else {
-    node["scope"] = "Null";
+  if (!id.IsValid()) {
+    return SerializeNullResourceId();
   }
 
+  YAML::Node node;
+  node["scope"] = "Global";
+  node["guid"] = id.GetGuid();
+  node["fileIdx"] = id.GetIdxInFile();
   return node;
 }
 
 
 auto SerializeLocalResourceId(int const idx) -> YAML::Node {
+  if (idx < 0) {
+    return SerializeNullResourceId();
+  }
+
   YAML::Node node;
   node["scope"] = "Local";
   node["fileIdx"] = idx;
+  return node;
+}
+
+
+auto SerializeNullResourceId() -> YAML::Node {
+  YAML::Node node;
+  node["scope"] = "Null";
   return node;
 }
 
@@ -52,6 +61,10 @@ auto DeserializeResourceId(YAML::Node const& node, YamlDeserializeContext const&
       auto const guid = guid_node.as<Guid>();
       auto const file_idx = file_idx_node.as<int>();
 
+      if (!guid.IsValid() || file_idx < 0) {
+        return std::nullopt;
+      }
+
       return ResourceId{guid, file_idx};
     }
 
@@ -64,7 +77,7 @@ auto DeserializeResourceId(YAML::Node const& node, YamlDeserializeContext const&
 
       auto const file_idx = file_idx_node.as<int>();
 
-      if (!ctx.current_guid.IsValid()) {
+      if (!ctx.current_guid.IsValid() || file_idx < 0) {
         return std::nullopt;
       }
 

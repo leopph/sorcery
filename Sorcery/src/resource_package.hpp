@@ -83,17 +83,17 @@ struct ResourcePackageSubresource {
 [[nodiscard]] SORCERYAPI
 auto PackBinaryResourcePackage(
   std::span<ResourceImportResult const> imports
-) noexcept -> std::optional<std::vector<std::byte>>;
+) -> std::optional<std::vector<std::byte>>;
 
 [[nodiscard]] SORCERYAPI
 auto UnpackBinaryResourcePackageEntries(
   std::span<std::byte const> file_bytes
-) noexcept -> std::optional<std::vector<resource_package::Entry>>;
+) -> std::optional<std::vector<resource_package::Entry>>;
 
 [[nodiscard]] SORCERYAPI
 auto PeekBinaryResourcePackage(
   std::filesystem::path const& file_path_abs
-) noexcept -> std::optional<ResourcePackageInfo>;
+) -> std::optional<ResourcePackageInfo>;
 
 [[nodiscard]] SORCERYAPI
 auto LoadBinaryResourcePackageSubresource(

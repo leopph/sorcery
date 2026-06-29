@@ -1,9 +1,11 @@
 #include "vector_stream.hpp"
 
+#include <utility>
+
 
 namespace sorcery {
 ByteVectorStreambuf::ByteVectorStreambuf(std::vector<std::byte>& buffer) :
-  buffer_(buffer) {}
+  buffer_{buffer} {}
 
 
 auto ByteVectorStreambuf::overflow(int_type const ch) -> std::streambuf::int_type {
@@ -12,7 +14,7 @@ auto ByteVectorStreambuf::overflow(int_type const ch) -> std::streambuf::int_typ
   }
 
   char const c = traits_type::to_char_type(ch);
-  buffer_.push_back(static_cast<std::byte>(static_cast<unsigned char>(c)));
+  WriteAtCurrentPosition(&c, 1);
 
   return ch;
 }
@@ -23,25 +25,86 @@ auto ByteVectorStreambuf::xsputn(char const* s, std::streamsize const n) -> std:
     return 0;
   }
 
-  auto const old_size = buffer_.size();
-  auto const count = static_cast<std::size_t>(n);
-
-  buffer_.resize(old_size + count);
-  std::memcpy(buffer_.data() + old_size, s, count);
-
+  WriteAtCurrentPosition(s, static_cast<std::size_t>(n));
   return n;
+}
+
+
+auto ByteVectorStreambuf::seekoff(off_type const off, std::ios_base::seekdir const dir,
+                                  std::ios_base::openmode const which) -> std::streambuf::pos_type {
+  if ((which & std::ios_base::out) == 0) {
+    return {static_cast<off_type>(-1)};
+  }
+
+  std::size_t base;
+
+  switch (dir) {
+    case std::ios_base::beg:
+      base = 0;
+      break;
+
+    case std::ios_base::cur:
+      base = pos_;
+      break;
+
+    case std::ios_base::end:
+      base = buffer_.size();
+      break;
+
+    default:
+      return {static_cast<off_type>(-1)};
+  }
+
+  if (off < 0 && std::cmp_greater(-off, base)) {
+    return {-1};
+  }
+
+  auto const new_pos = static_cast<std::size_t>(
+    static_cast<off_type>(base) + off
+  );
+
+  pos_ = new_pos;
+  return {static_cast<off_type>(pos_)};
+}
+
+
+auto ByteVectorStreambuf::seekpos(pos_type const pos, std::ios_base::openmode const which) -> std::streambuf::pos_type {
+  if ((which & std::ios_base::out) == 0) {
+    return {static_cast<off_type>(-1)};
+  }
+
+  auto const off = static_cast<off_type>(pos);
+
+  if (off < 0) {
+    return {static_cast<off_type>(-1)};
+  }
+
+  pos_ = static_cast<std::size_t>(off);
+  return pos;
+}
+
+
+auto ByteVectorStreambuf::WriteAtCurrentPosition(char const* s, std::size_t n) -> void {
+  auto const required_size = pos_ + n;
+
+  if (required_size > buffer_.size()) {
+    buffer_.resize(required_size);
+  }
+
+  std::memcpy(buffer_.data() + pos_, s, n);
+  pos_ += n;
 }
 
 
 ByteVectorOstream::ByteVectorOstream(std::vector<std::byte>& buffer) :
   std::basic_ostream<char>{nullptr},
-  buf_(buffer) {
+  buf_{buffer} {
   this->rdbuf(&buf_);
 }
 
 
 ByteSpanStreambuf::ByteSpanStreambuf(std::span<std::byte const> const bytes) :
-  bytes_(bytes) {}
+  bytes_{bytes} {}
 
 
 auto ByteSpanStreambuf::underflow() -> std::streambuf::int_type {
@@ -88,9 +151,73 @@ auto ByteSpanStreambuf::showmanyc() -> std::streamsize {
 }
 
 
-ByteSpanIstream::ByteSpanIstream(std::span<std::byte const> bytes) :
+auto ByteSpanStreambuf::seekoff(off_type const off, std::ios_base::seekdir const dir,
+                                std::ios_base::openmode const which) -> std::streambuf::pos_type {
+  if ((which & std::ios_base::in) == 0) {
+    return {static_cast<off_type>(-1)};
+  }
+
+  std::size_t base;
+
+  switch (dir) {
+    case std::ios_base::beg:
+      base = 0;
+      break;
+
+    case std::ios_base::cur:
+      base = pos_;
+      break;
+
+    case std::ios_base::end:
+      base = bytes_.size();
+      break;
+
+    default:
+      return {static_cast<off_type>(-1)};
+  }
+
+  if (off < 0 && std::cmp_greater(-off, base)) {
+    return {static_cast<off_type>(-1)};
+  }
+
+  auto const new_pos = static_cast<std::size_t>(
+    static_cast<off_type>(base) + off
+  );
+
+  if (new_pos > bytes_.size()) {
+    return {static_cast<off_type>(-1)};
+  }
+
+  pos_ = new_pos;
+  return {static_cast<off_type>(pos_)};
+}
+
+
+auto ByteSpanStreambuf::seekpos(pos_type const pos, std::ios_base::openmode const which) -> std::streambuf::pos_type {
+  if ((which & std::ios_base::in) == 0) {
+    return {static_cast<off_type>(-1)};
+  }
+
+  auto const off = static_cast<off_type>(pos);
+
+  if (off < 0) {
+    return {static_cast<off_type>(-1)};
+  }
+
+  auto const new_pos = static_cast<std::size_t>(off);
+
+  if (new_pos > bytes_.size()) {
+    return {static_cast<off_type>(-1)};
+  }
+
+  pos_ = new_pos;
+  return pos;
+}
+
+
+ByteSpanIstream::ByteSpanIstream(std::span<std::byte const> const bytes) :
   std::basic_istream<char>{nullptr},
-  buf_(bytes) {
+  buf_{bytes} {
   this->rdbuf(&buf_);
 }
 }
