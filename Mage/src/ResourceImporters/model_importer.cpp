@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstring>
 #include <format>
 #include <iterator>
 #include <limits>
@@ -145,7 +146,10 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
   // Collect material and texture info
 
   mesh_data.material_slots.resize(scene->mNumMaterials);
-  material_data.resize(scene->mNumMaterials);
+
+  if (import_materials_) {
+    material_data.resize(scene->mNumMaterials);
+  }
 
   for (unsigned i{0}; i < scene->mNumMaterials; i++) {
     auto const mtl{scene->mMaterials[i]};
@@ -156,106 +160,115 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
       mesh_data.material_slots[i].name = std::format("Material_{}", i);
     }
 
-    if (aiColor3D base_color; mtl->Get(AI_MATKEY_BASE_COLOR, base_color) == aiReturn_SUCCESS) {
-      material_data[i].base_color = Vector3{base_color.r, base_color.g, base_color.b};
-    }
-
-    if (float metallic; mtl->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == aiReturn_SUCCESS) {
-      material_data[i].metallic = metallic;
-    }
-
-    if (float roughness; mtl->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == aiReturn_SUCCESS) {
-      material_data[i].roughness = roughness;
-    }
-
-    auto const discover_embedded_tex = [scene, mtl, &tex_infos](
-      aiTextureType const type, unsigned const idx, ResourceId& id_to_set) {
-      if (aiString tex_path; mtl->GetTexture(type, idx, &tex_path) == aiReturn_SUCCESS &&
-                             scene->GetEmbeddedTexture(tex_path.C_Str())) {
-        // We store the textures' array index now as their package index.
-        // For this to work, they need to be the first resources in the package.
-        // If they are not, these resource IDs need to be updated later.
-        id_to_set = ResourceId{Guid::Invalid(), static_cast<int>(tex_infos.size())};
-        tex_infos.emplace_back(tex_path, type);
-        return true;
+    if (import_materials_) {
+      if (aiColor3D base_color; mtl->Get(AI_MATKEY_BASE_COLOR, base_color) == aiReturn_SUCCESS) {
+        material_data[i].base_color = Vector3{base_color.r, base_color.g, base_color.b};
       }
-      return false;
-    };
 
-    auto const has_base_color_map{discover_embedded_tex(aiTextureType_BASE_COLOR, 0, material_data[i].base_color_map)};
-    discover_embedded_tex(aiTextureType_METALNESS, 0, material_data[i].metallic_map);
-    discover_embedded_tex(aiTextureType_DIFFUSE_ROUGHNESS, 0, material_data[i].roughness_map);
-    discover_embedded_tex(aiTextureType_AMBIENT_OCCLUSION, 0, material_data[i].ao_map);
-    discover_embedded_tex(aiTextureType_NORMALS, 0, material_data[i].normal_map);
-    auto const has_opacity_map{discover_embedded_tex(aiTextureType_OPACITY, 0, material_data[i].opacity_map)};
-
-    auto mtl_not_opaque{has_opacity_map};
-    auto mtl_alpha_threshold{0.5f};
-
-    if (int flags; has_base_color_map && mtl->Get(AI_MATKEY_TEXFLAGS(aiTextureType_BASE_COLOR, 0), flags) ==
-                   aiReturn_SUCCESS) {
-      mtl_not_opaque = mtl_not_opaque || flags & aiTextureFlags_UseAlpha;
-    }
-
-    if (aiString alpha_mode; mtl->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode) == AI_SUCCESS) {
-      if (std::strcmp(alpha_mode.C_Str(), "MASK") == 0) {
-        mtl_not_opaque = true;
-        mtl->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mtl_alpha_threshold);
+      if (float metallic; mtl->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == aiReturn_SUCCESS) {
+        material_data[i].metallic = metallic;
       }
-    }
 
-    if (mtl_not_opaque) {
-      // If the material is not opaque, set its blend mode to threshold
-      material_data[i].blend_mode = MaterialBlendMode::kAlphaClip;
-      material_data[i].alpha_threshold = mtl_alpha_threshold;
+      if (float roughness; mtl->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == aiReturn_SUCCESS) {
+        material_data[i].roughness = roughness;
+      }
+
+      if (import_textures_) {
+        auto const discover_embedded_tex = [scene, mtl, &tex_infos](
+          aiTextureType const type, unsigned const idx, ResourceId& id_to_set) {
+          if (aiString tex_path; mtl->GetTexture(type, idx, &tex_path) == aiReturn_SUCCESS &&
+                                 scene->GetEmbeddedTexture(tex_path.C_Str())) {
+            // We store the textures' array index now as their package index.
+            // For this to work, they need to be the first resources in the package.
+            // If they are not, these resource IDs need to be updated later.
+            id_to_set = ResourceId{Guid::Invalid(), static_cast<int>(tex_infos.size())};
+            tex_infos.emplace_back(tex_path, type);
+            return true;
+          }
+          return false;
+        };
+
+        auto const has_base_color_map{
+          discover_embedded_tex(aiTextureType_BASE_COLOR, 0, material_data[i].base_color_map)
+        };
+        discover_embedded_tex(aiTextureType_METALNESS, 0, material_data[i].metallic_map);
+        discover_embedded_tex(aiTextureType_DIFFUSE_ROUGHNESS, 0, material_data[i].roughness_map);
+        discover_embedded_tex(aiTextureType_AMBIENT_OCCLUSION, 0, material_data[i].ao_map);
+        discover_embedded_tex(aiTextureType_NORMALS, 0, material_data[i].normal_map);
+        auto const has_opacity_map{discover_embedded_tex(aiTextureType_OPACITY, 0, material_data[i].opacity_map)};
+
+        auto mtl_not_opaque{has_opacity_map};
+        auto mtl_alpha_threshold{0.5f};
+
+        if (int flags; has_base_color_map && mtl->Get(AI_MATKEY_TEXFLAGS(aiTextureType_BASE_COLOR, 0), flags) ==
+                       aiReturn_SUCCESS) {
+          mtl_not_opaque = mtl_not_opaque || flags & aiTextureFlags_UseAlpha;
+        }
+
+        if (aiString alpha_mode; mtl->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode) == AI_SUCCESS) {
+          if (std::strcmp(alpha_mode.C_Str(), "MASK") == 0) {
+            mtl_not_opaque = true;
+            mtl->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mtl_alpha_threshold);
+          }
+        }
+
+        if (mtl_not_opaque) {
+          // If the material is not opaque, set its blend mode to threshold
+          material_data[i].blend_mode = MaterialBlendMode::kAlphaClip;
+          material_data[i].alpha_threshold = mtl_alpha_threshold;
+        }
+      }
     }
   }
 
   // Load textures
 
-  for (auto const& [path, type] : tex_infos) {
-    auto const tex{scene->GetEmbeddedTexture(path.C_Str())};
-    // We only collect embedded textures in the previous step so this should never trigger
-    assert(tex);
+  if (import_textures_) {
+    for (auto const& [path, type] : tex_infos) {
+      auto const tex{scene->GetEmbeddedTexture(path.C_Str())};
+      // We only collect embedded textures in the previous step so this should never trigger
+      assert(tex);
 
-    TextureImportSettings const settings{
-      .type = TextureImportType::kTexture2D,
-      .allow_block_compression = true,
-      .is_srgb = type == aiTextureType_BASE_COLOR,
-      .generate_mips = true
-    };
-
-    // The texture is compressed
-    if (tex->mHeight == 0) {
-      auto const ext{std::u8string{u8'.'} += reinterpret_cast<char8_t const*>(&tex->achFormatHint)};
-
-      TextureImportSource const import_src{
-        .file_bytes = std::span{reinterpret_cast<std::byte const*>(tex->pcData), tex->mWidth},
-        .ext = ext
+      TextureImportSettings const settings{
+        .type = TextureImportType::kTexture2D,
+        .allow_block_compression = true,
+        .is_srgb = type == aiTextureType_BASE_COLOR,
+        .generate_mips = true
       };
 
-      auto tex_result{ImportTexture(import_src, settings)};
+      // The texture is compressed
+      if (tex->mHeight == 0) {
+        auto const ext{std::u8string{u8'.'} += reinterpret_cast<char8_t const*>(&tex->achFormatHint)};
 
-      if (!tex_result) {
+        TextureImportSource const import_src{
+          .file_bytes = std::span{reinterpret_cast<std::byte const*>(tex->pcData), tex->mWidth},
+          .ext = ext
+        };
+
+        auto tex_result{ImportTexture(import_src, settings)};
+
+        if (!tex_result) {
+          return false;
+        }
+
+        // Textures are the first resources we export, so their index in the textures array corresponds
+        // to their index in the resource package. If materials reference their textures using their
+        // array index, they'll properly resolve from the resource package too.
+        results.emplace_back(tex_result->payload_kind, tex_result->runtime_type, path.C_Str(),
+          std::move(tex_result->bytes));
+      } else {
+        // TODO implement this path
+        assert("Found uncompressed embedded texture." && false);
         return false;
+        //auto& tex_data{
+        //  scene_data.textures.emplace_back(tex->mWidth, tex->mHeight,
+        //    std::make_unique_for_overwrite<
+        //      std::uint8_t[]>(
+        //      tex->mWidth * tex->mHeight * 4))
+        //};
+        //std::memcpy(tex_data.bytes.get(), tex->pcData,
+        //  tex->mWidth * tex->mHeight * 4);
       }
-
-      // Textures are the first resources we export, so their index in the textures array corresponds
-      // to their index in the resource package. If materials reference their textures using their
-      // array index, they'll properly resolve from the resource package too.
-      results.emplace_back(tex_result->payload_kind, tex_result->runtime_type, path.C_Str(),
-        std::move(tex_result->bytes));
-    } else {
-      // TODO implement this path
-      assert("Found uncompressed embedded texture." && false);
-      //auto& tex_data{
-      //  scene_data.textures.emplace_back(tex->mWidth, tex->mHeight,
-      //    std::make_unique_for_overwrite<
-      //      std::uint8_t[]>(
-      //      tex->mWidth * tex->mHeight * 4))
-      //};
-      //std::memcpy(tex_data.bytes.get(), tex->pcData,
-      //  tex->mWidth * tex->mHeight * 4);
     }
   }
 
@@ -874,10 +887,12 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
 
   // Serialize materials
 
-  for (std::size_t i{0}; i < material_data.size(); i++) {
-    auto mtl_result{ImportMaterial(material_data[i], {})};
-    results.emplace_back(mtl_result.payload_kind, mtl_result.runtime_type, mesh_data.material_slots[i].name,
-      std::move(mtl_result.bytes));
+  if (import_materials_) {
+    for (std::size_t i{0}; i < material_data.size(); i++) {
+      auto mtl_result{ImportMaterial(material_data[i], {})};
+      results.emplace_back(mtl_result.payload_kind, mtl_result.runtime_type, mesh_data.material_slots[i].name,
+        std::move(mtl_result.bytes));
+    }
   }
 
   return true;

@@ -26,14 +26,17 @@ auto ReadFileBinary(
   std::filesystem::path const& src,
   std::vector<std::byte>& out
 ) -> bool {
-  std::vector<unsigned char> temp;
+  fast_io::native_file_loader loader{src};
 
-  if (!ReadFileBinary(src, temp)) {
+  if (loader.empty()) {
     return false;
   }
 
-  out.resize(temp.size());
-  std::ranges::transform(temp, out.begin(), [](unsigned char const c) { return static_cast<std::byte>(c); });
+  out.resize(loader.size());
+  std::ranges::transform(loader, std::back_inserter(out), [](char const chr) {
+    return static_cast<std::byte>(chr);
+  });
+
   return true;
 }
 }
