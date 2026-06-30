@@ -33,7 +33,7 @@ auto ReadFileBinary(
   }
 
   out.resize(loader.size());
-  std::ranges::transform(loader, std::back_inserter(out), [](char const chr) {
+  std::ranges::transform(loader, out.begin(), [](char const chr) {
     return static_cast<std::byte>(chr);
   });
 

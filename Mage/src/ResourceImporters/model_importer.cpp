@@ -173,6 +173,16 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
         material_data[i].roughness = roughness;
       }
 
+      auto mtl_not_opaque{false};
+      auto mtl_alpha_threshold{0.5f};
+
+      if (aiString alpha_mode; mtl->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode) == AI_SUCCESS) {
+        if (std::strcmp(alpha_mode.C_Str(), "MASK") == 0) {
+          mtl_not_opaque = true;
+          mtl->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mtl_alpha_threshold);
+        }
+      }
+
       if (import_textures_) {
         auto const discover_embedded_tex = [scene, mtl, &tex_infos](
           aiTextureType const type, unsigned const idx, ResourceId& id_to_set) {
@@ -197,26 +207,19 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
         discover_embedded_tex(aiTextureType_NORMALS, 0, material_data[i].normal_map);
         auto const has_opacity_map{discover_embedded_tex(aiTextureType_OPACITY, 0, material_data[i].opacity_map)};
 
-        auto mtl_not_opaque{has_opacity_map};
-        auto mtl_alpha_threshold{0.5f};
+        mtl_not_opaque = mtl_not_opaque || has_opacity_map;
+
 
         if (int flags; has_base_color_map && mtl->Get(AI_MATKEY_TEXFLAGS(aiTextureType_BASE_COLOR, 0), flags) ==
                        aiReturn_SUCCESS) {
           mtl_not_opaque = mtl_not_opaque || flags & aiTextureFlags_UseAlpha;
         }
+      }
 
-        if (aiString alpha_mode; mtl->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode) == AI_SUCCESS) {
-          if (std::strcmp(alpha_mode.C_Str(), "MASK") == 0) {
-            mtl_not_opaque = true;
-            mtl->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mtl_alpha_threshold);
-          }
-        }
-
-        if (mtl_not_opaque) {
-          // If the material is not opaque, set its blend mode to threshold
-          material_data[i].blend_mode = MaterialBlendMode::kAlphaClip;
-          material_data[i].alpha_threshold = mtl_alpha_threshold;
-        }
+      if (mtl_not_opaque) {
+        // If the material is not opaque, set its blend mode to threshold
+        material_data[i].blend_mode = MaterialBlendMode::kAlphaClip;
+        material_data[i].alpha_threshold = mtl_alpha_threshold;
       }
     }
   }

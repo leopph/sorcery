@@ -1,5 +1,6 @@
 #include "vector_stream.hpp"
 
+#include <cstring>
 #include <utility>
 
 
