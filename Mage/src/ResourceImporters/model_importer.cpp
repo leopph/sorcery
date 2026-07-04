@@ -136,12 +136,38 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
   MeshData mesh_data;
   std::vector<MaterialResourceData> material_data;
 
-  struct TextureInfo {
-    aiString path;
+  struct TextureLoadInfo {
+    aiTexture const* tex;
     aiTextureType type;
+
+    [[nodiscard]]
+    auto operator==(TextureLoadInfo const& other) const -> bool = default;
   };
 
-  std::vector<TextureInfo> tex_infos;
+  std::vector<TextureLoadInfo> tex_infos;
+
+  // Store the texture or return the index of the existing one if it is already stored.
+  auto const try_emplace_tex = [&tex_infos](aiTexture const& tex, aiTextureType type) -> std::size_t {
+    // If type is unknown, be only place it if we don't already have it.
+    // Otherwise we just return the first one we find, since we don't care about the type.
+    if (type == aiTextureType_UNKNOWN) {
+      if (auto const it{std::ranges::find(tex_infos, &tex, &TextureLoadInfo::tex)}; it != tex_infos.end()) {
+        return std::distance(tex_infos.begin(), it);
+      }
+
+      tex_infos.emplace_back(&tex, type);
+      return tex_infos.size() - 1;
+    }
+
+    // If type is concrete, we only look for exact matches, and if that fails, then we store.
+    if (auto const it{std::ranges::find(tex_infos, TextureLoadInfo{.tex = &tex, .type = type})};
+      it != tex_infos.end()) {
+      return std::distance(tex_infos.begin(), it);
+    }
+
+    tex_infos.emplace_back(&tex, type);
+    return tex_infos.size() - 1;
+  };
 
   // Collect material and texture info
 
@@ -184,18 +210,26 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
       }
 
       if (import_textures_) {
-        auto const discover_embedded_tex = [scene, mtl, &tex_infos](
+        auto const discover_embedded_tex = [scene, mtl, &try_emplace_tex](
           aiTextureType const type, unsigned const idx, ResourceId& id_to_set) {
-          if (aiString tex_path; mtl->GetTexture(type, idx, &tex_path) == aiReturn_SUCCESS &&
-                                 scene->GetEmbeddedTexture(tex_path.C_Str())) {
-            // We store the textures' array index now as their package index.
-            // For this to work, they need to be the first resources in the package.
-            // If they are not, these resource IDs need to be updated later.
-            id_to_set = ResourceId{Guid::Invalid(), static_cast<int>(tex_infos.size())};
-            tex_infos.emplace_back(tex_path, type);
-            return true;
+          aiString tex_path;
+
+          if (mtl->GetTexture(type, idx, &tex_path) != aiReturn_SUCCESS) {
+            return false;
           }
-          return false;
+
+          auto const tex{scene->GetEmbeddedTexture(tex_path.C_Str())};
+
+          if (!tex) {
+            return false;
+          }
+
+          // We store the textures' array index now as their package index.
+          // For this to work, they need to be the first resources in the package.
+          // If they are not, these resource IDs need to be updated later.
+          auto const arr_idx{try_emplace_tex(*tex, type)};
+          id_to_set = ResourceId{Guid::Invalid(), static_cast<int>(arr_idx)};
+          return true;
         };
 
         auto const has_base_color_map{
@@ -224,14 +258,19 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
     }
   }
 
+  // Some textures may not be referenced by any material, but we still want to import them.
+  // Or we could be skipping materials altogether but still want textures.
+
+  if (import_textures_) {
+    for (std::size_t i{0}; i < scene->mNumTextures; ++i) {
+      try_emplace_tex(*scene->mTextures[i], aiTextureType_UNKNOWN);
+    }
+  }
+
   // Load textures
 
   if (import_textures_) {
-    for (auto const& [path, type] : tex_infos) {
-      auto const tex{scene->GetEmbeddedTexture(path.C_Str())};
-      // We only collect embedded textures in the previous step so this should never trigger
-      assert(tex);
-
+    for (auto const& [tex, type] : tex_infos) {
       TextureImportSettings const settings{
         .type = TextureImportType::kTexture2D,
         .allow_block_compression = true,
@@ -257,7 +296,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
         // Textures are the first resources we export, so their index in the textures array corresponds
         // to their index in the resource package. If materials reference their textures using their
         // array index, they'll properly resolve from the resource package too.
-        results.emplace_back(tex_result->payload_kind, tex_result->runtime_type, path.C_Str(),
+        results.emplace_back(tex_result->payload_kind, tex_result->runtime_type, tex->mFilename.C_Str(),
           std::move(tex_result->bytes));
       } else {
         // TODO implement this path
