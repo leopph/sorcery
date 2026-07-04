@@ -398,6 +398,4 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Sorcery
-Mage/vcpkg_installed
-Sorcery/vcpkg_installed
-Sorcery/src/rendering/shaders/generated
+vcpkg_installed
