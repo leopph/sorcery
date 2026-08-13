@@ -406,7 +406,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="vcpkg.json" />
     <None Include="src\rendering\shaders\shader_interop.h" />
     <None Include="src\rendering\shaders\brdf.hlsli" />
     <None Include="src\rendering\shaders\shadow_sampling.hlsli" />
