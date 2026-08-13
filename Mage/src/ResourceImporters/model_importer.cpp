@@ -26,10 +26,22 @@
 
 
 RTTR_REGISTRATION {
+  rttr::registration::enumeration<sorcery::mage::ModelImporter::SubresourceKind>("ModelImporterSubresourceKind")(
+    rttr::value("Material", sorcery::mage::ModelImporter::SubresourceKind::kMaterial),
+    rttr::value("Texture", sorcery::mage::ModelImporter::SubresourceKind::kTexture)
+  );
+
+  rttr::registration::class_<sorcery::mage::ModelImporter::SubresourceImportSettings>(
+      "ModelImporterSubresourceImportSettings")
+    .constructor<>()(rttr::policy::ctor::as_object)
+    .property("Subresource Kind", &sorcery::mage::ModelImporter::SubresourceImportSettings::kind)
+    .property("Material Import Settings", &sorcery::mage::ModelImporter::SubresourceImportSettings::material_settings)
+    .property("Texture Import Settings", &sorcery::mage::ModelImporter::SubresourceImportSettings::texture_settings);
+
   rttr::registration::class_<sorcery::mage::ModelImporter>{"Model Importer"}
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR
-    .property("Fuse submeshes", &sorcery::mage::ModelImporter::fuse_submeshes_)
-    .property("Force 32-bit indices", &sorcery::mage::ModelImporter::force_idx32_)
+    .property("Subresources", &sorcery::mage::ModelImporter::subresource_import_settings_)
+    .property("Mesh Import Settings", &sorcery::mage::ModelImporter::mesh_import_settings_)
     .property("Import materials", &sorcery::mage::ModelImporter::import_materials_)
     .property("Import textures", &sorcery::mage::ModelImporter::import_textures_);
 }
@@ -187,6 +199,17 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
     }
 
     if (import_materials_) {
+      if (subresource_import_settings_.size() <= i) {
+        subresource_import_settings_.emplace_back(MaterialImportSettings{}, TextureImportSettings{},
+          SubresourceKind::kMaterial);
+      } else if (subresource_import_settings_[i].kind != SubresourceKind::kMaterial) {
+        subresource_import_settings_[i].kind = SubresourceKind::kMaterial;
+        subresource_import_settings_[i].material_settings = MaterialImportSettings{};
+      }
+
+      // We don't use this yet, but we may want to in the future.
+      [[maybe_unused]] auto const& import_settings = subresource_import_settings_[i].material_settings;
+
       if (aiColor3D base_color; mtl->Get(AI_MATKEY_BASE_COLOR, base_color) == aiReturn_SUCCESS) {
         material_data[i].base_color = Vector3{base_color.r, base_color.g, base_color.b};
       }
@@ -270,24 +293,38 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
   // Load textures
 
   if (import_textures_) {
-    for (auto const& [tex, type] : tex_infos) {
-      TextureImportSettings const settings{
-        .type = TextureImportType::kTexture2D,
-        .allow_block_compression = true,
-        .is_srgb = type == aiTextureType_BASE_COLOR,
-        .generate_mips = true
-      };
+    for (auto const& [idx, tex_info] : tex_infos | std::views::enumerate) {
+      auto const subresource_idx{material_data.size() + idx};
+
+      {
+        TextureImportSettings const default_import_settings{
+          .type = TextureImportType::kTexture2D,
+          .allow_block_compression = true,
+          .is_srgb = tex_info.type == aiTextureType_BASE_COLOR,
+          .generate_mips = true
+        };
+
+        if (subresource_import_settings_.size() <= subresource_idx) {
+          subresource_import_settings_.emplace_back(MaterialImportSettings{}, default_import_settings,
+            SubresourceKind::kTexture);
+        } else if (subresource_import_settings_[subresource_idx].kind != SubresourceKind::kTexture) {
+          subresource_import_settings_[subresource_idx].kind = SubresourceKind::kTexture;
+          subresource_import_settings_[subresource_idx].texture_settings = default_import_settings;
+        }
+      }
+
+      auto const& import_settings = subresource_import_settings_[subresource_idx].texture_settings;
 
       // The texture is compressed
-      if (tex->mHeight == 0) {
-        auto const ext{std::u8string{u8'.'} += reinterpret_cast<char8_t const*>(&tex->achFormatHint)};
+      if (tex_info.tex->mHeight == 0) {
+        auto const ext{std::u8string{u8'.'} += reinterpret_cast<char8_t const*>(&tex_info.tex->achFormatHint)};
 
         TextureImportSource const import_src{
-          .file_bytes = std::span{reinterpret_cast<std::byte const*>(tex->pcData), tex->mWidth},
+          .file_bytes = std::span{reinterpret_cast<std::byte const*>(tex_info.tex->pcData), tex_info.tex->mWidth},
           .ext = ext
         };
 
-        auto tex_result{ImportTexture(import_src, settings)};
+        auto tex_result{ImportTexture(import_src, import_settings)};
 
         if (!tex_result) {
           return false;
@@ -296,7 +333,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
         // Textures are the first resources we export, so their index in the textures array corresponds
         // to their index in the resource package. If materials reference their textures using their
         // array index, they'll properly resolve from the resource package too.
-        results.emplace_back(tex_result->payload_kind, tex_result->runtime_type, tex->mFilename.C_Str(),
+        results.emplace_back(tex_result->payload_kind, tex_result->runtime_type, tex_info.tex->mFilename.C_Str(),
           std::move(tex_result->bytes));
       } else {
         // TODO implement this path
@@ -509,7 +546,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
       };
     });
 
-  if (fuse_submeshes_) {
+  if (mesh_import_settings_.fuse_submeshes) {
     // Fuse meshes that share materials
 
     std::map<std::uint32_t, std::vector<MeshProcessingData const*>> meshes_per_mtl_idx;
@@ -559,11 +596,12 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
 
   // Determine index format
 
-  mesh_data.idx32 = force_idx32_ || std::ranges::any_of(meshes, [](MeshProcessingData const& mesh) {
-    return std::ranges::any_of(mesh.indices, [](unsigned const idx) {
-      return idx > std::numeric_limits<std::uint16_t>::max();
-    });
-  });
+  mesh_data.idx32 = mesh_import_settings_.force_idx32 || std::ranges::any_of(meshes,
+                      [](MeshProcessingData const& mesh) {
+                        return std::ranges::any_of(mesh.indices, [](unsigned const idx) {
+                          return idx > std::numeric_limits<std::uint16_t>::max();
+                        });
+                      });
 
   // Meshletize submeshes
 

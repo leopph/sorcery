@@ -156,6 +156,7 @@
     <ClCompile Include="src\rendering\render_manager.cpp" />
     <ClCompile Include="src\resource_id.cpp" />
     <ClCompile Include="src\resource_import\material_import.cpp" />
+    <ClCompile Include="src\resource_import\mesh_import.cpp" />
     <ClCompile Include="src\resource_import\texture_import.cpp" />
     <ClCompile Include="src\resource_package.cpp" />
     <ClCompile Include="src\resource_reference.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="src\Reflection.hpp" />
     <ClInclude Include="src\Resources\Resource.hpp" />
     <ClInclude Include="src\resource_import\material_import.hpp" />
+    <ClInclude Include="src\resource_import\mesh_import.hpp" />
     <ClInclude Include="src\resource_import\texture_import.hpp" />
     <ClInclude Include="src\resource_manager.hpp" />
     <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp" />
