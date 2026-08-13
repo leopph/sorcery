@@ -201,9 +201,6 @@ auto ProjectWindow::DrawContextMenu() -> void {
     if (ImGui::MenuItem("Import")) {
       if (NFD::UniquePathSet dst_paths;
         OpenDialogMultiple(dst_paths, static_cast<nfdnfilteritem_t*>(nullptr)) == NFD_OKAY) {
-        mFilesToImport.clear();
-        mOpenImportModal = false;
-
         if (nfdpathsetsize_t path_set_size{0}; NFD::PathSet::Count(dst_paths, path_set_size) == NFD_OKAY) {
           for (nfdpathsetsize_t i{0}; i < path_set_size; i++) {
             if (NFD::UniquePathSetPathN src_path_abs_str;
@@ -211,9 +208,13 @@ auto ProjectWindow::DrawContextMenu() -> void {
               std::filesystem::path const src_path_abs{src_path_abs_str.get()};
 
               if (auto importer{ResourceDB::CreateNewImporterForResourceFile(src_path_abs)}) {
-                mFilesToImport.emplace_back(std::move(importer), src_path_abs,
-                  GenerateUniquePath(workingDirAbs / src_path_abs.filename()));
-                mOpenImportModal = true;
+                if (auto const dst_path_abs{GenerateUniquePath(workingDirAbs / src_path_abs.filename())};
+                  !TryImportFromSourceFile(importer.get(), src_path_abs, dst_path_abs)) {
+                  ImGui::CloseCurrentPopup();
+                  ImGui::EndPopup();
+                  ImGui::End();
+                  throw std::runtime_error{std::format("Failed to import {}.", dst_path_abs.string())};
+                }
               } else {
                 ImGui::EndPopup();
                 throw std::runtime_error{
@@ -262,6 +263,22 @@ auto ProjectWindow::StartRenamingSelected() noexcept -> void {
     .newName = mSelectedPathResDirRel.stem().string(),
     .nodePathAbs = mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel
   };
+}
+
+
+auto ProjectWindow::TryImportFromSourceFile(ResourceImporter* const importer, std::filesystem::path const& src_path_abs,
+                                            std::filesystem::path const& dst_path_abs) const -> bool {
+  if (exists(src_path_abs) && !exists(dst_path_abs)) {
+    copy_file(src_path_abs, dst_path_abs);
+  }
+
+  if (!mApp->GetResourceDatabase().ImportResource(
+    relative(dst_path_abs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), importer)) {
+    remove(dst_path_abs);
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -330,18 +347,12 @@ auto ProjectWindow::Draw() -> void {
       ImGui::SameLine();
 
       if (ImGui::Button("Import")) {
-        for (auto const& [importer, srcPathAbs, dstPathAbs] : mFilesToImport) {
-          if (exists(srcPathAbs) && !exists(dstPathAbs)) {
-            copy_file(srcPathAbs, dstPathAbs);
-          }
-
-          if (!mApp->GetResourceDatabase().ImportResource(
-            relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), importer.get())) {
-            remove(dstPathAbs);
+        for (auto const& [importer, src_path_abs, dst_path_abs] : mFilesToImport) {
+          if (!TryImportFromSourceFile(importer.get(), src_path_abs, dst_path_abs)) {
             ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
             ImGui::End();
-            throw std::runtime_error{std::format("Failed to import {}.", dstPathAbs.string())};
+            throw std::runtime_error{std::format("Failed to import {}.", dst_path_abs.string())};
           }
         }
         mFilesToImport.clear();
