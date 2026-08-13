@@ -590,13 +590,14 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
                                         std::map<std::filesystem::path, Guid>& src_abs_path_to_guid,
                                         std::map<ResourceId, ResourceEntry>& id_to_entry, ResourceImporter& importer,
                                         Guid const& guid) const -> bool {
-  if (!WriteMeta(res_path_abs, guid, importer)) {
-    return false;
-  }
-
   std::vector<ResourceImportResult> import_results;
 
   if (!importer.Import(res_path_abs, import_results)) {
+    return false;
+  }
+
+  // First import, then write meta, because importers can mutate their internal state during import, which may affect the meta file content.
+  if (!WriteMeta(res_path_abs, guid, importer)) {
     return false;
   }
 
