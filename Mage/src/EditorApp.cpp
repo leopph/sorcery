@@ -224,7 +224,7 @@ auto EditorApp::SaveCurrentSceneToFile() -> void {
   assert(scene_);
   scene_->Save();
   if (resource_db_.IsSavedResource(*scene_)) {
-    resource_db_.SaveResource(*scene_);
+    resource_db_.SaveResourceToFile(*scene_);
   } else {
     constexpr nfdu8filteritem_t filter{"Scene files", ResourceManager::SCENE_RESOURCE_EXT.substr(1).data()};
     if (NFD::UniquePath dst;
@@ -237,7 +237,7 @@ auto EditorApp::SaveCurrentSceneToFile() -> void {
       }
 
       if (!dst_res_dir_rel.empty()) {
-        resource_db_.CreateResource(GetResourceManager().Remove<Scene>(scene_->GetId()), dst_res_dir_rel);
+        resource_db_.SaveResourceToFile(GetResourceManager().Remove<Scene>(scene_->GetId()), dst_res_dir_rel);
       }
     }
   }

@@ -66,7 +66,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
 
       if (isDirectory
             ? resDb.MoveDirectory(relative(mRenameInfo->nodePathAbs, resDirAbs), newPathResDirRel)
-            : resDb.MoveResource(resDb.PathToGuid(thisPathResDirRel), newPathResDirRel)) {
+            : resDb.MoveResourceFile(resDb.PathToGuid(thisPathResDirRel), newPathResDirRel)) {
         thisPathAbs = newPathAbs;
         thisPathResDirRel = relative(thisPathAbs, resDirAbs);
         mSelectedPathResDirRel = thisPathResDirRel;
@@ -117,7 +117,8 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs,
       if (auto const objectDragDropData{static_cast<ObjectDragDropData*>(payload->Data)};
         objectDragDropData && objectDragDropData->ptr && rttr::type::get(*objectDragDropData->ptr).is_derived_from(
           rttr::type::get<Resource>())) {
-        if (auto const res{static_cast<Resource*>(objectDragDropData->ptr)}; resDb.MoveResource(res->GetId().GetGuid(),
+        if (auto const res{static_cast<Resource*>(objectDragDropData->ptr)}; resDb.MoveResourceFile(
+          res->GetId().GetGuid(),
           thisPathResDirRel / resDb.GuidToPath(res->GetId().GetGuid()).filename())) {
           ret = true;
         }
@@ -183,7 +184,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
       if (ImGui::MenuItem("Material")) {
         auto mtl{Create<Material>()};
         auto const mtlPathAbs{GenerateUniquePath(workingDirAbs / "New Material.mtl")};
-        auto const selection{mApp->GetResourceDatabase().CreateResource(std::move(mtl), mtlPathAbs)};
+        auto const selection{mApp->GetResourceDatabase().SaveResourceToFile(std::move(mtl), mtlPathAbs)};
         mSelectedPathResDirRel = relative(mtlPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath());
         mApp->SetSelectedObject(selection.Get());
       }
@@ -191,7 +192,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
       if (ImGui::MenuItem("Scene")) {
         auto scene{Create<Scene>()};
         auto const scenePathAbs{GenerateUniquePath(workingDirAbs / "New Scene.scene")};
-        auto const selection{mApp->GetResourceDatabase().CreateResource(std::move(scene), scenePathAbs)};
+        auto const selection{mApp->GetResourceDatabase().SaveResourceToFile(std::move(scene), scenePathAbs)};
         mApp->SetSelectedObject(selection.Get());
       }
 
@@ -272,7 +273,7 @@ auto ProjectWindow::TryImportFromSourceFile(ResourceImporter* const importer, st
     copy_file(src_path_abs, dst_path_abs);
   }
 
-  if (!mApp->GetResourceDatabase().ImportResource(
+  if (!mApp->GetResourceDatabase().ImportResourceFile(
     relative(dst_path_abs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), importer)) {
     remove(dst_path_abs);
     return false;

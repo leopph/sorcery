@@ -46,14 +46,14 @@ public:
    * The database then takes ownership of the resource.
    * Returns an observer pointer to the resource.
    */
-  auto CreateResource(std::unique_ptr<NativeResource>&& res,
-                      std::filesystem::path const& target_path_res_dir_rel) -> ObserverPtr<NativeResource>;
+  auto SaveResourceToFile(std::unique_ptr<NativeResource>&& res,
+                          std::filesystem::path const& target_path_res_dir_rel) -> ObserverPtr<NativeResource>;
 
   /**
    * Saves the native resource to the resource file it is already associated with.
    * If the resource is not associated with a file, it will not be saved.
    */
-  auto SaveResource(NativeResource const& res) -> void;
+  auto SaveResourceToFile(NativeResource const& res) -> void;
 
 
   /**
@@ -61,8 +61,8 @@ public:
    * If the importer is not passed, a new one will be created based on the file extension.
    * Returns whether the import was successful.
    */
-  [[nodiscard]] auto ImportResource(std::filesystem::path const& res_path_res_dir_rel,
-                                    ResourceImporter* importer = nullptr) -> bool;
+  [[nodiscard]] auto ImportResourceFile(std::filesystem::path const& res_path_res_dir_rel,
+                                        ResourceImporter* importer = nullptr) -> bool;
 
 
   /**
@@ -70,7 +70,7 @@ public:
    * If the resource file does not exist, or the target path already exists, the move will fail.
    * Returns whether the move was successful.
    */
-  [[nodiscard]] auto MoveResource(Guid const& guid, std::filesystem::path const& target_path_res_dir_rel) -> bool;
+  [[nodiscard]] auto MoveResourceFile(Guid const& guid, std::filesystem::path const& target_path_res_dir_rel) -> bool;
 
 
   /**
@@ -135,17 +135,35 @@ public:
     std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter>;
 
 
+  struct ResourceFileInfo {
+    Guid guid;
+    std::filesystem::path src_path_res_dir_rel;
+    std::filesystem::path load_path_abs;
+    int subresource_count;
+  };
+
+
+  struct ResourceInfo {
+    ResourceId id;
+    rttr::type type;
+    std::string name;
+  };
+
+
+  [[nodiscard]]
+  auto GetFileInfo(Guid const& guid) const -> ObserverPtr<ResourceFileInfo const>;
+
+  [[nodiscard]]
+  auto GetResourceInfo(ResourceId const& id) const -> ObserverPtr<ResourceInfo const>;
+
+  auto GetResourcesInFile(Guid const& guid, std::vector<ObserverPtr<ResourceInfo const>>& out) const -> void;
+
+
   constexpr static std::string_view kResourceMetaFileExt{".mojo"};
 
 private:
   constexpr static std::string_view kResourceDirProjRel{"Resources"};
   constexpr static std::string_view kCacheDirProjRel{"Cache"};
-
-
-  struct ResourceEntry {
-    rttr::type type;
-    std::string name;
-  };
 
 
   /**
@@ -189,12 +207,10 @@ private:
    * Returns whether the import was successful.
    */
   [[nodiscard]] auto InternalImportResource(std::filesystem::path const& res_path_abs,
-                                            std::map<Guid, std::filesystem::path>& guid_to_src_abs_path,
-                                            std::map<Guid, std::filesystem::path>& guid_to_res_abs_path,
-                                            std::map<std::filesystem::path, Guid>& src_abs_path_to_guid,
-                                            std::map<ResourceId, ResourceEntry>& id_to_entry,
-                                            ResourceImporter& importer,
-                                            Guid const& guid) const -> bool;
+                                            std::map<std::filesystem::path, Guid>& guid_by_src_abs_path,
+                                            std::map<Guid, ResourceFileInfo>& res_file_info_by_guid,
+                                            std::map<ResourceId, ResourceInfo>& res_info_by_id,
+                                            ResourceImporter& importer, Guid const& guid) const -> bool;
 
 
   /**
@@ -236,14 +252,10 @@ private:
   std::filesystem::path res_dir_abs_;
   std::filesystem::path cache_dir_abs_;
 
-  std::map<ResourceId, ResourceEntry> id_to_entry_;
+  std::map<std::filesystem::path, Guid> guid_by_src_abs_path_;
+  std::map<Guid, ResourceFileInfo> res_file_info_by_guid_;
+  std::map<ResourceId, ResourceInfo> res_info_by_id_;
 
-  // Maps resource Guids to the source file of the resource
-  std::map<Guid, std::filesystem::path> guid_to_src_abs_path_;
-  // Maps resource source files to the guid of the resource
-  std::map<std::filesystem::path, Guid> src_abs_path_to_guid_;
-  // Maps resource Guids to the loadable file of the resource
-  std::map<Guid, std::filesystem::path> guid_to_load_abs_path_;
   Object** selected_object_ptr_;
 };
 }

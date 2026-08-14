@@ -25,7 +25,7 @@ auto PropertiesWindow::Draw() -> void {
       if (changed) {
         if (auto const nativeRes{rttr::rttr_cast<NativeResource*>(selectedObj)};
           nativeRes && mApp->GetResourceDatabase().IsSavedResource(*nativeRes)) {
-          mApp->GetResourceDatabase().SaveResource(*nativeRes);
+          mApp->GetResourceDatabase().SaveResourceToFile(*nativeRes);
         }
       }
     }
