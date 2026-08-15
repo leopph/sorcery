@@ -14,132 +14,12 @@
 namespace sorcery::mage {
 class ResourceDB {
 public:
-  explicit ResourceDB(Object*& selected_object_ptr);
-
-  /**
-   * Refreshes the database by scanning the resource directory.
-   * Registered files that cannot be found in the filesystem will be removed from the database.
-   * Their associated objects will also be unloaded from memory.
-   * All new files will be registered in the database.
-   * All leftover meta files will be removed from the filesystem.
-   */
-  auto Refresh() -> void;
-
-
-  /**
-   * Changes the project directory to the given path.
-   * If it does not exist, it will be created.
-   * The database will be cleared and refreshed.
-   */
-  auto ChangeProjectDir(std::filesystem::path const& proj_dir_abs) -> void;
-
-
-  /**
-   * Returns the absolute path to the resource directory.
-   */
-  [[nodiscard]] auto GetResourceDirectoryAbsolutePath() -> std::filesystem::path const&;
-
-
-  /**
-   * Saves the native resource to the target resource file.
-   * If the file already exists, it will be overwritten.
-   * The database then takes ownership of the resource.
-   * Returns an observer pointer to the resource.
-   */
-  auto SaveResourceToFile(std::unique_ptr<NativeResource>&& res,
-                          std::filesystem::path const& target_path_res_dir_rel) -> ObserverPtr<NativeResource>;
-
-  /**
-   * Saves the native resource to the resource file it is already associated with.
-   * If the resource is not associated with a file, it will not be saved.
-   */
-  auto SaveResourceToFile(NativeResource const& res) -> void;
-
-
-  /**
-   * Perform the import procedure for the resource file at the given path.
-   * If the importer is not passed, a new one will be created based on the file extension.
-   * Returns whether the import was successful.
-   */
-  [[nodiscard]] auto ImportResourceFile(std::filesystem::path const& res_path_res_dir_rel,
-                                        ResourceImporter* importer = nullptr) -> bool;
-
-
-  /**
-   * Moves the resource file associated with the guid to the target path.
-   * If the resource file does not exist, or the target path already exists, the move will fail.
-   * Returns whether the move was successful.
-   */
-  [[nodiscard]] auto MoveResourceFile(Guid const& guid, std::filesystem::path const& target_path_res_dir_rel) -> bool;
-
-
-  /**
-   * Moves the source directory to the destination directory.
-   * If the source directory does not exist, or the destination directory already exists, the move will fail.
-   * Returns whether the move was successful.
-   */
-  [[nodiscard]] auto MoveDirectory(std::filesystem::path const& src_path_res_dir_rel,
-                                   std::filesystem::path const& dst_path_res_dir_rel) -> bool;
-
-
-  /**
-   * Deletes the resource file associated with the guid.
-   * If the resource file does not exist, or the guid is invalid, the deletion will fail.
-   */
-  auto DeleteResourceFile(Guid const& guid) -> void;
-
-
-  /**
-   * Deletes the directory at the given path.
-   * If the path is not a directory, or does not exist, the deletion will fail.
-   * Returns whether the deletion was successful.
-   */
-  [[nodiscard]] auto DeleteDirectory(std::filesystem::path const& path_res_dir_rel) -> bool;
-
-
-  /**
-   * Checks if the resource is saved in the database.
-   * Returns true if the resource is saved, false otherwise.
-   */
-  [[nodiscard]] auto IsSavedResource(NativeResource const& res) const -> bool;
-
-
-  /**
-   * Returns the Guid of the resource file associated with the given path.
-   * If the resource file does not exist, or is not associated with a Guid, an invalid Guid will be returned.
-   */
-  [[nodiscard]] auto PathToGuid(std::filesystem::path const& path_res_dir_rel) -> Guid;
-
-
-  /**
-   * Returns the resource directory relative path associated with the given Guid.
-   * If the Guid is not associated with a resource file, an empty path will be returned.
-   */
-  [[nodiscard]] auto GuidToPath(Guid const& guid) -> std::filesystem::path;
-
-
-  /**
-   * Returns an importer object for the resource file at the given path.
-   * If the file does not exist, or it is not a resource file, or the importer cannot be retrieved, the function will return nullptr.
-   */
-  [[nodiscard]] static auto GetImporterForResourceFile(
-    std::filesystem::path const& res_path_abs) noexcept -> std::unique_ptr<ResourceImporter>;
-
-
-  /**
-   * Creates a new importer object for the resource file at the given path.
-   * If no suitable importer could be found, a nullptr will be returned.
-   * The function will not validate the resource file's existence or contents.
-   */
-  [[nodiscard]] static auto CreateNewImporterForResourceFile(
-    std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter>;
-
-
   struct ResourceFileInfo {
     Guid guid;
     std::filesystem::path src_path_res_dir_rel;
     std::filesystem::path load_path_abs;
     int subresource_count;
+    bool is_native_resource;
   };
 
 
@@ -150,13 +30,199 @@ public:
   };
 
 
-  [[nodiscard]]
-  auto GetFileInfo(Guid const& guid) const -> ObserverPtr<ResourceFileInfo const>;
+  explicit ResourceDB(Object*& selected_object_ptr);
 
-  [[nodiscard]]
-  auto GetResourceInfo(ResourceId const& id) const -> ObserverPtr<ResourceInfo const>;
+  /**
+   * Refreshes the database by scanning the resource directory.
+   * Registered files that cannot be found in the filesystem will be removed from the database.
+   * Their associated objects will also be unloaded from memory.
+   * All new files will be registered in the database.
+   * All leftover meta files will be removed from the filesystem.
+   */
+  auto Refresh(
+  ) -> void;
 
-  auto GetResourcesInFile(Guid const& guid, std::vector<ObserverPtr<ResourceInfo const>>& out) const -> void;
+
+  /**
+   * Changes the project directory to the given path.
+   * If it does not exist, it will be created.
+   * The database will be cleared and refreshed.
+   */
+  auto ChangeProjectDir(
+    std::filesystem::path const& proj_dir_abs
+  ) -> void;
+
+
+  /**
+   * Returns the absolute path to the resource directory.
+   */
+  [[nodiscard]]
+  auto GetResourceDirectoryAbsolutePath(
+  ) const -> std::filesystem::path const&;
+
+
+  /**
+   * Saves the native resource to the target resource file.
+   * If the file already exists, it will be overwritten.
+   * The database then takes ownership of the resource.
+   * Returns an observer pointer to the resource.
+   */
+  auto SaveResourceToFile(
+    std::unique_ptr<NativeResource>&& res,
+    std::filesystem::path const& target_path_res_dir_rel
+  ) -> ObserverPtr<NativeResource>;
+
+  /**
+   * Saves the native resource to the resource file it is already associated with.
+   * If the resource is not associated with a file, it will not be saved.
+   */
+  auto SaveResourceToFile(
+    NativeResource const& res
+  ) -> void;
+
+
+  /**
+   * Perform the import procedure for the resource file at the given path.
+   * If the importer is not passed, a new one will be created based on the file extension.
+   * Returns whether the import was successful.
+   */
+  [[nodiscard]]
+  auto ImportResourceFile(
+    std::filesystem::path const& res_path_res_dir_rel,
+    ResourceImporter* importer = nullptr
+  ) -> bool;
+
+
+  /**
+   * Moves the resource file associated with the guid to the target path.
+   * If the resource file does not exist, or the target path already exists, the move will fail.
+   * Returns whether the move was successful.
+   */
+  [[nodiscard]]
+  auto MoveResourceFile(
+    Guid const& guid,
+    std::filesystem::path const& target_path_res_dir_rel
+  ) -> bool;
+
+
+  /**
+   * Moves the source directory to the destination directory.
+   * If the source directory does not exist, or the destination directory already exists, the move will fail.
+   * Returns whether the move was successful.
+   */
+  [[nodiscard]]
+  auto MoveDirectory(
+    std::filesystem::path const& src_path_res_dir_rel,
+    std::filesystem::path const& dst_path_res_dir_rel
+  ) -> bool;
+
+
+  /**
+   * Deletes the resource file associated with the guid.
+   * If the resource file does not exist, or the guid is invalid, the deletion will fail.
+   */
+  auto DeleteResourceFile(
+    Guid const& guid
+  ) -> void;
+
+
+  /**
+   * Deletes the directory at the given path.
+   * If the path is not a directory, or does not exist, the deletion will fail.
+   * Returns whether the deletion was successful.
+   */
+  [[nodiscard]]
+  auto DeleteDirectory(
+    std::filesystem::path const& path_res_dir_rel
+  ) -> bool;
+
+
+  /**
+   * Checks if the resource is saved in the database.
+   * Returns true if the resource is saved, false otherwise.
+   */
+  [[nodiscard]]
+  auto IsSavedResource(
+    NativeResource const& res
+  ) const -> bool;
+
+
+  /**
+   * Returns the Guid of the resource file associated with the given path.
+   * If the resource file does not exist, or is not associated with a Guid, an invalid Guid will be returned.
+   */
+  [[nodiscard]]
+  auto PathToGuid(
+    std::filesystem::path const& path_res_dir_rel
+  ) const -> Guid;
+
+
+  /**
+   * Returns the resource directory relative path associated with the given Guid.
+   * If the Guid is not associated with a resource file, an empty path will be returned.
+   */
+  [[nodiscard]]
+  auto GuidToPath(
+    Guid const& guid
+  ) const -> std::filesystem::path;
+
+
+  /**
+   * Returns the resource file info associated with the given Guid.
+   * If the guid is invalid or not associated with a resource file, nullptr will be returned.
+   */
+  [[nodiscard]]
+  auto GetFileInfo(
+    Guid const& guid
+  ) const -> ObserverPtr<ResourceFileInfo const>;
+
+
+  /**
+   * Returns the resource info associated with the given ResourceId.
+   * If the ResourceId is invalid or not associated with a resource, nullptr will be returned.
+   */
+  [[nodiscard]]
+  auto GetResourceInfo(
+    ResourceId const& id
+  ) const -> ObserverPtr<ResourceInfo const>;
+
+
+  /**
+   * Returns all resources that were imported from the resource file associated with the given Guid.
+   * If the guid is invalid or not associated with a resource file, the output vector will be empty.
+   */
+  auto GetResourcesInFile(
+    Guid const& guid,
+    std::vector<ObserverPtr<ResourceInfo const>>& out
+  ) const -> void;
+
+  /**
+   * Returns an importer object for the resource file at the given path.
+   * If the file does not exist, or it is not a resource file, or the importer cannot be retrieved, the function will return nullptr.
+   */
+  [[nodiscard]] static
+  auto GetImporterForResourceFile(
+    std::filesystem::path const& res_path_abs
+  ) noexcept -> std::unique_ptr<ResourceImporter>;
+
+
+  /**
+   * Creates a new importer object for the resource file at the given path.
+   * If no suitable importer could be found, a nullptr will be returned.
+   * The function will not validate the resource file's existence or contents.
+   */
+  [[nodiscard]] static
+  auto CreateNewImporterForResourceFile(
+    std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter>;
+
+  /**
+   * Returns if the given path is a plausible path to a meta file, that is, if its format is that of a valid meta file path.
+   * The function will not validate the file's existence or contents.
+   */
+  [[nodiscard]] static
+  auto IsMetaFile(
+    std::filesystem::path const& path
+  ) -> bool;
 
 
   constexpr static std::string_view kResourceMetaFileExt{".mojo"};
@@ -170,14 +236,10 @@ private:
  * Returns the path where the meta file for the file at the given path would be stored if it were a resource file.
  * The function will not validate the given path, nor will it check if the file exists or if it is even a resource.
  */
-  [[nodiscard]] static auto MakeMetaPath(std::filesystem::path const& path) -> std::filesystem::path;
-
-
-  /**
-   * Returns if the given path is a plausible path to a meta file, that is, if its format is that of a valid meta file path.
-   * The function will not validate the file's existence or contents.
-   */
-  [[nodiscard]] static auto IsMetaFile(std::filesystem::path const& path) -> bool;
+  [[nodiscard]] static
+  auto MakeMetaPath(
+    std::filesystem::path const& path
+  ) -> std::filesystem::path;
 
 
   /**
@@ -186,8 +248,12 @@ private:
  * If the file failed to load for any reason, the optional arguments will not be modified.
  * Returns whether the meta file was read successfully.
  */
-  [[nodiscard]] static auto ReadMeta(std::filesystem::path const& res_path_abs, Guid* guid,
-                                     std::unique_ptr<ResourceImporter>* importer) noexcept -> bool;
+  [[nodiscard]] static
+  auto ReadMeta(
+    std::filesystem::path const& res_path_abs,
+    Guid* guid,
+    std::unique_ptr<ResourceImporter>* importer
+  ) noexcept -> bool;
 
 
   /**
@@ -197,8 +263,12 @@ private:
    * The function will not validate the resource file's existence or contents.
    * Returns whether the meta file was written successfully.
    */
-  [[nodiscard]] static auto WriteMeta(std::filesystem::path const& res_path_abs, Guid const& guid,
-                                      ResourceImporter const& importer) noexcept -> bool;
+  [[nodiscard]] static
+  auto WriteMeta(
+    std::filesystem::path const& res_path_abs,
+    Guid const& guid,
+    ResourceImporter const& importer
+  ) noexcept -> bool;
 
 
   /**
@@ -206,25 +276,33 @@ private:
    * Uses the passed mappings to store the results and does not update the ResourceManager's mappings.
    * Returns whether the import was successful.
    */
-  [[nodiscard]] auto InternalImportResource(std::filesystem::path const& res_path_abs,
-                                            std::map<std::filesystem::path, Guid>& guid_by_src_abs_path,
-                                            std::map<Guid, ResourceFileInfo>& res_file_info_by_guid,
-                                            std::map<ResourceId, ResourceInfo>& res_info_by_id,
-                                            ResourceImporter& importer, Guid const& guid) const -> bool;
+  [[nodiscard]]
+  auto InternalImportResource(
+    std::filesystem::path const& res_path_abs,
+    std::map<std::filesystem::path, Guid>& guid_by_src_abs_path,
+    std::map<Guid, ResourceFileInfo>& res_file_info_by_guid,
+    std::map<ResourceId, ResourceInfo>& res_info_by_id,
+    ResourceImporter& importer, Guid const& guid
+  ) const -> bool;
 
 
   /**
    * Creates the mappings for the resources in the database.
    */
-  [[nodiscard]] auto CreateMappings() const noexcept ->
-    std::pair<std::map<ResourceId, ResourceManager::ResourceDescription>, std::map<Guid, std::filesystem::path>>;
+  [[nodiscard]]
+  auto CreateMappings(
+  ) const noexcept -> std::pair<std::map<ResourceId, ResourceManager::ResourceDescription>, std::map<
+                                  Guid, std::filesystem::path>>;
 
 
   /**
    * Returns an absolute path to a file that is appropriate to store an external resource with the given Guid.
    * The function will not validate the Guid nor the resource.
    */
-  [[nodiscard]] auto MakeExternalResourceBinaryPathAbs(Guid const& guid) const noexcept -> std::filesystem::path;
+  [[nodiscard]]
+  auto MakeExternalResourceBinaryPathAbs(
+    Guid const& guid
+  ) const noexcept -> std::filesystem::path;
 
 
   /**
@@ -233,20 +311,27 @@ private:
    * If the file already exists, it will be overwritten.
    * Returns whether the file was written successfully.
    */
-  [[nodiscard]] auto WriteBinaryResourcePackage(Guid const& guid,
-                                                std::span<ResourceImportResult const> imports) const noexcept -> bool;
+  [[nodiscard]]
+  auto WriteBinaryResourcePackage(
+    Guid const& guid,
+    std::span<ResourceImportResult const> imports
+  ) const noexcept -> bool;
 
 
   /**
    * Unloads all resources that were loaded from the resource file associated with the given Guid.
    */
-  auto UnloadResourcesFromFile(Guid const& guid) -> void;
+  auto UnloadResourcesFromFile(
+    Guid const& guid
+  ) -> void;
 
 
   /**
    * Clear object selection if the selected object's guid matches the given guid.
    */
-  auto ClearSelectionIfGuid(Guid const& guid) const -> void;
+  auto ClearSelectionIfGuid(
+    Guid const& guid
+  ) const -> void;
 
 
   std::filesystem::path res_dir_abs_;

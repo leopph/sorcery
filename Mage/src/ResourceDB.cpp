@@ -166,7 +166,8 @@ auto ResourceDB::Refresh() -> void {
       .guid = guid,
       .src_path_res_dir_rel = relative(res_path_abs, res_dir_abs_),
       .load_path_abs = importer->IsNativeImporter() ? res_path_abs : MakeExternalResourceBinaryPathAbs(guid),
-      .subresource_count = importer->IsNativeImporter() ? 1 : static_cast<int>(package_info->entries.size())
+      .subresource_count = importer->IsNativeImporter() ? 1 : static_cast<int>(package_info->entries.size()),
+      .is_native_resource = importer->IsNativeImporter()
     };
 
     // Store guid-source path mapping in the new database.
@@ -270,7 +271,7 @@ auto ResourceDB::ChangeProjectDir(std::filesystem::path const& proj_dir_abs) -> 
 }
 
 
-auto ResourceDB::GetResourceDirectoryAbsolutePath() -> std::filesystem::path const& {
+auto ResourceDB::GetResourceDirectoryAbsolutePath() const -> std::filesystem::path const& {
   return res_dir_abs_;
 }
 
@@ -309,7 +310,8 @@ auto ResourceDB::SaveResourceToFile(
     .guid = res->GetId().GetGuid(),
     .src_path_res_dir_rel = target_path_res_dir_rel,
     .load_path_abs = res_path_abs,
-    .subresource_count = 1
+    .subresource_count = 1,
+    .is_native_resource = true
   };
 
   // Update resource file record
@@ -476,7 +478,7 @@ auto ResourceDB::IsSavedResource(NativeResource const& res) const -> bool {
 }
 
 
-auto ResourceDB::PathToGuid(std::filesystem::path const& path_res_dir_rel) -> Guid {
+auto ResourceDB::PathToGuid(std::filesystem::path const& path_res_dir_rel) const -> Guid {
   if (auto const it{guid_by_src_abs_path_.find(GetResourceDirectoryAbsolutePath() / path_res_dir_rel)};
     it != std::end(guid_by_src_abs_path_)) {
     return it->second;
@@ -486,12 +488,41 @@ auto ResourceDB::PathToGuid(std::filesystem::path const& path_res_dir_rel) -> Gu
 }
 
 
-auto ResourceDB::GuidToPath(Guid const& guid) -> std::filesystem::path {
+auto ResourceDB::GuidToPath(Guid const& guid) const -> std::filesystem::path {
   if (auto const it{res_file_info_by_guid_.find(guid)}; it != std::end(res_file_info_by_guid_)) {
     return relative(it->second.load_path_abs, GetResourceDirectoryAbsolutePath());
   }
 
   return {};
+}
+
+
+auto ResourceDB::GetFileInfo(Guid const& guid) const -> ObserverPtr<ResourceFileInfo const> {
+  if (auto const it{res_file_info_by_guid_.find(guid)}; it != std::end(res_file_info_by_guid_)) {
+    return ObserverPtr{&it->second};
+  }
+
+  return nullptr;
+}
+
+
+auto ResourceDB::GetResourceInfo(ResourceId const& id) const -> ObserverPtr<ResourceInfo const> {
+  if (auto const it{res_info_by_id_.find(id)}; it != std::end(res_info_by_id_)) {
+    return ObserverPtr{&it->second};
+  }
+
+  return nullptr;
+}
+
+
+auto ResourceDB::GetResourcesInFile(Guid const& guid, std::vector<ObserverPtr<ResourceInfo const>>& out) const -> void {
+  out.clear();
+
+  for (auto const& [id, info] : res_info_by_id_) {
+    if (id.GetGuid() == guid) {
+      out.emplace_back(ObserverPtr{&info});
+    }
+  }
 }
 
 
@@ -522,44 +553,17 @@ auto ResourceDB::CreateNewImporterForResourceFile(
     }
   }
 
-  return {};
-}
-
-
-auto ResourceDB::GetFileInfo(Guid const& guid) const -> ObserverPtr<ResourceFileInfo const> {
-  if (auto const it{res_file_info_by_guid_.find(guid)}; it != std::end(res_file_info_by_guid_)) {
-    return ObserverPtr{&it->second};
-  }
-
   return nullptr;
-}
-
-
-auto ResourceDB::GetResourceInfo(ResourceId const& id) const -> ObserverPtr<ResourceInfo const> {
-  if (auto const it{res_info_by_id_.find(id)}; it != std::end(res_info_by_id_)) {
-    return ObserverPtr{&it->second};
-  }
-
-  return nullptr;
-}
-
-
-auto ResourceDB::GetResourcesInFile(Guid const& guid, std::vector<ObserverPtr<ResourceInfo const>>& out) const -> void {
-  for (auto const& [id, info] : res_info_by_id_) {
-    if (id.GetGuid() == guid) {
-      out.emplace_back(ObserverPtr{&info});
-    }
-  }
-}
-
-
-auto ResourceDB::MakeMetaPath(std::filesystem::path const& path) -> std::filesystem::path {
-  return std::filesystem::path{path} += kResourceMetaFileExt;
 }
 
 
 auto ResourceDB::IsMetaFile(std::filesystem::path const& path) -> bool {
   return path.extension() == kResourceMetaFileExt;
+}
+
+
+auto ResourceDB::MakeMetaPath(std::filesystem::path const& path) -> std::filesystem::path {
+  return std::filesystem::path{path} += kResourceMetaFileExt;
 }
 
 
@@ -693,7 +697,8 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
     .guid = guid,
     .src_path_res_dir_rel = relative(res_path_abs, res_dir_abs_),
     .load_path_abs = importer.IsNativeImporter() ? res_path_abs : MakeExternalResourceBinaryPathAbs(guid),
-    .subresource_count = clamp_cast<int>(import_results.size())
+    .subresource_count = clamp_cast<int>(import_results.size()),
+    .is_native_resource = importer.IsNativeImporter()
   };
 
   if (!importer.IsNativeImporter()) {
