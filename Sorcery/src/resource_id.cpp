@@ -1,5 +1,7 @@
 #include "resource_id.hpp"
 
+#include <sstream>
+
 
 namespace sorcery {
 auto ResourceId::Invalid() noexcept -> ResourceId {
@@ -24,6 +26,13 @@ auto ResourceId::GetIdxInFile() const noexcept -> int {
 
 auto ResourceId::IsValid() const noexcept -> bool {
   return guid_.IsValid() && idx_in_file_ >= 0;
+}
+
+
+ResourceId::operator std::string() const {
+  std::stringstream str_stream;
+  str_stream << std::string{guid_} << ":" << idx_in_file_;
+  return str_stream.str();
 }
 
 
