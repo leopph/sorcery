@@ -15,6 +15,7 @@
 
 namespace sorcery::mage {
 ResourceDB::ResourceDB(Object*& selected_object_ptr) :
+  OnDatabaseChanged{db_changed_},
   selected_object_ptr_{std::addressof(selected_object_ptr)} {}
 
 
@@ -240,6 +241,8 @@ auto ResourceDB::Refresh() -> void {
   App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
 
   spdlog::debug("Finished resource database refresh.");
+
+  db_changed_.invoke();
 }
 
 
@@ -328,6 +331,9 @@ auto ResourceDB::SaveResourceToFile(
 
   auto [res_mappings, file_mappings]{CreateMappings()};
   App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
+
+  db_changed_.invoke();
+
   return ret;
 }
 
@@ -377,6 +383,9 @@ auto ResourceDB::ImportResourceFile(std::filesystem::path const& res_path_res_di
 
   auto [res_mappings, file_mappings]{CreateMappings()};
   App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
+
+  db_changed_.invoke();
+
   return true;
 }
 
@@ -446,6 +455,8 @@ auto ResourceDB::DeleteResourceFile(Guid const& guid) -> void {
 
   auto [res_mappings, file_mappings]{CreateMappings()};
   App::Instance().GetResourceManager().UpdateMappings(std::move(res_mappings), std::move(file_mappings));
+
+  db_changed_.invoke();
 }
 
 
@@ -469,6 +480,9 @@ auto ResourceDB::DeleteDirectory(std::filesystem::path const& path_res_dir_rel) 
   }
 
   remove_all(pathAbs);
+
+  db_changed_.invoke();
+
   return true;
 }
 

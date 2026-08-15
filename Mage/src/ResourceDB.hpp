@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <map>
 
+#include "Event.hpp"
 #include "Guid.hpp"
 #include "NativeResource.hpp"
 #include "observer_ptr.hpp"
@@ -71,6 +72,7 @@ public:
     std::unique_ptr<NativeResource>&& res,
     std::filesystem::path const& target_path_res_dir_rel
   ) -> ObserverPtr<NativeResource>;
+
 
   /**
    * Saves the native resource to the resource file it is already associated with.
@@ -196,6 +198,7 @@ public:
     std::vector<ObserverPtr<ResourceInfo const>>& out
   ) const -> void;
 
+
   /**
    * Returns an importer object for the resource file at the given path.
    * If the file does not exist, or it is not a resource file, or the importer cannot be retrieved, the function will return nullptr.
@@ -215,6 +218,7 @@ public:
   auto CreateNewImporterForResourceFile(
     std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter>;
 
+
   /**
    * Returns if the given path is a plausible path to a meta file, that is, if its format is that of a valid meta file path.
    * The function will not validate the file's existence or contents.
@@ -225,13 +229,15 @@ public:
   ) -> bool;
 
 
+  /**
+   * Fires when the database has changed, for example when a resource file has been added, removed or modified.
+   */
+  GuardedEventReference<> OnDatabaseChanged;
+
+
   constexpr static std::string_view kResourceMetaFileExt{".mojo"};
 
 private:
-  constexpr static std::string_view kResourceDirProjRel{"Resources"};
-  constexpr static std::string_view kCacheDirProjRel{"Cache"};
-
-
   /**
  * Returns the path where the meta file for the file at the given path would be stored if it were a resource file.
  * The function will not validate the given path, nor will it check if the file exists or if it is even a resource.
@@ -342,5 +348,10 @@ private:
   std::map<ResourceId, ResourceInfo> res_info_by_id_;
 
   Object** selected_object_ptr_;
+
+  Event<> db_changed_;
+
+  constexpr static std::string_view kResourceDirProjRel{"Resources"};
+  constexpr static std::string_view kCacheDirProjRel{"Cache"};
 };
 }
