@@ -97,7 +97,7 @@ private:
 
   ImGuiRenderer imgui_renderer_{GetGraphicsDevice(), GetSwapChain(), GetRenderManager()};
 
-  ProjectWindow project_window_{*this};
+  ProjectWindow project_window_{*this, resource_db_};
   SceneViewWindow scene_view_window_;
   GameViewWindow game_view_window_;
   PropertiesWindow properties_window_{*this};
