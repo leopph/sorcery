@@ -209,7 +209,7 @@
     <ClInclude Include="src\Event.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Util.hpp">
+    <ClInclude Include="src\util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Resources\Scene.hpp">

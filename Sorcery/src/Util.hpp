@@ -63,6 +63,13 @@ template<std::integral T>
 // Does NOT perform any encoding conversions or checks.
 // Consider this a "static_cast".
 [[nodiscard]] LEOPPHAPI auto ToUtf8StdSv(std::string_view sv) -> std::u8string_view;
+
+
+template<class... Ts>
+struct Overloaded : Ts... {
+  using Ts::operator()...;
+  consteval auto operator()(auto) const -> void;
+};
 }
 
 

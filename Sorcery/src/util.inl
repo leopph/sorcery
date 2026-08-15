@@ -82,4 +82,10 @@ template<std::integral T>
 constexpr auto Mod(T dividend, T modulus) -> T {
   return (dividend % modulus + modulus) % modulus;
 }
+
+
+template<class... Ts>
+consteval auto Overloaded<Ts...>::operator()(auto) const -> void {
+  static_assert(false, "Unsupported type");
+}
 }
