@@ -94,17 +94,17 @@ private:
   };
 
 
-  using RenameTargetItem = std::variant<
-    DirectoryProjectItem,
-    ResourcePackageFileProjectItem,
-    NativeResourceFileProjectItem
-  >;
-
-
   struct RenameContext {
     std::string new_name;
+    std::string error_msg;
     std::filesystem::path node_path_abs; // TODO remove later
-    RenameTargetItem target;
+    ProjectItem target;
+  };
+
+
+  enum class PendingRenameAction : std::uint8_t {
+    kCommit,
+    kCancel
   };
 
 
@@ -166,8 +166,26 @@ private:
   auto DrawResourcePackageFileContextMenu(ResourcePackageFileProjectItem const& item) -> void;
   auto DrawSubresourceContextMenu(SubresourceProjectItem const& item) -> void;
 
+  [[nodiscard]]
+  auto CanRename(ProjectItem const& item) const -> bool;
+
+  [[nodiscard]]
+  auto IsRenaming(ProjectItem const& item) const -> bool;
+
+  [[nodiscard]] static
+  auto IsValidSingleFilename(std::string_view name) -> bool;
+
+  auto DrawRenameInput() -> void;
+  auto HandleRenameShortcut() -> void;
+  auto ExecutePendingRenameAction() -> void;
+  auto CommitRename() -> void;
+  [[nodiscard]]
+  auto CommitDirectoryRename(DirectoryProjectItem const& item, std::string_view new_name) -> bool;
+  [[nodiscard]]
+  auto CommitResourceFileRename(Guid const& guid, std::string_view new_name) -> bool;
+
   auto ExecutePendingCommand() -> void;
-  auto ExecuteImport(ProjectItem const& target) -> void;
+  auto ExecuteImport(ProjectItem const& target) const -> void;
   auto CreateFolder(ProjectItem const& target) -> void;
   auto BeginRename(ProjectItem const& target) -> void;
   auto ExecuteDelete(ProjectItem const& target) -> void;
@@ -208,7 +226,8 @@ private:
   std::optional<ProjectItem> selected_item_;
   std::optional<ProjectCommand> pending_command_;
   std::optional<ProjectItem> context_menu_target_;
-  std::optional<RenameContext> rename_ctx_; // nullopt if not renaming
+  std::optional<RenameContext> rename_ctx_;
+  std::optional<PendingRenameAction> pending_rename_action_;
   std::vector<FileImportContext> files_to_import_;
   bool open_import_modal_{false};
   bool open_context_menu_{false};

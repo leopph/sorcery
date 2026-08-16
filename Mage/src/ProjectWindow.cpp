@@ -207,7 +207,9 @@ auto ProjectWindow::Draw() -> void {
   }
   ImGui::End();
 
+  HandleRenameShortcut();
   ExecutePendingCommand();
+  ExecutePendingRenameAction();
 }
 
 
@@ -238,6 +240,7 @@ auto ProjectWindow::ShouldDrawAsTree(ProjectTreeNode const& node) -> bool {
 
 auto ProjectWindow::DrawNode(ProjectTreeNode const& node) -> void {
   auto const draw_as_tree{ShouldDrawAsTree(node)};
+  auto const is_renaming{IsRenaming(node.item)};
 
   ImGuiTreeNodeFlags flags =
     ImGuiTreeNodeFlags_DefaultOpen |
@@ -253,13 +256,32 @@ auto ProjectWindow::DrawNode(ProjectTreeNode const& node) -> void {
     flags |= ImGuiTreeNodeFlags_Selected;
   }
 
-  auto const is_open{ImGui::TreeNodeEx(node.imgui_id.c_str(), flags, "%s", node.display_name.c_str())};
-
-  if (ImGui::IsItemClicked()) {
-    SelectItem(node.item);
+  if (is_renaming) {
+    flags |= ImGuiTreeNodeFlags_AllowOverlap;
+    ImGui::SetNextItemAllowOverlap();
   }
 
-  DrawContextMenu(node.item);
+  auto const is_open{
+    ImGui::TreeNodeEx(
+      node.imgui_id.c_str(),
+      flags,
+      "%s",
+      is_renaming ? "" : node.display_name.c_str()
+    )
+  };
+
+  if (!is_renaming) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+      SelectItem(node.item);
+    }
+  }
+
+  if (is_renaming) {
+    DrawRenameInput();
+  } else {
+    // TODO drag and drop stuff
+    DrawContextMenu(node.item);
+  }
 
   if (draw_as_tree && is_open) {
     for (auto const& child_node : node.children) {
@@ -374,7 +396,7 @@ auto ProjectWindow::DrawDirectoryContextMenu(DirectoryProjectItem const& item) -
     };
   }
 
-  if (ImGui::MenuItem("Rename")) {
+  if (ImGui::MenuItem("Rename", nullptr, false, CanRename(item))) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kBeginRename,
       .target = item
@@ -409,7 +431,7 @@ auto ProjectWindow::DrawNativeResourceFileContextMenu(NativeResourceFileProjectI
 
   ImGui::Separator();
 
-  if (ImGui::MenuItem("Rename")) {
+  if (ImGui::MenuItem("Rename", nullptr, false, CanRename(item))) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kBeginRename,
       .target = item
@@ -474,7 +496,7 @@ auto ProjectWindow::DrawResourcePackageFileContextMenu(ResourcePackageFileProjec
 
   ImGui::Separator();
 
-  if (ImGui::MenuItem("Rename")) {
+  if (ImGui::MenuItem("Rename", nullptr, false, CanRename(item))) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kBeginRename,
       .target = item
@@ -547,6 +569,227 @@ auto ProjectWindow::DrawSubresourceContextMenu(SubresourceProjectItem const& ite
       .target = item
     };
   }
+}
+
+
+auto ProjectWindow::CanRename(ProjectItem const& item) const -> bool {
+  return std::visit(Overloaded{
+    [this]([[maybe_unused]] DirectoryProjectItem const& dir_item) {
+      // Don't allow renaming the root resource directory.
+      return exists(dir_item.path_abs) && !equivalent(dir_item.path_abs,
+               resource_db_->GetResourceDirectoryAbsolutePath());
+    },
+    []([[maybe_unused]] NativeResourceFileProjectItem const& res_item) {
+      return true;
+    },
+    []([[maybe_unused]] ResourcePackageFileProjectItem const& res_pack_item) {
+      return true;
+    },
+    []([[maybe_unused]] SubresourceProjectItem const& subres_item) {
+      return false;
+    }
+  }, item);
+}
+
+
+auto ProjectWindow::IsRenaming(ProjectItem const& item) const -> bool {
+  return rename_ctx_ && rename_ctx_->target == item;
+}
+
+
+auto ProjectWindow::IsValidSingleFilename(std::string_view const name) -> bool {
+  if (name.empty()) {
+    return false;
+  }
+
+  if (name == "." || name == "..") {
+    return false;
+  }
+
+  // Reject name if it contains a path separator.
+  if (std::filesystem::path{name}.has_parent_path()) {
+    return false;
+  }
+
+  return true;
+}
+
+
+auto ProjectWindow::DrawRenameInput() -> void {
+  if (!rename_ctx_) {
+    return;
+  }
+
+  ImGui::SameLine();
+  ImGui::PushID("rename_input");
+
+  ImGui::SetKeyboardFocusHere();
+
+  auto constexpr flags{ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll};
+
+  auto const pressed_enter{ImGui::InputText("##Rename", &rename_ctx_->new_name, flags)};
+  auto const pressed_escape{ImGui::IsKeyPressed(ImGuiKey_Escape)};
+  auto const deactivated{ImGui::IsItemDeactivated()};
+
+  if (!rename_ctx_->error_msg.empty()) {
+    ImGui::TextColored(ImVec4{1.0f, 0.0f, 0.0f, 1.0f}, "%s", rename_ctx_->error_msg.c_str());
+    spdlog::error("Rename error: {}", rename_ctx_->error_msg);
+  }
+
+  if (pressed_escape) {
+    pending_rename_action_ = PendingRenameAction::kCancel;
+  } else if (pressed_enter || deactivated) {
+    pending_rename_action_ = PendingRenameAction::kCommit;
+  }
+
+  ImGui::PopID();
+}
+
+
+auto ProjectWindow::HandleRenameShortcut() -> void {
+  if (!selected_item_) {
+    return;
+  }
+
+  if (!CanRename(*selected_item_)) {
+    return;
+  }
+
+  if (ImGui::IsKeyPressed(ImGuiKey_F2, false)) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kBeginRename,
+      .target = *selected_item_
+    };
+  }
+}
+
+
+auto ProjectWindow::ExecutePendingRenameAction() -> void {
+  if (!pending_rename_action_) {
+    return;
+  }
+
+  auto const action{std::exchange(pending_rename_action_, std::nullopt)};
+
+  switch (*action) {
+    case PendingRenameAction::kCommit: {
+      CommitRename();
+      break;
+    }
+
+    case PendingRenameAction::kCancel: {
+      rename_ctx_.reset();
+      break;
+    }
+  }
+}
+
+
+auto ProjectWindow::CommitRename() -> void {
+  if (!rename_ctx_) {
+    spdlog::error("Cannot commit rename without an active rename context.");
+    return;
+  }
+
+  auto const new_name{Trim(rename_ctx_->new_name)};
+
+  if (!IsValidSingleFilename(new_name)) {
+    spdlog::error("Failed to commit rename due to invalid name: '{}'.", new_name);
+    rename_ctx_.reset();
+    return;
+  }
+
+  auto const success{
+    std::visit(Overloaded{
+      [&](DirectoryProjectItem const& item) {
+        return CommitDirectoryRename(item, new_name);
+      },
+
+      [&](NativeResourceFileProjectItem const& item) {
+        return CommitResourceFileRename(item.guid, new_name);
+      },
+
+      [&](ResourcePackageFileProjectItem const& item) {
+        return CommitResourceFileRename(item.guid, new_name);
+      },
+
+      [this]([[maybe_unused]] SubresourceProjectItem const& item) {
+        return false;
+      }
+    }, rename_ctx_->target)
+  };
+
+  if (success) {
+    rename_ctx_.reset();
+  }
+}
+
+
+auto ProjectWindow::CommitDirectoryRename(DirectoryProjectItem const& item, std::string_view const new_name) -> bool {
+  if (item.path_abs.empty()) {
+    return false;
+  }
+
+  auto const& src_path_abs{item.path_abs};
+  auto const dst_path_abs{src_path_abs.parent_path() / new_name};
+
+  if (src_path_abs == dst_path_abs) {
+    return true;
+  }
+
+  if (std::filesystem::exists(dst_path_abs)) {
+    rename_ctx_->error_msg = "A folder or resource with that name already exists.";
+    return false;
+  }
+
+  if (!resource_db_->MoveDirectory(src_path_abs, dst_path_abs)) {
+    rename_ctx_->error_msg = "Failed to rename folder.";
+    return false;
+  }
+
+  selected_item_ = DirectoryProjectItem{
+    .path_abs = dst_path_abs
+  };
+
+  return true;
+}
+
+
+auto ProjectWindow::CommitResourceFileRename(Guid const& guid, std::string_view const new_name) -> bool {
+  auto info = resource_db_->GetFileInfo(guid);
+
+  if (!info) {
+    rename_ctx_->error_msg = "Resource file no longer exists.";
+    return false;
+  }
+
+  auto const& old_path_res_dir_rel{info->src_path_res_dir_rel};
+
+  auto const new_filename{
+    std::string{new_name}.append(ToUntypedStdSv(old_path_res_dir_rel.extension().u8string()))
+  };
+
+  auto const new_path_res_dir_rel{old_path_res_dir_rel.parent_path() / new_filename};
+
+  if (old_path_res_dir_rel == new_path_res_dir_rel) {
+    return true;
+  }
+
+  auto const dst_path_abs{
+    resource_db_->GetResourceDirectoryAbsolutePath() / new_path_res_dir_rel
+  };
+
+  if (std::filesystem::exists(dst_path_abs)) {
+    rename_ctx_->error_msg = "A file or folder with that name already exists.";
+    return false;
+  }
+
+  if (!resource_db_->MoveResourceFile(guid, new_path_res_dir_rel)) {
+    rename_ctx_->error_msg = "Failed to rename resource file.";
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -626,8 +869,8 @@ auto ProjectWindow::ExecutePendingCommand() -> void {
 }
 
 
-auto ProjectWindow::ExecuteImport(ProjectItem const& target) -> void {
-  std::optional const target_dir_abs{
+auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
+  auto const target_dir_abs{
     std::visit(Overloaded{
       [](DirectoryProjectItem const& folder) -> std::optional<std::filesystem::path> {
         return folder.path_abs;
@@ -695,7 +938,58 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) -> void {
 
 
 auto ProjectWindow::CreateFolder(ProjectItem const& target) -> void {}
-auto ProjectWindow::BeginRename(ProjectItem const& target) -> void {}
+
+
+auto ProjectWindow::BeginRename(ProjectItem const& target) -> void {
+  if (!CanRename(target)) {
+    spdlog::error("Tried renaming a project item that cannot be renamed. Ignoring.");
+    return;
+  }
+
+  auto const name{
+    std::visit(Overloaded{
+      [](DirectoryProjectItem const& item) -> std::optional<std::string> {
+        if (item.path_abs.empty()) {
+          return std::nullopt;
+        }
+        return item.path_abs.filename().string();
+      },
+
+      [this](NativeResourceFileProjectItem const& item) -> std::optional<std::string> {
+        auto const info{resource_db_->GetFileInfo(item.guid)};
+        if (!info) {
+          return std::nullopt;
+        }
+        return info->src_path_res_dir_rel.stem().string();
+      },
+
+      [this](ResourcePackageFileProjectItem const& item) -> std::optional<std::string> {
+        auto const info{resource_db_->GetFileInfo(item.guid)};
+        if (!info) {
+          return std::nullopt;
+        }
+        return info->src_path_res_dir_rel.stem().string();
+      },
+
+      [](SubresourceProjectItem const&) -> std::optional<std::string> {
+        return std::nullopt;
+      }
+    }, target)
+  };
+
+  if (!name) {
+    spdlog::error("Failed to get name to rename. Aborting.");
+    return;
+  }
+
+  rename_ctx_ = RenameContext{
+    .new_name = *name,
+    .node_path_abs = "",
+    .target = target
+  };
+}
+
+
 auto ProjectWindow::ExecuteDelete(ProjectItem const& target) -> void {}
 auto ProjectWindow::ExecuteShowInExplorer(ProjectItem const& target) -> void {}
 auto ProjectWindow::ExecuteReimport(ProjectItem const& target) -> void {}
