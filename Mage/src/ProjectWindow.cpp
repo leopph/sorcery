@@ -11,6 +11,7 @@
 #include "EditorApp.hpp"
 #include "GUI.hpp"
 #include "Material.hpp"
+#include "Platform.hpp"
 #include "ReflectionDisplayProperties.hpp"
 #include "util.hpp"
 
@@ -54,7 +55,7 @@ auto ProjectWindow::RebuildHierarchy() -> void {
 
     for (auto const& entry : std::filesystem::directory_iterator{dir_item.path_abs}) {
       if (entry.is_directory()) {
-        root_node_->children.emplace_back(ProjectTreeNode{
+        current_node->children.emplace_back(ProjectTreeNode{
           .item = DirectoryProjectItem{entry.path()},
           .display_name = entry.path().filename().string(),
           .imgui_id = std::format("##{}", entry.path().string()),
@@ -79,7 +80,7 @@ auto ProjectWindow::RebuildHierarchy() -> void {
         }
 
         if (file_info->is_native_resource) {
-          root_node_->children.emplace_back(ProjectTreeNode{
+          current_node->children.emplace_back(ProjectTreeNode{
             .item = NativeResourceFileProjectItem{.guid = guid},
             .display_name = entry.path().filename().string(),
             .imgui_id = std::format("##{}", entry.path().string()),
@@ -104,7 +105,7 @@ auto ProjectWindow::RebuildHierarchy() -> void {
             });
           }
 
-          root_node_->children.emplace_back(ProjectTreeNode{
+          current_node->children.emplace_back(ProjectTreeNode{
             .item = ResourcePackageFileProjectItem{.guid = guid},
             .display_name = entry.path().filename().string(),
             .imgui_id = std::format("##{}", entry.path().string()),
@@ -112,6 +113,10 @@ auto ProjectWindow::RebuildHierarchy() -> void {
           });
         }
       }
+    }
+
+    for (auto& child_node : current_node->children) {
+      nodes_to_process.emplace(&child_node);
     }
   }
 
@@ -122,6 +127,7 @@ auto ProjectWindow::RebuildHierarchy() -> void {
 auto ProjectWindow::Draw() -> void {
   if (should_rebuild_hierarchy_on_next_draw_) {
     RebuildHierarchy();
+    ValidateSelection();
     should_rebuild_hierarchy_on_next_draw_ = false;
   }
 
@@ -200,6 +206,8 @@ auto ProjectWindow::Draw() -> void {
     }*/
   }
   ImGui::End();
+
+  ExecutePendingCommand();
 }
 
 
@@ -232,6 +240,7 @@ auto ProjectWindow::DrawNode(ProjectTreeNode const& node) -> void {
   auto const draw_as_tree{ShouldDrawAsTree(node)};
 
   ImGuiTreeNodeFlags flags =
+    ImGuiTreeNodeFlags_DefaultOpen |
     ImGuiTreeNodeFlags_OpenOnArrow |
     ImGuiTreeNodeFlags_SpanAvailWidth;
 
@@ -250,7 +259,7 @@ auto ProjectWindow::DrawNode(ProjectTreeNode const& node) -> void {
     SelectItem(node.item);
   }
 
-  // TODO Draw context menu here
+  DrawContextMenu(node.item);
 
   if (draw_as_tree && is_open) {
     for (auto const& child_node : node.children) {
@@ -287,6 +296,416 @@ auto ProjectWindow::SetEditorSelectionTo(ProjectItem const& item) const -> void 
     }
   }, item);
 }
+
+
+auto ProjectWindow::ValidateSelection() -> void {
+  if (!selected_item_) {
+    return;
+  }
+
+  std::visit(Overloaded{
+    [&](DirectoryProjectItem const& item) {
+      if (!std::filesystem::is_directory(item.path_abs) || relative(item.path_abs,
+            resource_db_->GetResourceDirectoryAbsolutePath()).empty()) {
+        selected_item_.reset();
+      }
+    },
+    [&](NativeResourceFileProjectItem const& item) {
+      if (!resource_db_->GetFileInfo(item.guid)) {
+        selected_item_.reset();
+      }
+    },
+    [&](ResourcePackageFileProjectItem const& item) {
+      if (!resource_db_->GetFileInfo(item.guid)) {
+        selected_item_.reset();
+      }
+    },
+    [&](SubresourceProjectItem const& item) {
+      if (!resource_db_->GetResourceInfo(item.id)) {
+        if (resource_db_->GetFileInfo(item.id.GetGuid())) {
+          selected_item_ = ResourcePackageFileProjectItem{item.id.GetGuid()};
+        } else {
+          selected_item_.reset();
+        }
+      }
+    }
+  }, *selected_item_);
+}
+
+
+auto ProjectWindow::DrawContextMenu(ProjectItem const& item) -> void {
+  if (!ImGui::BeginPopupContextItem()) {
+    return;
+  }
+
+  std::visit(Overloaded{
+    [this](DirectoryProjectItem const& folder) {
+      DrawDirectoryContextMenu(folder);
+    },
+    [this](NativeResourceFileProjectItem const& file) {
+      DrawNativeResourceFileContextMenu(file);
+    },
+    [this](ResourcePackageFileProjectItem const& file) {
+      DrawResourcePackageFileContextMenu(file);
+    },
+    [this](SubresourceProjectItem const& resource) {
+      DrawSubresourceContextMenu(resource);
+    }
+  }, item);
+
+  ImGui::EndPopup();
+}
+
+
+auto ProjectWindow::DrawDirectoryContextMenu(DirectoryProjectItem const& item) -> void {
+  if (ImGui::MenuItem("Import New Resource")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kImportFilesIntoFolder,
+      .target = item
+    };
+  }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Create Folder")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kCreateFolder,
+      .target = item
+    };
+  }
+
+  if (ImGui::MenuItem("Rename")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kBeginRename,
+      .target = item
+    };
+  }
+
+  if (ImGui::MenuItem("Delete")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kDelete,
+      .target = item
+    };
+  }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Show in Explorer")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kShowInExplorer,
+      .target = item
+    };
+  }
+}
+
+
+auto ProjectWindow::DrawNativeResourceFileContextMenu(NativeResourceFileProjectItem const& item) -> void {
+  if (ImGui::MenuItem("Open")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kOpenResource,
+      .target = item
+    };
+  }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Rename")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kBeginRename,
+      .target = item
+    };
+  }
+
+  if (ImGui::MenuItem("Delete")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kDelete,
+      .target = item
+    };
+  }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Show in Explorer")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kShowInExplorer,
+      .target = item
+    };
+  }
+
+  if (ImGui::MenuItem("Copy GUID")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kCopyGuid,
+      .target = item
+    };
+  }
+
+  if (ImGui::MenuItem("Copy Resource ID")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kCopyResourceId,
+      .target = item
+    };
+  }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Unload")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kUnloadResource,
+      .target = item
+    };
+  }
+}
+
+
+auto ProjectWindow::DrawResourcePackageFileContextMenu(ResourcePackageFileProjectItem const& item) -> void {
+  if (ImGui::MenuItem("Reimport")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kReimportFile,
+      .target = item
+    };
+  }
+
+  if (ImGui::MenuItem("Import Settings")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kOpenImportSettings,
+      .target = item
+    };
+  }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Rename")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kBeginRename,
+      .target = item
+    };
+  }
+
+  if (ImGui::MenuItem("Delete")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kDelete,
+      .target = item
+    };
+  }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Show in Explorer")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kShowInExplorer,
+      .target = item
+    };
+  }
+
+  if (ImGui::MenuItem("Copy GUID")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kCopyGuid,
+      .target = item
+    };
+  }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Unload All Resources")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kUnloadAllResourcesInFile,
+      .target = item
+    };
+  }
+}
+
+
+auto ProjectWindow::DrawSubresourceContextMenu(SubresourceProjectItem const& item) -> void {
+  if (ImGui::MenuItem("Open")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kOpenResource,
+      .target = item
+    };
+  }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Copy Resource ID")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kCopyResourceId,
+      .target = item
+    };
+  }
+
+  if (ImGui::MenuItem("Locate Parent File")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kLocateParentFile,
+      .target = item
+    };
+  }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Unload")) {
+    pending_command_ = ProjectCommand{
+      .kind = ProjectCommandKind::kUnloadResource,
+      .target = item
+    };
+  }
+}
+
+
+auto ProjectWindow::ExecutePendingCommand() -> void {
+  if (!pending_command_) {
+    return;
+  }
+
+  auto const command = std::exchange(pending_command_, std::nullopt);
+
+  switch (command->kind) {
+    case ProjectCommandKind::kImportFilesIntoFolder: {
+      ExecuteImport(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kCreateFolder: {
+      CreateFolder(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kBeginRename: {
+      BeginRename(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kDelete: {
+      ExecuteDelete(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kShowInExplorer: {
+      ExecuteShowInExplorer(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kReimportFile: {
+      ExecuteReimport(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kOpenImportSettings: {
+      OpenImportSettings(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kCopyGuid: {
+      ExecuteCopyGuid(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kCopyResourceId: {
+      ExecuteCopyResourceId(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kUnloadResource: {
+      ExecuteUnloadResource(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kUnloadAllResourcesInFile: {
+      ExecuteUnloadAllResourcesInFile(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kOpenResource: {
+      ExecuteOpenResource(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kLocateParentFile: {
+      ExecuteLocateParentFile(command->target);
+      break;
+    }
+  }
+}
+
+
+auto ProjectWindow::ExecuteImport(ProjectItem const& target) -> void {
+  std::optional const target_dir_abs{
+    std::visit(Overloaded{
+      [](DirectoryProjectItem const& folder) -> std::optional<std::filesystem::path> {
+        return folder.path_abs;
+      },
+      []([[maybe_unused]] ResourcePackageFileProjectItem const& file) -> std::optional<std::filesystem::path> {
+        spdlog::error("Import command received a resource package instead of a directory as target, ignoring.");
+        return std::nullopt;
+      },
+      []([[maybe_unused]] NativeResourceFileProjectItem const& file) -> std::optional<std::filesystem::path> {
+        spdlog::error("Import command received a native resource instead of a directory as target, ignoring.");
+        return std::nullopt;
+      },
+      []([[maybe_unused]] SubresourceProjectItem const& resource) -> std::optional<std::filesystem::path> {
+        spdlog::error("Import command received a subresource instead of a directory as target, ignoring.");
+        return std::nullopt;
+      }
+    }, target)
+  };
+
+  NFD::UniquePathSet import_paths;
+
+  if (OpenDialogMultiple(import_paths, static_cast<nfdnfilteritem_t*>(nullptr)) != NFD_OKAY) {
+    return;
+  }
+
+  nfdpathsetsize_t import_path_count{0};
+
+  if (NFD::PathSet::Count(import_paths, import_path_count) != NFD_OKAY) {
+    spdlog::error("Failed to count selected import paths.");
+    return;
+  }
+
+  for (nfdpathsetsize_t i{0}; i < import_path_count; i++) {
+    NFD::UniquePathSetPathN src_path_abs_str;
+
+    if (NFD::PathSet::GetPath(import_paths, i, src_path_abs_str) != NFD_OKAY) {
+      spdlog::error("Failed to get selected import path at index {}.", i);
+      continue;
+    }
+
+    std::filesystem::path const src_path_abs{src_path_abs_str.get()};
+
+    auto importer{ResourceDB::CreateNewImporterForResourceFile(src_path_abs)};
+
+    if (!importer) {
+      auto const err_str{
+        std::format("Couldn't import file {} because no importer was found for its type.",
+          ToUntypedStdSv(src_path_abs.u8string()))
+      };
+      spdlog::error(err_str);
+      DisplayError(err_str);
+      continue;
+    }
+
+    if (auto const dst_path_abs{GenerateUniquePath(*target_dir_abs / src_path_abs.filename())};
+      !TryImportFromSourceFile(importer.get(), src_path_abs, dst_path_abs)) {
+      auto const err_str{
+        std::format("Failed to import file {}.", ToUntypedStdSv(src_path_abs.u8string()))
+      };
+      spdlog::error(err_str);
+      DisplayError(err_str);
+    }
+  }
+}
+
+
+auto ProjectWindow::CreateFolder(ProjectItem const& target) -> void {}
+auto ProjectWindow::BeginRename(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteDelete(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteShowInExplorer(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteReimport(ProjectItem const& target) -> void {}
+auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteCopyGuid(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteCopyResourceId(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteUnloadResource(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteOpenResource(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteLocateParentFile(ProjectItem const& target) -> void {}
 
 
 auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& node_path_abs,

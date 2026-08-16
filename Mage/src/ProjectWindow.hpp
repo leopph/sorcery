@@ -115,6 +115,30 @@ private:
   };
 
 
+  enum class ProjectCommandKind : std::uint8_t {
+    kImportFilesIntoFolder,
+    kCreateFolder,
+    kBeginRename,
+    kDelete,
+    kShowInExplorer,
+
+    kReimportFile,
+    kOpenImportSettings,
+    kCopyGuid,
+    kCopyResourceId,
+    kUnloadResource,
+    kUnloadAllResourcesInFile,
+    kOpenResource,
+    kLocateParentFile
+  };
+
+
+  struct ProjectCommand {
+    ProjectCommandKind kind;
+    ProjectItem target;
+  };
+
+
   [[nodiscard]] static
   auto IsDirectory(ProjectTreeNode const& node) -> bool;
 
@@ -133,8 +157,29 @@ private:
   auto DrawNode(ProjectTreeNode const& node) -> void;
 
   auto SelectItem(ProjectItem const& item) -> void;
-
   auto SetEditorSelectionTo(ProjectItem const& item) const -> void;
+  auto ValidateSelection() -> void;
+
+  auto DrawContextMenu(ProjectItem const& item) -> void;
+  auto DrawDirectoryContextMenu(DirectoryProjectItem const& item) -> void;
+  auto DrawNativeResourceFileContextMenu(NativeResourceFileProjectItem const& item) -> void;
+  auto DrawResourcePackageFileContextMenu(ResourcePackageFileProjectItem const& item) -> void;
+  auto DrawSubresourceContextMenu(SubresourceProjectItem const& item) -> void;
+
+  auto ExecutePendingCommand() -> void;
+  auto ExecuteImport(ProjectItem const& target) -> void;
+  auto CreateFolder(ProjectItem const& target) -> void;
+  auto BeginRename(ProjectItem const& target) -> void;
+  auto ExecuteDelete(ProjectItem const& target) -> void;
+  auto ExecuteShowInExplorer(ProjectItem const& target) -> void;
+  auto ExecuteReimport(ProjectItem const& target) -> void;
+  auto OpenImportSettings(ProjectItem const& target) -> void;
+  auto ExecuteCopyGuid(ProjectItem const& target) -> void;
+  auto ExecuteCopyResourceId(ProjectItem const& target) -> void;
+  auto ExecuteUnloadResource(ProjectItem const& target) -> void;
+  auto ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -> void;
+  auto ExecuteOpenResource(ProjectItem const& target) -> void;
+  auto ExecuteLocateParentFile(ProjectItem const& target) -> void;
 
   // Returns whether the drawn subtree was modified.
   [[nodiscard]]
@@ -161,6 +206,7 @@ private:
 
   std::optional<ProjectTreeNode> root_node_;
   std::optional<ProjectItem> selected_item_;
+  std::optional<ProjectCommand> pending_command_;
   std::optional<ProjectItem> context_menu_target_;
   std::optional<RenameContext> rename_ctx_; // nullopt if not renaming
   std::vector<FileImportContext> files_to_import_;
