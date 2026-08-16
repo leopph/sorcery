@@ -118,6 +118,8 @@ private:
   enum class ProjectCommandKind : std::uint8_t {
     kImportFilesIntoFolder,
     kCreateFolder,
+    kCreateMaterial,
+    kCreateScene,
     kBeginRename,
     kDelete,
     kShowInExplorer,
@@ -187,6 +189,8 @@ private:
   auto ExecutePendingCommand() -> void;
   auto ExecuteImport(ProjectItem const& target) const -> void;
   auto CreateFolder(ProjectItem const& target) -> void;
+  auto CreateMaterial(ProjectItem const& target) -> void;
+  auto CreateScene(ProjectItem const& target) -> void;
   auto BeginRename(ProjectItem const& target) -> void;
   auto ExecuteDelete(ProjectItem const& target) -> void;
   auto ExecuteShowInExplorer(ProjectItem const& target) -> void;

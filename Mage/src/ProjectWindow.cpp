@@ -380,6 +380,35 @@ auto ProjectWindow::DrawContextMenu(ProjectItem const& item) -> void {
 
 
 auto ProjectWindow::DrawDirectoryContextMenu(DirectoryProjectItem const& item) -> void {
+  if (ImGui::BeginMenu("New")) {
+    if (ImGui::MenuItem("Folder")) {
+      pending_command_ = ProjectCommand{
+        .kind = ProjectCommandKind::kCreateFolder,
+        .target = item
+      };
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::MenuItem("Material")) {
+      pending_command_ = ProjectCommand{
+        .kind = ProjectCommandKind::kCreateMaterial,
+        .target = item
+      };
+    }
+
+    if (ImGui::MenuItem("Scene")) {
+      pending_command_ = ProjectCommand{
+        .kind = ProjectCommandKind::kCreateScene,
+        .target = item
+      };
+    }
+
+    ImGui::EndMenu();
+  }
+
+  ImGui::Separator();
+
   if (ImGui::MenuItem("Import New Resource")) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kImportFilesIntoFolder,
@@ -388,13 +417,6 @@ auto ProjectWindow::DrawDirectoryContextMenu(DirectoryProjectItem const& item) -
   }
 
   ImGui::Separator();
-
-  if (ImGui::MenuItem("Create Folder")) {
-    pending_command_ = ProjectCommand{
-      .kind = ProjectCommandKind::kCreateFolder,
-      .target = item
-    };
-  }
 
   if (ImGui::MenuItem("Rename", nullptr, false, CanRename(item))) {
     pending_command_ = ProjectCommand{
@@ -811,6 +833,14 @@ auto ProjectWindow::ExecutePendingCommand() -> void {
       break;
     }
 
+    case ProjectCommandKind::kCreateMaterial: {
+      CreateMaterial(command->target);
+    }
+
+    case ProjectCommandKind::kCreateScene: {
+      CreateScene(command->target);
+    }
+
     case ProjectCommandKind::kBeginRename: {
       BeginRename(command->target);
       break;
@@ -938,6 +968,8 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
 
 
 auto ProjectWindow::CreateFolder(ProjectItem const& target) -> void {}
+auto ProjectWindow::CreateMaterial(ProjectItem const& target) -> void {}
+auto ProjectWindow::CreateScene(ProjectItem const& target) -> void {}
 
 
 auto ProjectWindow::BeginRename(ProjectItem const& target) -> void {
