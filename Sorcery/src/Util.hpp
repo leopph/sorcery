@@ -26,6 +26,9 @@ template<class T> concept Scalar = std::is_scalar_v<T>;
 
 [[nodiscard]] LEOPPHAPI auto Contains(std::string_view src, std::string_view target) -> bool;
 
+[[nodiscard]] SORCERYAPI
+auto Trim(std::string_view sv) -> std::string_view;
+
 LEOPPHAPI auto CalculateNormals(std::span<Vector3 const> positions, std::span<unsigned const> indices,
                                 std::vector<Vector3>& out) -> std::vector<Vector3>&;
 LEOPPHAPI auto CalculateTangents(std::span<Vector3 const> positions, std::span<Vector2 const> uvs,

@@ -33,6 +33,18 @@ auto Contains(std::string_view const src, std::string_view const target) -> bool
 }
 
 
+auto Trim(std::string_view const sv) -> std::string_view {
+  auto const begin{sv.find_first_not_of(" \t\r\n")};
+
+  if (begin == std::string_view::npos) {
+    return {};
+  }
+
+  auto const end{sv.find_last_not_of(" \t\r\n")};
+  return sv.substr(begin, end - begin + 1);
+}
+
+
 auto CalculateNormals(std::span<Vector3 const> const positions, std::span<unsigned const> const indices,
                       std::vector<Vector3>& out) -> std::vector<Vector3>& {
   if (indices.size() % 3 != 0) {
