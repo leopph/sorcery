@@ -188,7 +188,7 @@ private:
 
   auto ExecutePendingCommand() -> void;
   auto ExecuteImport(ProjectItem const& target) const -> void;
-  auto CreateFolder(ProjectItem const& target) -> void;
+  auto CreateFolder(ProjectItem const& target) const -> void;
   auto CreateMaterial(ProjectItem const& target) -> void;
   auto CreateScene(ProjectItem const& target) -> void;
   auto BeginRename(ProjectItem const& target) -> void;

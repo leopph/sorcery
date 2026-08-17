@@ -967,7 +967,30 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
 }
 
 
-auto ProjectWindow::CreateFolder(ProjectItem const& target) -> void {}
+auto ProjectWindow::CreateFolder(ProjectItem const& target) const -> void {
+  auto const* const dir_target{std::get_if<DirectoryProjectItem>(&target)};
+
+  if (!dir_target) {
+    spdlog::error("Tried to create folder inside a project item that is not a directory. Ignoring.");
+    return;
+  }
+
+  auto const new_folder_path_abs{GenerateUniquePath(dir_target->path_abs / "New Folder")};
+
+  std::error_code err;
+  create_directory(new_folder_path_abs, err);
+
+  if (err) {
+    auto const err_msg{std::format("Failed to create directory: {}.", ToUntypedStdSv(new_folder_path_abs.u8string()))};
+    spdlog::error(err_msg);
+    DisplayError(err_msg);
+    return;
+  }
+
+  resource_db_->Refresh();
+}
+
+
 auto ProjectWindow::CreateMaterial(ProjectItem const& target) -> void {}
 auto ProjectWindow::CreateScene(ProjectItem const& target) -> void {}
 
