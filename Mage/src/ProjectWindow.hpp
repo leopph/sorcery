@@ -159,6 +159,7 @@ private:
   auto DrawNode(ProjectTreeNode const& node) -> void;
 
   auto SelectItem(ProjectItem const& item) -> void;
+  auto ClearSelection() -> void;
   auto SetEditorSelectionTo(ProjectItem const& item) const -> void;
   auto ValidateSelection() -> void;
 
@@ -186,6 +187,12 @@ private:
   [[nodiscard]]
   auto CommitResourceFileRename(Guid const& guid, std::string_view new_name) -> bool;
 
+  [[nodiscard]]
+  auto IsResourceRootDirectory(DirectoryProjectItem const& item) const -> bool;
+
+  [[nodiscard]]
+  auto CanDelete(ProjectItem const& item) const -> bool;
+
   auto ExecutePendingCommand() -> void;
   auto ExecuteImport(ProjectItem const& target) const -> void;
   auto CreateFolder(ProjectItem const& target) const -> void;
@@ -193,6 +200,8 @@ private:
   auto CreateScene(ProjectItem const& target) -> void;
   auto BeginRename(ProjectItem const& target) -> void;
   auto ExecuteDelete(ProjectItem const& target) -> void;
+  auto ExecuteDeleteDirectory(DirectoryProjectItem const& target) -> void;
+  auto ExecuteDeleteResourceFile(Guid const& target) -> void;
   auto ExecuteShowInExplorer(ProjectItem const& target) -> void;
   auto ExecuteReimport(ProjectItem const& target) -> void;
   auto OpenImportSettings(ProjectItem const& target) -> void;

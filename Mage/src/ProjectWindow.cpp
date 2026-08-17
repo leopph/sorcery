@@ -299,6 +299,12 @@ auto ProjectWindow::SelectItem(ProjectItem const& item) -> void {
 }
 
 
+auto ProjectWindow::ClearSelection() -> void {
+  selected_item_.reset();
+  app_->SetSelectedObject(nullptr);
+}
+
+
 auto ProjectWindow::SetEditorSelectionTo(ProjectItem const& item) const -> void {
   std::visit(Overloaded{
     [this](DirectoryProjectItem const&) {
@@ -425,7 +431,7 @@ auto ProjectWindow::DrawDirectoryContextMenu(DirectoryProjectItem const& item) -
     };
   }
 
-  if (ImGui::MenuItem("Delete")) {
+  if (ImGui::MenuItem("Delete", nullptr, false, CanDelete(item))) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kDelete,
       .target = item
@@ -460,7 +466,7 @@ auto ProjectWindow::DrawNativeResourceFileContextMenu(NativeResourceFileProjectI
     };
   }
 
-  if (ImGui::MenuItem("Delete")) {
+  if (ImGui::MenuItem("Delete", nullptr, false, CanDelete(item))) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kDelete,
       .target = item
@@ -525,7 +531,7 @@ auto ProjectWindow::DrawResourcePackageFileContextMenu(ResourcePackageFileProjec
     };
   }
 
-  if (ImGui::MenuItem("Delete")) {
+  if (ImGui::MenuItem("Delete", nullptr, false, CanDelete(item))) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kDelete,
       .target = item
@@ -598,8 +604,7 @@ auto ProjectWindow::CanRename(ProjectItem const& item) const -> bool {
   return std::visit(Overloaded{
     [this]([[maybe_unused]] DirectoryProjectItem const& dir_item) {
       // Don't allow renaming the root resource directory.
-      return exists(dir_item.path_abs) && !equivalent(dir_item.path_abs,
-               resource_db_->GetResourceDirectoryAbsolutePath());
+      return !IsResourceRootDirectory(dir_item);
     },
     []([[maybe_unused]] NativeResourceFileProjectItem const& res_item) {
       return true;
@@ -812,6 +817,29 @@ auto ProjectWindow::CommitResourceFileRename(Guid const& guid, std::string_view 
   }
 
   return true;
+}
+
+
+auto ProjectWindow::IsResourceRootDirectory(DirectoryProjectItem const& item) const -> bool {
+  return exists(item.path_abs) && equivalent(item.path_abs, resource_db_->GetResourceDirectoryAbsolutePath());
+}
+
+
+auto ProjectWindow::CanDelete(ProjectItem const& item) const -> bool {
+  return std::visit(Overloaded{
+    [this](DirectoryProjectItem const& dir_item) {
+      return !IsResourceRootDirectory(dir_item);
+    },
+    []([[maybe_unused]] NativeResourceFileProjectItem const& native_res_item) {
+      return true;
+    },
+    []([[maybe_unused]] ResourcePackageFileProjectItem const& res_package_item) {
+      return true;
+    },
+    []([[maybe_unused]] SubresourceProjectItem const& subres_item) {
+      return false;
+    }
+  }, item);
 }
 
 
@@ -1045,7 +1073,54 @@ auto ProjectWindow::BeginRename(ProjectItem const& target) -> void {
 }
 
 
-auto ProjectWindow::ExecuteDelete(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteDelete(ProjectItem const& target) -> void {
+  std::visit(Overloaded{
+    [this](DirectoryProjectItem const& item) {
+      ExecuteDeleteDirectory(item);
+    },
+    [this](NativeResourceFileProjectItem const& item) {
+      ExecuteDeleteResourceFile(item.guid);
+    },
+    [this](ResourcePackageFileProjectItem const& item) {
+      ExecuteDeleteResourceFile(item.guid);
+    },
+    []([[maybe_unused]] SubresourceProjectItem const& item) {
+      spdlog::error("Tried deleting a subresource. Ignoring.");
+    }
+  }, target);
+}
+
+
+auto ProjectWindow::ExecuteDeleteDirectory(DirectoryProjectItem const& target) -> void {
+  if (IsResourceRootDirectory(target)) {
+    auto constexpr err_msg{"Tried deleting resource root directory. Ignoring."};
+    spdlog::error(err_msg);
+    DisplayError(err_msg);
+    return;
+  }
+
+  if (!app_->GetResourceDatabase().DeleteDirectory(target.path_abs)) {
+    auto const err_msg{std::format("Failed to delete folder: {}", ToUntypedStdSv(target.path_abs.u8string()))};
+    spdlog::error(err_msg);
+    DisplayError(err_msg);
+    return;
+  }
+
+  ClearSelection();
+}
+
+
+auto ProjectWindow::ExecuteDeleteResourceFile(Guid const& target) -> void {
+  if (!app_->GetResourceDatabase().GetFileInfo(target)) {
+    spdlog::error("Tried deleting resource file with GUID {} that does not exist. Ignoring.", target.ToString());
+    return;
+  }
+
+  app_->GetResourceDatabase().DeleteResourceFile(target);
+  ClearSelection();
+}
+
+
 auto ProjectWindow::ExecuteShowInExplorer(ProjectItem const& target) -> void {}
 auto ProjectWindow::ExecuteReimport(ProjectItem const& target) -> void {}
 auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {}
