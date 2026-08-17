@@ -1056,7 +1056,36 @@ auto ProjectWindow::ExecuteCreateMaterial(ProjectItem const& target) -> void {
 
 
 auto ProjectWindow::ExecuteCreateScene(ProjectItem const& target) -> void {
-  // TODO implement
+  std::visit(Overloaded{
+    [this](DirectoryProjectItem const& item) {
+      auto scene{Create<Scene>()};
+      auto const scene_path_abs{GenerateUniquePath(item.path_abs / "New Scene.scene")};
+
+      auto created_scene{app_->GetResourceDatabase().SaveResourceToFile(std::move(scene), scene_path_abs)};
+
+      if (!created_scene) {
+        auto const err_msg{
+          std::format("Failed to create new scene at {}.", ToUntypedStdSv(scene_path_abs.u8string()))
+        };
+        spdlog::error(err_msg);
+        DisplayError(err_msg);
+        return;
+      }
+
+      SelectItem(NativeResourceFileProjectItem{
+        created_scene->GetId().GetGuid()
+      });
+    },
+    []([[maybe_unused]] NativeResourceFileProjectItem const& item) {
+      spdlog::error("Tried to create scene at a native resource file target. Ignoring.");
+    },
+    []([[maybe_unused]] ResourcePackageFileProjectItem const& item) {
+      spdlog::error("Tried to create scene at a resource package file target. Ignoring.");
+    },
+    []([[maybe_unused]] SubresourceProjectItem const& item) {
+      spdlog::error("Tried to create scene and a subresource target. Ignoring.");
+    }
+  }, target);
 }
 
 
