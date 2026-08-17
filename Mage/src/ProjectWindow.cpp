@@ -1019,8 +1019,14 @@ auto ProjectWindow::CreateFolder(ProjectItem const& target) const -> void {
 }
 
 
-auto ProjectWindow::CreateMaterial(ProjectItem const& target) -> void {}
-auto ProjectWindow::CreateScene(ProjectItem const& target) -> void {}
+auto ProjectWindow::CreateMaterial(ProjectItem const& target) -> void {
+  // TODO implement
+}
+
+
+auto ProjectWindow::CreateScene(ProjectItem const& target) -> void {
+  // TODO implement
+}
 
 
 auto ProjectWindow::BeginRename(ProjectItem const& target) -> void {
@@ -1121,15 +1127,85 @@ auto ProjectWindow::ExecuteDeleteResourceFile(Guid const& target) -> void {
 }
 
 
-auto ProjectWindow::ExecuteShowInExplorer(ProjectItem const& target) -> void {}
-auto ProjectWindow::ExecuteReimport(ProjectItem const& target) -> void {}
-auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {}
-auto ProjectWindow::ExecuteCopyGuid(ProjectItem const& target) -> void {}
-auto ProjectWindow::ExecuteCopyResourceId(ProjectItem const& target) -> void {}
-auto ProjectWindow::ExecuteUnloadResource(ProjectItem const& target) -> void {}
-auto ProjectWindow::ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -> void {}
-auto ProjectWindow::ExecuteOpenResource(ProjectItem const& target) -> void {}
-auto ProjectWindow::ExecuteLocateParentFile(ProjectItem const& target) -> void {}
+auto ProjectWindow::ExecuteShowInExplorer(ProjectItem const& target) -> void {
+  // TODO implement
+}
+
+
+auto ProjectWindow::ExecuteReimport(ProjectItem const& target) -> void {
+  // TODO implement
+}
+
+
+auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {
+  // TODO implement
+}
+
+
+auto ProjectWindow::ExecuteCopyGuid(ProjectItem const& target) -> void {
+  // TODO implement
+}
+
+
+auto ProjectWindow::ExecuteCopyResourceId(ProjectItem const& target) -> void {
+  // TODO implement
+}
+
+
+auto ProjectWindow::ExecuteUnloadResource(ProjectItem const& target) -> void {
+  std::visit(Overloaded{
+    []([[maybe_unused]] DirectoryProjectItem const& item) {
+      spdlog::error("Tried unloading a directory. Ignoring.");
+    },
+    [this](NativeResourceFileProjectItem const& item) {
+      ExecuteUnloadResourceById(ResourceId{item.guid, 0});
+    },
+    [this]([[maybe_unused]] ResourcePackageFileProjectItem const& item) {
+      spdlog::error("Tried unloading a resource package file. Ignoring.");
+    },
+    [this](SubresourceProjectItem const& item) {
+      ExecuteUnloadResourceById(item.id);
+    }
+  }, target);
+}
+
+
+auto ProjectWindow::ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -> void {
+  std::visit(Overloaded{
+    [this]([[maybe_unused]] DirectoryProjectItem const& item) {
+      spdlog::error("Tried unloading all resources of a directory. Ignoring.");
+    },
+    [this]([[maybe_unused]] NativeResourceFileProjectItem const& item) {
+      spdlog::error("Tried unloading all resources of a native resource file. Ignoring.");
+    },
+    [this](ResourcePackageFileProjectItem const& item) {
+      std::vector<ObserverPtr<ResourceDB::ResourceInfo const>> subresources;
+      resource_db_->GetResourcesInFile(item.guid, subresources);
+      for (auto const& subresource : subresources) {
+        ExecuteUnloadResourceById(subresource->id);
+      }
+    },
+    [this]([[maybe_unused]] SubresourceProjectItem const& item) {
+      spdlog::error("Tried unloading all resources in a subresource. Ignoring.");
+    }
+  }, target);
+}
+
+
+auto ProjectWindow::ExecuteUnloadResourceById(ResourceId const& target) -> void {
+  App::Instance().GetResourceManager().Unload(target);
+  ClearSelection();
+}
+
+
+auto ProjectWindow::ExecuteOpenResource(ProjectItem const& target) -> void {
+  // TODO implement
+}
+
+
+auto ProjectWindow::ExecuteLocateParentFile(ProjectItem const& target) -> void {
+  // TODO implement
+}
 
 
 auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& node_path_abs,

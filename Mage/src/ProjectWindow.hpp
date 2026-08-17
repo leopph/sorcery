@@ -209,6 +209,7 @@ private:
   auto ExecuteCopyResourceId(ProjectItem const& target) -> void;
   auto ExecuteUnloadResource(ProjectItem const& target) -> void;
   auto ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -> void;
+  auto ExecuteUnloadResourceById(ResourceId const& target) -> void;
   auto ExecuteOpenResource(ProjectItem const& target) -> void;
   auto ExecuteLocateParentFile(ProjectItem const& target) -> void;
 
