@@ -857,16 +857,18 @@ auto ProjectWindow::ExecutePendingCommand() -> void {
     }
 
     case ProjectCommandKind::kCreateFolder: {
-      CreateFolder(command->target);
+      ExecuteCreateFolder(command->target);
       break;
     }
 
     case ProjectCommandKind::kCreateMaterial: {
-      CreateMaterial(command->target);
+      ExecuteCreateMaterial(command->target);
+      break;
     }
 
     case ProjectCommandKind::kCreateScene: {
-      CreateScene(command->target);
+      ExecuteCreateScene(command->target);
+      break;
     }
 
     case ProjectCommandKind::kBeginRename: {
@@ -995,7 +997,7 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
 }
 
 
-auto ProjectWindow::CreateFolder(ProjectItem const& target) const -> void {
+auto ProjectWindow::ExecuteCreateFolder(ProjectItem const& target) const -> void {
   auto const* const dir_target{std::get_if<DirectoryProjectItem>(&target)};
 
   if (!dir_target) {
@@ -1019,12 +1021,41 @@ auto ProjectWindow::CreateFolder(ProjectItem const& target) const -> void {
 }
 
 
-auto ProjectWindow::CreateMaterial(ProjectItem const& target) -> void {
-  // TODO implement
+auto ProjectWindow::ExecuteCreateMaterial(ProjectItem const& target) -> void {
+  std::visit(Overloaded{
+    [this](DirectoryProjectItem const& item) {
+      auto mtl{Create<Material>()};
+      auto const mtl_path_abs{GenerateUniquePath(item.path_abs / "New Material.mtl")};
+
+      auto created_mtl{app_->GetResourceDatabase().SaveResourceToFile(std::move(mtl), mtl_path_abs)};
+
+      if (!created_mtl) {
+        auto const err_msg{
+          std::format("Failed to create new material at {}.", ToUntypedStdSv(mtl_path_abs.u8string()))
+        };
+        spdlog::error(err_msg);
+        DisplayError(err_msg);
+        return;
+      }
+
+      SelectItem(NativeResourceFileProjectItem{
+        created_mtl->GetId().GetGuid()
+      });
+    },
+    []([[maybe_unused]] NativeResourceFileProjectItem const& item) {
+      spdlog::error("Tried to create material at a native resource file target. Ignoring.");
+    },
+    []([[maybe_unused]] ResourcePackageFileProjectItem const& item) {
+      spdlog::error("Tried to create material at a resource package file target. Ignoring.");
+    },
+    []([[maybe_unused]] SubresourceProjectItem const& item) {
+      spdlog::error("Tried to create material and a subresource target. Ignoring.");
+    }
+  }, target);
 }
 
 
-auto ProjectWindow::CreateScene(ProjectItem const& target) -> void {
+auto ProjectWindow::ExecuteCreateScene(ProjectItem const& target) -> void {
   // TODO implement
 }
 
