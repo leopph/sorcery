@@ -71,10 +71,11 @@
       <PreprocessorDefinitions>SORCERY_BUILD;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\d3d12_memory_allocator\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor\D3D12MemoryAllocator\;$(SolutionDir)vendor\work-stealing-queue\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <AdditionalOptions>/fp:contract %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -106,10 +107,11 @@
       <PreprocessorDefinitions>SORCERY_BUILD;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\d3d12_memory_allocator\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor\D3D12MemoryAllocator\;$(SolutionDir)vendor\work-stealing-queue\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <AdditionalOptions>/fp:contract %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -136,20 +138,19 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\vendor\d3d12_memory_allocator\D3D12MemAlloc.cpp">
+    <ClCompile Include="..\vendor\D3D12MemoryAllocator\D3D12MemAlloc.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <ClCompile Include="src\app.cpp" />
     <ClCompile Include="src\Bounds.cpp" />
     <ClCompile Include="src\char_encoding_helpers.cpp" />
-    <ClCompile Include="src\FileIo.cpp" />
+    <ClCompile Include="src\io_helpers.cpp" />
     <ClCompile Include="src\job_system.cpp" />
     <ClCompile Include="src\material_resource.cpp" />
     <ClCompile Include="src\mesh_data.cpp" />
     <ClCompile Include="src\random.cpp" />
     <ClCompile Include="src\rendering\graphics.cpp" />
-    <ClCompile Include="src\MemoryAllocation.cpp" />
     <ClCompile Include="src\rendering\Camera.cpp" />
     <ClCompile Include="src\rendering\directional_shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\scene_renderer.cpp" />
@@ -193,11 +194,10 @@
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
     <ClInclude Include="src\app.hpp" />
+    <ClInclude Include="src\io_helpers.hpp" />
     <ClInclude Include="src\material_blend_mode.hpp" />
     <ClInclude Include="src\char_encoding_helpers.hpp" />
     <ClInclude Include="src\extent.hpp" />
-    <ClInclude Include="src\fast_vector.hpp" />
-    <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\job_system.hpp" />
     <ClInclude Include="src\material_resource.hpp" />
     <ClInclude Include="src\mesh_data.hpp" />
@@ -206,9 +206,6 @@
     <ClInclude Include="src\point.hpp" />
     <ClInclude Include="src\random.hpp" />
     <ClInclude Include="src\rendering\graphics.hpp" />
-    <ClInclude Include="src\MemoryAllocation.hpp" />
-    <ClInclude Include="src\Pool.hpp" />
-    <ClInclude Include="src\PoolAllocator.hpp" />
     <ClInclude Include="src\rendering\directional_shadow_map_array.hpp" />
     <ClInclude Include="src\GUI.hpp" />
     <ClInclude Include="src\rendering\scene_renderer.hpp" />
@@ -245,7 +242,6 @@
     <ClInclude Include="src\viewport.hpp" />
     <ClInclude Include="src\Window.hpp" />
     <ClInclude Include="src\WindowImpl.hpp" />
-    <ClInclude Include="src\wsq.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Bounds.hpp" />

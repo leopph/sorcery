@@ -1,9 +1,5 @@
 #include "graphics.hpp"
 
-#include "../MemoryAllocation.hpp"
-
-#include <dxgidebug.h>
-
 #include <algorithm>
 #include <array>
 #include <bit>
@@ -13,6 +9,8 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+
+#include <dxgidebug.h>
 
 #include "../Util.hpp"
 
@@ -404,8 +402,8 @@ auto GraphicsDevice::CreateTexture(TextureDesc const& desc,
   ThrowIfFailed(allocator_->CreateResource3(&alloc_desc, &res_desc, initial_layout, clear_value, 0, nullptr,
     &allocation, IID_PPV_ARGS(&resource)), "Failed to create texture.");
 
-  FastVector<UINT> dsvs;
-  FastVector<UINT> rtvs;
+  std::vector<UINT> dsvs;
+  std::vector<UINT> rtvs;
   std::optional<UINT> srv;
   std::optional<UINT> uav;
 
@@ -554,8 +552,8 @@ auto GraphicsDevice::CreateSampler(D3D12_SAMPLER_DESC const& desc) -> UniqueSamp
 auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const buffer_descs,
                                              std::span<AliasedTextureCreateInfo const> const texture_infos,
                                              CpuAccess cpu_access,
-                                             FastVector<SharedDeviceChildHandle<Buffer>>* buffers,
-                                             FastVector<SharedDeviceChildHandle<Texture>>* textures) -> void {
+                                             std::vector<SharedDeviceChildHandle<Buffer>>* buffers,
+                                             std::vector<SharedDeviceChildHandle<Texture>>* textures) -> void {
   D3D12_RESOURCE_ALLOCATION_INFO buf_alloc_info{0, 0};
   D3D12_RESOURCE_ALLOCATION_INFO rt_ds_alloc_info{0, 0};
   D3D12_RESOURCE_ALLOCATION_INFO non_rt_ds_alloc_info{0, 0};
@@ -665,8 +663,8 @@ auto GraphicsDevice::CreateAliasingResources(std::span<BufferDesc const> const b
       ThrowIfFailed(allocator_->CreateAliasingResource2(alloc.Get(), 0, &desc, info.initial_layout, info.clear_value, 0,
         nullptr, IID_PPV_ARGS(&resource)), "Failed to create aliasing texture.");
 
-      FastVector<UINT> dsvs;
-      FastVector<UINT> rtvs;
+      std::vector<UINT> dsvs;
+      std::vector<UINT> rtvs;
       std::optional<UINT> srv;
       std::optional<UINT> uav;
       CreateTextureViews(*resource.Get(), info.desc, dsvs, rtvs, srv, uav);
@@ -758,7 +756,7 @@ auto GraphicsDevice::SignalFence(Fence& fence) const -> void {
 
 
 auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_lists) -> void {
-  FastVector<D3D12_TEXTURE_BARRIER> pending_tex_barriers;
+  std::vector<D3D12_TEXTURE_BARRIER> pending_tex_barriers;
 
   for (auto const& cmd_list : cmd_lists) {
     for (auto const& pending_barrier : cmd_list.pending_barriers_) {
@@ -793,7 +791,7 @@ auto GraphicsDevice::ExecuteCommandLists(std::span<CommandList const> const cmd_
     std::array{static_cast<ID3D12CommandList*>(pending_barrier_cmd.cmd_list_.Get())}.data());
   SignalFence(*execute_barrier_fence_);
 
-  FastVector<ID3D12CommandList*> submit_list;
+  std::vector<ID3D12CommandList*> submit_list;
   submit_list.reserve(cmd_lists.size());
   std::ranges::transform(cmd_lists, std::back_inserter(submit_list), [](CommandList const& cmd_list) {
     return cmd_list.cmd_list_.Get();
@@ -878,8 +876,8 @@ auto GraphicsDevice::SwapChainCreateTextures(SwapChain& swap_chain) -> void {
     ComPtr<ID3D12Resource2> buf;
     ThrowIfFailed(swap_chain.swap_chain_->GetBuffer(i, IID_PPV_ARGS(&buf)), "Failed to retrieve swap chain buffer.");
 
-    FastVector<UINT> dsvs;
-    FastVector<UINT> rtvs;
+    std::vector<UINT> dsvs;
+    std::vector<UINT> rtvs;
     std::optional<UINT> srv;
     std::optional<UINT> uav;
 
@@ -936,8 +934,8 @@ auto GraphicsDevice::CreateBufferViews(ID3D12Resource2& buffer, BufferDesc const
 }
 
 
-auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc const& desc, FastVector<UINT>& dsvs,
-                                        FastVector<UINT>& rtvs, std::optional<UINT>& srv,
+auto GraphicsDevice::CreateTextureViews(ID3D12Resource2& texture, TextureDesc const& desc, std::vector<UINT>& dsvs,
+                                        std::vector<UINT>& rtvs, std::optional<UINT>& srv,
                                         std::optional<UINT>& uav) const -> void {
   DXGI_FORMAT dsv_format;
   DXGI_FORMAT rtv_srv_uav_format;
@@ -1297,8 +1295,8 @@ auto Texture::GetRenderTargetView(UINT const mip_index) const -> UINT {
 }
 
 
-Texture::Texture(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, FastVector<UINT> dsvs,
-                 FastVector<UINT> rtvs, std::optional<UINT> const srv, std::optional<UINT> const uav,
+Texture::Texture(ComPtr<D3D12MA::Allocation> allocation, ComPtr<ID3D12Resource2> resource, std::vector<UINT> dsvs,
+                 std::vector<UINT> rtvs, std::optional<UINT> const srv, std::optional<UINT> const uav,
                  TextureDesc const& desc) :
   Resource{std::move(allocation), std::move(resource), srv, uav},
   desc_{desc},
@@ -1506,7 +1504,7 @@ auto CommandList::SetRenderTargets(std::span<Texture const* const> const render_
       pipeline_allows_ds_write_ ? D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE : D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ);
   }
 
-  FastVector<D3D12_CPU_DESCRIPTOR_HANDLE> rt_handles;
+  std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rt_handles;
   rt_handles.reserve(render_targets.size());
   std::ranges::transform(render_targets, std::back_inserter(rt_handles), [this, mip_level](Texture const* const tex) {
     return tex ? rtv_heap_->GetDescriptorCpuHandle(tex->GetRenderTargetView(mip_level)) : D3D12_CPU_DESCRIPTOR_HANDLE{};

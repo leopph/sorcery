@@ -5,7 +5,6 @@
     "assimp",
     "directxmesh",
     "directxtex",
-    "fastio",
     {
       "name": "imgui",
       "features": [
@@ -16,7 +15,6 @@
     },
     "imguizmo",
     "implot",
-    "mimalloc",
     "nativefiledialog-extended",
     "rttr",
     "spdlog",

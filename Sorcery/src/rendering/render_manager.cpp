@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <utility>
 
-#include "../fast_vector.hpp"
 #include "../Util.hpp"
 #include "shaders/shader_interop.h"
 
@@ -120,13 +119,13 @@ auto RenderManager::UpdateTexture(graphics::Texture const& tex, UINT const subre
     }
   }
 
-  FastVector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts;
+  std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts;
   layouts.resize(data.size());
 
-  FastVector<UINT> row_counts;
+  std::vector<UINT> row_counts;
   row_counts.resize(data.size());
 
-  FastVector<UINT64> row_sizes;
+  std::vector<UINT64> row_sizes;
   row_sizes.resize(data.size());
 
   device_->GetCopyableFootprints(tex.GetDesc(), subresource_offset, static_cast<UINT>(data.size()),
@@ -190,7 +189,7 @@ auto RenderManager::CreateReadOnlyTexture(
 
   auto tex{device_->CreateTexture(desc, graphics::CpuAccess::kNone, nullptr)};
 
-  FastVector<D3D12_SUBRESOURCE_DATA> subresource_data;
+  std::vector<D3D12_SUBRESOURCE_DATA> subresource_data;
   subresource_data.reserve(img.GetImageCount());
 
   for (std::size_t i{0}; i < img.GetImageCount(); i++) {

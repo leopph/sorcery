@@ -6,6 +6,7 @@
 #include <format>
 #include <iterator>
 #include <limits>
+#include <map>
 #include <optional>
 #include <queue>
 #include <ranges>
@@ -18,7 +19,7 @@
 #include <assimp/scene.h>
 
 #include "App.hpp"
-#include "FileIo.hpp"
+#include "io_helpers.hpp"
 #include "Serialization.hpp"
 #include "Resources/Mesh.hpp"
 #include "resource_import/material_import.hpp"
@@ -122,7 +123,7 @@ auto ModelImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& ou
 auto ModelImporter::Import(std::filesystem::path const& src, std::vector<ResourceImportResult>& results) -> bool {
   std::vector<unsigned char> meshBytes;
 
-  if (!ReadFileBinary(src, meshBytes)) {
+  if (!ReadBinaryFile(src, meshBytes)) {
     return false;
   }
 

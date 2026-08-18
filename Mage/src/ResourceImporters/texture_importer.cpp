@@ -1,7 +1,10 @@
 #include "texture_importer.hpp"
 
+#include <fstream>
+
+#include "io_helpers.hpp"
 #include "Util.hpp"
-#include "../FileIo.hpp"
+
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::mage::TextureImporter>("Texture Importer")
@@ -29,7 +32,7 @@ auto TextureImporter::Import(
 ) -> bool {
   std::vector<std::byte> file_bytes;
 
-  if (!ReadFileBinary(src, file_bytes)) {
+  if (!ReadBinaryFile(src, file_bytes)) {
     return false;
   }
 

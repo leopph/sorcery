@@ -1,6 +1,5 @@
 #include "app.hpp"
 
-#include "MemoryAllocation.hpp"
 #include "Platform.hpp"
 #include "Timing.hpp"
 
