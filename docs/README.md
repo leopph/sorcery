@@ -1,6 +1,6 @@
 # 🪄 Sorcery 🪄
 
-Sorcery is my hobby game engine that I use to play around with new hardware features and graphics algorithms. The aim is to eventually make it a complete toolset for video game creation, but in its current state, it's more of a close integration of ideas.
+Sorcery is my toy game engine that I'm building to learn about rendering architectures, graphics algorithms, and hardware features.
 
 ## Gallery 
 Some screenshots from Sorcery's editor, Mage!
@@ -53,35 +53,6 @@ Some screenshots from Sorcery's editor, Mage!
   * Asset creation and editing (materials, scenes)
   * Performance logging
   * Several changable settings (graphics, performance, etc.)
-
-### Planned
-* Graphics and rendering
-  * Better support for transparency effects
-  * Percentage-Closer Soft Shadows (PCSS)
-  * Image-Based Lighting (IBL)
-  * Hybrid Tiled (Forward+) rendering
-  * Support for writing custom shaders for materials
-  * Ground Truth-based Ambient Occlusion (GTAO)
-  * Screen Space Shadows
-  * Screen Space Reflections (SSR)
-  * Screen Space Subsurface Scattering
-  * Screen Space Global Illumination (SSGI)
-  * Vulkan backend
-* Nvidia PhysX integration for physics
-* Support for custom script compilation
-* Audio playback
-* Possibly more things
-
-## Used technologies and third-party libraries
-Non-exhaustive list of core components:
-- Win32 for window and event handling
-- Direct3D 12 for rendering
-- RTTR for runtime reflection
-- Dear ImGui for tool interfaces
-- Assimp for model asset importing
-- DirectXTex for texture preprocessing
-- DirectXMesh for mesh preprocessing
-- mimalloc for general memory allocation
 
 ## Building and Usage
 ### Build requirements
