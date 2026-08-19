@@ -450,15 +450,6 @@ auto ProjectWindow::DrawDirectoryContextMenu(DirectoryProjectItem const& item) -
 
 
 auto ProjectWindow::DrawNativeResourceFileContextMenu(NativeResourceFileProjectItem const& item) -> void {
-  if (ImGui::MenuItem("Open")) {
-    pending_command_ = ProjectCommand{
-      .kind = ProjectCommandKind::kOpenResource,
-      .target = item
-    };
-  }
-
-  ImGui::Separator();
-
   if (ImGui::MenuItem("Rename", nullptr, false, CanRename(item))) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kBeginRename,
@@ -566,15 +557,6 @@ auto ProjectWindow::DrawResourcePackageFileContextMenu(ResourcePackageFileProjec
 
 
 auto ProjectWindow::DrawSubresourceContextMenu(SubresourceProjectItem const& item) -> void {
-  if (ImGui::MenuItem("Open")) {
-    pending_command_ = ProjectCommand{
-      .kind = ProjectCommandKind::kOpenResource,
-      .target = item
-    };
-  }
-
-  ImGui::Separator();
-
   if (ImGui::MenuItem("Copy Resource ID")) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kCopyResourceId,
@@ -913,11 +895,6 @@ auto ProjectWindow::ExecutePendingCommand() -> void {
 
     case ProjectCommandKind::kUnloadAllResourcesInFile: {
       ExecuteUnloadAllResourcesInFile(command->target);
-      break;
-    }
-
-    case ProjectCommandKind::kOpenResource: {
-      ExecuteOpenResource(command->target);
       break;
     }
 
@@ -1323,11 +1300,6 @@ auto ProjectWindow::ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -
 auto ProjectWindow::ExecuteUnloadResourceById(ResourceId const& target) -> void {
   App::Instance().GetResourceManager().Unload(target);
   ClearSelection();
-}
-
-
-auto ProjectWindow::ExecuteOpenResource(ProjectItem const& target) -> void {
-  // TODO implement
 }
 
 
