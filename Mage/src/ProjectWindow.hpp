@@ -99,6 +99,7 @@ private:
     std::string error_msg;
     std::filesystem::path node_path_abs; // TODO remove later
     ProjectItem target;
+    bool focus_requested{true};
   };
 
 

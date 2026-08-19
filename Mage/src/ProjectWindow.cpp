@@ -625,7 +625,10 @@ auto ProjectWindow::DrawRenameInput() -> void {
   ImGui::SameLine();
   ImGui::PushID("rename_input");
 
-  ImGui::SetKeyboardFocusHere();
+  if (rename_ctx_->focus_requested) {
+    ImGui::SetKeyboardFocusHere();
+    rename_ctx_->focus_requested = false;
+  }
 
   auto constexpr flags{ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll};
 
@@ -696,8 +699,8 @@ auto ProjectWindow::CommitRename() -> void {
   auto const new_name{Trim(rename_ctx_->new_name)};
 
   if (!IsValidSingleFilename(new_name)) {
-    spdlog::error("Failed to commit rename due to invalid name: '{}'.", new_name);
-    rename_ctx_.reset();
+    rename_ctx_->error_msg = "Invalid name.";
+    rename_ctx_->focus_requested = true;
     return;
   }
 
@@ -741,11 +744,13 @@ auto ProjectWindow::CommitDirectoryRename(DirectoryProjectItem const& item, std:
 
   if (std::filesystem::exists(dst_path_abs)) {
     rename_ctx_->error_msg = "A folder or resource with that name already exists.";
+    rename_ctx_->focus_requested = true;
     return false;
   }
 
   if (!resource_db_->MoveDirectory(src_path_abs, dst_path_abs)) {
     rename_ctx_->error_msg = "Failed to rename folder.";
+    rename_ctx_->focus_requested = true;
     return false;
   }
 
@@ -783,11 +788,13 @@ auto ProjectWindow::CommitResourceFileRename(Guid const& guid, std::string_view 
 
   if (std::filesystem::exists(dst_path_abs)) {
     rename_ctx_->error_msg = "A file or folder with that name already exists.";
+    rename_ctx_->focus_requested = true;
     return false;
   }
 
   if (!resource_db_->MoveResourceFile(guid, new_path_res_dir_rel)) {
     rename_ctx_->error_msg = "Failed to rename resource file.";
+    rename_ctx_->focus_requested = true;
     return false;
   }
 
@@ -1086,7 +1093,8 @@ auto ProjectWindow::BeginRename(ProjectItem const& target) -> void {
   rename_ctx_ = RenameContext{
     .new_name = *name,
     .node_path_abs = "",
-    .target = target
+    .target = target,
+    .focus_requested = true
   };
 }
 
