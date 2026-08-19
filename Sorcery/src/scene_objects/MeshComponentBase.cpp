@@ -1,13 +1,15 @@
 #include "MeshComponentBase.hpp"
 
-#include "Entity.hpp"
-#include "../app.hpp"
-#include "../Gui.hpp"
+#include <format>
+#include <stdexcept>
 
 #include <imgui.h>
 
-#include <format>
-#include <stdexcept>
+
+#include "Entity.hpp"
+#include "../app.hpp"
+#include "../gui_helpers.hpp"
+
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::MeshComponentBase>{"Mesh Component Base"}
@@ -27,13 +29,15 @@ auto detail::SetPrevModelMtx(MeshComponentBase& mesh_component, Matrix4 const& m
 }
 
 
-auto MeshComponentBase::OnDrawProperties(bool& changed) -> void {
-  Component::OnDrawProperties(changed);
+auto MeshComponentBase::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
+  Component::OnDrawProperties(allow_edit, changed);
 
   ImGui::Text("%s", "Mesh");
   ImGui::TableNextColumn();
   static ObjectPicker<Mesh> meshPicker;
-  if (auto mesh{GetMesh()}; meshPicker.Draw(mesh, true)) {
+  if (auto mesh{GetMesh()}; ImGuiDisabled(!allow_edit, [&] {
+    return meshPicker.Draw(mesh, true);
+  })) {
     SetMesh(mesh);
   }
 
@@ -56,7 +60,9 @@ auto MeshComponentBase::OnDrawProperties(bool& changed) -> void {
       ImGui::TableNextColumn();
       ImGui::Text("%s", mtlSlots[i].name.c_str());
       ImGui::TableNextColumn();
-      if (auto mtl{mtls[i]}; mtlPickers[i].Draw(mtl, true)) {
+      if (auto mtl{mtls[i]}; ImGuiDisabled(!allow_edit, [&] {
+        return mtlPickers[i].Draw(mtl, true);
+      })) {
         SetMaterial(i, mtl);
       }
     }

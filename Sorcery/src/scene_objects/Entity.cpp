@@ -14,6 +14,7 @@
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
+#include "../gui_helpers.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Entity>{"Entity"}
@@ -24,8 +25,8 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto Entity::OnDrawProperties(bool& changed) -> void {
-  SceneObject::OnDrawProperties(changed);
+auto Entity::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
+  SceneObject::OnDrawProperties(allow_edit, changed);
 
   static std::string entityName;
   entityName = GetName();
@@ -39,7 +40,9 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
 
     ImGui::TableSetColumnIndex(1);
     ImGui::PushItemWidth(-FLT_MIN);
-    if (ImGui::InputText("##EntityName", &entityName, ImGuiInputTextFlags_EnterReturnsTrue)) {
+    if (ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::InputText("##EntityName", &entityName, ImGuiInputTextFlags_EnterReturnsTrue);
+    })) {
       SetName(entityName);
     }
 
@@ -61,7 +64,7 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
         ImGui::PushItemWidth(-FLT_MIN);
         ImGui::TableSetColumnIndex(0);
 
-        components_[i]->OnDrawProperties(changed);
+        components_[i]->OnDrawProperties(allow_edit, changed);
         ImGui::EndTable();
       }
 
@@ -69,7 +72,7 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
     }
 
     if (ImGui::BeginPopupContextItem(treeNodeId.c_str())) {
-      if (ImGui::MenuItem("Delete")) {
+      if (ImGui::MenuItem("Delete", nullptr, false, allow_edit)) {
         RemoveComponent(*components_[i]);
         ImGui::EndPopup();
         break;
@@ -155,39 +158,6 @@ auto Entity::OnBeforeExitingScene(Scene const& scene) -> void {
 }
 
 
-auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
-  static std::vector<Entity*> entities;
-  FindObjectsOfType(entities);
-
-  for (auto* const entity : entities) {
-    if (entity->GetName() == name) {
-      return entity;
-    }
-  }
-  return nullptr;
-}
-
-
-auto Entity::GetComponentsForSerialization() const -> std::vector<Component*> {
-  std::vector<Component*> ret;
-  std::ranges::transform(components_, std::back_inserter(ret), [](auto const& component) {
-    return component.get();
-  });
-  return ret;
-}
-
-
-auto Entity::SetComponentFromDeserialization(std::vector<Component*> components) -> void {
-  while (!components_.empty()) {
-    RemoveComponent(*components_.back());
-  }
-
-  for (auto* const component : components) {
-    AddComponent(std::unique_ptr<Component>{component}); // Taking ownership
-  }
-}
-
-
 Entity::Entity() {
   SetName("New Entity");
   AddComponent(Create<TransformComponent>());
@@ -226,16 +196,16 @@ Entity::~Entity() {
 }
 
 
-auto Entity::GetScene() const -> ObserverPtr<Scene const> {
-  return scene_;
-}
-
-
 auto Entity::GetTransform() const -> TransformComponent& {
   if (!transform_) {
     transform_ = GetComponent<TransformComponent>();
   }
   return *transform_;
+}
+
+
+auto Entity::GetScene() const -> ObserverPtr<Scene const> {
+  return scene_;
 }
 
 
@@ -269,5 +239,38 @@ auto Entity::RemoveComponent(Component& component) -> std::unique_ptr<Component>
   }
 
   return nullptr;
+}
+
+
+auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
+  static std::vector<Entity*> entities;
+  FindObjectsOfType(entities);
+
+  for (auto* const entity : entities) {
+    if (entity->GetName() == name) {
+      return entity;
+    }
+  }
+  return nullptr;
+}
+
+
+auto Entity::GetComponentsForSerialization() const -> std::vector<Component*> {
+  std::vector<Component*> ret;
+  std::ranges::transform(components_, std::back_inserter(ret), [](auto const& component) {
+    return component.get();
+  });
+  return ret;
+}
+
+
+auto Entity::SetComponentFromDeserialization(std::vector<Component*> components) -> void {
+  while (!components_.empty()) {
+    RemoveComponent(*components_.back());
+  }
+
+  for (auto* const component : components) {
+    AddComponent(std::unique_ptr<Component>{component}); // Taking ownership
+  }
 }
 }

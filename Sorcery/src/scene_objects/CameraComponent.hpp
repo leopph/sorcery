@@ -10,7 +10,7 @@ class CameraComponent final : public Component, public rendering::Camera {
   RTTR_ENABLE(Component)
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
 
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
   LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;

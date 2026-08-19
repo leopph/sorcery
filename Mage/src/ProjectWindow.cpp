@@ -9,7 +9,7 @@
 #include <spdlog/spdlog.h>
 
 #include "EditorApp.hpp"
-#include "GUI.hpp"
+#include "gui_helpers.hpp"
 #include "Material.hpp"
 #include "Platform.hpp"
 #include "ReflectionDisplayProperties.hpp"

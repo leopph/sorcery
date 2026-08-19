@@ -29,6 +29,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetHeight() const noexcept -> unsigned;
   [[nodiscard]] LEOPPHAPI auto GetChannelCount() const noexcept -> unsigned;
 
-  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
 };
 }

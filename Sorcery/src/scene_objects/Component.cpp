@@ -12,7 +12,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto Component::OnDrawProperties([[maybe_unused]] bool& changed) -> void {
+auto Component::OnDrawProperties([[maybe_unused]] bool const allow_edit, [[maybe_unused]] bool& changed) -> void {
   // We explicitly do not call SceneObject::OnDrawProperties here to avoid displaying the name and type
 }
 

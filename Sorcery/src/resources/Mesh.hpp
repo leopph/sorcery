@@ -69,7 +69,7 @@ class Mesh final : public Resource {
   bool idx32_{false};
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
 
   Mesh() = default;
   Mesh(Mesh const&) = delete;

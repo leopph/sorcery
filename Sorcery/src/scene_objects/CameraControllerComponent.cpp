@@ -5,6 +5,7 @@
 #include "CameraComponent.hpp"
 #include "Entity.hpp"
 #include "../app.hpp"
+#include "../gui_helpers.hpp"
 #include "../Platform.hpp"
 #include "../Timing.hpp"
 #include "../Window.hpp"
@@ -27,13 +28,15 @@ auto CameraControllerComponent::Clone() -> std::unique_ptr<SceneObject> {
 }
 
 
-auto CameraControllerComponent::OnDrawProperties(bool& changed) -> void {
-  Component::OnDrawProperties(changed);
+auto CameraControllerComponent::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
+  Component::OnDrawProperties(allow_edit, changed);
 
   ImGui::Text("Mouse Sensitivity");
   ImGui::TableNextColumn();
 
-  if (ImGui::DragFloat("###CamCtrlMouseSens", &mouse_sens_, 0.05f, 0.1f, 10.0f, "%.2f")) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("###CamCtrlMouseSens", &mouse_sens_, 0.05f, 0.1f, 10.0f, "%.2f");
+  })) {
     changed = true;
   }
 
@@ -41,7 +44,9 @@ auto CameraControllerComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Move Speed");
   ImGui::TableNextColumn();
 
-  if (ImGui::DragFloat("###CamCtrlMoveSpeed", &move_speed_, 0.1f, 0.1f, 100.0f, "%.2f")) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("###CamCtrlMoveSpeed", &move_speed_, 0.1f, 0.1f, 100.0f, "%.2f");
+  })) {
     changed = true;
   }
 
@@ -49,7 +54,9 @@ auto CameraControllerComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Sprint Multiplier");
   ImGui::TableNextColumn();
 
-  if (ImGui::DragFloat("###CamCtrlSprintMul", &sprint_multiplier_, 0.1f, 1.0f, 10.0f, "%.2f")) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("###CamCtrlSprintMul", &sprint_multiplier_, 0.1f, 1.0f, 10.0f, "%.2f");
+  })) {
     changed = true;
   }
 }

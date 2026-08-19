@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cubemap.hpp"
-#include "GUI.hpp"
+#include "gui_helpers.hpp"
 #include "StandaloneCamera.hpp"
 
 #include <string_view>

@@ -16,7 +16,7 @@ class TransformComponent : public Component {
   RTTR_REGISTRATION_FRIEND
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
 
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
 

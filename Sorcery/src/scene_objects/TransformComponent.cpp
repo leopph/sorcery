@@ -20,8 +20,10 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto TransformComponent::OnDrawProperties(bool& changed) -> void {
-  Component::OnDrawProperties(changed);
+auto TransformComponent::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
+  Component::OnDrawProperties(allow_edit, changed);
+
+  ImGui::BeginDisabled(!allow_edit);
 
   ImGui::Text("Local Position");
   ImGui::TableNextColumn();
@@ -43,7 +45,7 @@ auto TransformComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Local Scale");
   ImGui::TableNextColumn();
 
-  bool static uniformScale{true};
+  auto static uniformScale{true};
   auto constexpr scaleSpeed{0.01f};
 
   ImGui::Text("%s", "Uniform");
@@ -62,6 +64,8 @@ auto TransformComponent::OnDrawProperties(bool& changed) -> void {
       SetLocalScale(localScale);
     }
   }
+
+  ImGui::EndDisabled();
 }
 
 
@@ -111,36 +115,6 @@ TransformComponent::TransformComponent(TransformComponent&& other) noexcept :
   mLocalScale{std::move(other.mLocalScale)} {
   UpdateWorldDataRecursive();
   // Explicitly not copying parent and children
-}
-
-
-auto TransformComponent::UpdateWorldDataRecursive() -> void {
-  SetChanged(true);
-
-  mWorldPosition = mParent != nullptr
-                     ? mParent->mWorldPosition + mParent->mWorldRotation.Rotate(mLocalPosition)
-                     : mLocalPosition;
-  mWorldRotation = mParent != nullptr
-                     ? mParent->mWorldRotation * mLocalRotation
-                     : mLocalRotation;
-  mWorldScale = mParent != nullptr
-                  ? mParent->mWorldScale * mLocalScale
-                  : mLocalScale;
-
-  mForward = mWorldRotation.Rotate(Vector3::Forward());
-  mRight = mWorldRotation.Rotate(Vector3::Right());
-  mUp = mWorldRotation.Rotate(Vector3::Up());
-
-  // SRT transformation order
-
-  mLocalToWorldMtx[0] = Vector4{mRight * mWorldScale[0], 0};
-  mLocalToWorldMtx[1] = Vector4{mUp * mWorldScale[1], 0};
-  mLocalToWorldMtx[2] = Vector4{mForward * mWorldScale[2], 0};
-  mLocalToWorldMtx[3] = Vector4{mWorldPosition, 1};
-
-  for (auto* const child : mChildren) {
-    child->UpdateWorldDataRecursive();
-  }
 }
 
 
@@ -323,7 +297,7 @@ auto TransformComponent::CalculateLocalToWorldMatrixWithoutScale() const noexcep
   auto mtx{GetLocalToWorldMatrix()};
   auto const scale{GetWorldScale()};
 
-  for (int i = 0; i < 3; i++) {
+  for (auto i = 0; i < 3; i++) {
     mtx[i] = Vector4{Vector3{mtx[i]} / scale, mtx[i][3]};
   }
 
@@ -338,5 +312,35 @@ auto TransformComponent::HasChanged() const noexcept -> bool {
 
 auto TransformComponent::SetChanged(bool const changed) noexcept -> void {
   mChanged = changed;
+}
+
+
+auto TransformComponent::UpdateWorldDataRecursive() -> void {
+  SetChanged(true);
+
+  mWorldPosition = mParent != nullptr
+                     ? mParent->mWorldPosition + mParent->mWorldRotation.Rotate(mLocalPosition)
+                     : mLocalPosition;
+  mWorldRotation = mParent != nullptr
+                     ? mParent->mWorldRotation * mLocalRotation
+                     : mLocalRotation;
+  mWorldScale = mParent != nullptr
+                  ? mParent->mWorldScale * mLocalScale
+                  : mLocalScale;
+
+  mForward = mWorldRotation.Rotate(Vector3::Forward());
+  mRight = mWorldRotation.Rotate(Vector3::Right());
+  mUp = mWorldRotation.Rotate(Vector3::Up());
+
+  // SRT transformation order
+
+  mLocalToWorldMtx[0] = Vector4{mRight * mWorldScale[0], 0};
+  mLocalToWorldMtx[1] = Vector4{mUp * mWorldScale[1], 0};
+  mLocalToWorldMtx[2] = Vector4{mForward * mWorldScale[2], 0};
+  mLocalToWorldMtx[3] = Vector4{mWorldPosition, 1};
+
+  for (auto* const child : mChildren) {
+    child->UpdateWorldDataRecursive();
+  }
 }
 }

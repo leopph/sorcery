@@ -5,10 +5,11 @@ class EditorApp;
 
 
 class PropertiesWindow {
-  EditorApp* mApp;
-
 public:
   explicit PropertiesWindow(EditorApp& app);
-  auto Draw() -> void;
+  auto Draw() const -> void;
+
+private:
+  EditorApp* app_;
 };
 }

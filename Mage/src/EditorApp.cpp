@@ -6,7 +6,7 @@
 #include <nfd.hpp>
 
 #include "char_encoding_helpers.hpp"
-#include "GUI.hpp"
+#include "gui_helpers.hpp"
 #include "LoadingScreen.hpp"
 #include "PerformanceCounterWindow.hpp"
 #include "Platform.hpp"

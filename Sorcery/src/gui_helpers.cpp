@@ -1,4 +1,4 @@
-#include "GUI.hpp"
+#include "gui_helpers.hpp"
 
 #include <memory>
 

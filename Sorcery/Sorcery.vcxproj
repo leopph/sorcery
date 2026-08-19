@@ -165,7 +165,7 @@
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\scene_objects\CameraControllerComponent.cpp" />
     <ClCompile Include="src\scene_objects\Component.cpp" />
-    <ClCompile Include="src\GUI.cpp" />
+    <ClCompile Include="src\gui_helpers.cpp" />
     <ClCompile Include="src\Resources\Cubemap.cpp" />
     <ClCompile Include="src\GridLike.cpp" />
     <ClCompile Include="src\Math.cpp" />
@@ -207,7 +207,7 @@
     <ClInclude Include="src\random.hpp" />
     <ClInclude Include="src\rendering\graphics.hpp" />
     <ClInclude Include="src\rendering\directional_shadow_map_array.hpp" />
-    <ClInclude Include="src\GUI.hpp" />
+    <ClInclude Include="src\gui_helpers.hpp" />
     <ClInclude Include="src\rendering\scene_renderer.hpp" />
     <ClInclude Include="src\rendering\constant_buffer.hpp" />
     <ClInclude Include="src\rendering\render_manager.hpp" />
@@ -270,6 +270,7 @@
     <ClInclude Include="src\Platform.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\gui_helpers.inl" />
     <None Include="packages.config" />
     <None Include="src\job_system.inl" />
     <None Include="src\object.inl" />

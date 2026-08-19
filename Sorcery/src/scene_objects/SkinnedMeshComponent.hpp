@@ -15,7 +15,7 @@ class SkinnedMeshComponent final : public MeshComponentBase {
   RTTR_ENABLE(MeshComponentBase)
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
+  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
   LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;

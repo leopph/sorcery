@@ -8,7 +8,7 @@
 #include "../app.hpp"
 #include "../Serialization.hpp"
 #undef FindResource
-#include "../GUI.hpp"
+#include "../gui_helpers.hpp"
 #include "../job_system.hpp"
 #include "../material_resource.hpp"
 #include "../resource_manager.hpp"
@@ -31,8 +31,8 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto Material::OnDrawProperties(bool& changed) -> void {
-  NativeResource::OnDrawProperties(changed);
+auto Material::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
+  NativeResource::OnDrawProperties(allow_edit, changed);
 
   if (ImGui::BeginTable(std::format("{}", GetId().GetGuid().ToString()).c_str(), 2,
     ImGuiTableFlags_SizingStretchSame)) {
@@ -46,7 +46,9 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("Albedo Color");
     ImGui::TableNextColumn();
 
-    if (Vector3 albedoColor{GetAlbedoVector()}; ImGui::ColorEdit3("##matAlbedoColor", albedoColor.GetData())) {
+    if (Vector3 albedoColor{GetAlbedoVector()}; ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::ColorEdit3("##matAlbedoColor", albedoColor.GetData());
+    })) {
       SetAlbedoVector(albedoColor);
       changed = true;
     }
@@ -55,7 +57,9 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("%s", "Metallic");
     ImGui::TableNextColumn();
 
-    if (f32 metallic{GetMetallic()}; ImGui::SliderFloat("##matMetallic", &metallic, 0.0f, 1.0f)) {
+    if (f32 metallic{GetMetallic()}; ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::SliderFloat("##matMetallic", &metallic, 0.0f, 1.0f);
+    })) {
       SetMetallic(metallic);
       changed = true;
     }
@@ -64,7 +68,9 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("%s", "Roughness");
     ImGui::TableNextColumn();
 
-    if (f32 roughness{GetRoughness()}; ImGui::SliderFloat("##matRoughness", &roughness, 0.0f, 1.0f)) {
+    if (f32 roughness{GetRoughness()}; ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::SliderFloat("##matRoughness", &roughness, 0.0f, 1.0f);
+    })) {
       SetRoughness(roughness);
       changed = true;
     }
@@ -73,7 +79,9 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("%s", "Ambient Occlusion");
     ImGui::TableNextColumn();
 
-    if (f32 ao{GetAo()}; ImGui::SliderFloat("##matAo", &ao, 0.0f, 1.0f)) {
+    if (f32 ao{GetAo()}; ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::SliderFloat("##matAo", &ao, 0.0f, 1.0f);
+    })) {
       SetAo(ao);
       changed = true;
     }
@@ -82,7 +90,9 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("%s", "Albedo Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> albedoMapPicker;
-    if (auto albedoMap{GetAlbedoMap()}; albedoMapPicker.Draw(albedoMap)) {
+    if (auto albedoMap{GetAlbedoMap()}; ImGuiDisabled(!allow_edit, [&] {
+      return albedoMapPicker.Draw(albedoMap);
+    })) {
       SetAlbedoMap(albedoMap);
       changed = true;
     }
@@ -91,7 +101,9 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("%s", "Metallic Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> metallicMapPicker;
-    if (auto metallicMap{GetMetallicMap()}; metallicMapPicker.Draw(metallicMap)) {
+    if (auto metallicMap{GetMetallicMap()}; ImGuiDisabled(!allow_edit, [&] {
+      return metallicMapPicker.Draw(metallicMap);
+    })) {
       SetMetallicMap(metallicMap);
       changed = true;
     }
@@ -100,7 +112,9 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("%s", "Roughness Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> roughnessMapPicker;
-    if (auto roughnessMap{GetRoughnessMap()}; roughnessMapPicker.Draw(roughnessMap)) {
+    if (auto roughnessMap{GetRoughnessMap()}; ImGuiDisabled(!allow_edit, [&] {
+      return roughnessMapPicker.Draw(roughnessMap);
+    })) {
       SetRoughnessMap(roughnessMap);
       changed = true;
     }
@@ -109,7 +123,9 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("%s", "Ambient Occlusion Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> aoMapPicker;
-    if (auto aoMap{GetAoMap()}; aoMapPicker.Draw(aoMap)) {
+    if (auto aoMap{GetAoMap()}; ImGuiDisabled(!allow_edit, [&] {
+      return aoMapPicker.Draw(aoMap);
+    })) {
       SetAoMap(aoMap);
       changed = true;
     }
@@ -118,7 +134,9 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("%s", "Normal Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> normalMapPicker;
-    if (auto normalMap{GetNormalMap()}; normalMapPicker.Draw(normalMap)) {
+    if (auto normalMap{GetNormalMap()}; ImGuiDisabled(!allow_edit, [&] {
+      return normalMapPicker.Draw(normalMap);
+    })) {
       SetNormalMap(normalMap);
       changed = true;
     }
@@ -126,6 +144,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
     ImGui::Text("%s", "Blend Mode");
     ImGui::TableNextColumn();
+    ImGui::BeginDisabled(!allow_edit);
     if (char const* blendModeNames[]{"Opaque", "Alpha Clipping"}; ImGui::BeginCombo("##blendMode",
       blendModeNames[static_cast<int>(GetBlendMode())])) {
       for (auto i = 0; i < 2; i++) {
@@ -136,12 +155,15 @@ auto Material::OnDrawProperties(bool& changed) -> void {
       }
       ImGui::EndCombo();
     }
+    ImGui::EndDisabled();
 
     if (GetBlendMode() == BlendMode::kAlphaClip) {
       ImGui::TableNextColumn();
       ImGui::Text("%s", "Alpha Threshold");
       ImGui::TableNextColumn();
-      if (auto thresh{GetAlphaThreshold()}; ImGui::SliderFloat("##AlphaThresh", &thresh, 0, 1)) {
+      if (auto thresh{GetAlphaThreshold()}; ImGuiDisabled(!allow_edit, [&] {
+        return ImGui::SliderFloat("##AlphaThresh", &thresh, 0, 1);
+      })) {
         SetAlphaThreshold(thresh);
         changed = true;
       }
@@ -150,7 +172,9 @@ auto Material::OnDrawProperties(bool& changed) -> void {
       ImGui::Text("%s", "Opacity Mask");
       ImGui::TableNextColumn();
       static ObjectPicker<Texture2D> opacityMaskPicker;
-      if (auto opacityMask{GetOpacityMask()}; opacityMaskPicker.Draw(opacityMask)) {
+      if (auto opacityMask{GetOpacityMask()}; ImGuiDisabled(!allow_edit, [&] {
+        return opacityMaskPicker.Draw(opacityMask);
+      })) {
         SetOpacityMask(opacityMask);
         changed = true;
       }

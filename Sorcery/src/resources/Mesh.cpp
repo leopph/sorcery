@@ -53,8 +53,8 @@ auto Submesh::GetBounds() const -> AABB const& {
 }
 
 
-auto Mesh::OnDrawProperties(bool& changed) -> void {
-  Resource::OnDrawProperties(changed);
+auto Mesh::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
+  Resource::OnDrawProperties(allow_edit, changed);
 
   ImGui::Text("%s: %d", "Vertex Count", vertex_count_);
   ImGui::Text("%s: %d", "Triangle Count", primitive_count_);

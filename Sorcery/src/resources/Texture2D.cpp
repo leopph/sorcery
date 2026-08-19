@@ -72,8 +72,8 @@ auto Texture2D::GetChannelCount() const noexcept -> unsigned {
 }
 
 
-auto Texture2D::OnDrawProperties(bool& changed) -> void {
-  Resource::OnDrawProperties(changed);
+auto Texture2D::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
+  Resource::OnDrawProperties(allow_edit, changed);
 
   if (ImGui::BeginTable(std::format("{}", GetId().GetGuid().ToString()).c_str(), 2,
     ImGuiTableFlags_SizingStretchSame)) {

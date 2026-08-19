@@ -102,7 +102,7 @@
     <ClCompile Include="src\Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\GUI.cpp">
+    <ClCompile Include="src\gui_helpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\directional_shadow_map_array.cpp">
@@ -290,7 +290,7 @@
     <ClInclude Include="src\Resources\NativeResource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\GUI.hpp">
+    <ClInclude Include="src\gui_helpers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\serialization.hpp">
@@ -449,6 +449,9 @@
     <None Include="src\rendering\shaders\brdf_integration.hlsli" />
     <None Include="src\rendering\shaders\tonemapping.hlsli" />
     <None Include="src\serialization.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="src\gui_helpers.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>

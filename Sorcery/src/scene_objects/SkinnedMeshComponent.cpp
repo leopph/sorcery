@@ -1,9 +1,11 @@
 #include "SkinnedMeshComponent.hpp"
 
 #include <cmath>
+
 #include <imgui.h>
 
 #include "../app.hpp"
+#include "../gui_helpers.hpp"
 #include "../Timing.hpp"
 
 RTTR_REGISTRATION {
@@ -13,8 +15,8 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto SkinnedMeshComponent::OnDrawProperties(bool& changed) -> void {
-  MeshComponentBase::OnDrawProperties(changed);
+auto SkinnedMeshComponent::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
+  MeshComponentBase::OnDrawProperties(allow_edit, changed);
 
   ImGui::TableNextColumn();
   ImGui::Text("Animation");
@@ -30,7 +32,9 @@ auto SkinnedMeshComponent::OnDrawProperties(bool& changed) -> void {
   }
 
   if (auto combo_idx{static_cast<int>(cur_animation_idx_ ? *cur_animation_idx_ + 1 : 0)};
-    ImGui::Combo("##animCombo", &combo_idx, items.data(), static_cast<int>(items.size()))) {
+    ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::Combo("##animCombo", &combo_idx, items.data(), static_cast<int>(items.size()));
+    })) {
     cur_animation_idx_ = combo_idx == 0 ? std::nullopt : std::make_optional(combo_idx - 1);
   }
 }

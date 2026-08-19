@@ -12,10 +12,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-std::vector<Object*> Object::sAllObjects;
-std::recursive_mutex Object::sAllObjectsMutex;
-
-
 Object::Object() {
   std::unique_lock const lock{sAllObjectsMutex};
   sAllObjects.emplace_back(this);
@@ -50,7 +46,13 @@ auto Object::SetName(std::string const& name) -> void {
 }
 
 
-auto Object::OnDrawProperties([[maybe_unused]] bool& changed) -> void {
+auto Object::OnDrawProperties([[maybe_unused]] bool const allow_edit, [[maybe_unused]] bool& changed) -> void {
   ImGui::SeparatorText(std::format("{} ({})", GetName(), rttr::type::get(*this).get_name().data()).c_str());
 }
+
+
+std::vector<Object*> Object::sAllObjects;
+
+
+std::recursive_mutex Object::sAllObjectsMutex;
 }

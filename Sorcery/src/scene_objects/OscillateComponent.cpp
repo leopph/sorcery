@@ -3,6 +3,7 @@
 #include <imgui.h>
 
 #include "Entity.hpp"
+#include "../gui_helpers.hpp"
 #include "../Timing.hpp"
 
 RTTR_REGISTRATION {
@@ -20,13 +21,15 @@ auto OscillateComponent::Clone() -> std::unique_ptr<SceneObject> {
 }
 
 
-auto OscillateComponent::OnDrawProperties(bool& changed) -> void {
-  Component::OnDrawProperties(changed);
+auto OscillateComponent::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
+  Component::OnDrawProperties(allow_edit, changed);
 
   ImGui::Text("Direction");
   ImGui::TableNextColumn();
 
-  if (ImGui::DragFloat3("###OscillateDirection", &direction_[0], 0.01f, -100.0f, 100.0f, "%.2f")) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat3("###OscillateDirection", &direction_[0], 0.01f, -100.0f, 100.0f, "%.2f");
+  })) {
     changed = true;
   }
 
@@ -34,7 +37,9 @@ auto OscillateComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Distance");
   ImGui::TableNextColumn();
 
-  if (ImGui::DragFloat("###OscillateDistance", &distance_, 0.1f, 0.0f, 100.0f, "%.2f")) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("###OscillateDistance", &distance_, 0.1f, 0.0f, 100.0f, "%.2f");
+  })) {
     changed = true;
   }
 
@@ -42,7 +47,9 @@ auto OscillateComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Speed");
   ImGui::TableNextColumn();
 
-  if (ImGui::DragFloat("###OscillateSpeed", &speed_, 0.1f, 0.0f, 100.0f, "%.2f")) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("###OscillateSpeed", &speed_, 0.1f, 0.0f, 100.0f, "%.2f");
+  })) {
     changed = true;
   }
 }

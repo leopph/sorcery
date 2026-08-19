@@ -1,14 +1,13 @@
 #include "CameraComponent.hpp"
 
+#include <imgui.h>
+
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
 #include "../app.hpp"
+#include "../gui_helpers.hpp"
 #include "../Reflection.hpp"
 #include "../rendering/scene_renderer.hpp"
-
-#include <imgui.h>
-
-#include <iostream>
 
 
 RTTR_REGISTRATION {
@@ -29,15 +28,17 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto CameraComponent::OnDrawProperties(bool& changed) -> void {
-  Component::OnDrawProperties(changed);
+auto CameraComponent::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
+  Component::OnDrawProperties(allow_edit, changed);
 
   ImGui::Text("Type");
   ImGui::TableNextColumn();
 
   constexpr char const* typeOptions[]{"Perspective", "Orthographic"};
   int selection{GetType() == Type::Perspective ? 0 : 1};
-  if (ImGui::Combo("###CameraType", &selection, typeOptions, 2)) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::Combo("###CameraType", &selection, typeOptions, 2);
+  })) {
     SetType(selection == 0 ? Type::Perspective : Type::Orthographic);
   }
 
@@ -47,14 +48,18 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("Field Of View");
     ImGui::TableNextColumn();
     float value{GetVerticalPerspectiveFov()};
-    if (ImGui::DragFloat("FOV", &value)) {
+    if (ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::DragFloat("FOV", &value);
+    })) {
       SetVerticalPerspectiveFov(value);
     }
   } else {
     ImGui::Text("Size");
     ImGui::TableNextColumn();
     float value{GetVerticalOrthographicSize()};
-    if (ImGui::DragFloat("OrthoSize", &value)) {
+    if (ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::DragFloat("OrthoSize", &value);
+    })) {
       SetVerticalOrthographicSize(value);
     }
   }
@@ -64,7 +69,9 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::TableNextColumn();
 
   float nearValue{GetNearClipPlane()};
-  if (ImGui::DragFloat("NearClip", &nearValue)) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("NearClip", &nearValue);
+  })) {
     SetNearClipPlane(nearValue);
   }
 
@@ -73,7 +80,9 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::TableNextColumn();
 
   float farValue{GetFarClipPlane()};
-  if (ImGui::DragFloat("FarClip", &farValue)) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("FarClip", &farValue);
+  })) {
     SetFarClipPlane(farValue);
   }
 
@@ -88,8 +97,11 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Viewport Left");
   ImGui::TableNextColumn();
 
-  if (ImGui::DragFloat("##ViewportLeftDrag", &viewport.left, viewport_drag_speed, viewport_drag_min, viewport_drag_max,
-    viewport_drag_format)) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("##ViewportLeftDrag", &viewport.left, viewport_drag_speed, viewport_drag_min,
+      viewport_drag_max,
+      viewport_drag_format);
+  })) {
     SetViewport(viewport);
   }
 
@@ -97,8 +109,11 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Viewport Top");
   ImGui::TableNextColumn();
 
-  if (ImGui::DragFloat("##ViewportTopDrag", &viewport.top, viewport_drag_speed, viewport_drag_min, viewport_drag_max,
-    viewport_drag_format)) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("##ViewportTopDrag", &viewport.top, viewport_drag_speed, viewport_drag_min,
+      viewport_drag_max,
+      viewport_drag_format);
+  })) {
     SetViewport(viewport);
   }
 
@@ -106,8 +121,10 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Viewport Right");
   ImGui::TableNextColumn();
 
-  if (ImGui::DragFloat("##ViewportRightDrag", &viewport.right, viewport_drag_speed, viewport_drag_min,
-    viewport_drag_max, viewport_drag_format)) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("##ViewportRightDrag", &viewport.right, viewport_drag_speed, viewport_drag_min,
+      viewport_drag_max, viewport_drag_format);
+  })) {
     SetViewport(viewport);
   }
 
@@ -115,8 +132,10 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Viewport Bottom");
   ImGui::TableNextColumn();
 
-  if (ImGui::DragFloat("##ViewportBottomDrag", &viewport.bottom, viewport_drag_speed, viewport_drag_min,
-    viewport_drag_max, viewport_drag_format)) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragFloat("##ViewportBottomDrag", &viewport.bottom, viewport_drag_speed, viewport_drag_min,
+      viewport_drag_max, viewport_drag_format);
+  })) {
     SetViewport(viewport);
   }
 
@@ -125,7 +144,9 @@ auto CameraComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::TableNextColumn();
 
   Vector4 color{GetBackgroundColor()};
-  if (ImGui::ColorEdit4("###backgroundColor", color.GetData())) {
+  if (ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::ColorEdit4("###backgroundColor", color.GetData());
+  })) {
     SetBackgroundColor(color);
   }
 }
