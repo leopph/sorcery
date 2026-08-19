@@ -335,17 +335,17 @@ auto ProjectWindow::ValidateSelection() -> void {
     [&](DirectoryProjectItem const& item) {
       if (!std::filesystem::is_directory(item.path_abs) || relative(item.path_abs,
             resource_db_->GetResourceDirectoryAbsolutePath()).empty()) {
-        selected_item_.reset();
+        ClearSelection();
       }
     },
     [&](NativeResourceFileProjectItem const& item) {
       if (!resource_db_->GetFileInfo(item.guid)) {
-        selected_item_.reset();
+        ClearSelection();
       }
     },
     [&](ResourcePackageFileProjectItem const& item) {
       if (!resource_db_->GetFileInfo(item.guid)) {
-        selected_item_.reset();
+        ClearSelection();
       }
     },
     [&](SubresourceProjectItem const& item) {
@@ -353,7 +353,7 @@ auto ProjectWindow::ValidateSelection() -> void {
         if (resource_db_->GetFileInfo(item.id.GetGuid())) {
           selected_item_ = ResourcePackageFileProjectItem{item.id.GetGuid()};
         } else {
-          selected_item_.reset();
+          ClearSelection();
         }
       }
     }
