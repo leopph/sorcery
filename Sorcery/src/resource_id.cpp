@@ -36,6 +36,11 @@ ResourceId::operator std::string() const {
 }
 
 
+auto ResourceId::ToString() const -> std::string {
+  return std::string{*this};
+}
+
+
 auto operator<=>(ResourceId const& lhs, ResourceId const& rhs) noexcept -> std::strong_ordering {
   return lhs.GetGuid() <=> rhs.GetGuid() != std::strong_ordering::equivalent
            ? lhs.GetGuid() <=> rhs.GetGuid()

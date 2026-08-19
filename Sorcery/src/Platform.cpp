@@ -121,7 +121,7 @@ auto Utf8ToWide(std::string_view const str) -> std::wstring {
 
 auto GetExecutablePath() noexcept -> std::wstring_view {
 #ifdef NDEBUG
-    wchar_t* exePath;
+  wchar_t* exePath;
   _get_wpgmptr(&exePath);
   return exePath;
 #else
@@ -146,5 +146,91 @@ auto DisplayError(std::string_view const msg) noexcept -> void {
 
 auto DisplayError(std::wstring_view const msg) noexcept -> void {
   MessageBoxW(nullptr, msg.data(), L"Error", MB_ICONERROR);
+}
+
+
+auto CopyToClipboard(std::string_view const str) -> bool {
+  if (!OpenClipboard(nullptr)) {
+    return false;
+  }
+
+  if (!EmptyClipboard()) {
+    CloseClipboard();
+    return false;
+  }
+
+  auto const size{str.size() + 1};
+  auto const memory{GlobalAlloc(GMEM_MOVEABLE, size)};
+
+  if (!memory) {
+    CloseClipboard();
+    return false;
+  }
+
+  auto* const data{GlobalLock(memory)};
+
+  if (!data) {
+    GlobalFree(memory);
+    CloseClipboard();
+    return false;
+  }
+
+  std::memcpy(data, str.data(), str.size());
+  static_cast<char*>(data)[str.size()] = '\0';
+
+  GlobalUnlock(memory);
+
+  if (!SetClipboardData(CF_TEXT, memory)) {
+    GlobalFree(memory);
+    CloseClipboard();
+    return false;
+  }
+
+  // Explicitly not calling GlobalFree here because Windows takes ownership of the memory.
+  CloseClipboard();
+  return true;
+}
+
+
+auto CopyToClipboard(std::wstring_view const str) -> bool {
+  if (!OpenClipboard(nullptr)) {
+    return false;
+  }
+
+  if (!EmptyClipboard()) {
+    CloseClipboard();
+    return false;
+  }
+
+  auto const size{(str.size() + 1) * sizeof(wchar_t)};
+  auto const memory{GlobalAlloc(GMEM_MOVEABLE, size)};
+
+  if (!memory) {
+    CloseClipboard();
+    return false;
+  }
+
+  auto* const data{GlobalLock(memory)};
+
+  if (!data) {
+    GlobalFree(memory);
+    CloseClipboard();
+    return false;
+  }
+
+  std::memcpy(data, str.data(), str.size() * sizeof(wchar_t));
+  static_cast<wchar_t*>(data)[str.size()] = L'\0';
+
+  GlobalUnlock(memory);
+
+  if (!SetClipboardData(CF_UNICODETEXT, memory)) {
+    GlobalFree(memory);
+    CloseClipboard();
+    return false;
+  }
+
+  // Explicitly not calling GlobalFree here because Windows takes ownership of the memory.
+  CloseClipboard();
+  return true;
 }
 }

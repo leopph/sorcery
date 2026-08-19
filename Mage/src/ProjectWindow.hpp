@@ -205,8 +205,8 @@ private:
   auto ExecuteShowInExplorer(ProjectItem const& target) -> void;
   auto ExecuteReimport(ProjectItem const& target) -> void;
   auto OpenImportSettings(ProjectItem const& target) -> void;
-  auto ExecuteCopyGuid(ProjectItem const& target) -> void;
-  auto ExecuteCopyResourceId(ProjectItem const& target) -> void;
+  auto ExecuteCopyGuid(ProjectItem const& target) const -> void;
+  auto ExecuteCopyResourceId(ProjectItem const& target) const -> void;
   auto ExecuteUnloadResource(ProjectItem const& target) -> void;
   auto ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -> void;
   auto ExecuteUnloadResourceById(ResourceId const& target) -> void;

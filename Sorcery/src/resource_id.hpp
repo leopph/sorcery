@@ -18,6 +18,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto IsValid() const noexcept -> bool;
 
   [[nodiscard]] SORCERYAPI explicit operator std::string() const;
+  [[nodiscard]] SORCERYAPI auto ToString() const -> std::string;
 
 private:
   Guid guid_{Guid::Invalid()};

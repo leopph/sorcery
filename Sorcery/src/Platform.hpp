@@ -28,6 +28,15 @@ LEOPPHAPI auto SetMouseDelta(Point2D<int> mouseDelta) noexcept -> void;
 LEOPPHAPI auto DisplayError(std::string_view msg) noexcept -> void;
 LEOPPHAPI auto DisplayError(std::wstring_view msg) noexcept -> void;
 
+[[nodiscard]] SORCERYAPI
+auto CopyToClipboard(std::string_view str) -> bool;
+
+[[nodiscard]] SORCERYAPI
+auto CopyToClipboard(std::wstring_view str) -> bool;
+
+[[nodiscard]] SORCERYAPI
+auto CopyToClipboard(std::wstring_view str) noexcept -> bool;
+
 
 enum class Key : int {
   LeftMouseButton   = 0x01,

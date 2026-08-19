@@ -1202,13 +1202,47 @@ auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {
 }
 
 
-auto ProjectWindow::ExecuteCopyGuid(ProjectItem const& target) -> void {
-  // TODO implement
+auto ProjectWindow::ExecuteCopyGuid(ProjectItem const& target) const -> void {
+  std::visit(Overloaded{
+    []([[maybe_unused]] DirectoryProjectItem const& item) {
+      spdlog::error("Tried copying GUID of a directory. Ignoring.");
+    },
+    [this](NativeResourceFileProjectItem const& item) {
+      if (!CopyToClipboard(item.guid.ToString())) {
+        spdlog::error("Failed to copy GUID to clipboard.");
+      }
+    },
+    [this](ResourcePackageFileProjectItem const& item) {
+      if (!CopyToClipboard(item.guid.ToString())) {
+        spdlog::error("Failed to copy GUID to clipboard.");
+      }
+    },
+    []([[maybe_unused]] SubresourceProjectItem const& item) {
+      spdlog::error("Tried copying GUID of a subresource. Ignoring.");
+    }
+  }, target);
 }
 
 
-auto ProjectWindow::ExecuteCopyResourceId(ProjectItem const& target) -> void {
-  // TODO implement
+auto ProjectWindow::ExecuteCopyResourceId(ProjectItem const& target) const -> void {
+  std::visit(Overloaded{
+    [this]([[maybe_unused]] DirectoryProjectItem const& item) {
+      spdlog::error("Tried copying resource ID of a directory. Ignoring.");
+    },
+    [this](NativeResourceFileProjectItem const& item) {
+      if (!CopyToClipboard(ResourceId{item.guid, 0}.ToString())) {
+        spdlog::error("Failed to copy resource ID to clipboard.");
+      }
+    },
+    [this]([[maybe_unused]] ResourcePackageFileProjectItem const& item) {
+      spdlog::error("Tried copying resource ID of a resource package file. Ignoring.");
+    },
+    [this](SubresourceProjectItem const& item) {
+      if (!CopyToClipboard(item.id.ToString())) {
+        spdlog::error("Failed to copy resource ID to clipboard.");
+      }
+    }
+  }, target);
 }
 
 
