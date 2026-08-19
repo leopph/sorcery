@@ -287,6 +287,10 @@ auto ResourceDB::SaveResourceToFile(
     return nullptr;
   }
 
+  if (!IsResourceEditable(res->GetId())) {
+    return nullptr;
+  }
+
   // If the resource doesn't have a valid ResourceId yet, we generate a new one.
   if (!res->GetId().IsValid()) {
     res->SetId(ResourceId{Guid::Generate(), 0});
@@ -339,6 +343,10 @@ auto ResourceDB::SaveResourceToFile(
 
 
 auto ResourceDB::SaveResourceToFile(NativeResource const& res) -> void {
+  if (!IsResourceEditable(res.GetId())) {
+    return;
+  }
+
   if (auto const it{res_file_info_by_guid_.find(res.GetId().GetGuid())}; it != std::end(res_file_info_by_guid_)) {
     std::ofstream out_stream{res_dir_abs_ / it->second.src_path_res_dir_rel};
     YAML::Emitter emitter{out_stream};
@@ -537,6 +545,18 @@ auto ResourceDB::GetResourcesInFile(Guid const& guid, std::vector<ObserverPtr<Re
       out.emplace_back(ObserverPtr{&info});
     }
   }
+}
+
+
+auto ResourceDB::IsResourceFileEditable(Guid const& guid) const -> bool {
+  auto const file_info{GetFileInfo(guid)};
+  // If the file info is not found, we assume it is editable, as it may be a new resource that has not been saved yet.
+  return !file_info || file_info->is_native_resource;
+}
+
+
+auto ResourceDB::IsResourceEditable(ResourceId const& id) const -> bool {
+  return IsResourceFileEditable(id.GetGuid());
 }
 
 

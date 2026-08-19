@@ -200,6 +200,26 @@ public:
 
 
   /**
+   * Returns whether the resource file associated with the given GUID can be edited.
+   * Invalid or unknown GUIDs are considered editable.
+   */
+  [[nodiscard]]
+  auto IsResourceFileEditable(
+    Guid const& guid
+  ) const -> bool;
+
+
+  /**
+   * Returns whether the resource associated with the given resource ID can be edited.
+   * Invalid or unknown resource IDs are considered editable.
+   */
+  [[nodiscard]]
+  auto IsResourceEditable(
+    ResourceId const& id
+  ) const -> bool;
+
+
+  /**
    * Returns an importer object for the resource file at the given path.
    * If the file does not exist, or it is not a resource file, or the importer cannot be retrieved, the function will return nullptr.
    */
