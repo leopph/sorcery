@@ -90,10 +90,6 @@ auto ProjectWindow::RebuildHierarchy() -> void {
           std::vector<ObserverPtr<ResourceDB::ResourceInfo const>> subresources;
           resource_db_->GetResourcesInFile(guid, subresources);
 
-          if (subresources.empty()) {
-            continue;
-          }
-
           std::vector<ProjectTreeNode> subresource_nodes;
 
           for (auto const& subresource : subresources) {
