@@ -564,13 +564,6 @@ auto ProjectWindow::DrawSubresourceContextMenu(SubresourceProjectItem const& ite
     };
   }
 
-  if (ImGui::MenuItem("Locate Parent File")) {
-    pending_command_ = ProjectCommand{
-      .kind = ProjectCommandKind::kLocateParentFile,
-      .target = item
-    };
-  }
-
   ImGui::Separator();
 
   if (ImGui::MenuItem("Unload")) {
@@ -895,11 +888,6 @@ auto ProjectWindow::ExecutePendingCommand() -> void {
 
     case ProjectCommandKind::kUnloadAllResourcesInFile: {
       ExecuteUnloadAllResourcesInFile(command->target);
-      break;
-    }
-
-    case ProjectCommandKind::kLocateParentFile: {
-      ExecuteLocateParentFile(command->target);
       break;
     }
   }
@@ -1300,11 +1288,6 @@ auto ProjectWindow::ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -
 auto ProjectWindow::ExecuteUnloadResourceById(ResourceId const& target) -> void {
   App::Instance().GetResourceManager().Unload(target);
   ClearSelection();
-}
-
-
-auto ProjectWindow::ExecuteLocateParentFile(ProjectItem const& target) -> void {
-  // TODO implement
 }
 
 

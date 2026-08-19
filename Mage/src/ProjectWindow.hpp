@@ -129,8 +129,7 @@ private:
     kCopyGuid,
     kCopyResourceId,
     kUnloadResource,
-    kUnloadAllResourcesInFile,
-    kLocateParentFile
+    kUnloadAllResourcesInFile
   };
 
 
@@ -209,7 +208,6 @@ private:
   auto ExecuteUnloadResource(ProjectItem const& target) -> void;
   auto ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -> void;
   auto ExecuteUnloadResourceById(ResourceId const& target) -> void;
-  auto ExecuteLocateParentFile(ProjectItem const& target) -> void;
 
   // Returns whether the drawn subtree was modified.
   [[nodiscard]]
