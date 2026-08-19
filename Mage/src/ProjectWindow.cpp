@@ -115,6 +115,22 @@ auto ProjectWindow::RebuildHierarchy() -> void {
       }
     }
 
+    // Sort children by name.
+    // Folders first, then files.
+    // Subresources are not sorted.
+    if (!std::holds_alternative<ResourcePackageFileProjectItem>(current_node->item)) {
+      auto const not_dir_range{
+        std::ranges::partition(current_node->children, [](ProjectTreeNode const& node) {
+          return IsDirectory(node);
+        })
+      };
+
+      std::ranges::sort(std::ranges::begin(current_node->children), std::ranges::begin(not_dir_range), {},
+        &ProjectTreeNode::display_name);
+
+      std::ranges::sort(not_dir_range, {}, &ProjectTreeNode::display_name);
+    }
+
     for (auto& child_node : current_node->children) {
       nodes_to_process.emplace(&child_node);
     }
