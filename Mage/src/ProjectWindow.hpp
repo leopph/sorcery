@@ -223,7 +223,6 @@ private:
 
   [[nodiscard]]
   auto TryImportFromSourceFile(
-    ResourceImporter* importer,
     std::filesystem::path const& src_path_abs,
     std::filesystem::path const& dst_path_abs
   ) const -> bool;

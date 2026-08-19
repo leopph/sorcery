@@ -938,20 +938,7 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
 
     std::filesystem::path const src_path_abs{src_path_abs_str.get()};
 
-    auto importer{ResourceDB::CreateNewImporterForResourceFile(src_path_abs)};
-
-    if (!importer) {
-      auto const err_str{
-        std::format("Couldn't import file {} because no importer was found for its type.",
-          ToUntypedStdSv(src_path_abs.u8string()))
-      };
-      spdlog::error(err_str);
-      DisplayError(err_str);
-      continue;
-    }
-
-    if (auto const dst_path_abs{GenerateUniquePath(*target_dir_abs / src_path_abs.filename())};
-      !TryImportFromSourceFile(importer.get(), src_path_abs, dst_path_abs)) {
+    if (!TryImportFromSourceFile(src_path_abs, GenerateUniquePath(*target_dir_abs / src_path_abs.filename()))) {
       auto const err_str{
         std::format("Failed to import file {}.", ToUntypedStdSv(src_path_abs.u8string()))
       };
@@ -1482,21 +1469,12 @@ auto ProjectWindow::DrawContextMenu() -> void {
           for (nfdpathsetsize_t i{0}; i < path_set_size; i++) {
             if (NFD::UniquePathSetPathN src_path_abs_str;
               NFD::PathSet::GetPath(dst_paths, i, src_path_abs_str) == NFD_OKAY) {
-              std::filesystem::path const src_path_abs{src_path_abs_str.get()};
-
-              if (auto importer{ResourceDB::CreateNewImporterForResourceFile(src_path_abs)}) {
-                if (auto const dst_path_abs{GenerateUniquePath(workingDirAbs / src_path_abs.filename())};
-                  !TryImportFromSourceFile(importer.get(), src_path_abs, dst_path_abs)) {
-                  ImGui::CloseCurrentPopup();
-                  ImGui::EndPopup();
-                  ImGui::End();
-                  throw std::runtime_error{std::format("Failed to import {}.", dst_path_abs.string())};
-                }
-              } else {
+              if (std::filesystem::path const src_path_abs{src_path_abs_str.get()};
+                !TryImportFromSourceFile(src_path_abs, GenerateUniquePath(workingDirAbs / src_path_abs.filename()))) {
+                ImGui::CloseCurrentPopup();
                 ImGui::EndPopup();
-                throw std::runtime_error{
-                  std::format("Couldn't find importer for file type {}.", src_path_abs.extension().string())
-                };
+                ImGui::End();
+                throw std::runtime_error{std::format("Failed to import {}.", src_path_abs.string())};
               }
             }
           }
@@ -1543,18 +1521,22 @@ auto ProjectWindow::StartRenamingSelected() noexcept -> void {
 }
 
 
-auto ProjectWindow::TryImportFromSourceFile(ResourceImporter* const importer, std::filesystem::path const& src_path_abs,
-                                            std::filesystem::path const& dst_path_abs) const -> bool {
-  if (exists(src_path_abs) && !exists(dst_path_abs)) {
-    copy_file(src_path_abs, dst_path_abs);
-  }
-
-  if (!app_->GetResourceDatabase().ImportResourceFile(
-    relative(dst_path_abs, app_->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), importer)) {
-    remove(dst_path_abs);
+auto ProjectWindow::TryImportFromSourceFile(
+  std::filesystem::path const& src_path_abs,
+  std::filesystem::path const& dst_path_abs
+) const -> bool {
+  if (!exists(src_path_abs) || exists(dst_path_abs)) {
     return false;
   }
 
+  std::error_code ec;
+  copy_file(src_path_abs, dst_path_abs, ec);
+
+  if (ec) {
+    return false;
+  }
+
+  resource_db_->Refresh();
   return true;
 }
 }
