@@ -20,6 +20,7 @@
 
 #include "App.hpp"
 #include "io_helpers.hpp"
+#include "Platform.hpp"
 #include "Serialization.hpp"
 #include "Resources/Mesh.hpp"
 #include "resource_import/material_import.hpp"
@@ -143,7 +144,9 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
   };
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    throw std::runtime_error{std::format("Failed to import model at {}: {}.", src.string(), importer.GetErrorString())};
+    DisplayError(std::format("Failed to import model at {}: {}.", ToUntypedStdSv(src.u8string()),
+      importer.GetErrorString()));
+    return false;
   }
 
   MeshData mesh_data;
@@ -666,7 +669,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
 
   for (std::size_t i{0}; i < meshes.size(); i++) {
     if (!meshletized_meshes[i]) {
-      throw std::runtime_error{"Failed to compute meshlets."};
+      DisplayError(std::format("Failed to compute meshlets for submesh {}.", i));
+      return false;
     }
 
     auto& [meshlets, unique_vertex_indices, primitive_indices, cull_data]{*meshletized_meshes[i]};
