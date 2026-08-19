@@ -1,9 +1,10 @@
 #pragma once
 
+#include <filesystem>
+#include <string>
+
 #include "Core.hpp"
 #include "point.hpp"
-
-#include <string>
 
 
 namespace sorcery {
@@ -35,7 +36,7 @@ auto CopyToClipboard(std::string_view str) -> bool;
 auto CopyToClipboard(std::wstring_view str) -> bool;
 
 [[nodiscard]] SORCERYAPI
-auto CopyToClipboard(std::wstring_view str) noexcept -> bool;
+auto ShowInFileExplorer(std::filesystem::path const& path) -> bool;
 
 
 enum class Key : int {

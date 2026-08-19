@@ -202,7 +202,7 @@ private:
   auto ExecuteDelete(ProjectItem const& target) -> void;
   auto ExecuteDeleteDirectory(DirectoryProjectItem const& target) -> void;
   auto ExecuteDeleteResourceFile(Guid const& target) -> void;
-  auto ExecuteShowInExplorer(ProjectItem const& target) -> void;
+  auto ExecuteShowInExplorer(ProjectItem const& target) const -> void;
   auto ExecuteReimport(ProjectItem const& target) -> void;
   auto OpenImportSettings(ProjectItem const& target) -> void;
   auto ExecuteCopyGuid(ProjectItem const& target) const -> void;

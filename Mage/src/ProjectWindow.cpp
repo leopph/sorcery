@@ -1187,8 +1187,42 @@ auto ProjectWindow::ExecuteDeleteResourceFile(Guid const& target) -> void {
 }
 
 
-auto ProjectWindow::ExecuteShowInExplorer(ProjectItem const& target) -> void {
-  // TODO implement
+auto ProjectWindow::ExecuteShowInExplorer(ProjectItem const& target) const -> void {
+  std::visit(Overloaded{
+    [this](DirectoryProjectItem const& item) {
+      if (!ShowInFileExplorer(item.path_abs)) {
+        spdlog::error("Failed to show directory in explorer.");
+        DisplayError("Failed to open File Explorer.");
+      }
+    },
+    [this](NativeResourceFileProjectItem const& item) {
+      auto const path_res_dir_rel{resource_db_->GuidToPath(item.guid)};
+      if (path_res_dir_rel.empty()) {
+        spdlog::error("Tried showing a native resource file in explorer, but failed to get its path.");
+        DisplayError("Failed to get file path.");
+        return;
+      }
+      if (!ShowInFileExplorer(resource_db_->GetResourceDirectoryAbsolutePath() / path_res_dir_rel)) {
+        spdlog::error("Failed to show native resource file in explorer.");
+        DisplayError("Failed to open File Explorer.");
+      }
+    },
+    [this](ResourcePackageFileProjectItem const& item) {
+      auto const path_res_dir_rel{resource_db_->GuidToPath(item.guid)};
+      if (path_res_dir_rel.empty()) {
+        spdlog::error("Tried showing a resource package file in explorer, but failed to get its path.");
+        DisplayError("Failed to get file path.");
+        return;
+      }
+      if (!ShowInFileExplorer(resource_db_->GetResourceDirectoryAbsolutePath() / path_res_dir_rel)) {
+        spdlog::error("Failed to show resource package file in explorer.");
+        DisplayError("Failed to open File Explorer.");
+      }
+    },
+    []([[maybe_unused]] SubresourceProjectItem const& item) {
+      spdlog::error("Tried showing a subresource in explorer. Ignoring.");
+    }
+  }, target);
 }
 
 

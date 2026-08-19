@@ -7,6 +7,7 @@
 #include <Windows.h>
 // Has to be after Windows.h
 #include <hidusage.h>
+#include <shellapi.h>
 
 
 namespace sorcery {
@@ -231,6 +232,25 @@ auto CopyToClipboard(std::wstring_view const str) -> bool {
 
   // Explicitly not calling GlobalFree here because Windows takes ownership of the memory.
   CloseClipboard();
+  return true;
+}
+
+
+auto ShowInFileExplorer(std::filesystem::path const& path) -> bool {
+  std::error_code ec;
+  auto const status{std::filesystem::status(path, ec)};
+
+  if (ec || !std::filesystem::exists(status)) {
+    return false;
+  }
+
+  if (std::filesystem::is_directory(status)) {
+    ShellExecuteW(nullptr, L"open", path.c_str(), nullptr, nullptr,SW_SHOWNORMAL);
+    return true;
+  }
+
+  auto const select_cmd{L"/select,\"" + path.wstring() + L"\""};
+  ShellExecuteW(nullptr, L"open", L"explorer.exe", select_cmd.c_str(), nullptr,SW_SHOWNORMAL);
   return true;
 }
 }

@@ -504,7 +504,7 @@ auto ResourceDB::PathToGuid(std::filesystem::path const& path_res_dir_rel) const
 
 auto ResourceDB::GuidToPath(Guid const& guid) const -> std::filesystem::path {
   if (auto const it{res_file_info_by_guid_.find(guid)}; it != std::end(res_file_info_by_guid_)) {
-    return relative(it->second.load_path_abs, GetResourceDirectoryAbsolutePath());
+    return it->second.src_path_res_dir_rel;
   }
 
   return {};
