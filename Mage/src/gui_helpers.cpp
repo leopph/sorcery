@@ -1,4 +1,4 @@
-#include "editor_gui_helpers.hpp"
+#include "gui_helpers.hpp"
 
 #include <imgui_internal.h>
 
@@ -49,6 +49,16 @@ auto Spinner(char const* label, float const radius, int const thickness, ImU32 c
 
 
 namespace sorcery::mage {
+namespace detail {
+auto ObjectPickerBase::GetNextInstanceId() noexcept -> int {
+  return sNextInstanceId++;
+}
+
+
+int ObjectPickerBase::sNextInstanceId{0};
+}
+
+
 auto DrawSpinner(char const* const label, float const radius, int const thickness, ImU32 const& color) -> bool {
   return ImGui::Spinner(label, radius, thickness, color);
 }

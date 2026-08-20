@@ -1,5 +1,7 @@
 #include "mesh_editor_drawer.hpp"
 
+#include <imgui.h>
+
 #include "editor_drawer_registry.hpp"
 
 

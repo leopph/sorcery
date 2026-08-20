@@ -1,10 +1,11 @@
 #include "PerformanceCounterWindow.hpp"
 
-#include "Timing.hpp"
-#include "../editor_gui_helpers.hpp"
-
 #include <chrono>
 #include <numeric>
+
+#include <implot.h>
+
+#include "Timing.hpp"
 
 
 namespace sorcery::mage {

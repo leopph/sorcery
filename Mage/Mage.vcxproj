@@ -135,9 +135,11 @@
     <ClCompile Include="src\drawers\material_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\mesh_component_base_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\mesh_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\model_importer_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\object_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\oscillate_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\skinned_mesh_component_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\texture_importer_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\transform_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\texture2d_editor_drawer.cpp" />
     <ClCompile Include="src\rendering\imgui_renderer.cpp" />
@@ -159,14 +161,14 @@
     <ClCompile Include="src\ResourceDB.cpp" />
     <ClCompile Include="src\windows\SceneViewWindow.cpp" />
     <ClCompile Include="src\StartupScreen.cpp" />
-    <ClCompile Include="src\editor_gui_helpers.cpp" />
+    <ClCompile Include="src\gui_helpers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="src\drawers\editor_drawer.inl" />
     <None Include="src\drawers\editor_drawer_registry.inl" />
     <None Include="src\editor_app.inl" />
-    <None Include="src\editor_gui_helpers.inl" />
+    <None Include="src\gui_helpers.inl" />
     <None Include="src\rendering\shaders\imgui.hlsli" />
   </ItemGroup>
   <ItemGroup>
@@ -182,12 +184,14 @@
     <ClInclude Include="src\drawers\material_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\mesh_component_base_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\mesh_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\model_importer_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\object_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\oscillate_component_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\texture_importer_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\transform_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\skinned_mesh_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\texture2d_editor_drawer.hpp" />
-    <ClInclude Include="src\editor_gui_helpers.hpp" />
+    <ClInclude Include="src\gui_helpers.hpp" />
     <ClInclude Include="src\rendering\shaders\imgui_shader_interop.h" />
     <ClInclude Include="src\rendering\imgui_renderer.hpp" />
     <ClInclude Include="src\ResourceImporters\model_importer.hpp" />

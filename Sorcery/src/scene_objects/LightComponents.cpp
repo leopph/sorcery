@@ -7,7 +7,6 @@
 #include "TransformComponent.hpp"
 #include "../app.hpp"
 #include "../Color.hpp"
-#include "../gui_helpers.hpp"
 #include "../rendering/scene_renderer.hpp"
 
 

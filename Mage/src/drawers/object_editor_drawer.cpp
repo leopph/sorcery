@@ -1,6 +1,6 @@
 #include "object_editor_drawer.hpp"
 
-#include "gui_helpers.hpp"
+#include <imgui.h>
 
 
 namespace sorcery::mage {

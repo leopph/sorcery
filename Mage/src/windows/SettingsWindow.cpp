@@ -4,7 +4,7 @@
 #include "scene_renderer.hpp"
 #include "Timing.hpp"
 #include "../editor_app.hpp"
-#include "../editor_gui_helpers.hpp"
+#include "../gui_helpers.hpp"
 
 #include <limits>
 

@@ -1,7 +1,10 @@
 #include "material_editor_drawer.hpp"
 
+#include <imgui.h>
+
 #include "editor_drawer_registry.hpp"
-#include "gui_helpers.hpp"
+
+#include "../gui_helpers.hpp"
 
 
 namespace sorcery::mage {

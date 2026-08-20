@@ -3,7 +3,6 @@
 #include <cmath>
 
 #include "../app.hpp"
-#include "../gui_helpers.hpp"
 #include "../Timing.hpp"
 
 RTTR_REGISTRATION {

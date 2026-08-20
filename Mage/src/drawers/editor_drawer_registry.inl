@@ -1,7 +1,6 @@
 #pragma once
 
 #include "editor_drawer_context.hpp"
-#include "../editor_gui_helpers.hpp"
 
 
 namespace sorcery::mage {

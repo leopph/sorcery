@@ -4,7 +4,7 @@
 
 #include "Reflection.hpp"
 #include "../editor_app.hpp"
-#include "../editor_gui_helpers.hpp"
+#include "../gui_helpers.hpp"
 #include "../drawers/editor_drawer_registry.hpp"
 
 

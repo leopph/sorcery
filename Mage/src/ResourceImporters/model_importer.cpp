@@ -982,4 +982,44 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
 
   return true;
 }
+
+
+auto ModelImporter::GetMeshImportSettings() const -> MeshImportSettings const& {
+  return mesh_import_settings_;
+}
+
+
+auto ModelImporter::SetMeshImportSettings(MeshImportSettings const& settings) -> void {
+  mesh_import_settings_ = settings;
+}
+
+
+auto ModelImporter::GetSubresourceImportSettings() const -> std::span<SubresourceImportSettings const> {
+  return subresource_import_settings_;
+}
+
+
+auto ModelImporter::SetSubresourceImportSettings(std::span<SubresourceImportSettings const> settings) -> void {
+  subresource_import_settings_.assign(settings.begin(), settings.end());
+}
+
+
+auto ModelImporter::IsMaterialImportEnabled() const -> bool {
+  return import_materials_;
+}
+
+
+auto ModelImporter::SetMaterialImportEnabled(bool const enabled) -> void {
+  import_materials_ = enabled;
+}
+
+
+auto ModelImporter::IsTextureImportEnabled() const -> bool {
+  return import_textures_;
+}
+
+
+auto ModelImporter::SetTextureImportEnabled(bool const enabled) -> void {
+  import_textures_ = enabled;
+}
 }

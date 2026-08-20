@@ -1,7 +1,5 @@
 #include "texture_importer.hpp"
 
-#include <fstream>
-
 #include "io_helpers.hpp"
 #include "Util.hpp"
 
@@ -47,5 +45,15 @@ auto TextureImporter::Import(
   results.emplace_back(result->payload_kind, result->runtime_type,
     std::string{ToUntypedStdSv(src.filename().u8string())}, std::move(result->bytes));
   return true;
+}
+
+
+auto TextureImporter::GetSettings() const -> TextureImportSettings const& {
+  return settings_;
+}
+
+
+auto TextureImporter::SetSettings(TextureImportSettings const& settings) -> void {
+  settings_ = settings;
 }
 }

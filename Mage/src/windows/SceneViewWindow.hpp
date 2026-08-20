@@ -3,7 +3,9 @@
 #include <array>
 #include <optional>
 
-#include "../editor_gui_helpers.hpp"
+#include <imgui.h>
+#include <ImGuizmo.h>
+
 #include "../StandaloneCamera.hpp"
 
 

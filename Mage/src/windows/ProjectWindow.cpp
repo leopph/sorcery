@@ -4,11 +4,9 @@
 #include <queue>
 
 #include <imgui.h>
-#include <imgui_stdlib.h>
 #include <nfd.hpp>
 #include <spdlog/spdlog.h>
 
-#include "gui_helpers.hpp"
 #include "Material.hpp"
 #include "Platform.hpp"
 #include "util.hpp"

@@ -3,7 +3,6 @@
 #include "CameraComponent.hpp"
 #include "Entity.hpp"
 #include "../app.hpp"
-#include "../gui_helpers.hpp"
 #include "../Platform.hpp"
 #include "../Timing.hpp"
 #include "../Window.hpp"

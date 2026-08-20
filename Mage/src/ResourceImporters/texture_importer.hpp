@@ -23,6 +23,11 @@ public:
     std::vector<ResourceImportResult>& results
   ) -> bool override;
 
+  [[nodiscard]]
+  auto GetSettings() const -> TextureImportSettings const&;
+
+  auto SetSettings(TextureImportSettings const& settings) -> void;
+
 private:
   TextureImportSettings settings_;
 

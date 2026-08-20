@@ -3,32 +3,26 @@
 #include <concepts>
 #include <format>
 #include <functional>
-#include <optional>
 #include <string>
 #include <type_traits>
-#include <utility>
 
 #include <imgui.h>
-#include <imgui_stdlib.h>
 
 #include "app.hpp"
 #include "Core.hpp"
 #include "Object.hpp"
 #include "resource_manager.hpp"
-#include "Util.hpp"
 #include "Resources/Resource.hpp"
 
 
-namespace sorcery {
-LEOPPHAPI auto SetImGuiContext(ImGuiContext& ctx) -> void;
-
-
+namespace sorcery::mage {
 namespace detail {
 class ObjectPickerBase {
-  static int sNextInstanceId;
-
 protected:
-  [[nodiscard]] LEOPPHAPI static auto GetNextInstanceId() noexcept -> int;
+  [[nodiscard]] static auto GetNextInstanceId() noexcept -> int;
+
+private:
+  static int sNextInstanceId;
 };
 }
 
@@ -63,6 +57,11 @@ struct ObjectDragDropPayload {
 
 template<typename F>
 decltype(auto) ImGuiDisabled(bool disabled, F&& func);
+
+auto DrawSpinner(char const* label, float radius, int thickness, ImU32 const& color) -> bool;
+
+template<typename T>
+auto ReflectionDisplayProperties(T& obj) -> void;
 }
 
 

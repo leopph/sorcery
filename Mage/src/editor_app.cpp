@@ -45,8 +45,7 @@ EditorApp::EditorApp(std::span<std::string_view const> const args) :
 
   GetWindow().SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
 
-  GetWindow().SetTitle(std::string{window_title_base_});;
-  SetImGuiContext(*ImGui::GetCurrentContext());
+  GetWindow().SetTitle(std::string{window_title_base_});
   SetGuiDarkMode(dark_mode_);
 
   timing::SetTargetFrameRate(SettingsWindow::DEFAULT_TARGET_FRAME_RATE);

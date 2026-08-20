@@ -6,7 +6,6 @@
 #include "../app.hpp"
 #include "../Serialization.hpp"
 #undef FindResource
-#include "../gui_helpers.hpp"
 #include "../job_system.hpp"
 #include "../material_resource.hpp"
 #include "../resource_manager.hpp"

@@ -8,7 +8,7 @@
 #include <string_view>
 
 #include "app.hpp"
-#include "editor_gui_helpers.hpp"
+#include "gui_helpers.hpp"
 #include "Event.hpp"
 #include "MainMenuBar.hpp"
 #include "ResourceDB.hpp"

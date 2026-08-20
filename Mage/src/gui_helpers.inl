@@ -1,6 +1,13 @@
 #pragma once
 
-namespace sorcery {
+#include <cassert>
+
+#include <imgui_stdlib.h>
+
+#include "Reflection.hpp"
+
+
+namespace sorcery::mage {
 template<std::derived_from<Object> T>
 auto ObjectPicker<T>::Draw(T*& targetObj, bool const allowNull) noexcept -> bool {
   auto ret{false};
@@ -110,6 +117,52 @@ decltype(auto) ImGuiDisabled(bool const disabled, F&& func) {
     decltype(auto) result = std::invoke(std::forward<F>(func));
     ImGui::EndDisabled();
     return result;
+  }
+}
+
+
+template<typename T>
+auto ReflectionDisplayProperties(T& obj) -> void {
+  for (auto const& prop : rttr::type::get(obj).get_properties()) {
+    if (prop.get_type().is_arithmetic()) {
+      auto propValue{prop.get_value(obj)};
+      assert(propValue.is_valid());
+
+      if (propValue.template is_type<bool>()) {
+        if (auto boolValue{propValue.template get_value<bool>()}; ImGui::Checkbox(prop.get_name().data(), &boolValue)) {
+          [[maybe_unused]] auto const success{prop.set_value(obj, boolValue)};
+          assert(success);
+        }
+      } else {
+        auto success{false};
+        auto propValueStr{propValue.to_string(&success)};
+        assert(success);
+
+        if (ImGui::InputText(prop.get_name().data(), &propValueStr)) {
+          if (rttr::variant newValue{propValueStr}; newValue.convert(prop.get_type())) {
+            success = prop.set_value(obj, newValue);
+            assert(success);
+          }
+        }
+      }
+    } else if (prop.get_type().is_enumeration()) {
+      auto const enumeration{prop.get_enumeration()};
+      assert(enumeration.is_valid());
+      auto const propValue{prop.get_value(obj)};
+      assert(propValue.is_valid());
+
+      if (ImGui::BeginCombo(prop.get_name().data(), enumeration.value_to_name(propValue).data())) {
+        for (auto const& name : enumeration.get_names()) {
+          if (auto const valueOfName{enumeration.name_to_value(name)}; ImGui::Selectable(name.data(),
+            propValue == valueOfName)) {
+            [[maybe_unused]] auto const success{prop.set_value(obj, valueOfName)};
+            assert(success);
+          }
+        }
+
+        ImGui::EndCombo();
+      }
+    }
   }
 }
 }

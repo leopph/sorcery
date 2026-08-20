@@ -6,7 +6,6 @@
 #include <iterator>
 #include <utility>
 
-#include "../gui_helpers.hpp"
 #include "../Util.hpp"
 #include "../Resources/Scene.hpp"
 

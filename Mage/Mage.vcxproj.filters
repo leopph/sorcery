@@ -18,7 +18,7 @@
     <ClCompile Include="src\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\editor_gui_helpers.cpp">
+    <ClCompile Include="src\gui_helpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\editor_app.cpp">
@@ -123,6 +123,12 @@
     <ClCompile Include="src\drawers\transform_component_editor_drawer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\drawers\texture_importer_editor_drawer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\drawers\model_importer_editor_drawer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\imgui.hlsli" />
@@ -130,7 +136,7 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="packages.config" />
-    <None Include="src\editor_gui_helpers.inl">
+    <None Include="src\gui_helpers.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\drawers\editor_drawer.inl">
@@ -198,7 +204,7 @@
     <ClInclude Include="src\rendering\shaders\imgui_shader_interop.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\editor_gui_helpers.hpp">
+    <ClInclude Include="src\gui_helpers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\command_line_processor.hpp">
@@ -250,6 +256,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\drawers\transform_component_editor_drawer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\drawers\texture_importer_editor_drawer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\drawers\model_importer_editor_drawer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
