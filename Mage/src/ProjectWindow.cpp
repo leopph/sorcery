@@ -17,6 +17,19 @@
 
 
 namespace sorcery::mage {
+namespace {
+template<typename T>
+[[nodiscard]]
+auto ExtractPayloadData(ImGuiPayload const& payload) -> ObserverPtr<T const> {
+  if (!payload.Data || payload.DataSize != sizeof(T)) {
+    return nullptr;
+  }
+
+  return ObserverPtr<T const>{static_cast<T const*>(payload.Data)};
+}
+}
+
+
 ProjectWindow::ProjectWindow(EditorApp& context, ResourceDB& resource_db) :
   app_{&context},
   resource_db_{&resource_db},
@@ -676,9 +689,11 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
 
         std::filesystem::path const src_abs{ToUtf8StdSv(src_abs_sv)};
 
-        if (IsResourceRootDirectory(src_abs) ||
-            IsSubpath(dir_target.path_abs, src_abs) ||
-            equivalent(src_abs.parent_path(), dir_target.path_abs)) {
+        if (std::error_code ec;
+          IsResourceRootDirectory(src_abs) ||
+          IsSubpath(dir_target.path_abs, src_abs) ||
+          equivalent(src_abs.parent_path(), dir_target.path_abs, ec) ||
+          ec) {
           return;
         }
 
@@ -710,7 +725,7 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
 
         auto const src_abs{resource_db_->GetResourceDirectoryAbsolutePath() / src_res_dir_rel};
 
-        if (equivalent(src_abs.parent_path(), dir_target.path_abs)) {
+        if (std::error_code ec; equivalent(src_abs.parent_path(), dir_target.path_abs, ec) || ec) {
           return;
         }
 
@@ -753,7 +768,7 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
 
         auto const src_abs{resource_db_->GetResourceDirectoryAbsolutePath() / file_info->src_path_res_dir_rel};
 
-        if (equivalent(src_abs.parent_path(), dir_target.path_abs)) {
+        if (std::error_code ec; equivalent(src_abs.parent_path(), dir_target.path_abs, ec) || ec) {
           return;
         }
 
@@ -1019,7 +1034,8 @@ auto ProjectWindow::IsResourceRootDirectory(DirectoryProjectItem const& item) co
 
 
 auto ProjectWindow::IsResourceRootDirectory(std::filesystem::path const& path_abs) const -> bool {
-  return exists(path_abs) && equivalent(path_abs, resource_db_->GetResourceDirectoryAbsolutePath());
+  std::error_code ec;
+  return exists(path_abs) && equivalent(path_abs, resource_db_->GetResourceDirectoryAbsolutePath(), ec) && !ec;
 }
 
 
@@ -1513,10 +1529,12 @@ auto ProjectWindow::ExecuteMoveToFolder(ProjectItem const& target) -> void {
     return;
   }
 
+  auto const move_to_folder_ctx{std::exchange(move_to_folder_ctx_, std::nullopt)};
+
   std::visit(Overloaded{
-    [this](DirectoryProjectItem const& dir_target) {
+    [this, &move_to_folder_ctx](DirectoryProjectItem const& dir_target) {
       std::error_code ec;
-      auto const src_status{std::filesystem::status(move_to_folder_ctx_->src_abs, ec)};
+      auto const src_status{std::filesystem::status(move_to_folder_ctx->src_abs, ec)};
 
       if (ec) {
         spdlog::error("Tried moving to folder but failed to get status of source file. Ignoring.");
@@ -1528,32 +1546,32 @@ auto ProjectWindow::ExecuteMoveToFolder(ProjectItem const& target) -> void {
         return;
       }
 
-      auto const dst_abs{dir_target.path_abs / move_to_folder_ctx_->src_abs.filename()};
+      auto const dst_abs{dir_target.path_abs / move_to_folder_ctx->src_abs.filename()};
 
-      if (exists(dst_abs) && equivalent(dst_abs, move_to_folder_ctx_->src_abs)) {
+      if ((exists(dst_abs) && equivalent(dst_abs, move_to_folder_ctx->src_abs, ec)) || ec) {
         spdlog::info("Move to folder command source and destination are the same. Ignoring.");
         return;
       }
 
       if (is_directory(src_status)) {
-        if (IsSubpath(dst_abs, move_to_folder_ctx_->src_abs)) {
+        if (IsSubpath(dst_abs, move_to_folder_ctx->src_abs)) {
           spdlog::error("Tried moving a folder into its own subdirectory. Ignoring.");
           return;
         }
 
-        if (!resource_db_->MoveDirectory(move_to_folder_ctx_->src_abs, dst_abs)) {
-          spdlog::error("Failed to move directory {} to {}.", ToUntypedStdSv(move_to_folder_ctx_->src_abs.u8string()),
+        if (!resource_db_->MoveDirectory(move_to_folder_ctx->src_abs, dst_abs)) {
+          spdlog::error("Failed to move directory {} to {}.", ToUntypedStdSv(move_to_folder_ctx->src_abs.u8string()),
             ToUntypedStdSv(dst_abs.u8string()));
           DisplayError("Failed to move folder.");
         }
       } else {
-        if (!IsSubpath(move_to_folder_ctx_->src_abs, resource_db_->GetResourceDirectoryAbsolutePath())) {
+        if (!IsSubpath(move_to_folder_ctx->src_abs, resource_db_->GetResourceDirectoryAbsolutePath())) {
           spdlog::error("Tried moving a file that is not in resource directory. Ignoring.");
           return;
         }
 
         auto const src_res_dir_rel{
-          relative(move_to_folder_ctx_->src_abs, resource_db_->GetResourceDirectoryAbsolutePath())
+          relative(move_to_folder_ctx->src_abs, resource_db_->GetResourceDirectoryAbsolutePath())
         };
 
         auto const dst_res_dir_rel{
@@ -1569,7 +1587,7 @@ auto ProjectWindow::ExecuteMoveToFolder(ProjectItem const& target) -> void {
 
         if (!resource_db_->MoveResourceFile(guid, dst_res_dir_rel)) {
           spdlog::error("Failed to move resource file {} to {}.",
-            ToUntypedStdSv(move_to_folder_ctx_->src_abs.u8string()),
+            ToUntypedStdSv(move_to_folder_ctx->src_abs.u8string()),
             ToUntypedStdSv(dst_abs.u8string()));
           DisplayError("Failed to move resource file.");
         }
@@ -1585,8 +1603,6 @@ auto ProjectWindow::ExecuteMoveToFolder(ProjectItem const& target) -> void {
       spdlog::error("Tried moving into a subresource. Ignoring.");
     }
   }, target);
-
-  move_to_folder_ctx_.reset();
 }
 
 
