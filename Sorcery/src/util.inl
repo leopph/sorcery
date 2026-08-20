@@ -15,7 +15,7 @@ constexpr auto clamp_cast(From const what) -> To {
     }
   } else {
     if constexpr (std::cmp_greater_equal(std::numeric_limits<To>::max(), std::numeric_limits<From>::max())) {
-      return static_cast<To>(std::max<From>(what, std::numeric_limits<To>::min()));
+      return static_cast<To>(std::max<From>(what, static_cast<From>(std::numeric_limits<To>::min())));
     } else {
       return static_cast<To>(std::clamp<From>(what, std::numeric_limits<To>::min(), std::numeric_limits<To>::max()));
     }
