@@ -47,8 +47,8 @@ auto ObjectPicker<T>::Draw(T*& targetObj, bool const allowNull) noexcept -> bool
                       : NULL_DISPLAY_NAME.data());
 
   if (ImGui::BeginDragDropTarget()) {
-    if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropData::TYPE_STR.data())}) {
-      if (auto const dragDropData{static_cast<ObjectDragDropData*>(payload->Data)};
+    if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data())}) {
+      if (auto const dragDropData{static_cast<ObjectDragDropPayload*>(payload->Data)};
         dragDropData && dragDropData->ptr && rttr::type::get(*dragDropData->ptr).
         is_derived_from(rttr::type::get<T>())) {
         targetObj = static_cast<T*>(dragDropData->ptr);

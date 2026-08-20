@@ -55,9 +55,9 @@ private:
 };
 
 
-struct ObjectDragDropData {
-  LEOPPHAPI static std::string_view const TYPE_STR;
+struct ObjectDragDropPayload {
   Object* ptr;
+  constexpr static std::string_view kTypeStr{"OBJECT_DRAG_DROP_PAYLOAD"};
 };
 
 

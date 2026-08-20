@@ -116,6 +116,11 @@ private:
   };
 
 
+  struct MoveToFolderContext {
+    std::filesystem::path src_abs;
+  };
+
+
   enum class ProjectCommandKind : std::uint8_t {
     kImportFilesIntoFolder,
     kCreateFolder,
@@ -130,7 +135,9 @@ private:
     kCopyGuid,
     kCopyResourceId,
     kUnloadResource,
-    kUnloadAllResourcesInFile
+    kUnloadAllResourcesInFile,
+
+    kMoveToFolder
   };
 
 
@@ -167,6 +174,15 @@ private:
   auto DrawNativeResourceFileContextMenu(NativeResourceFileProjectItem const& item) -> void;
   auto DrawResourcePackageFileContextMenu(ResourcePackageFileProjectItem const& item) -> void;
   auto DrawSubresourceContextMenu(SubresourceProjectItem const& item) -> void;
+
+  [[nodiscard]]
+  auto CanDrag(ProjectItem const& item) const -> bool;
+
+  [[nodiscard]] static
+  auto CanDropOnto(ProjectItem const& item) -> bool;
+
+  auto DrawDragSource(ProjectItem const& item) const -> void;
+  auto DrawDropTarget(ProjectItem const& item) -> void;
 
   [[nodiscard]]
   auto CanRename(ProjectItem const& item) const -> bool;
@@ -209,6 +225,7 @@ private:
   auto ExecuteUnloadResource(ProjectItem const& target) -> void;
   auto ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -> void;
   auto ExecuteUnloadResourceById(ResourceId const& target) -> void;
+  auto ExecuteMoveToFolder(ProjectItem const& target) -> void;
 
   // Returns whether the drawn subtree was modified.
   [[nodiscard]]
@@ -239,6 +256,7 @@ private:
   std::optional<RenameContext> rename_ctx_;
   std::optional<PendingRenameAction> pending_rename_action_;
   std::vector<FileImportContext> files_to_import_;
+  std::optional<MoveToFolderContext> move_to_folder_ctx_;
   bool open_import_modal_{false};
   bool open_context_menu_{false};
   bool should_rebuild_hierarchy_on_next_draw_{true};
@@ -246,6 +264,7 @@ private:
   std::filesystem::path mSelectedPathResDirRel; // empty if not selected TODO remove
 
   constexpr static std::string_view kContextMenuId{"ContextMenu"};
-  constexpr static std::string_view kDirNodeDragDropTypeStr{"NodeDragDropTypeStr"};
+  constexpr static std::string_view kDirNodeDragDropTypeStr{"DRAG_DROP_DIR_TYPE"};
+  constexpr static std::string_view kResPackNodeDragDropTypeStr{"DRAG_DROP_RES_PACK_TYPE"};
 };
 }

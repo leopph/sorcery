@@ -283,7 +283,8 @@ auto ProjectWindow::DrawNode(ProjectTreeNode const& node) -> void {
   };
 
   if (!is_renaming) {
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+    if (ImGui::IsItemHovered() &&
+        (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right))) {
       SelectItem(node.item);
     }
   }
@@ -291,7 +292,14 @@ auto ProjectWindow::DrawNode(ProjectTreeNode const& node) -> void {
   if (is_renaming) {
     DrawRenameInput();
   } else {
-    // TODO drag and drop stuff
+    if (CanDrag(node.item)) {
+      DrawDragSource(node.item);
+    }
+
+    if (CanDropOnto(node.item)) {
+      DrawDropTarget(node.item);
+    }
+
     DrawContextMenu(node.item);
   }
 
@@ -584,6 +592,125 @@ auto ProjectWindow::DrawSubresourceContextMenu(SubresourceProjectItem const& ite
       .target = item
     };
   }
+}
+
+
+auto ProjectWindow::CanDrag(ProjectItem const& item) const -> bool {
+  return (std::holds_alternative<DirectoryProjectItem>(item) &&
+          !IsResourceRootDirectory(std::get<DirectoryProjectItem>(item))) ||
+         std::holds_alternative<NativeResourceFileProjectItem>(item) ||
+         std::holds_alternative<ResourcePackageFileProjectItem>(item) ||
+         std::holds_alternative<SubresourceProjectItem>(item);
+}
+
+
+auto ProjectWindow::CanDropOnto(ProjectItem const& item) -> bool {
+  return std::holds_alternative<DirectoryProjectItem>(item);
+}
+
+
+auto ProjectWindow::DrawDragSource(ProjectItem const& item) const -> void {
+  if (!ImGui::BeginDragDropSource()) {
+    return;
+  }
+
+  std::visit(Overloaded{
+    [this](DirectoryProjectItem const& dir_item) {
+      ImGui::SetDragDropPayload(kDirNodeDragDropTypeStr.data(), &dir_item, sizeof(dir_item));
+    },
+    [this](NativeResourceFileProjectItem const& res_item) {
+      auto const obj{app_->GetResourceManager().GetOrLoad(ResourceId{res_item.guid, 0})};
+
+      if (!obj) {
+        spdlog::error("Failed to load native resource when creating drag source. Ignoring.");
+        return;
+      }
+
+      ObjectDragDropPayload const payload{
+        .ptr = obj
+      };
+      ImGui::SetDragDropPayload(ObjectDragDropPayload::kTypeStr.data(), &payload, sizeof(payload));
+    },
+    [this](ResourcePackageFileProjectItem const& res_pack_item) {
+      ImGui::SetDragDropPayload(kResPackNodeDragDropTypeStr.data(), &res_pack_item, sizeof(res_pack_item));
+    },
+    [this](SubresourceProjectItem const& subres_item) {
+      auto const obj{app_->GetResourceManager().GetOrLoad(subres_item.id)};
+
+      if (!obj) {
+        spdlog::error("Failed to load subresource when creating drag source. Ignoring.");
+        return;
+      }
+
+      ObjectDragDropPayload const payload{
+        .ptr = obj
+      };
+      ImGui::SetDragDropPayload(ObjectDragDropPayload::kTypeStr.data(), &payload, sizeof(payload));
+    }
+  }, item);
+
+  ImGui::EndDragDropSource();
+}
+
+
+auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
+  if (!ImGui::BeginDragDropTarget()) {
+    return;
+  }
+
+  std::visit(Overloaded{
+    [this](DirectoryProjectItem const& dir_item) {
+      auto const* payload{ImGui::AcceptDragDropPayload(kDirNodeDragDropTypeStr.data())};
+
+      if (payload) {
+        auto const* const dragged_dir_item{static_cast<DirectoryProjectItem const*>(payload->Data)};
+
+        move_to_folder_ctx_ = MoveToFolderContext{
+          .src_abs = dragged_dir_item->path_abs
+        };
+
+        pending_command_ = ProjectCommand{
+          .kind = ProjectCommandKind::kMoveToFolder,
+          .target = dir_item
+        };
+
+        return;
+      }
+
+      payload = ImGui::AcceptDragDropPayload(kResPackNodeDragDropTypeStr.data());
+
+      if (payload) {
+        auto const* const dragged_res_pack_item{static_cast<ResourcePackageFileProjectItem const*>(payload->Data)};
+        auto const path_res_dir_rel{resource_db_->GuidToPath(dragged_res_pack_item->guid)};
+
+        if (path_res_dir_rel.empty()) {
+          spdlog::error("Failed to get resource package path during drop. Ignoring.");
+          DisplayError("Failed to move file.");
+          return;
+        }
+
+        move_to_folder_ctx_ = MoveToFolderContext{
+          .src_abs = resource_db_->GetResourceDirectoryAbsolutePath() / path_res_dir_rel
+        };
+
+        pending_command_ = ProjectCommand{
+          .kind = ProjectCommandKind::kMoveToFolder,
+          .target = dir_item
+        };
+      }
+    },
+    []([[maybe_unused]] NativeResourceFileProjectItem const& res_item) {
+      spdlog::error("Tried to drop onto a native resource file. Ignoring.");
+    },
+    []([[maybe_unused]] ResourcePackageFileProjectItem const& res_pack_item) {
+      spdlog::error("Tried to drop onto a resource package file. Ignoring.");
+    },
+    []([[maybe_unused]] SubresourceProjectItem const& subres_item) {
+      spdlog::error("Tried to drop onto a subresource. Ignoring.");
+    }
+  }, item);
+
+  ImGui::EndDragDropTarget();
 }
 
 
@@ -907,6 +1034,11 @@ auto ProjectWindow::ExecutePendingCommand() -> void {
 
     case ProjectCommandKind::kUnloadAllResourcesInFile: {
       ExecuteUnloadAllResourcesInFile(command->target);
+      break;
+    }
+
+    case ProjectCommandKind::kMoveToFolder: {
+      ExecuteMoveToFolder(command->target);
       break;
     }
   }
@@ -1298,6 +1430,85 @@ auto ProjectWindow::ExecuteUnloadResourceById(ResourceId const& target) -> void 
 }
 
 
+auto ProjectWindow::ExecuteMoveToFolder(ProjectItem const& target) -> void {
+  if (!move_to_folder_ctx_) {
+    spdlog::error("Tried running move to folder command without context. Ignoring.");
+    return;
+  }
+
+  std::visit(Overloaded{
+    [this](DirectoryProjectItem const& dir_target) {
+      std::error_code ec;
+      auto const status{std::filesystem::status(move_to_folder_ctx_->src_abs, ec)};
+
+      if (ec) {
+        spdlog::error("Tried moving to folder but failed to get status of source file. Ignoring.");
+        return;
+      }
+
+      if (!exists(status)) {
+        spdlog::error("Tried moving to folder but the source path does not exist. Ignoring.");
+        return;
+      }
+
+      auto const dst_abs{dir_target.path_abs / move_to_folder_ctx_->src_abs.filename()};
+
+      if (exists(dst_abs) && equivalent(dst_abs, move_to_folder_ctx_->src_abs)) {
+        spdlog::info("Move to folder command source and destination are the same. Ignoring.");
+        return;
+      }
+
+      if (is_directory(status)) {
+        if (!resource_db_->MoveDirectory(move_to_folder_ctx_->src_abs, dst_abs)) {
+          spdlog::error("Failed to move directory {} to {}.", ToUntypedStdSv(move_to_folder_ctx_->src_abs.u8string()),
+            ToUntypedStdSv(dst_abs.u8string()));
+          DisplayError("Failed to move folder.");
+        }
+      } else {
+        if (!IsSubpath(move_to_folder_ctx_->src_abs, resource_db_->GetResourceDirectoryAbsolutePath())) {
+          spdlog::error("Tried moving a file that is not in resource directory. Ignoring.");
+          return;
+        }
+
+        auto const src_res_dir_rel{
+          relative(move_to_folder_ctx_->src_abs, resource_db_->GetResourceDirectoryAbsolutePath())
+        };
+
+        auto const dst_res_dir_rel{
+          relative(dst_abs, resource_db_->GetResourceDirectoryAbsolutePath())
+        };
+
+        auto const guid{resource_db_->PathToGuid(src_res_dir_rel)};
+
+        if (!guid.IsValid()) {
+          spdlog::error("Tried moving a file that is not in resource database. Ignoring.");
+          return;
+        }
+
+        if (!resource_db_->MoveResourceFile(guid, dst_res_dir_rel)) {
+          spdlog::error("Failed to move resource file {} to {}.",
+            ToUntypedStdSv(move_to_folder_ctx_->src_abs.u8string()),
+            ToUntypedStdSv(dst_abs.u8string()));
+          DisplayError("Failed to move resource file.");
+          return;
+        }
+      }
+
+      move_to_folder_ctx_.reset();
+    },
+    []([[maybe_unused]] NativeResourceFileProjectItem const& item) {
+      spdlog::error("Tried moving into a native resource file. Ignoring.");
+    },
+    []([[maybe_unused]] ResourcePackageFileProjectItem const& item) {
+      spdlog::error("Tried moving into a resource package file. Ignoring.");
+    },
+    []([[maybe_unused]] SubresourceProjectItem const& item) {
+      spdlog::error("Tried moving into a subresource. Ignoring.");
+    }
+  }, target);
+}
+
+
 auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& node_path_abs,
                                        std::filesystem::path const& node_path_res_dir_rel,
                                        bool const is_directory) noexcept -> bool {
@@ -1380,7 +1591,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& node_path_ab
       auto const res{
         App::Instance().GetResourceManager().GetOrLoad(ResourceId{res_db.PathToGuid(this_path_res_dir_rel), 0})
       };
-      ImGui::SetDragDropPayload(ObjectDragDropData::TYPE_STR.data(), &res, sizeof(decltype(res)));
+      ImGui::SetDragDropPayload(ObjectDragDropPayload::kTypeStr.data(), &res, sizeof(decltype(res)));
     }
     ImGui::EndDragDropSource();
   }
@@ -1396,8 +1607,8 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& node_path_ab
       }
     }
 
-    if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropData::TYPE_STR.data())}) {
-      if (auto const objectDragDropData{static_cast<ObjectDragDropData*>(payload->Data)};
+    if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data())}) {
+      if (auto const objectDragDropData{static_cast<ObjectDragDropPayload*>(payload->Data)};
         objectDragDropData && objectDragDropData->ptr && rttr::type::get(*objectDragDropData->ptr).is_derived_from(
           rttr::type::get<Resource>())) {
         if (auto const res{static_cast<Resource*>(objectDragDropData->ptr)}; res_db.MoveResourceFile(
