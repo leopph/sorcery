@@ -61,7 +61,7 @@ decltype(auto) ImGuiDisabled(bool disabled, F&& func);
 auto DrawSpinner(char const* label, float radius, int thickness, ImU32 const& color) -> bool;
 
 template<typename T>
-auto ReflectionDisplayProperties(T& obj) -> void;
+auto DrawReflectedProperties(T& obj, bool allow_edit, bool& changed) -> void;
 }
 
 

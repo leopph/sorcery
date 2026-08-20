@@ -41,5 +41,7 @@ EditorDrawerRegistry::EditorDrawerRegistry() {
   RegisterDrawer(std::make_unique<TransformComponentEditorDrawer>());
   RegisterDrawer(std::make_unique<TextureImporterEditorDrawer>());
   RegisterDrawer(std::make_unique<ModelImporterEditorDrawer>());
+
+  // TODO add reflection-based auto query
 }
 }

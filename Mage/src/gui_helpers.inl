@@ -122,26 +122,32 @@ decltype(auto) ImGuiDisabled(bool const disabled, F&& func) {
 
 
 template<typename T>
-auto ReflectionDisplayProperties(T& obj) -> void {
+auto DrawReflectedProperties(T& obj, bool const allow_edit, bool& changed) -> void {
   for (auto const& prop : rttr::type::get(obj).get_properties()) {
     if (prop.get_type().is_arithmetic()) {
       auto propValue{prop.get_value(obj)};
       assert(propValue.is_valid());
 
       if (propValue.template is_type<bool>()) {
-        if (auto boolValue{propValue.template get_value<bool>()}; ImGui::Checkbox(prop.get_name().data(), &boolValue)) {
+        if (auto boolValue{propValue.template get_value<bool>()}; ImGuiDisabled(!allow_edit, [&] {
+          return ImGui::Checkbox(prop.get_name().data(), &boolValue);
+        })) {
           [[maybe_unused]] auto const success{prop.set_value(obj, boolValue)};
           assert(success);
+          changed = true;
         }
       } else {
         auto success{false};
         auto propValueStr{propValue.to_string(&success)};
         assert(success);
 
-        if (ImGui::InputText(prop.get_name().data(), &propValueStr)) {
+        if (ImGuiDisabled(!allow_edit, [&] {
+          return ImGui::InputText(prop.get_name().data(), &propValueStr);
+        })) {
           if (rttr::variant newValue{propValueStr}; newValue.convert(prop.get_type())) {
             success = prop.set_value(obj, newValue);
             assert(success);
+            changed = true;
           }
         }
       }
@@ -151,12 +157,15 @@ auto ReflectionDisplayProperties(T& obj) -> void {
       auto const propValue{prop.get_value(obj)};
       assert(propValue.is_valid());
 
-      if (ImGui::BeginCombo(prop.get_name().data(), enumeration.value_to_name(propValue).data())) {
+      if (ImGuiDisabled(!allow_edit, [&] {
+        return ImGui::BeginCombo(prop.get_name().data(), enumeration.value_to_name(propValue).data());
+      })) {
         for (auto const& name : enumeration.get_names()) {
           if (auto const valueOfName{enumeration.name_to_value(name)}; ImGui::Selectable(name.data(),
             propValue == valueOfName)) {
             [[maybe_unused]] auto const success{prop.set_value(obj, valueOfName)};
             assert(success);
+            changed = true;
           }
         }
 

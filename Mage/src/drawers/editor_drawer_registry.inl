@@ -1,6 +1,7 @@
 #pragma once
 
 #include "editor_drawer_context.hpp"
+#include "../gui_helpers.hpp"
 
 
 namespace sorcery::mage {
@@ -41,6 +42,6 @@ auto EditorDrawerRegistry::DrawAs(rttr::type const& type, T& obj, bool allow_edi
   }
 
   // If we couldn't find any drawers for the entire inheritance chain, default to reflection-based draw.
-  // ReflectionDisplayProperties(obj, allow_edit, changed); TODO
+  DrawReflectedProperties(obj, allow_edit, changed);
 }
 }
