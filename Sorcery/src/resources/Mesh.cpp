@@ -1,17 +1,12 @@
 #include "Mesh.hpp"
 
-#include "../app.hpp"
-#include "../Serialization.hpp"
-#include "../rendering/render_manager.hpp"
+#include <algorithm>
+#include <iterator>
 
 #include <DirectXMesh.h>
-#include <imgui.h>
 
-#include <algorithm>
-#include <bit>
-#include <cassert>
-#include <iterator>
-#include <utility>
+#include "../app.hpp"
+#include "../rendering/render_manager.hpp"
 
 
 RTTR_REGISTRATION {
@@ -50,17 +45,6 @@ auto Submesh::GetMaterialIndex() const -> std::uint32_t {
 
 auto Submesh::GetBounds() const -> AABB const& {
   return bounds_;
-}
-
-
-auto Mesh::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
-  Resource::OnDrawProperties(allow_edit, changed);
-
-  ImGui::Text("%s: %d", "Vertex Count", vertex_count_);
-  ImGui::Text("%s: %d", "Triangle Count", primitive_count_);
-  ImGui::Text("%s: %d", "Meshlet Count", meshlets_.size());
-  ImGui::Text("%s: %d", "Submesh Count", submeshes_.size());
-  ImGui::Text("%s: %s", "Uses 32-bit indices", idx32_ ? "yes" : "no");
 }
 
 
@@ -222,6 +206,11 @@ auto Mesh::GetVertexCount() const noexcept -> std::size_t {
 
 auto Mesh::GetPrimitiveCount() const noexcept -> std::size_t {
   return primitive_count_;
+}
+
+
+auto Mesh::GetMeshletCount() const noexcept -> std::size_t {
+  return meshlets_.size();
 }
 
 

@@ -13,6 +13,7 @@
 #include "MainMenuBar.hpp"
 #include "ResourceDB.hpp"
 #include "Scene.hpp"
+#include "drawers/editor_drawer_registry.hpp"
 #include "rendering/imgui_renderer.hpp"
 #include "windows/EntityHierarchyWindow.hpp"
 #include "windows/GameViewWindow.hpp"
@@ -97,10 +98,12 @@ private:
 
   ImGuiRenderer imgui_renderer_{GetGraphicsDevice(), GetSwapChain(), GetRenderManager()};
 
+  EditorDrawerRegistry drawer_registry_;
+
   ProjectWindow project_window_{*this, resource_db_};
   SceneViewWindow scene_view_window_;
   GameViewWindow game_view_window_;
-  PropertiesWindow properties_window_{*this};
+  PropertiesWindow properties_window_{*this, drawer_registry_};
   SettingsWindow editor_settings_window_{*this, scene_view_window_.GetCamera()};
   MainMenuBar main_menu_bar_{*this, editor_settings_window_};
   EntityHierarchyWindow entity_hierarchy_window_{*this};

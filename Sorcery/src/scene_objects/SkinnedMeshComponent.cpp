@@ -2,8 +2,6 @@
 
 #include <cmath>
 
-#include <imgui.h>
-
 #include "../app.hpp"
 #include "../gui_helpers.hpp"
 #include "../Timing.hpp"
@@ -15,31 +13,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto SkinnedMeshComponent::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
-  MeshComponentBase::OnDrawProperties(allow_edit, changed);
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Animation");
-
-  ImGui::TableNextColumn();
-  std::vector<char const*> items;
-  items.emplace_back("None");
-
-  if (auto const mesh{GetMesh()}) {
-    for (auto const& [name, duration, ticks_per_second, node_anims] : mesh->GetAnimations()) {
-      items.emplace_back(name.c_str());
-    }
-  }
-
-  if (auto combo_idx{static_cast<int>(cur_animation_idx_ ? *cur_animation_idx_ + 1 : 0)};
-    ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::Combo("##animCombo", &combo_idx, items.data(), static_cast<int>(items.size()));
-    })) {
-    cur_animation_idx_ = combo_idx == 0 ? std::nullopt : std::make_optional(combo_idx - 1);
-  }
-}
-
-
 auto SkinnedMeshComponent::OnDrawGizmosSelected() -> void {
   MeshComponentBase::OnDrawGizmosSelected();
 }
@@ -138,6 +111,18 @@ auto SkinnedMeshComponent::GetSkinnedTangentBuffers() const noexcept -> std::spa
 auto SkinnedMeshComponent::GetBoneMatrixBuffers() const noexcept -> std::span<
   graphics::SharedDeviceChildHandle<graphics::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()> {
   return bone_matrix_buffers_;
+}
+
+
+auto SkinnedMeshComponent::GetCurrentAnimationIndex() const -> std::optional<std::size_t> {
+  return cur_animation_idx_;
+}
+
+
+auto SkinnedMeshComponent::SetCurrentAnimationIndex(std::optional<size_t> const idx) -> void {
+  if (!idx || *idx < GetMesh()->GetAnimations().size()) {
+    cur_animation_idx_ = idx;
+  }
 }
 
 

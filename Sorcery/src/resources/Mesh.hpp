@@ -69,8 +69,6 @@ class Mesh final : public Resource {
   bool idx32_{false};
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
-
   Mesh() = default;
   Mesh(Mesh const&) = delete;
   Mesh(Mesh&& other) noexcept = delete;
@@ -106,6 +104,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
   [[nodiscard]] LEOPPHAPI auto GetVertexCount() const noexcept -> std::size_t;
   [[nodiscard]] LEOPPHAPI auto GetPrimitiveCount() const noexcept -> std::size_t;
+  [[nodiscard]] SORCERYAPI auto GetMeshletCount() const noexcept -> std::size_t;
   [[nodiscard]] LEOPPHAPI auto Has32BitVertexIndices() const noexcept -> bool;
 };
 

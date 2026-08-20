@@ -9,7 +9,6 @@ class CameraControllerComponent final : public Component {
 
 public:
   [[nodiscard]] auto Clone() -> std::unique_ptr<SceneObject> override;
-  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
 
   LEOPPHAPI auto Start() -> void override;
   LEOPPHAPI auto Update() -> void override;

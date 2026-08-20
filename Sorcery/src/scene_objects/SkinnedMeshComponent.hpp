@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <cstddef>
 #include <optional>
 #include <span>
 
@@ -15,7 +14,6 @@ class SkinnedMeshComponent final : public MeshComponentBase {
   RTTR_ENABLE(MeshComponentBase)
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
   LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
@@ -36,6 +34,12 @@ public:
     graphics::SharedDeviceChildHandle<graphics::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()>;
   [[nodiscard]] LEOPPHAPI auto GetBoneMatrixBuffers() const noexcept -> std::span<
     graphics::SharedDeviceChildHandle<graphics::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()>;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetCurrentAnimationIndex() const -> std::optional<std::size_t>;
+
+  SORCERYAPI
+  auto SetCurrentAnimationIndex(std::optional<size_t> idx) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetCurrentAnimation() const -> std::optional<Animation>;
   [[nodiscard]] LEOPPHAPI auto GetCurrentAnimationTime() const noexcept -> float;

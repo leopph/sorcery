@@ -11,12 +11,29 @@ class OscillateComponent final : public Component {
 
 public:
   [[nodiscard]] auto Clone() -> std::unique_ptr<SceneObject> override;
-  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
 
   auto Start() -> void override;
   auto Update() -> void override;
 
   LEOPPHAPI OscillateComponent();
+
+  [[nodiscard]] SORCERYAPI
+  auto GetDirection() const -> Vector3 const&;
+
+  SORCERYAPI
+  auto SetDirection(Vector3 const& dir) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetSpeed() const -> float;
+
+  SORCERYAPI
+  auto SetSpeed(float speed) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetDistance() const -> float;
+
+  SORCERYAPI
+  auto SetDistance(float dist) -> void;
 
 private:
   Vector3 direction_{1, 0, 0};

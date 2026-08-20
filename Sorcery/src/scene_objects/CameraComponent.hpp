@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Component.hpp"
-#include "../rendering/Camera.hpp"
 #include "../Math.hpp"
+#include "../rendering/Camera.hpp"
 
 
 namespace sorcery {
@@ -10,8 +10,6 @@ class CameraComponent final : public Component, public rendering::Camera {
   RTTR_ENABLE(Component)
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
-
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
   LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
   LEOPPHAPI auto OnBeforeExitingScene(Scene const& scene) -> void override;

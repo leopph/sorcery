@@ -1,20 +1,15 @@
 #include "Entity.hpp"
 
-#include "../Util.hpp"
-#include "../Resources/Scene.hpp"
-
 #include <algorithm>
-#include <cassert>
 #include <format>
 #include <functional>
-#include <iostream>
 #include <iterator>
 #include <utility>
 
-#include <imgui.h>
-#include <imgui_stdlib.h>
-
 #include "../gui_helpers.hpp"
+#include "../Util.hpp"
+#include "../Resources/Scene.hpp"
+
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Entity>{"Entity"}
@@ -25,84 +20,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto Entity::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
-  SceneObject::OnDrawProperties(allow_edit, changed);
-
-  static std::string entityName;
-  entityName = GetName();
-
-  if (ImGui::BeginTable("Property Widgets", 2)) {
-    ImGui::TableNextRow();
-
-    ImGui::TableSetColumnIndex(0);
-    ImGui::PushItemWidth(FLT_MIN);
-    ImGui::Text("Name");
-
-    ImGui::TableSetColumnIndex(1);
-    ImGui::PushItemWidth(-FLT_MIN);
-    if (ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::InputText("##EntityName", &entityName, ImGuiInputTextFlags_EnterReturnsTrue);
-    })) {
-      SetName(entityName);
-    }
-
-    ImGui::EndTable();
-  }
-
-  for (std::size_t i{0}; i < std::size(components_); i++) {
-    auto const treeNodeId{
-      std::format("{}##{}", rttr::type::get(*components_[i]).get_name().to_string(), std::to_string(i))
-    };
-
-    if (ImGui::TreeNodeEx(treeNodeId.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-      ImGui::Separator();
-      if (ImGui::BeginTable("Component Property Table", 2, ImGuiTableFlags_SizingStretchSame)) {
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::PushItemWidth(FLT_MIN);
-        ImGui::TableSetColumnIndex(1);
-        ImGui::PushItemWidth(-FLT_MIN);
-        ImGui::TableSetColumnIndex(0);
-
-        components_[i]->OnDrawProperties(allow_edit, changed);
-        ImGui::EndTable();
-      }
-
-      ImGui::TreePop();
-    }
-
-    if (ImGui::BeginPopupContextItem(treeNodeId.c_str())) {
-      if (ImGui::MenuItem("Delete", nullptr, false, allow_edit)) {
-        RemoveComponent(*components_[i]);
-        ImGui::EndPopup();
-        break;
-      }
-      ImGui::EndPopup();
-    }
-    ImGui::OpenPopupOnItemClick(treeNodeId.c_str(), ImGuiPopupFlags_MouseButtonRight);
-  }
-
-  auto constexpr addNewComponentLabel = "Add New Component";
-  ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(addNewComponentLabel).x) * 0.5f);
-  ImGui::Button(addNewComponentLabel);
-
-  if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-    for (auto const& component_class : rttr::type::get<Component>().get_derived_classes()) {
-      if (component_class.get_constructors().empty()) {
-        continue;
-      }
-
-      if (ImGui::MenuItem(component_class.get_name().data())) {
-        AddComponent(static_unique_ptr_cast<Component>(Create(component_class)));
-        ImGui::CloseCurrentPopup();
-      }
-    }
-
-    ImGui::EndPopup();
-  }
-}
-
-
 auto Entity::OnDrawGizmosSelected() -> void {
   SceneObject::OnDrawGizmosSelected();
 

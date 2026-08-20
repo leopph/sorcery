@@ -1,7 +1,5 @@
 #include "OscillateComponent.h"
 
-#include <imgui.h>
-
 #include "Entity.hpp"
 #include "../gui_helpers.hpp"
 #include "../Timing.hpp"
@@ -18,40 +16,6 @@ RTTR_REGISTRATION {
 namespace sorcery {
 auto OscillateComponent::Clone() -> std::unique_ptr<SceneObject> {
   return std::make_unique<OscillateComponent>(*this);
-}
-
-
-auto OscillateComponent::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
-  Component::OnDrawProperties(allow_edit, changed);
-
-  ImGui::Text("Direction");
-  ImGui::TableNextColumn();
-
-  if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::DragFloat3("###OscillateDirection", &direction_[0], 0.01f, -100.0f, 100.0f, "%.2f");
-  })) {
-    changed = true;
-  }
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Distance");
-  ImGui::TableNextColumn();
-
-  if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::DragFloat("###OscillateDistance", &distance_, 0.1f, 0.0f, 100.0f, "%.2f");
-  })) {
-    changed = true;
-  }
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Speed");
-  ImGui::TableNextColumn();
-
-  if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::DragFloat("###OscillateSpeed", &speed_, 0.1f, 0.0f, 100.0f, "%.2f");
-  })) {
-    changed = true;
-  }
 }
 
 
@@ -83,5 +47,35 @@ auto OscillateComponent::Update() -> void {
 
 OscillateComponent::OscillateComponent() {
   SetUpdatable(true);
+}
+
+
+auto OscillateComponent::GetDirection() const -> Vector3 const& {
+  return direction_;
+}
+
+
+auto OscillateComponent::SetDirection(Vector3 const& dir) -> void {
+  direction_ = dir;
+}
+
+
+auto OscillateComponent::GetSpeed() const -> float {
+  return speed_;
+}
+
+
+auto OscillateComponent::SetSpeed(float const speed) -> void {
+  speed_ = speed;
+}
+
+
+auto OscillateComponent::GetDistance() const -> float {
+  return distance_;
+}
+
+
+auto OscillateComponent::SetDistance(float const dist) -> void {
+  distance_ = dist;
 }
 }

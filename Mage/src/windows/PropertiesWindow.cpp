@@ -5,11 +5,13 @@
 #include "Reflection.hpp"
 #include "../editor_app.hpp"
 #include "../editor_gui_helpers.hpp"
+#include "../drawers/editor_drawer_registry.hpp"
 
 
 namespace sorcery::mage {
-PropertiesWindow::PropertiesWindow(EditorApp& app) :
-  app_{&app} {}
+PropertiesWindow::PropertiesWindow(EditorApp& app, EditorDrawerRegistry& drawer_registry) :
+  app_{&app},
+  drawer_registry_{&drawer_registry} {}
 
 
 auto PropertiesWindow::Draw() const -> void {
@@ -27,7 +29,7 @@ auto PropertiesWindow::Draw() const -> void {
       }
 
       auto changed{false};
-      selected_obj->OnDrawProperties(editable, changed);
+      drawer_registry_->Draw(*selected_obj, editable, changed);
 
       if (changed) {
         if (auto const* const native_res{rttr::rttr_cast<NativeResource*>(selected_obj)};

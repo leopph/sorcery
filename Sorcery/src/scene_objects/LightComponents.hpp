@@ -1,9 +1,9 @@
 #pragma once
 
+#include <array>
+
 #include "Component.hpp"
 #include "../Math.hpp"
-
-#include <array>
 
 
 namespace sorcery {
@@ -11,7 +11,6 @@ class LightComponent final : public Component {
   RTTR_ENABLE(Component)
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;

@@ -3,9 +3,6 @@
 #include <format>
 #include <stdexcept>
 
-#include <imgui.h>
-
-
 #include "Entity.hpp"
 #include "../app.hpp"
 #include "../gui_helpers.hpp"
@@ -26,52 +23,6 @@ auto detail::GetPrevModelMtx(MeshComponentBase const& mesh_component) noexcept -
 
 auto detail::SetPrevModelMtx(MeshComponentBase& mesh_component, Matrix4 const& mtx) noexcept -> void {
   mesh_component.prev_model_mtx_ = mtx;
-}
-
-
-auto MeshComponentBase::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
-  Component::OnDrawProperties(allow_edit, changed);
-
-  ImGui::Text("%s", "Mesh");
-  ImGui::TableNextColumn();
-  static ObjectPicker<Mesh> meshPicker;
-  if (auto mesh{GetMesh()}; ImGuiDisabled(!allow_edit, [&] {
-    return meshPicker.Draw(mesh, true);
-  })) {
-    SetMesh(mesh);
-  }
-
-  if (auto const mesh{GetMesh()}) {
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Materials");
-
-    auto const mtlSlots{mesh->GetMaterialSlots()};
-    auto const mtlCount{std::ssize(mtlSlots)};
-
-    static std::vector<ObjectPicker<Material>> mtlPickers;
-    if (std::ssize(mtlPickers) < mtlCount) {
-      mtlPickers.resize(mtlCount);
-    }
-
-    auto const mtls{GetMaterials()};
-
-    for (auto i = 0; i < mtlCount; i++) {
-      ImGui::TableNextRow();
-      ImGui::TableNextColumn();
-      ImGui::Text("%s", mtlSlots[i].name.c_str());
-      ImGui::TableNextColumn();
-      if (auto mtl{mtls[i]}; ImGuiDisabled(!allow_edit, [&] {
-        return mtlPickers[i].Draw(mtl, true);
-      })) {
-        SetMaterial(i, mtl);
-      }
-    }
-  }
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Show bounding boxes");
-  ImGui::TableNextColumn();
-  ImGui::Checkbox("##showAabbsCheckbox", &show_bounding_boxes_);
 }
 
 
@@ -164,6 +115,16 @@ auto MeshComponentBase::SetMaterial(int const idx, Material* const mtl) -> void 
   }
 
   materials_[idx] = mtl;
+}
+
+
+auto MeshComponentBase::IsShowingBoundingBoxes() -> bool {
+  return show_bounding_boxes_;
+}
+
+
+auto MeshComponentBase::SetShowBoundingBoxes(bool const show) -> void {
+  show_bounding_boxes_ = show;
 }
 
 

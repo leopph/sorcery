@@ -1,10 +1,10 @@
 #pragma once
 
+#include <vector>
+
 #include "Component.hpp"
 #include "../Resources/Material.hpp"
 #include "../Resources/Mesh.hpp"
-
-#include <vector>
 
 
 namespace sorcery {
@@ -27,7 +27,6 @@ class MeshComponentBase : public Component {
   friend auto detail::SetPrevModelMtx(MeshComponentBase& mesh_component, Matrix4 const& mtx) noexcept -> void;
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 
   LEOPPHAPI MeshComponentBase();
@@ -40,6 +39,12 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetMaterials() const noexcept -> std::vector<Material*> const&;
   LEOPPHAPI auto SetMaterials(std::vector<Material*> const& materials) -> void;
   LEOPPHAPI auto SetMaterial(int idx, Material* mtl) -> void;
+
+  [[nodiscard]] SORCERYAPI static
+  auto IsShowingBoundingBoxes() -> bool;
+
+  SORCERYAPI static
+  auto SetShowBoundingBoxes(bool show) -> void;
 
 private:
   auto ResizeMaterialListToSubmeshCount() -> void;

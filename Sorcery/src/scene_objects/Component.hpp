@@ -13,8 +13,6 @@ class Component : public SceneObject {
   RTTR_ENABLE(SceneObject)
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
-
   LEOPPHAPI virtual auto OnAfterAttachedToEntity(Entity& entity) -> void;
   LEOPPHAPI virtual auto OnBeforeDetachedFromEntity(Entity& entity) -> void;
 

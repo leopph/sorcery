@@ -125,6 +125,21 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\command_line_processor.cpp" />
+    <ClCompile Include="src\drawers\camera_component_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\camera_controller_component_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\component_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\editor_drawer_registry.cpp" />
+    <ClCompile Include="src\drawers\entity_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\light_component_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\material_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\mesh_component_base_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\mesh_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\object_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\oscillate_component_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\skinned_mesh_component_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\transform_component_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\texture2d_editor_drawer.cpp" />
     <ClCompile Include="src\rendering\imgui_renderer.cpp" />
     <ClCompile Include="src\ResourceImporters\model_importer.cpp" />
     <ClCompile Include="src\ResourceImporters\native_resource_importer.cpp" />
@@ -148,12 +163,30 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="src\drawers\editor_drawer.inl" />
+    <None Include="src\drawers\editor_drawer_registry.inl" />
     <None Include="src\editor_app.inl" />
     <None Include="src\editor_gui_helpers.inl" />
     <None Include="src\rendering\shaders\imgui.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\command_line_processor.hpp" />
+    <ClInclude Include="src\drawers\camera_component_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\camera_controller_component_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\component_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\editor_drawer.h" />
+    <ClInclude Include="src\drawers\editor_drawer_context.hpp" />
+    <ClInclude Include="src\drawers\editor_drawer_registry.hpp" />
+    <ClInclude Include="src\drawers\entity_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\light_component_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\material_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\mesh_component_base_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\mesh_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\object_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\oscillate_component_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\transform_component_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\skinned_mesh_component_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\texture2d_editor_drawer.hpp" />
     <ClInclude Include="src\editor_gui_helpers.hpp" />
     <ClInclude Include="src\rendering\shaders\imgui_shader_interop.h" />
     <ClInclude Include="src\rendering\imgui_renderer.hpp" />

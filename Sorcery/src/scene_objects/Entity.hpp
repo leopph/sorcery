@@ -1,7 +1,7 @@
 #pragma once
 
-#include "SceneObject.hpp"
 #include "Component.hpp"
+#include "SceneObject.hpp"
 #include "TransformComponent.hpp"
 #include "../observer_ptr.hpp"
 #include "../Reflection.hpp"
@@ -20,7 +20,6 @@ class Entity final : public SceneObject {
   RTTR_REGISTRATION_FRIEND
 
 public:
-  LEOPPHAPI auto OnDrawProperties(bool allow_edit, bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;

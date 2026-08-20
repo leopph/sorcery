@@ -1,10 +1,9 @@
 #include "TransformComponent.hpp"
 
+#include <utility>
+
 #include "../Serialization.hpp"
 
-#include <imgui.h>
-#include <iostream>
-#include <utility>
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::TransformComponent>{"Transform Component"}
@@ -20,55 +19,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto TransformComponent::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
-  Component::OnDrawProperties(allow_edit, changed);
-
-  ImGui::BeginDisabled(!allow_edit);
-
-  ImGui::Text("Local Position");
-  ImGui::TableNextColumn();
-
-  Vector3 localPos{GetLocalPosition()};
-  if (ImGui::DragFloat3("###transformPos", localPos.GetData(), 0.1f)) {
-    SetLocalPosition(localPos);
-  }
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Local Rotation");
-  ImGui::TableNextColumn();
-
-  if (auto euler{GetLocalEulerAngles()}; ImGui::DragFloat3("###transformRot", euler.GetData(), 1.0f)) {
-    SetLocalEulerAngles(euler);
-  }
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Local Scale");
-  ImGui::TableNextColumn();
-
-  auto static uniformScale{true};
-  auto constexpr scaleSpeed{0.01f};
-
-  ImGui::Text("%s", "Uniform");
-  ImGui::SameLine();
-  ImGui::Checkbox("##UniformScaleCheck", &uniformScale);
-  ImGui::SameLine();
-
-  if (uniformScale) {
-    f32 scale{GetLocalScale()[0]};
-    if (ImGui::DragFloat("###transformScale", &scale, scaleSpeed)) {
-      SetLocalScale(Vector3{scale});
-    }
-  } else {
-    Vector3 localScale{GetLocalScale()};
-    if (ImGui::DragFloat3("###transformScale", localScale.GetData(), scaleSpeed)) {
-      SetLocalScale(localScale);
-    }
-  }
-
-  ImGui::EndDisabled();
-}
-
-
 auto TransformComponent::Clone() -> std::unique_ptr<SceneObject> {
   auto clone{Create<TransformComponent>(*this)};
   clone->mChildren.clear();

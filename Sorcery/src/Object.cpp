@@ -1,7 +1,5 @@
 #include "Object.hpp"
 
-#include <imgui.h>
-
 #include <cassert>
 #include <format>
 
@@ -43,11 +41,6 @@ auto Object::GetName() const noexcept -> std::string const& {
 
 auto Object::SetName(std::string const& name) -> void {
   name_ = name;
-}
-
-
-auto Object::OnDrawProperties([[maybe_unused]] bool const allow_edit, [[maybe_unused]] bool& changed) -> void {
-  ImGui::SeparatorText(std::format("{} ({})", GetName(), rttr::type::get(*this).get_name().data()).c_str());
 }
 
 

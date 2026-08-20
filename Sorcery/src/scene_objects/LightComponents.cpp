@@ -3,15 +3,13 @@
 #include <algorithm>
 #include <cmath>
 
-#include <imgui.h>
-
-
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
 #include "../app.hpp"
 #include "../Color.hpp"
 #include "../gui_helpers.hpp"
 #include "../rendering/scene_renderer.hpp"
+
 
 RTTR_REGISTRATION {
   rttr::registration::enumeration<sorcery::LightComponent::Type>("Light Type")(
@@ -39,148 +37,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto LightComponent::OnDrawProperties(bool const allow_edit, bool& changed) -> void {
-  Component::OnDrawProperties(allow_edit, changed);
-
-  ImGui::Text("Color");
-  ImGui::TableNextColumn();
-
-  Vector3 color{GetColor()};
-  if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::ColorEdit3("###lightColor", color.GetData());
-  })) {
-    SetColor(color);
-  }
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Intensity");
-  ImGui::TableNextColumn();
-
-  auto intensity{GetIntensity()};
-  if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::DragFloat("###lightIntensity", &intensity, 0.1f, MIN_INTENSITY,
-      std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp);
-  })) {
-    SetIntensity(intensity);
-  }
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Casts Shadow");
-  ImGui::TableNextColumn();
-
-  auto castsShadow{IsCastingShadow()};
-  if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::Checkbox("###lightCastsShadow", &castsShadow);
-  })) {
-    SetCastingShadow(castsShadow);
-  }
-
-  if (IsCastingShadow()) {
-    ImGui::TableNextColumn();
-
-    if (GetType() == Type::Directional) {
-      ImGui::Text("%s", "Shadow Extension");
-      ImGui::TableNextColumn();
-
-      float shadowExt{GetShadowExtension()};
-      if (ImGuiDisabled(!allow_edit, [&] {
-        return ImGui::DragFloat("##lightShadowExt", &shadowExt, 1.0f, MIN_SHADOW_EXTENSION,
-          std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp);
-      })) {
-        SetShadowExtension(shadowExt);
-      }
-    } else {
-      ImGui::Text("%s", "Shadow Near Plane");
-      ImGui::TableNextColumn();
-
-      auto shadowNearPlane{GetShadowNearPlane()};
-      if (ImGuiDisabled(!allow_edit, [&] {
-        return ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane, 0.01f, MIN_SHADOW_NEAR_PLANE,
-          std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp);
-      })) {
-        SetShadowNearPlane(shadowNearPlane);
-      }
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Shadow Depth Bias");
-    ImGui::TableNextColumn();
-
-    auto shadowDepthBias{GetShadowDepthBias()};
-    if (ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::DragFloat("###lightShadowDephBias", &shadowDepthBias, 0.25f, 0, FLT_MAX, "%.3f",
-        ImGuiSliderFlags_AlwaysClamp);
-    })) {
-      SetShadowDepthBias(shadowDepthBias);
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Shadow Normal Bias");
-    ImGui::TableNextColumn();
-
-    auto shadowNormalBias{GetShadowNormalBias()};
-    if (ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::DragFloat("###lightShadowNormalBias", &shadowNormalBias, 0.25f, 0, FLT_MAX, "%.3f",
-        ImGuiSliderFlags_AlwaysClamp);
-    })) {
-      SetShadowNormalBias(shadowNormalBias);
-    }
-  }
-
-  ImGui::TableNextColumn();
-  ImGui::Text("Type");
-  ImGui::TableNextColumn();
-
-  constexpr char const* typeOptions[]{"Directional", "Spot", "Point"};
-  auto selection{static_cast<int>(GetType())};
-  if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::Combo("###LightType", &selection, typeOptions, 3);
-  })) {
-    SetType(static_cast<Type>(selection));
-  }
-
-  if (GetType() == Type::Spot || GetType() == Type::Point) {
-    ImGui::TableNextColumn();
-    ImGui::Text("Range");
-    ImGui::TableNextColumn();
-
-    auto range{GetRange()};
-    if (ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::DragFloat("###lightRange", &range, 1.0f, MIN_RANGE, std::numeric_limits<float>::max(),
-        "%.3f", ImGuiSliderFlags_AlwaysClamp);
-    })) {
-      SetRange(range);
-    }
-  }
-
-  if (GetType() == Type::Spot) {
-    ImGui::TableNextColumn();
-    ImGui::Text("Inner Angle");
-    ImGui::TableNextColumn();
-
-    auto innerAngleRad{ToRadians(GetInnerAngle())};
-    if (ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::SliderAngle("###spotLightInnerAngle", &innerAngleRad, MIN_ANGLE_DEG,
-        MAX_ANGLE_DEG, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-    })) {
-      SetInnerAngle(ToDegrees(innerAngleRad));
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("Outer Angle");
-    ImGui::TableNextColumn();
-
-    auto outerAngleRad{ToRadians(GetOuterAngle())};
-    if (ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::SliderAngle("###spotLightOuterAngle", &outerAngleRad, MIN_ANGLE_DEG,
-        MAX_ANGLE_DEG, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-    })) {
-      SetOuterAngle(ToDegrees(outerAngleRad));
-    }
-  }
-}
-
-
 auto LightComponent::OnDrawGizmosSelected() -> void {
   Component::OnDrawGizmosSelected();
 
