@@ -10,6 +10,7 @@
 #include "material_editor_drawer.hpp"
 #include "mesh_component_base_editor_drawer.hpp"
 #include "mesh_editor_drawer.hpp"
+#include "model_importer_editor_drawer.hpp"
 #include "object_editor_drawer.hpp"
 #include "oscillate_component_editor_drawer.hpp"
 #include "skinned_mesh_component_editor_drawer.hpp"
@@ -39,5 +40,6 @@ EditorDrawerRegistry::EditorDrawerRegistry() {
   RegisterDrawer(std::make_unique<SkinnedMeshComponentEditorDrawer>());
   RegisterDrawer(std::make_unique<TransformComponentEditorDrawer>());
   RegisterDrawer(std::make_unique<TextureImporterEditorDrawer>());
+  RegisterDrawer(std::make_unique<ModelImporterEditorDrawer>());
 }
 }

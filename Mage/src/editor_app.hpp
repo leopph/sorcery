@@ -100,7 +100,7 @@ private:
 
   EditorDrawerRegistry drawer_registry_;
 
-  ProjectWindow project_window_{*this, resource_db_};
+  ProjectWindow project_window_{*this, resource_db_, drawer_registry_};
   SceneViewWindow scene_view_window_;
   GameViewWindow game_view_window_;
   PropertiesWindow properties_window_{*this, drawer_registry_};

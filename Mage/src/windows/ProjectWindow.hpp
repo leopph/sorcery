@@ -17,11 +17,12 @@
 namespace sorcery::mage {
 class EditorApp;
 class ResourceDB;
+class EditorDrawerRegistry;
 
 
 class ProjectWindow {
 public:
-  explicit ProjectWindow(EditorApp& context, ResourceDB& resource_db);
+  explicit ProjectWindow(EditorApp& context, ResourceDB& resource_db, EditorDrawerRegistry& drawer_registry);
   ProjectWindow(ProjectWindow const& other) = delete;
   ProjectWindow(ProjectWindow&& other) noexcept = delete;
 
@@ -146,6 +147,14 @@ private:
   };
 
 
+  struct ImportSettingsContext {
+    Guid guid;
+    std::filesystem::path src_path_res_dir_rel;
+    std::unique_ptr<ResourceImporter> importer;
+    bool dirty{false};
+  };
+
+
   [[nodiscard]] static
   auto IsDirectory(ProjectTreeNode const& node) -> bool;
 
@@ -210,6 +219,8 @@ private:
   [[nodiscard]]
   auto CanDelete(ProjectItem const& item) const -> bool;
 
+  auto DrawImportSettingsDialog() -> void;
+
   auto ExecutePendingCommand() -> void;
   auto ExecuteImport(ProjectItem const& target) const -> void;
   auto ExecuteCreateFolder(ProjectItem const& target) const -> void;
@@ -231,6 +242,7 @@ private:
 
   ObserverPtr<EditorApp> app_;
   ObserverPtr<ResourceDB> resource_db_;
+  ObserverPtr<EditorDrawerRegistry> drawer_registry_;
   EventListenerHandle<> database_changed_listener_;
 
   std::optional<ProjectTreeNode> root_node_;
@@ -239,6 +251,8 @@ private:
   std::optional<RenameContext> rename_ctx_;
   std::optional<PendingRenameAction> pending_rename_action_;
   std::optional<MoveToFolderContext> move_to_folder_ctx_;
+  std::optional<ImportSettingsContext> import_settings_ctx_;
+  bool open_import_settings_dialog_{false};
   bool should_rebuild_hierarchy_on_next_draw_{true};
 
   constexpr static std::string_view kContextMenuId{"ContextMenu"};

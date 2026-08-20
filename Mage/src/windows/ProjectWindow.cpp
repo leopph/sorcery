@@ -11,12 +11,14 @@
 #include "Platform.hpp"
 #include "util.hpp"
 #include "../editor_app.hpp"
+#include "../drawers/editor_drawer_registry.hpp"
 
 
 namespace sorcery::mage {
-ProjectWindow::ProjectWindow(EditorApp& context, ResourceDB& resource_db) :
+ProjectWindow::ProjectWindow(EditorApp& context, ResourceDB& resource_db, EditorDrawerRegistry& drawer_registry) :
   app_{&context},
   resource_db_{&resource_db},
+  drawer_registry_{&drawer_registry},
   database_changed_listener_{
     resource_db.OnDatabaseChanged.add_listener([this] { should_rebuild_hierarchy_on_next_draw_ = true; })
   } {}
@@ -148,6 +150,9 @@ auto ProjectWindow::Draw() -> void {
     if (root_node_) {
       DrawNode(*root_node_);
     }
+
+    DrawImportSettingsDialog();
+
     /*if ((!ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_ChildWindows) &&
          ImGui::IsAnyItemHovered() && (ImGui::IsMouseReleased(ImGuiMouseButton_Left) ||
                                        ImGui::IsMouseReleased(ImGuiMouseButton_Right))) || (
@@ -1041,6 +1046,61 @@ auto ProjectWindow::CanDelete(ProjectItem const& item) const -> bool {
 }
 
 
+auto ProjectWindow::DrawImportSettingsDialog() -> void {
+  auto constexpr popup_id{"Import Settings"};
+
+  if (open_import_settings_dialog_) {
+    open_import_settings_dialog_ = false;
+    ImGui::OpenPopup(popup_id);
+  }
+
+  if (!ImGui::BeginPopupModal(popup_id, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    return;
+  }
+
+  if (!import_settings_ctx_) {
+    spdlog::error("Tried drawing import settings dialog but context is empty.");
+    ImGui::CloseCurrentPopup();
+    ImGui::EndPopup();
+    return;
+  }
+
+  auto& ctx{*import_settings_ctx_};
+
+  ImGui::SeparatorText(ToUntypedStdSv(ctx.src_path_res_dir_rel.filename().u8string()).data());
+
+  auto changed_this_frame{false};
+  drawer_registry_->Draw(*ctx.importer, true, changed_this_frame);
+  ctx.dirty |= changed_this_frame;
+
+  ImGui::Separator();
+
+  if (ImGui::Button("Cancel")) {
+    import_settings_ctx_.reset();
+    ImGui::CloseCurrentPopup();
+  }
+
+  ImGui::SameLine();
+
+  ImGui::BeginDisabled(!ctx.dirty);
+
+  if (ImGui::Button("Apply and Reimport")) {
+    if (resource_db_->ImportResourceFile(ctx.src_path_res_dir_rel, ctx.importer.get())) {
+      import_settings_ctx_.reset();
+      ImGui::CloseCurrentPopup();
+    } else {
+      auto constexpr err_msg{"Failed to reimport."};
+      spdlog::error(err_msg);
+      DisplayError(err_msg);
+    }
+  }
+
+  ImGui::EndDisabled();
+
+  ImGui::EndPopup();
+}
+
+
 auto ProjectWindow::ExecutePendingCommand() -> void {
   if (!pending_command_) {
     return;
@@ -1471,7 +1531,47 @@ auto ProjectWindow::ExecuteReimport(ProjectItem const& target) const -> void {
 
 
 auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {
-  // TODO implement
+  std::visit(Overloaded{
+    []([[maybe_unused]] DirectoryProjectItem const&) {
+      spdlog::error("Tried opening import settings for a folder. Ignoring.");
+    },
+
+    []([[maybe_unused]] NativeResourceFileProjectItem const&) {
+      spdlog::error("Tried opening import settings for a native resource. Ignoring.");
+    },
+
+    [this](ResourcePackageFileProjectItem const& item) {
+      auto const file_info{resource_db_->GetFileInfo(item.guid)};
+
+      if (!file_info) {
+        spdlog::error("Tried opening import settings but failed to get file info.");
+        DisplayError("Failed to open import settings.");
+        return;
+      }
+
+      auto const src_path_abs{resource_db_->GetResourceDirectoryAbsolutePath() / file_info->src_path_res_dir_rel};
+      auto importer{ResourceDB::GetImporterForResourceFile(src_path_abs)};
+
+      if (!importer) {
+        spdlog::error("Tried opening import settings but failed to get importer.");
+        DisplayError("Failed to open import settings.");
+        return;
+      }
+
+      import_settings_ctx_ = ImportSettingsContext{
+        .guid = item.guid,
+        .src_path_res_dir_rel = file_info->src_path_res_dir_rel,
+        .importer = std::move(importer),
+        .dirty = false
+      };
+
+      open_import_settings_dialog_ = true;
+    },
+
+    []([[maybe_unused]] SubresourceProjectItem const&) {
+      spdlog::error("Tried opening import settings for a subresource. Ignoring.");
+    }
+  }, target);
 }
 
 
