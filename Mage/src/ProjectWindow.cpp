@@ -1447,8 +1447,42 @@ auto ProjectWindow::ExecuteShowInExplorer(ProjectItem const& target) const -> vo
 }
 
 
-auto ProjectWindow::ExecuteReimport(ProjectItem const& target) -> void {
-  // TODO implement
+auto ProjectWindow::ExecuteReimport(ProjectItem const& target) const -> void {
+  std::visit(Overloaded{
+    []([[maybe_unused]] DirectoryProjectItem const& item) {
+      spdlog::error("Tried reimporting a folder. Ignoring.");
+    },
+    []([[maybe_unused]] NativeResourceFileProjectItem const& item) {
+      spdlog::error("Tried reimporting a native resource. Ignoring.");
+    },
+    [this](ResourcePackageFileProjectItem const& item) {
+      auto const file_info{resource_db_->GetFileInfo(item.guid)};
+
+      if (!file_info) {
+        spdlog::error("Tried to reimport but failed to get file info.");
+        DisplayError("Failed to reimport.");
+        return;
+      }
+
+      auto const src_path_abs{resource_db_->GetResourceDirectoryAbsolutePath() / file_info->src_path_res_dir_rel};
+      auto const importer{ResourceDB::GetImporterForResourceFile(src_path_abs)};
+
+      if (!importer) {
+        spdlog::error("Tried to reimport but failed to get importer.");
+        DisplayError("Failed to reimport.");
+        return;
+      }
+
+      if (!resource_db_->ImportResourceFile(file_info->src_path_res_dir_rel, importer.get())) {
+        auto constexpr err_msg{"Failed to reimport."};
+        spdlog::error(err_msg);
+        DisplayError(err_msg);
+      }
+    },
+    []([[maybe_unused]] SubresourceProjectItem const& item) {
+      spdlog::error("Tried reimporting a subresource. Ignoring.");
+    }
+  }, target);
 }
 
 
