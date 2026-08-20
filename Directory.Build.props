@@ -1,3 +1,6 @@
 <Project>
 	<Import Project="$(MSBuildThisFileDirectory)vcpkg\scripts\buildsystems\msbuild\vcpkg.props"/>
+    <PropertyGroup>
+        <VcpkgXUseBuiltInApplocalDeps>false</VcpkgXUseBuiltInApplocalDeps>
+    </PropertyGroup>
 </Project>
