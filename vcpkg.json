@@ -1,23 +1,50 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "builtin-baseline": "56bb2411609227288b70117ead2c47585ba07713",
+  "builtin-baseline": "9e593bb18ea69cc5095e012465dcd675a822ed0d",
   "dependencies": [
-    "assimp",
-    "directxmesh",
-    "directxtex",
+    {
+      "name": "assimp",
+      "version>=": "6.0.4"
+    },
+    {
+      "name": "directxmesh",
+      "version>=": "2026-05-07"
+    },
+    {
+      "name": "directxtex",
+      "version>=": "2026-05-07"
+    },
     {
       "name": "imgui",
       "features": [
         "docking-experimental",
         "win32-binding"
       ],
-      "version>=": "1.91.9"
+      "version>=": "1.92.8"
     },
-    "imguizmo",
-    "implot",
-    "nativefiledialog-extended",
-    "rttr",
-    "spdlog",
-    "yaml-cpp"
+    {
+      "name": "imguizmo",
+      "version>=": "1.10"
+    },
+    {
+      "name": "implot",
+      "version>=": "1.0"
+    },
+    {
+      "name": "nativefiledialog-extended",
+      "version>=": "1.3.0"
+    },
+    {
+      "name": "rttr",
+      "version>=": "0.9.6+20210811"
+    },
+    {
+      "name": "spdlog",
+      "version>=": "1.17.0"
+    },
+    {
+      "name": "yaml-cpp",
+      "version>=": "0.9.0"
+    }
   ]
 }
