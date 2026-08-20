@@ -131,6 +131,7 @@
     <ClCompile Include="src\drawers\editor_drawer.cpp" />
     <ClCompile Include="src\drawers\editor_drawer_registry.cpp" />
     <ClCompile Include="src\drawers\entity_editor_drawer.cpp" />
+    <ClCompile Include="src\drawers\import_settings_editor_draw_helpers.cpp" />
     <ClCompile Include="src\drawers\light_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\material_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\mesh_component_base_editor_drawer.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="src\drawers\editor_drawer_context.hpp" />
     <ClInclude Include="src\drawers\editor_drawer_registry.hpp" />
     <ClInclude Include="src\drawers\entity_editor_drawer.hpp" />
+    <ClInclude Include="src\drawers\import_settings_editor_draw_helpers.hpp" />
     <ClInclude Include="src\drawers\light_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\material_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\mesh_component_base_editor_drawer.hpp" />

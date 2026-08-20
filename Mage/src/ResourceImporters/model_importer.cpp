@@ -1010,6 +1010,18 @@ auto ModelImporter::IsMaterialImportEnabled() const -> bool {
 
 
 auto ModelImporter::SetMaterialImportEnabled(bool const enabled) -> void {
+  // If we're turning off material import, we remove material subresource settings
+  if (import_materials_ && !enabled) {
+    std::erase_if(subresource_import_settings_, [](SubresourceImportSettings const& settings) {
+      return settings.kind == SubresourceKind::kMaterial;
+    });
+  }
+
+  // If we're turning on material import, we reset the entire subresouce settings set
+  if (!import_materials_ && enabled) {
+    subresource_import_settings_.clear();
+  }
+
   import_materials_ = enabled;
 }
 
@@ -1020,6 +1032,18 @@ auto ModelImporter::IsTextureImportEnabled() const -> bool {
 
 
 auto ModelImporter::SetTextureImportEnabled(bool const enabled) -> void {
+  // If we're turning off texture import, we remove texture subresource settings
+  if (import_textures_ && !enabled) {
+    std::erase_if(subresource_import_settings_, [](SubresourceImportSettings const& settings) {
+      return settings.kind == SubresourceKind::kTexture;
+    });
+  }
+
+  // If we're turning on texture import, we reset the entire subresource settings set
+  if (!import_textures_ && enabled) {
+    subresource_import_settings_.clear();
+  }
+
   import_textures_ = enabled;
 }
 }

@@ -1,7 +1,10 @@
 #include "model_importer_editor_drawer.hpp"
 
+#include <ranges>
+
 #include <imgui.h>
 
+#include "import_settings_editor_draw_helpers.hpp"
 #include "../gui_helpers.hpp"
 
 
@@ -76,6 +79,28 @@ auto ModelImporterEditorDrawer::Draw(
     ImGui::EndTable();
   }
 
-  // TODO implement subresource draw
+  auto subres_settings{
+    std::ranges::to<std::vector<ModelImporter::SubresourceImportSettings>>(obj.GetSubresourceImportSettings())
+  };
+
+  for (auto& settings : subres_settings) {
+    ImGui::Separator();
+
+    switch (settings.kind) {
+      case ModelImporter::SubresourceKind::kMaterial: {
+        if (DrawMaterialImportSettings(settings.material_settings, allow_edit, changed)) {
+          obj.SetSubresourceImportSettings(subres_settings);
+        }
+        break;
+      }
+
+      case ModelImporter::SubresourceKind::kTexture: {
+        if (DrawTextureImportSettings(settings.texture_settings, allow_edit, changed)) {
+          obj.SetSubresourceImportSettings(subres_settings);
+        }
+        break;
+      }
+    }
+  }
 }
 }
