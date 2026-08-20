@@ -744,6 +744,11 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& res_path_ab
   guid_by_src_abs_path.insert_or_assign(res_path_abs, guid);
   res_file_info_by_guid.insert_or_assign(guid, file_info);
 
+  // Erase resource info instances since a reimport might contain less subresources than it did before
+  std::erase_if(res_info_by_id, [&guid](auto const& pair) {
+    return pair.first.GetGuid() == guid;
+  });
+
   for (std::size_t i{0}; i < import_results.size(); ++i) {
     ResourceId const res_id{guid, static_cast<int>(i)};
     res_info_by_id.insert_or_assign(res_id, ResourceInfo{
