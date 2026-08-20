@@ -148,7 +148,6 @@ private:
 
 
   struct ImportSettingsContext {
-    Guid guid;
     std::filesystem::path src_path_res_dir_rel;
     std::unique_ptr<ResourceImporter> importer;
     bool dirty{false};

@@ -150,74 +150,7 @@ auto ProjectWindow::Draw() -> void {
     if (root_node_) {
       DrawNode(*root_node_);
     }
-
     DrawImportSettingsDialog();
-
-    /*if ((!ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_ChildWindows) &&
-         ImGui::IsAnyItemHovered() && (ImGui::IsMouseReleased(ImGuiMouseButton_Left) ||
-                                       ImGui::IsMouseReleased(ImGuiMouseButton_Right))) || (
-          !mSelectedPathResDirRel.empty() && !exists(
-            app_->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel))) {
-      mSelectedPathResDirRel.clear();
-    }
-
-    if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
-      if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-        open_context_menu_ = true;
-      }
-    }
-
-    std::ignore = DrawFilesystemTree(app_->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), "", true);
-
-    if (open_context_menu_) {
-      open_context_menu_ = false;
-      ImGui::OpenPopup(kContextMenuId.data());
-    }
-
-    try {
-      DrawContextMenu();
-    } catch ([[maybe_unused]] std::runtime_error const& ex) {
-      ImGui::End();
-      throw;
-    }
-
-    auto constexpr importModalId{"Import Settings"};
-
-    if (open_import_modal_) {
-      open_import_modal_ = false;
-      ImGui::OpenPopup(importModalId);
-    }
-
-    if (ImGui::BeginPopupModal(importModalId)) {
-      for (auto& [importer, srcPathAbs, dstPathAbs] : files_to_import_) {
-        ImGui::SeparatorText(srcPathAbs.stem().string().c_str());
-        ImGui::PushID(srcPathAbs.string().c_str());
-        ReflectionDisplayProperties(*importer);
-        ImGui::PopID();
-      }
-
-      if (ImGui::Button("Cancel")) {
-        files_to_import_.clear();
-        ImGui::CloseCurrentPopup();
-      }
-
-      ImGui::SameLine();
-
-      if (ImGui::Button("Import")) {
-        for (auto const& [importer, src_path_abs, dst_path_abs] : files_to_import_) {
-          if (!TryImportFromSourceFile(importer.get(), src_path_abs, dst_path_abs)) {
-            ImGui::CloseCurrentPopup();
-            ImGui::EndPopup();
-            ImGui::End();
-            throw std::runtime_error{std::format("Failed to import {}.", dst_path_abs.string())};
-          }
-        }
-        files_to_import_.clear();
-        ImGui::CloseCurrentPopup();
-      }
-
-      ImGui::EndPopup();
-    }*/
   }
   ImGui::End();
 
@@ -1081,11 +1014,14 @@ auto ProjectWindow::DrawImportSettingsDialog() -> void {
     if (resource_db_->ImportResourceFile(ctx.src_path_res_dir_rel, ctx.importer.get())) {
       import_settings_ctx_.reset();
       ImGui::CloseCurrentPopup();
-    } else {
-      auto constexpr err_msg{"Failed to reimport."};
-      spdlog::error(err_msg);
-      DisplayError(err_msg);
+      ImGui::EndDisabled();
+      ImGui::EndPopup();
+      return;
     }
+
+    auto constexpr err_msg{"Failed to reimport."};
+    spdlog::error(err_msg);
+    DisplayError(err_msg);
   }
 
   ImGui::EndDisabled();
@@ -1559,7 +1495,6 @@ auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {
       }
 
       import_settings_ctx_ = ImportSettingsContext{
-        .guid = item.guid,
         .src_path_res_dir_rel = file_info->src_path_res_dir_rel,
         .importer = std::move(importer),
         .dirty = false

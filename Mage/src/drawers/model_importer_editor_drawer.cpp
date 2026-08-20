@@ -79,12 +79,17 @@ auto ModelImporterEditorDrawer::Draw(
     ImGui::EndTable();
   }
 
+  ImGui::Separator();
+
   auto subres_settings{
     std::ranges::to<std::vector<ModelImporter::SubresourceImportSettings>>(obj.GetSubresourceImportSettings())
   };
 
-  for (auto& settings : subres_settings) {
-    ImGui::Separator();
+  for (auto idx{0}; auto& settings : subres_settings) {
+    ImGui::SeparatorText(std::format("Subresource {} ({})", idx,
+      settings.kind == ModelImporter::SubresourceKind::kMaterial ? "Material" : "Texture").c_str());
+
+    ImGui::PushID(idx++);
 
     switch (settings.kind) {
       case ModelImporter::SubresourceKind::kMaterial: {
@@ -101,6 +106,8 @@ auto ModelImporterEditorDrawer::Draw(
         break;
       }
     }
+
+    ImGui::PopID();
   }
 }
 }

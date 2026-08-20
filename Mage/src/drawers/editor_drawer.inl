@@ -13,7 +13,6 @@ auto EditorDrawer<T>::Draw(EditorDrawerContext const& ctx, rttr::instance const 
   auto* const typed{obj.try_convert<T>()};
 
   if (!typed) {
-    changed = false;
     return;
   }
 

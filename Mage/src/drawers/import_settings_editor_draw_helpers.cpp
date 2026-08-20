@@ -11,7 +11,6 @@ auto DrawMaterialImportSettings(
   [[maybe_unused]] bool const allow_edit,
   [[maybe_unused]] bool& changed
 ) -> bool {
-  ImGui::Text("Material");
   return false;
 }
 
