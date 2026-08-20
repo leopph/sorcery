@@ -97,7 +97,6 @@ private:
   struct RenameContext {
     std::string new_name;
     std::string error_msg;
-    std::filesystem::path node_path_abs; // TODO remove later
     ProjectItem target;
     bool focus_requested{true};
   };
@@ -230,24 +229,6 @@ private:
   auto ExecuteUnloadResourceById(ResourceId const& target) -> void;
   auto ExecuteMoveToFolder(ProjectItem const& target) -> void;
 
-  // Returns whether the drawn subtree was modified.
-  [[nodiscard]]
-  auto DrawFilesystemTree(
-    std::filesystem::path const& node_path_abs,
-    std::filesystem::path const& node_path_res_dir_rel,
-    bool is_directory
-  ) noexcept -> bool;
-
-  auto DrawContextMenu() -> void;
-
-  auto StartRenamingSelected() noexcept -> void;
-
-  [[nodiscard]]
-  auto TryImportFromSourceFile(
-    std::filesystem::path const& src_path_abs,
-    std::filesystem::path const& dst_path_abs
-  ) const -> bool;
-
   ObserverPtr<EditorApp> app_;
   ObserverPtr<ResourceDB> resource_db_;
   EventListenerHandle<> database_changed_listener_;
@@ -255,16 +236,10 @@ private:
   std::optional<ProjectTreeNode> root_node_;
   std::optional<ProjectItem> selected_item_;
   std::optional<ProjectCommand> pending_command_;
-  std::optional<ProjectItem> context_menu_target_;
   std::optional<RenameContext> rename_ctx_;
   std::optional<PendingRenameAction> pending_rename_action_;
-  std::vector<FileImportContext> files_to_import_;
   std::optional<MoveToFolderContext> move_to_folder_ctx_;
-  bool open_import_modal_{false};
-  bool open_context_menu_{false};
   bool should_rebuild_hierarchy_on_next_draw_{true};
-
-  std::filesystem::path mSelectedPathResDirRel; // empty if not selected TODO remove
 
   constexpr static std::string_view kContextMenuId{"ContextMenu"};
   constexpr static std::string_view kDirNodeDragDropTypeStr{"DRAG_DROP_DIR_TYPE"};

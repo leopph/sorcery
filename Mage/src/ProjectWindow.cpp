@@ -1181,14 +1181,39 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
     }
 
     std::filesystem::path const src_path_abs{src_path_abs_str.get()};
+    auto const dst_path_abs{GenerateUniquePath(*target_dir_abs / src_path_abs.filename())};
 
-    if (!TryImportFromSourceFile(src_path_abs, GenerateUniquePath(*target_dir_abs / src_path_abs.filename()))) {
-      auto const err_str{
-        std::format("Failed to import file {}.", ToUntypedStdSv(src_path_abs.u8string()))
+    if (!exists(src_path_abs)) {
+      auto const err_msg{
+        std::format("Failed to import {}. File does not exist.", ToUntypedStdSv(src_path_abs.u8string()))
       };
-      spdlog::error(err_str);
-      DisplayError(err_str);
+      spdlog::error(err_msg);
+      DisplayError(err_msg);
+      return;
     }
+
+    if (exists(dst_path_abs)) {
+      auto const err_msg{
+        std::format("Failed to import {}. File already exists.", ToUntypedStdSv(dst_path_abs.u8string()))
+      };
+      spdlog::error(err_msg);
+      DisplayError(err_msg);
+      return;
+    }
+
+    std::error_code ec;
+    copy_file(src_path_abs, dst_path_abs, ec);
+
+    if (ec) {
+      auto const err_msg{
+        std::format("Failed to import {}. Copy failed.", ToUntypedStdSv(src_path_abs.u8string()))
+      };
+      spdlog::error(err_msg);
+      DisplayError(err_msg);
+      return;
+    }
+
+    resource_db_->Refresh();
   }
 }
 
@@ -1329,7 +1354,6 @@ auto ProjectWindow::BeginRename(ProjectItem const& target) -> void {
 
   rename_ctx_ = RenameContext{
     .new_name = *name,
-    .node_path_abs = "",
     .target = target,
     .focus_requested = true
   };
@@ -1603,268 +1627,5 @@ auto ProjectWindow::ExecuteMoveToFolder(ProjectItem const& target) -> void {
       spdlog::error("Tried moving into a subresource. Ignoring.");
     }
   }, target);
-}
-
-
-auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& node_path_abs,
-                                       std::filesystem::path const& node_path_res_dir_rel,
-                                       bool const is_directory) noexcept -> bool {
-  auto ret{false};
-
-  auto& res_db{app_->GetResourceDatabase()};
-  auto const& res_dir_abs{res_db.GetResourceDirectoryAbsolutePath()};
-
-  auto this_path_res_dir_rel{node_path_res_dir_rel};
-  auto this_path_abs{node_path_abs};
-  auto selected_path_abs{mSelectedPathResDirRel.empty() ? res_dir_abs : res_dir_abs / mSelectedPathResDirRel};
-
-  auto const is_selected{this_path_abs == selected_path_abs};
-  auto const is_renaming{rename_ctx_ && rename_ctx_->node_path_abs == this_path_abs};
-
-  ImGuiTreeNodeFlags tree_node_flags{ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick};
-
-  if (!is_directory) {
-    tree_node_flags |= ImGuiTreeNodeFlags_Leaf;
-  } else {
-    tree_node_flags |= ImGuiTreeNodeFlags_DefaultOpen;
-  }
-
-  if (is_selected) {
-    tree_node_flags |= ImGuiTreeNodeFlags_Selected;
-  }
-
-  if (is_renaming) {
-    tree_node_flags |= ImGuiTreeNodeFlags_AllowOverlap;
-    ImGui::SetNextItemAllowOverlap();
-  }
-
-  auto const tree_node_pos{ImGui::GetCursorPos()};
-  auto tree_node_label{this_path_abs.stem().string()};
-  auto const node_is_open{
-    ImGui::TreeNodeEx((is_renaming ? tree_node_label.insert(0, "##") : tree_node_label).c_str(), tree_node_flags)
-  };
-
-  if (is_renaming) {
-    ImGui::SetKeyboardFocusHere();
-    ImGui::SetCursorPos(tree_node_pos);
-
-    if (ImGui::InputText("##Rename", &rename_ctx_->new_name,
-      ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-      auto const newPathAbs{
-        rename_ctx_->node_path_abs.parent_path() / rename_ctx_->new_name += rename_ctx_->node_path_abs.extension()
-      };
-      auto const newPathResDirRel{relative(newPathAbs, res_dir_abs)};
-
-      if (is_directory
-            ? res_db.MoveDirectory(relative(rename_ctx_->node_path_abs, res_dir_abs), newPathResDirRel)
-            : res_db.MoveResourceFile(res_db.PathToGuid(this_path_res_dir_rel), newPathResDirRel)) {
-        this_path_abs = newPathAbs;
-        this_path_res_dir_rel = relative(this_path_abs, res_dir_abs);
-        mSelectedPathResDirRel = this_path_res_dir_rel;
-        selected_path_abs = res_dir_abs / mSelectedPathResDirRel;
-        ret = true;
-      }
-
-      rename_ctx_.reset();
-    }
-
-    if ((!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) || ImGui::IsKeyPressed(
-          ImGuiKey_Escape)) {
-      rename_ctx_.reset();
-    }
-  } else if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 3) || (
-               is_selected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
-    mSelectedPathResDirRel = this_path_res_dir_rel;
-    selected_path_abs = res_dir_abs / mSelectedPathResDirRel;
-    StartRenamingSelected();
-  }
-
-  if (!this_path_res_dir_rel.empty() && ImGui::BeginDragDropSource()) {
-    if (is_directory) {
-      auto const thisPathResDirRelStr{this_path_res_dir_rel.string()};
-      ImGui::SetDragDropPayload(kDirNodeDragDropTypeStr.data(), thisPathResDirRelStr.c_str(),
-        thisPathResDirRelStr.size() + 1);
-    } else {
-      auto const res{
-        App::Instance().GetResourceManager().GetOrLoad(ResourceId{res_db.PathToGuid(this_path_res_dir_rel), 0})
-      };
-      ImGui::SetDragDropPayload(ObjectDragDropPayload::kTypeStr.data(), &res, sizeof(decltype(res)));
-    }
-    ImGui::EndDragDropSource();
-  }
-
-  if (is_directory && ImGui::BeginDragDropTarget()) {
-    if (auto const payload{ImGui::AcceptDragDropPayload(kDirNodeDragDropTypeStr.data())}) {
-      std::string payloadPathResDirRelStr(static_cast<std::size_t>(payload->DataSize), '\0');
-      std::memcpy(payloadPathResDirRelStr.data(), payload->Data, payload->DataSize);
-      std::filesystem::path const payloadPathResDirRel{payloadPathResDirRelStr};
-
-      if (res_db.MoveDirectory(payloadPathResDirRel, this_path_res_dir_rel / payloadPathResDirRel.filename())) {
-        ret = true;
-      }
-    }
-
-    if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data())}) {
-      if (auto const objectDragDropData{static_cast<ObjectDragDropPayload*>(payload->Data)};
-        objectDragDropData && objectDragDropData->ptr && rttr::type::get(*objectDragDropData->ptr).is_derived_from(
-          rttr::type::get<Resource>())) {
-        if (auto const res{static_cast<Resource*>(objectDragDropData->ptr)}; res_db.MoveResourceFile(
-          res->GetId().GetGuid(),
-          this_path_res_dir_rel / res_db.GuidToPath(res->GetId().GetGuid()).filename())) {
-          ret = true;
-        }
-      }
-    }
-
-    ImGui::EndDragDropTarget();
-  }
-
-  if ((ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) || ImGui::IsItemClicked(
-        ImGuiMouseButton_Right)) {
-    mSelectedPathResDirRel = this_path_res_dir_rel;
-    selected_path_abs = res_dir_abs / mSelectedPathResDirRel;
-    app_->SetSelectedObject(App::Instance().GetResourceManager().GetOrLoad(ResourceId{
-      res_db.PathToGuid(this_path_res_dir_rel), 0
-    }));
-  }
-
-  if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-    open_context_menu_ = true;
-  }
-
-  if (node_is_open) {
-    if (is_directory) {
-      for (auto const& entry : std::filesystem::directory_iterator{this_path_abs}) {
-        if (entry.path().extension() != ResourceDB::kResourceMetaFileExt) {
-          if (DrawFilesystemTree(entry.path(), this_path_res_dir_rel / entry.path().filename(), entry.is_directory())) {
-            // The directory_iterator does not guarantee anything when the directory tree changes, it's safer to skip the rest of the frame.
-            break;
-          }
-        }
-      }
-    }
-
-    ImGui::TreePop();
-  }
-
-  return ret;
-}
-
-
-auto ProjectWindow::DrawContextMenu() -> void {
-  if (ImGui::BeginPopup(kContextMenuId.data())) {
-    auto const selectedPathAbs{
-      weakly_canonical(app_->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel)
-    };
-    auto const workingDirAbs{is_directory(selectedPathAbs) ? selectedPathAbs : selectedPathAbs.parent_path()};
-    auto const isResDirSelected{
-      exists(selectedPathAbs) && exists(app_->GetResourceDatabase().GetResourceDirectoryAbsolutePath()) && equivalent(
-        selectedPathAbs, app_->GetResourceDatabase().GetResourceDirectoryAbsolutePath())
-    };
-
-    if (ImGui::BeginMenu("New")) {
-      if (ImGui::MenuItem("Folder")) {
-        auto const newFolderPathAbs{GenerateUniquePath(workingDirAbs / "New Folder")};
-        create_directory(newFolderPathAbs);
-
-        mSelectedPathResDirRel = relative(newFolderPathAbs,
-          app_->GetResourceDatabase().GetResourceDirectoryAbsolutePath());
-        app_->SetSelectedObject(nullptr);
-      }
-
-      if (ImGui::MenuItem("Material")) {
-        auto mtl{Create<Material>()};
-        auto const mtlPathAbs{GenerateUniquePath(workingDirAbs / "New Material.mtl")};
-        auto const selection{app_->GetResourceDatabase().SaveResourceToFile(std::move(mtl), mtlPathAbs)};
-        mSelectedPathResDirRel = relative(mtlPathAbs, app_->GetResourceDatabase().GetResourceDirectoryAbsolutePath());
-        app_->SetSelectedObject(selection.Get());
-      }
-
-      if (ImGui::MenuItem("Scene")) {
-        auto scene{Create<Scene>()};
-        auto const scenePathAbs{GenerateUniquePath(workingDirAbs / "New Scene.scene")};
-        auto const selection{app_->GetResourceDatabase().SaveResourceToFile(std::move(scene), scenePathAbs)};
-        app_->SetSelectedObject(selection.Get());
-      }
-
-      ImGui::EndMenu();
-    }
-
-    if (ImGui::MenuItem("Import")) {
-      if (NFD::UniquePathSet dst_paths;
-        OpenDialogMultiple(dst_paths, static_cast<nfdnfilteritem_t*>(nullptr)) == NFD_OKAY) {
-        if (nfdpathsetsize_t path_set_size{0}; NFD::PathSet::Count(dst_paths, path_set_size) == NFD_OKAY) {
-          for (nfdpathsetsize_t i{0}; i < path_set_size; i++) {
-            if (NFD::UniquePathSetPathN src_path_abs_str;
-              NFD::PathSet::GetPath(dst_paths, i, src_path_abs_str) == NFD_OKAY) {
-              if (std::filesystem::path const src_path_abs{src_path_abs_str.get()};
-                !TryImportFromSourceFile(src_path_abs, GenerateUniquePath(workingDirAbs / src_path_abs.filename()))) {
-                ImGui::CloseCurrentPopup();
-                ImGui::EndPopup();
-                ImGui::End();
-                throw std::runtime_error{std::format("Failed to import {}.", src_path_abs.string())};
-              }
-            }
-          }
-        }
-      }
-    }
-
-    ImGui::Separator();
-
-    if (ImGui::MenuItem("Import Settings", nullptr, nullptr, !is_directory(selectedPathAbs))) {
-      if (std::unique_ptr importer{ResourceDB::GetImporterForResourceFile(selectedPathAbs)}) {
-        files_to_import_.emplace_back(std::move(importer), selectedPathAbs, selectedPathAbs);
-        open_import_modal_ = true;
-      }
-    }
-
-    if (ImGui::MenuItem("Rename", nullptr, nullptr, !isResDirSelected)) {
-      StartRenamingSelected();
-    }
-
-    if (ImGui::MenuItem("Delete", nullptr, nullptr, !isResDirSelected)) {
-      if (is_directory(selectedPathAbs)) {
-        if (app_->GetResourceDatabase().DeleteDirectory(selectedPathAbs)) {
-          app_->SetSelectedObject(nullptr);
-          mSelectedPathResDirRel.clear();
-        }
-      } else {
-        app_->GetResourceDatabase().DeleteResourceFile(app_->GetResourceDatabase().PathToGuid(mSelectedPathResDirRel));
-        app_->SetSelectedObject(nullptr);
-        mSelectedPathResDirRel.clear();
-      }
-    }
-
-    ImGui::EndPopup();
-  }
-}
-
-
-auto ProjectWindow::StartRenamingSelected() noexcept -> void {
-  rename_ctx_ = RenameContext{
-    .new_name = mSelectedPathResDirRel.stem().string(),
-    .node_path_abs = app_->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel
-  };
-}
-
-
-auto ProjectWindow::TryImportFromSourceFile(
-  std::filesystem::path const& src_path_abs,
-  std::filesystem::path const& dst_path_abs
-) const -> bool {
-  if (!exists(src_path_abs) || exists(dst_path_abs)) {
-    return false;
-  }
-
-  std::error_code ec;
-  copy_file(src_path_abs, dst_path_abs, ec);
-
-  if (ec) {
-    return false;
-  }
-
-  resource_db_->Refresh();
-  return true;
 }
 }
