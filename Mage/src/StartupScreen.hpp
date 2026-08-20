@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EditorApp.hpp"
+#include "editor_app.hpp"
 
 
 namespace sorcery::mage {

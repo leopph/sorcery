@@ -11,7 +11,7 @@
 #include "Guid.hpp"
 #include "observer_ptr.hpp"
 #include "resource_id.hpp"
-#include "ResourceImporters/resource_importer.hpp"
+#include "../ResourceImporters/resource_importer.hpp"
 
 
 namespace sorcery::mage {

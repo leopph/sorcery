@@ -1,9 +1,9 @@
 #include "GameViewWindow.hpp"
 
 #include "app.hpp"
-#include "editor_gui.hpp"
 #include "scene_renderer.hpp"
 #include "Util.hpp"
+#include "../editor_gui_helpers.hpp"
 
 
 namespace sorcery::mage {

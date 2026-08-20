@@ -1,10 +1,10 @@
 #include "SettingsWindow.hpp"
 
 #include "app.hpp"
-#include "EditorApp.hpp"
-#include "editor_gui.hpp"
 #include "scene_renderer.hpp"
 #include "Timing.hpp"
+#include "../editor_app.hpp"
+#include "../editor_gui_helpers.hpp"
 
 #include <limits>
 

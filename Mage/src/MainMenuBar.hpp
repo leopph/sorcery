@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SettingsWindow.hpp"
+#include "windows/SettingsWindow.hpp"
 
 
 namespace sorcery::mage {

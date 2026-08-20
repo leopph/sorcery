@@ -3,8 +3,8 @@
 #include <nfd.hpp>
 
 #include "char_encoding_helpers.hpp"
-#include "EditorApp.hpp"
-#include "SettingsWindow.hpp"
+#include "editor_app.hpp"
+#include "windows/SettingsWindow.hpp"
 
 
 namespace sorcery::mage {

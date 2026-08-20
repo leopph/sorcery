@@ -2,7 +2,7 @@
 
 #include "Cubemap.hpp"
 #include "gui_helpers.hpp"
-#include "StandaloneCamera.hpp"
+#include "../StandaloneCamera.hpp"
 
 #include <string_view>
 

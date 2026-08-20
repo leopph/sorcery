@@ -1,8 +1,8 @@
 #include "EntityHierarchyWindow.hpp"
 
-#include "EditorApp.hpp"
-
 #include <functional>
+
+#include "../editor_app.hpp"
 
 
 namespace sorcery::mage {
@@ -75,7 +75,7 @@ auto EntityHierarchyWindow::Draw() -> void {
         mApp->SetSelectedObject(&entity);
       }
 
-      bool deleted{false};
+      auto deleted{false};
 
       if (ImGui::BeginPopupContextItem()) {
         mApp->SetSelectedObject(&entity);

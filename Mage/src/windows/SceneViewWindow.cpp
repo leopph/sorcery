@@ -1,11 +1,11 @@
 #include "SceneViewWindow.hpp"
 
-#include "EditorApp.hpp"
 #include "Platform.hpp"
 #include "scene_renderer.hpp"
-#include "StandaloneCamera.hpp"
 #include "Timing.hpp"
 #include "Window.hpp"
+#include "../editor_app.hpp"
+#include "../StandaloneCamera.hpp"
 
 
 namespace sorcery::mage {

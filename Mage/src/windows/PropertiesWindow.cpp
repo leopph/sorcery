@@ -1,10 +1,10 @@
 #include "PropertiesWindow.hpp"
 
-#include "EditorApp.hpp"
-#include "editor_gui.hpp"
-#include "Reflection.hpp"
-
 #include <limits>
+
+#include "Reflection.hpp"
+#include "../editor_app.hpp"
+#include "../editor_gui_helpers.hpp"
 
 
 namespace sorcery::mage {

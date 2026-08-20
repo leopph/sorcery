@@ -1,9 +1,8 @@
 #pragma once
 
-#include "gui_helpers.hpp"
-#include "Reflection.hpp"
-
 #include <cassert>
+
+#include "Reflection.hpp"
 
 
 namespace sorcery::mage {

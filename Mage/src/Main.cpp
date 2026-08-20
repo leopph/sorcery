@@ -4,7 +4,7 @@
 #include <spdlog/sinks/msvc_sink.h>
 
 #include "command_line_processor.hpp"
-#include "EditorApp.hpp"
+#include "editor_app.hpp"
 #include "Platform.hpp"
 
 

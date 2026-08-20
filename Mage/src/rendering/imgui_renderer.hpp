@@ -1,7 +1,7 @@
 #pragma once
 
 #include "observer_ptr.hpp"
-#include "../editor_gui.hpp"
+#include "../editor_gui_helpers.hpp"
 #include "rendering/graphics.hpp"
 #include "rendering/render_manager.hpp"
 

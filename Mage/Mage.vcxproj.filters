@@ -18,10 +18,10 @@
     <ClCompile Include="src\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Widgets.cpp">
+    <ClCompile Include="src\editor_gui_helpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\EditorApp.cpp">
+    <ClCompile Include="src\editor_app.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\StandaloneCamera.cpp">
@@ -33,28 +33,28 @@
     <ClCompile Include="src\MainMenuBar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\EntityHierarchyWindow.cpp">
+    <ClCompile Include="src\windows\EntityHierarchyWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\PropertiesWindow.cpp">
+    <ClCompile Include="src\windows\PropertiesWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\GameViewWindow.cpp">
+    <ClCompile Include="src\windows\GameViewWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneViewWindow.cpp">
+    <ClCompile Include="src\windows\SceneViewWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ProjectWindow.cpp">
+    <ClCompile Include="src\windows\ProjectWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\PerformanceCounterWindow.cpp">
+    <ClCompile Include="src\windows\PerformanceCounterWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\LoadingScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SettingsWindow.cpp">
+    <ClCompile Include="src\windows\SettingsWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ResourceDB.cpp">
@@ -85,12 +85,12 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="src\editor_gui_helpers.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Widgets.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\EditorApp.hpp">
+    <ClInclude Include="src\editor_app.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\StandaloneCamera.hpp">
@@ -102,34 +102,31 @@
     <ClInclude Include="src\MainMenuBar.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\EntityHierarchyWindow.hpp">
+    <ClInclude Include="src\windows\EntityHierarchyWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\PropertiesWindow.hpp">
+    <ClInclude Include="src\windows\PropertiesWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\GameViewWindow.hpp">
+    <ClInclude Include="src\windows\GameViewWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneViewWindow.hpp">
+    <ClInclude Include="src\windows\SceneViewWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ProjectWindow.hpp">
+    <ClInclude Include="src\windows\ProjectWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\PerformanceCounterWindow.hpp">
+    <ClInclude Include="src\windows\PerformanceCounterWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\LoadingScreen.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SettingsWindow.hpp">
+    <ClInclude Include="src\windows\SettingsWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ResourceDB.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ReflectionDisplayProperties.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ResourceImporters\model_importer.hpp">
@@ -150,7 +147,7 @@
     <ClInclude Include="src\rendering\shaders\imgui_shader_interop.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\editor_gui.hpp">
+    <ClInclude Include="src\editor_gui_helpers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\command_line_processor.hpp">

@@ -1,4 +1,4 @@
-#include "EditorApp.hpp"
+#include "editor_app.hpp"
 
 #include <ImGuizmo.h>
 #include <imgui_impl_win32.h>
@@ -8,12 +8,12 @@
 #include "char_encoding_helpers.hpp"
 #include "gui_helpers.hpp"
 #include "LoadingScreen.hpp"
-#include "PerformanceCounterWindow.hpp"
 #include "Platform.hpp"
 #include "resource_manager.hpp"
 #include "StartupScreen.hpp"
 #include "Timing.hpp"
 #include "Window.hpp"
+#include "windows/PerformanceCounterWindow.hpp"
 
 extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 

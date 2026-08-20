@@ -8,12 +8,11 @@
 #include <nfd.hpp>
 #include <spdlog/spdlog.h>
 
-#include "EditorApp.hpp"
 #include "gui_helpers.hpp"
 #include "Material.hpp"
 #include "Platform.hpp"
-#include "ReflectionDisplayProperties.hpp"
 #include "util.hpp"
+#include "../editor_app.hpp"
 
 
 namespace sorcery::mage {

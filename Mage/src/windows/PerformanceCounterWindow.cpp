@@ -1,7 +1,7 @@
 #include "PerformanceCounterWindow.hpp"
 
-#include "editor_gui.hpp"
 #include "Timing.hpp"
+#include "../editor_gui_helpers.hpp"
 
 #include <chrono>
 #include <numeric>

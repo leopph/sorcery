@@ -1,10 +1,10 @@
 #pragma once
 
-#include "editor_gui.hpp"
-#include "StandaloneCamera.hpp"
-
 #include <array>
 #include <optional>
+
+#include "../editor_gui_helpers.hpp"
+#include "../StandaloneCamera.hpp"
 
 
 namespace sorcery::mage {

@@ -1,24 +1,24 @@
 #pragma once
 
-#include "app.hpp"
-#include "editor_gui.hpp"
-#include "EntityHierarchyWindow.hpp"
-#include "Event.hpp"
-#include "GameViewWindow.hpp"
-#include "MainMenuBar.hpp"
-#include "ProjectWindow.hpp"
-#include "PropertiesWindow.hpp"
-#include "ResourceDB.hpp"
-#include "Scene.hpp"
-#include "SceneViewWindow.hpp"
-#include "rendering/imgui_renderer.hpp"
-
 #include <atomic>
 #include <filesystem>
 #include <memory>
 #include <span>
 #include <string>
 #include <string_view>
+
+#include "app.hpp"
+#include "editor_gui_helpers.hpp"
+#include "Event.hpp"
+#include "MainMenuBar.hpp"
+#include "ResourceDB.hpp"
+#include "Scene.hpp"
+#include "rendering/imgui_renderer.hpp"
+#include "windows/EntityHierarchyWindow.hpp"
+#include "windows/GameViewWindow.hpp"
+#include "windows/ProjectWindow.hpp"
+#include "windows/PropertiesWindow.hpp"
+#include "windows/SceneViewWindow.hpp"
 
 
 namespace sorcery::mage {

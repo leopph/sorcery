@@ -1,7 +1,6 @@
 #include "LoadingScreen.hpp"
 
-#include "editor_gui.hpp"
-#include "Widgets.hpp"
+#include "editor_gui_helpers.hpp"
 
 
 namespace sorcery::mage {
