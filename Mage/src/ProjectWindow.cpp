@@ -17,19 +17,6 @@
 
 
 namespace sorcery::mage {
-namespace {
-template<typename T>
-[[nodiscard]]
-auto ExtractPayloadData(ImGuiPayload const& payload) -> ObserverPtr<T const> {
-  if (!payload.Data || payload.DataSize != sizeof(T)) {
-    return nullptr;
-  }
-
-  return ObserverPtr<T const>{static_cast<T const*>(payload.Data)};
-}
-}
-
-
 ProjectWindow::ProjectWindow(EditorApp& context, ResourceDB& resource_db) :
   app_{&context},
   resource_db_{&resource_db},
