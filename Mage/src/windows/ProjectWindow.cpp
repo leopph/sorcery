@@ -1075,16 +1075,9 @@ auto ProjectWindow::DrawImportSettingsDialog() -> void {
 
   ImGui::Separator();
 
-  if (ImGui::Button("Cancel")) {
-    import_settings_ctx_.reset();
-    ImGui::CloseCurrentPopup();
-  }
-
-  ImGui::SameLine();
-
   ImGui::BeginDisabled(!ctx.dirty);
 
-  if (ImGui::Button("Apply and Reimport")) {
+  if (ImGui::Button("Apply and reimport")) {
     if (resource_db_->ImportResourceFile(ctx.src_path_res_dir_rel, ctx.importer.get())) {
       import_settings_ctx_.reset();
       ImGui::CloseCurrentPopup();
@@ -1096,6 +1089,13 @@ auto ProjectWindow::DrawImportSettingsDialog() -> void {
   }
 
   ImGui::EndDisabled();
+
+  ImGui::SameLine();
+
+  if (ImGui::Button("Cancel")) {
+    import_settings_ctx_.reset();
+    ImGui::CloseCurrentPopup();
+  }
 
   ImGui::EndPopup();
 }
