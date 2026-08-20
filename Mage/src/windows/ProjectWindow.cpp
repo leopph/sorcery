@@ -1054,7 +1054,7 @@ auto ProjectWindow::DrawImportSettingsDialog() -> void {
     ImGui::OpenPopup(popup_id);
   }
 
-  if (!ImGui::BeginPopupModal(popup_id, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (!ImGui::BeginPopupModal(popup_id, nullptr)) {
     return;
   }
 
