@@ -1139,6 +1139,10 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
     }, target)
   };
 
+  if (!target_dir_abs) {
+    return;
+  }
+
   NFD::UniquePathSet import_paths;
 
   if (OpenDialogMultiple(import_paths, static_cast<nfdnfilteritem_t*>(nullptr)) != NFD_OKAY) {

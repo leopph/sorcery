@@ -109,13 +109,6 @@ private:
   };
 
 
-  struct FileImportContext {
-    std::unique_ptr<ResourceImporter> importer;
-    std::filesystem::path src_path_abs;
-    std::filesystem::path dst_path_abs;
-  };
-
-
   struct MoveToFolderContext {
     std::filesystem::path src_abs;
   };
