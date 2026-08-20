@@ -206,6 +206,9 @@ private:
   auto IsResourceRootDirectory(DirectoryProjectItem const& item) const -> bool;
 
   [[nodiscard]]
+  auto IsResourceRootDirectory(std::filesystem::path const& path_abs) const -> bool;
+
+  [[nodiscard]]
   auto CanDelete(ProjectItem const& item) const -> bool;
 
   auto ExecutePendingCommand() -> void;

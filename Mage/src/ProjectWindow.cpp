@@ -661,53 +661,76 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
   }
 
   std::visit(Overloaded{
-    [this](DirectoryProjectItem const& dir_item) {
-      auto const* payload{ImGui::AcceptDragDropPayload(kDirNodeDragDropTypeStr.data())};
+    [this](DirectoryProjectItem const& dir_target) {
+      auto const* payload{ImGui::GetDragDropPayload()};
 
-      if (payload) {
+      if (!payload) {
+        spdlog::error("Couldn't get payload on drag drop target. Ignoring.");
+        return;
+      }
+
+      if (payload->IsDataType(kDirNodeDragDropTypeStr.data())) {
         std::string_view const src_abs_sv{
           static_cast<char const*>(payload->Data), clamp_cast<std::size_t>(payload->DataSize)
         };
 
-        move_to_folder_ctx_ = MoveToFolderContext{
-          .src_abs = ToUtf8StdSv(src_abs_sv)
-        };
+        std::filesystem::path const src_abs{ToUtf8StdSv(src_abs_sv)};
 
-        pending_command_ = ProjectCommand{
-          .kind = ProjectCommandKind::kMoveToFolder,
-          .target = dir_item
-        };
+        if (IsResourceRootDirectory(src_abs) ||
+            IsSubpath(dir_target.path_abs, src_abs) ||
+            equivalent(src_abs.parent_path(), dir_target.path_abs)) {
+          return;
+        }
+
+        ImGui::AcceptDragDropPayload(kDirNodeDragDropTypeStr.data());
+
+        if (payload->IsDelivery()) {
+          move_to_folder_ctx_ = MoveToFolderContext{
+            .src_abs = src_abs
+          };
+
+          pending_command_ = ProjectCommand{
+            .kind = ProjectCommandKind::kMoveToFolder,
+            .target = dir_target
+          };
+        }
 
         return;
       }
 
-      payload = ImGui::AcceptDragDropPayload(kResPackNodeDragDropTypeStr.data());
-
-      if (payload) {
+      if (payload->IsDataType(kResPackNodeDragDropTypeStr.data())) {
         auto const* const guid{static_cast<Guid const*>(payload->Data)};
-        auto const path_res_dir_rel{resource_db_->GuidToPath(*guid)};
+        auto const src_res_dir_rel{resource_db_->GuidToPath(*guid)};
 
-        if (path_res_dir_rel.empty()) {
+        if (src_res_dir_rel.empty()) {
           spdlog::error("Failed to get resource package path during drop. Ignoring.");
           DisplayError("Failed to move file.");
           return;
         }
 
-        move_to_folder_ctx_ = MoveToFolderContext{
-          .src_abs = resource_db_->GetResourceDirectoryAbsolutePath() / path_res_dir_rel
-        };
+        auto const src_abs{resource_db_->GetResourceDirectoryAbsolutePath() / src_res_dir_rel};
 
-        pending_command_ = ProjectCommand{
-          .kind = ProjectCommandKind::kMoveToFolder,
-          .target = dir_item
-        };
+        if (equivalent(src_abs.parent_path(), dir_target.path_abs)) {
+          return;
+        }
+
+        ImGui::AcceptDragDropPayload(kResPackNodeDragDropTypeStr.data());
+
+        if (payload->IsDelivery()) {
+          move_to_folder_ctx_ = MoveToFolderContext{
+            .src_abs = src_abs
+          };
+
+          pending_command_ = ProjectCommand{
+            .kind = ProjectCommandKind::kMoveToFolder,
+            .target = dir_target
+          };
+        }
 
         return;
       }
 
-      payload = ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
-
-      if (payload) {
+      if (payload->IsDataType(ObjectDragDropPayload::kTypeStr.data())) {
         auto const res{rttr::rttr_cast<NativeResource*>(static_cast<ObjectDragDropPayload const*>(payload->Data)->ptr)};
 
         if (!res) {
@@ -728,14 +751,24 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
           return;
         }
 
-        move_to_folder_ctx_ = MoveToFolderContext{
-          .src_abs = resource_db_->GetResourceDirectoryAbsolutePath() / file_info->src_path_res_dir_rel
-        };
+        auto const src_abs{resource_db_->GetResourceDirectoryAbsolutePath() / file_info->src_path_res_dir_rel};
 
-        pending_command_ = ProjectCommand{
-          .kind = ProjectCommandKind::kMoveToFolder,
-          .target = dir_item
-        };
+        if (equivalent(src_abs.parent_path(), dir_target.path_abs)) {
+          return;
+        }
+
+        ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
+
+        if (payload->IsDelivery()) {
+          move_to_folder_ctx_ = MoveToFolderContext{
+            .src_abs = src_abs
+          };
+
+          pending_command_ = ProjectCommand{
+            .kind = ProjectCommandKind::kMoveToFolder,
+            .target = dir_target
+          };
+        }
       }
     },
     []([[maybe_unused]] NativeResourceFileProjectItem const& res_item) {
@@ -981,7 +1014,12 @@ auto ProjectWindow::CommitResourceFileRename(Guid const& guid, std::string_view 
 
 
 auto ProjectWindow::IsResourceRootDirectory(DirectoryProjectItem const& item) const -> bool {
-  return exists(item.path_abs) && equivalent(item.path_abs, resource_db_->GetResourceDirectoryAbsolutePath());
+  return IsResourceRootDirectory(item.path_abs);
+}
+
+
+auto ProjectWindow::IsResourceRootDirectory(std::filesystem::path const& path_abs) const -> bool {
+  return exists(path_abs) && equivalent(path_abs, resource_db_->GetResourceDirectoryAbsolutePath());
 }
 
 
