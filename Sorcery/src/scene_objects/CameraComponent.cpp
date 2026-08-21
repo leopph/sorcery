@@ -26,7 +26,7 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 auto CameraComponent::Clone() -> std::unique_ptr<SceneObject> {
-  return Create<CameraComponent>(*this);
+  return std::make_unique<CameraComponent>(*this);
 }
 
 

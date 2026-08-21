@@ -31,7 +31,7 @@ auto MaterialEditorDrawer::Draw(
     if (Vector3 albedoColor{mtl.GetAlbedoVector()}; ImGuiDisabled(!allow_edit, [&] {
       return ImGui::ColorEdit3("##matAlbedoColor", albedoColor.GetData());
     })) {
-      mtl.SetAlbedoVector(albedoColor);
+      mtl.SetAlbedoVector(albedoColor, GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -42,7 +42,7 @@ auto MaterialEditorDrawer::Draw(
     if (f32 metallic{mtl.GetMetallic()}; ImGuiDisabled(!allow_edit, [&] {
       return ImGui::SliderFloat("##matMetallic", &metallic, 0.0f, 1.0f);
     })) {
-      mtl.SetMetallic(metallic);
+      mtl.SetMetallic(metallic, GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -53,7 +53,7 @@ auto MaterialEditorDrawer::Draw(
     if (f32 roughness{mtl.GetRoughness()}; ImGuiDisabled(!allow_edit, [&] {
       return ImGui::SliderFloat("##matRoughness", &roughness, 0.0f, 1.0f);
     })) {
-      mtl.SetRoughness(roughness);
+      mtl.SetRoughness(roughness, GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -64,7 +64,7 @@ auto MaterialEditorDrawer::Draw(
     if (f32 ao{mtl.GetAo()}; ImGuiDisabled(!allow_edit, [&] {
       return ImGui::SliderFloat("##matAo", &ao, 0.0f, 1.0f);
     })) {
-      mtl.SetAo(ao);
+      mtl.SetAo(ao, GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -75,7 +75,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto albedoMap{mtl.GetAlbedoMap()}; ImGuiDisabled(!allow_edit, [&] {
       return albedoMapPicker.Draw(albedoMap);
     })) {
-      mtl.SetAlbedoMap(albedoMap);
+      mtl.SetAlbedoMap(albedoMap, GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -86,7 +86,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto metallicMap{mtl.GetMetallicMap()}; ImGuiDisabled(!allow_edit, [&] {
       return metallicMapPicker.Draw(metallicMap);
     })) {
-      mtl.SetMetallicMap(metallicMap);
+      mtl.SetMetallicMap(metallicMap, GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -97,7 +97,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto roughnessMap{mtl.GetRoughnessMap()}; ImGuiDisabled(!allow_edit, [&] {
       return roughnessMapPicker.Draw(roughnessMap);
     })) {
-      mtl.SetRoughnessMap(roughnessMap);
+      mtl.SetRoughnessMap(roughnessMap, GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -108,7 +108,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto aoMap{mtl.GetAoMap()}; ImGuiDisabled(!allow_edit, [&] {
       return aoMapPicker.Draw(aoMap);
     })) {
-      mtl.SetAoMap(aoMap);
+      mtl.SetAoMap(aoMap, GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -119,7 +119,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto normalMap{mtl.GetNormalMap()}; ImGuiDisabled(!allow_edit, [&] {
       return normalMapPicker.Draw(normalMap);
     })) {
-      mtl.SetNormalMap(normalMap);
+      mtl.SetNormalMap(normalMap, GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -131,7 +131,7 @@ auto MaterialEditorDrawer::Draw(
       blendModeNames[static_cast<int>(mtl.GetBlendMode())])) {
       for (auto i = 0; i < 2; i++) {
         if (ImGui::Selectable(blendModeNames[i], i == static_cast<int>(mtl.GetBlendMode()))) {
-          mtl.SetBlendMode(static_cast<MaterialBlendMode>(i));
+          mtl.SetBlendMode(static_cast<MaterialBlendMode>(i), GpuResidencyPolicy::kMakeResident);
           changed = true;
         }
       }
@@ -146,7 +146,7 @@ auto MaterialEditorDrawer::Draw(
       if (auto thresh{mtl.GetAlphaThreshold()}; ImGuiDisabled(!allow_edit, [&] {
         return ImGui::SliderFloat("##AlphaThresh", &thresh, 0, 1);
       })) {
-        mtl.SetAlphaThreshold(thresh);
+        mtl.SetAlphaThreshold(thresh, GpuResidencyPolicy::kMakeResident);
         changed = true;
       }
 
@@ -157,7 +157,7 @@ auto MaterialEditorDrawer::Draw(
       if (auto opacityMask{mtl.GetOpacityMask()}; ImGuiDisabled(!allow_edit, [&] {
         return opacityMaskPicker.Draw(opacityMask);
       })) {
-        mtl.SetOpacityMask(opacityMask);
+        mtl.SetOpacityMask(opacityMask, GpuResidencyPolicy::kMakeResident);
         changed = true;
       }
     }

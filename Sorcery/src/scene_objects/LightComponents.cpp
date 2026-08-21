@@ -59,7 +59,7 @@ auto LightComponent::OnDrawGizmosSelected() -> void {
 
 
 auto LightComponent::Clone() -> std::unique_ptr<SceneObject> {
-  return Create<LightComponent>(*this);
+  return std::make_unique<LightComponent>(*this);
 }
 
 

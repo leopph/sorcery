@@ -81,7 +81,7 @@ auto EntityEditorDrawer::Draw(
       }
 
       if (ImGui::MenuItem(component_class.get_name().data())) {
-        obj.AddComponent(static_unique_ptr_cast<Component>(Create(component_class)));
+        obj.AddComponent(static_unique_ptr_cast<Component>(MakeUniqueObject(component_class)));
         ImGui::CloseCurrentPopup();
       }
     }

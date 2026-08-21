@@ -1229,7 +1229,7 @@ auto ProjectWindow::ExecuteCreateFolder(ProjectItem const& target) const -> void
 auto ProjectWindow::ExecuteCreateMaterial(ProjectItem const& target) -> void {
   std::visit(Overloaded{
     [this](DirectoryProjectItem const& item) {
-      auto mtl{Create<Material>()};
+      auto mtl{std::make_unique<Material>(GpuResidencyPolicy::kMakeResident)};
       auto const mtl_path_abs{GenerateUniquePath(item.path_abs / "New Material.mtl")};
 
       auto created_mtl{app_->GetResourceDatabase().SaveResourceToFile(std::move(mtl), mtl_path_abs)};
@@ -1263,7 +1263,7 @@ auto ProjectWindow::ExecuteCreateMaterial(ProjectItem const& target) -> void {
 auto ProjectWindow::ExecuteCreateScene(ProjectItem const& target) -> void {
   std::visit(Overloaded{
     [this](DirectoryProjectItem const& item) {
-      auto scene{Create<Scene>()};
+      auto scene{std::make_unique<Scene>()};
       auto const scene_path_abs{GenerateUniquePath(item.path_abs / "New Scene.scene")};
 
       auto created_scene{app_->GetResourceDatabase().SaveResourceToFile(std::move(scene), scene_path_abs)};

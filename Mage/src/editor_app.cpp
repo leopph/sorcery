@@ -213,7 +213,7 @@ auto EditorApp::OpenNewScene() -> void {
     GetResourceManager().Unload(scene_->GetId());
   }
 
-  scene_ = GetResourceManager().Add(Create<Scene>());
+  scene_ = GetResourceManager().Add(std::make_unique<Scene>());
   scene_->SetActive();
   selected_object_ = nullptr;
 }

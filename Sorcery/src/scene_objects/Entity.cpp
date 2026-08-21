@@ -29,7 +29,7 @@ auto Entity::OnDrawGizmosSelected() -> void {
 
 
 auto Entity::Clone() -> std::unique_ptr<SceneObject> {
-  return Create<Entity>(*this);
+  return std::make_unique<Entity>(*this);
 }
 
 
@@ -76,7 +76,7 @@ auto Entity::OnBeforeExitingScene(Scene const& scene) -> void {
 
 Entity::Entity() {
   SetName("New Entity");
-  AddComponent(Create<TransformComponent>());
+  AddComponent(std::make_unique<TransformComponent>());
 }
 
 
@@ -101,7 +101,7 @@ Entity::Entity(Entity&& other) noexcept :
     AddComponent(other.RemoveComponent(*other.components_.back()));
   }
 
-  other.AddComponent(Create<TransformComponent>());
+  other.AddComponent(std::make_unique<TransformComponent>());
 }
 
 

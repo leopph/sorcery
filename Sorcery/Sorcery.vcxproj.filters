@@ -392,6 +392,9 @@
     <ClInclude Include="src\entity_serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\resource_residency_policy.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\shader_interop.h" />
@@ -412,9 +415,6 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\object.inl">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="src\resources\native_resource.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\scene_objects\entity.inl">

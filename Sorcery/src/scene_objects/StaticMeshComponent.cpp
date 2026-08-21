@@ -10,7 +10,7 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 auto StaticMeshComponent::Clone() -> std::unique_ptr<SceneObject> {
-  return Create<StaticMeshComponent>(*this);
+  return std::make_unique<StaticMeshComponent>(*this);
 }
 
 

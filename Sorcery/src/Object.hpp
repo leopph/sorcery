@@ -49,10 +49,7 @@ private:
 
 
 template<typename... Args>
-[[nodiscard]] auto Create(rttr::type const& type, Args&&... args) -> std::unique_ptr<Object>;
-
-template<std::derived_from<Object> ObjectType, typename... Args>
-[[nodiscard]] auto Create(Args&&... args) -> std::unique_ptr<ObjectType>;
+[[nodiscard]] auto MakeUniqueObject(rttr::type const& type, Args&&... args) -> std::unique_ptr<Object>;
 }
 
 

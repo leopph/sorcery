@@ -18,7 +18,7 @@ auto SkinnedMeshComponent::OnDrawGizmosSelected() -> void {
 
 
 auto SkinnedMeshComponent::Clone() -> std::unique_ptr<SceneObject> {
-  return Create<SkinnedMeshComponent>(*this);
+  return std::make_unique<SkinnedMeshComponent>(*this);
 }
 
 

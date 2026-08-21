@@ -48,13 +48,44 @@ auto Submesh::GetBounds() const -> AABB const& {
 }
 
 
-Mesh::Mesh(MeshData const& data) noexcept {
-  SetData(data);
+Mesh::Mesh(MeshData data, ResourceResidencyPolicy const data_policy) {
+  SetData(std::move(data), data_policy);
 }
 
 
-auto Mesh::SetData(MeshData const& data) noexcept -> void {
-  // GPU buffers
+auto Mesh::SetData(MeshData data, ResourceResidencyPolicy const data_policy) -> void {
+  // CPU data
+  mesh_data_ = std::make_unique<MeshData>(std::move(data));
+
+  meshlets_ = mesh_data_->meshlets;
+  mtl_slots_ = mesh_data_->material_slots;
+
+  submeshes_.clear();
+  submeshes_.reserve(mesh_data_->submeshes.size());
+  std::ranges::for_each(mesh_data_->submeshes, [this](SubmeshData const& submesh) {
+    submeshes_.emplace_back(submesh);
+  });
+
+  animations_ = mesh_data_->animations;
+  skeleton_ = mesh_data_->skeleton;
+  bones_ = mesh_data_->bones;
+
+  bounds_ = mesh_data_->bounds;
+  vertex_count_ = mesh_data_->positions.size();
+  primitive_count_ = mesh_data_->triangle_indices.size();
+  idx32_ = mesh_data_->idx32;
+
+  // GPU data
+  if (data_policy.gpu == GpuResidencyPolicy::kMakeResident) {
+    UploadToGpu(data_policy.cpu);
+  }
+}
+
+
+auto Mesh::UploadToGpu(CpuResidencyPolicy const cpu_policy) -> void {
+  if (!mesh_data_) {
+    return;
+  }
 
   auto const to_vec4{
     [](std::span<Vector3 const> const vectors, float const component4,
@@ -77,45 +108,28 @@ auto Mesh::SetData(MeshData const& data) noexcept -> void {
 
   using rendering::StructuredBuffer;
 
-  pos_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.positions, 1, vec4_buf), false, true, true);
-  norm_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.normals, 0, vec4_buf), false, true, true);
-  tan_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(data.tangents, 0, vec4_buf), false, true, true);
-  uv_buf_ = StructuredBuffer<Vector2>::New(gd, rm, data.uvs, false, true, false);
-  bone_weight_buf_ = data.bone_weights.empty()
+  pos_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(mesh_data_->positions, 1, vec4_buf), false, true, true);
+  norm_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(mesh_data_->normals, 0, vec4_buf), false, true, true);
+  tan_buf_ = StructuredBuffer<Vector4>::New(gd, rm, to_vec4(mesh_data_->tangents, 0, vec4_buf), false, true, true);
+  uv_buf_ = StructuredBuffer<Vector2>::New(gd, rm, mesh_data_->uvs, false, true, false);
+  bone_weight_buf_ = mesh_data_->bone_weights.empty()
                        ? StructuredBuffer<Vector4>{}
-                       : StructuredBuffer<Vector4>::New(gd, rm, data.bone_weights, false, false, true);
-  bone_idx_buf_ = data.bone_indices.empty()
+                       : StructuredBuffer<Vector4>::New(gd, rm, mesh_data_->bone_weights, false, false, true);
+  bone_idx_buf_ = mesh_data_->bone_indices.empty()
                     ? StructuredBuffer<Vector<std::uint32_t, 4>>{}
-                    : StructuredBuffer<Vector<std::uint32_t, 4>>::New(gd, rm, data.bone_indices, false, false, true);
-  meshlet_buf_ = StructuredBuffer<MeshletData>::New(gd, rm, data.meshlets, false);
-  vertex_idx_buf_ = gd.CreateBuffer(graphics::BufferDesc{data.vertex_indices.size(), 1, false, true, false},
+                    : StructuredBuffer<Vector<std::uint32_t, 4>>::New(gd, rm, mesh_data_->bone_indices, false, false,
+                      true);
+  meshlet_buf_ = StructuredBuffer<MeshletData>::New(gd, rm, mesh_data_->meshlets, false);
+  vertex_idx_buf_ = gd.CreateBuffer(graphics::BufferDesc{mesh_data_->vertex_indices.size(), 1, false, true, false},
     graphics::CpuAccess::kNone);
-  prim_idx_buf_ = StructuredBuffer<MeshletTriangleData>::New(gd, rm, data.triangle_indices, false, true, false);
-  cull_data_buf_ = StructuredBuffer<MeshletCullData>::New(gd, rm, data.cull_data, false, true, false);
+  prim_idx_buf_ = StructuredBuffer<MeshletTriangleData>::New(gd, rm, mesh_data_->triangle_indices, false, true, false);
+  cull_data_buf_ = StructuredBuffer<MeshletCullData>::New(gd, rm, mesh_data_->cull_data, false, true, false);
 
-  rm.UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{data.vertex_indices}));
+  rm.UpdateBuffer(*vertex_idx_buf_, 0, as_bytes(std::span{mesh_data_->vertex_indices}));
 
-  // CPU lists
-
-  meshlets_ = data.meshlets;
-  mtl_slots_ = data.material_slots;
-
-  submeshes_.clear();
-  submeshes_.reserve(data.submeshes.size());
-  std::ranges::for_each(data.submeshes, [this](SubmeshData const& submesh) {
-    submeshes_.emplace_back(submesh);
-  });
-
-  animations_ = data.animations;
-  skeleton_ = data.skeleton;
-  bones_ = data.bones;
-
-  // Other info
-
-  bounds_ = data.bounds;
-  vertex_count_ = data.positions.size();
-  primitive_count_ = data.triangle_indices.size();
-  idx32_ = data.idx32;
+  if (cpu_policy == CpuResidencyPolicy::kReleaseAfterUpload) {
+    mesh_data_.reset();
+  }
 }
 
 

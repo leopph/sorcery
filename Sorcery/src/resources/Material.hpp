@@ -4,6 +4,7 @@
 #include "Texture2D.hpp"
 #include "../Color.hpp"
 #include "../material_blend_mode.hpp"
+#include "../resource_residency_policy.hpp"
 #include "../rendering/constant_buffer.hpp"
 #include "../rendering/graphics.hpp"
 #include "../rendering/shaders/shader_interop.h"
@@ -12,6 +13,7 @@
 namespace sorcery {
 class Material final : public NativeResource {
   RTTR_ENABLE(NativeResource)
+  RTTR_REGISTRATION_FRIEND
 
 public:
   using BlendMode = MaterialBlendMode;
@@ -34,59 +36,105 @@ private:
   Texture2D* opacity_mask_{nullptr};
 
 public:
-  [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
-  LEOPPHAPI auto Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext const& ctx) noexcept -> void override;
+  [[nodiscard]] SORCERYAPI
+  auto Serialize() const noexcept -> YAML::Node override;
+  SORCERYAPI
+  auto Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext const& ctx) noexcept -> void override;
 
-  LEOPPHAPI Material();
+  SORCERYAPI explicit Material(GpuResidencyPolicy gpu_policy);
   Material(Material const&) = delete;
   Material(Material&&) noexcept = delete;
 
-  LEOPPHAPI ~Material() override;
+  SORCERYAPI ~Material() override;
 
   auto operator=(Material const&) -> void = delete;
   auto operator=(Material&&) noexcept -> void = delete;
 
-  [[nodiscard]] LEOPPHAPI auto GetAlbedoVector() const noexcept -> Vector3 const&;
-  LEOPPHAPI auto SetAlbedoVector(Vector3 const& albedoVector) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetAlbedoVector() const -> Vector3 const&;
+  SORCERYAPI
+  auto SetAlbedoVector(Vector3 const& albedo_vector, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAlbedoColor() const noexcept -> Color;
-  LEOPPHAPI auto SetAlbedoColor(Color albedoColor) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetAlbedoColor() const -> Color;
+  SORCERYAPI
+  auto SetAlbedoColor(Color albedo_color, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetMetallic() const noexcept -> f32;
-  LEOPPHAPI auto SetMetallic(f32 metallic) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetMetallic() const -> f32;
+  SORCERYAPI
+  auto SetMetallic(f32 metallic, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetRoughness() const noexcept -> f32;
-  LEOPPHAPI auto SetRoughness(f32 roughness) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetRoughness() const -> f32;
+  SORCERYAPI
+  auto SetRoughness(f32 roughness, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAo() const noexcept -> f32;
-  LEOPPHAPI auto SetAo(f32 ao) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetAo() const -> f32;
+  SORCERYAPI
+  auto SetAo(f32 ao, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAlbedoMap() const noexcept -> Texture2D*;
-  LEOPPHAPI auto SetAlbedoMap(Texture2D* tex) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetAlbedoMap() const -> Texture2D*;
+  SORCERYAPI
+  auto SetAlbedoMap(Texture2D* tex, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetMetallicMap() const noexcept -> Texture2D*;
-  LEOPPHAPI auto SetMetallicMap(Texture2D* tex) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetMetallicMap() const -> Texture2D*;
+  SORCERYAPI
+  auto SetMetallicMap(Texture2D* tex, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetRoughnessMap() const noexcept -> Texture2D*;
-  LEOPPHAPI auto SetRoughnessMap(Texture2D* tex) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetRoughnessMap() const -> Texture2D*;
+  SORCERYAPI
+  auto SetRoughnessMap(Texture2D* tex, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAoMap() const noexcept -> Texture2D*;
-  LEOPPHAPI auto SetAoMap(Texture2D* tex) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetAoMap() const -> Texture2D*;
+  SORCERYAPI
+  auto SetAoMap(Texture2D* tex, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetNormalMap() const noexcept -> Texture2D*;
-  LEOPPHAPI auto SetNormalMap(Texture2D* tex) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetNormalMap() const -> Texture2D*;
+  SORCERYAPI
+  auto SetNormalMap(Texture2D* tex, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetBlendMode() const noexcept -> BlendMode;
-  LEOPPHAPI auto SetBlendMode(BlendMode blendMode) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetBlendMode() const -> BlendMode;
+  SORCERYAPI
+  auto SetBlendMode(BlendMode blend_mode, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAlphaThreshold() const noexcept -> float;
-  LEOPPHAPI auto SetAlphaThreshold(float threshold) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetAlphaThreshold() const -> float;
+  SORCERYAPI
+  auto SetAlphaThreshold(float threshold, GpuResidencyPolicy gpu_policy) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetOpacityMask() const noexcept -> Texture2D*;
-  LEOPPHAPI auto SetOpacityMask(Texture2D* opacityMask) noexcept -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetOpacityMask() const -> Texture2D*;
+  SORCERYAPI
+  auto SetOpacityMask(Texture2D* opacity_mask, GpuResidencyPolicy gpu_policy) -> void;
 
-  LEOPPHAPI auto Update() const -> void;
+  SORCERYAPI
+  auto UploadToGpu() -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] SORCERYAPI
+  auto GetBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+
+private:
+  // These are just for reflection and default to MakeResident
+
+  auto SetAlbedoVectorRefl(Vector3 const& albedo_vector) -> void;
+  auto SetMetallicRefl(f32 metallic) -> void;
+  auto SetRoughnessRefl(f32 roughness) -> void;
+  auto SetAoRefl(f32 ao) -> void;
+  auto SetAlbedoMapRefl(Texture2D* tex) -> void;
+  auto SetMetallicMapRefl(Texture2D* tex) -> void;
+  auto SetRoughnessMapRefl(Texture2D* tex) -> void;
+  auto SetAoMapRefl(Texture2D* tex) -> void;
+  auto SetNormalMapRefl(Texture2D* tex) -> void;
+  auto SetBlendModeRefl(BlendMode blend_mode) -> void;
+  auto SetAlphaThresholdRefl(float threshold) -> void;
+  auto SetOpacityMaskRefl(Texture2D* opacity_mask) -> void;
 };
 }

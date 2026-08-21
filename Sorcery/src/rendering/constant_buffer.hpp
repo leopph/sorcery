@@ -19,6 +19,11 @@ public:
   auto Update(T const& val) -> void;
   [[nodiscard]] auto GetBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
 
+  [[nodiscard]]
+  auto IsValid() const -> bool;
+
+  operator bool() const;
+
 private:
   ConstantBuffer(graphics::SharedDeviceChildHandle<graphics::Buffer> buffer, T* ptr);
 
@@ -63,6 +68,18 @@ auto ConstantBuffer<T>::Update(T const& val) -> void {
 template<typename T>
 auto ConstantBuffer<T>::GetBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
   return buffer_;
+}
+
+
+template<typename T>
+auto ConstantBuffer<T>::IsValid() const -> bool {
+  return buffer_.get();
+}
+
+
+template<typename T>
+ConstantBuffer<T>::operator bool() const {
+  return IsValid();
 }
 
 

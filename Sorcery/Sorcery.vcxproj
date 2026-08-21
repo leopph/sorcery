@@ -213,6 +213,7 @@
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\Reflection.hpp" />
     <ClInclude Include="src\Resources\Resource.hpp" />
+    <ClInclude Include="src\resource_residency_policy.hpp" />
     <ClInclude Include="src\resource_import\material_import.hpp" />
     <ClInclude Include="src\resource_import\mesh_import.hpp" />
     <ClInclude Include="src\resource_import\texture_import.hpp" />
@@ -300,7 +301,6 @@
     <None Include="src\rendering\shaders\tonemapping.hlsli" />
     <None Include="src\rendering\shaders\utility.hlsli" />
     <None Include="src\rendering\structured_buffer.inl" />
-    <None Include="src\resources\native_resource.inl" />
     <None Include="src\resource_manager.inl" />
     <None Include="src\scene_objects\entity.inl" />
     <None Include="src\resources\mesh.inl" />

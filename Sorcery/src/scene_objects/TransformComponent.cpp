@@ -20,7 +20,7 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 auto TransformComponent::Clone() -> std::unique_ptr<SceneObject> {
-  auto clone{Create<TransformComponent>(*this)};
+  auto clone{std::make_unique<TransformComponent>(*this)};
   clone->mChildren.clear();
   clone->mParent = nullptr;
   clone->SetParent(mParent);

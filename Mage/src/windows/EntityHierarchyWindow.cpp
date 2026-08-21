@@ -24,7 +24,7 @@ auto EntityHierarchyWindow::Draw() -> void {
 
     if (ImGui::BeginPopup(contextId)) {
       if (ImGui::MenuItem("Create New Entity")) {
-        mApp->GetScene().AddEntity(Create<Entity>());
+        mApp->GetScene().AddEntity(std::make_unique<Entity>());
       }
 
       ImGui::EndPopup();

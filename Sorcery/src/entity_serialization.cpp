@@ -118,7 +118,7 @@ auto DeserializeEntitySet(
   for (auto const& scene_obj_node : scene_objects_node) {
     auto const type_node{scene_obj_node["type"]};
     auto const type{rttr::type::get_by_name(type_node.as<std::string>())};
-    auto const scene_obj{static_cast<SceneObject*>(Create(type).release())};
+    auto const scene_obj{static_cast<SceneObject*>(MakeUniqueObject(type).release())};
     scene_objects.emplace_back(scene_obj);
     ptr_fix_up[static_cast<int>(std::ssize(ptr_fix_up)) + 1] = scene_obj;
     discover_resource_references(scene_obj_node["properties"], type);
@@ -144,7 +144,7 @@ auto DeserializeEntitySet(
   // Deserialize the scene objects
 
   auto const deserialize_scene_obj_ptr{
-    [](YAML::Node const& obj_node, rttr::variant& v, [[maybe_unused]] YamlDeserializeContext const& ctx) -> void {
+    [](YAML::Node const& obj_node, rttr::variant& v, [[maybe_unused]] YamlDeserializeContext const& yaml_ctx) -> void {
       if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
         if (auto const it{ptr_fix_up.find(obj_node.as<int>(0))}; it != std::end(ptr_fix_up)) {
           auto const type{v.get_type()};

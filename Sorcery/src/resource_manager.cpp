@@ -153,7 +153,7 @@ auto ResourceManager::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
 
 auto ResourceManager::CreateDefaultResources() -> void {
   if (!default_mtl_) {
-    default_mtl_ = Create<Material>();
+    default_mtl_ = std::make_unique<Material>(GpuResidencyPolicy::kMakeResident);
     default_mtl_->SetId({default_mtl_guid_, 0});
     default_mtl_->SetName("Default Material");
     default_resources_.emplace_back(default_mtl_.get());
@@ -178,7 +178,9 @@ auto ResourceManager::CreateDefaultResources() -> void {
     cube_data.bounds = cube_data.submeshes[0].bounds;
     cube_data.idx32 = true;
 
-    cube_mesh_ = Create<Mesh>(cube_data);
+    cube_mesh_ = std::make_unique<Mesh>(cube_data, ResourceResidencyPolicy{
+      .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
+    });
     cube_mesh_->SetId({cube_mesh_guid_, 0});
     cube_mesh_->SetName("Cube");
     default_resources_.emplace_back(cube_mesh_.get());
@@ -203,7 +205,9 @@ auto ResourceManager::CreateDefaultResources() -> void {
     plane_data.bounds = plane_data.submeshes[0].bounds;
     plane_data.idx32 = true;
 
-    plane_mesh_ = Create<Mesh>(plane_data);
+    plane_mesh_ = std::make_unique<Mesh>(plane_data, ResourceResidencyPolicy{
+      .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
+    });
     plane_mesh_->SetId({plane_mesh_guid_, 0});
     plane_mesh_->SetName("Plane");
     default_resources_.emplace_back(plane_mesh_.get());
@@ -229,7 +233,9 @@ auto ResourceManager::CreateDefaultResources() -> void {
     sphere_data.bounds = sphere_data.submeshes[0].bounds;
     sphere_data.idx32 = true;
 
-    sphere_mesh_ = Create<Mesh>(sphere_data);
+    sphere_mesh_ = std::make_unique<Mesh>(sphere_data, ResourceResidencyPolicy{
+      .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
+    });
     sphere_mesh_->SetId({sphere_mesh_guid_, 0});
     sphere_mesh_->SetName("Sphere");
     default_resources_.emplace_back(sphere_mesh_.get());
@@ -319,9 +325,13 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
               }
             }
           } else if (job_data.path_abs.extension() == SCENE_RESOURCE_EXT) {
-            res = CreateDeserialize<Scene>(YAML::LoadFile(job_data.path_abs.string()), ctx);
+            auto scene = std::make_unique<Scene>();
+            scene->Deserialize(YAML::LoadFile(job_data.path_abs.string()), ctx);
+            res = std::move(scene);
           } else if (job_data.path_abs.extension() == MATERIAL_RESOURCE_EXT) {
-            res = CreateDeserialize<Material>(YAML::LoadFile(job_data.path_abs.string()), ctx);
+            auto mtl = std::make_unique<Material>(GpuResidencyPolicy::kDeferUpload);
+            mtl->Deserialize(YAML::LoadFile(job_data.path_abs.string()), ctx);
+            res = std::move(mtl);
           }
 
           if (res) {
@@ -372,9 +382,9 @@ auto ResourceManager::LoadTexture(
 
   if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
     if (meta.IsCubemap()) {
-      ret = Create<Cubemap>(std::move(tex));
+      ret = std::make_unique<Cubemap>(std::move(tex));
     } else {
-      ret = Create<Texture2D>(std::move(tex));
+      ret = std::make_unique<Texture2D>(std::move(tex));
     }
   } else {
     return nullptr;
@@ -699,7 +709,9 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 
   assert(cur_bytes.empty());
 
-  return Create<Mesh>(std::move(mesh_data));
+  return std::make_unique<Mesh>(std::move(mesh_data), ResourceResidencyPolicy{
+    .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
+  });
 }
 
 
@@ -708,8 +720,10 @@ auto ResourceManager::LoadMaterial(
   YamlDeserializeContext const& ctx
 ) -> MaybeNull<std::unique_ptr<Resource>> {
   // TODO rewrite this to spanstream when upgrading to C++23
-  return CreateDeserialize<Material>(YAML::Load(std::string{
+  auto mtl = std::make_unique<Material>(GpuResidencyPolicy::kDeferUpload);
+  mtl->Deserialize(YAML::Load(std::string{
     reinterpret_cast<char const*>(bytes.data()), bytes.size()
   }), ctx);
+  return mtl;
 }
 }
