@@ -2,15 +2,7 @@
 
 Sorcery is my toy game engine that I'm building to learn about rendering architectures, graphics algorithms, and hardware features.
 
-## Gallery 
-Some screenshots from Sorcery's editor, Mage!
-
-|  |  |
-|--|--|
-| ![A close-up of PBR model](../Screenshots/cerberus.jpg) | ![The Sponza scene](../Screenshots/sponza.jpg) |
-
 ## Features
-### Implemented
 * DX12 Renderer
   * Built using HLSL Dynamic Resources, Enhanced Barriers, Mesh Shaders, and other modern features
   * Deferred rendering
@@ -54,26 +46,7 @@ Some screenshots from Sorcery's editor, Mage!
   * Performance logging
   * Several changable settings (graphics, performance, etc.)
 
-## Building and Usage
-### Build requirements
-- Windows SDK 10.0.22000 or newer
-- MSBuild
-- MSVC v143 toolset
-### Runtime requirements
-- OS
-  - Windows 11
-- CPU
-  - AVX2
-- GPU
-  - Feature Level 12_2
-  - Shader Model 6.6
-  - Resource Binding Tier 3
-  - Enhanced Barriers
-  - Root Signature 1.1
-  - Mesh Shaders
-
-### Building
+## Building
+You'll need Visual Studio with a version of MSVC capable of C++23. Once you have that, just
 - Run **setup.bat** from the root directory
 - Build the solution in the root directory
-### Usage
-Just open Mage and poke around in it!
