@@ -13,13 +13,15 @@
 #include <string_view>
 #include <utility>
 
+#include <assimp/DefaultLogger.hpp>
 #include <assimp/GltfMaterial.h>
 #include <assimp/Importer.hpp>
+#include <assimp/Logger.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <spdlog/spdlog.h>
 
 #include "App.hpp"
-#include "io_helpers.hpp"
 #include "Platform.hpp"
 #include "Serialization.hpp"
 #include "Resources/Mesh.hpp"
@@ -122,10 +124,8 @@ auto ModelImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& ou
 
 
 auto ModelImporter::Import(std::filesystem::path const& src, std::vector<ResourceImportResult>& results) -> bool {
-  std::vector<unsigned char> meshBytes;
-
-  if (!ReadBinaryFile(src, meshBytes)) {
-    return false;
+  if (spdlog::get_level() == spdlog::level::trace) {
+    Assimp::DefaultLogger::create("", Assimp::Logger::VERBOSE, aiDefaultLogStream_STDOUT | aiDefaultLogStream_DEBUGGER);
   }
 
   Assimp::Importer importer;
@@ -138,9 +138,9 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
   importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
 
   auto const scene{
-    importer.ReadFileFromMemory(meshBytes.data(), meshBytes.size(),
+    importer.ReadFile(std::string{ToUntypedStdSv(src.u8string())},
       aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded | aiProcess_TransformUVCoords |
-      aiProcess_RemoveComponent, src.extension().string().c_str())
+      aiProcess_RemoveComponent)
   };
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
