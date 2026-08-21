@@ -32,7 +32,8 @@ namespace sorcery {
 template<typename T> requires (!std::derived_from<T, Object>)
 auto ReflectionSerializeToYaml(
   T const& obj,
-  std::function<YAML::Node(rttr::variant const&)> const& extension_func
+  YamlSerializeContext const& ctx,
+  std::function<YAML::Node(rttr::variant const&, YamlSerializeContext const&)> const& extension_func
 ) noexcept -> YAML::Node {
   if constexpr (std::is_arithmetic_v<T> || std::is_enum_v<T>) {
     return ReflectionSerializeToYaml(rttr::variant{obj}, extension_func);
@@ -40,7 +41,7 @@ auto ReflectionSerializeToYaml(
     auto const type{rttr::type::get(obj)};
     assert(type.is_valid());
     if (type.is_sequential_container()) {
-      return ReflectionSerializeToYaml(rttr::variant{std::ref(obj)}, extension_func);
+      return ReflectionSerializeToYaml(rttr::variant{std::ref(obj)}, ctx, extension_func);
     }
 
     if (type.is_associative_container() || type.is_pointer() || type.is_wrapper()) {
@@ -52,7 +53,7 @@ auto ReflectionSerializeToYaml(
       for (auto const& prop : type.get_properties()) {
         auto propValue{prop.get_value(obj)};
         assert(propValue.is_valid());
-        ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(propValue, extension_func);
+        ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(propValue, ctx, extension_func);
       }
       return ret;
     }

@@ -691,7 +691,7 @@ auto ResourceDB::WriteMeta(std::filesystem::path const& res_path_abs, Guid const
 
   YAML::Node importerNode;
   importerNode["type"] = importerType.get_name().to_string();
-  importerNode["properties"] = ReflectionSerializeToYaml(importer);
+  importerNode["properties"] = ReflectionSerializeToYaml(importer, {});
 
   YAML::Node metaNode;
   metaNode["guid"] = guid;

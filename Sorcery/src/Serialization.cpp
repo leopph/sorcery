@@ -54,11 +54,12 @@ auto convert<sorcery::Guid>::decode(Node const& node, sorcery::Guid& guid) -> bo
 namespace sorcery {
 auto ReflectionSerializeToYaml(
   Object const& obj,
-  std::function<YAML::Node(rttr::variant const&)> const& extension_func
+  YamlSerializeContext const& ctx,
+  std::function<YAML::Node(rttr::variant const&, YamlSerializeContext const&)> const& extension_func
 ) noexcept -> YAML::Node {
   YAML::Node ret;
   for (auto const& prop : rttr::type::get(obj).get_properties()) {
-    ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(obj), extension_func);
+    ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(obj), ctx, extension_func);
   }
   return ret;
 }
@@ -66,7 +67,8 @@ auto ReflectionSerializeToYaml(
 
 auto ReflectionSerializeToYaml(
   rttr::variant const& v,
-  std::function<YAML::Node(rttr::variant const&)> const& extension_func
+  YamlSerializeContext const& ctx,
+  std::function<YAML::Node(rttr::variant const&, YamlSerializeContext const&)> const& extension_func
 ) noexcept -> YAML::Node {
   if (v.get_type() == rttr::type::get<bool>()) {
     return YAML::Node{v.get_value<bool>()};
@@ -137,12 +139,19 @@ auto ReflectionSerializeToYaml(
     auto underlying{v};
     [[maybe_unused]] auto const success{underlying.convert(enumeration.get_underlying_type())};
     assert(success);
-    return ReflectionSerializeToYaml(underlying, extension_func);
+    return ReflectionSerializeToYaml(underlying, ctx, extension_func);
   }
 
   if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
     auto const res{v.get_value<Resource*>()};
-    return SerializeGlobalResourceId(res ? res->GetId() : ResourceId::Invalid());
+    auto const res_id{res ? res->GetId() : ResourceId::Invalid()};
+
+    switch (ctx.resource_ref_serialization) {
+      case ResourceRefSerialization::kGlobal:
+        return SerializeGlobalResourceId(res_id);
+      case ResourceRefSerialization::kLocal:
+        return SerializeLocalResourceId(res_id.GetIdxInFile());
+    }
   }
 
   if (v.is_sequential_container()) {
@@ -154,7 +163,7 @@ auto ReflectionSerializeToYaml(
     for (auto const& elem : container) {
       auto const value{elem.extract_wrapped_value()};
       assert(value.is_valid());
-      node.push_back(ReflectionSerializeToYaml(value, extension_func));
+      node.push_back(ReflectionSerializeToYaml(value, ctx, extension_func));
     }
 
     return node;
@@ -170,7 +179,7 @@ auto ReflectionSerializeToYaml(
     for (auto const& prop : v.get_type().get_properties()) {
       auto const value{prop.get_value(v)};
       assert(value.is_valid());
-      node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, extension_func);
+      node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, ctx, extension_func);
     }
 
     return node;
@@ -182,14 +191,14 @@ auto ReflectionSerializeToYaml(
     for (auto const& prop : v.get_type().get_wrapped_type().get_properties()) {
       auto const value{prop.get_value(v)};
       assert(value.is_valid());
-      node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, extension_func);
+      node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, ctx, extension_func);
     }
 
     return node;
   }
 
   if (extension_func) {
-    return extension_func(v);
+    return extension_func(v, ctx);
   }
 
   return {};

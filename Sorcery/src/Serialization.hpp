@@ -53,19 +53,22 @@ template<typename T> requires (!std::derived_from<T, Object>)
 [[nodiscard]]
 auto ReflectionSerializeToYaml(
   T const& obj,
-  std::function<YAML::Node(rttr::variant const&)> const& extension_func = {}
+  YamlSerializeContext const& ctx,
+  std::function<YAML::Node(rttr::variant const&, YamlSerializeContext const&)> const& extension_func = {}
 ) noexcept -> YAML::Node;
 
 [[nodiscard]] SORCERYAPI
 auto ReflectionSerializeToYaml(
   Object const& obj,
-  std::function<YAML::Node(rttr::variant const&)> const& extension_func = {}
+  YamlSerializeContext const& ctx,
+  std::function<YAML::Node(rttr::variant const&, YamlSerializeContext const&)> const& extension_func = {}
 ) noexcept -> YAML::Node;
 
 [[nodiscard]] SORCERYAPI
 auto ReflectionSerializeToYaml(
   rttr::variant const& v,
-  std::function<YAML::Node(rttr::variant const&)> const& extension_func = {}
+  YamlSerializeContext const& ctx,
+  std::function<YAML::Node(rttr::variant const&, YamlSerializeContext const&)> const& extension_func = {}
 ) noexcept -> YAML::Node;
 
 // Reflection-based deserialization from YAML

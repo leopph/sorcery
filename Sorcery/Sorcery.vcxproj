@@ -176,6 +176,7 @@
     <ClCompile Include="src\scene_objects\SceneObject.cpp" />
     <ClCompile Include="src\scene_objects\SkinnedMeshComponent.cpp" />
     <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp" />
+    <ClCompile Include="src\entity_serialization.cpp" />
     <ClCompile Include="src\serialization.cpp" />
     <ClCompile Include="src\rendering\shadow_atlas.cpp" />
     <ClCompile Include="src\scene_objects\MeshComponentBase.cpp" />
@@ -230,6 +231,7 @@
     <ClInclude Include="src\scene_objects\OscillateComponent.h" />
     <ClInclude Include="src\scene_objects\SceneObject.hpp" />
     <ClInclude Include="src\scene_objects\SkinnedMeshComponent.hpp" />
+    <ClInclude Include="src\entity_serialization.hpp" />
     <ClInclude Include="src\serialization.hpp" />
     <ClCompile Include="src\Resources\Texture2D.cpp" />
     <ClCompile Include="src\Timing.cpp" />

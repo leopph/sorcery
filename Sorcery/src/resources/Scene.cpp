@@ -8,6 +8,7 @@
 #include "../Serialization.hpp"
 #include "../scene_objects/SceneObject.hpp"
 #undef FindResource
+#include "../entity_serialization.hpp"
 #include "../job_system.hpp"
 #include "../Reflection.hpp"
 #include "../resource_manager.hpp"
@@ -131,15 +132,6 @@ auto Scene::GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> co
 
 
 auto Scene::Save() -> void {
-  static std::vector<SceneObject*> tmpThisSceneObjects;
-  tmpThisSceneObjects.clear();
-
-  static std::vector<Component*> tmpComponents;
-  tmpComponents.clear();
-
-  static std::unordered_map<void const*, int> ptrFixUp;
-  ptrFixUp.clear();
-
   yaml_data_.reset();
   yaml_data_["version"] = 1;
   yaml_data_["ambientLight"] = ambient_light_;
@@ -147,37 +139,13 @@ auto Scene::Save() -> void {
   yaml_data_["skyColor"] = sky_color_;
   yaml_data_["skybox"] = SerializeGlobalResourceId(skybox_ ? skybox_->GetId() : ResourceId::Invalid());
 
-  for (auto const& entity : entities_) {
-    tmpThisSceneObjects.emplace_back(entity.get());
+  std::vector<Entity const*> entities;
+  entities.reserve(entities_.size());
+  std::ranges::transform(entities_, std::back_inserter(entities), &std::unique_ptr<Entity>::get);
 
-    for (auto const component : entity->GetComponents(tmpComponents)) {
-      tmpThisSceneObjects.emplace_back(component);
-    }
-  }
-
-  for (auto const sceneObj : tmpThisSceneObjects) {
-    ptrFixUp[sceneObj] = static_cast<int>(std::ssize(ptrFixUp) + 1);
-  }
-
-  auto const extensionFunc{
-    [](rttr::variant const& v) -> YAML::Node {
-      YAML::Node retNode;
-
-      if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
-        auto const it{ptrFixUp.find(v.get_value<SceneObject*>())};
-        retNode = it != std::end(ptrFixUp) ? it->second : 0;
-      }
-
-      return retNode;
-    }
-  };
-
-  for (auto const sceneObj : tmpThisSceneObjects) {
-    YAML::Node sceneObjNode;
-    sceneObjNode["type"] = rttr::type::get(*sceneObj).get_name().to_string();
-    sceneObjNode["properties"] = ReflectionSerializeToYaml(*sceneObj, extensionFunc);
-    yaml_data_["sceneObjects"].push_back(sceneObjNode);
-  }
+  yaml_data_["sceneObjects"] = SerializeEntitySet(entities, EntitySerializationContext{
+    .resource_ref_serialization = ResourceRefSerialization::kGlobal
+  });
 }
 
 
@@ -225,115 +193,15 @@ auto Scene::Load() -> void {
     }
   }
 
-  // Discover all resource references in the scene objects and preload them
+  // Add the new entities to the scene
 
-  std::vector<ResourceId> required_resource_ids;
-
-  std::function<void(YAML::Node const&, rttr::type const&)> discover_resource_references;
-  discover_resource_references = [this, &discover_resource_references, &required_resource_ids](
-    YAML::Node const& node, rttr::type const& type) -> void {
-      if (!node.IsDefined()) {
-        return;
-      }
-
-      auto const actual_type{type.is_wrapper() ? type.get_wrapped_type() : type};
-
-      if (node.IsMap() && actual_type.is_pointer() && actual_type.get_raw_type().is_derived_from(
-            rttr::type::get<Resource>())) {
-        if (auto const res_id{DeserializeResourceId(node, yaml_ctx_).value_or(ResourceId::Invalid())};
-          res_id.IsValid()) {
-          required_resource_ids.emplace_back(res_id);
-          return;
-        }
-      }
-
-      if (node.IsSequence() && actual_type.is_sequential_container()) {
-        if (auto const template_args{actual_type.get_template_arguments()}; !template_args.empty()) {
-          for (auto const& elem : node) {
-            discover_resource_references(elem, *template_args.begin());
-          }
-        }
-
-        return;
-      }
-
-      if (node.IsMap() && actual_type.is_class()) {
-        for (auto const& prop : actual_type.get_properties()) {
-          discover_resource_references(node[prop.get_name().to_string()], prop.get_type());
-        }
-      }
-    };
-
-
-  // These pointers OWN the objects. A scene consists of entities and components.
-  // Components will be taken ownership of by the entities during deserialization.
-  // The scene will take ownership of the entities at the end of the process.
-  std::vector<SceneObject*> scene_objects;
-
-  static std::unordered_map<int, SceneObject*> ptr_fix_up;
-  ptr_fix_up.clear();
-
-  for (auto const& scene_obj_node : yaml_data_["sceneObjects"]) {
-    auto const type_node{scene_obj_node["type"]};
-    auto const type{rttr::type::get_by_name(type_node.as<std::string>())};
-    auto const scene_obj{static_cast<SceneObject*>(Create(type).release())};
-    scene_objects.emplace_back(scene_obj);
-    ptr_fix_up[static_cast<int>(std::ssize(ptr_fix_up)) + 1] = scene_obj;
-    discover_resource_references(scene_obj_node["properties"], type);
-  }
-
-  // Preload all resources used by the new scene objects
-
-  std::ranges::sort(required_resource_ids, std::less{});
-
-  required_resource_ids.erase(std::ranges::unique(required_resource_ids).begin(), required_resource_ids.end());
-
-  std::vector<ObserverPtr<Job>> resource_loading_jobs;
-  resource_loading_jobs.reserve(required_resource_ids.size());
-
-  for (auto const& res_id : required_resource_ids) {
-    resource_loading_jobs.emplace_back(App::Instance().GetJobSystem().CreateJob([](ResourceId const& target_res_id) {
-      App::Instance().GetResourceManager().GetOrLoad<Resource>(target_res_id);
-    }, res_id));
-
-    App::Instance().GetJobSystem().Run(resource_loading_jobs.back());
-  }
-
-  // Deserialize the scene objects
-
-  auto const deserialize_scene_obj_ptr{
-    [](YAML::Node const& obj_node, rttr::variant& v, [[maybe_unused]] YamlDeserializeContext const& ctx) -> void {
-      if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
-        if (auto const it{ptr_fix_up.find(obj_node.as<int>(0))}; it != std::end(ptr_fix_up)) {
-          auto const type{v.get_type()};
-          v = it->second;
-          [[maybe_unused]] auto const success{v.convert(type)};
-          assert(success);
-        }
-      }
-    }
-  };
-
-  for (auto const& [fileId, obj] : ptr_fix_up) {
-    ReflectionDeserializeFromYaml(yaml_data_["sceneObjects"][fileId - 1]["properties"], *obj,
-      yaml_ctx_, deserialize_scene_obj_ptr);
+  for (auto& entity_ptr : DeserializeEntitySet(yaml_data_["sceneObjects"], yaml_ctx_)) {
+    AddEntity(std::move(entity_ptr));
   }
 
   if (skybox_job) {
     App::Instance().GetJobSystem().Wait(skybox_job);
     skybox_ = skybox_job_data.cubemap;
-  }
-
-  for (auto const job : resource_loading_jobs) {
-    App::Instance().GetJobSystem().Wait(job);
-  }
-
-  // Add the new scene objects to the scene
-
-  for (auto* const scene_obj : scene_objects) {
-    if (auto* const entity{rttr::rttr_cast<Entity*>(scene_obj)}) {
-      AddEntity(std::unique_ptr<Entity>{entity});
-    }
   }
 }
 
