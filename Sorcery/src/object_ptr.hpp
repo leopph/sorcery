@@ -11,9 +11,9 @@ namespace sorcery {
 template<std::derived_from<Object> T>
 class ObjectPtr {
 public:
-  ObjectPtr() = default;
-  ObjectPtr(nullptr_t null);
-  ObjectPtr(ObserverPtr<T> obj);
+  ObjectPtr() noexcept = default;
+  ObjectPtr(nullptr_t null) noexcept;
+  ObjectPtr(ObserverPtr<T> obj) noexcept;
 
   [[nodiscard]]
   auto Get() const -> ObserverPtr<T>;
@@ -30,6 +30,11 @@ public:
 private:
   ObjectId id_;
 };
+
+
+template<std::derived_from<Object> T>
+[[nodiscard]]
+auto MakeObjectPtr(ObserverPtr<T> object) noexcept -> ObjectPtr<T>;
 }
 
 
