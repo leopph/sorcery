@@ -1,6 +1,7 @@
 #include "SceneViewWindow.hpp"
 
 #include "Platform.hpp"
+#include "prefab.hpp"
 #include "scene_renderer.hpp"
 #include "Timing.hpp"
 #include "Window.hpp"
@@ -161,6 +162,23 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
     }
 
     ImGui::Image(std::bit_cast<ImTextureID>(cam_.GetRenderTarget()->GetColorTex().get()), contentRegionSize);
+
+    if (ImGui::BeginDragDropTarget()) {
+      if (auto const* const payload{ImGui::GetDragDropPayload()};
+        payload && payload->IsDataType(ObjectDragDropPayload::kTypeStr.data())) {
+        if (auto const* const data{static_cast<ObjectDragDropPayload const*>(payload->Data)}) {
+          if (auto const* const prefab{rttr::rttr_cast<Prefab*>(data->ptr)}) {
+            ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
+            if (payload->IsDelivery()) {
+              for (auto& entity : prefab->Instantiate()) {
+                context.GetScene().AddEntity(std::move(entity));
+              }
+            }
+          }
+        }
+      }
+      ImGui::EndDragDropTarget();
+    }
 
     auto const aspect{ImGui::GetWindowWidth() / ImGui::GetWindowHeight()};
     auto const camViewMtx{cam_.CalculateViewMatrix()};
