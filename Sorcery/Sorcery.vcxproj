@@ -281,6 +281,7 @@
     <None Include="packages.config" />
     <None Include="src\job_system.inl" />
     <None Include="src\object.inl" />
+    <None Include="src\observer_ptr.inl" />
     <None Include="src\rendering\shaders\brdf.hlsli" />
     <None Include="src\rendering\shaders\brdf_integration.hlsli" />
     <None Include="src\rendering\shaders\CatmullRom.hlsli" />

@@ -466,6 +466,9 @@
     <None Include="src\serialization.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="src\observer_ptr.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />

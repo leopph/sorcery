@@ -70,87 +70,100 @@ auto ReflectionSerializeToYaml(
   YamlSerializeContext const& ctx,
   std::function<YAML::Node(rttr::variant const&, YamlSerializeContext const&)> const& extension_func
 ) noexcept -> YAML::Node {
-  if (v.get_type() == rttr::type::get<bool>()) {
+  auto const variant_type{v.get_type()};
+
+  if (variant_type == rttr::type::get<bool>()) {
     return YAML::Node{v.get_value<bool>()};
   }
 
-  if (v.get_type() == rttr::type::get<char>()) {
+  if (variant_type == rttr::type::get<char>()) {
     return YAML::Node{v.get_value<char>()};
   }
 
-  if (v.get_type() == rttr::type::get<signed char>()) {
+  if (variant_type == rttr::type::get<signed char>()) {
     return YAML::Node{v.get_value<signed char>()};
   }
 
-  if (v.get_type() == rttr::type::get<unsigned char>()) {
+  if (variant_type == rttr::type::get<unsigned char>()) {
     return YAML::Node{v.get_value<unsigned char>()};
   }
 
-  if (v.get_type() == rttr::type::get<short>()) {
+  if (variant_type == rttr::type::get<short>()) {
     return YAML::Node{v.get_value<short>()};
   }
 
-  if (v.get_type() == rttr::type::get<unsigned short>()) {
+  if (variant_type == rttr::type::get<unsigned short>()) {
     return YAML::Node{v.get_value<unsigned short>()};
   }
 
-  if (v.get_type() == rttr::type::get<int>()) {
+  if (variant_type == rttr::type::get<int>()) {
     return YAML::Node{v.get_value<int>()};
   }
 
-  if (v.get_type() == rttr::type::get<unsigned>()) {
+  if (variant_type == rttr::type::get<unsigned>()) {
     return YAML::Node{v.get_value<unsigned>()};
   }
 
-  if (v.get_type() == rttr::type::get<long>()) {
+  if (variant_type == rttr::type::get<long>()) {
     return YAML::Node{v.get_value<long>()};
   }
 
-  if (v.get_type() == rttr::type::get<unsigned long>()) {
+  if (variant_type == rttr::type::get<unsigned long>()) {
     return YAML::Node{v.get_value<unsigned long>()};
   }
 
-  if (v.get_type() == rttr::type::get<long long>()) {
+  if (variant_type == rttr::type::get<long long>()) {
     return YAML::Node{v.get_value<long long>()};
   }
 
-  if (v.get_type() == rttr::type::get<unsigned long long>()) {
+  if (variant_type == rttr::type::get<unsigned long long>()) {
     return YAML::Node{v.get_value<unsigned long long>()};
   }
 
-  if (v.get_type() == rttr::type::get<float>()) {
+  if (variant_type == rttr::type::get<float>()) {
     return YAML::Node{v.get_value<float>()};
   }
 
-  if (v.get_type() == rttr::type::get<double>()) {
+  if (variant_type == rttr::type::get<double>()) {
     return YAML::Node{v.get_value<double>()};
   }
 
-  if (v.get_type() == rttr::type::get<long double>()) {
+  if (variant_type == rttr::type::get<long double>()) {
     return YAML::Node{v.get_value<long double>()};
   }
 
-  if (v.get_type() == rttr::type::get<std::string>()) {
+  if (variant_type == rttr::type::get<std::string>()) {
     return YAML::Node{v.get_value<std::string>()};
   }
 
-  if (v.get_type().is_enumeration()) {
-    auto const enumeration{v.get_type().get_enumeration()};
+  if (variant_type.is_enumeration()) {
+    auto const enumeration{variant_type.get_enumeration()};
     auto underlying{v};
     [[maybe_unused]] auto const success{underlying.convert(enumeration.get_underlying_type())};
     assert(success);
     return ReflectionSerializeToYaml(underlying, ctx, extension_func);
   }
 
-  if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
-    auto const res{v.get_value<Resource*>()};
-    auto const res_id{res ? res->GetResId() : ResourceId::Invalid()};
+  // T*, ObserverPtr<T>, etc.
+  if (variant_type.is_pointer() || (variant_type.is_wrapper() && variant_type.get_wrapped_type().is_pointer())) {
+    // std::remove_pointer<T>
+    auto const ptr_type{variant_type.is_pointer() ? variant_type : variant_type.get_wrapped_type()};
 
-    switch (ctx.resource_ref_serialization) {
-      case ResourceRefSerialization::kGlobal:
-        return SerializeGlobalResourceId(res_id);
-      case ResourceRefSerialization::kLocal:
-        return SerializeLocalResourceId(res_id.GetIdxInFile());
+    // std::remove_cv<T>
+    auto const raw_type{ptr_type.get_raw_type()};
+
+    // std::derived_from<T, Resource>
+    if (raw_type.is_derived_from(rttr::type::get<Resource>())) {
+      // if the original type is a wrapper, we extract the pointer here
+      auto const res{(variant_type.is_pointer() ? v : v.extract_wrapped_value()).get_value<Resource*>()};
+      auto const res_id{res ? res->GetResId() : ResourceId::Invalid()};
+
+      switch (ctx.resource_ref_serialization) {
+        case ResourceRefSerialization::kGlobal:
+          return SerializeGlobalResourceId(res_id);
+        case ResourceRefSerialization::kLocal:
+          return SerializeLocalResourceId(res_id.GetIdxInFile());
+      }
     }
   }
 
@@ -173,10 +186,10 @@ auto ReflectionSerializeToYaml(
     return {};
   }
 
-  if (v.get_type().is_class()) {
+  if (variant_type.is_class()) {
     YAML::Node node;
 
-    for (auto const& prop : v.get_type().get_properties()) {
+    for (auto const& prop : variant_type.get_properties()) {
       auto const value{prop.get_value(v)};
       assert(value.is_valid());
       node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, ctx, extension_func);
@@ -185,10 +198,10 @@ auto ReflectionSerializeToYaml(
     return node;
   }
 
-  if (v.get_type().is_wrapper() && v.get_type().get_wrapped_type().is_class()) {
+  if (variant_type.is_wrapper() && variant_type.get_wrapped_type().is_class()) {
     YAML::Node node;
 
-    for (auto const& prop : v.get_type().get_wrapped_type().get_properties()) {
+    for (auto const& prop : variant_type.get_wrapped_type().get_properties()) {
       auto const value{prop.get_value(v)};
       assert(value.is_valid());
       node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, ctx, extension_func);
@@ -228,124 +241,130 @@ auto ReflectionDeserializeFromYaml(
   YamlDeserializeContext const& ctx,
   std::function<void(YAML::Node const&, rttr::variant&, YamlDeserializeContext const&)> const& extension_func
 ) noexcept -> void {
-  if (!node.IsDefined() || node.IsNull() || !v.get_type().is_valid()) {
+  if (!node.IsDefined() || node.IsNull()) {
     return;
   }
 
-  if (v.get_type() == rttr::type::get<bool>()) {
+  auto const variant_type{v.get_type()};
+
+  if (!variant_type.is_valid()) {
+    return;
+  }
+
+  if (variant_type == rttr::type::get<bool>()) {
     try {
       v = node.as<bool>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<char>()) {
+  if (variant_type == rttr::type::get<char>()) {
     try {
       v = node.as<char>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<signed char>()) {
+  if (variant_type == rttr::type::get<signed char>()) {
     try {
       v = node.as<signed char>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<unsigned char>()) {
+  if (variant_type == rttr::type::get<unsigned char>()) {
     try {
       v = node.as<unsigned char>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<short>()) {
+  if (variant_type == rttr::type::get<short>()) {
     try {
       v = node.as<short>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<unsigned short>()) {
+  if (variant_type == rttr::type::get<unsigned short>()) {
     try {
       v = node.as<unsigned short>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<int>()) {
+  if (variant_type == rttr::type::get<int>()) {
     try {
       v = node.as<int>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<unsigned>()) {
+  if (variant_type == rttr::type::get<unsigned>()) {
     try {
       v = node.as<unsigned>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<long>()) {
+  if (variant_type == rttr::type::get<long>()) {
     try {
       v = node.as<long>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<unsigned long>()) {
+  if (variant_type == rttr::type::get<unsigned long>()) {
     try {
       v = node.as<unsigned long>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<long long>()) {
+  if (variant_type == rttr::type::get<long long>()) {
     try {
       v = node.as<long long>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<unsigned long long>()) {
+  if (variant_type == rttr::type::get<unsigned long long>()) {
     try {
       v = node.as<unsigned long long>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<float>()) {
+  if (variant_type == rttr::type::get<float>()) {
     try {
       v = node.as<float>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<double>()) {
+  if (variant_type == rttr::type::get<double>()) {
     try {
       v = node.as<double>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<long double>()) {
+  if (variant_type == rttr::type::get<long double>()) {
     try {
       v = node.as<long double>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type() == rttr::type::get<std::string>()) {
+  if (variant_type == rttr::type::get<std::string>()) {
     try {
       v = node.as<std::string>();
     } catch (...) {}
     return;
   }
 
-  if (v.get_type().is_enumeration()) {
-    auto const enumeration{v.get_type().get_enumeration()};
+  if (variant_type.is_enumeration()) {
+    auto const enumeration{variant_type.get_enumeration()};
     assert(enumeration.is_valid());
     auto copy{v};
     assert(copy.is_valid());
@@ -359,20 +378,34 @@ auto ReflectionDeserializeFromYaml(
     return;
   }
 
-  if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
-    try {
-      if (auto const res{
-        App::Instance().GetResourceManager().GetOrLoad(
-          DeserializeResourceId(node, ctx).value_or<ResourceId>(ResourceId::Invalid()))
-      }) {
-        if (rttr::variant resVar{res}; resVar.can_convert(v.get_type())) {
-          [[maybe_unused]] auto const success{resVar.convert(v.get_type())};
-          assert(success);
-          v = resVar;
+  // T*, ObserverPtr<T>, etc.
+  if (variant_type.is_pointer() || (variant_type.is_wrapper() && variant_type.get_wrapped_type().is_pointer())) {
+    // std::remove_pointer<T>
+    auto const ptr_type{variant_type.is_pointer() ? variant_type : variant_type.get_wrapped_type()};
+
+    // std::remove_cv<T>
+    auto const raw_type{ptr_type.get_raw_type()};
+
+    // std::derived_from<T, Resource>
+    if (raw_type.is_derived_from(rttr::type::get<Resource>())) {
+      auto const res_id{DeserializeResourceId(node, ctx)};
+
+      if (res_id->IsValid()) {
+        auto const res = App::Instance().GetResourceManager().GetOrLoad(*res_id);
+
+        if (res) {
+          rttr::variant res_var{res};
+
+          // dynamic_cast<T*>(res)
+          if (res_var.convert(ptr_type)) {
+            // if the original type is a wrapper, we wrap the pointer here
+            if (res_var.convert(variant_type)) {
+              v = res_var;
+            }
+          }
         }
       }
-    } catch (...) {}
-    return;
+    }
   }
 
   if (v.is_sequential_container()) {
@@ -400,8 +433,8 @@ auto ReflectionDeserializeFromYaml(
     return;
   }
 
-  if (v.get_type().is_class()) {
-    for (auto const& prop : v.get_type().get_properties()) {
+  if (variant_type.is_class()) {
+    for (auto const& prop : variant_type.get_properties()) {
       auto value{prop.get_value(v)};
       assert(value.is_valid());
       ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, ctx, extension_func);
@@ -413,8 +446,8 @@ auto ReflectionDeserializeFromYaml(
     return;
   }
 
-  if (v.get_type().is_wrapper() && v.get_type().get_wrapped_type().is_class()) {
-    for (auto const& prop : v.get_type().get_wrapped_type().get_properties()) {
+  if (variant_type.is_wrapper() && variant_type.get_wrapped_type().is_class()) {
+    for (auto const& prop : variant_type.get_wrapped_type().get_properties()) {
       auto value{prop.get_value(v)};
       assert(value.is_valid());
       ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, ctx, extension_func);
