@@ -32,7 +32,12 @@ public:
   auto Instance() -> ObjectRegistry&;
 
 private:
-  mutable Mutex<std::vector<ObjectSlot>, true> slots_;
-  Mutex<std::vector<std::uint32_t>> free_slot_indices_;
+  struct RegistryData {
+    std::vector<ObjectSlot> slots;
+    std::vector<std::uint32_t> free_indices;
+  };
+
+
+  mutable Mutex<RegistryData, true> data_;
 };
 }
