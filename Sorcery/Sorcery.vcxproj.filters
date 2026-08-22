@@ -410,6 +410,9 @@
     <ClInclude Include="src\object_id.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\object_ptr.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\shader_interop.h" />
@@ -464,6 +467,9 @@
     <None Include="src\rendering\shaders\brdf_integration.hlsli" />
     <None Include="src\rendering\shaders\tonemapping.hlsli" />
     <None Include="src\serialization.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="src\object_ptr.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\observer_ptr.inl">

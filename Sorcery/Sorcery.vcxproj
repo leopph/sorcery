@@ -71,7 +71,7 @@
       <PreprocessorDefinitions>SORCERY_BUILD;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\D3D12MemoryAllocator\;$(SolutionDir)vendor\work-stealing-queue\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\src;$(SolutionDir)vendor\D3D12MemoryAllocator\;$(SolutionDir)vendor\work-stealing-queue\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
@@ -108,7 +108,7 @@
       <PreprocessorDefinitions>SORCERY_BUILD;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\D3D12MemoryAllocator\;$(SolutionDir)vendor\work-stealing-queue\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\src;$(SolutionDir)vendor\D3D12MemoryAllocator\;$(SolutionDir)vendor\work-stealing-queue\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
@@ -207,6 +207,7 @@
     <ClInclude Include="src\mesh_data.hpp" />
     <ClInclude Include="src\mutex.hpp" />
     <ClInclude Include="src\object_id.hpp" />
+    <ClInclude Include="src\object_ptr.hpp" />
     <ClInclude Include="src\object_registry.hpp" />
     <ClInclude Include="src\observer_ptr.hpp" />
     <ClInclude Include="src\point.hpp" />
@@ -281,6 +282,7 @@
     <None Include="packages.config" />
     <None Include="src\job_system.inl" />
     <None Include="src\object.inl" />
+    <None Include="src\object_ptr.inl" />
     <None Include="src\observer_ptr.inl" />
     <None Include="src\rendering\shaders\brdf.hlsli" />
     <None Include="src\rendering\shaders\brdf_integration.hlsli" />

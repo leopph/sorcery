@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "Core.hpp"
 #include "mutex.hpp"
 #include "object_id.hpp"
 #include "observer_ptr.hpp"
@@ -24,8 +25,11 @@ public:
   auto Register(ObserverPtr<Object> obj) -> ObjectId;
   auto Unregister(ObjectId id) -> void;
 
-  [[nodiscard]]
+  [[nodiscard]] SORCERYAPI
   auto Resolve(ObjectId id) const -> ObserverPtr<Object>;
+
+  [[nodiscard]] SORCERYAPI static
+  auto Instance() -> ObjectRegistry&;
 
 private:
   mutable Mutex<std::vector<ObjectSlot>, true> slots_;

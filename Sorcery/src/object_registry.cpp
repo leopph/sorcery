@@ -60,4 +60,10 @@ auto ObjectRegistry::Resolve(ObjectId const id) const -> ObserverPtr<Object> {
 
   return obj;
 }
+
+
+auto ObjectRegistry::Instance() -> ObjectRegistry& {
+  static ObjectRegistry instance;
+  return instance;
+}
 }

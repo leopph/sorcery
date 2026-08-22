@@ -9,20 +9,15 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-namespace {
-ObjectRegistry g_registry;
-}
-
-
 Object::Object() :
-  id_{g_registry.Register(ObserverPtr{this})} {
+  id_{ObjectRegistry::Instance().Register(ObserverPtr{this})} {
   sAllObjects.Lock()->emplace_back(this);
 }
 
 
 Object::~Object() {
   std::erase(*sAllObjects.Lock(), this);
-  g_registry.Unregister(id_);
+  ObjectRegistry::Instance().Unregister(id_);
 }
 
 
