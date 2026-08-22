@@ -9,10 +9,10 @@ class Resource : public Object {
   RTTR_ENABLE(Object)
 
 public:
-  [[nodiscard]] LEOPPHAPI auto GetId() const noexcept -> ResourceId const&;
-  LEOPPHAPI auto SetId(ResourceId const& res_id) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetResId() const noexcept -> ResourceId const&;
+  LEOPPHAPI auto SetResId(ResourceId const& res_id) -> void;
 
 private:
-  ResourceId id_{Guid::Generate(), 0};
+  ResourceId res_id_{Guid::Generate(), 0};
 };
 }

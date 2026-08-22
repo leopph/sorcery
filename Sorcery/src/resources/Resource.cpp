@@ -2,12 +2,12 @@
 
 
 namespace sorcery {
-auto Resource::GetId() const noexcept -> ResourceId const& {
-  return id_;
+auto Resource::GetResId() const noexcept -> ResourceId const& {
+  return res_id_;
 }
 
 
-auto Resource::SetId(ResourceId const& res_id) -> void {
-  id_ = res_id;
+auto Resource::SetResId(ResourceId const& res_id) -> void {
+  res_id_ = res_id;
 }
 }

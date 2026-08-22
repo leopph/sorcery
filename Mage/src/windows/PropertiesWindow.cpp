@@ -24,7 +24,7 @@ auto PropertiesWindow::Draw() const -> void {
       auto editable{true};
 
       if (auto const* const res{rttr::rttr_cast<Resource*>(selected_obj)};
-        res && !app_->GetResourceDatabase().IsResourceEditable(res->GetId())) {
+        res && !app_->GetResourceDatabase().IsResourceEditable(res->GetResId())) {
         editable = false;
       }
 

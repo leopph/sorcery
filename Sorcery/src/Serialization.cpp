@@ -144,7 +144,7 @@ auto ReflectionSerializeToYaml(
 
   if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
     auto const res{v.get_value<Resource*>()};
-    auto const res_id{res ? res->GetId() : ResourceId::Invalid()};
+    auto const res_id{res ? res->GetResId() : ResourceId::Invalid()};
 
     switch (ctx.resource_ref_serialization) {
       case ResourceRefSerialization::kGlobal:

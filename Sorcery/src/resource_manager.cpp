@@ -76,7 +76,7 @@ auto ResourceManager::UnloadAll() -> void {
 
 auto ResourceManager::IsLoaded(ResourceId const& res_id) -> bool {
   for (auto const& res : default_resources_) {
-    if (res->GetId() == res_id) {
+    if (res->GetResId() == res_id) {
       return true;
     }
   }
@@ -104,7 +104,7 @@ auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vec
   // Default resources
   for (auto const& res : default_resources_) {
     if (auto const res_type{rttr::type::get(*res)}; res_type.is_derived_from(type)) {
-      out.emplace_back(res->GetId(), res->GetName(), res_type);
+      out.emplace_back(res->GetResId(), res->GetName(), res_type);
     }
   }
 
@@ -119,14 +119,14 @@ auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vec
   for (auto const& res : *loaded_resources_.LockShared()) {
     auto contains{false};
     for (auto const& res_info : out) {
-      if (res_info.id == res->GetId()) {
+      if (res_info.id == res->GetResId()) {
         contains = true;
         break;
       }
     }
 
     if (!contains && rttr::type::get(*res).is_derived_from(type)) {
-      out.emplace_back(res->GetId(), res->GetName(), res->get_type());
+      out.emplace_back(res->GetResId(), res->GetName(), res->get_type());
     }
   }
 }
@@ -155,7 +155,7 @@ auto ResourceManager::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
 auto ResourceManager::CreateDefaultResources() -> void {
   if (!default_mtl_) {
     default_mtl_ = std::make_unique<Material>(GpuResidencyPolicy::kMakeResident);
-    default_mtl_->SetId({default_mtl_guid_, 0});
+    default_mtl_->SetResId({default_mtl_guid_, 0});
     default_mtl_->SetName("Default Material");
     default_resources_.emplace_back(default_mtl_.get());
   }
@@ -182,7 +182,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     cube_mesh_ = std::make_unique<Mesh>(cube_data, ResourceResidencyPolicy{
       .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
     });
-    cube_mesh_->SetId({cube_mesh_guid_, 0});
+    cube_mesh_->SetResId({cube_mesh_guid_, 0});
     cube_mesh_->SetName("Cube");
     default_resources_.emplace_back(cube_mesh_.get());
   }
@@ -209,7 +209,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     plane_mesh_ = std::make_unique<Mesh>(plane_data, ResourceResidencyPolicy{
       .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
     });
-    plane_mesh_->SetId({plane_mesh_guid_, 0});
+    plane_mesh_->SetResId({plane_mesh_guid_, 0});
     plane_mesh_->SetName("Plane");
     default_resources_.emplace_back(plane_mesh_.get());
   }
@@ -237,7 +237,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     sphere_mesh_ = std::make_unique<Mesh>(sphere_data, ResourceResidencyPolicy{
       .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
     });
-    sphere_mesh_->SetId({sphere_mesh_guid_, 0});
+    sphere_mesh_->SetResId({sphere_mesh_guid_, 0});
     sphere_mesh_->SetName("Sphere");
     default_resources_.emplace_back(sphere_mesh_.get());
   }
@@ -246,19 +246,19 @@ auto ResourceManager::CreateDefaultResources() -> void {
 
 auto ResourceManager::ResourceIdLess::operator()(std::unique_ptr<Resource> const& lhs,
                                                  std::unique_ptr<Resource> const& rhs) const noexcept -> bool {
-  return lhs->GetId() < rhs->GetId();
+  return lhs->GetResId() < rhs->GetResId();
 }
 
 
 auto ResourceManager::ResourceIdLess::operator()(std::unique_ptr<Resource> const& lhs,
                                                  ResourceId const& rhs) const noexcept -> bool {
-  return lhs->GetId() < rhs;
+  return lhs->GetResId() < rhs;
 }
 
 
 auto ResourceManager::ResourceIdLess::operator()(ResourceId const& lhs,
                                                  std::unique_ptr<Resource> const& rhs) const noexcept -> bool {
-  return lhs < rhs->GetId();
+  return lhs < rhs->GetResId();
 }
 
 
@@ -340,7 +340,7 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
           }
 
           if (res) {
-            res->SetId(*job_data.res_id);
+            res->SetResId(*job_data.res_id);
             res->SetName(job_data.desc->name);
 
             auto const [it, inserted]{loaded_resources_.Lock()->emplace(std::move(res))};

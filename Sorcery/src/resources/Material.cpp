@@ -30,7 +30,7 @@ RTTR_REGISTRATION {
 namespace sorcery {
 auto Material::Serialize() const noexcept -> YAML::Node {
   auto const get_res_id = [](Texture2D const* const tex) -> ResourceId {
-    return tex ? tex->GetId() : ResourceId::Invalid();
+    return tex ? tex->GetResId() : ResourceId::Invalid();
   };
 
   return SerializeMaterialResourceData(MaterialResourceData{

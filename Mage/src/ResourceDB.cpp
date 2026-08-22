@@ -287,13 +287,13 @@ auto ResourceDB::SaveResourceToFile(
     return nullptr;
   }
 
-  if (!IsResourceEditable(res->GetId())) {
+  if (!IsResourceEditable(res->GetResId())) {
     return nullptr;
   }
 
   // If the resource doesn't have a valid ResourceId yet, we generate a new one.
-  if (!res->GetId().IsValid()) {
-    res->SetId(ResourceId{Guid::Generate(), 0});
+  if (!res->GetResId().IsValid()) {
+    res->SetResId(ResourceId{Guid::Generate(), 0});
   }
 
   // The serialized byte content of the resource
@@ -306,7 +306,7 @@ auto ResourceDB::SaveResourceToFile(
   res_emitter << res_bytes;
 
   // Write meta file
-  if (!WriteMeta(res_path_abs, res->GetId().GetGuid(), NativeResourceImporter{})) {
+  if (!WriteMeta(res_path_abs, res->GetResId().GetGuid(), NativeResourceImporter{})) {
     return nullptr;
   }
 
@@ -314,7 +314,7 @@ auto ResourceDB::SaveResourceToFile(
   res->SetName(target_path_res_dir_rel.stem().string());
 
   ResourceFileInfo const file_info{
-    .guid = res->GetId().GetGuid(),
+    .guid = res->GetResId().GetGuid(),
     .src_path_res_dir_rel = target_path_res_dir_rel,
     .load_path_abs = res_path_abs,
     .subresource_count = 1,
@@ -322,13 +322,13 @@ auto ResourceDB::SaveResourceToFile(
   };
 
   // Update resource file record
-  res_file_info_by_guid_.insert_or_assign(res->GetId().GetGuid(), file_info);
+  res_file_info_by_guid_.insert_or_assign(res->GetResId().GetGuid(), file_info);
   // Update resource record
-  res_info_by_id_.insert_or_assign(res->GetId(), ResourceInfo{
-    .id = res->GetId(), .type = rttr::type::get(res), .name = res->GetName()
+  res_info_by_id_.insert_or_assign(res->GetResId(), ResourceInfo{
+    .id = res->GetResId(), .type = rttr::type::get(res), .name = res->GetName()
   });
   // Update guid-source path mapping
-  guid_by_src_abs_path_.insert_or_assign(res_path_abs, res->GetId().GetGuid());
+  guid_by_src_abs_path_.insert_or_assign(res_path_abs, res->GetResId().GetGuid());
 
   // Transfer resource ownership to resource manager
   auto const ret{App::Instance().GetResourceManager().Add(std::move(res))};
@@ -343,11 +343,11 @@ auto ResourceDB::SaveResourceToFile(
 
 
 auto ResourceDB::SaveResourceToFile(NativeResource const& res) -> void {
-  if (!IsResourceEditable(res.GetId())) {
+  if (!IsResourceEditable(res.GetResId())) {
     return;
   }
 
-  if (auto const it{res_file_info_by_guid_.find(res.GetId().GetGuid())}; it != std::end(res_file_info_by_guid_)) {
+  if (auto const it{res_file_info_by_guid_.find(res.GetResId().GetGuid())}; it != std::end(res_file_info_by_guid_)) {
     std::ofstream out_stream{res_dir_abs_ / it->second.src_path_res_dir_rel};
     YAML::Emitter emitter{out_stream};
     emitter << res.Serialize();
@@ -496,7 +496,7 @@ auto ResourceDB::DeleteDirectory(std::filesystem::path const& path_res_dir_rel) 
 
 
 auto ResourceDB::IsSavedResource(NativeResource const& res) const -> bool {
-  return res_file_info_by_guid_.contains(res.GetId().GetGuid());
+  return res_file_info_by_guid_.contains(res.GetResId().GetGuid());
 }
 
 
@@ -832,7 +832,7 @@ auto ResourceDB::UnloadResourcesFromFile(Guid const& guid) -> void {
 
 auto ResourceDB::ClearSelectionIfGuid(Guid const& guid) const -> void {
   if (*selected_object_ptr_) {
-    if (auto const res{dynamic_cast<Resource*>(*selected_object_ptr_)}; res && res->GetId().GetGuid() == guid) {
+    if (auto const res{dynamic_cast<Resource*>(*selected_object_ptr_)}; res && res->GetResId().GetGuid() == guid) {
       *selected_object_ptr_ = nullptr;
     }
   }

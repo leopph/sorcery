@@ -10,7 +10,7 @@ template<std::derived_from<Resource> ResType>
 auto ResourceManager::GetOrLoad(ResourceId const& res_id) -> ResType* {
   // Check default resources
   for (auto const& def_res : default_resources_) {
-    if (def_res->GetId() == res_id) {
+    if (def_res->GetResId() == res_id) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
         return rttr::rttr_cast<ResType*>(def_res.Get());
       } else {
@@ -61,7 +61,7 @@ auto ResourceManager::GetOrLoad(ResourceId const& res_id) -> ResType* {
 
 template<std::derived_from<Resource> ResType>
 auto ResourceManager::Add(std::unique_ptr<ResType> resource) -> ObserverPtr<ResType> {
-  if (resource && resource->GetId().IsValid()) {
+  if (resource && resource->GetResId().IsValid()) {
     return ObserverPtr{loaded_resources_.Lock()->emplace(std::move(resource)).first->get()};
   }
 
@@ -76,9 +76,9 @@ auto ResourceManager::Remove(ResourceId const& res_id) -> std::unique_ptr<ResTyp
   if (auto const it{
     std::ranges::find_if(*resources, [&res_id](std::unique_ptr<Resource> const& res) {
       if constexpr (std::is_same_v<ResType, Resource>) {
-        return res->GetId() == res_id;
+        return res->GetResId() == res_id;
       } else {
-        return res->GetId() == res_id && rttr::type::get(*res).get_raw_type().is_derived_from<ResType>();
+        return res->GetResId() == res_id && rttr::type::get(*res).get_raw_type().is_derived_from<ResType>();
       }
     })
   }; it != std::end(*resources)) {

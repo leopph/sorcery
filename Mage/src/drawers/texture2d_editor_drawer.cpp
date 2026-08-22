@@ -14,7 +14,7 @@ auto Texture2DEditorDrawer::Draw(
 ) -> void {
   ctx.registry->DrawAs<Resource>(obj, allow_edit, changed);
 
-  if (ImGui::BeginTable(std::format("{}", obj.GetId().GetGuid().ToString()).c_str(), 2,
+  if (ImGui::BeginTable(std::format("{}", obj.GetResId().GetGuid().ToString()).c_str(), 2,
     ImGuiTableFlags_SizingStretchSame)) {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);

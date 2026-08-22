@@ -16,7 +16,7 @@ auto MaterialEditorDrawer::Draw(
 ) -> void {
   ctx.registry->DrawAs<NativeResource>(mtl, allow_edit, changed);
 
-  if (ImGui::BeginTable(std::format("{}", mtl.GetId().GetGuid().ToString()).c_str(), 2,
+  if (ImGui::BeginTable(std::format("{}", mtl.GetResId().GetGuid().ToString()).c_str(), 2,
     ImGuiTableFlags_SizingStretchSame)) {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);

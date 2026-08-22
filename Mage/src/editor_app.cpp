@@ -190,7 +190,7 @@ auto EditorApp::GetResourceDatabase() noexcept -> ResourceDB& {
 
 
 auto EditorApp::OpenScene(ResourceId const& res_id) -> void {
-  if (!res_id.IsValid() || (scene_ && scene_->GetId() == res_id)) {
+  if (!res_id.IsValid() || (scene_ && scene_->GetResId() == res_id)) {
     return;
   }
 
@@ -198,7 +198,7 @@ auto EditorApp::OpenScene(ResourceId const& res_id) -> void {
     new_scene->Load();
 
     if (scene_) {
-      GetResourceManager().Unload(scene_->GetId());
+      GetResourceManager().Unload(scene_->GetResId());
     }
 
     scene_.Reset(new_scene);
@@ -210,7 +210,7 @@ auto EditorApp::OpenScene(ResourceId const& res_id) -> void {
 
 auto EditorApp::OpenNewScene() -> void {
   if (scene_) {
-    GetResourceManager().Unload(scene_->GetId());
+    GetResourceManager().Unload(scene_->GetResId());
   }
 
   scene_ = GetResourceManager().Add(std::make_unique<Scene>());
@@ -236,7 +236,7 @@ auto EditorApp::SaveCurrentSceneToFile() -> void {
       }
 
       if (!dst_res_dir_rel.empty()) {
-        resource_db_.SaveResourceToFile(GetResourceManager().Remove<Scene>(scene_->GetId()), dst_res_dir_rel);
+        resource_db_.SaveResourceToFile(GetResourceManager().Remove<Scene>(scene_->GetResId()), dst_res_dir_rel);
       }
     }
   }

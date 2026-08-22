@@ -670,11 +670,11 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
       if (payload->IsDataType(ObjectDragDropPayload::kTypeStr.data())) {
         auto const res{rttr::rttr_cast<NativeResource*>(static_cast<ObjectDragDropPayload const*>(payload->Data)->ptr)};
 
-        if (!res || !resource_db_->IsResourceEditable(res->GetId())) {
+        if (!res || !resource_db_->IsResourceEditable(res->GetResId())) {
           return;
         }
 
-        auto const file_info{resource_db_->GetFileInfo(res->GetId().GetGuid())};
+        auto const file_info{resource_db_->GetFileInfo(res->GetResId().GetGuid())};
 
         if (!file_info) {
           spdlog::error("Failed to get file info for drop target resource. Ignoring.");
@@ -1238,7 +1238,7 @@ auto ProjectWindow::ExecuteCreateMaterial(ProjectItem const& target) -> void {
       }
 
       SelectItem(NativeResourceFileProjectItem{
-        created_mtl->GetId().GetGuid()
+        created_mtl->GetResId().GetGuid()
       });
     },
     []([[maybe_unused]] NativeResourceFileProjectItem const& item) {
@@ -1272,7 +1272,7 @@ auto ProjectWindow::ExecuteCreateScene(ProjectItem const& target) -> void {
       }
 
       SelectItem(NativeResourceFileProjectItem{
-        created_scene->GetId().GetGuid()
+        created_scene->GetResId().GetGuid()
       });
     },
     []([[maybe_unused]] NativeResourceFileProjectItem const& item) {

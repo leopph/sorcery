@@ -137,7 +137,7 @@ auto Scene::Save() -> void {
   yaml_data_["ambientLight"] = ambient_light_;
   yaml_data_["skyMode"] = static_cast<int>(sky_mode_);
   yaml_data_["skyColor"] = sky_color_;
-  yaml_data_["skybox"] = SerializeGlobalResourceId(skybox_ ? skybox_->GetId() : ResourceId::Invalid());
+  yaml_data_["skybox"] = SerializeGlobalResourceId(skybox_ ? skybox_->GetResId() : ResourceId::Invalid());
 
   std::vector<Entity const*> entities;
   entities.reserve(entities_.size());
