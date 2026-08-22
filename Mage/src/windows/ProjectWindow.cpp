@@ -670,13 +670,7 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
       if (payload->IsDataType(ObjectDragDropPayload::kTypeStr.data())) {
         auto const res{rttr::rttr_cast<NativeResource*>(static_cast<ObjectDragDropPayload const*>(payload->Data)->ptr)};
 
-        if (!res) {
-          spdlog::info("Received non-native resource object payload in directory drop target. Ignoring.");
-          return;
-        }
-
-        if (!resource_db_->IsResourceEditable(res->GetId())) {
-          spdlog::info("Received non-editable native resource object payload in directory drop target. Ignoring.");
+        if (!res || !resource_db_->IsResourceEditable(res->GetId())) {
           return;
         }
 
