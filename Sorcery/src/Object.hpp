@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Core.hpp"
-#include "Reflection.hpp"
-
 #include <concepts>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
+
+#include "Core.hpp"
+#include "mutex.hpp"
+#include "object_id.hpp"
+#include "Reflection.hpp"
 
 
 namespace sorcery {
@@ -16,18 +17,23 @@ class Object {
   RTTR_REGISTRATION_FRIEND
 
 protected:
-  LEOPPHAPI Object();
+  SORCERYAPI Object();
   Object(Object const& other) = default;
   Object(Object&& other) noexcept = default;
 
 public:
-  LEOPPHAPI virtual ~Object();
+  SORCERYAPI virtual ~Object();
 
   auto operator=(Object const& other) -> void = delete;
   auto operator=(Object&& other) -> void = delete;
 
-  [[nodiscard]] LEOPPHAPI auto GetName() const noexcept -> std::string const&;
-  LEOPPHAPI auto SetName(std::string const& name) -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetName() const noexcept -> std::string const&;
+  SORCERYAPI
+  auto SetName(std::string const& name) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetId() const -> ObjectId const&;
 
   virtual auto OnDrawGizmosSelected() -> void {}
 
@@ -41,10 +47,10 @@ public:
   [[nodiscard]] auto FindObjectsOfType() -> std::vector<T*>;
 
 private:
-  LEOPPHAPI static std::vector<Object*> sAllObjects;
-  LEOPPHAPI static std::recursive_mutex sAllObjectsMutex;
-
   std::string name_{"New Object"};
+  ObjectId id_;
+
+  SORCERYAPI static Mutex<std::vector<Object*>, true> sAllObjects;
 };
 
 

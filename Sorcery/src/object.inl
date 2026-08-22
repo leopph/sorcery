@@ -6,12 +6,12 @@
 namespace sorcery {
 template<std::derived_from<Object> T>
 auto Object::FindObjectOfType() -> T* {
-  std::unique_lock const lock{sAllObjectsMutex};
+  auto const all_objs{sAllObjects.LockShared()};
 
   if constexpr (std::same_as<Object, T>) {
-    return sAllObjects.empty() ? nullptr : sAllObjects.front();
+    return all_objs->empty() ? nullptr : all_objs->front();
   } else {
-    for (auto const obj : sAllObjects) {
+    for (auto const obj : *all_objs) {
       if (auto const castObj{rttr::rttr_cast<T*>(obj)}) {
         return castObj;
       }
@@ -24,14 +24,14 @@ auto Object::FindObjectOfType() -> T* {
 
 template<std::derived_from<Object> T>
 auto Object::FindObjectsOfType(std::vector<T*>& out) -> std::vector<T*>& {
-  std::unique_lock const lock{sAllObjectsMutex};
+  auto const all_objs{sAllObjects.LockShared()};
 
   if constexpr (std::same_as<Object, T>) {
-    out = sAllObjects;
+    out = all_objs;
   } else {
     out.clear();
 
-    for (auto const obj : sAllObjects) {
+    for (auto const obj : *all_objs) {
       if (auto const castObj{rttr::rttr_cast<T*>(obj)}) {
         out.emplace_back(castObj);
       }

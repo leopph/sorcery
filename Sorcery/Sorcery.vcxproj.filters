@@ -186,6 +186,9 @@
     <ClCompile Include="src\entity_serialization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\object_registry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\scene_objects\Entity.hpp">
@@ -399,6 +402,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\resource_residency_policy.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\object_registry.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\object_id.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

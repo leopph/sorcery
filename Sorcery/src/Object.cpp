@@ -1,7 +1,6 @@
 #include "Object.hpp"
 
-#include <cassert>
-#include <format>
+#include "object_registry.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Object>{"Object"}
@@ -10,27 +9,20 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Object::Object() {
-  std::unique_lock const lock{sAllObjectsMutex};
-  sAllObjects.emplace_back(this);
+namespace {
+ObjectRegistry g_registry;
+}
+
+
+Object::Object() :
+  id_{g_registry.Register(ObserverPtr{this})} {
+  sAllObjects.Lock()->emplace_back(this);
 }
 
 
 Object::~Object() {
-  std::unique_lock const lock{sAllObjectsMutex};
-
-  std::erase(sAllObjects, this);
-
-  for (auto const otherObj : sAllObjects) {
-    for (auto const prop : rttr::type::get(*otherObj).get_properties()) {
-      if (prop.get_type().is_pointer()) {
-        if (prop.get_value(*otherObj).get_value<Object*>() == this) {
-          [[maybe_unused]] auto const success{prop.set_value(*otherObj, nullptr)};
-          assert(success);
-        }
-      }
-    }
-  }
+  std::erase(*sAllObjects.Lock(), this);
+  g_registry.Unregister(id_);
 }
 
 
@@ -44,8 +36,10 @@ auto Object::SetName(std::string const& name) -> void {
 }
 
 
-std::vector<Object*> Object::sAllObjects;
+auto Object::GetId() const -> ObjectId const& {
+  return id_;
+}
 
 
-std::recursive_mutex Object::sAllObjectsMutex;
+Mutex<std::vector<Object*>, true> Object::sAllObjects;
 }

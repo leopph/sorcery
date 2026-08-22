@@ -151,6 +151,7 @@
     <ClCompile Include="src\job_system.cpp" />
     <ClCompile Include="src\material_resource.cpp" />
     <ClCompile Include="src\mesh_data.cpp" />
+    <ClCompile Include="src\object_registry.cpp" />
     <ClCompile Include="src\random.cpp" />
     <ClCompile Include="src\rendering\graphics.cpp" />
     <ClCompile Include="src\rendering\Camera.cpp" />
@@ -205,6 +206,8 @@
     <ClInclude Include="src\material_resource.hpp" />
     <ClInclude Include="src\mesh_data.hpp" />
     <ClInclude Include="src\mutex.hpp" />
+    <ClInclude Include="src\object_id.hpp" />
+    <ClInclude Include="src\object_registry.hpp" />
     <ClInclude Include="src\observer_ptr.hpp" />
     <ClInclude Include="src\point.hpp" />
     <ClInclude Include="src\random.hpp" />
