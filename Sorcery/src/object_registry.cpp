@@ -12,6 +12,7 @@ auto ObjectRegistry::Register(ObserverPtr<Object> const obj) -> ObjectId {
   if (data->free_indices.empty()) {
     auto const idx = static_cast<std::uint32_t>(data->slots.size());
     data->slots.emplace_back(obj, 0);
+    assert(data->slots.size() < ObjectId::kInvalidIndex);
     return ObjectId{.idx = idx, .gen = 0};
   }
 
@@ -41,6 +42,10 @@ auto ObjectRegistry::Unregister(ObjectId const id) -> void {
 
 
 auto ObjectRegistry::Resolve(ObjectId const id) const -> ObserverPtr<Object> {
+  if (!id.IsValid()) {
+    return nullptr;
+  }
+
   auto const data = data_.LockShared();
 
   if (id.idx >= data->slots.size()) {
@@ -54,11 +59,5 @@ auto ObjectRegistry::Resolve(ObjectId const id) const -> ObserverPtr<Object> {
   }
 
   return obj;
-}
-
-
-auto ObjectRegistry::Instance() -> ObjectRegistry& {
-  static ObjectRegistry instance;
-  return instance;
 }
 }

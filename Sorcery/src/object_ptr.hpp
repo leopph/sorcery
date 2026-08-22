@@ -2,6 +2,7 @@
 
 #include <concepts>
 
+#include "Core.hpp"
 #include "Object.hpp"
 #include "observer_ptr.hpp"
 #include "Reflection.hpp"
@@ -35,6 +36,12 @@ private:
 template<std::derived_from<Object> T>
 [[nodiscard]]
 auto MakeObjectPtr(ObserverPtr<T> object) noexcept -> ObjectPtr<T>;
+
+
+namespace detail {
+[[nodiscard]] SORCERYAPI
+auto ResolveObject(ObjectId id) -> ObserverPtr<Object>;
+}
 }
 
 

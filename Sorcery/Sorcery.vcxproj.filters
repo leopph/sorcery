@@ -189,6 +189,12 @@
     <ClCompile Include="src\object_registry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\object_ptr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resource_ref.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\scene_objects\Entity.hpp">
@@ -413,6 +419,9 @@
     <ClInclude Include="src\object_ptr.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\resource_ref.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\shader_interop.h" />
@@ -473,6 +482,9 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\observer_ptr.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="src\resource_ref.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>

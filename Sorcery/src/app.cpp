@@ -96,6 +96,11 @@ auto App::GetJobSystem() -> JobSystem& {
 }
 
 
+auto App::GetObjectRegistry() -> ObjectRegistry& {
+  return object_registry_;
+}
+
+
 auto App::GetResourceManager() -> ResourceManager& {
   return resource_manager_;
 }

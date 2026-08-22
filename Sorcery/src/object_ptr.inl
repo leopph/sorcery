@@ -1,7 +1,5 @@
 #pragma once
 
-#include "object_registry.hpp"
-
 
 namespace sorcery {
 template<std::derived_from<Object> T>
@@ -16,7 +14,7 @@ ObjectPtr<T>::ObjectPtr(ObserverPtr<T> const obj) noexcept :
 
 template<std::derived_from<Object> T>
 auto ObjectPtr<T>::Get() const -> ObserverPtr<T> {
-  return ObserverPtr{static_cast<T*>(ObjectRegistry::Instance().Resolve(id_).Get())};
+  return ObserverPtr{static_cast<T*>(detail::ResolveObject(id_).Get())};
 }
 
 
@@ -53,14 +51,14 @@ auto rttr::wrapper_mapper<sorcery::ObjectPtr<T>>::get(type const& obj_ptr) -> wr
 
 template<std::derived_from<sorcery::Object> T>
 auto rttr::wrapper_mapper<sorcery::ObjectPtr<T>>::create(wrapped_type const& ptr) -> type {
-  return sorcery::ObjectPtr{sorcery::MakeObserver(ptr)};
+  return sorcery::MakeObjectPtr(sorcery::MakeObserver(ptr));
 }
 
 
 template<std::derived_from<sorcery::Object> T>
 template<typename U>
 auto rttr::wrapper_mapper<sorcery::ObjectPtr<T>>::convert(type const& obj_ptr, bool& ok) -> sorcery::ObjectPtr<U> {
-  auto* const obj{rttr_cast<typename sorcery::ObjectPtr<U>::wrapped_type>(get(obj_ptr))};
+  auto* const obj = rttr_cast<typename sorcery::ObjectPtr<U>::wrapped_type>(get(obj_ptr));
   ok = obj != nullptr;
   return wrapper_mapper<sorcery::ObjectPtr<U>>::create(obj);
 }

@@ -1,5 +1,6 @@
 #include "Object.hpp"
 
+#include "app.hpp"
 #include "object_registry.hpp"
 
 RTTR_REGISTRATION {
@@ -10,14 +11,14 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 Object::Object() :
-  id_{ObjectRegistry::Instance().Register(ObserverPtr{this})} {
+  id_{App::Instance().GetObjectRegistry().Register(ObserverPtr{this})} {
   sAllObjects.Lock()->emplace_back(this);
 }
 
 
 Object::~Object() {
   std::erase(*sAllObjects.Lock(), this);
-  ObjectRegistry::Instance().Unregister(id_);
+  App::Instance().GetObjectRegistry().Unregister(id_);
 }
 
 

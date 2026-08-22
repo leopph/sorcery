@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cassert>
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <DirectXTex.h>
 
 #include "../Resources/Cubemap.hpp"

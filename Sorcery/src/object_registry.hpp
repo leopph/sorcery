@@ -28,9 +28,6 @@ public:
   [[nodiscard]] SORCERYAPI
   auto Resolve(ObjectId id) const -> ObserverPtr<Object>;
 
-  [[nodiscard]] SORCERYAPI static
-  auto Instance() -> ObjectRegistry&;
-
 private:
   struct RegistryData {
     std::vector<ObjectSlot> slots;
