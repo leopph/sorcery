@@ -100,6 +100,10 @@ private:
     std::span<std::byte const> bytes, YamlDeserializeContext const& ctx
   ) -> MaybeNull<std::unique_ptr<Resource>>;
 
+  [[nodiscard]] static auto LoadPrefab(
+    std::span<std::byte const> bytes, YamlDeserializeContext const& ctx
+  ) -> MaybeNull<std::unique_ptr<Resource>>;
+
   inline static Guid const default_mtl_guid_{1, 0};
   inline static Guid const cube_mesh_guid_{2, 0};
   inline static Guid const plane_mesh_guid_{3, 0};

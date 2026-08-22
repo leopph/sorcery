@@ -18,6 +18,7 @@ enum class ResourcePackagePayloadKind: std::uint8_t {
   kTexture  = 1,
   kMesh     = 2,
   kMaterial = 3,
+  kPrefab   = 4,
 };
 
 
@@ -27,6 +28,7 @@ enum class ResourceRuntimeType : std::uint8_t {
   kMesh      = 2,
   kScene     = 3,
   kTexture2D = 4,
+  kPrefab    = 5,
 };
 
 

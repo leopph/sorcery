@@ -75,7 +75,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
-      <AdditionalOptions>/fp:contract %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/fp:contract /w44062 %(AdditionalOptions)</AdditionalOptions>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -111,7 +112,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
-      <AdditionalOptions>/fp:contract %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/fp:contract /w44062 %(AdditionalOptions)</AdditionalOptions>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -155,6 +157,7 @@
     <ClCompile Include="src\rendering\directional_shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\scene_renderer.cpp" />
     <ClCompile Include="src\rendering\render_manager.cpp" />
+    <ClCompile Include="src\resources\prefab.cpp" />
     <ClCompile Include="src\resource_id.cpp" />
     <ClCompile Include="src\resource_import\material_import.cpp" />
     <ClCompile Include="src\resource_import\mesh_import.cpp" />
@@ -212,6 +215,7 @@
     <ClInclude Include="src\rendering\render_manager.hpp" />
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\Reflection.hpp" />
+    <ClInclude Include="src\resources\prefab.hpp" />
     <ClInclude Include="src\Resources\Resource.hpp" />
     <ClInclude Include="src\resource_residency_policy.hpp" />
     <ClInclude Include="src\resource_import\material_import.hpp" />

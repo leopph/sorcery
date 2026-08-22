@@ -12,6 +12,7 @@
 #include "Reflection.hpp"
 #include "resource_package.hpp"
 #include "rendering/render_manager.hpp"
+#include "resources/prefab.hpp"
 #include "Resources/Scene.hpp"
 
 using Microsoft::WRL::ComPtr;
@@ -317,6 +318,10 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
               case ResourcePackagePayloadKind::kMaterial: {
                 res = LoadMaterial(subresource->bytes, ctx);
                 break;
+              }
+
+              case ResourcePackagePayloadKind::kPrefab: {
+                res = LoadPrefab(subresource->bytes, ctx);
               }
 
               case ResourcePackagePayloadKind::kInvalid: {
@@ -725,5 +730,18 @@ auto ResourceManager::LoadMaterial(
     reinterpret_cast<char const*>(bytes.data()), bytes.size()
   }), ctx);
   return mtl;
+}
+
+
+auto ResourceManager::LoadPrefab(
+  std::span<std::byte const> const bytes,
+  YamlDeserializeContext const& ctx
+) -> MaybeNull<std::unique_ptr<Resource>> {
+  // TODO rewrite this to spanstream when upgrading to C++23
+  auto prefab = std::make_unique<Prefab>();
+  prefab->Deserialize(YAML::Load(std::string{
+    reinterpret_cast<char const*>(bytes.data()), bytes.size()
+  }), ctx);
+  return prefab;
 }
 }

@@ -22,7 +22,10 @@
 #include <spdlog/spdlog.h>
 
 #include "App.hpp"
+#include "Entity.hpp"
+#include "entity_serialization.hpp"
 #include "Platform.hpp"
+#include "prefab.hpp"
 #include "Serialization.hpp"
 #include "Resources/Mesh.hpp"
 #include "resource_import/material_import.hpp"
@@ -149,6 +152,14 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
     return false;
   }
 
+  /******************************************************
+   WE WANT TO IMPORT SUBRESOURCES IN THE FOLLOWING ORDER:
+   1. Prefab
+   2. Mesh
+   3. Materials
+   4. Textures
+   *******************************************************/
+
   MeshData mesh_data;
   std::vector<MaterialResourceData> material_data;
 
@@ -252,8 +263,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
           }
 
           // We store the textures' array index now as their package index.
-          // For this to work, they need to be the first resources in the package.
-          // If they are not, these resource IDs need to be updated later.
+          // Later we will patch this when we're creating the final subresource order in the package.
           auto const arr_idx{try_emplace_tex(*tex, type)};
           id_to_set = ResourceId{Guid::Invalid(), static_cast<int>(arr_idx)};
           return true;
@@ -285,6 +295,25 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
     }
   }
 
+  // Now we know how many materials we have so we can determine the final texture indices for the materials
+
+  for (auto& mtl_data : material_data) {
+    auto const fix_up_tex_id = [&material_data](ResourceId& id) {
+      if (id.GetIdxInFile() >= 0) {
+        id = ResourceId{
+          id.GetGuid(), id.GetIdxInFile() + 2 /* prefab + mesh */ + clamp_cast<int>(material_data.size())
+        };
+      }
+    };
+
+    fix_up_tex_id(mtl_data.base_color_map);
+    fix_up_tex_id(mtl_data.metallic_map);
+    fix_up_tex_id(mtl_data.roughness_map);
+    fix_up_tex_id(mtl_data.ao_map);
+    fix_up_tex_id(mtl_data.normal_map);
+    fix_up_tex_id(mtl_data.opacity_map);
+  }
+
   // Some textures may not be referenced by any material, but we still want to import them.
   // Or we could be skipping materials altogether but still want textures.
 
@@ -295,6 +324,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
   }
 
   // Load textures
+
+  std::vector<ResourceImportResult> texture_import_results;
 
   if (import_textures_) {
     for (auto const& [idx, tex_info] : tex_infos | std::views::enumerate) {
@@ -334,11 +365,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
           return false;
         }
 
-        // Textures are the first resources we export, so their index in the textures array corresponds
-        // to their index in the resource package. If materials reference their textures using their
-        // array index, they'll properly resolve from the resource package too.
-        results.emplace_back(tex_result->payload_kind, tex_result->runtime_type, tex_info.tex->mFilename.C_Str(),
-          std::move(tex_result->bytes));
+        texture_import_results.emplace_back(tex_result->payload_kind, tex_result->runtime_type,
+          tex_info.tex->mFilename.C_Str(), std::move(tex_result->bytes));
       } else {
         // TODO implement this path
         assert("Found uncompressed embedded texture." && false);
@@ -965,6 +993,51 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
 
   SerializeToBinary(mesh_data.idx32, bytes);
 
+  // Create prefab subresource and write to output
+
+  {
+    auto const entity{std::make_unique<Entity>()};
+    entity->SetName(std::string{ToUntypedStdSv(src.filename().stem().u8string())});
+
+    auto mesh_component{std::make_unique<StaticMeshComponent>()};
+
+    auto const dummy_mesh = std::make_unique<Mesh>(mesh_data, ResourceResidencyPolicy{
+      .gpu = GpuResidencyPolicy::kDeferUpload,
+      .cpu = CpuResidencyPolicy::kKeepResident
+    });
+
+    mesh_component->SetMesh(dummy_mesh.get());
+
+    std::vector<std::unique_ptr<Material>> dummy_materials;
+    dummy_materials.reserve(material_data.size());
+
+    for (std::size_t i{0}; i < material_data.size(); i++) {
+      auto dummy_mtl{std::make_unique<Material>(GpuResidencyPolicy::kDeferUpload)};
+      dummy_mtl->SetId(ResourceId{Guid::Invalid(), 2 /* prefab + mesh */ + clamp_cast<int>(i)});
+      mesh_component->SetMaterial(clamp_cast<int>(i), dummy_mtl.get());
+      dummy_materials.emplace_back(std::move(dummy_mtl));
+    }
+
+    entity->AddComponent(std::move(mesh_component));
+
+    auto const* const entity_ptr{entity.get()};
+    auto const prefab_node{
+      SerializeEntitySet(std::span{&entity_ptr, 1}, EntitySerializationContext{
+        .resource_ref_serialization = ResourceRefSerialization::kLocal
+      })
+    };
+
+    auto const yaml_str{YAML::Dump(prefab_node)};
+
+    std::vector<std::byte> prefab_bytes;
+    prefab_bytes.resize(yaml_str.size());
+    std::ranges::copy(yaml_str | std::views::transform([](char c) { return static_cast<std::byte>(c); }),
+      prefab_bytes.begin());
+
+    results.emplace_back(ResourcePackagePayloadKind::kPrefab, rttr::type::get<Prefab>(), entity->GetName(),
+      std::move(prefab_bytes));
+  }
+
   // Write mesh bytes to output
 
   results.emplace_back(ResourcePackagePayloadKind::kMesh, rttr::type::get<Mesh>(),
@@ -978,6 +1051,12 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
       results.emplace_back(mtl_result.payload_kind, mtl_result.runtime_type, mesh_data.material_slots[i].name,
         std::move(mtl_result.bytes));
     }
+  }
+
+  // Write textures to output
+
+  if (import_textures_) {
+    std::ranges::move(texture_import_results, std::back_inserter(results));
   }
 
   return true;

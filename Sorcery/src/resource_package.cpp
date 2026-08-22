@@ -8,6 +8,7 @@
 #include "resources/Cubemap.hpp"
 #include "resources/Material.hpp"
 #include "resources/Mesh.hpp"
+#include "resources/prefab.hpp"
 #include "resources/Scene.hpp"
 #include "resources/Texture2D.hpp"
 
@@ -35,6 +36,9 @@ namespace {
   if (type == rttr::type::get<Cubemap>()) {
     return ResourceRuntimeType::kCubemap;
   }
+  if (type == rttr::type::get<Prefab>()) {
+    return ResourceRuntimeType::kPrefab;
+  }
 
   return std::nullopt;
 }
@@ -52,9 +56,11 @@ namespace {
       return rttr::type::get<Texture2D>();
     case ResourceRuntimeType::kCubemap:
       return rttr::type::get<Cubemap>();
-    default:
-      return std::nullopt;
+    case ResourceRuntimeType::kPrefab:
+      return rttr::type::get<Prefab>();
   }
+
+  return std::nullopt;
 }
 
 
