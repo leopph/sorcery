@@ -20,7 +20,7 @@ auto EntityHierarchyWindow::Draw() -> void {
     if (ImGui::BeginChild("EntityHierarchyContent", ImVec2{0, 0}, ImGuiChildFlags_None, ImGuiWindowFlags_None)) {
       auto const contextId{"EntityHierarchyContextId"};
 
-      if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+      if (ImGui::IsWindowHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
         ImGui::OpenPopup(contextId);
       }
 
