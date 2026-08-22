@@ -1005,6 +1005,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
       .gpu = GpuResidencyPolicy::kDeferUpload,
       .cpu = CpuResidencyPolicy::kKeepResident
     });
+    dummy_mesh->SetId(ResourceId{Guid::Invalid(), 1 /* prefab is first */});
 
     mesh_component->SetMesh(dummy_mesh.get());
 
