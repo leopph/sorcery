@@ -9,9 +9,9 @@
 #include "resource_manager.hpp"
 #include "Timing.hpp"
 #include "Window.hpp"
-#include "rendering/graphics.hpp"
 #include "rendering/render_manager.hpp"
 #include "rendering/scene_renderer.hpp"
+#include "wand/wand.hpp"
 
 
 namespace sorcery {
@@ -46,7 +46,7 @@ struct App::Data {
       })
     },
     swap_chain{
-      graphics_device.CreateSwapChain(graphics::SwapChainDesc{
+      graphics_device.CreateSwapChain(wand::SwapChainDesc{
         0, 0, 2, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_USAGE_RENDER_TARGET_OUTPUT, DXGI_SCALING_STRETCH
       }, static_cast<HWND>(window.GetNativeHandle()))
     },
@@ -56,9 +56,9 @@ struct App::Data {
 
 
   JobSystem job_system;
-  graphics::GraphicsDevice graphics_device;
+  wand::GraphicsDevice graphics_device;
   Window window;
-  graphics::SharedDeviceChildHandle<graphics::SwapChain> swap_chain;
+  wand::SharedDeviceChildHandle<wand::SwapChain> swap_chain;
   rendering::RenderManager render_manager;
   rendering::SceneRenderer scene_renderer;
   ObjectRegistry object_registry;
@@ -96,7 +96,7 @@ auto App::GetJobSystem() -> JobSystem& {
 }
 
 
-auto App::GetGraphicsDevice() -> graphics::GraphicsDevice& {
+auto App::GetGraphicsDevice() -> wand::GraphicsDevice& {
   return data_->graphics_device;
 }
 
@@ -106,7 +106,7 @@ auto App::GetWindow() -> Window& {
 }
 
 
-auto App::GetSwapChain() -> graphics::SwapChain& {
+auto App::GetSwapChain() -> wand::SwapChain& {
   return *data_->swap_chain;
 }
 

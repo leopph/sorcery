@@ -367,7 +367,7 @@ auto Material::UploadToGpu() -> void {
 }
 
 
-auto Material::GetBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Material::GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return cb_.GetBuffer();
 }
 

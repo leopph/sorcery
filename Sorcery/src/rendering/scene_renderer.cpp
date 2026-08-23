@@ -98,7 +98,7 @@ namespace {
 }
 
 
-SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, RenderManager& render_manager) :
+SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager) :
   render_manager_{&render_manager},
   window_{&window},
   device_{&device} {
@@ -228,10 +228,10 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_, *render_manager_, true);
   RecreateSsaoSamples(ssao_params_.sample_count);
 
-  ssao_noise_tex_ = device_->CreateTexture(graphics::TextureDesc{
-    graphics::TextureDimension::k2D, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,
+  ssao_noise_tex_ = device_->CreateTexture(wand::TextureDesc{
+    wand::TextureDimension::k2D, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,
     false, false, true, false
-  }, graphics::CpuAccess::kNone, nullptr);
+  }, wand::CpuAccess::kNone, nullptr);
   ssao_noise_tex_->SetDebugName(L"SSAO Noise");
 
   std::vector<Vector4> ssao_noise;
@@ -248,9 +248,9 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
     }
   });
 
-  white_tex_ = device_->CreateTexture(graphics::TextureDesc{
-    graphics::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
-  }, graphics::CpuAccess::kNone, nullptr);
+  white_tex_ = device_->CreateTexture(wand::TextureDesc{
+    wand::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
+  }, wand::CpuAccess::kNone, nullptr);
 
   std::array<std::uint8_t, 4> constexpr white_tex_data{255, 255, 255, 255};
 
@@ -258,10 +258,10 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
     D3D12_SUBRESOURCE_DATA{white_tex_data.data(), sizeof(white_tex_data), sizeof(white_tex_data)}
   });
 
-  brdf_integration_map_ = device_->CreateTexture(graphics::TextureDesc{
-    graphics::TextureDimension::k2D, brdf_integration_map_size_, brdf_integration_map_size_, 1, 1,
+  brdf_integration_map_ = device_->CreateTexture(wand::TextureDesc{
+    wand::TextureDimension::k2D, brdf_integration_map_size_, brdf_integration_map_size_, 1, 1,
     brdf_integration_map_format_, 1, false, true, true, false
-  }, graphics::CpuAccess::kNone, std::array{
+  }, wand::CpuAccess::kNone, std::array{
     D3D12_CLEAR_VALUE{.Format = brdf_integration_map_format_, .Color = {0.F, 0.F, 0.F, 1.F}}
   }.data());
 
@@ -276,7 +276,7 @@ SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, R
   auto& cmd{render_manager.AcquireCommandList()};
   cmd.Begin(brdf_integration_pso_.get());
   cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  cmd.SetRenderTargets(std::array{static_cast<graphics::Texture const*>(brdf_integration_map_.get())}, nullptr);
+  cmd.SetRenderTargets(std::array{static_cast<wand::Texture const*>(brdf_integration_map_.get())}, nullptr);
   cmd.SetViewports(std::span{&brdf_integration_viewport, 1});
   cmd.SetScissorRects(std::span{&brdf_integration_scissor_rect, 1});
   cmd.ClearRenderTarget(*brdf_integration_map_, std::array{0.F, 0.F, 0.F, 1.F}, {});
@@ -324,7 +324,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   packet.mesh_data.reserve(static_mesh_components_.size());
 
   auto const find_or_emplace_back_buffer{
-    [&packet](graphics::SharedDeviceChildHandle<graphics::Buffer> const& buf) -> unsigned {
+    [&packet](wand::SharedDeviceChildHandle<wand::Buffer> const& buf) -> unsigned {
       unsigned idx;
 
       if (auto const it{std::ranges::find(packet.buffers, buf)}; it != std::ranges::end(packet.buffers)) {
@@ -339,7 +339,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   };
 
   auto const find_or_emplace_back_texture{
-    [&packet](graphics::SharedDeviceChildHandle<graphics::Texture> const& tex) -> unsigned {
+    [&packet](wand::SharedDeviceChildHandle<wand::Texture> const& tex) -> unsigned {
       unsigned idx;
 
       if (auto const it{std::ranges::find(packet.textures, tex)}; it != std::ranges::end(packet.textures)) {
@@ -879,7 +879,7 @@ auto SceneRenderer::Render() -> void {
       samp_tri_clamp_.Get());
 
     auto const& envmap_desc{frame_packet.prefiltered_env_map->GetDesc()};
-    auto const mip_count{graphics::GetActualMipLevels(envmap_desc)};
+    auto const mip_count{wand::GetActualMipLevels(envmap_desc)};
 
     for (UINT16 mip{0}; mip < mip_count; mip++) {
       auto const mip_scale{std::pow(0.5, mip)};
@@ -1101,7 +1101,7 @@ auto SceneRenderer::Render() -> void {
     // GBuffer and velocity pass
 
     cam_cmd.SetPipelineState(*frame_packet.gbuffer_velocity_pso);
-    std::array<graphics::Texture const*, 4> gbuffer_velocity_textures{
+    std::array<wand::Texture const*, 4> gbuffer_velocity_textures{
       gbuffer0_rt->GetColorTex().get(), gbuffer1_rt->GetColorTex().get(), gbuffer2_rt->GetColorTex().get(),
       velocity_rt->GetColorTex().get()
     };
@@ -1214,7 +1214,7 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx),
         *per_frame_cb.GetBuffer());
       cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<graphics::Texture const*>(ssao_rt->GetColorTex().get())}.data(), 1
+        std::array{static_cast<wand::Texture const*>(ssao_rt->GetColorTex().get())}.data(), 1
       }, nullptr);
       cam_cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cam_cmd.DrawInstanced(3, 1, 0, 0);
@@ -1233,7 +1233,7 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, point_clamp_samp_idx),
         samp_point_clamp_.Get());
       cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<graphics::Texture const*>(ssao_blur_rt->GetColorTex().get())}.data(), 1
+        std::array{static_cast<wand::Texture const*>(ssao_blur_rt->GetColorTex().get())}.data(), 1
       }, nullptr);
       cam_cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cam_cmd.DrawInstanced(3, 1, 0, 0);
@@ -1343,7 +1343,7 @@ auto SceneRenderer::Render() -> void {
     }
 
     cam_cmd.SetRenderTargets(std::span{
-      std::array{static_cast<graphics::Texture const*>(color_hdr_rt->GetColorTex().get())}.data(), 1
+      std::array{static_cast<wand::Texture const*>(color_hdr_rt->GetColorTex().get())}.data(), 1
     }, depth_rt->GetDepthStencilTex().get());
     cam_cmd.ClearRenderTarget(*color_hdr_rt->GetColorTex(), frame_packet.background_color, {});
 
@@ -1379,7 +1379,7 @@ auto SceneRenderer::Render() -> void {
       auto const ssr_rt{render_manager_->AcquireTemporaryRenderTarget(ssr_rt_desc)};
 
       cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<graphics::Texture const*>(ssr_rt->GetColorTex().get())}.data(), 1
+        std::array{static_cast<wand::Texture const*>(ssr_rt->GetColorTex().get())}.data(), 1
       }, depth_rt->GetDepthStencilTex().get());
       cam_cmd.ClearRenderTarget(*ssr_rt->GetColorTex(), ssr_rt_desc.color_clear_value, {});
 
@@ -1400,7 +1400,7 @@ auto SceneRenderer::Render() -> void {
 
       auto const ssr_compose_rt{render_manager_->AcquireTemporaryRenderTarget(ssr_compose_rt_desc)};
       cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<graphics::Texture const*>(ssr_compose_rt->GetColorTex().get())}.data(), 1
+        std::array{static_cast<wand::Texture const*>(ssr_compose_rt->GetColorTex().get())}.data(), 1
       }, nullptr);
       cam_cmd.ClearRenderTarget(*ssr_compose_rt->GetColorTex(), ssr_compose_rt_desc.color_clear_value, {});
 
@@ -1413,7 +1413,7 @@ auto SceneRenderer::Render() -> void {
     if (frame_packet.skybox_cubemap) {
       cam_cmd.SetPipelineState(*frame_packet.skybox_pso);
       cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<graphics::Texture const*>(color_hdr_rt->GetColorTex().get())}.data(), 1
+        std::array{static_cast<wand::Texture const*>(color_hdr_rt->GetColorTex().get())}.data(), 1
       }, depth_rt->GetDepthStencilTex().get());
 
       auto const cube_mesh{App::Instance().GetResourceManager().GetCubeMesh()};
@@ -1453,7 +1453,7 @@ auto SceneRenderer::Render() -> void {
 
       cam_cmd.SetPipelineState(*frame_packet.taa_resolve_pso);
       cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<graphics::Texture const*>(taa_rt->GetColorTex().get())}.data(), 1
+        std::array{static_cast<wand::Texture const*>(taa_rt->GetColorTex().get())}.data(), 1
       }, nullptr);
 
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, color_tex_idx),
@@ -1489,7 +1489,7 @@ auto SceneRenderer::Render() -> void {
       *std::bit_cast<UINT*>(&frame_packet.inv_gamma));
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(PostProcessDrawParams, bi_clamp_samp_idx), samp_bi_clamp_.Get());
     cam_cmd.SetRenderTargets(std::span{
-      std::array{static_cast<graphics::Texture const*>(target_rt.GetColorTex().get())}.data(), 1
+      std::array{static_cast<wand::Texture const*>(target_rt.GetColorTex().get())}.data(), 1
     }, nullptr);
     cam_cmd.DrawInstanced(3, 1, 0, 0);
 
@@ -1504,7 +1504,7 @@ auto SceneRenderer::Render() -> void {
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx),
         *cam_per_view_cb.GetBuffer());
       cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<graphics::Texture const*>(target_rt.GetColorTex().get())}.data(), 1
+        std::array{static_cast<wand::Texture const*>(target_rt.GetColorTex().get())}.data(), 1
       }, nullptr);
       cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
       cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -2012,7 +2012,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
                                               CameraData const& cam_data, float rt_aspect, int const cascade_count,
                                               ShadowCascadeBoundaries const& shadow_cascade_boundaries,
                                               std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
-                                              graphics::CommandList& cmd) -> void {
+                                              wand::CommandList& cmd) -> void {
   cmd.SetPipelineState(*shadow_pso_);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
   cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
@@ -2219,7 +2219,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
 auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
                                            SceneRenderer::FramePacket const& frame_packet,
-                                           graphics::CommandList& cmd) -> void {
+                                           wand::CommandList& cmd) -> void {
   cmd.SetPipelineState(*shadow_pso_);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
@@ -2372,7 +2372,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
     }
   };
 
-  graphics::PipelineDesc const shadow_pso_desc{
+  wand::PipelineDesc const shadow_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{&g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
     .as = CD3DX12_SHADER_BYTECODE{&g_depth_only_as_bytes, ARRAYSIZE(g_depth_only_as_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{&g_depth_only_ms_bytes, ARRAYSIZE(g_depth_only_ms_bytes)},
@@ -2382,13 +2382,13 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   shadow_pso_ = device_->CreatePipelineState(shadow_pso_desc, sizeof(DepthOnlyDrawParams) / 4);
 
-  graphics::PipelineDesc const depth_resolve_pso_desc{
+  wand::PipelineDesc const depth_resolve_pso_desc{
     .cs = CD3DX12_SHADER_BYTECODE{&g_depth_resolve_cs_bytes, ARRAYSIZE(g_depth_resolve_cs_bytes)}
   };
 
   depth_resolve_pso_ = device_->CreatePipelineState(depth_resolve_pso_desc, sizeof(DepthResolveDrawParams) / 4);
 
-  graphics::PipelineDesc const line_gizmo_pso_desc{
+  wand::PipelineDesc const line_gizmo_pso_desc{
     .primitive_topology_type = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
     .vs = CD3DX12_SHADER_BYTECODE{&g_gizmos_line_vs_bytes, ARRAYSIZE(g_gizmos_line_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_gizmos_ps_bytes, ARRAYSIZE(g_gizmos_ps_bytes)},
@@ -2398,7 +2398,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
 
 
-  graphics::PipelineDesc const gbuffer_velocity_pso_desc{
+  wand::PipelineDesc const gbuffer_velocity_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_ps_bytes, ARRAYSIZE(g_gbuffer_velocity_ps_bytes)},
     .as = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_as_bytes, ARRAYSIZE(g_gbuffer_velocity_as_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_ms_bytes, ARRAYSIZE(g_gbuffer_velocity_ms_bytes)},
@@ -2407,7 +2407,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
   gbuffer_velocity_pso_ = device_->CreatePipelineState(gbuffer_velocity_pso_desc, sizeof(GBufferDrawParams) / 4);
 
-  graphics::PipelineDesc const deferred_lighting_pso_desc{
+  wand::PipelineDesc const deferred_lighting_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_deferred_lighting_vs_bytes, ARRAYSIZE(g_deferred_lighting_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_deferred_lighting_ps_bytes, ARRAYSIZE(g_deferred_lighting_ps_bytes)},
     .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_, .rt_formats = color_format
@@ -2416,7 +2416,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   deferred_lighting_pso_ = device_->CreatePipelineState(deferred_lighting_pso_desc,
     sizeof(DeferredLightingDrawParams) / 4);
 
-  graphics::PipelineDesc const post_process_pso_desc{
+  wand::PipelineDesc const post_process_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_post_process_vs_bytes, ARRAYSIZE(g_post_process_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_post_process_ps_bytes, ARRAYSIZE(g_post_process_ps_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rt_formats = render_target_format,
@@ -2424,7 +2424,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   post_process_pso_ = device_->CreatePipelineState(post_process_pso_desc, sizeof(PostProcessDrawParams) / 4);
 
-  graphics::PipelineDesc const skybox_pso_desc{
+  wand::PipelineDesc const skybox_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{&g_skybox_ps_bytes, ARRAYSIZE(g_skybox_ps_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{&g_skybox_ms_bytes, ARRAYSIZE(g_skybox_ms_bytes)},
     .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_, .rasterizer_state = skybox_rasterizer_desc,
@@ -2432,7 +2432,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
   skybox_pso_ = device_->CreatePipelineState(skybox_pso_desc, sizeof(SkyboxDrawParams) / 4);
 
-  graphics::PipelineDesc const ssao_pso_desc{
+  wand::PipelineDesc const ssao_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_main_ps_bytes, ARRAYSIZE(g_ssao_main_ps_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rt_formats = ssao_format,
@@ -2440,7 +2440,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   ssao_pso_ = device_->CreatePipelineState(ssao_pso_desc, sizeof(SsaoDrawParams) / 4);
 
-  graphics::PipelineDesc const ssao_blur_pso_desc{
+  wand::PipelineDesc const ssao_blur_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_blur_ps_bytes, ARRAYSIZE(g_ssao_blur_ps_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rt_formats = ssao_format
@@ -2448,7 +2448,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   ssao_blur_pso_ = device_->CreatePipelineState(ssao_blur_pso_desc, sizeof(SsaoBlurDrawParams) / 4);
 
-  graphics::PipelineDesc const ssr_compose_pso_desc{
+  wand::PipelineDesc const ssr_compose_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_compose_ps_bytes, ARRAYSIZE(g_ssr_compose_ps_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
@@ -2456,7 +2456,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   ssr_compose_pso_ = device_->CreatePipelineState(ssr_compose_pso_desc, sizeof(SsrComposeDrawParams) / 4);
 
-  graphics::PipelineDesc const ssr_pso_desc{
+  wand::PipelineDesc const ssr_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_ps_bytes, ARRAYSIZE(g_ssr_ps_bytes)},
     .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_,
@@ -2465,7 +2465,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   ssr_pso_ = device_->CreatePipelineState(ssr_pso_desc, sizeof(SsrDrawParams) / 4);
 
-  graphics::PipelineDesc const taa_resolve_pso_desc{
+  wand::PipelineDesc const taa_resolve_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_vs_bytes, ARRAYSIZE(g_taa_resolve_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_ps_bytes, ARRAYSIZE(g_taa_resolve_ps_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
@@ -2473,13 +2473,13 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   taa_pso_ = device_->CreatePipelineState(taa_resolve_pso_desc, sizeof(TaaResolveDrawParams) / 4);
 
-  graphics::PipelineDesc const vtx_skinning_pso_desc{
+  wand::PipelineDesc const vtx_skinning_pso_desc{
     .cs = CD3DX12_SHADER_BYTECODE{&g_vtx_skinning_cs_bytes, ARRAYSIZE(g_vtx_skinning_cs_bytes)}
   };
 
   vtx_skinning_pso_ = device_->CreatePipelineState(vtx_skinning_pso_desc, sizeof(VertexSkinningDrawParams) / 4);
 
-  graphics::PipelineDesc const irradiance_pso_desc{
+  wand::PipelineDesc const irradiance_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{&g_irradiance_ps_bytes, ARRAYSIZE(g_irradiance_ps_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{&g_irradiance_ms_bytes, ARRAYSIZE(g_irradiance_ms_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rasterizer_state = skybox_rasterizer_desc,
@@ -2490,7 +2490,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
 
   irradiance_pso_ = device_->CreatePipelineState(irradiance_pso_desc, sizeof(IrradianceDrawParams) / 4);
 
-  graphics::PipelineDesc const envmap_prefilter_pso_desc{
+  wand::PipelineDesc const envmap_prefilter_pso_desc{
     .ps = CD3DX12_SHADER_BYTECODE{&g_envmap_prefilter_ps_bytes, ARRAYSIZE(g_envmap_prefilter_ps_bytes)},
     .ms = CD3DX12_SHADER_BYTECODE{&g_envmap_prefilter_ms_bytes, ARRAYSIZE(g_envmap_prefilter_ms_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rasterizer_state = skybox_rasterizer_desc,
@@ -2502,7 +2502,7 @@ auto SceneRenderer::RecreatePipelines() -> void {
   envmap_prefilter_pso_ = device_->
     CreatePipelineState(envmap_prefilter_pso_desc, sizeof(EnvmapPrefilterDrawParams) / 4);
 
-  graphics::PipelineDesc const brdf_integration_pso_desc{
+  wand::PipelineDesc const brdf_integration_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_brdf_integration_vs_bytes, ARRAYSIZE(g_brdf_integration_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_brdf_integration_ps_bytes, ARRAYSIZE(g_brdf_integration_ps_bytes)},
     .depth_stencil_state = depth_stencil_disabled, .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
@@ -2575,7 +2575,7 @@ auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
 auto SceneRenderer::DrawSubmesh(SubmeshData const& submesh, std::optional<UINT> const meshlet_count_param_idx,
                                 std::optional<UINT> const meshlet_offset_param_idx,
                                 std::optional<UINT> const base_vertex_param_idx,
-                                graphics::CommandList const& cmd) -> void {
+                                wand::CommandList const& cmd) -> void {
   DrawSubmesh(submesh.meshlet_count, submesh.first_meshlet, submesh.base_vertex, meshlet_count_param_idx,
     meshlet_offset_param_idx, base_vertex_param_idx, cmd);
 }
@@ -2586,7 +2586,7 @@ auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const sub
                                 std::optional<UINT> const meshlet_count_param_idx,
                                 std::optional<UINT> const meshlet_offset_param_idx,
                                 std::optional<UINT> const base_vertex_param_idx,
-                                graphics::CommandList const& cmd) -> void {
+                                wand::CommandList const& cmd) -> void {
   UINT constexpr max_dispatch_thread_group_count{65535};
   UINT constexpr max_meshlet_count_per_dispatch{AS_THREAD_GROUP_SIZE * max_dispatch_thread_group_count};
 

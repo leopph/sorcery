@@ -18,7 +18,7 @@
 
 
 namespace sorcery::mage {
-ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, graphics::SwapChain const& swap_chain,
+ImGuiRenderer::ImGuiRenderer(wand::GraphicsDevice& device, wand::SwapChain const& swap_chain,
                              rendering::RenderManager& render_manager) :
   device_{&device},
   swap_chain_{&swap_chain},
@@ -27,7 +27,7 @@ ImGuiRenderer::ImGuiRenderer(graphics::GraphicsDevice& device, graphics::SwapCha
   io.BackendRendererName = "Sorcery ImGui Renderer";
   io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
 
-  pso_ = device_->CreatePipelineState(graphics::PipelineDesc{
+  pso_ = device_->CreatePipelineState(wand::PipelineDesc{
     .vs = CD3DX12_SHADER_BYTECODE{g_imgui_vs_bytes, ARRAYSIZE(g_imgui_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{g_imgui_ps_bytes, ARRAYSIZE(g_imgui_ps_bytes)},
     .blend_state = CD3DX12_BLEND_DESC{
@@ -67,10 +67,10 @@ auto ImGuiRenderer::UpdateFonts() -> void {
   int fonts_tex_height;
   ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&fonts_tex_pixel_data, &fonts_tex_width, &fonts_tex_height);
 
-  fonts_tex_ = device_->CreateTexture(graphics::TextureDesc{
-    graphics::TextureDimension::k2D, static_cast<UINT>(fonts_tex_width), static_cast<UINT>(fonts_tex_height), 1, 1,
+  fonts_tex_ = device_->CreateTexture(wand::TextureDesc{
+    wand::TextureDimension::k2D, static_cast<UINT>(fonts_tex_width), static_cast<UINT>(fonts_tex_height), 1, 1,
     DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
-  }, graphics::CpuAccess::kNone, nullptr);
+  }, wand::CpuAccess::kNone, nullptr);
   fonts_tex_->SetDebugName(L"UI Font Texture");
 
   render_manager_->UpdateTexture(*fonts_tex_, 0, std::array{
@@ -136,9 +136,9 @@ auto ImGuiRenderer::Render() -> void {
 
   if (auto const vtx_data_byte_size{draw_data->TotalVtxCount * sizeof(ImDrawVert)};
     !vb || vb->GetDesc().size < vtx_data_byte_size) {
-    vb = device_->CreateBuffer(graphics::BufferDesc{
+    vb = device_->CreateBuffer(wand::BufferDesc{
       vtx_data_byte_size, static_cast<UINT>(sizeof(ImDrawVert)), false, true, false
-    }, graphics::CpuAccess::kWrite);
+    }, wand::CpuAccess::kWrite);
     vb->SetDebugName(L"UI Vertex Buffer");
     vb_ptr = vb->Map();
   }
@@ -148,8 +148,8 @@ auto ImGuiRenderer::Render() -> void {
 
   if (auto const idx_data_byte_size{draw_data->TotalIdxCount * sizeof(ImDrawIdx)};
     !ib || ib->GetDesc().size < idx_data_byte_size) {
-    ib = device_->CreateBuffer(graphics::BufferDesc{idx_data_byte_size, 0, false, false, false},
-      graphics::CpuAccess::kWrite);
+    ib = device_->CreateBuffer(wand::BufferDesc{idx_data_byte_size, 0, false, false, false},
+      wand::CpuAccess::kWrite);
     ib->SetDebugName(L"UI Index Buffer");
     ib_ptr = ib->Map();
   }
@@ -231,7 +231,7 @@ auto ImGuiRenderer::Render() -> void {
         });
 
         cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ImGuiDrawParams, tex_idx),
-          *std::bit_cast<graphics::Texture*>(draw_cmd.GetTexID()));
+          *std::bit_cast<wand::Texture*>(draw_cmd.GetTexID()));
 
         cmd.DrawIndexedInstanced(draw_cmd.ElemCount, 1, draw_cmd.IdxOffset + global_idx_offset,
           draw_cmd.VtxOffset + global_vtx_offset, 0);

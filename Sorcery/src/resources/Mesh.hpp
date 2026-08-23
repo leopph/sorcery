@@ -10,8 +10,9 @@
 #include "../Math.hpp"
 #include "../mesh_data.hpp"
 #include "../resource_residency_policy.hpp"
-#include "../rendering/graphics.hpp"
 #include "../rendering/structured_buffer.hpp"
+#include "wand/buffer.hpp"
+#include "wand/device_child.hpp"
 
 
 namespace sorcery {
@@ -53,7 +54,7 @@ class Mesh final : public Resource {
   // Indexing
 
   rendering::StructuredBuffer<MeshletData> meshlet_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Buffer> vertex_idx_buf_;
+  wand::SharedDeviceChildHandle<wand::Buffer> vertex_idx_buf_;
   rendering::StructuredBuffer<MeshletTriangleData> prim_idx_buf_;
   rendering::StructuredBuffer<MeshletCullData> cull_data_buf_;
 
@@ -90,25 +91,25 @@ public:
   auto UploadToGpu(CpuResidencyPolicy cpu_policy) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetPositionBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetPositionBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
   [[nodiscard]] SORCERYAPI
-  auto GetNormalBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetNormalBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
   [[nodiscard]] SORCERYAPI
-  auto GetTangentBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetTangentBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
   [[nodiscard]] SORCERYAPI
-  auto GetUvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetUvBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
   [[nodiscard]] SORCERYAPI
-  auto GetBoneWeightBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetBoneWeightBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
   [[nodiscard]] SORCERYAPI
-  auto GetBoneIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetBoneIndexBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
   [[nodiscard]] SORCERYAPI
-  auto GetMeshletBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetMeshletBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
   [[nodiscard]] SORCERYAPI
-  auto GetVertexIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetVertexIndexBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
   [[nodiscard]] SORCERYAPI
-  auto GetPrimitiveIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetPrimitiveIndexBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
   [[nodiscard]] SORCERYAPI
-  auto GetCullDataBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetCullDataBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
 
   [[nodiscard]] SORCERYAPI
   auto GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const>;

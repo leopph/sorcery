@@ -2,8 +2,8 @@
 
 #include "observer_ptr.hpp"
 #include "../gui_helpers.hpp"
-#include "rendering/graphics.hpp"
 #include "rendering/render_manager.hpp"
+#include "wand/wand.hpp"
 
 #include <array>
 #include <vector>
@@ -12,7 +12,7 @@
 namespace sorcery::mage {
 class ImGuiRenderer {
 public:
-  ImGuiRenderer(graphics::GraphicsDevice& device, graphics::SwapChain const& swap_chain,
+  ImGuiRenderer(wand::GraphicsDevice& device, wand::SwapChain const& swap_chain,
                 rendering::RenderManager& render_manager);
 
   auto UpdateFonts() -> void;
@@ -41,17 +41,17 @@ private:
   };
 
 
-  ObserverPtr<graphics::GraphicsDevice> device_;
-  ObserverPtr<graphics::SwapChain const> swap_chain_;
+  ObserverPtr<wand::GraphicsDevice> device_;
+  ObserverPtr<wand::SwapChain const> swap_chain_;
   ObserverPtr<rendering::RenderManager> render_manager_;
 
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> pso_;
-  graphics::UniqueSamplerHandle samp_;
-  graphics::SharedDeviceChildHandle<graphics::Texture> fonts_tex_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> pso_;
+  wand::UniqueSamplerHandle samp_;
+  wand::SharedDeviceChildHandle<wand::Texture> fonts_tex_;
 
-  std::array<graphics::SharedDeviceChildHandle<graphics::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
+  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
   vtx_buffers_;
-  std::array<graphics::SharedDeviceChildHandle<graphics::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
+  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
   idx_buffers_;
 
   std::array<void*, rendering::RenderManager::GetMaxFramesInFlight()> vb_ptrs_{};

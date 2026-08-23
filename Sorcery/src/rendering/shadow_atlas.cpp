@@ -4,14 +4,14 @@
 
 
 namespace sorcery::rendering {
-ShadowAtlas::ShadowAtlas(graphics::GraphicsDevice* const device, DXGI_FORMAT const depth_format, UINT const size,
-                         int const subdiv_size):
+ShadowAtlas::ShadowAtlas(wand::GraphicsDevice* const device, DXGI_FORMAT const depth_format, UINT const size,
+                         int const subdiv_size) :
   GridLike{subdiv_size},
   tex_{
     device->CreateTexture(
-      graphics::TextureDesc{
-        graphics::TextureDimension::k2D, size, size, 1, 1, depth_format, 1, true, false, true, false
-      }, graphics::CpuAccess::kNone,
+      wand::TextureDesc{
+        wand::TextureDimension::k2D, size, size, 1, 1, depth_format, 1, true, false, true, false
+      }, wand::CpuAccess::kNone,
       std::array{D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {DEPTH_CLEAR_VALUE, 0}}}.data())
   },
   size_{size} {
@@ -21,7 +21,7 @@ ShadowAtlas::ShadowAtlas(graphics::GraphicsDevice* const device, DXGI_FORMAT con
 }
 
 
-ShadowAtlas::Cell::Cell(int const subdiv_size):
+ShadowAtlas::Cell::Cell(int const subdiv_size) :
   GridLike{subdiv_size} {
   subcells_.resize(GetElementCount());
 }
@@ -47,7 +47,7 @@ auto ShadowAtlas::Cell::Resize(int const subdiv_size) -> void {
 ShadowAtlas::~ShadowAtlas() = default;
 
 
-auto ShadowAtlas::GetTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+auto ShadowAtlas::GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const& {
   return tex_;
 }
 

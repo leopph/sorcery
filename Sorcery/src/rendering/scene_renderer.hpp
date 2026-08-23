@@ -7,7 +7,6 @@
 #include "Camera.hpp"
 #include "constant_buffer.hpp"
 #include "directional_shadow_map_array.hpp"
-#include "graphics.hpp"
 #include "punctual_shadow_atlas.hpp"
 #include "render_manager.hpp"
 #include "render_target.hpp"
@@ -21,6 +20,7 @@
 #include "../scene_objects/StaticMeshComponent.hpp"
 #include "shaders/shader_interop.h"
 #include "shaders/shadow_filtering_modes.h"
+#include "wand/wand.hpp"
 
 
 namespace sorcery::rendering {
@@ -62,7 +62,7 @@ struct SsrParams {
 
 class SceneRenderer {
 public:
-  LEOPPHAPI SceneRenderer(Window& window, graphics::GraphicsDevice& device, RenderManager& render_manager);
+  LEOPPHAPI SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager);
   SceneRenderer(SceneRenderer const&) = delete;
   SceneRenderer(SceneRenderer&&) = delete;
 
@@ -268,8 +268,8 @@ private:
 
 
   struct FramePacket {
-    std::vector<graphics::SharedDeviceChildHandle<graphics::Buffer>> buffers;
-    std::vector<graphics::SharedDeviceChildHandle<graphics::Texture>> textures;
+    std::vector<wand::SharedDeviceChildHandle<wand::Buffer>> buffers;
+    std::vector<wand::SharedDeviceChildHandle<wand::Texture>> textures;
     std::vector<LightData> light_data;
     std::vector<MeshData> mesh_data;
     std::vector<SubmeshData> submesh_data;
@@ -297,29 +297,29 @@ private:
     DXGI_FORMAT color_buffer_format;
     std::array<float, 4> background_color;
 
-    graphics::SharedDeviceChildHandle<graphics::Texture> skybox_cubemap;
-    graphics::SharedDeviceChildHandle<graphics::Texture> irradiance_map;
-    graphics::SharedDeviceChildHandle<graphics::Texture> prefiltered_env_map;
+    wand::SharedDeviceChildHandle<wand::Texture> skybox_cubemap;
+    wand::SharedDeviceChildHandle<wand::Texture> irradiance_map;
+    wand::SharedDeviceChildHandle<wand::Texture> prefiltered_env_map;
     bool draw_irradiance_map;
     bool draw_prefiltered_env_map;
 
     Vector3 ambient_light;
 
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> shadow_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> gbuffer_velocity_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_resolve_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> line_gizmo_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> deferred_lighting_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> post_process_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_compose_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> taa_resolve_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> irradiance_pso;
-    graphics::SharedDeviceChildHandle<graphics::PipelineState> envmap_prefilter_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> shadow_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> gbuffer_velocity_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> depth_resolve_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> line_gizmo_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> deferred_lighting_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> post_process_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> skybox_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> ssao_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> ssao_blur_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> ssr_compose_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> ssr_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> taa_resolve_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> vtx_skinning_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> irradiance_pso;
+    wand::SharedDeviceChildHandle<wand::PipelineState> envmap_prefilter_pso;
   };
 
 
@@ -352,9 +352,9 @@ private:
                                  CameraData const& cam_data, float rt_aspect, int cascade_count,
                                  ShadowCascadeBoundaries const& shadow_cascade_boundaries,
                                  std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
-                                 graphics::CommandList& cmd) -> void;
+                                 wand::CommandList& cmd) -> void;
   auto DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, FramePacket const& frame_packet,
-                              graphics::CommandList& cmd) -> void;
+                              wand::CommandList& cmd) -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
 
@@ -373,12 +373,12 @@ private:
   static auto DrawSubmesh(SubmeshData const& submesh, std::optional<UINT> meshlet_count_param_idx,
                           std::optional<UINT> meshlet_offset_param_idx,
                           std::optional<UINT> base_vertex_param_idx,
-                          graphics::CommandList const& cmd) -> void;
+                          wand::CommandList const& cmd) -> void;
   static auto DrawSubmesh(UINT submesh_meshlet_count, UINT submesh_meshlet_offset,
                           UINT submesh_base_vertex, std::optional<UINT> meshlet_count_param_idx,
                           std::optional<UINT> meshlet_offset_param_idx,
                           std::optional<UINT> base_vertex_param_idx,
-                          graphics::CommandList const& cmd) -> void;
+                          wand::CommandList const& cmd) -> void;
 
   static DXGI_FORMAT constexpr imprecise_color_buffer_format_{DXGI_FORMAT_R11G11B10_FLOAT};
   static DXGI_FORMAT constexpr precise_color_buffer_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
@@ -401,51 +401,51 @@ private:
   ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<Window> window_;
 
-  ObserverPtr<graphics::GraphicsDevice> device_;
+  ObserverPtr<wand::GraphicsDevice> device_;
 
   std::array<ConstantBuffer<ShaderPerFrameConstants>, RenderManager::GetMaxFramesInFlight()> per_frame_cbs_;
   std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, RenderManager::GetMaxFramesInFlight()>> per_view_cbs_;
   std::vector<std::array<ConstantBuffer<ShaderPerDrawConstants>, RenderManager::GetMaxFramesInFlight()>> per_draw_cbs_;
   StructuredBuffer<ShaderLight> light_buffer_;
 
-  graphics::SharedDeviceChildHandle<graphics::Texture> white_tex_;
-  graphics::SharedDeviceChildHandle<graphics::Texture> ssao_noise_tex_;
+  wand::SharedDeviceChildHandle<wand::Texture> white_tex_;
+  wand::SharedDeviceChildHandle<wand::Texture> ssao_noise_tex_;
 
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> shadow_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> depth_resolve_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> line_gizmo_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> gbuffer_velocity_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> deferred_lighting_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> post_process_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> skybox_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> ssao_blur_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_compose_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> ssr_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> taa_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> vtx_skinning_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> irradiance_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> envmap_prefilter_pso_;
-  graphics::SharedDeviceChildHandle<graphics::PipelineState> brdf_integration_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> shadow_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> depth_resolve_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> line_gizmo_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> gbuffer_velocity_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> deferred_lighting_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> post_process_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> skybox_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> ssao_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> ssao_blur_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> ssr_compose_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> ssr_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> taa_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> vtx_skinning_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> irradiance_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> envmap_prefilter_pso_;
+  wand::SharedDeviceChildHandle<wand::PipelineState> brdf_integration_pso_;
 
-  graphics::UniqueSamplerHandle samp_cmp_pcf_ge_;
-  graphics::UniqueSamplerHandle samp_cmp_pcf_le_;
-  graphics::UniqueSamplerHandle samp_cmp_point_ge_;
-  graphics::UniqueSamplerHandle samp_cmp_point_le_;
-  graphics::UniqueSamplerHandle samp_af16_clamp_;
-  graphics::UniqueSamplerHandle samp_af8_clamp_;
-  graphics::UniqueSamplerHandle samp_af4_clamp_;
-  graphics::UniqueSamplerHandle samp_af2_clamp_;
-  graphics::UniqueSamplerHandle samp_tri_clamp_;
-  graphics::UniqueSamplerHandle samp_bi_clamp_;
-  graphics::UniqueSamplerHandle samp_point_clamp_;
-  graphics::UniqueSamplerHandle samp_af16_wrap_;
-  graphics::UniqueSamplerHandle samp_af8_wrap_;
-  graphics::UniqueSamplerHandle samp_af4_wrap_;
-  graphics::UniqueSamplerHandle samp_af2_wrap_;
-  graphics::UniqueSamplerHandle samp_tri_wrap_;
-  graphics::UniqueSamplerHandle samp_bi_wrap_;
-  graphics::UniqueSamplerHandle samp_point_wrap_;
+  wand::UniqueSamplerHandle samp_cmp_pcf_ge_;
+  wand::UniqueSamplerHandle samp_cmp_pcf_le_;
+  wand::UniqueSamplerHandle samp_cmp_point_ge_;
+  wand::UniqueSamplerHandle samp_cmp_point_le_;
+  wand::UniqueSamplerHandle samp_af16_clamp_;
+  wand::UniqueSamplerHandle samp_af8_clamp_;
+  wand::UniqueSamplerHandle samp_af4_clamp_;
+  wand::UniqueSamplerHandle samp_af2_clamp_;
+  wand::UniqueSamplerHandle samp_tri_clamp_;
+  wand::UniqueSamplerHandle samp_bi_clamp_;
+  wand::UniqueSamplerHandle samp_point_clamp_;
+  wand::UniqueSamplerHandle samp_af16_wrap_;
+  wand::UniqueSamplerHandle samp_af8_wrap_;
+  wand::UniqueSamplerHandle samp_af4_wrap_;
+  wand::UniqueSamplerHandle samp_af2_wrap_;
+  wand::UniqueSamplerHandle samp_tri_wrap_;
+  wand::UniqueSamplerHandle samp_bi_wrap_;
+  wand::UniqueSamplerHandle samp_point_wrap_;
 
   std::array<FramePacket, RenderManager::GetMaxFramesInFlight()> frame_packets_;
 
@@ -463,7 +463,7 @@ private:
 
   StructuredBuffer<Vector4> ssao_samples_buffer_;
 
-  graphics::SharedDeviceChildHandle<graphics::Texture> brdf_integration_map_;
+  wand::SharedDeviceChildHandle<wand::Texture> brdf_integration_map_;
 
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
   SsrParams ssr_params_{

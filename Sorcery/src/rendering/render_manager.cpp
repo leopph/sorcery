@@ -9,7 +9,7 @@
 
 
 namespace sorcery::rendering {
-RenderManager::RenderManager(graphics::GraphicsDevice& device) :
+RenderManager::RenderManager(wand::GraphicsDevice& device) :
   device_{&device},
   in_flight_frames_fence_{device_->CreateFence(0)},
   upload_fence_{device_->CreateFence(0)} {
@@ -40,7 +40,7 @@ auto RenderManager::GetPreviousFrameIndex() const -> UINT {
 }
 
 
-auto RenderManager::AcquireCommandList() -> graphics::CommandList& {
+auto RenderManager::AcquireCommandList() -> wand::CommandList& {
   std::scoped_lock const lck{cmd_list_mutex_};
   if (next_cmd_list_idx_ >= cmd_lists_.size()) {
     CreateCommandLists(1);
@@ -62,7 +62,7 @@ auto RenderManager::AcquireTemporaryRenderTarget(RenderTarget::Desc const& desc)
 }
 
 
-auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, UINT const byte_offset,
+auto RenderManager::UpdateBuffer(wand::Buffer const& buf, UINT const byte_offset,
                                  std::span<std::byte const> const data) -> void {
   if (buf.GetDesc().size - byte_offset < data.size()) {
     throw std::runtime_error{"Failed to update buffer: the provided data does not fit in the destination buffer."};
@@ -93,7 +93,7 @@ auto RenderManager::UpdateBuffer(graphics::Buffer const& buf, UINT const byte_of
 }
 
 
-auto RenderManager::UpdateTexture(graphics::Texture const& tex, UINT const subresource_offset,
+auto RenderManager::UpdateTexture(wand::Texture const& tex, UINT const subresource_offset,
                                   std::span<D3D12_SUBRESOURCE_DATA const> const data) -> void {
   UINT64 tex_size;
   device_->GetCopyableFootprints(tex.GetDesc(), subresource_offset, static_cast<UINT>(data.size()), 0, nullptr, nullptr,
@@ -156,10 +156,10 @@ auto RenderManager::UpdateTexture(graphics::Texture const& tex, UINT const subre
 
 
 auto RenderManager::CreateReadOnlyTexture(
-  DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture> {
+  DirectX::ScratchImage const& img) -> wand::SharedDeviceChildHandle<wand::Texture> {
   auto const& meta{img.GetMetadata()};
 
-  graphics::TextureDesc desc;
+  wand::TextureDesc desc;
   desc.width = static_cast<UINT>(meta.width);
   desc.mip_levels = static_cast<UINT16>(meta.mipLevels);
   desc.format = meta.format;
@@ -170,24 +170,24 @@ auto RenderManager::CreateReadOnlyTexture(
   desc.unordered_access = false;
 
   if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE1D) {
-    desc.dimension = graphics::TextureDimension::k1D;
+    desc.dimension = wand::TextureDimension::k1D;
     desc.height = 1;
     desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
   } else if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
     if (meta.IsCubemap()) {
-      desc.dimension = graphics::TextureDimension::kCube;
+      desc.dimension = wand::TextureDimension::kCube;
     } else {
-      desc.dimension = graphics::TextureDimension::k2D;
+      desc.dimension = wand::TextureDimension::k2D;
     }
     desc.height = static_cast<UINT>(meta.height);
     desc.depth_or_array_size = static_cast<UINT16>(meta.arraySize);
   } else if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE3D) {
-    desc.dimension = graphics::TextureDimension::k3D;
+    desc.dimension = wand::TextureDimension::k3D;
     desc.height = static_cast<UINT>(meta.height);
     desc.depth_or_array_size = static_cast<UINT16>(meta.depth);
   }
 
-  auto tex{device_->CreateTexture(desc, graphics::CpuAccess::kNone, nullptr)};
+  auto tex{device_->CreateTexture(desc, wand::CpuAccess::kNone, nullptr)};
 
   std::vector<D3D12_SUBRESOURCE_DATA> subresource_data;
   subresource_data.reserve(img.GetImageCount());
@@ -203,13 +203,13 @@ auto RenderManager::CreateReadOnlyTexture(
 }
 
 
-auto RenderManager::KeepAliveWhileInUse(graphics::SharedDeviceChildHandle<graphics::Buffer> buf) -> void {
+auto RenderManager::KeepAliveWhileInUse(wand::SharedDeviceChildHandle<wand::Buffer> buf) -> void {
   std::scoped_lock const lock{keep_alive_resources_mutex_};
   resources_to_keep_alive_.emplace_back(std::move(buf), 0);
 }
 
 
-auto RenderManager::KeepAliveWhileInUse(graphics::SharedDeviceChildHandle<graphics::Texture> tex) -> void {
+auto RenderManager::KeepAliveWhileInUse(wand::SharedDeviceChildHandle<wand::Texture> tex) -> void {
   std::scoped_lock const lock{keep_alive_resources_mutex_};
   resources_to_keep_alive_.emplace_back(std::move(tex), 0);
 }
@@ -272,7 +272,7 @@ auto RenderManager::ReleaseUnusedBuffers() -> void {
 
 
 auto RenderManager::RecreateUploadBuffer(UINT64 const size) -> void {
-  upload_buf_ = device_->CreateBuffer(graphics::BufferDesc{size, 0, false, false, false}, graphics::CpuAccess::kWrite);
+  upload_buf_ = device_->CreateBuffer(wand::BufferDesc{size, 0, false, false, false}, wand::CpuAccess::kWrite);
   upload_buf_->SetDebugName(L"Render Manager Upload Buffer");
   upload_ptr_ = static_cast<std::byte*>(upload_buf_->Map());
 }

@@ -1,17 +1,17 @@
 #pragma once
 
-#include "graphics.hpp"
+#include "wand/wand.hpp"
 
 
 namespace sorcery::rendering {
 class DirectionalShadowMapArray {
-  graphics::SharedDeviceChildHandle<graphics::Texture> tex_;
+  wand::SharedDeviceChildHandle<wand::Texture> tex_;
   UINT size_;
 
 public:
-  explicit DirectionalShadowMapArray(graphics::GraphicsDevice* device, DXGI_FORMAT depth_format, UINT size);
+  explicit DirectionalShadowMapArray(wand::GraphicsDevice* device, DXGI_FORMAT depth_format, UINT size);
 
-  [[nodiscard]] auto GetTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
+  [[nodiscard]] auto GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const&;
   [[nodiscard]] auto GetSize() const noexcept -> UINT;
 };
 }

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "graphics.hpp"
 #include "render_target.hpp"
 #include "../Core.hpp"
 #include "../Math.hpp"
 #include "../observer_ptr.hpp"
+#include "wand/wand.hpp"
 
 #include <DirectXTex.h>
 
@@ -19,7 +19,7 @@
 namespace sorcery::rendering {
 class RenderManager {
 public:
-  LEOPPHAPI explicit RenderManager(graphics::GraphicsDevice& device);
+  LEOPPHAPI explicit RenderManager(wand::GraphicsDevice& device);
   RenderManager(RenderManager const&) = delete;
   RenderManager(RenderManager&&) = delete;
 
@@ -35,19 +35,19 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetCurrentFrameIndex() const -> UINT;
   [[nodiscard]] LEOPPHAPI auto GetPreviousFrameIndex() const -> UINT;
 
-  [[nodiscard]] LEOPPHAPI auto AcquireCommandList() -> graphics::CommandList&;
+  [[nodiscard]] LEOPPHAPI auto AcquireCommandList() -> wand::CommandList&;
   [[nodiscard]] LEOPPHAPI auto AcquireTemporaryRenderTarget(
     RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget>;
 
-  LEOPPHAPI auto UpdateBuffer(graphics::Buffer const& buf, UINT byte_offset, std::span<std::byte const> data) -> void;
-  LEOPPHAPI auto UpdateTexture(graphics::Texture const& tex, UINT subresource_offset,
+  LEOPPHAPI auto UpdateBuffer(wand::Buffer const& buf, UINT byte_offset, std::span<std::byte const> data) -> void;
+  LEOPPHAPI auto UpdateTexture(wand::Texture const& tex, UINT subresource_offset,
                                std::span<D3D12_SUBRESOURCE_DATA const> data) -> void;
 
   [[nodiscard]] LEOPPHAPI auto CreateReadOnlyTexture(
-    DirectX::ScratchImage const& img) -> graphics::SharedDeviceChildHandle<graphics::Texture>;
+    DirectX::ScratchImage const& img) -> wand::SharedDeviceChildHandle<wand::Texture>;
 
-  LEOPPHAPI auto KeepAliveWhileInUse(graphics::SharedDeviceChildHandle<graphics::Buffer> buf) -> void;
-  LEOPPHAPI auto KeepAliveWhileInUse(graphics::SharedDeviceChildHandle<graphics::Texture> tex) -> void;
+  LEOPPHAPI auto KeepAliveWhileInUse(wand::SharedDeviceChildHandle<wand::Buffer> buf) -> void;
+  LEOPPHAPI auto KeepAliveWhileInUse(wand::SharedDeviceChildHandle<wand::Texture> tex) -> void;
 
   // At the end of a frame this must be called!
   LEOPPHAPI auto EndFrame() -> void;
@@ -60,8 +60,8 @@ private:
 
 
   struct KeepAliveRecord {
-    std::variant<graphics::SharedDeviceChildHandle<graphics::Buffer>, graphics::SharedDeviceChildHandle<
-                   graphics::Texture>> res;
+    std::variant<wand::SharedDeviceChildHandle<wand::Buffer>, wand::SharedDeviceChildHandle<
+                   wand::Texture>> res;
     UINT age;
   };
 
@@ -84,22 +84,22 @@ private:
     max_tmp_rt_age_ > max_gpu_queued_frames_ &&
     "Temporary render targets must live long enough to let any work possibly queued on them finish!");
 
-  ObserverPtr<graphics::GraphicsDevice> device_;
+  ObserverPtr<wand::GraphicsDevice> device_;
 
   UINT64 frame_count_{0};
   UINT frame_idx_{0};
   UINT next_cmd_list_idx_{0};
 
-  std::vector<std::array<graphics::SharedDeviceChildHandle<graphics::CommandList>, max_frames_in_flight_>> cmd_lists_;
+  std::vector<std::array<wand::SharedDeviceChildHandle<wand::CommandList>, max_frames_in_flight_>> cmd_lists_;
   std::mutex cmd_list_mutex_;
 
   std::vector<TempRenderTargetRecord> tmp_render_targets_;
   std::mutex tmp_render_targets_mutex_;
 
-  graphics::SharedDeviceChildHandle<graphics::Fence> in_flight_frames_fence_;
+  wand::SharedDeviceChildHandle<wand::Fence> in_flight_frames_fence_;
 
-  graphics::SharedDeviceChildHandle<graphics::Buffer> upload_buf_;
-  graphics::SharedDeviceChildHandle<graphics::Fence> upload_fence_;
+  wand::SharedDeviceChildHandle<wand::Buffer> upload_buf_;
+  wand::SharedDeviceChildHandle<wand::Fence> upload_fence_;
   std::byte* upload_ptr_{nullptr};
   UINT64 upload_buf_current_offset_{0};
   std::mutex upload_mutex_;

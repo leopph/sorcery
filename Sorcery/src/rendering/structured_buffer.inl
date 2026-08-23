@@ -3,7 +3,7 @@
 
 namespace sorcery::rendering {
 template<typename T>
-auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, RenderManager& render_manager,
+auto StructuredBuffer<T>::New(wand::GraphicsDevice& device, RenderManager& render_manager,
                               bool const cpu_accessible, bool const shader_resource,
                               bool const unordered_access) -> StructuredBuffer {
   return StructuredBuffer{device, render_manager, 1, cpu_accessible, shader_resource, unordered_access};
@@ -11,7 +11,7 @@ auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, RenderManager& r
 
 
 template<typename T>
-auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, RenderManager& render_manager,
+auto StructuredBuffer<T>::New(wand::GraphicsDevice& device, RenderManager& render_manager,
                               std::span<T const> const data, bool const cpu_accessible, bool const shader_resource,
                               bool const unordered_access) -> StructuredBuffer {
   return StructuredBuffer(device, render_manager, data, cpu_accessible, shader_resource, unordered_access);
@@ -19,7 +19,7 @@ auto StructuredBuffer<T>::New(graphics::GraphicsDevice& device, RenderManager& r
 
 
 template<typename T>
-auto StructuredBuffer<T>::GetBuffer() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto StructuredBuffer<T>::GetBuffer() const noexcept -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return buffer_;
 }
 
@@ -61,7 +61,7 @@ auto StructuredBuffer<T>::Resize(UINT const new_size) -> void {
 
 
 template<typename T>
-StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice& device, RenderManager& render_manager,
+StructuredBuffer<T>::StructuredBuffer(wand::GraphicsDevice& device, RenderManager& render_manager,
                                       UINT const initial_capacity, bool const cpu_accessible,
                                       bool const shader_resource, bool const unordered_access) :
   device_{&device},
@@ -75,7 +75,7 @@ StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice& device, RenderMa
 
 
 template<typename T>
-StructuredBuffer<T>::StructuredBuffer(graphics::GraphicsDevice& device, RenderManager& render_manager,
+StructuredBuffer<T>::StructuredBuffer(wand::GraphicsDevice& device, RenderManager& render_manager,
                                       std::span<T const> const data, bool const cpu_accessible,
                                       bool const shader_resource, bool const unordered_access) :
   StructuredBuffer{
@@ -97,9 +97,9 @@ auto StructuredBuffer<T>::RecreateBuffer() -> void {
     render_manager_->KeepAliveWhileInUse(buffer_);
   }
 
-  buffer_ = device_->CreateBuffer(graphics::BufferDesc{
+  buffer_ = device_->CreateBuffer(wand::BufferDesc{
     static_cast<UINT>(capacity_ * sizeof(T)), sizeof(T), false, srv_, uav_
-  }, cpu_accessible_ ? graphics::CpuAccess::kWrite : graphics::CpuAccess::kNone);
+  }, cpu_accessible_ ? wand::CpuAccess::kWrite : wand::CpuAccess::kNone);
 
   mapped_ptr_ = static_cast<T*>(cpu_accessible_ ? buffer_->Map() : nullptr);
 }

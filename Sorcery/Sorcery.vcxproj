@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\Microsoft.Direct3D.DXC.1.8.2505.32\build\native\Microsoft.Direct3D.DXC.props" Condition="Exists('..\packages\Microsoft.Direct3D.DXC.1.8.2505.32\build\native\Microsoft.Direct3D.DXC.props')" />
-  <Import Project="..\packages\Microsoft.Direct3D.D3D12.1.616.1\build\native\Microsoft.Direct3D.D3D12.props" Condition="Exists('..\packages\Microsoft.Direct3D.D3D12.1.616.1\build\native\Microsoft.Direct3D.D3D12.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -53,14 +51,14 @@
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>Sorcery</TargetName>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
-    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)vcpkg_installed</ExternalIncludePath>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)vcpkg_installed\;$(SolutionDir)deps\work-stealing-queue\</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>Sorcery</TargetName>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
-    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)vcpkg_installed</ExternalIncludePath>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)vcpkg_installed\;$(SolutionDir)deps\work-stealing-queue\</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
@@ -71,7 +69,8 @@
       <PreprocessorDefinitions>SORCERY_BUILD;SPDLOG_COMPILED_LIB;SPDLOG_SHARED_LIB;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\src;$(SolutionDir)vendor\D3D12MemoryAllocator\;$(SolutionDir)vendor\work-stealing-queue\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
@@ -82,7 +81,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;dxguid.lib;Dwmapi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Dwmapi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>
@@ -108,7 +107,8 @@
       <PreprocessorDefinitions>SORCERY_BUILD;SPDLOG_COMPILED_LIB;SPDLOG_SHARED_LIB;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\src;$(SolutionDir)vendor\D3D12MemoryAllocator\;$(SolutionDir)vendor\work-stealing-queue\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
@@ -121,7 +121,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;dxguid.lib;Dwmapi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Dwmapi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>
@@ -140,10 +140,6 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\vendor\D3D12MemoryAllocator\D3D12MemAlloc.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
-    </ClCompile>
     <ClCompile Include="src\app.cpp" />
     <ClCompile Include="src\Bounds.cpp" />
     <ClCompile Include="src\char_encoding_helpers.cpp" />
@@ -154,7 +150,6 @@
     <ClCompile Include="src\object_ptr.cpp" />
     <ClCompile Include="src\object_registry.cpp" />
     <ClCompile Include="src\random.cpp" />
-    <ClCompile Include="src\rendering\graphics.cpp" />
     <ClCompile Include="src\rendering\Camera.cpp" />
     <ClCompile Include="src\rendering\directional_shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\scene_renderer.cpp" />
@@ -214,7 +209,6 @@
     <ClInclude Include="src\observer_ptr.hpp" />
     <ClInclude Include="src\point.hpp" />
     <ClInclude Include="src\random.hpp" />
-    <ClInclude Include="src\rendering\graphics.hpp" />
     <ClInclude Include="src\rendering\directional_shadow_map_array.hpp" />
     <ClInclude Include="src\rendering\scene_renderer.hpp" />
     <ClInclude Include="src\rendering\constant_buffer.hpp" />
@@ -282,7 +276,6 @@
     <ClInclude Include="src\Platform.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="src\job_system.inl" />
     <None Include="src\object.inl" />
     <None Include="src\object_ptr.inl" />
@@ -634,18 +627,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\deps\wand\wand\wand.vcxproj">
+      <Project>{f91f1551-40d1-4c76-af68-ade75caf8cb7}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\Microsoft.Direct3D.D3D12.1.616.1\build\native\Microsoft.Direct3D.D3D12.targets" Condition="Exists('..\packages\Microsoft.Direct3D.D3D12.1.616.1\build\native\Microsoft.Direct3D.D3D12.targets')" />
-    <Import Project="..\packages\Microsoft.Direct3D.DXC.1.8.2505.32\build\native\Microsoft.Direct3D.DXC.targets" Condition="Exists('..\packages\Microsoft.Direct3D.DXC.1.8.2505.32\build\native\Microsoft.Direct3D.DXC.targets')" />
-  </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Microsoft.Direct3D.D3D12.1.616.1\build\native\Microsoft.Direct3D.D3D12.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.D3D12.1.616.1\build\native\Microsoft.Direct3D.D3D12.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.Direct3D.D3D12.1.616.1\build\native\Microsoft.Direct3D.D3D12.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.D3D12.1.616.1\build\native\Microsoft.Direct3D.D3D12.targets'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.Direct3D.DXC.1.8.2505.32\build\native\Microsoft.Direct3D.DXC.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.DXC.1.8.2505.32\build\native\Microsoft.Direct3D.DXC.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.Direct3D.DXC.1.8.2505.32\build\native\Microsoft.Direct3D.DXC.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.DXC.1.8.2505.32\build\native\Microsoft.Direct3D.DXC.targets'))" />
-  </Target>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>

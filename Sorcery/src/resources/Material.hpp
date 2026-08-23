@@ -1,14 +1,15 @@
 #pragma once
 
 #include "NativeResource.hpp"
-#include "resource_ref.hpp"
 #include "Texture2D.hpp"
 #include "../Color.hpp"
 #include "../material_blend_mode.hpp"
+#include "../resource_ref.hpp"
 #include "../resource_residency_policy.hpp"
 #include "../rendering/constant_buffer.hpp"
-#include "../rendering/graphics.hpp"
 #include "../rendering/shaders/shader_interop.h"
+#include "wand/buffer.hpp"
+#include "wand/device_child.hpp"
 
 
 namespace sorcery {
@@ -102,7 +103,7 @@ public:
   auto UploadToGpu() -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  auto GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
 
 private:
   // These are just for reflection and default to MakeResident

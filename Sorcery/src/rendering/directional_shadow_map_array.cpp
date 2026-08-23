@@ -4,19 +4,19 @@
 
 
 namespace sorcery::rendering {
-DirectionalShadowMapArray::DirectionalShadowMapArray(graphics::GraphicsDevice* const device,
+DirectionalShadowMapArray::DirectionalShadowMapArray(wand::GraphicsDevice* const device,
                                                      DXGI_FORMAT const depth_format, UINT const size) :
   tex_{
     device->CreateTexture(
-      graphics::TextureDesc{
-        graphics::TextureDimension::k2D, size, size, MAX_CASCADE_COUNT, 1, depth_format, 1, true, false, true, false
-      }, graphics::CpuAccess::kNone,
+      wand::TextureDesc{
+        wand::TextureDimension::k2D, size, size, MAX_CASCADE_COUNT, 1, depth_format, 1, true, false, true, false
+      }, wand::CpuAccess::kNone,
       std::array{D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {DEPTH_CLEAR_VALUE, 0}}}.data())
   },
   size_{size} {}
 
 
-auto DirectionalShadowMapArray::GetTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+auto DirectionalShadowMapArray::GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const& {
   return tex_;
 }
 

@@ -4,6 +4,7 @@
 #include "../Core.hpp"
 #include "../Math.hpp"
 #include "../viewport.hpp"
+#include "wand/wand.hpp"
 
 #include <cstdint>
 
@@ -15,7 +16,7 @@ class Camera;
 namespace detail {
 [[nodiscard]]
 auto GetTaaAccumulationRt(Camera const& cam) -> RenderTarget const*;
-auto RecreateTaaAccumulationRt(Camera& cam, graphics::GraphicsDevice& device, Extent2D<unsigned> size,
+auto RecreateTaaAccumulationRt(Camera& cam, wand::GraphicsDevice& device, Extent2D<unsigned> size,
                                DXGI_FORMAT format) -> void;
 }
 
@@ -23,7 +24,7 @@ auto RecreateTaaAccumulationRt(Camera& cam, graphics::GraphicsDevice& device, Ex
 class Camera {
   [[nodiscard]]
   friend auto detail::GetTaaAccumulationRt(Camera const& cam) -> RenderTarget const*;
-  friend auto detail::RecreateTaaAccumulationRt(Camera& cam, graphics::GraphicsDevice& device, Extent2D<unsigned> size,
+  friend auto detail::RecreateTaaAccumulationRt(Camera& cam, wand::GraphicsDevice& device, Extent2D<unsigned> size,
                                                 DXGI_FORMAT format) -> void;
 
 public:
@@ -90,7 +91,7 @@ private:
 
   std::shared_ptr<RenderTarget> render_target_{nullptr};
   std::unique_ptr<RenderTarget> taa_accum_target_{nullptr};
-  graphics::GraphicsDevice* taa_rt_device_{nullptr};
+  wand::GraphicsDevice* taa_rt_device_{nullptr};
   float near_{MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE};
   float far_{100.f};
   float vert_orho_size_{10};

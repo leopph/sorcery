@@ -10,7 +10,7 @@ auto detail::GetTaaAccumulationRt(Camera const& cam) -> RenderTarget const* {
 }
 
 
-auto detail::RecreateTaaAccumulationRt(Camera& cam, graphics::GraphicsDevice& device, Extent2D<unsigned> const size,
+auto detail::RecreateTaaAccumulationRt(Camera& cam, wand::GraphicsDevice& device, Extent2D<unsigned> const size,
                                        DXGI_FORMAT format) -> void {
   cam.taa_rt_device_ = &device;
   cam.taa_accum_target_ = RenderTarget::New(device, RenderTarget::Desc{
@@ -24,7 +24,7 @@ auto detail::RecreateTaaAccumulationRt(Camera& cam, graphics::GraphicsDevice& de
     .color_clear_value = std::array{0.0f, 0.0f, 0.0f, 1.0f},
     .depth_clear_value = 0.0f,
     .stencil_clear_value = 0,
-    .dimension = graphics::TextureDimension::k2D,
+    .dimension = wand::TextureDimension::k2D,
     .depth_or_array_size = 1
   });
 }

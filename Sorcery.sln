@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.32112.339
+# Visual Studio Version 18
+VisualStudioVersion = 18.9.12112.369 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mage", "Mage\Mage.vcxproj", "{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sorcery", "Sorcery\Sorcery.vcxproj", "{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wand", "deps\wand\wand\wand.vcxproj", "{F91F1551-40D1-4C76-AF68-ADE75CAF8CB7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.Build.0 = Debug|x64
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.ActiveCfg = Release|x64
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.Build.0 = Release|x64
+		{F91F1551-40D1-4C76-AF68-ADE75CAF8CB7}.Debug|x64.ActiveCfg = Debug|x64
+		{F91F1551-40D1-4C76-AF68-ADE75CAF8CB7}.Debug|x64.Build.0 = Debug|x64
+		{F91F1551-40D1-4C76-AF68-ADE75CAF8CB7}.Release|x64.ActiveCfg = Release|x64
+		{F91F1551-40D1-4C76-AF68-ADE75CAF8CB7}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,7 +6,6 @@
 #include "../app.hpp"
 #include "../resource_reference.hpp"
 #include "../Serialization.hpp"
-#include "../scene_objects/SceneObject.hpp"
 #undef FindResource
 #include "../entity_serialization.hpp"
 #include "../job_system.hpp"
@@ -21,19 +20,19 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto detail::GetIrradianceMap(Scene const& scene) -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+auto detail::GetIrradianceMap(Scene const& scene) -> wand::SharedDeviceChildHandle<wand::Texture> const& {
   return scene.irradiance_map_;
 }
 
 
-auto detail::RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT const format,
+auto detail::RecreateIrradianceMap(Scene& scene, wand::GraphicsDevice& device, DXGI_FORMAT const format,
                                    UINT const size) -> void {
   if (!scene.skybox_) {
     return;
   }
 
-  scene.irradiance_map_ = device.CreateTexture(graphics::TextureDesc{
-      .dimension = graphics::TextureDimension::kCube,
+  scene.irradiance_map_ = device.CreateTexture(wand::TextureDesc{
+      .dimension = wand::TextureDimension::kCube,
       .width = size,
       .height = size,
       .depth_or_array_size = 6,
@@ -44,20 +43,20 @@ auto detail::RecreateIrradianceMap(Scene& scene, graphics::GraphicsDevice& devic
       .render_target = true,
       .shader_resource = true,
       .unordered_access = false
-    }, graphics::CpuAccess::kNone,
+    }, wand::CpuAccess::kNone,
     std::array{D3D12_CLEAR_VALUE{.Format = format, .Color = {0.0F, 0.0F, 0.0F, 1.0F}}}.data());
 }
 
 
-auto detail::GetPrefilteredEnvMap(Scene const& scene) -> graphics::SharedDeviceChildHandle<graphics::Texture> const& {
+auto detail::GetPrefilteredEnvMap(Scene const& scene) -> wand::SharedDeviceChildHandle<wand::Texture> const& {
   return scene.prefiltered_env_map_;
 }
 
 
-auto detail::RecreatePrefilteredEnvMap(Scene& scene, graphics::GraphicsDevice& device, DXGI_FORMAT const format,
+auto detail::RecreatePrefilteredEnvMap(Scene& scene, wand::GraphicsDevice& device, DXGI_FORMAT const format,
                                        UINT const size) -> void {
-  scene.prefiltered_env_map_ = device.CreateTexture(graphics::TextureDesc{
-      .dimension = graphics::TextureDimension::kCube,
+  scene.prefiltered_env_map_ = device.CreateTexture(wand::TextureDesc{
+      .dimension = wand::TextureDimension::kCube,
       .width = size,
       .height = size,
       .depth_or_array_size = 6,
@@ -68,7 +67,7 @@ auto detail::RecreatePrefilteredEnvMap(Scene& scene, graphics::GraphicsDevice& d
       .render_target = true,
       .shader_resource = true,
       .unordered_access = false
-    }, graphics::CpuAccess::kNone,
+    }, wand::CpuAccess::kNone,
     std::array{D3D12_CLEAR_VALUE{.Format = format, .Color = {0.0F, 0.0F, 0.0F, 1.0F}}}.data());
 }
 

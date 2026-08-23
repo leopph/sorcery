@@ -6,8 +6,8 @@
 #include <optional>
 #include <string>
 
-#include "graphics.hpp"
 #include "../Core.hpp"
+#include "wand/wand.hpp"
 
 
 namespace sorcery::rendering {
@@ -30,14 +30,14 @@ public:
     float depth_clear_value{0.0f};
     std::uint8_t stencil_clear_value{0};
 
-    graphics::TextureDimension dimension{graphics::TextureDimension::k2D};
+    wand::TextureDimension dimension{wand::TextureDimension::k2D};
     UINT16 depth_or_array_size{1};
 
     LEOPPHAPI [[nodiscard]] auto operator==(Desc const& other) const -> bool;
   };
 
 
-  [[nodiscard]] LEOPPHAPI static auto New(graphics::GraphicsDevice& device,
+  [[nodiscard]] LEOPPHAPI static auto New(wand::GraphicsDevice& device,
                                           Desc const& desc) -> std::unique_ptr<RenderTarget>;
 
   RenderTarget(RenderTarget const&) = delete;
@@ -49,18 +49,17 @@ public:
   auto operator=(RenderTarget&&) -> void = delete;
 
   [[nodiscard]] LEOPPHAPI auto GetDesc() const noexcept -> Desc const&;
+  [[nodiscard]] LEOPPHAPI auto GetColorTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const&;
   [[nodiscard]] LEOPPHAPI auto
-  GetColorTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
-  [[nodiscard]] LEOPPHAPI auto
-  GetDepthStencilTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
+  GetDepthStencilTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const&;
 
 private:
-  RenderTarget(Desc desc, graphics::SharedDeviceChildHandle<graphics::Texture> color_tex,
-               graphics::SharedDeviceChildHandle<graphics::Texture> depth_stencil_tex);
+  RenderTarget(Desc desc, wand::SharedDeviceChildHandle<wand::Texture> color_tex,
+               wand::SharedDeviceChildHandle<wand::Texture> depth_stencil_tex);
 
   Desc desc_;
 
-  graphics::SharedDeviceChildHandle<graphics::Texture> color_tex_;
-  graphics::SharedDeviceChildHandle<graphics::Texture> depth_stencil_tex_;
+  wand::SharedDeviceChildHandle<wand::Texture> color_tex_;
+  wand::SharedDeviceChildHandle<wand::Texture> depth_stencil_tex_;
 };
 }

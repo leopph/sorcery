@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "Component.hpp"
-#include "resource_ref.hpp"
+#include "../resource_ref.hpp"
 #include "../Resources/Material.hpp"
 #include "../Resources/Mesh.hpp"
 

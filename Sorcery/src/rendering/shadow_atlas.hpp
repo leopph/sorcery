@@ -1,22 +1,22 @@
 #pragma once
 
-#include "graphics.hpp"
-#include "ShadowCascadeBoundary.hpp"
-#include "../GridLike.hpp"
-
 #include <optional>
 #include <span>
 #include <vector>
+
+#include "ShadowCascadeBoundary.hpp"
+#include "../GridLike.hpp"
+#include "wand/wand.hpp"
 
 
 namespace sorcery::rendering {
 class ShadowAtlas : public GridLike {
 protected:
-  graphics::SharedDeviceChildHandle<graphics::Texture> tex_;
+  wand::SharedDeviceChildHandle<wand::Texture> tex_;
   UINT size_;
 
 
-  ShadowAtlas(graphics::GraphicsDevice* device, DXGI_FORMAT depth_format, UINT size, int subdiv_size);
+  ShadowAtlas(wand::GraphicsDevice* device, DXGI_FORMAT depth_format, UINT size, int subdiv_size);
 
 public:
   class Cell : public GridLike {
@@ -49,7 +49,7 @@ public:
   auto operator=(ShadowAtlas const&) -> void = delete;
   auto operator=(ShadowAtlas&&) -> void = delete;
 
-  [[nodiscard]] auto GetTex() const noexcept -> graphics::SharedDeviceChildHandle<graphics::Texture> const&;
+  [[nodiscard]] auto GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const&;
   [[nodiscard]] auto GetSize() const noexcept -> UINT;
 
   auto SetLookUpInfo(std::span<ShaderLight> lights) const -> void;

@@ -6,8 +6,8 @@
 #include <iterator>
 #include <utility>
 
-#include "app.hpp"
-#include "object_registry.hpp"
+#include "../app.hpp"
+#include "../object_registry.hpp"
 #include "../Util.hpp"
 #include "../Resources/Scene.hpp"
 

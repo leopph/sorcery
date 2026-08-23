@@ -138,7 +138,6 @@
     <None Include="src\editor_app.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="packages.config" />
     <None Include="src\gui_helpers.inl">
       <Filter>Header Files</Filter>
     </None>

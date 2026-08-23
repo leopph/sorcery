@@ -1,7 +1,7 @@
 #pragma once
 
-#include "graphics.hpp"
 #include "../Util.hpp"
+#include "wand/wand.hpp"
 
 #include <cstring>
 #include <optional>
@@ -12,12 +12,12 @@ namespace sorcery::rendering {
 template<typename T>
 class ConstantBuffer {
 public:
-  [[nodiscard]] static auto New(graphics::GraphicsDevice& device, bool cpu_accessible) -> std::optional<ConstantBuffer>;
+  [[nodiscard]] static auto New(wand::GraphicsDevice& device, bool cpu_accessible) -> std::optional<ConstantBuffer>;
 
   ConstantBuffer() = default;
 
   auto Update(T const& val) -> void;
-  [[nodiscard]] auto GetBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const&;
+  [[nodiscard]] auto GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
 
   [[nodiscard]]
   auto IsValid() const -> bool;
@@ -25,20 +25,20 @@ public:
   operator bool() const;
 
 private:
-  ConstantBuffer(graphics::SharedDeviceChildHandle<graphics::Buffer> buffer, T* ptr);
+  ConstantBuffer(wand::SharedDeviceChildHandle<wand::Buffer> buffer, T* ptr);
 
-  graphics::SharedDeviceChildHandle<graphics::Buffer> buffer_;
+  wand::SharedDeviceChildHandle<wand::Buffer> buffer_;
   void* ptr_{nullptr};
 };
 
 
 template<typename T>
-auto ConstantBuffer<T>::New(graphics::GraphicsDevice& device,
+auto ConstantBuffer<T>::New(wand::GraphicsDevice& device,
                             bool const cpu_accessible) -> std::optional<ConstantBuffer> {
   auto buf{
-    device.CreateBuffer(graphics::BufferDesc{
+    device.CreateBuffer(wand::BufferDesc{
       static_cast<UINT>(RoundToNextMultiple(sizeof(T), 256)), 0, true, false, false
-    }, cpu_accessible ? graphics::CpuAccess::kWrite : graphics::CpuAccess::kNone)
+    }, cpu_accessible ? wand::CpuAccess::kWrite : wand::CpuAccess::kNone)
   };
 
   if (!buf) {
@@ -66,7 +66,7 @@ auto ConstantBuffer<T>::Update(T const& val) -> void {
 
 
 template<typename T>
-auto ConstantBuffer<T>::GetBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto ConstantBuffer<T>::GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return buffer_;
 }
 
@@ -84,7 +84,7 @@ ConstantBuffer<T>::operator bool() const {
 
 
 template<typename T>
-ConstantBuffer<T>::ConstantBuffer(graphics::SharedDeviceChildHandle<graphics::Buffer> buffer, T* ptr) :
+ConstantBuffer<T>::ConstantBuffer(wand::SharedDeviceChildHandle<wand::Buffer> buffer, T* ptr) :
   buffer_{std::move(buffer)},
   ptr_{ptr} {}
 }

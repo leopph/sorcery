@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <iterator>
 
-#include <DirectXMesh.h>
-
 #include "../app.hpp"
 #include "../rendering/render_manager.hpp"
 
@@ -120,8 +118,8 @@ auto Mesh::UploadToGpu(CpuResidencyPolicy const cpu_policy) -> void {
                     : StructuredBuffer<Vector<std::uint32_t, 4>>::New(gd, rm, mesh_data_->bone_indices, false, false,
                       true);
   meshlet_buf_ = StructuredBuffer<MeshletData>::New(gd, rm, mesh_data_->meshlets, false);
-  vertex_idx_buf_ = gd.CreateBuffer(graphics::BufferDesc{mesh_data_->vertex_indices.size(), 1, false, true, false},
-    graphics::CpuAccess::kNone);
+  vertex_idx_buf_ = gd.CreateBuffer(wand::BufferDesc{mesh_data_->vertex_indices.size(), 1, false, true, false},
+    wand::CpuAccess::kNone);
   prim_idx_buf_ = StructuredBuffer<MeshletTriangleData>::New(gd, rm, mesh_data_->triangle_indices, false, true, false);
   cull_data_buf_ = StructuredBuffer<MeshletCullData>::New(gd, rm, mesh_data_->cull_data, false, true, false);
 
@@ -133,52 +131,52 @@ auto Mesh::UploadToGpu(CpuResidencyPolicy const cpu_policy) -> void {
 }
 
 
-auto Mesh::GetPositionBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Mesh::GetPositionBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return pos_buf_.GetBuffer();
 }
 
 
-auto Mesh::GetNormalBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Mesh::GetNormalBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return norm_buf_.GetBuffer();
 }
 
 
-auto Mesh::GetTangentBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Mesh::GetTangentBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return tan_buf_.GetBuffer();
 }
 
 
-auto Mesh::GetUvBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Mesh::GetUvBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return uv_buf_.GetBuffer();
 }
 
 
-auto Mesh::GetBoneWeightBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Mesh::GetBoneWeightBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return bone_weight_buf_.GetBuffer();
 }
 
 
-auto Mesh::GetBoneIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Mesh::GetBoneIndexBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return bone_idx_buf_.GetBuffer();
 }
 
 
-auto Mesh::GetMeshletBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Mesh::GetMeshletBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return meshlet_buf_.GetBuffer();
 }
 
 
-auto Mesh::GetVertexIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Mesh::GetVertexIndexBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return vertex_idx_buf_;
 }
 
 
-auto Mesh::GetPrimitiveIndexBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Mesh::GetPrimitiveIndexBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return prim_idx_buf_.GetBuffer();
 }
 
 
-auto Mesh::GetCullDataBuffer() const -> graphics::SharedDeviceChildHandle<graphics::Buffer> const& {
+auto Mesh::GetCullDataBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return cull_data_buf_.GetBuffer();
 }
 

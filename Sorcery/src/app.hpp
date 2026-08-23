@@ -8,13 +8,13 @@
 #include "observer_ptr.hpp"
 
 
-namespace sorcery {
-namespace graphics {
+namespace wand {
 class GraphicsDevice;
 class SwapChain;
 }
 
 
+namespace sorcery {
 namespace rendering {
 class RenderManager;
 class SceneRenderer;
@@ -42,13 +42,13 @@ public:
   auto GetJobSystem() -> JobSystem&;
 
   [[nodiscard]] SORCERYAPI
-  auto GetGraphicsDevice() -> graphics::GraphicsDevice&;
+  auto GetGraphicsDevice() -> wand::GraphicsDevice&;
 
   [[nodiscard]] SORCERYAPI
   auto GetWindow() -> Window&;
 
   [[nodiscard]] SORCERYAPI
-  auto GetSwapChain() -> graphics::SwapChain&;
+  auto GetSwapChain() -> wand::SwapChain&;
 
   [[nodiscard]] SORCERYAPI
   auto GetRenderManager() -> rendering::RenderManager&;

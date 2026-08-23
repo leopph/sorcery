@@ -17,6 +17,7 @@ __declspec(dllexport) extern char const* const D3D12SDKPath{".\\D3D12\\"};
 #ifdef NDEBUG
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE,
                      _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
+
 #else
 auto main(int argc, char* argv[]) -> int {
 #endif
