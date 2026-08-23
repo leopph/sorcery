@@ -45,6 +45,12 @@ ObjectPtr<T>::operator bool() const {
 }
 
 
+template<typename T>
+auto ObjectPtr<T>::HasIdentity() const -> bool {
+  return id_.IsValid();
+}
+
+
 template<std::derived_from<Object> T>
 auto MakeObjectPtr(ObserverPtr<T> const object) noexcept -> ObjectPtr<T> {
   return ObjectPtr{object};

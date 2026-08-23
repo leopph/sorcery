@@ -29,7 +29,13 @@ ResourceRef<T>::ResourceRef(ResourceRef<U> const& other) noexcept :
 
 template<typename T>
 auto ResourceRef<T>::Get() const -> ObjectPtr<T> requires std::derived_from<T, Resource> {
-  if (!id_.IsValid()) {
+  // We want to support ResourceRefs that hold pointers to resources not-yet saved or
+  // registered in the ResourceManager. Those might not have valid IDs yet. So we can
+  // only avoid reading the cache if we know FOR SURE that it cannot possibly point to
+  // an object. If the cache does not track any Object identity, it won't be able to 
+  // resolve to anything. If our resource ID is also invalid, we will not able to update
+  // the cache either. So we can be sure that we're just wasting our time.
+  if (!cached_.HasIdentity() && !id_.IsValid()) {
     return nullptr;
   }
 
@@ -46,6 +52,12 @@ template<typename T>
 auto ResourceRef<T>::Observe() const -> ObserverPtr<T> requires std::derived_from<T, Resource> {
   if (auto const obj = cached_.Get()) {
     return obj;
+  }
+
+  // This function is designed for hot paths. If the cache returned null, it might not even be
+  // possible to resolve the ID. We are preventing the potential unnecessary Resolve attempt here.
+  if (!id_.IsValid()) {
+    return nullptr;
   }
 
   UpdateCache();
@@ -67,7 +79,7 @@ auto ResourceRef<T>::operator*() const -> T& requires std::derived_from<T, Resou
 
 template<typename T>
 ResourceRef<T>::operator bool() const {
-  return Get().Get() != nullptr;
+  return Observe() != nullptr;
 }
 
 

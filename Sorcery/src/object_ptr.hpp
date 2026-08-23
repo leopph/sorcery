@@ -9,11 +9,22 @@
 
 
 namespace sorcery {
+// A persistent pointer to an Object.
+// Semantically, an ObserverPtr<Object> is the memory address of an Object instance.
+// An ObjectPtr expresses the identity of the Object regardless of its memory address.
+// In practice, ObjectPtr will point to its object as long as it exists. Once it's
+// destroyed, ObjectPtr will be considered null and won't resolve to anything.
+// This guarantee has some performance overhead over regular ObserverPtr,
+// so the recommended usage is to hold ObjectPtr for persistent identity and
+// resolving it to ObserverPtr for immediate use.
 template<typename T>
 class ObjectPtr {
 public:
+  // Create a null pointer.
   ObjectPtr() noexcept = default;
+  // Create a null pointer.
   ObjectPtr(nullptr_t null) noexcept;
+  // Create an ObjectPtr that identifies the Object instance this pointer points to.
   explicit ObjectPtr(ObserverPtr<T> obj) noexcept requires std::derived_from<T, Object>;
 
   template<typename U> requires
@@ -22,17 +33,29 @@ public:
     std::convertible_to<U*, T*>
   ObjectPtr(ObjectPtr<U> const& other) noexcept;
 
+  // Observe the current instance of the Object.
+  // If the Object no longer lives, this returns nullptr.
   [[nodiscard]]
   auto Get() const -> ObserverPtr<T> requires std::derived_from<T, Object>;
 
+  // Same semantics as Get.
   [[nodiscard]]
   auto operator->() const -> ObserverPtr<T> requires std::derived_from<T, Object>;
 
+  // Same semantics as Get.
   [[nodiscard]]
   auto operator*() const -> T& requires std::derived_from<T, Object>;
 
+  // Does the ObjectPtr point to a living Object?
   [[nodiscard]]
   operator bool() const;
+
+  // Does the ObjectPtr hold a valid Object identity?
+  // Due to performance reasons it is sometimes beneficial to avoid resolving
+  // the pointed-to Object and enough to know that the pointer is structurally
+  // null and cannot resolve to anything.
+  [[nodiscard]]
+  auto HasIdentity() const -> bool;
 
 private:
   template<typename>
