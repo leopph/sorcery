@@ -8,6 +8,10 @@
 namespace sorcery {
 template<std::derived_from<Resource> ResType>
 auto ResourceManager::Resolve(ResourceId const& res_id) -> ObjectPtr<ResType> {
+  if (!res_id.IsValid()) {
+    return nullptr;
+  }
+
   // Check default resources
   for (auto const def_res : default_resources_) {
     if (def_res->GetResId() == res_id) {

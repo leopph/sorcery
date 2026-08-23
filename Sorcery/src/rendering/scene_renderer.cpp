@@ -98,902 +98,6 @@ namespace {
 }
 
 
-auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,
-                                                           ShadowParams const& shadow_params) ->
-  ShadowCascadeBoundaries {
-  auto const cam_near{cam_data.near_plane};
-  auto const shadow_distance{std::min(cam_data.far_plane, shadow_params.distance)};
-  auto const shadowed_frustum_depth{shadow_distance - cam_near};
-
-  ShadowCascadeBoundaries boundaries;
-
-  boundaries[0].nearClip = cam_near;
-
-  for (auto i = 0u; i < shadow_params.cascade_count - 1; i++) {
-    boundaries[i + 1].nearClip = cam_near + shadow_params.normalized_cascade_splits[i] * shadowed_frustum_depth;
-    boundaries[i].farClip = boundaries[i + 1].nearClip * 1.005f;
-  }
-
-  boundaries[shadow_params.cascade_count - 1].farClip = shadow_distance;
-
-  for (int i = shadow_params.cascade_count; i < MAX_CASCADE_COUNT; i++) {
-    boundaries[i].nearClip = std::numeric_limits<float>::infinity();
-    boundaries[i].farClip = std::numeric_limits<float>::infinity();
-  }
-
-  return boundaries;
-}
-
-
-auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData const> const lights,
-                               std::vector<unsigned>& visible_light_indices) -> void {
-  visible_light_indices.clear();
-
-  for (unsigned light_idx = 0; light_idx < static_cast<unsigned>(lights.size()); light_idx++) {
-    switch (auto const light{lights[light_idx]}; light.type) {
-      case LightComponent::Type::Directional: {
-        visible_light_indices.emplace_back(light_idx);
-        break;
-      }
-
-      case LightComponent::Type::Spot: {
-        auto const light_vertices_ws{
-          [light] {
-            auto vertices{CalculateSpotLightLocalVertices(light.range, light.outer_angle)};
-
-            for (auto const model_mtx_no_scale{light.local_to_world_mtx_no_scale}; auto& vertex : vertices) {
-              vertex = Vector3{Vector4{vertex, 1} * model_mtx_no_scale};
-            }
-
-            return vertices;
-          }()
-        };
-
-        if (frustum_ws.Intersects(AABB::FromVertices(light_vertices_ws))) {
-          visible_light_indices.emplace_back(light_idx);
-        }
-
-        break;
-      }
-
-      case LightComponent::Type::Point: {
-        if (BoundingSphere const bounds_ws{Vector3{light.position}, light.range}; frustum_ws.Intersects(bounds_ws)) {
-          visible_light_indices.emplace_back(light_idx);
-        }
-        break;
-      }
-    }
-  }
-}
-
-
-auto SceneRenderer::SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int const rt_width,
-                                         int const rt_height, Vector3 const& ambient_light,
-                                         ShadowParams const& shadow_params) -> void {
-  cb.Update(ShaderPerFrameConstants{
-    .ambientLightColor = ambient_light, .shadowCascadeCount = shadow_params.cascade_count,
-    .screenSize = Vector2{rt_width, rt_height}, .visualizeShadowCascades = shadow_params.visualize_cascades,
-    .shadowFilteringMode = static_cast<int>(shadow_params.filtering_mode)
-  });
-}
-
-
-auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
-                                        Matrix4 const& proj_mtx, Matrix4 const& prev_view_proj_mtx,
-                                        ShadowCascadeBoundaries const& cascade_bounds, Frustum const& frustum_ws,
-                                        Vector3 const& view_pos, float const near_clip_plane,
-                                        float const far_clip_plane) -> void {
-  ShaderPerViewConstants data;
-  data.viewMtx = view_mtx;
-  data.invViewMtx = view_mtx.Inverse();
-  data.projMtx = proj_mtx;
-  data.invProjMtx = proj_mtx.Inverse();
-  data.viewProjMtx = view_mtx * proj_mtx;
-  data.invViewProjMtx = data.viewProjMtx.Inverse();
-  data.prev_view_proj_mtx = prev_view_proj_mtx;
-
-  for (auto i = 0; i < 6; i++) {
-    data.frustum_planes_ws[i] = frustum_ws.GetPlanes()[i];
-  }
-
-  data.viewPos = view_pos;
-  data.near_clip_plane = near_clip_plane;
-  data.far_clip_plane = far_clip_plane;
-
-  for (auto i = 0; i < MAX_CASCADE_COUNT; i++) {
-    data.shadowCascadeSplitDistances[i] = cascade_bounds[i].farClip;
-  }
-
-  cb.Update(data);
-}
-
-
-auto SceneRenderer::SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
-                                        Matrix4 const& view_mtx, Matrix4 const& proj_mtx,
-                                        Matrix4 const& prev_model_mtx, float const max_abs_scaling) -> void {
-  cb.Update(ShaderPerDrawConstants{
-    .modelMtx = model_mtx, .invTranspModelMtx = model_mtx.Inverse().Transpose(), .model_view_mtx = model_mtx * view_mtx,
-    .model_view_proj_mtx = model_mtx * view_mtx * proj_mtx, .prev_model_mtx = prev_model_mtx,
-    .max_abs_scaling = max_abs_scaling
-  });
-}
-
-
-auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
-                                              std::span<SceneRenderer::LightData const> const lights,
-                                              std::span<unsigned const> visible_light_indices,
-                                              SceneRenderer::CameraData const& cam_data,
-                                              Matrix4 const& cam_view_proj_mtx, float const shadow_distance) -> void {
-  struct LightCascadeIndex {
-    int lightIdxIdx;
-    int shadowIdx;
-  };
-
-  std::array lightIndexIndicesInCell{
-    std::vector<LightCascadeIndex>{}, std::vector<LightCascadeIndex>{},
-    std::vector<LightCascadeIndex>{}, std::vector<LightCascadeIndex>{}
-  };
-
-  auto const& camPos{cam_data.position};
-
-  auto const determineScreenCoverage{
-    [&camPos, &cam_view_proj_mtx](std::span<Vector3 const> const vertices) -> std::optional<int> {
-      std::optional<int> cellIdx;
-
-      if (auto const [worldMin, worldMax]{AABB::FromVertices(vertices)};
-        worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] && worldMax[0] >= camPos[0] &&
-        worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
-        cellIdx = 0;
-      } else {
-        Vector2 const bottomLeft{-1, -1};
-        Vector2 const topRight{1, 1};
-
-        Vector2 min{std::numeric_limits<float>::max()};
-        Vector2 max{std::numeric_limits<float>::lowest()};
-
-        for (auto& vertex : vertices) {
-          Vector4 vertex4{vertex, 1};
-          vertex4 *= cam_view_proj_mtx;
-          auto const projected{Vector2{vertex4} / vertex4[3]};
-          min = Clamp(Min(min, projected), bottomLeft, topRight);
-          max = Clamp(Max(max, projected), bottomLeft, topRight);
-        }
-
-        auto const width{max[0] - min[0]};
-        auto const height{max[1] - min[1]};
-
-        auto const area{width * height};
-        auto const coverage{area / 4};
-
-        if (coverage >= 1) {
-          cellIdx = 0;
-        } else if (coverage >= 0.25f) {
-          cellIdx = 1;
-        } else if (coverage >= 0.0625f) {
-          cellIdx = 2;
-        } else if (coverage >= 0.015625f) {
-          cellIdx = 3;
-        }
-      }
-
-      return cellIdx;
-    }
-  };
-
-  for (auto i = 0; i < static_cast<int>(visible_light_indices.size()); i++) {
-    if (auto const light{lights[visible_light_indices[i]]};
-      light.casts_shadow && (light.type == LightComponent::Type::Spot || light.type == LightComponent::Type::Point)) {
-      Vector3 const& lightPos{light.position};
-      float const lightRange{light.range};
-
-      // Skip the light if its bounding sphere is farther than the shadow distance
-      if (Vector3 const camToLightDir{Normalize(lightPos - camPos)}; Distance(lightPos - camToLightDir * lightRange,
-                                                                       cam_data.position) > shadow_distance) {
-        continue;
-      }
-
-      if (light.type == LightComponent::Type::Spot) {
-        auto lightVertices{CalculateSpotLightLocalVertices(light.range, light.outer_angle)};
-
-        for (auto const modelMtxNoScale{light.local_to_world_mtx_no_scale}; auto& vertex : lightVertices) {
-          vertex = Vector3{Vector4{vertex, 1} * modelMtxNoScale};
-        }
-
-        if (auto const cellIdx{determineScreenCoverage(lightVertices)}) {
-          lightIndexIndicesInCell[*cellIdx].emplace_back(i, 0);
-        }
-      } else if (light.type == LightComponent::Type::Point) {
-        for (auto j = 0; j < 6; j++) {
-          std::array static const faceBoundsRotations{
-            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(90)), // +X
-            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(-90)), // -X
-            Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(-90)), // +Y
-            Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(90)), // -Y
-            Quaternion{}, // +Z
-            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(180)) // -Z
-          };
-
-          std::array const shadowFrustumVertices{
-            faceBoundsRotations[i].Rotate(Vector3{lightRange, lightRange, lightRange}) + lightPos,
-            faceBoundsRotations[i].Rotate(Vector3{-lightRange, lightRange, lightRange}) + lightPos,
-            faceBoundsRotations[i].Rotate(Vector3{-lightRange, -lightRange, lightRange}) + lightPos,
-            faceBoundsRotations[i].Rotate(Vector3{lightRange, -lightRange, lightRange}) + lightPos, lightPos,
-          };
-
-          if (auto const cellIdx{determineScreenCoverage(shadowFrustumVertices)}) {
-            lightIndexIndicesInCell[*cellIdx].emplace_back(i, j);
-          }
-        }
-      }
-    }
-  }
-
-  for (auto i = 0; i < 4; i++) {
-    std::ranges::sort(lightIndexIndicesInCell[i],
-      [&visible_light_indices, &camPos, &lights](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
-        auto const leftLight{lights[visible_light_indices[lhs.lightIdxIdx]]};
-        auto const rightLight{lights[visible_light_indices[rhs.lightIdxIdx]]};
-
-        auto const leftLightPos{leftLight.position};
-        auto const rightLightPos{rightLight.position};
-
-        auto const leftDist{Distance(leftLightPos, camPos)};
-        auto const rightDist{Distance(camPos, rightLightPos)};
-
-        return leftDist > rightDist;
-      });
-
-    for (auto j = 0; j < atlas.GetCell(i).GetElementCount(); j++) {
-      auto& subcell{atlas.GetCell(i).GetSubcell(j)};
-      subcell.reset();
-
-      if (lightIndexIndicesInCell[i].empty()) {
-        continue;
-      }
-
-      auto const [lightIdxIdx, shadowIdx]{lightIndexIndicesInCell[i].back()};
-      auto const light{lights[visible_light_indices[lightIdxIdx]]};
-      lightIndexIndicesInCell[i].pop_back();
-
-      if (light.type == LightComponent::Type::Spot) {
-        auto const shadowViewMtx{Matrix4::LookTo(light.position, light.direction, Vector3::Up())};
-        auto const shadowProjMtx{
-          Matrix4::PerspectiveFov(ToRadians(light.outer_angle), 1.f, light.range, light.shadow_near_plane)
-        };
-
-        subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
-      } else if (light.type == LightComponent::Type::Point) {
-        auto const lightPos{light.position};
-
-        auto const faceViewMatrices{MakeCubeFaceViewMatrices(lightPos)};
-        auto const shadowViewMtx{faceViewMatrices[shadowIdx]};
-        auto const shadowProjMtx{
-          TransformProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, light.shadow_near_plane,
-            light.range))
-        };
-
-        subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
-      }
-    }
-
-    if (i + 1 < 4) {
-      std::ranges::copy(lightIndexIndicesInCell[i], std::back_inserter(lightIndexIndicesInCell[i + 1]));
-    }
-  }
-}
-
-
-auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
-                                              std::span<unsigned const> const visible_light_indices,
-                                              CameraData const& cam_data, float rt_aspect, int const cascade_count,
-                                              ShadowCascadeBoundaries const& shadow_cascade_boundaries,
-                                              std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
-                                              graphics::CommandList& cmd) -> void {
-  cmd.SetPipelineState(*shadow_pso_);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
-  cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
-  cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
-
-  for (auto const lightIdx : visible_light_indices) {
-    if (auto const light{frame_packet.light_data[lightIdx]};
-      light.type == LightComponent::Type::Directional && light.casts_shadow) {
-      float const camNear{cam_data.near_plane};
-      float const camFar{cam_data.far_plane};
-
-      enum FrustumVertex : int {
-        FrustumVertex_NearTopRight    = 0,
-        FrustumVertex_NearTopLeft     = 1,
-        FrustumVertex_NearBottomLeft  = 2,
-        FrustumVertex_NearBottomRight = 3,
-        FrustumVertex_FarTopRight     = 4,
-        FrustumVertex_FarTopLeft      = 5,
-        FrustumVertex_FarBottomLeft   = 6,
-        FrustumVertex_FarBottomRight  = 7,
-      };
-
-      // Order of vertices is CCW from top right, near first
-      auto const frustumVertsWS{
-        [&cam_data, rt_aspect, camNear, camFar] {
-          std::array<Vector3, 8> ret;
-
-          Vector3 const nearWorldForward{cam_data.position + cam_data.forward * camNear};
-          Vector3 const farWorldForward{cam_data.position + cam_data.forward * camFar};
-
-          switch (cam_data.type) {
-            case Camera::Type::Perspective: {
-              float const tanHalfFov{std::tan(ToRadians(cam_data.fov_vert_deg / 2.0f))};
-              float const nearExtentY{camNear * tanHalfFov};
-              float const nearExtentX{nearExtentY * rt_aspect};
-              float const farExtentY{camFar * tanHalfFov};
-              float const farExtentX{farExtentY * rt_aspect};
-
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam_data.right * nearExtentX + cam_data.up *
-                                                nearExtentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam_data.right * nearExtentX + cam_data.up *
-                                               nearExtentY;
-              ret[FrustumVertex_NearBottomLeft] =
-                nearWorldForward - cam_data.right * nearExtentX - cam_data.up * nearExtentY;
-              ret[FrustumVertex_NearBottomRight] =
-                nearWorldForward + cam_data.right * nearExtentX - cam_data.up * nearExtentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam_data.right * farExtentX + cam_data.up * farExtentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam_data.right * farExtentX + cam_data.up * farExtentY;
-              ret[FrustumVertex_FarBottomLeft] =
-                farWorldForward - cam_data.right * farExtentX - cam_data.up * farExtentY;
-              ret[FrustumVertex_FarBottomRight] =
-                farWorldForward + cam_data.right * farExtentX - cam_data.up * farExtentY;
-              break;
-            }
-            case Camera::Type::Orthographic: {
-              float const extentX{cam_data.size_vert / 2.0f};
-              float const extentY{extentX / rt_aspect};
-
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam_data.right * extentX + cam_data.up * extentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam_data.right * extentX + cam_data.up * extentY;
-              ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam_data.right * extentX - cam_data.up * extentY;
-              ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam_data.right * extentX - cam_data.up * extentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam_data.right * extentX + cam_data.up * extentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam_data.right * extentX + cam_data.up * extentY;
-              ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam_data.right * extentX - cam_data.up * extentY;
-              ret[FrustumVertex_FarBottomRight] = farWorldForward + cam_data.right * extentX - cam_data.up * extentY;
-              break;
-            }
-          }
-
-          return ret;
-        }()
-      };
-
-      auto const frustumDepth{camFar - camNear};
-
-      for (auto cascadeIdx{0}; cascadeIdx < cascade_count; cascadeIdx++) {
-        // cascade vertices in world space
-        auto const cascadeVertsWS{
-          [&frustumVertsWS, &shadow_cascade_boundaries, cascadeIdx, camNear, frustumDepth] {
-            auto const [cascadeNear, cascadeFar]{shadow_cascade_boundaries[cascadeIdx]};
-
-            float const cascadeNearNorm{(cascadeNear - camNear) / frustumDepth};
-            float const cascadeFarNorm{(cascadeFar - camNear) / frustumDepth};
-
-            std::array<Vector3, 8> ret;
-
-            for (auto j = 0; j < 4; j++) {
-              Vector3 const& from{frustumVertsWS[j]};
-              Vector3 const& to{frustumVertsWS[j + 4]};
-
-              ret[j] = Lerp(from, to, cascadeNearNorm);
-              ret[j + 4] = Lerp(from, to, cascadeFarNorm);
-            }
-
-            return ret;
-          }()
-        };
-
-        Vector3 cascadeCenterWS{Vector3::Zero()};
-
-        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
-          cascadeCenterWS += cascadeVertWS;
-        }
-
-        cascadeCenterWS /= 8.0f;
-
-        auto sphereRadius{0.0f};
-
-        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
-          sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
-        }
-
-        auto const shadowMapSize{dir_shadow_map_arr_->GetSize()};
-        auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
-
-        auto const up{
-          [&light] {
-            auto const dot{Dot(light.direction, Vector3::Up())};
-            return Approximately(dot, 1.0F)
-                     ? Vector3::Backward()
-                     : Approximately(dot, -1.0F)
-                         ? Vector3::Forward()
-                         : Vector3::Up();
-          }()
-        };
-
-        Matrix4 shadowViewMtx{Matrix4::LookTo(Vector3::Zero(), light.direction, up)};
-        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
-        cascadeCenterWS /= worldUnitsPerTexel;
-        cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
-        cascadeCenterWS[1] = std::floor(cascadeCenterWS[1]);
-        cascadeCenterWS *= worldUnitsPerTexel;
-        // shadowViewMtx is only rotation, transpose is its inverse
-        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Transpose()};
-
-        auto const shadow_near_clip{-sphereRadius - light.shadow_extension};
-        auto const shadow_far_clip{sphereRadius};
-
-        shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light.direction, up);
-        auto const shadowProjMtx{
-          TransformProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
-            sphereRadius, -sphereRadius, shadow_near_clip, shadow_far_clip))
-        };
-
-        shadow_view_proj_matrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
-
-        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), cascadeIdx);
-
-        D3D12_VIEWPORT const shadowViewport{
-          0, 0, static_cast<float>(shadowMapSize), static_cast<float>(shadowMapSize), 0, 1
-        };
-
-        D3D12_RECT const shadow_scissor{0, 0, static_cast<LONG>(shadowMapSize), static_cast<LONG>(shadowMapSize)};
-
-        cmd.SetViewports(std::array{shadowViewport});
-        cmd.SetScissorRects(std::array{shadow_scissor});
-
-        Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
-
-        auto& per_view_cb{AcquirePerViewConstantBuffer()};
-        SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, {}, ShadowCascadeBoundaries{},
-          shadow_frustum_ws, Vector3{}, shadow_near_clip, shadow_far_clip);
-        cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
-
-        for (auto const& instance : frame_packet.instance_data) {
-          auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
-          auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
-          auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
-
-          auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
-          SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, shadowViewMtx, shadowProjMtx, {},
-            instance.max_abs_scaling);
-
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
-            *frame_packet.buffers[mesh.pos_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
-            *frame_packet.buffers[mesh.uv_buf_local_idx]);
-          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), *mtl_buf);
-          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
-            *per_draw_cb.GetBuffer());
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, vertex_idx_buf_idx),
-            *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, prim_idx_buf_idx),
-            *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
-            *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, cull_data_buf_idx),
-            *frame_packet.buffers[mesh.cull_data_buf_local_idx]);
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), mesh.idx32);
-
-          DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
-            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
-            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex),
-            cmd);
-        }
-      }
-
-      break;
-    }
-  }
-}
-
-
-auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
-                                           SceneRenderer::FramePacket const& frame_packet,
-                                           graphics::CommandList& cmd) -> void {
-  cmd.SetPipelineState(*shadow_pso_);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
-  cmd.SetRenderTargets({}, atlas.GetTex().get());
-  cmd.ClearDepthStencil(*atlas.GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
-
-  auto const cell_size_norm{atlas.GetNormalizedElementSize()};
-
-  for (auto i = 0; i < atlas.GetElementCount(); i++) {
-    auto const& cell{atlas.GetCell(i)};
-    auto const cell_offset_norm{atlas.GetNormalizedElementOffset(i)};
-    auto const subcell_size{cell_size_norm * cell.GetNormalizedElementSize() * static_cast<float>(atlas.GetSize())};
-
-    for (auto j = 0; j < cell.GetElementCount(); j++) {
-      if (auto const& subcell{cell.GetSubcell(j)}) {
-        auto const subcell_offset{
-          (cell_offset_norm + cell.GetNormalizedElementOffset(j) * cell_size_norm) * static_cast<float>(atlas.GetSize())
-        };
-
-        D3D12_VIEWPORT const viewport{subcell_offset[0], subcell_offset[1], subcell_size, subcell_size, 0, 1};
-        D3D12_RECT const scissor{
-          static_cast<LONG>(subcell_offset[0]), static_cast<LONG>(subcell_offset[1]),
-          static_cast<LONG>(subcell_offset[0] + subcell_size), static_cast<LONG>(subcell_offset[1] + subcell_size)
-        };
-
-        cmd.SetViewports(std::span{&viewport, 1});
-        cmd.SetScissorRects(std::array{scissor});
-
-        Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
-
-        auto& per_view_cb{AcquirePerViewConstantBuffer()};
-        SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, {},
-          ShadowCascadeBoundaries{}, shadow_frustum_ws, Vector3{}, 0, 0); // TODO pass proper near and far clip planes
-        cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
-
-        for (auto const& instance : frame_packet.instance_data) {
-          auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
-          auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
-          auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
-
-          auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
-          SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, Matrix4::Identity(),
-            subcell->shadowViewProjMtx, {}, instance.max_abs_scaling);
-
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
-            *frame_packet.buffers[mesh.pos_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
-            *frame_packet.buffers[mesh.uv_buf_local_idx]);
-          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), *mtl_buf);
-          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
-            *per_draw_cb.GetBuffer());
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, vertex_idx_buf_idx),
-            *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, prim_idx_buf_idx),
-            *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
-            *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, cull_data_buf_idx),
-            *frame_packet.buffers[mesh.cull_data_buf_local_idx]);
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), mesh.idx32);
-
-          DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
-            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
-            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex),
-            cmd);
-        }
-      }
-    }
-  }
-}
-
-
-auto SceneRenderer::ClearGizmoDrawQueue() noexcept -> void {
-  gizmo_colors_.clear();
-  line_gizmo_vertex_data_.clear();
-}
-
-
-auto SceneRenderer::RecreateSsaoSamples(int const sample_count) noexcept -> void {
-  ssao_samples_buffer_.Resize(sample_count);
-  auto const ssao_samples{ssao_samples_buffer_.GetData()};
-
-  std::uniform_real_distribution dist{0.0f, 1.0f};
-  std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
-
-  for (auto i{0}; i < sample_count; i++) {
-    Vector3 sample{dist(gen) * 2 - 1, dist(gen) * 2 - 1, dist(gen)};
-    Normalize(sample);
-    sample *= dist(gen);
-
-    auto scale{static_cast<float>(i) / static_cast<float>(sample_count)};
-    scale = std::lerp(0.1f, 1.0f, scale * scale);
-    sample *= scale;
-
-    ssao_samples[i] = Vector4{sample, 0};
-  }
-}
-
-
-auto SceneRenderer::RecreatePipelines() -> void {
-  CD3DX12_DEPTH_STENCIL_DESC1 const depth_stencil_write{
-    TRUE, D3D12_DEPTH_WRITE_MASK_ALL,
-#ifdef REVERSE_Z
-    D3D12_COMPARISON_FUNC_GREATER_EQUAL,
-#else
-    D3D12_COMPARISON_FUNC_LESS_EQUAL,
-#endif
-    FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, FALSE
-  };
-
-  CD3DX12_DEPTH_STENCIL_DESC1 const depth_stencil_read_not_equal{
-    TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_NOT_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-    FALSE
-  };
-
-  CD3DX12_DEPTH_STENCIL_DESC1 const depth_stencil_disabled{
-    FALSE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_NONE, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, FALSE
-  };
-
-  auto constexpr depth_bias_multiplier{
-#ifdef REVERSE_Z
-    -1
-#else
-    1
-#endif
-  };
-
-  CD3DX12_RASTERIZER_DESC const shadow_rasterizer_desc{
-    D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, FALSE, depth_bias_multiplier * 1, 0.F, depth_bias_multiplier * 2.5F,
-    TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF
-  };
-
-  CD3DX12_RASTERIZER_DESC const skybox_rasterizer_desc{
-    D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-    D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, TRUE, TRUE, FALSE, 0, {}
-  };
-
-  CD3DX12_RT_FORMAT_ARRAY const render_target_format{
-    D3D12_RT_FORMAT_ARRAY{.RTFormats = {render_target_format_}, .NumRenderTargets = 1}
-  };
-  CD3DX12_RT_FORMAT_ARRAY const color_format{
-    D3D12_RT_FORMAT_ARRAY{.RTFormats = {color_buffer_format_}, .NumRenderTargets = 1}
-  };
-  CD3DX12_RT_FORMAT_ARRAY const ssao_format{
-    D3D12_RT_FORMAT_ARRAY{.RTFormats = {ssao_buffer_format_}, .NumRenderTargets = 1}
-  };
-  CD3DX12_RT_FORMAT_ARRAY const gbuffer_velocity_format{
-    D3D12_RT_FORMAT_ARRAY{
-      .RTFormats = {gbuffer0_format_, gbuffer1_format_, gbuffer2_format_, velocity_format_}, .NumRenderTargets = 4
-    }
-  };
-
-  graphics::PipelineDesc const shadow_pso_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{&g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
-    .as = CD3DX12_SHADER_BYTECODE{&g_depth_only_as_bytes, ARRAYSIZE(g_depth_only_as_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{&g_depth_only_ms_bytes, ARRAYSIZE(g_depth_only_ms_bytes)},
-    .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
-    .rasterizer_state = shadow_rasterizer_desc
-  };
-
-  shadow_pso_ = device_->CreatePipelineState(shadow_pso_desc, sizeof(DepthOnlyDrawParams) / 4);
-
-  graphics::PipelineDesc const depth_resolve_pso_desc{
-    .cs = CD3DX12_SHADER_BYTECODE{&g_depth_resolve_cs_bytes, ARRAYSIZE(g_depth_resolve_cs_bytes)}
-  };
-
-  depth_resolve_pso_ = device_->CreatePipelineState(depth_resolve_pso_desc, sizeof(DepthResolveDrawParams) / 4);
-
-  graphics::PipelineDesc const line_gizmo_pso_desc{
-    .primitive_topology_type = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
-    .vs = CD3DX12_SHADER_BYTECODE{&g_gizmos_line_vs_bytes, ARRAYSIZE(g_gizmos_line_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_gizmos_ps_bytes, ARRAYSIZE(g_gizmos_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = render_target_format
-  };
-
-  line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
-
-
-  graphics::PipelineDesc const gbuffer_velocity_pso_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_ps_bytes, ARRAYSIZE(g_gbuffer_velocity_ps_bytes)},
-    .as = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_as_bytes, ARRAYSIZE(g_gbuffer_velocity_as_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_ms_bytes, ARRAYSIZE(g_gbuffer_velocity_ms_bytes)},
-    .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
-    .rt_formats = gbuffer_velocity_format
-  };
-  gbuffer_velocity_pso_ = device_->CreatePipelineState(gbuffer_velocity_pso_desc, sizeof(GBufferDrawParams) / 4);
-
-  graphics::PipelineDesc const deferred_lighting_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_deferred_lighting_vs_bytes, ARRAYSIZE(g_deferred_lighting_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_deferred_lighting_ps_bytes, ARRAYSIZE(g_deferred_lighting_ps_bytes)},
-    .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_, .rt_formats = color_format
-  };
-
-  deferred_lighting_pso_ = device_->CreatePipelineState(deferred_lighting_pso_desc,
-    sizeof(DeferredLightingDrawParams) / 4);
-
-  graphics::PipelineDesc const post_process_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_post_process_vs_bytes, ARRAYSIZE(g_post_process_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_post_process_ps_bytes, ARRAYSIZE(g_post_process_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = render_target_format,
-  };
-
-  post_process_pso_ = device_->CreatePipelineState(post_process_pso_desc, sizeof(PostProcessDrawParams) / 4);
-
-  graphics::PipelineDesc const skybox_pso_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{&g_skybox_ps_bytes, ARRAYSIZE(g_skybox_ps_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{&g_skybox_ms_bytes, ARRAYSIZE(g_skybox_ms_bytes)},
-    .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_, .rasterizer_state = skybox_rasterizer_desc,
-    .rt_formats = color_format
-  };
-  skybox_pso_ = device_->CreatePipelineState(skybox_pso_desc, sizeof(SkyboxDrawParams) / 4);
-
-  graphics::PipelineDesc const ssao_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_main_ps_bytes, ARRAYSIZE(g_ssao_main_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = ssao_format,
-  };
-
-  ssao_pso_ = device_->CreatePipelineState(ssao_pso_desc, sizeof(SsaoDrawParams) / 4);
-
-  graphics::PipelineDesc const ssao_blur_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_blur_ps_bytes, ARRAYSIZE(g_ssao_blur_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = ssao_format
-  };
-
-  ssao_blur_pso_ = device_->CreatePipelineState(ssao_blur_pso_desc, sizeof(SsaoBlurDrawParams) / 4);
-
-  graphics::PipelineDesc const ssr_compose_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_compose_ps_bytes, ARRAYSIZE(g_ssr_compose_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
-  };
-
-  ssr_compose_pso_ = device_->CreatePipelineState(ssr_compose_pso_desc, sizeof(SsrComposeDrawParams) / 4);
-
-  graphics::PipelineDesc const ssr_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_ps_bytes, ARRAYSIZE(g_ssr_ps_bytes)},
-    .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_,
-    .rt_formats = color_format
-  };
-
-  ssr_pso_ = device_->CreatePipelineState(ssr_pso_desc, sizeof(SsrDrawParams) / 4);
-
-  graphics::PipelineDesc const taa_resolve_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_vs_bytes, ARRAYSIZE(g_taa_resolve_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_ps_bytes, ARRAYSIZE(g_taa_resolve_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
-  };
-
-  taa_pso_ = device_->CreatePipelineState(taa_resolve_pso_desc, sizeof(TaaResolveDrawParams) / 4);
-
-  graphics::PipelineDesc const vtx_skinning_pso_desc{
-    .cs = CD3DX12_SHADER_BYTECODE{&g_vtx_skinning_cs_bytes, ARRAYSIZE(g_vtx_skinning_cs_bytes)}
-  };
-
-  vtx_skinning_pso_ = device_->CreatePipelineState(vtx_skinning_pso_desc, sizeof(VertexSkinningDrawParams) / 4);
-
-  graphics::PipelineDesc const irradiance_pso_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{&g_irradiance_ps_bytes, ARRAYSIZE(g_irradiance_ps_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{&g_irradiance_ms_bytes, ARRAYSIZE(g_irradiance_ms_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rasterizer_state = skybox_rasterizer_desc,
-    .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
-      D3D12_RT_FORMAT_ARRAY{.RTFormats = {irradiance_map_format_}, .NumRenderTargets = 1}
-    },
-  };
-
-  irradiance_pso_ = device_->CreatePipelineState(irradiance_pso_desc, sizeof(IrradianceDrawParams) / 4);
-
-  graphics::PipelineDesc const envmap_prefilter_pso_desc{
-    .ps = CD3DX12_SHADER_BYTECODE{&g_envmap_prefilter_ps_bytes, ARRAYSIZE(g_envmap_prefilter_ps_bytes)},
-    .ms = CD3DX12_SHADER_BYTECODE{&g_envmap_prefilter_ms_bytes, ARRAYSIZE(g_envmap_prefilter_ms_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rasterizer_state = skybox_rasterizer_desc,
-    .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
-      D3D12_RT_FORMAT_ARRAY{.RTFormats = {prefiltered_env_map_format_}, .NumRenderTargets = 1}
-    },
-  };
-
-  envmap_prefilter_pso_ = device_->
-    CreatePipelineState(envmap_prefilter_pso_desc, sizeof(EnvmapPrefilterDrawParams) / 4);
-
-  graphics::PipelineDesc const brdf_integration_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_brdf_integration_vs_bytes, ARRAYSIZE(g_brdf_integration_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_brdf_integration_ps_bytes, ARRAYSIZE(g_brdf_integration_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
-      D3D12_RT_FORMAT_ARRAY{.RTFormats = {brdf_integration_map_format_}, .NumRenderTargets = 1}
-    },
-  };
-
-  brdf_integration_pso_ = device_->CreatePipelineState(brdf_integration_pso_desc, 0);
-}
-
-
-auto SceneRenderer::CreatePerViewConstantBuffers(UINT const count) -> void {
-  per_view_cbs_.reserve(per_view_cbs_.size() + count);
-
-  for (UINT i{0}; i < count; i++) {
-    auto& arr{per_view_cbs_.emplace_back()};
-
-    for (UINT j{0}; j < RenderManager::GetMaxFramesInFlight(); j++) {
-      if (auto opt{ConstantBuffer<ShaderPerViewConstants>::New(*device_, true)}) {
-        arr[j] = std::move(*opt);
-      }
-    }
-  }
-}
-
-
-auto SceneRenderer::CreatePerDrawConstantBuffers(UINT const count) -> void {
-  per_draw_cbs_.reserve(per_draw_cbs_.size() + count);
-
-  for (UINT i{0}; i < count; i++) {
-    auto& arr{per_draw_cbs_.emplace_back()};
-
-    for (UINT j{0}; j < RenderManager::GetMaxFramesInFlight(); j++) {
-      if (auto opt{ConstantBuffer<ShaderPerDrawConstants>::New(*device_, true)}) {
-        arr[j] = std::move(*opt);
-      }
-    }
-  }
-}
-
-
-auto SceneRenderer::AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>& {
-  if (next_per_view_cb_idx_ >= per_view_cbs_.size()) {
-    CreatePerViewConstantBuffers(1);
-  }
-
-  return per_view_cbs_[next_per_view_cb_idx_++][render_manager_->GetCurrentFrameIndex()];
-}
-
-
-auto SceneRenderer::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>& {
-  if (next_per_draw_cb_idx_ >= per_draw_cbs_.size()) {
-    CreatePerDrawConstantBuffers(1);
-  }
-
-  return per_draw_cbs_[next_per_draw_cb_idx_++][render_manager_->GetCurrentFrameIndex()];
-}
-
-
-auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
-  if (size.width != 0 && size.height != 0) {
-    RenderTarget::Desc desc{main_rt_->GetDesc()};
-    desc.width = size.width;
-    desc.height = size.height;
-    main_rt_ = RenderTarget::New(*device_, desc);
-  }
-}
-
-
-auto SceneRenderer::DrawSubmesh(SubmeshData const& submesh, std::optional<UINT> const meshlet_count_param_idx,
-                                std::optional<UINT> const meshlet_offset_param_idx,
-                                std::optional<UINT> const base_vertex_param_idx,
-                                graphics::CommandList const& cmd) -> void {
-  DrawSubmesh(submesh.meshlet_count, submesh.first_meshlet, submesh.base_vertex, meshlet_count_param_idx,
-    meshlet_offset_param_idx, base_vertex_param_idx, cmd);
-}
-
-
-auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const submesh_meshlet_offset,
-                                UINT const submesh_base_vertex,
-                                std::optional<UINT> const meshlet_count_param_idx,
-                                std::optional<UINT> const meshlet_offset_param_idx,
-                                std::optional<UINT> const base_vertex_param_idx,
-                                graphics::CommandList const& cmd) -> void {
-  UINT constexpr max_dispatch_thread_group_count{65535};
-  UINT constexpr max_meshlet_count_per_dispatch{AS_THREAD_GROUP_SIZE * max_dispatch_thread_group_count};
-
-  auto const submesh_meshlet_end{submesh_meshlet_offset + submesh_meshlet_count};
-
-  for (auto meshlet_offset{submesh_meshlet_offset};
-       meshlet_offset < submesh_meshlet_end;
-       meshlet_offset += max_meshlet_count_per_dispatch) {
-    auto const this_dispatch_meshlet_count{
-      std::min(submesh_meshlet_end - meshlet_offset, max_meshlet_count_per_dispatch)
-    };
-
-    auto const this_dispatch_thread_group_count{DivRoundUp<UINT>(this_dispatch_meshlet_count, AS_THREAD_GROUP_SIZE)};
-
-    if (meshlet_count_param_idx) {
-      cmd.SetPipelineParameter(*meshlet_count_param_idx, this_dispatch_meshlet_count);
-    }
-
-    if (meshlet_offset_param_idx) {
-      cmd.SetPipelineParameter(*meshlet_offset_param_idx, meshlet_offset);
-    }
-
-    if (base_vertex_param_idx) {
-      cmd.SetPipelineParameter(*base_vertex_param_idx, submesh_base_vertex);
-    }
-
-    cmd.DispatchMesh(this_dispatch_thread_group_count, 1, 1);
-  }
-}
-
-
 SceneRenderer::SceneRenderer(Window& window, graphics::GraphicsDevice& device, RenderManager& render_manager) :
   render_manager_{&render_manager},
   window_{&window},
@@ -1251,7 +355,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
   auto const extract_from_mesh_comp{
     [&find_or_emplace_back_buffer, &packet, &find_or_emplace_back_texture](MeshComponentBase* const comp) {
-      auto const mesh{comp->GetMesh()};
+      auto const mesh{comp->GetMesh().Observe()};
 
       if (!mesh) {
         return;
@@ -1277,7 +381,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
       auto const max_abs_scale{std::max({std::abs(scaling[0]), std::abs(scaling[1]), std::abs(scaling[2])})};
 
       for (auto const& submesh : mesh->GetSubmeshes()) {
-        auto const mtl{comp->GetMaterials()[submesh.GetMaterialIndex()]};
+        auto const mtl{comp->GetMaterials()[submesh.GetMaterialIndex()].Observe()};
 
         if (!mtl) {
           continue;
@@ -1286,8 +390,12 @@ auto SceneRenderer::ExtractCurrentState() -> void {
         auto const mtl_buf_local_idx{find_or_emplace_back_buffer(mtl->GetBuffer())};
 
         for (auto const tex : {
-               mtl->GetAlbedoMap(), mtl->GetMetallicMap(), mtl->GetRoughnessMap(), mtl->GetAoMap(), mtl->GetNormalMap(),
-               mtl->GetOpacityMask()
+               mtl->GetAlbedoMap().Observe(),
+               mtl->GetMetallicMap().Observe(),
+               mtl->GetRoughnessMap().Observe(),
+               mtl->GetAoMap().Observe(),
+               mtl->GetNormalMap().Observe(),
+               mtl->GetOpacityMask().Observe()
              }) {
           if (tex) {
             find_or_emplace_back_texture(tex->GetTex());
@@ -1309,7 +417,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 
   std::ranges::for_each(skinned_mesh_components_,
     [&extract_from_mesh_comp, &packet, this](SkinnedMeshComponent* const comp) {
-      auto const mesh{comp->GetMesh()};
+      auto const mesh{comp->GetMesh().Observe()};
 
       if (!mesh) {
         return;
@@ -1499,7 +607,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
     }
 
     if (active_scene->GetSkyMode() == SkyMode::Skybox) {
-      if (auto const cubemap{active_scene->GetSkybox()}) {
+      if (auto const cubemap{active_scene->GetSkybox().Observe()}) {
         packet.skybox_cubemap = cubemap->GetTex();
 
         if (auto const irradiance_map{sorcery::detail::GetIrradianceMap(*active_scene)};
@@ -2611,5 +1719,901 @@ auto SceneRenderer::Register(Camera& cam) noexcept -> void {
 
 auto SceneRenderer::Unregister(Camera const& cam) noexcept -> void {
   std::erase(cameras_, &cam);
+}
+
+
+auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,
+                                                           ShadowParams const& shadow_params) ->
+  ShadowCascadeBoundaries {
+  auto const cam_near{cam_data.near_plane};
+  auto const shadow_distance{std::min(cam_data.far_plane, shadow_params.distance)};
+  auto const shadowed_frustum_depth{shadow_distance - cam_near};
+
+  ShadowCascadeBoundaries boundaries;
+
+  boundaries[0].nearClip = cam_near;
+
+  for (auto i = 0u; i < shadow_params.cascade_count - 1; i++) {
+    boundaries[i + 1].nearClip = cam_near + shadow_params.normalized_cascade_splits[i] * shadowed_frustum_depth;
+    boundaries[i].farClip = boundaries[i + 1].nearClip * 1.005f;
+  }
+
+  boundaries[shadow_params.cascade_count - 1].farClip = shadow_distance;
+
+  for (int i = shadow_params.cascade_count; i < MAX_CASCADE_COUNT; i++) {
+    boundaries[i].nearClip = std::numeric_limits<float>::infinity();
+    boundaries[i].farClip = std::numeric_limits<float>::infinity();
+  }
+
+  return boundaries;
+}
+
+
+auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData const> const lights,
+                               std::vector<unsigned>& visible_light_indices) -> void {
+  visible_light_indices.clear();
+
+  for (unsigned light_idx = 0; light_idx < static_cast<unsigned>(lights.size()); light_idx++) {
+    switch (auto const light{lights[light_idx]}; light.type) {
+      case LightComponent::Type::Directional: {
+        visible_light_indices.emplace_back(light_idx);
+        break;
+      }
+
+      case LightComponent::Type::Spot: {
+        auto const light_vertices_ws{
+          [light] {
+            auto vertices{CalculateSpotLightLocalVertices(light.range, light.outer_angle)};
+
+            for (auto const model_mtx_no_scale{light.local_to_world_mtx_no_scale}; auto& vertex : vertices) {
+              vertex = Vector3{Vector4{vertex, 1} * model_mtx_no_scale};
+            }
+
+            return vertices;
+          }()
+        };
+
+        if (frustum_ws.Intersects(AABB::FromVertices(light_vertices_ws))) {
+          visible_light_indices.emplace_back(light_idx);
+        }
+
+        break;
+      }
+
+      case LightComponent::Type::Point: {
+        if (BoundingSphere const bounds_ws{Vector3{light.position}, light.range}; frustum_ws.Intersects(bounds_ws)) {
+          visible_light_indices.emplace_back(light_idx);
+        }
+        break;
+      }
+    }
+  }
+}
+
+
+auto SceneRenderer::SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int const rt_width,
+                                         int const rt_height, Vector3 const& ambient_light,
+                                         ShadowParams const& shadow_params) -> void {
+  cb.Update(ShaderPerFrameConstants{
+    .ambientLightColor = ambient_light, .shadowCascadeCount = shadow_params.cascade_count,
+    .screenSize = Vector2{rt_width, rt_height}, .visualizeShadowCascades = shadow_params.visualize_cascades,
+    .shadowFilteringMode = static_cast<int>(shadow_params.filtering_mode)
+  });
+}
+
+
+auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
+                                        Matrix4 const& proj_mtx, Matrix4 const& prev_view_proj_mtx,
+                                        ShadowCascadeBoundaries const& cascade_bounds, Frustum const& frustum_ws,
+                                        Vector3 const& view_pos, float const near_clip_plane,
+                                        float const far_clip_plane) -> void {
+  ShaderPerViewConstants data;
+  data.viewMtx = view_mtx;
+  data.invViewMtx = view_mtx.Inverse();
+  data.projMtx = proj_mtx;
+  data.invProjMtx = proj_mtx.Inverse();
+  data.viewProjMtx = view_mtx * proj_mtx;
+  data.invViewProjMtx = data.viewProjMtx.Inverse();
+  data.prev_view_proj_mtx = prev_view_proj_mtx;
+
+  for (auto i = 0; i < 6; i++) {
+    data.frustum_planes_ws[i] = frustum_ws.GetPlanes()[i];
+  }
+
+  data.viewPos = view_pos;
+  data.near_clip_plane = near_clip_plane;
+  data.far_clip_plane = far_clip_plane;
+
+  for (auto i = 0; i < MAX_CASCADE_COUNT; i++) {
+    data.shadowCascadeSplitDistances[i] = cascade_bounds[i].farClip;
+  }
+
+  cb.Update(data);
+}
+
+
+auto SceneRenderer::SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
+                                        Matrix4 const& view_mtx, Matrix4 const& proj_mtx,
+                                        Matrix4 const& prev_model_mtx, float const max_abs_scaling) -> void {
+  cb.Update(ShaderPerDrawConstants{
+    .modelMtx = model_mtx, .invTranspModelMtx = model_mtx.Inverse().Transpose(), .model_view_mtx = model_mtx * view_mtx,
+    .model_view_proj_mtx = model_mtx * view_mtx * proj_mtx, .prev_model_mtx = prev_model_mtx,
+    .max_abs_scaling = max_abs_scaling
+  });
+}
+
+
+auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
+                                              std::span<SceneRenderer::LightData const> const lights,
+                                              std::span<unsigned const> visible_light_indices,
+                                              SceneRenderer::CameraData const& cam_data,
+                                              Matrix4 const& cam_view_proj_mtx, float const shadow_distance) -> void {
+  struct LightCascadeIndex {
+    int lightIdxIdx;
+    int shadowIdx;
+  };
+
+  std::array lightIndexIndicesInCell{
+    std::vector<LightCascadeIndex>{}, std::vector<LightCascadeIndex>{},
+    std::vector<LightCascadeIndex>{}, std::vector<LightCascadeIndex>{}
+  };
+
+  auto const& camPos{cam_data.position};
+
+  auto const determineScreenCoverage{
+    [&camPos, &cam_view_proj_mtx](std::span<Vector3 const> const vertices) -> std::optional<int> {
+      std::optional<int> cellIdx;
+
+      if (auto const [worldMin, worldMax]{AABB::FromVertices(vertices)};
+        worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] && worldMax[0] >= camPos[0] &&
+        worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
+        cellIdx = 0;
+      } else {
+        Vector2 const bottomLeft{-1, -1};
+        Vector2 const topRight{1, 1};
+
+        Vector2 min{std::numeric_limits<float>::max()};
+        Vector2 max{std::numeric_limits<float>::lowest()};
+
+        for (auto& vertex : vertices) {
+          Vector4 vertex4{vertex, 1};
+          vertex4 *= cam_view_proj_mtx;
+          auto const projected{Vector2{vertex4} / vertex4[3]};
+          min = Clamp(Min(min, projected), bottomLeft, topRight);
+          max = Clamp(Max(max, projected), bottomLeft, topRight);
+        }
+
+        auto const width{max[0] - min[0]};
+        auto const height{max[1] - min[1]};
+
+        auto const area{width * height};
+        auto const coverage{area / 4};
+
+        if (coverage >= 1) {
+          cellIdx = 0;
+        } else if (coverage >= 0.25f) {
+          cellIdx = 1;
+        } else if (coverage >= 0.0625f) {
+          cellIdx = 2;
+        } else if (coverage >= 0.015625f) {
+          cellIdx = 3;
+        }
+      }
+
+      return cellIdx;
+    }
+  };
+
+  for (auto i = 0; i < static_cast<int>(visible_light_indices.size()); i++) {
+    if (auto const light{lights[visible_light_indices[i]]};
+      light.casts_shadow && (light.type == LightComponent::Type::Spot || light.type == LightComponent::Type::Point)) {
+      Vector3 const& lightPos{light.position};
+      float const lightRange{light.range};
+
+      // Skip the light if its bounding sphere is farther than the shadow distance
+      if (Vector3 const camToLightDir{Normalize(lightPos - camPos)}; Distance(lightPos - camToLightDir * lightRange,
+                                                                       cam_data.position) > shadow_distance) {
+        continue;
+      }
+
+      if (light.type == LightComponent::Type::Spot) {
+        auto lightVertices{CalculateSpotLightLocalVertices(light.range, light.outer_angle)};
+
+        for (auto const modelMtxNoScale{light.local_to_world_mtx_no_scale}; auto& vertex : lightVertices) {
+          vertex = Vector3{Vector4{vertex, 1} * modelMtxNoScale};
+        }
+
+        if (auto const cellIdx{determineScreenCoverage(lightVertices)}) {
+          lightIndexIndicesInCell[*cellIdx].emplace_back(i, 0);
+        }
+      } else if (light.type == LightComponent::Type::Point) {
+        for (auto j = 0; j < 6; j++) {
+          std::array static const faceBoundsRotations{
+            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(90)), // +X
+            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(-90)), // -X
+            Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(-90)), // +Y
+            Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(90)), // -Y
+            Quaternion{}, // +Z
+            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(180)) // -Z
+          };
+
+          std::array const shadowFrustumVertices{
+            faceBoundsRotations[i].Rotate(Vector3{lightRange, lightRange, lightRange}) + lightPos,
+            faceBoundsRotations[i].Rotate(Vector3{-lightRange, lightRange, lightRange}) + lightPos,
+            faceBoundsRotations[i].Rotate(Vector3{-lightRange, -lightRange, lightRange}) + lightPos,
+            faceBoundsRotations[i].Rotate(Vector3{lightRange, -lightRange, lightRange}) + lightPos, lightPos,
+          };
+
+          if (auto const cellIdx{determineScreenCoverage(shadowFrustumVertices)}) {
+            lightIndexIndicesInCell[*cellIdx].emplace_back(i, j);
+          }
+        }
+      }
+    }
+  }
+
+  for (auto i = 0; i < 4; i++) {
+    std::ranges::sort(lightIndexIndicesInCell[i],
+      [&visible_light_indices, &camPos, &lights](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
+        auto const leftLight{lights[visible_light_indices[lhs.lightIdxIdx]]};
+        auto const rightLight{lights[visible_light_indices[rhs.lightIdxIdx]]};
+
+        auto const leftLightPos{leftLight.position};
+        auto const rightLightPos{rightLight.position};
+
+        auto const leftDist{Distance(leftLightPos, camPos)};
+        auto const rightDist{Distance(camPos, rightLightPos)};
+
+        return leftDist > rightDist;
+      });
+
+    for (auto j = 0; j < atlas.GetCell(i).GetElementCount(); j++) {
+      auto& subcell{atlas.GetCell(i).GetSubcell(j)};
+      subcell.reset();
+
+      if (lightIndexIndicesInCell[i].empty()) {
+        continue;
+      }
+
+      auto const [lightIdxIdx, shadowIdx]{lightIndexIndicesInCell[i].back()};
+      auto const light{lights[visible_light_indices[lightIdxIdx]]};
+      lightIndexIndicesInCell[i].pop_back();
+
+      if (light.type == LightComponent::Type::Spot) {
+        auto const shadowViewMtx{Matrix4::LookTo(light.position, light.direction, Vector3::Up())};
+        auto const shadowProjMtx{
+          Matrix4::PerspectiveFov(ToRadians(light.outer_angle), 1.f, light.range, light.shadow_near_plane)
+        };
+
+        subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
+      } else if (light.type == LightComponent::Type::Point) {
+        auto const lightPos{light.position};
+
+        auto const faceViewMatrices{MakeCubeFaceViewMatrices(lightPos)};
+        auto const shadowViewMtx{faceViewMatrices[shadowIdx]};
+        auto const shadowProjMtx{
+          TransformProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, light.shadow_near_plane,
+            light.range))
+        };
+
+        subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
+      }
+    }
+
+    if (i + 1 < 4) {
+      std::ranges::copy(lightIndexIndicesInCell[i], std::back_inserter(lightIndexIndicesInCell[i + 1]));
+    }
+  }
+}
+
+
+auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
+                                              std::span<unsigned const> const visible_light_indices,
+                                              CameraData const& cam_data, float rt_aspect, int const cascade_count,
+                                              ShadowCascadeBoundaries const& shadow_cascade_boundaries,
+                                              std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
+                                              graphics::CommandList& cmd) -> void {
+  cmd.SetPipelineState(*shadow_pso_);
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
+  cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
+  cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
+
+  for (auto const lightIdx : visible_light_indices) {
+    if (auto const light{frame_packet.light_data[lightIdx]};
+      light.type == LightComponent::Type::Directional && light.casts_shadow) {
+      float const camNear{cam_data.near_plane};
+      float const camFar{cam_data.far_plane};
+
+      enum FrustumVertex : int {
+        FrustumVertex_NearTopRight    = 0,
+        FrustumVertex_NearTopLeft     = 1,
+        FrustumVertex_NearBottomLeft  = 2,
+        FrustumVertex_NearBottomRight = 3,
+        FrustumVertex_FarTopRight     = 4,
+        FrustumVertex_FarTopLeft      = 5,
+        FrustumVertex_FarBottomLeft   = 6,
+        FrustumVertex_FarBottomRight  = 7,
+      };
+
+      // Order of vertices is CCW from top right, near first
+      auto const frustumVertsWS{
+        [&cam_data, rt_aspect, camNear, camFar] {
+          std::array<Vector3, 8> ret;
+
+          Vector3 const nearWorldForward{cam_data.position + cam_data.forward * camNear};
+          Vector3 const farWorldForward{cam_data.position + cam_data.forward * camFar};
+
+          switch (cam_data.type) {
+            case Camera::Type::Perspective: {
+              float const tanHalfFov{std::tan(ToRadians(cam_data.fov_vert_deg / 2.0f))};
+              float const nearExtentY{camNear * tanHalfFov};
+              float const nearExtentX{nearExtentY * rt_aspect};
+              float const farExtentY{camFar * tanHalfFov};
+              float const farExtentX{farExtentY * rt_aspect};
+
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam_data.right * nearExtentX + cam_data.up *
+                                                nearExtentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam_data.right * nearExtentX + cam_data.up *
+                                               nearExtentY;
+              ret[FrustumVertex_NearBottomLeft] =
+                nearWorldForward - cam_data.right * nearExtentX - cam_data.up * nearExtentY;
+              ret[FrustumVertex_NearBottomRight] =
+                nearWorldForward + cam_data.right * nearExtentX - cam_data.up * nearExtentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam_data.right * farExtentX + cam_data.up * farExtentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam_data.right * farExtentX + cam_data.up * farExtentY;
+              ret[FrustumVertex_FarBottomLeft] =
+                farWorldForward - cam_data.right * farExtentX - cam_data.up * farExtentY;
+              ret[FrustumVertex_FarBottomRight] =
+                farWorldForward + cam_data.right * farExtentX - cam_data.up * farExtentY;
+              break;
+            }
+            case Camera::Type::Orthographic: {
+              float const extentX{cam_data.size_vert / 2.0f};
+              float const extentY{extentX / rt_aspect};
+
+              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam_data.right * extentX + cam_data.up * extentY;
+              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam_data.right * extentX + cam_data.up * extentY;
+              ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam_data.right * extentX - cam_data.up * extentY;
+              ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam_data.right * extentX - cam_data.up * extentY;
+              ret[FrustumVertex_FarTopRight] = farWorldForward + cam_data.right * extentX + cam_data.up * extentY;
+              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam_data.right * extentX + cam_data.up * extentY;
+              ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam_data.right * extentX - cam_data.up * extentY;
+              ret[FrustumVertex_FarBottomRight] = farWorldForward + cam_data.right * extentX - cam_data.up * extentY;
+              break;
+            }
+          }
+
+          return ret;
+        }()
+      };
+
+      auto const frustumDepth{camFar - camNear};
+
+      for (auto cascadeIdx{0}; cascadeIdx < cascade_count; cascadeIdx++) {
+        // cascade vertices in world space
+        auto const cascadeVertsWS{
+          [&frustumVertsWS, &shadow_cascade_boundaries, cascadeIdx, camNear, frustumDepth] {
+            auto const [cascadeNear, cascadeFar]{shadow_cascade_boundaries[cascadeIdx]};
+
+            float const cascadeNearNorm{(cascadeNear - camNear) / frustumDepth};
+            float const cascadeFarNorm{(cascadeFar - camNear) / frustumDepth};
+
+            std::array<Vector3, 8> ret;
+
+            for (auto j = 0; j < 4; j++) {
+              Vector3 const& from{frustumVertsWS[j]};
+              Vector3 const& to{frustumVertsWS[j + 4]};
+
+              ret[j] = Lerp(from, to, cascadeNearNorm);
+              ret[j + 4] = Lerp(from, to, cascadeFarNorm);
+            }
+
+            return ret;
+          }()
+        };
+
+        Vector3 cascadeCenterWS{Vector3::Zero()};
+
+        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
+          cascadeCenterWS += cascadeVertWS;
+        }
+
+        cascadeCenterWS /= 8.0f;
+
+        auto sphereRadius{0.0f};
+
+        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
+          sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
+        }
+
+        auto const shadowMapSize{dir_shadow_map_arr_->GetSize()};
+        auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
+
+        auto const up{
+          [&light] {
+            auto const dot{Dot(light.direction, Vector3::Up())};
+            return Approximately(dot, 1.0F)
+                     ? Vector3::Backward()
+                     : Approximately(dot, -1.0F)
+                         ? Vector3::Forward()
+                         : Vector3::Up();
+          }()
+        };
+
+        Matrix4 shadowViewMtx{Matrix4::LookTo(Vector3::Zero(), light.direction, up)};
+        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
+        cascadeCenterWS /= worldUnitsPerTexel;
+        cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
+        cascadeCenterWS[1] = std::floor(cascadeCenterWS[1]);
+        cascadeCenterWS *= worldUnitsPerTexel;
+        // shadowViewMtx is only rotation, transpose is its inverse
+        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Transpose()};
+
+        auto const shadow_near_clip{-sphereRadius - light.shadow_extension};
+        auto const shadow_far_clip{sphereRadius};
+
+        shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light.direction, up);
+        auto const shadowProjMtx{
+          TransformProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
+            sphereRadius, -sphereRadius, shadow_near_clip, shadow_far_clip))
+        };
+
+        shadow_view_proj_matrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
+
+        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), cascadeIdx);
+
+        D3D12_VIEWPORT const shadowViewport{
+          0, 0, static_cast<float>(shadowMapSize), static_cast<float>(shadowMapSize), 0, 1
+        };
+
+        D3D12_RECT const shadow_scissor{0, 0, static_cast<LONG>(shadowMapSize), static_cast<LONG>(shadowMapSize)};
+
+        cmd.SetViewports(std::array{shadowViewport});
+        cmd.SetScissorRects(std::array{shadow_scissor});
+
+        Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
+
+        auto& per_view_cb{AcquirePerViewConstantBuffer()};
+        SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, {}, ShadowCascadeBoundaries{},
+          shadow_frustum_ws, Vector3{}, shadow_near_clip, shadow_far_clip);
+        cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
+
+        for (auto const& instance : frame_packet.instance_data) {
+          auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
+          auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
+          auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
+
+          auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
+          SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, shadowViewMtx, shadowProjMtx, {},
+            instance.max_abs_scaling);
+
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
+            *frame_packet.buffers[mesh.pos_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
+            *frame_packet.buffers[mesh.uv_buf_local_idx]);
+          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), *mtl_buf);
+          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
+            *per_draw_cb.GetBuffer());
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, vertex_idx_buf_idx),
+            *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, prim_idx_buf_idx),
+            *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
+            *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, cull_data_buf_idx),
+            *frame_packet.buffers[mesh.cull_data_buf_local_idx]);
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), mesh.idx32);
+
+          DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex),
+            cmd);
+        }
+      }
+
+      break;
+    }
+  }
+}
+
+
+auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
+                                           SceneRenderer::FramePacket const& frame_packet,
+                                           graphics::CommandList& cmd) -> void {
+  cmd.SetPipelineState(*shadow_pso_);
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
+  cmd.SetRenderTargets({}, atlas.GetTex().get());
+  cmd.ClearDepthStencil(*atlas.GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
+
+  auto const cell_size_norm{atlas.GetNormalizedElementSize()};
+
+  for (auto i = 0; i < atlas.GetElementCount(); i++) {
+    auto const& cell{atlas.GetCell(i)};
+    auto const cell_offset_norm{atlas.GetNormalizedElementOffset(i)};
+    auto const subcell_size{cell_size_norm * cell.GetNormalizedElementSize() * static_cast<float>(atlas.GetSize())};
+
+    for (auto j = 0; j < cell.GetElementCount(); j++) {
+      if (auto const& subcell{cell.GetSubcell(j)}) {
+        auto const subcell_offset{
+          (cell_offset_norm + cell.GetNormalizedElementOffset(j) * cell_size_norm) * static_cast<float>(atlas.GetSize())
+        };
+
+        D3D12_VIEWPORT const viewport{subcell_offset[0], subcell_offset[1], subcell_size, subcell_size, 0, 1};
+        D3D12_RECT const scissor{
+          static_cast<LONG>(subcell_offset[0]), static_cast<LONG>(subcell_offset[1]),
+          static_cast<LONG>(subcell_offset[0] + subcell_size), static_cast<LONG>(subcell_offset[1] + subcell_size)
+        };
+
+        cmd.SetViewports(std::span{&viewport, 1});
+        cmd.SetScissorRects(std::array{scissor});
+
+        Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
+
+        auto& per_view_cb{AcquirePerViewConstantBuffer()};
+        SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, {},
+          ShadowCascadeBoundaries{}, shadow_frustum_ws, Vector3{}, 0, 0); // TODO pass proper near and far clip planes
+        cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
+
+        for (auto const& instance : frame_packet.instance_data) {
+          auto const& submesh{frame_packet.submesh_data[instance.submesh_local_idx]};
+          auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
+          auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
+
+          auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
+          SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, Matrix4::Identity(),
+            subcell->shadowViewProjMtx, {}, instance.max_abs_scaling);
+
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
+            *frame_packet.buffers[mesh.pos_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
+            *frame_packet.buffers[mesh.uv_buf_local_idx]);
+          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx), *mtl_buf);
+          cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
+            *per_draw_cb.GetBuffer());
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, vertex_idx_buf_idx),
+            *frame_packet.buffers[mesh.vtx_idx_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, prim_idx_buf_idx),
+            *frame_packet.buffers[mesh.prim_idx_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
+            *frame_packet.buffers[mesh.meshlet_buf_local_idx]);
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, cull_data_buf_idx),
+            *frame_packet.buffers[mesh.cull_data_buf_local_idx]);
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), mesh.idx32);
+
+          DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex),
+            cmd);
+        }
+      }
+    }
+  }
+}
+
+
+auto SceneRenderer::ClearGizmoDrawQueue() noexcept -> void {
+  gizmo_colors_.clear();
+  line_gizmo_vertex_data_.clear();
+}
+
+
+auto SceneRenderer::RecreateSsaoSamples(int const sample_count) noexcept -> void {
+  ssao_samples_buffer_.Resize(sample_count);
+  auto const ssao_samples{ssao_samples_buffer_.GetData()};
+
+  std::uniform_real_distribution dist{0.0f, 1.0f};
+  std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
+
+  for (auto i{0}; i < sample_count; i++) {
+    Vector3 sample{dist(gen) * 2 - 1, dist(gen) * 2 - 1, dist(gen)};
+    Normalize(sample);
+    sample *= dist(gen);
+
+    auto scale{static_cast<float>(i) / static_cast<float>(sample_count)};
+    scale = std::lerp(0.1f, 1.0f, scale * scale);
+    sample *= scale;
+
+    ssao_samples[i] = Vector4{sample, 0};
+  }
+}
+
+
+auto SceneRenderer::RecreatePipelines() -> void {
+  CD3DX12_DEPTH_STENCIL_DESC1 const depth_stencil_write{
+    TRUE, D3D12_DEPTH_WRITE_MASK_ALL,
+#ifdef REVERSE_Z
+    D3D12_COMPARISON_FUNC_GREATER_EQUAL,
+#else
+    D3D12_COMPARISON_FUNC_LESS_EQUAL,
+#endif
+    FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, FALSE
+  };
+
+  CD3DX12_DEPTH_STENCIL_DESC1 const depth_stencil_read_not_equal{
+    TRUE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_NOT_EQUAL, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+    FALSE
+  };
+
+  CD3DX12_DEPTH_STENCIL_DESC1 const depth_stencil_disabled{
+    FALSE, D3D12_DEPTH_WRITE_MASK_ZERO, D3D12_COMPARISON_FUNC_NONE, FALSE, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, FALSE
+  };
+
+  auto constexpr depth_bias_multiplier{
+#ifdef REVERSE_Z
+    -1
+#else
+    1
+#endif
+  };
+
+  CD3DX12_RASTERIZER_DESC const shadow_rasterizer_desc{
+    D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, FALSE, depth_bias_multiplier * 1, 0.F, depth_bias_multiplier * 2.5F,
+    TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF
+  };
+
+  CD3DX12_RASTERIZER_DESC const skybox_rasterizer_desc{
+    D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_FRONT, FALSE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+    D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, TRUE, TRUE, FALSE, 0, {}
+  };
+
+  CD3DX12_RT_FORMAT_ARRAY const render_target_format{
+    D3D12_RT_FORMAT_ARRAY{.RTFormats = {render_target_format_}, .NumRenderTargets = 1}
+  };
+  CD3DX12_RT_FORMAT_ARRAY const color_format{
+    D3D12_RT_FORMAT_ARRAY{.RTFormats = {color_buffer_format_}, .NumRenderTargets = 1}
+  };
+  CD3DX12_RT_FORMAT_ARRAY const ssao_format{
+    D3D12_RT_FORMAT_ARRAY{.RTFormats = {ssao_buffer_format_}, .NumRenderTargets = 1}
+  };
+  CD3DX12_RT_FORMAT_ARRAY const gbuffer_velocity_format{
+    D3D12_RT_FORMAT_ARRAY{
+      .RTFormats = {gbuffer0_format_, gbuffer1_format_, gbuffer2_format_, velocity_format_}, .NumRenderTargets = 4
+    }
+  };
+
+  graphics::PipelineDesc const shadow_pso_desc{
+    .ps = CD3DX12_SHADER_BYTECODE{&g_depth_only_ps_bytes, ARRAYSIZE(g_depth_only_ps_bytes)},
+    .as = CD3DX12_SHADER_BYTECODE{&g_depth_only_as_bytes, ARRAYSIZE(g_depth_only_as_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{&g_depth_only_ms_bytes, ARRAYSIZE(g_depth_only_ms_bytes)},
+    .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
+    .rasterizer_state = shadow_rasterizer_desc
+  };
+
+  shadow_pso_ = device_->CreatePipelineState(shadow_pso_desc, sizeof(DepthOnlyDrawParams) / 4);
+
+  graphics::PipelineDesc const depth_resolve_pso_desc{
+    .cs = CD3DX12_SHADER_BYTECODE{&g_depth_resolve_cs_bytes, ARRAYSIZE(g_depth_resolve_cs_bytes)}
+  };
+
+  depth_resolve_pso_ = device_->CreatePipelineState(depth_resolve_pso_desc, sizeof(DepthResolveDrawParams) / 4);
+
+  graphics::PipelineDesc const line_gizmo_pso_desc{
+    .primitive_topology_type = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
+    .vs = CD3DX12_SHADER_BYTECODE{&g_gizmos_line_vs_bytes, ARRAYSIZE(g_gizmos_line_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_gizmos_ps_bytes, ARRAYSIZE(g_gizmos_ps_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = render_target_format
+  };
+
+  line_gizmo_pso_ = device_->CreatePipelineState(line_gizmo_pso_desc, sizeof(GizmoDrawParams) / 4);
+
+
+  graphics::PipelineDesc const gbuffer_velocity_pso_desc{
+    .ps = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_ps_bytes, ARRAYSIZE(g_gbuffer_velocity_ps_bytes)},
+    .as = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_as_bytes, ARRAYSIZE(g_gbuffer_velocity_as_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{&g_gbuffer_velocity_ms_bytes, ARRAYSIZE(g_gbuffer_velocity_ms_bytes)},
+    .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_,
+    .rt_formats = gbuffer_velocity_format
+  };
+  gbuffer_velocity_pso_ = device_->CreatePipelineState(gbuffer_velocity_pso_desc, sizeof(GBufferDrawParams) / 4);
+
+  graphics::PipelineDesc const deferred_lighting_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_deferred_lighting_vs_bytes, ARRAYSIZE(g_deferred_lighting_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_deferred_lighting_ps_bytes, ARRAYSIZE(g_deferred_lighting_ps_bytes)},
+    .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_, .rt_formats = color_format
+  };
+
+  deferred_lighting_pso_ = device_->CreatePipelineState(deferred_lighting_pso_desc,
+    sizeof(DeferredLightingDrawParams) / 4);
+
+  graphics::PipelineDesc const post_process_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_post_process_vs_bytes, ARRAYSIZE(g_post_process_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_post_process_ps_bytes, ARRAYSIZE(g_post_process_ps_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = render_target_format,
+  };
+
+  post_process_pso_ = device_->CreatePipelineState(post_process_pso_desc, sizeof(PostProcessDrawParams) / 4);
+
+  graphics::PipelineDesc const skybox_pso_desc{
+    .ps = CD3DX12_SHADER_BYTECODE{&g_skybox_ps_bytes, ARRAYSIZE(g_skybox_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{&g_skybox_ms_bytes, ARRAYSIZE(g_skybox_ms_bytes)},
+    .depth_stencil_state = depth_stencil_write, .ds_format = depth_format_, .rasterizer_state = skybox_rasterizer_desc,
+    .rt_formats = color_format
+  };
+  skybox_pso_ = device_->CreatePipelineState(skybox_pso_desc, sizeof(SkyboxDrawParams) / 4);
+
+  graphics::PipelineDesc const ssao_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_main_ps_bytes, ARRAYSIZE(g_ssao_main_ps_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = ssao_format,
+  };
+
+  ssao_pso_ = device_->CreatePipelineState(ssao_pso_desc, sizeof(SsaoDrawParams) / 4);
+
+  graphics::PipelineDesc const ssao_blur_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_blur_ps_bytes, ARRAYSIZE(g_ssao_blur_ps_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = ssao_format
+  };
+
+  ssao_blur_pso_ = device_->CreatePipelineState(ssao_blur_pso_desc, sizeof(SsaoBlurDrawParams) / 4);
+
+  graphics::PipelineDesc const ssr_compose_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_compose_ps_bytes, ARRAYSIZE(g_ssr_compose_ps_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
+  };
+
+  ssr_compose_pso_ = device_->CreatePipelineState(ssr_compose_pso_desc, sizeof(SsrComposeDrawParams) / 4);
+
+  graphics::PipelineDesc const ssr_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_ps_bytes, ARRAYSIZE(g_ssr_ps_bytes)},
+    .depth_stencil_state = depth_stencil_read_not_equal, .ds_format = depth_format_,
+    .rt_formats = color_format
+  };
+
+  ssr_pso_ = device_->CreatePipelineState(ssr_pso_desc, sizeof(SsrDrawParams) / 4);
+
+  graphics::PipelineDesc const taa_resolve_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_vs_bytes, ARRAYSIZE(g_taa_resolve_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_ps_bytes, ARRAYSIZE(g_taa_resolve_ps_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
+  };
+
+  taa_pso_ = device_->CreatePipelineState(taa_resolve_pso_desc, sizeof(TaaResolveDrawParams) / 4);
+
+  graphics::PipelineDesc const vtx_skinning_pso_desc{
+    .cs = CD3DX12_SHADER_BYTECODE{&g_vtx_skinning_cs_bytes, ARRAYSIZE(g_vtx_skinning_cs_bytes)}
+  };
+
+  vtx_skinning_pso_ = device_->CreatePipelineState(vtx_skinning_pso_desc, sizeof(VertexSkinningDrawParams) / 4);
+
+  graphics::PipelineDesc const irradiance_pso_desc{
+    .ps = CD3DX12_SHADER_BYTECODE{&g_irradiance_ps_bytes, ARRAYSIZE(g_irradiance_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{&g_irradiance_ms_bytes, ARRAYSIZE(g_irradiance_ms_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rasterizer_state = skybox_rasterizer_desc,
+    .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
+      D3D12_RT_FORMAT_ARRAY{.RTFormats = {irradiance_map_format_}, .NumRenderTargets = 1}
+    },
+  };
+
+  irradiance_pso_ = device_->CreatePipelineState(irradiance_pso_desc, sizeof(IrradianceDrawParams) / 4);
+
+  graphics::PipelineDesc const envmap_prefilter_pso_desc{
+    .ps = CD3DX12_SHADER_BYTECODE{&g_envmap_prefilter_ps_bytes, ARRAYSIZE(g_envmap_prefilter_ps_bytes)},
+    .ms = CD3DX12_SHADER_BYTECODE{&g_envmap_prefilter_ms_bytes, ARRAYSIZE(g_envmap_prefilter_ms_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rasterizer_state = skybox_rasterizer_desc,
+    .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
+      D3D12_RT_FORMAT_ARRAY{.RTFormats = {prefiltered_env_map_format_}, .NumRenderTargets = 1}
+    },
+  };
+
+  envmap_prefilter_pso_ = device_->
+    CreatePipelineState(envmap_prefilter_pso_desc, sizeof(EnvmapPrefilterDrawParams) / 4);
+
+  graphics::PipelineDesc const brdf_integration_pso_desc{
+    .vs = CD3DX12_SHADER_BYTECODE{&g_brdf_integration_vs_bytes, ARRAYSIZE(g_brdf_integration_vs_bytes)},
+    .ps = CD3DX12_SHADER_BYTECODE{&g_brdf_integration_ps_bytes, ARRAYSIZE(g_brdf_integration_ps_bytes)},
+    .depth_stencil_state = depth_stencil_disabled, .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
+      D3D12_RT_FORMAT_ARRAY{.RTFormats = {brdf_integration_map_format_}, .NumRenderTargets = 1}
+    },
+  };
+
+  brdf_integration_pso_ = device_->CreatePipelineState(brdf_integration_pso_desc, 0);
+}
+
+
+auto SceneRenderer::CreatePerViewConstantBuffers(UINT const count) -> void {
+  per_view_cbs_.reserve(per_view_cbs_.size() + count);
+
+  for (UINT i{0}; i < count; i++) {
+    auto& arr{per_view_cbs_.emplace_back()};
+
+    for (UINT j{0}; j < RenderManager::GetMaxFramesInFlight(); j++) {
+      if (auto opt{ConstantBuffer<ShaderPerViewConstants>::New(*device_, true)}) {
+        arr[j] = std::move(*opt);
+      }
+    }
+  }
+}
+
+
+auto SceneRenderer::CreatePerDrawConstantBuffers(UINT const count) -> void {
+  per_draw_cbs_.reserve(per_draw_cbs_.size() + count);
+
+  for (UINT i{0}; i < count; i++) {
+    auto& arr{per_draw_cbs_.emplace_back()};
+
+    for (UINT j{0}; j < RenderManager::GetMaxFramesInFlight(); j++) {
+      if (auto opt{ConstantBuffer<ShaderPerDrawConstants>::New(*device_, true)}) {
+        arr[j] = std::move(*opt);
+      }
+    }
+  }
+}
+
+
+auto SceneRenderer::AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>& {
+  if (next_per_view_cb_idx_ >= per_view_cbs_.size()) {
+    CreatePerViewConstantBuffers(1);
+  }
+
+  return per_view_cbs_[next_per_view_cb_idx_++][render_manager_->GetCurrentFrameIndex()];
+}
+
+
+auto SceneRenderer::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>& {
+  if (next_per_draw_cb_idx_ >= per_draw_cbs_.size()) {
+    CreatePerDrawConstantBuffers(1);
+  }
+
+  return per_draw_cbs_[next_per_draw_cb_idx_++][render_manager_->GetCurrentFrameIndex()];
+}
+
+
+auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
+  if (size.width != 0 && size.height != 0) {
+    RenderTarget::Desc desc{main_rt_->GetDesc()};
+    desc.width = size.width;
+    desc.height = size.height;
+    main_rt_ = RenderTarget::New(*device_, desc);
+  }
+}
+
+
+auto SceneRenderer::DrawSubmesh(SubmeshData const& submesh, std::optional<UINT> const meshlet_count_param_idx,
+                                std::optional<UINT> const meshlet_offset_param_idx,
+                                std::optional<UINT> const base_vertex_param_idx,
+                                graphics::CommandList const& cmd) -> void {
+  DrawSubmesh(submesh.meshlet_count, submesh.first_meshlet, submesh.base_vertex, meshlet_count_param_idx,
+    meshlet_offset_param_idx, base_vertex_param_idx, cmd);
+}
+
+
+auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const submesh_meshlet_offset,
+                                UINT const submesh_base_vertex,
+                                std::optional<UINT> const meshlet_count_param_idx,
+                                std::optional<UINT> const meshlet_offset_param_idx,
+                                std::optional<UINT> const base_vertex_param_idx,
+                                graphics::CommandList const& cmd) -> void {
+  UINT constexpr max_dispatch_thread_group_count{65535};
+  UINT constexpr max_meshlet_count_per_dispatch{AS_THREAD_GROUP_SIZE * max_dispatch_thread_group_count};
+
+  auto const submesh_meshlet_end{submesh_meshlet_offset + submesh_meshlet_count};
+
+  for (auto meshlet_offset{submesh_meshlet_offset};
+       meshlet_offset < submesh_meshlet_end;
+       meshlet_offset += max_meshlet_count_per_dispatch) {
+    auto const this_dispatch_meshlet_count{
+      std::min(submesh_meshlet_end - meshlet_offset, max_meshlet_count_per_dispatch)
+    };
+
+    auto const this_dispatch_thread_group_count{DivRoundUp<UINT>(this_dispatch_meshlet_count, AS_THREAD_GROUP_SIZE)};
+
+    if (meshlet_count_param_idx) {
+      cmd.SetPipelineParameter(*meshlet_count_param_idx, this_dispatch_meshlet_count);
+    }
+
+    if (meshlet_offset_param_idx) {
+      cmd.SetPipelineParameter(*meshlet_offset_param_idx, meshlet_offset);
+    }
+
+    if (base_vertex_param_idx) {
+      cmd.SetPipelineParameter(*base_vertex_param_idx, submesh_base_vertex);
+    }
+
+    cmd.DispatchMesh(this_dispatch_thread_group_count, 1, 1);
+  }
 }
 }

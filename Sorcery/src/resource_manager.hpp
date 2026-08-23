@@ -136,10 +136,11 @@ private:
 
   Mutex<std::map<ResourceId, ObserverPtr<Job>>, true> loader_jobs_;
 
-  inline static Guid const default_mtl_guid_{1, 0};
-  inline static Guid const cube_mesh_guid_{2, 0};
-  inline static Guid const plane_mesh_guid_{3, 0};
-  inline static Guid const sphere_mesh_guid_{4, 0};
+  inline static Guid const default_res_guid_{1, 0};
+  inline static ResourceId const default_mtl_res_id_{default_res_guid_, 0};
+  inline static ResourceId const cube_mesh_res_id_{default_res_guid_, 1};
+  inline static ResourceId const plane_mesh_res_id_{default_res_guid_, 2};
+  inline static ResourceId const sphere_mesh_res_id_{default_res_guid_, 3};
 };
 }
 

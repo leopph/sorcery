@@ -155,7 +155,7 @@ auto ResourceManager::GetSphereMesh() const noexcept -> ResourceRef<Mesh> {
 auto ResourceManager::CreateDefaultResources() -> void {
   if (!default_mtl_) {
     default_mtl_ = std::make_unique<Material>(GpuResidencyPolicy::kMakeResident);
-    default_mtl_->SetResId({default_mtl_guid_, 0});
+    default_mtl_->SetResId(default_mtl_res_id_);
     default_mtl_->SetName("Default Material");
     default_resources_.emplace_back(default_mtl_.get());
   }
@@ -182,7 +182,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     cube_mesh_ = std::make_unique<Mesh>(cube_data, ResourceResidencyPolicy{
       .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
     });
-    cube_mesh_->SetResId({cube_mesh_guid_, 0});
+    cube_mesh_->SetResId(cube_mesh_res_id_);
     cube_mesh_->SetName("Cube");
     default_resources_.emplace_back(cube_mesh_.get());
   }
@@ -209,7 +209,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     plane_mesh_ = std::make_unique<Mesh>(plane_data, ResourceResidencyPolicy{
       .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
     });
-    plane_mesh_->SetResId({plane_mesh_guid_, 0});
+    plane_mesh_->SetResId(plane_mesh_res_id_);
     plane_mesh_->SetName("Plane");
     default_resources_.emplace_back(plane_mesh_.get());
   }
@@ -237,7 +237,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     sphere_mesh_ = std::make_unique<Mesh>(sphere_data, ResourceResidencyPolicy{
       .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
     });
-    sphere_mesh_->SetResId({sphere_mesh_guid_, 0});
+    sphere_mesh_->SetResId(sphere_mesh_res_id_);
     sphere_mesh_->SetName("Sphere");
     default_resources_.emplace_back(sphere_mesh_.get());
   }

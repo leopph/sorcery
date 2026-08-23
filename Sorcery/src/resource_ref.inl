@@ -29,12 +29,27 @@ ResourceRef<T>::ResourceRef(ResourceRef<U> const& other) noexcept :
 
 template<typename T>
 auto ResourceRef<T>::Get() const -> ObjectPtr<T> requires std::derived_from<T, Resource> {
+  if (!id_.IsValid()) {
+    return nullptr;
+  }
+
   if (cached_) {
     return cached_;
   }
 
-  cached_ = ReflCast<T>(detail::ResolveResource(id_));
+  UpdateCache();
   return cached_;
+}
+
+
+template<typename T>
+auto ResourceRef<T>::Observe() const -> ObserverPtr<T> requires std::derived_from<T, Resource> {
+  if (auto const obj = cached_.Get()) {
+    return obj;
+  }
+
+  UpdateCache();
+  return cached_.Get();
 }
 
 
@@ -53,6 +68,12 @@ auto ResourceRef<T>::operator*() const -> T& requires std::derived_from<T, Resou
 template<typename T>
 ResourceRef<T>::operator bool() const {
   return Get().Get() != nullptr;
+}
+
+
+template<typename T>
+auto ResourceRef<T>::UpdateCache() const -> void {
+  cached_ = ReflCast<T>(detail::ResolveResource(id_));
 }
 
 

@@ -28,6 +28,9 @@ public:
   auto Get() const -> ObjectPtr<T> requires std::derived_from<T, Resource>;
 
   [[nodiscard]]
+  auto Observe() const -> ObserverPtr<T> requires std::derived_from<T, Resource>;
+
+  [[nodiscard]]
   auto operator->() const -> ObjectPtr<T> requires std::derived_from<T, Resource>;
 
   [[nodiscard]]
@@ -39,6 +42,8 @@ public:
 private:
   template<typename>
   friend class ResourceRef;
+
+  auto UpdateCache() const -> void;
 
   ResourceId id_;
   mutable ObjectPtr<T> cached_;
