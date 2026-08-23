@@ -3,9 +3,9 @@
 #include <bit>
 #include <cassert>
 
+#include <spdlog/spdlog.h>
+
 #include "../app.hpp"
-#include "../Serialization.hpp"
-#undef FindResource
 #include "../job_system.hpp"
 #include "../material_resource.hpp"
 #include "../resource_manager.hpp"
@@ -54,7 +54,10 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   auto const data{DeserializeMaterialResourceData(yaml_node, ctx)};
 
   if (!data) {
-    // TODO log or something?
+    // If we can't deserialize, we still should make sure we have some data on the GPU.
+    UploadToGpu();
+
+    spdlog::error("Failed to deserialize material resource data.");
     assert("Failed to deserialize material resource data!" && false);
     return;
   }
