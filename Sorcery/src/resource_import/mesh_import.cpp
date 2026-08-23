@@ -1,6 +1,6 @@
 #include "mesh_import.hpp"
 
-#include "../Reflection.hpp"
+#include "../reflection.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::MeshImportSettings>("Mesh Import Settings")

@@ -3,7 +3,7 @@
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
 #include "../app.hpp"
-#include "../Reflection.hpp"
+#include "../reflection.hpp"
 #include "../rendering/scene_renderer.hpp"
 
 

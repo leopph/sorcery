@@ -18,10 +18,10 @@ auto MeshComponentBaseEditorDrawer::Draw(
   ImGui::Text("%s", "Mesh");
   ImGui::TableNextColumn();
   static ObjectPicker<Mesh> meshPicker;
-  if (auto mesh{obj.GetMesh()}; ImGuiDisabled(!allow_edit, [&] {
+  if (auto mesh{obj.GetMesh().Get()}; ImGuiDisabled(!allow_edit, [&] {
     return meshPicker.Draw(mesh, true);
   })) {
-    obj.SetMesh(mesh);
+    obj.SetMesh(MakeResourceRef(mesh.Get()));
   }
 
   if (auto const mesh{obj.GetMesh()}) {
@@ -43,10 +43,10 @@ auto MeshComponentBaseEditorDrawer::Draw(
       ImGui::TableNextColumn();
       ImGui::Text("%s", mtlSlots[i].name.c_str());
       ImGui::TableNextColumn();
-      if (auto mtl{mtls[i]}; ImGuiDisabled(!allow_edit, [&] {
+      if (auto mtl{mtls[i].Get()}; ImGuiDisabled(!allow_edit, [&] {
         return mtlPickers[i].Draw(mtl, true);
       })) {
-        obj.SetMaterial(i, mtl);
+        obj.SetMaterial(i, MakeResourceRef(mtl.Get()));
       }
     }
   }

@@ -11,13 +11,10 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 Object::Object() :
-  id_{App::Instance().GetObjectRegistry().Register(ObserverPtr{this})} {
-  sAllObjects.Lock()->emplace_back(this);
-}
+  id_{App::Instance().GetObjectRegistry().Register(ObserverPtr{this})} {}
 
 
 Object::~Object() {
-  std::erase(*sAllObjects.Lock(), this);
   App::Instance().GetObjectRegistry().Unregister(id_);
 }
 
@@ -35,7 +32,4 @@ auto Object::SetName(std::string const& name) -> void {
 auto Object::GetId() const -> ObjectId const& {
   return id_;
 }
-
-
-Mutex<std::vector<Object*>, true> Object::sAllObjects;
 }

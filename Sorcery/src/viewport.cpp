@@ -1,6 +1,6 @@
 #include "viewport.hpp"
 
-#include "Reflection.hpp"
+#include "reflection.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::NormalizedViewport>{"NormalizedViewport"}.

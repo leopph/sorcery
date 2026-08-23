@@ -6,6 +6,7 @@
 #include "Core.hpp"
 #include "mutex.hpp"
 #include "object_id.hpp"
+#include "object_ptr.hpp"
 #include "observer_ptr.hpp"
 
 
@@ -28,6 +29,17 @@ public:
   [[nodiscard]] SORCERYAPI
   auto Resolve(ObjectId id) const -> ObserverPtr<Object>;
 
+  template<std::derived_from<Object> T>
+  [[nodiscard]]
+  auto FindObjectOfType() -> ObjectPtr<T>;
+
+  template<std::derived_from<Object> T>
+  auto FindObjectsOfType(std::vector<ObjectPtr<T>>& out) -> std::vector<ObjectPtr<T>>&;
+
+  template<std::derived_from<Object> T>
+  [[nodiscard]]
+  auto FindObjectsOfType() -> std::vector<ObjectPtr<T>>;
+
 private:
   struct RegistryData {
     std::vector<ObjectSlot> slots;
@@ -38,3 +50,6 @@ private:
   mutable Mutex<RegistryData, true> data_;
 };
 }
+
+
+#include "object_registry.inl"

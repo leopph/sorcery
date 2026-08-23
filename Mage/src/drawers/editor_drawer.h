@@ -1,7 +1,7 @@
 #pragma once
 
 #include "editor_drawer_context.hpp"
-#include "Reflection.hpp"
+#include "reflection.hpp"
 
 
 namespace sorcery::mage {

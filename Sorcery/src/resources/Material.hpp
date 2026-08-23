@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NativeResource.hpp"
+#include "resource_ref.hpp"
 #include "Texture2D.hpp"
 #include "../Color.hpp"
 #include "../material_blend_mode.hpp"
@@ -18,24 +19,6 @@ class Material final : public NativeResource {
 public:
   using BlendMode = MaterialBlendMode;
 
-private:
-  ShaderMaterial mShaderMtl{
-    .albedo = Vector3{1, 1, 1}, .metallic = 0.0f, .roughness = 0.5f, .ao = 1.0f, .alphaThreshold = 1.0f,
-    .albedo_map_idx = INVALID_RES_IDX, .metallic_map_idx = INVALID_RES_IDX, .roughness_map_idx = INVALID_RES_IDX,
-    .ao_map_idx = INVALID_RES_IDX, .normal_map_idx = INVALID_RES_IDX, .opacity_map_idx = INVALID_RES_IDX,
-    .blendMode = BLEND_MODE_OPAQUE
-  };
-
-  rendering::ConstantBuffer<ShaderMaterial> cb_;
-
-  Texture2D* albedo_map_{nullptr};
-  Texture2D* metallic_map_{nullptr};
-  Texture2D* roughness_map_{nullptr};
-  Texture2D* ao_map_{nullptr};
-  Texture2D* normal_map_{nullptr};
-  Texture2D* opacity_mask_{nullptr};
-
-public:
   [[nodiscard]] SORCERYAPI
   auto Serialize() const noexcept -> YAML::Node override;
   SORCERYAPI
@@ -76,29 +59,29 @@ public:
   auto SetAo(f32 ao, GpuResidencyPolicy gpu_policy) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetAlbedoMap() const -> Texture2D*;
+  auto GetAlbedoMap() const -> ResourceRef<Texture2D>;
   SORCERYAPI
-  auto SetAlbedoMap(Texture2D* tex, GpuResidencyPolicy gpu_policy) -> void;
+  auto SetAlbedoMap(ResourceRef<Texture2D> const& tex, GpuResidencyPolicy gpu_policy) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetMetallicMap() const -> Texture2D*;
+  auto GetMetallicMap() const -> ResourceRef<Texture2D>;
   SORCERYAPI
-  auto SetMetallicMap(Texture2D* tex, GpuResidencyPolicy gpu_policy) -> void;
+  auto SetMetallicMap(ResourceRef<Texture2D> const& tex, GpuResidencyPolicy gpu_policy) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetRoughnessMap() const -> Texture2D*;
+  auto GetRoughnessMap() const -> ResourceRef<Texture2D>;
   SORCERYAPI
-  auto SetRoughnessMap(Texture2D* tex, GpuResidencyPolicy gpu_policy) -> void;
+  auto SetRoughnessMap(ResourceRef<Texture2D> const& tex, GpuResidencyPolicy gpu_policy) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetAoMap() const -> Texture2D*;
+  auto GetAoMap() const -> ResourceRef<Texture2D>;
   SORCERYAPI
-  auto SetAoMap(Texture2D* tex, GpuResidencyPolicy gpu_policy) -> void;
+  auto SetAoMap(ResourceRef<Texture2D> const& tex, GpuResidencyPolicy gpu_policy) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetNormalMap() const -> Texture2D*;
+  auto GetNormalMap() const -> ResourceRef<Texture2D>;
   SORCERYAPI
-  auto SetNormalMap(Texture2D* tex, GpuResidencyPolicy gpu_policy) -> void;
+  auto SetNormalMap(ResourceRef<Texture2D> const& tex, GpuResidencyPolicy gpu_policy) -> void;
 
   [[nodiscard]] SORCERYAPI
   auto GetBlendMode() const -> BlendMode;
@@ -111,9 +94,9 @@ public:
   auto SetAlphaThreshold(float threshold, GpuResidencyPolicy gpu_policy) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetOpacityMask() const -> Texture2D*;
+  auto GetOpacityMask() const -> ResourceRef<Texture2D>;
   SORCERYAPI
-  auto SetOpacityMask(Texture2D* opacity_mask, GpuResidencyPolicy gpu_policy) -> void;
+  auto SetOpacityMask(ResourceRef<Texture2D> const& opacity_mask, GpuResidencyPolicy gpu_policy) -> void;
 
   SORCERYAPI
   auto UploadToGpu() -> void;
@@ -128,13 +111,29 @@ private:
   auto SetMetallicRefl(f32 metallic) -> void;
   auto SetRoughnessRefl(f32 roughness) -> void;
   auto SetAoRefl(f32 ao) -> void;
-  auto SetAlbedoMapRefl(Texture2D* tex) -> void;
-  auto SetMetallicMapRefl(Texture2D* tex) -> void;
-  auto SetRoughnessMapRefl(Texture2D* tex) -> void;
-  auto SetAoMapRefl(Texture2D* tex) -> void;
-  auto SetNormalMapRefl(Texture2D* tex) -> void;
+  auto SetAlbedoMapRefl(ResourceRef<Texture2D> tex) -> void;
+  auto SetMetallicMapRefl(ResourceRef<Texture2D> tex) -> void;
+  auto SetRoughnessMapRefl(ResourceRef<Texture2D> tex) -> void;
+  auto SetAoMapRefl(ResourceRef<Texture2D> tex) -> void;
+  auto SetNormalMapRefl(ResourceRef<Texture2D> tex) -> void;
   auto SetBlendModeRefl(BlendMode blend_mode) -> void;
   auto SetAlphaThresholdRefl(float threshold) -> void;
-  auto SetOpacityMaskRefl(Texture2D* opacity_mask) -> void;
+  auto SetOpacityMaskRefl(ResourceRef<Texture2D> opacity_mask) -> void;
+
+  ShaderMaterial cpu_data_{
+    .albedo = Vector3{1, 1, 1}, .metallic = 0.0f, .roughness = 0.5f, .ao = 1.0f, .alphaThreshold = 1.0f,
+    .albedo_map_idx = INVALID_RES_IDX, .metallic_map_idx = INVALID_RES_IDX, .roughness_map_idx = INVALID_RES_IDX,
+    .ao_map_idx = INVALID_RES_IDX, .normal_map_idx = INVALID_RES_IDX, .opacity_map_idx = INVALID_RES_IDX,
+    .blendMode = BLEND_MODE_OPAQUE
+  };
+
+  rendering::ConstantBuffer<ShaderMaterial> cb_;
+
+  ResourceRef<Texture2D> albedo_map_{nullptr};
+  ResourceRef<Texture2D> metallic_map_{nullptr};
+  ResourceRef<Texture2D> roughness_map_{nullptr};
+  ResourceRef<Texture2D> ao_map_{nullptr};
+  ResourceRef<Texture2D> normal_map_{nullptr};
+  ResourceRef<Texture2D> opacity_mask_{nullptr};
 };
 }

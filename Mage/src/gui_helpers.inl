@@ -4,36 +4,38 @@
 
 #include <imgui_stdlib.h>
 
-#include "Reflection.hpp"
+#include "app.hpp"
+#include "object_registry.hpp"
+#include "reflection.hpp"
 
 
 namespace sorcery::mage {
 template<std::derived_from<Object> T>
-auto ObjectPicker<T>::Draw(T*& targetObj, bool const allowNull) noexcept -> bool {
+auto ObjectPicker<T>::Draw(ObjectPtr<T>& target_obj, bool const allow_null) noexcept -> bool {
   auto ret{false};
 
-  if (ImGui::BeginPopup(mPopupId.c_str())) {
+  if (ImGui::BeginPopup(popup_id_.c_str())) {
     if (ImGui::IsWindowAppearing()) {
       ImGui::SetKeyboardFocusHere();
     }
 
-    if (ImGui::InputText(mInputTextLabel.c_str(), &mFilter)) {
-      QueryObjects(allowNull);
+    if (ImGui::InputText(input_text_label_.c_str(), &filter_)) {
+      QueryObjects(allow_null);
     }
 
-    for (auto const obj : mObjects) {
+    for (auto const obj : objects_) {
       auto constexpr fmt{"{}##SelectableObjectPicker{}"};
 
       if constexpr (std::derived_from<T, Resource>) {
-        if (ImGui::Selectable(std::format(fmt, obj.id.IsValid() ? obj.name : NULL_DISPLAY_NAME,
-          mPopupId).c_str())) {
-          targetObj = App::Instance().GetResourceManager().GetOrLoad<T>(obj.id);
+        if (ImGui::Selectable(std::format(fmt, obj.id.IsValid() ? obj.name : kNullDisplayName,
+          popup_id_).c_str())) {
+          target_obj = App::Instance().GetResourceManager().Resolve<T>(obj.id);
           ret = true;
         }
       } else {
-        if (ImGui::Selectable(std::format(fmt, obj ? obj->GetName() : NULL_DISPLAY_NAME,
-          mPopupId).c_str())) {
-          targetObj = obj;
+        if (ImGui::Selectable(std::format(fmt, obj ? obj->GetName() : kNullDisplayName,
+          popup_id_).c_str())) {
+          target_obj = obj;
           ret = true;
         }
       }
@@ -42,23 +44,23 @@ auto ObjectPicker<T>::Draw(T*& targetObj, bool const allowNull) noexcept -> bool
     ImGui::EndPopup();
   }
 
-  if (ImGui::Button(mButtonLabel.c_str())) {
-    mFilter.clear();
-    QueryObjects(allowNull);
-    ImGui::OpenPopup(mPopupId.c_str());
+  if (ImGui::Button(button_label_.c_str())) {
+    filter_.clear();
+    QueryObjects(allow_null);
+    ImGui::OpenPopup(popup_id_.c_str());
   }
 
   ImGui::SameLine();
-  ImGui::Text("%s", targetObj
-                      ? targetObj->GetName().c_str()
-                      : NULL_DISPLAY_NAME.data());
+  ImGui::Text("%s", target_obj
+                      ? target_obj->GetName().c_str()
+                      : kNullDisplayName.data());
 
   if (ImGui::BeginDragDropTarget()) {
     if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data())}) {
       if (auto const dragDropData{static_cast<ObjectDragDropPayload*>(payload->Data)};
         dragDropData && dragDropData->ptr && rttr::type::get(*dragDropData->ptr).
         is_derived_from(rttr::type::get<T>())) {
-        targetObj = static_cast<T*>(dragDropData->ptr);
+        target_obj = MakeObjectPtr(MakeObserver(static_cast<T*>(dragDropData->ptr)));
         ret = true;
       }
     }
@@ -70,37 +72,37 @@ auto ObjectPicker<T>::Draw(T*& targetObj, bool const allowNull) noexcept -> bool
 
 
 template<std::derived_from<Object> T>
-auto ObjectPicker<T>::QueryObjects(bool const insertNull) noexcept -> void {
-  mObjects.clear();
+auto ObjectPicker<T>::QueryObjects(bool const insert_null) noexcept -> void {
+  objects_.clear();
 
   if constexpr (std::derived_from<T, Resource>) {
-    App::Instance().GetResourceManager().GetInfoForResourcesOfType<T>(mObjects);
+    App::Instance().GetResourceManager().GetInfoForResourcesOfType<T>(objects_);
 
-    std::erase_if(mObjects, [this](auto const& res_info) {
-      return !Contains(res_info.name, mFilter);
+    std::erase_if(objects_, [this](auto const& res_info) {
+      return !Contains(res_info.name, filter_);
     });
 
-    std::ranges::sort(mObjects, [](auto const& lhs, auto const& rhs) {
+    std::ranges::sort(objects_, [](auto const& lhs, auto const& rhs) {
       return lhs.name < rhs.name;
     });
 
-    if (insertNull) {
-      mObjects.insert(std::begin(mObjects),
+    if (insert_null) {
+      objects_.insert(std::begin(objects_),
         ResourceManager::ResourceInfo{ResourceId::Invalid(), std::string{}, rttr::type::get<T>()});
     }
   } else {
-    Object::FindObjectsOfType(mObjects);
+    App::Instance().GetObjectRegistry().FindObjectsOfType(objects_);
 
-    std::erase_if(mObjects, [this](auto const obj) {
-      return obj && !Contains(obj->GetName(), mFilter);
+    std::erase_if(objects_, [this](auto const obj) {
+      return obj && !Contains(obj->GetName(), filter_);
     });
 
-    std::ranges::sort(mObjects, [](auto const lhs, auto const rhs) {
+    std::ranges::sort(objects_, [](auto const lhs, auto const rhs) {
       return !lhs || (rhs && lhs->GetName() < rhs->GetName());
     });
 
-    if (insertNull) {
-      mObjects.insert(std::begin(mObjects), nullptr);
+    if (insert_null) {
+      objects_.insert(std::begin(objects_), nullptr);
     }
   }
 }

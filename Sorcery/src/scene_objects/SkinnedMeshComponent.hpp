@@ -19,7 +19,7 @@ public:
   LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
   LEOPPHAPI auto OnBeforeExitingScene(Scene const& scene) -> void override;
 
-  LEOPPHAPI auto SetMesh(Mesh* mesh) noexcept -> void override;
+  LEOPPHAPI auto SetMesh(ResourceRef<Mesh> mesh) noexcept -> void override;
 
   LEOPPHAPI auto Start() -> void override;
   LEOPPHAPI auto Update() -> void override;

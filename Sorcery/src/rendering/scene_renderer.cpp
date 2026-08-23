@@ -1499,7 +1499,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
     }
 
     if (active_scene->GetSkyMode() == SkyMode::Skybox) {
-      if (auto const* const cubemap{active_scene->GetSkybox()}) {
+      if (auto const cubemap{active_scene->GetSkybox()}) {
         packet.skybox_cubemap = cubemap->GetTex();
 
         if (auto const irradiance_map{sorcery::detail::GetIrradianceMap(*active_scene)};

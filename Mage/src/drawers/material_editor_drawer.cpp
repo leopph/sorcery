@@ -72,10 +72,10 @@ auto MaterialEditorDrawer::Draw(
     ImGui::Text("%s", "Albedo Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> albedoMapPicker;
-    if (auto albedoMap{mtl.GetAlbedoMap()}; ImGuiDisabled(!allow_edit, [&] {
+    if (auto albedoMap{mtl.GetAlbedoMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return albedoMapPicker.Draw(albedoMap);
     })) {
-      mtl.SetAlbedoMap(albedoMap, GpuResidencyPolicy::kMakeResident);
+      mtl.SetAlbedoMap(MakeResourceRef(albedoMap.Get()), GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -83,10 +83,10 @@ auto MaterialEditorDrawer::Draw(
     ImGui::Text("%s", "Metallic Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> metallicMapPicker;
-    if (auto metallicMap{mtl.GetMetallicMap()}; ImGuiDisabled(!allow_edit, [&] {
+    if (auto metallicMap{mtl.GetMetallicMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return metallicMapPicker.Draw(metallicMap);
     })) {
-      mtl.SetMetallicMap(metallicMap, GpuResidencyPolicy::kMakeResident);
+      mtl.SetMetallicMap(MakeResourceRef(metallicMap.Get()), GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -94,10 +94,10 @@ auto MaterialEditorDrawer::Draw(
     ImGui::Text("%s", "Roughness Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> roughnessMapPicker;
-    if (auto roughnessMap{mtl.GetRoughnessMap()}; ImGuiDisabled(!allow_edit, [&] {
+    if (auto roughnessMap{mtl.GetRoughnessMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return roughnessMapPicker.Draw(roughnessMap);
     })) {
-      mtl.SetRoughnessMap(roughnessMap, GpuResidencyPolicy::kMakeResident);
+      mtl.SetRoughnessMap(MakeResourceRef(roughnessMap.Get()), GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -105,10 +105,10 @@ auto MaterialEditorDrawer::Draw(
     ImGui::Text("%s", "Ambient Occlusion Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> aoMapPicker;
-    if (auto aoMap{mtl.GetAoMap()}; ImGuiDisabled(!allow_edit, [&] {
+    if (auto aoMap{mtl.GetAoMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return aoMapPicker.Draw(aoMap);
     })) {
-      mtl.SetAoMap(aoMap, GpuResidencyPolicy::kMakeResident);
+      mtl.SetAoMap(MakeResourceRef(aoMap.Get()), GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -116,10 +116,10 @@ auto MaterialEditorDrawer::Draw(
     ImGui::Text("%s", "Normal Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> normalMapPicker;
-    if (auto normalMap{mtl.GetNormalMap()}; ImGuiDisabled(!allow_edit, [&] {
+    if (auto normalMap{mtl.GetNormalMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return normalMapPicker.Draw(normalMap);
     })) {
-      mtl.SetNormalMap(normalMap, GpuResidencyPolicy::kMakeResident);
+      mtl.SetNormalMap(MakeResourceRef(normalMap.Get()), GpuResidencyPolicy::kMakeResident);
       changed = true;
     }
 
@@ -154,10 +154,10 @@ auto MaterialEditorDrawer::Draw(
       ImGui::Text("%s", "Opacity Mask");
       ImGui::TableNextColumn();
       static ObjectPicker<Texture2D> opacityMaskPicker;
-      if (auto opacityMask{mtl.GetOpacityMask()}; ImGuiDisabled(!allow_edit, [&] {
+      if (auto opacityMask{mtl.GetOpacityMask().Get()}; ImGuiDisabled(!allow_edit, [&] {
         return opacityMaskPicker.Draw(opacityMask);
       })) {
-        mtl.SetOpacityMask(opacityMask, GpuResidencyPolicy::kMakeResident);
+        mtl.SetOpacityMask(MakeResourceRef(opacityMask.Get()), GpuResidencyPolicy::kMakeResident);
         changed = true;
       }
     }

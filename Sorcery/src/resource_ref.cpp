@@ -5,7 +5,7 @@
 
 
 namespace sorcery::detail {
-auto ResolveResource(ResourceId const& id) -> ObserverPtr<Resource> {
-  return MakeObserver(App::Instance().GetResourceManager().GetOrLoad(id));
+auto ResolveResource(ResourceId const& id) -> ObjectPtr<Resource> {
+  return App::Instance().GetResourceManager().Resolve(id);
 }
 }

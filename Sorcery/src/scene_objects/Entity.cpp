@@ -6,6 +6,8 @@
 #include <iterator>
 #include <utility>
 
+#include "app.hpp"
+#include "object_registry.hpp"
 #include "../Util.hpp"
 #include "../Resources/Scene.hpp"
 
@@ -158,11 +160,11 @@ auto Entity::RemoveComponent(Component& component) -> std::unique_ptr<Component>
 }
 
 
-auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
-  static std::vector<Entity*> entities;
-  FindObjectsOfType(entities);
+auto Entity::FindEntityByName(std::string_view const name) -> ObjectPtr<Entity> {
+  static std::vector<ObjectPtr<Entity>> entities;
+  App::Instance().GetObjectRegistry().FindObjectsOfType(entities);
 
-  for (auto* const entity : entities) {
+  for (auto const entity : entities) {
     if (entity->GetName() == name) {
       return entity;
     }

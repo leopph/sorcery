@@ -19,7 +19,7 @@
 #include "Guid.hpp"
 #include "Math.hpp"
 #include "Object.hpp"
-#include "Reflection.hpp"
+#include "reflection.hpp"
 #include "resource_reference.hpp"
 
 

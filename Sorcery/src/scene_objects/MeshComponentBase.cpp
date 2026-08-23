@@ -5,6 +5,8 @@
 
 #include "Entity.hpp"
 #include "../app.hpp"
+#include "../resource_manager.hpp"
+#include "../rendering/scene_renderer.hpp"
 
 
 RTTR_REGISTRATION {
@@ -28,50 +30,52 @@ auto detail::SetPrevModelMtx(MeshComponentBase& mesh_component, Matrix4 const& m
 auto MeshComponentBase::OnDrawGizmosSelected() -> void {
   Component::OnDrawGizmosSelected();
 
-  if (show_bounding_boxes_) {
-    if (mesh_) {
-      auto const draw_aabb_edges{
-        [](AABB const& aabb, Color const& line_color) {
-          auto const& [min, max]{aabb};
+  auto const mesh = mesh_.Get().Get();
 
-          // Near face
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(min, Vector3{max[0], min[1], min[2]}, line_color);
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(min, Vector3{min[0], max[1], min[2]}, line_color);
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], max[1], min[2]},
-            Vector3{max[0], min[1], min[2]}, line_color);
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], max[1], min[2]},
-            Vector3{min[0], max[1], min[2]}, line_color);
+  if (!show_bounding_boxes_ | !mesh) {
+    return;
+  }
 
-          // Far face
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{min[0], min[1], max[2]},
-            Vector3{max[0], min[1], max[2]}, line_color);
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{min[0], min[1], max[2]},
-            Vector3{min[0], max[1], max[2]}, line_color);
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(max, Vector3{max[0], min[1], max[2]}, line_color);
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(max, Vector3{min[0], max[1], max[2]}, line_color);
+  auto const draw_aabb_edges{
+    [](AABB const& aabb, Color const& line_color) {
+      auto const& [min, max]{aabb};
 
-          // Edges along Z
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(min, Vector3{min[0], min[1], max[2]}, line_color);
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], min[1], min[2]},
-            Vector3{max[0], min[1], max[2]}, line_color);
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{min[0], max[1], min[2]},
-            Vector3{min[0], max[1], max[2]}, line_color);
-          App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], max[1], min[2]}, max, line_color);
-        }
-      };
+      // Near face
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(min, Vector3{max[0], min[1], min[2]}, line_color);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(min, Vector3{min[0], max[1], min[2]}, line_color);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], max[1], min[2]},
+        Vector3{max[0], min[1], min[2]}, line_color);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], max[1], min[2]},
+        Vector3{min[0], max[1], min[2]}, line_color);
 
-      auto const& local_to_world_mtx{GetEntity()->GetTransform().GetLocalToWorldMatrix()};
+      // Far face
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{min[0], min[1], max[2]},
+        Vector3{max[0], min[1], max[2]}, line_color);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{min[0], min[1], max[2]},
+        Vector3{min[0], max[1], max[2]}, line_color);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(max, Vector3{max[0], min[1], max[2]}, line_color);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(max, Vector3{min[0], max[1], max[2]}, line_color);
 
-      if (auto const drawable_submesh_count{std::max(mesh_->GetSubmeshes().size(), materials_.size())};
-        drawable_submesh_count > 1) {
-        for (auto i{0}; i < drawable_submesh_count; i++) {
-          draw_aabb_edges(mesh_->GetSubmeshes()[i].GetBounds().Transform(local_to_world_mtx), Color{255, 165, 0, 255});
-        }
-      }
+      // Edges along Z
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(min, Vector3{min[0], min[1], max[2]}, line_color);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], min[1], min[2]},
+        Vector3{max[0], min[1], max[2]}, line_color);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{min[0], max[1], min[2]},
+        Vector3{min[0], max[1], max[2]}, line_color);
+      App::Instance().GetSceneRenderer().DrawLineAtNextRender(Vector3{max[0], max[1], min[2]}, max, line_color);
+    }
+  };
 
-      draw_aabb_edges(mesh_->GetBounds().Transform(local_to_world_mtx), Color::Red());
+  auto const& local_to_world_mtx{GetEntity()->GetTransform().GetLocalToWorldMatrix()};
+
+  if (auto const drawable_submesh_count{std::max(mesh->GetSubmeshes().size(), materials_.size())};
+    drawable_submesh_count > 1) {
+    for (auto i{0}; i < drawable_submesh_count; i++) {
+      draw_aabb_edges(mesh->GetSubmeshes()[i].GetBounds().Transform(local_to_world_mtx), Color{255, 165, 0, 255});
     }
   }
+
+  draw_aabb_edges(mesh->GetBounds().Transform(local_to_world_mtx), Color::Red());
 }
 
 
@@ -84,29 +88,29 @@ MeshComponentBase::MeshComponentBase() :
 MeshComponentBase::~MeshComponentBase() = default;
 
 
-auto MeshComponentBase::GetMesh() const noexcept -> Mesh* {
+auto MeshComponentBase::GetMesh() const noexcept -> ResourceRef<Mesh> {
   return mesh_;
 }
 
 
-auto MeshComponentBase::SetMesh(Mesh* const mesh) noexcept -> void {
+auto MeshComponentBase::SetMesh(ResourceRef<Mesh> const mesh) noexcept -> void {
   mesh_ = mesh;
   ResizeMaterialListToSubmeshCount();
 }
 
 
-auto MeshComponentBase::GetMaterials() const noexcept -> std::vector<Material*> const& {
+auto MeshComponentBase::GetMaterials() const noexcept -> std::vector<ResourceRef<Material>> const& {
   return materials_;
 }
 
 
-auto MeshComponentBase::SetMaterials(std::vector<Material*> const& materials) -> void {
+auto MeshComponentBase::SetMaterials(std::vector<ResourceRef<Material>> const& materials) -> void {
   materials_ = materials;
   ResizeMaterialListToSubmeshCount();
 }
 
 
-auto MeshComponentBase::SetMaterial(int const idx, Material* const mtl) -> void {
+auto MeshComponentBase::SetMaterial(int const idx, ResourceRef<Material> const& mtl) -> void {
   if (idx >= std::ssize(materials_)) {
     throw std::runtime_error{
       std::format("Invalid index {} while attempting to replace material on mesh component.", idx)
@@ -128,17 +132,19 @@ auto MeshComponentBase::SetShowBoundingBoxes(bool const show) -> void {
 
 
 auto MeshComponentBase::ResizeMaterialListToSubmeshCount() -> void {
-  if (!mesh_) {
+  auto const mesh = mesh_.Get().Get();
+
+  if (!mesh) {
     materials_.clear();
     return;
   }
 
-  if (auto const subMeshCount{std::size(mesh_->GetSubmeshes())}, mtlCount{std::size(materials_)};
+  if (auto const subMeshCount{std::size(mesh->GetSubmeshes())}, mtlCount{std::size(materials_)};
     subMeshCount != mtlCount) {
     materials_.resize(subMeshCount);
 
     for (std::size_t i{mtlCount}; i < subMeshCount; i++) {
-      materials_[i] = App::Instance().GetResourceManager().GetDefaultMaterial().Get();
+      materials_[i] = App::Instance().GetResourceManager().GetDefaultMaterial();
     }
   }
 }

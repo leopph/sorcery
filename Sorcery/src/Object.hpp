@@ -1,14 +1,11 @@
 #pragma once
 
-#include <concepts>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "Core.hpp"
-#include "mutex.hpp"
 #include "object_id.hpp"
-#include "Reflection.hpp"
+#include "reflection.hpp"
 
 
 namespace sorcery {
@@ -37,20 +34,9 @@ public:
 
   virtual auto OnDrawGizmosSelected() -> void {}
 
-  template<std::derived_from<Object> T>
-  [[nodiscard]] static auto FindObjectOfType() -> T*;
-
-  template<std::derived_from<Object> T>
-  static auto FindObjectsOfType(std::vector<T*>& out) -> std::vector<T*>&;
-
-  template<std::derived_from<Object> T>
-  [[nodiscard]] auto FindObjectsOfType() -> std::vector<T*>;
-
 private:
   std::string name_{"New Object"};
   ObjectId id_;
-
-  SORCERYAPI static Mutex<std::vector<Object*>, true> sAllObjects;
 };
 
 

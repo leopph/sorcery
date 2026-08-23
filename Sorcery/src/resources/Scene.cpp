@@ -10,13 +10,13 @@
 #undef FindResource
 #include "../entity_serialization.hpp"
 #include "../job_system.hpp"
-#include "../Reflection.hpp"
+#include "../reflection.hpp"
 #include "../resource_manager.hpp"
 
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Scene>{"Scene"}
-    .property("skybox", &sorcery::Scene::GetSkybox, &sorcery::Scene::SetSkybox);
+    .property("skybox", &sorcery::Scene::GetSkybox, &sorcery::Scene::SetSkyboxRefl);
 }
 
 
@@ -176,7 +176,7 @@ auto Scene::Load() -> void {
 
   struct SkyboxJobData {
     ResourceId res_id;
-    Cubemap* cubemap;
+    ResourceRef<Cubemap> cubemap;
   } skybox_job_data;
 
   ObserverPtr<Job> skybox_job;
@@ -186,7 +186,7 @@ auto Scene::Load() -> void {
       skybox_job_data.res_id = res_id;
 
       skybox_job = App::Instance().GetJobSystem().CreateJob([](SkyboxJobData* const data) {
-        data->cubemap = App::Instance().GetResourceManager().GetOrLoad<Cubemap>(data->res_id);
+        data->cubemap = MakeResourceRef(App::Instance().GetResourceManager().Resolve<Cubemap>(data->res_id).Get());
       }, &skybox_job_data);
 
       App::Instance().GetJobSystem().Run(skybox_job);
@@ -274,15 +274,22 @@ auto Scene::SetSkyColor(Vector3 const& skyColor) noexcept -> void {
 }
 
 
-auto Scene::GetSkybox() const noexcept -> Cubemap* {
+auto Scene::GetSkybox() const noexcept -> ResourceRef<Cubemap> {
   return skybox_;
 }
 
 
-auto Scene::SetSkybox(Cubemap* const skybox) noexcept -> void {
+auto Scene::SetSkybox(ResourceRef<Cubemap> const& skybox) noexcept -> void {
   skybox_ = skybox;
   irradiance_map_ = nullptr;
   prefiltered_env_map_ = nullptr;
+}
+
+
+// ReSharper disable once CppPassValueParameterByConstReference
+// Reflection requires matching getter and setter types
+auto Scene::SetSkyboxRefl(ResourceRef<Cubemap> const skybox) noexcept -> void {
+  SetSkybox(skybox);
 }
 
 

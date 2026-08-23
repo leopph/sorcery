@@ -1,20 +1,32 @@
 #pragma once
 
-#include "Core.hpp"
-#include "job_system.hpp"
-#include "object_registry.hpp"
-#include "observer_ptr.hpp"
-#include "resource_manager.hpp"
-#include "Window.hpp"
-#include "rendering/graphics.hpp"
-#include "rendering/render_manager.hpp"
-#include "rendering/scene_renderer.hpp"
-
+#include <memory>
 #include <span>
 #include <string_view>
 
+#include "Core.hpp"
+#include "observer_ptr.hpp"
+
 
 namespace sorcery {
+namespace graphics {
+class GraphicsDevice;
+class SwapChain;
+}
+
+
+namespace rendering {
+class RenderManager;
+class SceneRenderer;
+}
+
+
+class Window;
+class JobSystem;
+class ObjectRegistry;
+class ResourceManager;
+
+
 class App {
 public:
   SORCERYAPI explicit App(std::span<std::string_view const> args = {});
@@ -26,21 +38,39 @@ public:
   auto operator=(App const&) -> void = delete;
   auto operator=(App&&) -> void = delete;
 
-  [[nodiscard]] SORCERYAPI auto GetGraphicsDevice() -> graphics::GraphicsDevice&;
-  [[nodiscard]] SORCERYAPI auto GetWindow() -> Window&;
-  [[nodiscard]] SORCERYAPI auto GetSwapChain() -> graphics::SwapChain&;
-  [[nodiscard]] SORCERYAPI auto GetRenderManager() -> rendering::RenderManager&;
-  [[nodiscard]] SORCERYAPI auto GetSceneRenderer() -> rendering::SceneRenderer&;
-  [[nodiscard]] SORCERYAPI auto GetJobSystem() -> JobSystem&;
-  [[nodiscard]] SORCERYAPI auto GetObjectRegistry() -> ObjectRegistry&;
-  [[nodiscard]] SORCERYAPI auto GetResourceManager() -> ResourceManager&;
+  [[nodiscard]] SORCERYAPI
+  auto GetJobSystem() -> JobSystem&;
 
-  SORCERYAPI auto Run() -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetGraphicsDevice() -> graphics::GraphicsDevice&;
 
-  [[nodiscard]] SORCERYAPI static auto Instance() -> App&;
+  [[nodiscard]] SORCERYAPI
+  auto GetWindow() -> Window&;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetSwapChain() -> graphics::SwapChain&;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetRenderManager() -> rendering::RenderManager&;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetSceneRenderer() -> rendering::SceneRenderer&;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetObjectRegistry() -> ObjectRegistry&;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetResourceManager() -> ResourceManager&;
+
+  SORCERYAPI
+  auto Run() -> void;
+
+  [[nodiscard]] SORCERYAPI static
+  auto Instance() -> App&;
 
 protected:
-  SORCERYAPI auto WaitRenderJob() -> void;
+  SORCERYAPI
+  auto WaitRenderJob() -> void;
 
   SORCERYAPI virtual auto BeginFrame() -> void;
   virtual auto Update() -> void {}
@@ -49,17 +79,10 @@ protected:
   SORCERYAPI virtual auto Render() -> void;
 
 private:
-  JobSystem job_system_;
-  graphics::GraphicsDevice graphics_device_;
-  Window window_;
-  graphics::SharedDeviceChildHandle<graphics::SwapChain> swap_chain_;
-  rendering::RenderManager render_manager_;
-  rendering::SceneRenderer scene_renderer_;
-  ObjectRegistry object_registry_;
-  ResourceManager resource_manager_;
-  ObserverPtr<Job> render_job_;
-  bool window_resized_{false};
+  struct Data;
 
+  std::unique_ptr<Data> data_;
+  bool window_resized_{false};
 
   static ObserverPtr<App> instance_;
 };

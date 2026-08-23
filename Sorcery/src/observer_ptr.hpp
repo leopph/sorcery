@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "Reflection.hpp"
+#include "reflection.hpp"
 
 
 namespace sorcery {
@@ -60,6 +60,11 @@ template<class W1, class W2>
 auto operator<=(ObserverPtr<W1> const& p1, ObserverPtr<W2> const& p2) -> bool;
 template<class W1, class W2>
 auto operator>=(ObserverPtr<W1> const& p1, ObserverPtr<W2> const& p2) -> bool;
+
+
+template<typename To, typename From>
+[[nodiscard]]
+auto ReflCast(ObserverPtr<From> ptr) noexcept -> ObserverPtr<To>;
 }
 
 

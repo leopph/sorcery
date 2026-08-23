@@ -8,7 +8,7 @@
 #define LEOPPH_MATH_USE_INTRINSICS
 #endif
 
-#include "Reflection.hpp"
+#include "reflection.hpp"
 
 #include <algorithm>
 #include <array>

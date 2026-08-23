@@ -267,7 +267,7 @@ auto ProjectWindow::SetEditorSelectionTo(ProjectItem const& item) const -> void 
     },
 
     [this](NativeResourceFileProjectItem const& file) {
-      app_->SetSelectedObject(App::Instance().GetResourceManager().GetOrLoad(ResourceId{file.guid, 0}));
+      app_->SetSelectedObject(App::Instance().GetResourceManager().Resolve(ResourceId{file.guid, 0}));
     },
 
     [this](ResourcePackageFileProjectItem const&) {
@@ -275,7 +275,7 @@ auto ProjectWindow::SetEditorSelectionTo(ProjectItem const& item) const -> void 
     },
 
     [this](SubresourceProjectItem const& resource) {
-      app_->SetSelectedObject(App::Instance().GetResourceManager().GetOrLoad(resource.id));
+      app_->SetSelectedObject(App::Instance().GetResourceManager().Resolve(resource.id));
     }
   }, item);
 }
@@ -556,7 +556,7 @@ auto ProjectWindow::DrawDragSource(ProjectItem const& item) const -> void {
       ImGui::SetDragDropPayload(kDirNodeDragDropTypeStr.data(), path_sv.data(), path_sv.size());
     },
     [this](NativeResourceFileProjectItem const& res_item) {
-      auto const obj{app_->GetResourceManager().GetOrLoad(ResourceId{res_item.guid, 0})};
+      auto const obj{app_->GetResourceManager().Resolve(ResourceId{res_item.guid, 0})};
 
       if (!obj) {
         spdlog::error("Failed to load native resource when creating drag source. Ignoring.");
@@ -564,7 +564,7 @@ auto ProjectWindow::DrawDragSource(ProjectItem const& item) const -> void {
       }
 
       ObjectDragDropPayload const payload{
-        .ptr = obj
+        .ptr = obj.Get().Get()
       };
       ImGui::SetDragDropPayload(ObjectDragDropPayload::kTypeStr.data(), &payload, sizeof(payload));
     },
@@ -572,7 +572,7 @@ auto ProjectWindow::DrawDragSource(ProjectItem const& item) const -> void {
       ImGui::SetDragDropPayload(kResPackNodeDragDropTypeStr.data(), &res_pack_item.guid, sizeof(res_pack_item.guid));
     },
     [this](SubresourceProjectItem const& subres_item) {
-      auto const obj{app_->GetResourceManager().GetOrLoad(subres_item.id)};
+      auto const obj{app_->GetResourceManager().Resolve(subres_item.id)};
 
       if (!obj) {
         spdlog::error("Failed to load subresource when creating drag source. Ignoring.");
@@ -580,7 +580,7 @@ auto ProjectWindow::DrawDragSource(ProjectItem const& item) const -> void {
       }
 
       ObjectDragDropPayload const payload{
-        .ptr = obj
+        .ptr = obj.Get().Get()
       };
       ImGui::SetDragDropPayload(ObjectDragDropPayload::kTypeStr.data(), &payload, sizeof(payload));
     }
@@ -668,7 +668,7 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
       }
 
       if (payload->IsDataType(ObjectDragDropPayload::kTypeStr.data())) {
-        auto const res{rttr::rttr_cast<NativeResource*>(static_cast<ObjectDragDropPayload const*>(payload->Data)->ptr)};
+        auto const res{ReflCast<NativeResource*>(static_cast<ObjectDragDropPayload const*>(payload->Data)->ptr)};
 
         if (!res || !resource_db_->IsResourceEditable(res->GetResId())) {
           return;

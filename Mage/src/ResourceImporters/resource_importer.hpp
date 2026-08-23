@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Reflection.hpp"
+#include "reflection.hpp"
 #include "resource_package.hpp"
 
 #include <filesystem>

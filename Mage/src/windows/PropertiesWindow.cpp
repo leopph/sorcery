@@ -2,7 +2,7 @@
 
 #include <limits>
 
-#include "Reflection.hpp"
+#include "reflection.hpp"
 #include "../editor_app.hpp"
 #include "../gui_helpers.hpp"
 #include "../drawers/editor_drawer_registry.hpp"
@@ -23,7 +23,7 @@ auto PropertiesWindow::Draw() const -> void {
     if (auto const selected_obj{app_->GetSelectedObject()}) {
       auto editable{true};
 
-      if (auto const* const res{rttr::rttr_cast<Resource*>(selected_obj)};
+      if (auto const res{ReflCast<Resource>(selected_obj)};
         res && !app_->GetResourceDatabase().IsResourceEditable(res->GetResId())) {
         editable = false;
       }
@@ -32,7 +32,7 @@ auto PropertiesWindow::Draw() const -> void {
       drawer_registry_->Draw(*selected_obj, editable, changed);
 
       if (changed) {
-        if (auto const* const native_res{rttr::rttr_cast<NativeResource*>(selected_obj)};
+        if (auto const native_res{ReflCast<NativeResource>(selected_obj)};
           native_res && app_->GetResourceDatabase().IsSavedResource(*native_res)) {
           app_->GetResourceDatabase().SaveResourceToFile(*native_res);
         }

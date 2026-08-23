@@ -1,6 +1,7 @@
 #include "StaticMeshComponent.hpp"
 
 #include "../app.hpp"
+#include "../rendering/scene_renderer.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::StaticMeshComponent>{"Static Mesh Component"}

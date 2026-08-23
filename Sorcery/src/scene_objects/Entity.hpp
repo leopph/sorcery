@@ -3,8 +3,9 @@
 #include "Component.hpp"
 #include "SceneObject.hpp"
 #include "TransformComponent.hpp"
+#include "../object_ptr.hpp"
 #include "../observer_ptr.hpp"
-#include "../Reflection.hpp"
+#include "../reflection.hpp"
 
 #include <concepts>
 #include <memory>
@@ -20,27 +21,27 @@ class Entity final : public SceneObject {
   RTTR_REGISTRATION_FRIEND
 
 public:
-  LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
+  SORCERYAPI auto OnDrawGizmosSelected() -> void override;
 
-  [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
-  LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
-  LEOPPHAPI auto OnBeforeExitingScene(Scene const& scene) -> void override;
+  [[nodiscard]] SORCERYAPI auto Clone() -> std::unique_ptr<SceneObject> override;
+  SORCERYAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
+  SORCERYAPI auto OnBeforeExitingScene(Scene const& scene) -> void override;
 
-  LEOPPHAPI Entity();
-  LEOPPHAPI Entity(Entity const& other);
-  LEOPPHAPI Entity(Entity&& other) noexcept;
+  SORCERYAPI Entity();
+  SORCERYAPI Entity(Entity const& other);
+  SORCERYAPI Entity(Entity&& other) noexcept;
 
-  LEOPPHAPI ~Entity() override;
+  SORCERYAPI ~Entity() override;
 
   auto operator=(Entity const& other) -> void = delete;
   auto operator=(Entity&& other) -> void = delete;
 
-  [[nodiscard]] LEOPPHAPI auto GetTransform() const -> TransformComponent&;
+  [[nodiscard]] SORCERYAPI auto GetTransform() const -> TransformComponent&;
 
-  [[nodiscard]] LEOPPHAPI auto GetScene() const -> ObserverPtr<Scene const>;
+  [[nodiscard]] SORCERYAPI auto GetScene() const -> ObserverPtr<Scene const>;
 
-  LEOPPHAPI auto AddComponent(std::unique_ptr<Component> component) -> void;
-  LEOPPHAPI auto RemoveComponent(Component& component) -> std::unique_ptr<Component>;
+  SORCERYAPI auto AddComponent(std::unique_ptr<Component> component) -> void;
+  SORCERYAPI auto RemoveComponent(Component& component) -> std::unique_ptr<Component>;
 
   template<std::derived_from<Component> T>
   auto GetComponent() const -> T*;
@@ -51,7 +52,7 @@ public:
   template<std::derived_from<Component> T>
   auto GetComponents() const -> std::vector<T*>;
 
-  [[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
+  [[nodiscard]] SORCERYAPI static auto FindEntityByName(std::string_view name) -> ObjectPtr<Entity>;
 
 private:
   [[nodiscard]] auto GetComponentsForSerialization() const -> std::vector<Component*>;

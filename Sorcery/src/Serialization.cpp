@@ -391,7 +391,7 @@ auto ReflectionDeserializeFromYaml(
       auto const res_id{DeserializeResourceId(node, ctx)};
 
       if (res_id->IsValid()) {
-        auto const res = App::Instance().GetResourceManager().GetOrLoad(*res_id);
+        auto const res = App::Instance().GetResourceManager().Resolve(*res_id);
 
         if (res) {
           rttr::variant res_var{res};

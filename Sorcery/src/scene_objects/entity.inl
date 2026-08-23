@@ -13,7 +13,7 @@ auto Entity::GetComponent() const -> T* {
              : components_.front().get();
   } else {
     for (auto const& component : components_) {
-      if (auto const castPtr{rttr::rttr_cast<T*>(component.get())}) {
+      if (auto const castPtr{ReflCast<T*>(component.get())}) {
         return castPtr;
       }
     }
@@ -34,7 +34,7 @@ auto Entity::GetComponents(std::vector<T*>& out) const -> std::vector<T*>& {
     out.clear();
 
     for (auto const& component : components_) {
-      if (auto const castPtr{rttr::rttr_cast<T*>(component.get())}) {
+      if (auto const castPtr{ReflCast<T*>(component.get())}) {
         out.emplace_back(castPtr);
       }
     }

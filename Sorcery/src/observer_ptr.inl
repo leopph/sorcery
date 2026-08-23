@@ -137,6 +137,12 @@ template<class W1, class W2>
 auto operator>=(ObserverPtr<W1> const& p1, ObserverPtr<W2> const& p2) -> bool {
   return !(p1 < p2);
 }
+
+
+template<typename To, typename From>
+auto ReflCast(ObserverPtr<From> const ptr) noexcept -> ObserverPtr<To> {
+  return MakeObserver(ReflCast<To*>(ptr.Get()));
+}
 }
 
 

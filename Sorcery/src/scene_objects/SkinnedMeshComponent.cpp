@@ -4,6 +4,7 @@
 
 #include "../app.hpp"
 #include "../Timing.hpp"
+#include "../rendering/scene_renderer.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::SkinnedMeshComponent>{"Skinned Mesh Component"}
@@ -34,36 +35,39 @@ auto SkinnedMeshComponent::OnBeforeExitingScene(Scene const& scene) -> void {
 }
 
 
-auto SkinnedMeshComponent::SetMesh(Mesh* const mesh) noexcept -> void {
+auto SkinnedMeshComponent::SetMesh(ResourceRef<Mesh> const mesh) noexcept -> void {
   MeshComponentBase::SetMesh(mesh);
 
-  if (mesh) {
-    for (UINT i{0}; i < rendering::RenderManager::GetMaxFramesInFlight(); i++) {
-      skinned_vertex_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
-        graphics::BufferDesc{mesh->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
-        graphics::CpuAccess::kNone);
+  auto const mesh_inst = mesh.Get().Get();
 
-      skinned_normal_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
-        graphics::BufferDesc{mesh->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
-        graphics::CpuAccess::kNone);
-
-      skinned_tangent_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
-        graphics::BufferDesc{mesh->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
-        graphics::CpuAccess::kNone);
-
-      if (auto const bones{mesh->GetBones()}; !bones.empty()) {
-        bone_matrix_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
-          graphics::BufferDesc{mesh->GetBones().size() * sizeof(Matrix4), sizeof(Matrix4), false, false, true},
-          graphics::CpuAccess::kNone);
-      }
-    }
-
-    cur_animation_time_ticks_ = 0;
-    cur_anim_delta_time_ = 0;
-    cur_animation_idx_ = mesh->GetAnimations().empty() ? std::nullopt : std::make_optional(0);
-  } else {
+  if (!mesh_inst) {
     cur_animation_idx_.reset();
+    return;
   }
+
+  for (UINT i{0}; i < rendering::RenderManager::GetMaxFramesInFlight(); i++) {
+    skinned_vertex_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
+      graphics::BufferDesc{mesh_inst->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
+      graphics::CpuAccess::kNone);
+
+    skinned_normal_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
+      graphics::BufferDesc{mesh_inst->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
+      graphics::CpuAccess::kNone);
+
+    skinned_tangent_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
+      graphics::BufferDesc{mesh_inst->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
+      graphics::CpuAccess::kNone);
+
+    if (auto const bones{mesh_inst->GetBones()}; !bones.empty()) {
+      bone_matrix_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
+        graphics::BufferDesc{mesh_inst->GetBones().size() * sizeof(Matrix4), sizeof(Matrix4), false, false, true},
+        graphics::CpuAccess::kNone);
+    }
+  }
+
+  cur_animation_time_ticks_ = 0;
+  cur_anim_delta_time_ = 0;
+  cur_animation_idx_ = mesh_inst->GetAnimations().empty() ? std::nullopt : std::make_optional(0);
 }
 
 

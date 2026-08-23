@@ -1,51 +1,56 @@
 #pragma once
 
 namespace sorcery {
-template<std::derived_from<Resource> T>
+template<typename T>
 ResourceRef<T>::ResourceRef([[maybe_unused]] nullptr_t const null) noexcept :
   id_{ResourceId::Invalid()} {}
 
 
-template<std::derived_from<Resource> T>
-ResourceRef<T>::ResourceRef(ObserverPtr<T> res) noexcept :
+template<typename T>
+ResourceRef<T>::ResourceRef(ObserverPtr<T> res) noexcept requires std::derived_from<T, Resource> :
   id_{res ? res->GetResId() : ResourceId::Invalid()},
   cached_{res} {}
 
 
-template<std::derived_from<Resource> T>
-ResourceRef<T>::ResourceRef(ResourceId const& res_id) noexcept :
+template<typename T>
+ResourceRef<T>::ResourceRef(ResourceId const& res_id) noexcept requires std::derived_from<T, Resource> :
   id_{res_id} {}
 
 
-template<std::derived_from<Resource> T>
-auto ResourceRef<T>::Get() const -> ObjectPtr<T> {
+template<typename T>
+template<typename U> requires
+  std::derived_from<std::remove_cv_t<U>, Resource> &&
+  std::derived_from<std::remove_cv_t<T>, Resource> &&
+  std::convertible_to<U*, T*>
+ResourceRef<T>::ResourceRef(ResourceRef<U> const& other) noexcept :
+  id_{other.id_},
+  cached_{other.cached_} {}
+
+
+template<typename T>
+auto ResourceRef<T>::Get() const -> ObjectPtr<T> requires std::derived_from<T, Resource> {
   if (cached_) {
     return cached_;
   }
 
-  if (auto const res = detail::ResolveResource(id_)) {
-    cached_ = MakeObserver(rttr::rttr_cast<T*>(res.Get()));
-  } else {
-    cached_ = nullptr;
-  }
-
+  cached_ = ReflCast<T>(detail::ResolveResource(id_));
   return cached_;
 }
 
 
-template<std::derived_from<Resource> T>
-auto ResourceRef<T>::operator->() const -> ObjectPtr<T> {
+template<typename T>
+auto ResourceRef<T>::operator->() const -> ObjectPtr<T> requires std::derived_from<T, Resource> {
   return Get();
 }
 
 
-template<std::derived_from<Resource> T>
-auto ResourceRef<T>::operator*() const -> T& {
+template<typename T>
+auto ResourceRef<T>::operator*() const -> T& requires std::derived_from<T, Resource> {
   return *Get();
 }
 
 
-template<std::derived_from<Resource> T>
+template<typename T>
 ResourceRef<T>::operator bool() const {
   return Get().Get() != nullptr;
 }
@@ -54,6 +59,12 @@ ResourceRef<T>::operator bool() const {
 template<std::derived_from<Resource> T>
 auto MakeResourceRef(ObserverPtr<T> const resource) noexcept -> ResourceRef<T> {
   return ResourceRef{resource};
+}
+
+
+template<std::derived_from<Resource> To, std::derived_from<Resource> From>
+auto ReflCast(ResourceRef<From> res) noexcept -> ResourceRef<To> {
+  return MakeResourceRef(ReflCast<To>(res.Get()));
 }
 }
 

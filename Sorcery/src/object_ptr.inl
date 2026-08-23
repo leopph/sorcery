@@ -2,35 +2,44 @@
 
 
 namespace sorcery {
-template<std::derived_from<Object> T>
+template<typename T>
 ObjectPtr<T>::ObjectPtr([[maybe_unused]] nullptr_t null) noexcept :
   id_{} {}
 
 
-template<std::derived_from<Object> T>
-ObjectPtr<T>::ObjectPtr(ObserverPtr<T> const obj) noexcept :
+template<typename T>
+ObjectPtr<T>::ObjectPtr(ObserverPtr<T> const obj) noexcept requires std::derived_from<T, Object> :
   id_{obj ? obj->GetId() : ObjectId{}} {}
 
 
-template<std::derived_from<Object> T>
-auto ObjectPtr<T>::Get() const -> ObserverPtr<T> {
+template<typename T>
+template<typename U> requires
+  std::derived_from<std::remove_cv_t<U>, Object> &&
+  std::derived_from<std::remove_cv_t<T>, Object> &&
+  std::convertible_to<U*, T*>
+ObjectPtr<T>::ObjectPtr(ObjectPtr<U> const& other) noexcept :
+  id_{other.id_} {}
+
+
+template<typename T>
+auto ObjectPtr<T>::Get() const -> ObserverPtr<T> requires std::derived_from<T, Object> {
   return ObserverPtr{static_cast<T*>(detail::ResolveObject(id_).Get())};
 }
 
 
-template<std::derived_from<Object> T>
-auto ObjectPtr<T>::operator->() const -> ObserverPtr<T> {
+template<typename T>
+auto ObjectPtr<T>::operator->() const -> ObserverPtr<T> requires std::derived_from<T, Object> {
   return Get();
 }
 
 
-template<std::derived_from<Object> T>
-auto ObjectPtr<T>::operator*() const -> T& {
+template<typename T>
+auto ObjectPtr<T>::operator*() const -> T& requires std::derived_from<T, Object> {
   return *Get();
 }
 
 
-template<std::derived_from<Object> T>
+template<typename T>
 ObjectPtr<T>::operator bool() const {
   return Get() != nullptr;
 }
@@ -39,6 +48,12 @@ ObjectPtr<T>::operator bool() const {
 template<std::derived_from<Object> T>
 auto MakeObjectPtr(ObserverPtr<T> const object) noexcept -> ObjectPtr<T> {
   return ObjectPtr{object};
+}
+
+
+template<std::derived_from<Object> To, std::derived_from<Object> From>
+auto ReflCast(ObjectPtr<From> obj) noexcept -> ObjectPtr<To> {
+  return MakeObjectPtr(ReflCast<To>(obj.Get()));
 }
 }
 

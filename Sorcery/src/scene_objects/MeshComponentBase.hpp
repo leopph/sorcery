@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Component.hpp"
+#include "resource_ref.hpp"
 #include "../Resources/Material.hpp"
 #include "../Resources/Mesh.hpp"
 
@@ -32,13 +33,13 @@ public:
   LEOPPHAPI MeshComponentBase();
   LEOPPHAPI ~MeshComponentBase() override = 0;
 
-  [[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> Mesh*;
-  LEOPPHAPI virtual auto SetMesh(Mesh* mesh) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> ResourceRef<Mesh>;
+  LEOPPHAPI virtual auto SetMesh(ResourceRef<Mesh> mesh) noexcept -> void;
 
   // The returned vector is the same length as the Mesh's submesh count.
-  [[nodiscard]] LEOPPHAPI auto GetMaterials() const noexcept -> std::vector<Material*> const&;
-  LEOPPHAPI auto SetMaterials(std::vector<Material*> const& materials) -> void;
-  LEOPPHAPI auto SetMaterial(int idx, Material* mtl) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetMaterials() const noexcept -> std::vector<ResourceRef<Material>> const&;
+  LEOPPHAPI auto SetMaterials(std::vector<ResourceRef<Material>> const& materials) -> void;
+  LEOPPHAPI auto SetMaterial(int idx, ResourceRef<Material> const& mtl) -> void;
 
   [[nodiscard]] SORCERYAPI static
   auto IsShowingBoundingBoxes() -> bool;
@@ -49,8 +50,8 @@ public:
 private:
   auto ResizeMaterialListToSubmeshCount() -> void;
 
-  std::vector<Material*> materials_;
-  Mesh* mesh_;
+  std::vector<ResourceRef<Material>> materials_;
+  ResourceRef<Mesh> mesh_;
   Matrix4 prev_model_mtx_{Matrix4::Identity()};
 
   static bool show_bounding_boxes_; // TODO this should be stripped when not compiling for Mage

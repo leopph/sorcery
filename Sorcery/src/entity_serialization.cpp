@@ -2,6 +2,7 @@
 
 #include "app.hpp"
 #include "job_system.hpp"
+#include "resource_manager.hpp"
 #include "Serialization.hpp"
 #include "resources/Resource.hpp"
 #include "scene_objects/Component.hpp"
@@ -135,7 +136,7 @@ auto DeserializeEntitySet(
 
   for (auto const& res_id : required_resource_ids) {
     resource_loading_jobs.emplace_back(App::Instance().GetJobSystem().CreateJob([](ResourceId const& target_res_id) {
-      App::Instance().GetResourceManager().GetOrLoad<Resource>(target_res_id);
+      App::Instance().GetResourceManager().Resolve(target_res_id);
     }, res_id));
 
     App::Instance().GetJobSystem().Run(resource_loading_jobs.back());
@@ -170,7 +171,7 @@ auto DeserializeEntitySet(
   // Add the new entities to the returned vector
 
   for (auto* const scene_obj : scene_objects) {
-    if (auto* const entity{rttr::rttr_cast<Entity*>(scene_obj)}) {
+    if (auto* const entity{ReflCast<Entity*>(scene_obj)}) {
       ret.emplace_back(entity);
     }
   }

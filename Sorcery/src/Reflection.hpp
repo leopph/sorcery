@@ -9,3 +9,13 @@
 #define REFLECT_REGISTER_ENTITY_CTOR REFLECT_REGISTER_SCENE_OBJECT_CTOR
 
 #define REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR constructor<>()(::rttr::policy::ctor::as_raw_ptr)
+
+
+namespace sorcery {
+template<typename To, typename From>
+[[nodiscard]]
+auto ReflCast(From obj) noexcept -> To;
+}
+
+
+#include "reflection.inl"

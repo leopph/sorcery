@@ -2,7 +2,7 @@
 
 #include <ranges>
 
-#include "../Reflection.hpp"
+#include "../reflection.hpp"
 #include "../resources/Material.hpp"
 
 RTTR_REGISTRATION {

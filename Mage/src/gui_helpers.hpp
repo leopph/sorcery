@@ -8,9 +8,8 @@
 
 #include <imgui.h>
 
-#include "app.hpp"
-#include "Core.hpp"
 #include "Object.hpp"
+#include "object_ptr.hpp"
 #include "resource_manager.hpp"
 #include "Resources/Resource.hpp"
 
@@ -31,21 +30,22 @@ template<std::derived_from<Object> T>
 class ObjectPicker : detail::ObjectPickerBase {
 public:
   // Returns whether an assignment was made.
-  [[nodiscard]] auto Draw(T*& targetObj, bool allowNull = true) noexcept -> bool;
+  [[nodiscard]] auto Draw(ObjectPtr<T>& target_obj, bool allow_null = true) noexcept -> bool;
 
 private:
-  using StoredType = std::conditional_t<std::derived_from<T, Resource>, ResourceManager::ResourceInfo, T*>;
+  using StoredType = std::conditional_t<std::derived_from<T, Resource>, ResourceManager::ResourceInfo, ObserverPtr<T>>;
 
-  auto QueryObjects(bool insertNull) noexcept -> void;
+  auto QueryObjects(bool insert_null) noexcept -> void;
 
-  std::vector<StoredType> mObjects;
-  std::string mFilter;
-  int const mInstanceId{GetNextInstanceId()};
-  std::string const mPopupId{std::format("PopupObjectPicker{}", mInstanceId)};
-  std::string const mButtonLabel{std::format("Select##ObjectPicker{}", mInstanceId)};
-  std::string const mInputTextLabel{std::format("###FilterObjectPicker{}", mInstanceId)};
+  std::vector<StoredType> objects_;
+  std::string filter_;
 
-  constexpr static std::string_view NULL_DISPLAY_NAME{"None"};
+  int const instance_id_{GetNextInstanceId()};
+  std::string const popup_id_{std::format("PopupObjectPicker{}", instance_id_)};
+  std::string const button_label_{std::format("Select##ObjectPicker{}", instance_id_)};
+  std::string const input_text_label_{std::format("###FilterObjectPicker{}", instance_id_)};
+
+  constexpr static std::string_view kNullDisplayName{"None"};
 };
 
 

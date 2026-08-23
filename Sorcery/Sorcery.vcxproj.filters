@@ -296,7 +296,7 @@
     <ClInclude Include="src\Resources\Resource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Reflection.hpp">
+    <ClInclude Include="src\reflection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Resources\NativeResource.hpp">
@@ -485,6 +485,12 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\resource_ref.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="src\reflection.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="src\object_registry.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>

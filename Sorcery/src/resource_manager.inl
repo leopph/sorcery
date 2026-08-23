@@ -7,14 +7,14 @@
 
 namespace sorcery {
 template<std::derived_from<Resource> ResType>
-auto ResourceManager::GetOrLoad(ResourceId const& res_id) -> ResType* {
+auto ResourceManager::Resolve(ResourceId const& res_id) -> ObjectPtr<ResType> {
   // Check default resources
-  for (auto const& def_res : default_resources_) {
+  for (auto const def_res : default_resources_) {
     if (def_res->GetResId() == res_id) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
-        return rttr::rttr_cast<ResType*>(def_res.Get());
+        return MakeObjectPtr(ReflCast<ResType>(def_res));
       } else {
-        return def_res.Get();
+        return MakeObjectPtr(def_res);
       }
     }
   }
@@ -25,9 +25,9 @@ auto ResourceManager::GetOrLoad(ResourceId const& res_id) -> ResType* {
 
     if (auto const it{resources->find(res_id)}; it != std::end(*resources)) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
-        return rttr::rttr_cast<ResType*>(it->get());
+        return MakeObjectPtr(MakeObserver(ReflCast<ResType*>(it->get())));
       } else {
-        return it->get();
+        return MakeObjectPtr(MakeObserver(it->get()));
       }
     }
   }
@@ -48,9 +48,9 @@ auto ResourceManager::GetOrLoad(ResourceId const& res_id) -> ResType* {
   if (desc) {
     if (auto const res{InternalLoadResource(res_id, *desc)}) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
-        return rttr::rttr_cast<ResType*>(res.Get());
+        return ReflCast<ResType>(res);
       } else {
-        return res.Get();
+        return res;
       }
     }
   }
@@ -60,9 +60,10 @@ auto ResourceManager::GetOrLoad(ResourceId const& res_id) -> ResType* {
 
 
 template<std::derived_from<Resource> ResType>
-auto ResourceManager::Add(std::unique_ptr<ResType> resource) -> ObserverPtr<ResType> {
+auto ResourceManager::Add(std::unique_ptr<ResType> resource) -> ResourceRef<ResType> {
   if (resource && resource->GetResId().IsValid()) {
-    return ObserverPtr{loaded_resources_.Lock()->emplace(std::move(resource)).first->get()};
+    return MakeResourceRef(
+      MakeObserver(static_cast<ResType*>(loaded_resources_.Lock()->emplace(std::move(resource)).first->get())));
   }
 
   return nullptr;

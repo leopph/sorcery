@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "Core.hpp"
-#include "Reflection.hpp"
+#include "reflection.hpp"
 
 
 namespace sorcery {

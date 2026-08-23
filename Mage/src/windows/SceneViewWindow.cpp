@@ -167,7 +167,7 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
       if (auto const* const payload{ImGui::GetDragDropPayload()};
         payload && payload->IsDataType(ObjectDragDropPayload::kTypeStr.data())) {
         if (auto const* const data{static_cast<ObjectDragDropPayload const*>(payload->Data)}) {
-          if (auto const* const prefab{rttr::rttr_cast<Prefab*>(data->ptr)}) {
+          if (auto const* const prefab{ReflCast<Prefab*>(data->ptr)}) {
             ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
             if (payload->IsDelivery()) {
               for (auto& entity : prefab->Instantiate()) {
@@ -223,21 +223,24 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
       }
     }
 
-    if (auto const selectedEntity{dynamic_cast<Entity*>(context.GetSelectedObject())}; selectedEntity) {
+    if (auto const selected_entity_ptr{ReflCast<Entity>(context.GetSelectedObject())}; selected_entity_ptr) {
+      auto const selected_entity{selected_entity_ptr.Get()};
+
       if (!context.GetImGuiIo().WantTextInput && !cam_moving_ && GetKeyDown(Key::F)) {
         focus_target_.emplace(cam_.GetPosition(),
-          selectedEntity->GetTransform().GetWorldPosition() - cam_.GetForwardAxis() * 2, 0.0f);
+          selected_entity->GetTransform().GetWorldPosition() - cam_.GetForwardAxis() * 2, 0.0f);
       }
 
       // TODO this breaks if the transform is a child of a rotated transform
-      if (Matrix4 modelMat{selectedEntity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(camViewMtx.GetData(),
+      if (Matrix4 modelMat{selected_entity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(
+        camViewMtx.GetData(),
         camProjMtx.GetData(), gizmo_op_options_[gizmo_op_idx_].op, gizmo_mode_options_[gizmo_mode_idx_].mode,
         modelMat.GetData())) {
         Vector3 pos, euler, scale;
         ImGuizmo::DecomposeMatrixToComponents(modelMat.GetData(), pos.GetData(), euler.GetData(), scale.GetData());
-        selectedEntity->GetTransform().SetWorldPosition(pos);
-        selectedEntity->GetTransform().SetWorldRotation(Quaternion::FromEulerAngles(euler));
-        selectedEntity->GetTransform().SetWorldScale(scale);
+        selected_entity->GetTransform().SetWorldPosition(pos);
+        selected_entity->GetTransform().SetWorldRotation(Quaternion::FromEulerAngles(euler));
+        selected_entity->GetTransform().SetWorldScale(scale);
       }
     }
   } else {

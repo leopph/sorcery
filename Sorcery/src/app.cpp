@@ -1,58 +1,83 @@
 #include "app.hpp"
 
-#include "Platform.hpp"
-#include "Timing.hpp"
-
 #include <charconv>
 #include <stdexcept>
 
+#include "job_system.hpp"
+#include "object_registry.hpp"
+#include "Platform.hpp"
+#include "resource_manager.hpp"
+#include "Timing.hpp"
+#include "Window.hpp"
+#include "rendering/graphics.hpp"
+#include "rendering/render_manager.hpp"
+#include "rendering/scene_renderer.hpp"
+
 
 namespace sorcery {
-App::App(std::span<std::string_view const> const args) :
-  job_system_{
-    [args] {
-      unsigned thread_count{0};
+struct App::Data {
+  explicit Data(std::span<std::string_view const> const args) :
+    job_system{
+      [args] {
+        unsigned thread_count{0};
 
-      for (auto const arg : args) {
-        if (arg.starts_with("-threads=")) {
-          auto const thread_count_sv{arg.substr(9)};
-          if (std::from_chars(thread_count_sv.data(), thread_count_sv.data() + thread_count_sv.size(), thread_count).ec
-              == std::errc{}) {
-            break;
+        for (auto const arg : args) {
+          if (arg.starts_with("-threads=")) {
+            auto const thread_count_sv{arg.substr(9)};
+            if (std::from_chars(thread_count_sv.data(), thread_count_sv.data() + thread_count_sv.size(),
+                  thread_count).ec
+                == std::errc{}) {
+              break;
+            }
           }
         }
-      }
 
-      return thread_count;
-    }()
-  },
-  graphics_device_{
+        return thread_count;
+      }()
+    },
+    graphics_device{
 #ifndef NDEBUG
-    true,
+      true,
 #else
-    false,
+      false,
 #endif
-    std::ranges::any_of(args, [](std::string_view const arg) {
-      return arg == "-swrendering";
-    })
-  },
-  swap_chain_{
-    graphics_device_.CreateSwapChain(graphics::SwapChainDesc{
-      0, 0, 2, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_USAGE_RENDER_TARGET_OUTPUT, DXGI_SCALING_STRETCH
-    }, static_cast<HWND>(window_.GetNativeHandle()))
-  },
-  render_manager_{graphics_device_},
-  scene_renderer_{window_, graphics_device_, render_manager_},
-  resource_manager_{job_system_} {
+      std::ranges::any_of(args, [](std::string_view const arg) {
+        return arg == "-swrendering";
+      })
+    },
+    swap_chain{
+      graphics_device.CreateSwapChain(graphics::SwapChainDesc{
+        0, 0, 2, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_USAGE_RENDER_TARGET_OUTPUT, DXGI_SCALING_STRETCH
+      }, static_cast<HWND>(window.GetNativeHandle()))
+    },
+    render_manager{graphics_device},
+    scene_renderer{window, graphics_device, render_manager},
+    resource_manager{job_system} {}
+
+
+  JobSystem job_system;
+  graphics::GraphicsDevice graphics_device;
+  Window window;
+  graphics::SharedDeviceChildHandle<graphics::SwapChain> swap_chain;
+  rendering::RenderManager render_manager;
+  rendering::SceneRenderer scene_renderer;
+  ObjectRegistry object_registry;
+  ResourceManager resource_manager;
+  ObserverPtr<Job> render_job;
+};
+
+
+App::App(std::span<std::string_view const> const args) :
+  data_{std::make_unique<Data>(args)} {
   if (instance_) {
     throw std::logic_error{"App already exists!"};
   }
 
   instance_.Reset(this);
 
-  resource_manager_.CreateDefaultResources();
+  data_->resource_manager.CreateDefaultResources();
 
-  window_.OnWindowSize.add_listener([this](Extent2D<unsigned>) {
+  data_->window.OnWindowSize.add_listener([this](Extent2D<unsigned>) {
     window_resized_ = true;
   });
 
@@ -62,47 +87,47 @@ App::App(std::span<std::string_view const> const args) :
 
 App::~App() {
   WaitRenderJob();
-  graphics_device_.WaitIdle();
-}
-
-
-auto App::GetGraphicsDevice() -> graphics::GraphicsDevice& {
-  return graphics_device_;
-}
-
-
-auto App::GetWindow() -> Window& {
-  return window_;
-}
-
-
-auto App::GetSwapChain() -> graphics::SwapChain& {
-  return *swap_chain_;
-}
-
-
-auto App::GetRenderManager() -> rendering::RenderManager& {
-  return render_manager_;
-}
-
-
-auto App::GetSceneRenderer() -> rendering::SceneRenderer& {
-  return scene_renderer_;
+  data_->graphics_device.WaitIdle();
 }
 
 
 auto App::GetJobSystem() -> JobSystem& {
-  return job_system_;
+  return data_->job_system;
+}
+
+
+auto App::GetGraphicsDevice() -> graphics::GraphicsDevice& {
+  return data_->graphics_device;
+}
+
+
+auto App::GetWindow() -> Window& {
+  return data_->window;
+}
+
+
+auto App::GetSwapChain() -> graphics::SwapChain& {
+  return *data_->swap_chain;
+}
+
+
+auto App::GetRenderManager() -> rendering::RenderManager& {
+  return data_->render_manager;
+}
+
+
+auto App::GetSceneRenderer() -> rendering::SceneRenderer& {
+  return data_->scene_renderer;
 }
 
 
 auto App::GetObjectRegistry() -> ObjectRegistry& {
-  return object_registry_;
+  return data_->object_registry;
 }
 
 
 auto App::GetResourceManager() -> ResourceManager& {
-  return resource_manager_;
+  return data_->resource_manager;
 }
 
 
@@ -118,14 +143,14 @@ auto App::Run() -> void {
 
     EndFrame();
 
-    if (render_job_) {
-      job_system_.Wait(render_job_);
+    if (data_->render_job) {
+      data_->job_system.Wait(data_->render_job);
     }
 
     if (window_resized_) {
-      if (auto const [width, height]{window_.GetClientAreaSize()}; width != 0 && height != 0) {
-        graphics_device_.WaitIdle();
-        graphics_device_.ResizeSwapChain(*swap_chain_, 0, 0);
+      if (auto const [width, height]{data_->window.GetClientAreaSize()}; width != 0 && height != 0) {
+        data_->graphics_device.WaitIdle();
+        data_->graphics_device.ResizeSwapChain(*data_->swap_chain, 0, 0);
       }
 
       window_resized_ = false;
@@ -133,13 +158,13 @@ auto App::Run() -> void {
 
     PrepareRender();
 
-    render_job_ = job_system_.CreateJob([this] {
+    data_->render_job = data_->job_system.CreateJob([this] {
       Render();
-      graphics_device_.Present(*swap_chain_);
-      render_manager_.EndFrame();
+      data_->graphics_device.Present(*data_->swap_chain);
+      data_->render_manager.EndFrame();
     });
 
-    job_system_.Run(render_job_);
+    data_->job_system.Run(data_->render_job);
 
     timing::OnFrameEnd();
   }
@@ -156,8 +181,8 @@ auto App::Instance() -> App& {
 
 
 auto App::WaitRenderJob() -> void {
-  if (render_job_) {
-    job_system_.Wait(render_job_);
+  if (data_->render_job) {
+    data_->job_system.Wait(data_->render_job);
   }
 }
 
@@ -168,12 +193,12 @@ auto App::BeginFrame() -> void {
 
 
 auto App::PrepareRender() -> void {
-  scene_renderer_.ExtractCurrentState();
+  data_->scene_renderer.ExtractCurrentState();
 }
 
 
 auto App::Render() -> void {
-  scene_renderer_.Render();
+  data_->scene_renderer.Render();
 }
 
 

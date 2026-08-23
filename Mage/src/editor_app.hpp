@@ -51,8 +51,8 @@ public:
   auto SaveCurrentSceneToFile() -> void;
   [[nodiscard]] auto GetScene() const noexcept -> Scene&;
 
-  [[nodiscard]] auto GetSelectedObject() const noexcept -> Object*;
-  auto SetSelectedObject(Object* obj) noexcept -> void;
+  [[nodiscard]] auto GetSelectedObject() const noexcept -> ObjectPtr<Object>;
+  auto SetSelectedObject(ObjectPtr<Object> obj) noexcept -> void;
 
   [[nodiscard]] auto GetProjectDirectoryAbsolute() const noexcept -> std::filesystem::path const&;
 
@@ -83,8 +83,8 @@ private:
   ObserverPtr<ImGuiIO> imgui_io_;
   std::string imgui_io_ini_path_;
 
-  ObserverPtr<Scene> scene_;
-  Object* selected_object_{nullptr};
+  ResourceRef<Scene> scene_;
+  ObjectPtr<Object> selected_object_{nullptr};
   ResourceDB resource_db_{selected_object_};
 
   std::filesystem::path proj_dir_abs_;

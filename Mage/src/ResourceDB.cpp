@@ -7,14 +7,14 @@
 #include <spdlog/spdlog.h>
 
 #include "app.hpp"
-#include "Reflection.hpp"
+#include "reflection.hpp"
 #include "resource_manager.hpp"
 #include "Util.hpp"
 #include "ResourceImporters/native_resource_importer.hpp"
 
 
 namespace sorcery::mage {
-ResourceDB::ResourceDB(Object*& selected_object_ptr) :
+ResourceDB::ResourceDB(ObjectPtr<Object>& selected_object_ptr) :
   OnDatabaseChanged{db_changed_},
   selected_object_ptr_{std::addressof(selected_object_ptr)} {}
 
@@ -224,7 +224,7 @@ auto ResourceDB::Refresh() -> void {
       it != std::end(new_res_file_info_by_guid) &&
       it->second.src_path_res_dir_rel != resource_file_info.src_path_res_dir_rel &&
       App::Instance().GetResourceManager().IsLoaded(ResourceId{guid, 0})) {
-      App::Instance().GetResourceManager().GetOrLoad(ResourceId{guid, 0})->SetName(
+      App::Instance().GetResourceManager().Resolve(ResourceId{guid, 0})->SetName(
         resource_file_info.src_path_res_dir_rel.stem().string());
     }
   }
@@ -282,7 +282,7 @@ auto ResourceDB::GetResourceDirectoryAbsolutePath() const -> std::filesystem::pa
 auto ResourceDB::SaveResourceToFile(
   std::unique_ptr<NativeResource>&& res,
   std::filesystem::path const& target_path_res_dir_rel)
-  -> ObserverPtr<NativeResource> {
+  -> ResourceRef<NativeResource> {
   if (!res) {
     return nullptr;
   }
@@ -832,7 +832,7 @@ auto ResourceDB::UnloadResourcesFromFile(Guid const& guid) -> void {
 
 auto ResourceDB::ClearSelectionIfGuid(Guid const& guid) const -> void {
   if (*selected_object_ptr_) {
-    if (auto const res{dynamic_cast<Resource*>(*selected_object_ptr_)}; res && res->GetResId().GetGuid() == guid) {
+    if (auto const res{ReflCast<Resource>(*selected_object_ptr_)}; res && res->GetResId().GetGuid() == guid) {
       *selected_object_ptr_ = nullptr;
     }
   }

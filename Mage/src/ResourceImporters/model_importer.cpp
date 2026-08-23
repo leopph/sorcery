@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstring>
 #include <format>
 #include <iterator>
 #include <limits>
@@ -24,9 +23,11 @@
 #include "App.hpp"
 #include "Entity.hpp"
 #include "entity_serialization.hpp"
+#include "job_system.hpp"
 #include "Platform.hpp"
 #include "prefab.hpp"
 #include "Serialization.hpp"
+#include "StaticMeshComponent.hpp"
 #include "Resources/Mesh.hpp"
 #include "resource_import/material_import.hpp"
 #include "resource_import/texture_import.hpp"
@@ -1007,7 +1008,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
     });
     dummy_mesh->SetResId(ResourceId{Guid::Invalid(), 1 /* prefab is first */});
 
-    mesh_component->SetMesh(dummy_mesh.get());
+    mesh_component->SetMesh(MakeResourceRef(MakeObserver(dummy_mesh.get())));
 
     std::vector<std::unique_ptr<Material>> dummy_materials;
     dummy_materials.reserve(material_data.size());
@@ -1015,7 +1016,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
     for (std::size_t i{0}; i < material_data.size(); i++) {
       auto dummy_mtl{std::make_unique<Material>(GpuResidencyPolicy::kDeferUpload)};
       dummy_mtl->SetResId(ResourceId{Guid::Invalid(), 2 /* prefab + mesh */ + clamp_cast<int>(i)});
-      mesh_component->SetMaterial(clamp_cast<int>(i), dummy_mtl.get());
+      mesh_component->SetMaterial(clamp_cast<int>(i), MakeResourceRef(MakeObserver(dummy_mtl.get())));
       dummy_materials.emplace_back(std::move(dummy_mtl));
     }
 

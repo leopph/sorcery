@@ -54,7 +54,7 @@ auto EntityHierarchyWindow::Draw() -> void {
           nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
         }
 
-        if (mApp->GetSelectedObject() && mApp->GetSelectedObject() == &entity) {
+        if (mApp->GetSelectedObject() && mApp->GetSelectedObject().Get().Get() == &entity) {
           nodeFlags |= ImGuiTreeNodeFlags_Selected;
         }
 
@@ -74,17 +74,17 @@ auto EntityHierarchyWindow::Draw() -> void {
         }
 
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-          mApp->SetSelectedObject(&entity);
+          mApp->SetSelectedObject(MakeObjectPtr(MakeObserver(&entity)));
         }
 
         auto deleted{false};
 
         if (ImGui::BeginPopupContextItem()) {
-          mApp->SetSelectedObject(&entity);
+          mApp->SetSelectedObject(MakeObjectPtr(MakeObserver(&entity)));
 
           if (ImGui::MenuItem("Duplicate")) {
             auto clone{static_unique_ptr_cast<Entity>(entity.Clone())};
-            mApp->SetSelectedObject(clone.get());
+            mApp->SetSelectedObject(MakeObjectPtr(MakeObserver(clone.get())));
             mApp->GetScene().AddEntity(std::move(clone));
             entities = mApp->GetScene().GetEntities();
             ImGui::CloseCurrentPopup();
@@ -128,7 +128,7 @@ auto EntityHierarchyWindow::Draw() -> void {
       if (auto const* const payload{ImGui::GetDragDropPayload()};
         payload && payload->IsDataType(ObjectDragDropPayload::kTypeStr.data())) {
         if (auto const* const data{static_cast<ObjectDragDropPayload const*>(payload->Data)}) {
-          if (auto const* const prefab{rttr::rttr_cast<Prefab*>(data->ptr)}) {
+          if (auto const* const prefab{ReflCast<Prefab*>(data->ptr)}) {
             ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
             if (payload->IsDelivery()) {
               for (auto& entity : prefab->Instantiate()) {

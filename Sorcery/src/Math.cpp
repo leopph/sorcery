@@ -1,5 +1,5 @@
 #include "Math.hpp"
-#include "Reflection.hpp"
+#include "reflection.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Vector2>{ "Vector 2" }

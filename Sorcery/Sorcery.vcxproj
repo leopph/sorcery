@@ -220,7 +220,7 @@
     <ClInclude Include="src\rendering\constant_buffer.hpp" />
     <ClInclude Include="src\rendering\render_manager.hpp" />
     <ClInclude Include="src\Resources\NativeResource.hpp" />
-    <ClInclude Include="src\Reflection.hpp" />
+    <ClInclude Include="src\reflection.hpp" />
     <ClInclude Include="src\resources\prefab.hpp" />
     <ClInclude Include="src\Resources\Resource.hpp" />
     <ClInclude Include="src\resource_ref.hpp" />
@@ -286,7 +286,9 @@
     <None Include="src\job_system.inl" />
     <None Include="src\object.inl" />
     <None Include="src\object_ptr.inl" />
+    <None Include="src\object_registry.inl" />
     <None Include="src\observer_ptr.inl" />
+    <None Include="src\reflection.inl" />
     <None Include="src\rendering\shaders\brdf.hlsli" />
     <None Include="src\rendering\shaders\brdf_integration.hlsli" />
     <None Include="src\rendering\shaders\CatmullRom.hlsli" />

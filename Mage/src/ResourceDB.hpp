@@ -31,7 +31,7 @@ public:
   };
 
 
-  explicit ResourceDB(Object*& selected_object_ptr);
+  explicit ResourceDB(ObjectPtr<Object>& selected_object_ptr);
 
   /**
    * Refreshes the database by scanning the resource directory.
@@ -66,12 +66,12 @@ public:
    * Saves the native resource to the target resource file.
    * If the file already exists, it will be overwritten.
    * The database then takes ownership of the resource.
-   * Returns an observer pointer to the resource.
+   * Returns a reference to the resource.
    */
   auto SaveResourceToFile(
     std::unique_ptr<NativeResource>&& res,
     std::filesystem::path const& target_path_res_dir_rel
-  ) -> ObserverPtr<NativeResource>;
+  ) -> ResourceRef<NativeResource>;
 
 
   /**
@@ -367,7 +367,7 @@ private:
   std::map<Guid, ResourceFileInfo> res_file_info_by_guid_;
   std::map<ResourceId, ResourceInfo> res_info_by_id_;
 
-  Object** selected_object_ptr_;
+  ObserverPtr<ObjectPtr<Object>> selected_object_ptr_;
 
   Event<> db_changed_;
 

@@ -9,7 +9,7 @@
 
 #include "app.hpp"
 #include "job_system.hpp"
-#include "Reflection.hpp"
+#include "reflection.hpp"
 #include "resource_package.hpp"
 #include "rendering/render_manager.hpp"
 #include "resources/prefab.hpp"
@@ -132,23 +132,23 @@ auto ResourceManager::GetInfoForResourcesOfType(rttr::type const& type, std::vec
 }
 
 
-auto ResourceManager::GetDefaultMaterial() const noexcept -> ObserverPtr<Material> {
-  return ObserverPtr{default_mtl_.get()};
+auto ResourceManager::GetDefaultMaterial() const noexcept -> ResourceRef<Material> {
+  return MakeResourceRef(MakeObserver(default_mtl_.get()));
 }
 
 
-auto ResourceManager::GetCubeMesh() const noexcept -> ObserverPtr<Mesh> {
-  return ObserverPtr{cube_mesh_.get()};
+auto ResourceManager::GetCubeMesh() const noexcept -> ResourceRef<Mesh> {
+  return MakeResourceRef(MakeObserver(cube_mesh_.get()));
 }
 
 
-auto ResourceManager::GetPlaneMesh() const noexcept -> ObserverPtr<Mesh> {
-  return ObserverPtr{plane_mesh_.get()};
+auto ResourceManager::GetPlaneMesh() const noexcept -> ResourceRef<Mesh> {
+  return MakeResourceRef(MakeObserver(plane_mesh_.get()));
 }
 
 
-auto ResourceManager::GetSphereMesh() const noexcept -> ObserverPtr<Mesh> {
-  return ObserverPtr{sphere_mesh_.get()};
+auto ResourceManager::GetSphereMesh() const noexcept -> ResourceRef<Mesh> {
+  return MakeResourceRef(MakeObserver(sphere_mesh_.get()));
 }
 
 
@@ -263,7 +263,7 @@ auto ResourceManager::ResourceIdLess::operator()(ResourceId const& lhs,
 
 
 auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
-                                           ResourceDescription const& desc) -> ObserverPtr<Resource> {
+                                           ResourceDescription const& desc) -> ObjectPtr<Resource> {
   ObserverPtr<Job> loader_job;
   auto created_job{false};
 
@@ -364,13 +364,12 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
   {
     auto const resources{loaded_resources_.LockShared()};
     auto const it{resources->find(res_id)};
-    return ObserverPtr{it != resources->end() ? it->get() : nullptr};
+    return MakeObjectPtr(MakeObserver(it != resources->end() ? it->get() : nullptr));
   }
 }
 
 
-auto ResourceManager::LoadTexture(
-  std::span<std::byte const> const bytes) noexcept -> MaybeNull<std::unique_ptr<Resource>> {
+auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) -> MaybeNull<std::unique_ptr<Resource>> {
   DirectX::TexMetadata meta;
   DirectX::ScratchImage img;
   if (FAILED(LoadFromDDSMemory(bytes.data(), bytes.size(), DirectX::DDS_FLAGS_NONE, &meta, img))) {

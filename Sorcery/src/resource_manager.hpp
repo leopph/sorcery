@@ -2,8 +2,9 @@
 
 #include "Core.hpp"
 #include "mutex.hpp"
+#include "object_ptr.hpp"
 #include "observer_ptr.hpp"
-#include "Serialization.hpp"
+#include "resource_ref.hpp"
 #include "resources/Material.hpp"
 #include "resources/Mesh.hpp"
 #include "Resources/Resource.hpp"
@@ -36,33 +37,48 @@ public:
   };
 
 
-  LEOPPHAPI explicit ResourceManager(JobSystem& job_system);
+  SORCERYAPI explicit ResourceManager(JobSystem& job_system);
 
   template<std::derived_from<Resource> ResType = Resource>
-  auto GetOrLoad(ResourceId const& res_id) -> ResType*;
+  auto Resolve(ResourceId const& res_id) -> ObjectPtr<ResType>;
 
-  LEOPPHAPI auto Unload(ResourceId const& res_id) -> void;
-  LEOPPHAPI auto UnloadAll() -> void;
+  SORCERYAPI
+  auto Unload(ResourceId const& res_id) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto IsLoaded(ResourceId const& res_id) -> bool;
+  SORCERYAPI
+  auto UnloadAll() -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto IsLoaded(ResourceId const& res_id) -> bool;
 
   template<std::derived_from<Resource> ResType>
-  auto Add(std::unique_ptr<ResType> resource) -> ObserverPtr<ResType>;
+  auto Add(std::unique_ptr<ResType> resource) -> ResourceRef<ResType>;
 
   template<std::derived_from<Resource> ResType = Resource>
-  [[nodiscard]] auto Remove(ResourceId const& res_id) -> std::unique_ptr<ResType>;
+  [[nodiscard]]
+  auto Remove(ResourceId const& res_id) -> std::unique_ptr<ResType>;
 
-  LEOPPHAPI auto UpdateMappings(std::map<ResourceId, ResourceDescription> res_mappings,
-                                std::map<Guid, std::filesystem::path> file_mappings) -> void;
+  SORCERYAPI
+  auto UpdateMappings(std::map<ResourceId, ResourceDescription> res_mappings,
+                      std::map<Guid, std::filesystem::path> file_mappings) -> void;
 
   template<std::derived_from<Resource> T>
   auto GetInfoForResourcesOfType(std::vector<ResourceInfo>& out) -> void;
-  auto LEOPPHAPI GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> ObserverPtr<Material>;
-  [[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> ObserverPtr<Mesh>;
-  [[nodiscard]] LEOPPHAPI auto GetPlaneMesh() const noexcept -> ObserverPtr<Mesh>;
-  [[nodiscard]] LEOPPHAPI auto GetSphereMesh() const noexcept -> ObserverPtr<Mesh>;
+  SORCERYAPI
+  auto GetInfoForResourcesOfType(rttr::type const& type, std::vector<ResourceInfo>& out) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetDefaultMaterial() const noexcept -> ResourceRef<Material>;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetCubeMesh() const noexcept -> ResourceRef<Mesh>;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetPlaneMesh() const noexcept -> ResourceRef<Mesh>;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetSphereMesh() const noexcept -> ResourceRef<Mesh>;
 
   // Called only internally!
   auto CreateDefaultResources() -> void;
@@ -75,41 +91,44 @@ private:
   struct ResourceIdLess {
     using is_transparent = void;
 
-    [[nodiscard]] LEOPPHAPI auto operator()(std::unique_ptr<Resource> const& lhs,
-                                            std::unique_ptr<Resource> const& rhs) const noexcept -> bool;
+    [[nodiscard]] SORCERYAPI auto operator()(std::unique_ptr<Resource> const& lhs,
+                                             std::unique_ptr<Resource> const& rhs) const noexcept -> bool;
 
-    [[nodiscard]] LEOPPHAPI auto operator()(std::unique_ptr<Resource> const& lhs,
-                                            ResourceId const& rhs) const noexcept -> bool;
+    [[nodiscard]] SORCERYAPI auto operator()(std::unique_ptr<Resource> const& lhs,
+                                             ResourceId const& rhs) const noexcept -> bool;
 
-    [[nodiscard]] LEOPPHAPI auto operator()(ResourceId const& lhs,
-                                            std::unique_ptr<Resource> const& rhs) const noexcept -> bool;
+    [[nodiscard]] SORCERYAPI auto operator()(ResourceId const& lhs,
+                                             std::unique_ptr<Resource> const& rhs) const noexcept -> bool;
   };
 
 
-  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(ResourceId const& res_id,
-                                                    ResourceDescription const& desc) -> ObserverPtr<Resource>;
-  [[nodiscard]] static auto LoadTexture(
-    std::span<std::byte const> bytes
-  ) noexcept -> MaybeNull<std::unique_ptr<Resource>>;
+  [[nodiscard]] SORCERYAPI auto InternalLoadResource(ResourceId const& res_id,
+                                                     ResourceDescription const& desc) -> ObjectPtr<Resource>;
+  [[nodiscard]] static
+  auto LoadTexture(std::span<std::byte const> bytes) -> MaybeNull<std::unique_ptr<Resource>>;
 
-  [[nodiscard]] static auto LoadMesh(
-    std::span<std::byte const> bytes
-  ) -> MaybeNull<std::unique_ptr<Resource>>;
+  [[nodiscard]] static
+  auto LoadMesh(std::span<std::byte const> bytes) -> MaybeNull<std::unique_ptr<Resource>>;
 
-  [[nodiscard]] static auto LoadMaterial(
-    std::span<std::byte const> bytes, YamlDeserializeContext const& ctx
-  ) -> MaybeNull<std::unique_ptr<Resource>>;
+  [[nodiscard]] static
+  auto LoadMaterial(std::span<std::byte const> bytes,
+                    YamlDeserializeContext const& ctx) -> MaybeNull<std::unique_ptr<Resource>>;
 
-  [[nodiscard]] static auto LoadPrefab(
-    std::span<std::byte const> bytes, YamlDeserializeContext const& ctx
-  ) -> MaybeNull<std::unique_ptr<Resource>>;
+  [[nodiscard]] static
+  auto LoadPrefab(std::span<std::byte const> bytes,
+                  YamlDeserializeContext const& ctx) -> MaybeNull<std::unique_ptr<Resource>>;
 
-  inline static Guid const default_mtl_guid_{1, 0};
-  inline static Guid const cube_mesh_guid_{2, 0};
-  inline static Guid const plane_mesh_guid_{3, 0};
-  inline static Guid const sphere_mesh_guid_{4, 0};
+  ObserverPtr<JobSystem> job_system_;
 
   Mutex<std::set<std::unique_ptr<Resource>, ResourceIdLess>, true> loaded_resources_;
+
+  std::unique_ptr<Material> default_mtl_;
+  std::unique_ptr<Mesh> cube_mesh_;
+  std::unique_ptr<Mesh> plane_mesh_;
+  std::unique_ptr<Mesh> sphere_mesh_;
+
+  // We can safely hold default resources with ObserverPtr
+  // because we have owning pointers to them in other members
   std::vector<ObserverPtr<Resource>> default_resources_;
 
   Mutex<std::map<ResourceId, ResourceDescription>, true> res_mappings_;
@@ -117,12 +136,10 @@ private:
 
   Mutex<std::map<ResourceId, ObserverPtr<Job>>, true> loader_jobs_;
 
-  std::unique_ptr<Material> default_mtl_;
-  std::unique_ptr<Mesh> cube_mesh_;
-  std::unique_ptr<Mesh> plane_mesh_;
-  std::unique_ptr<Mesh> sphere_mesh_;
-
-  ObserverPtr<JobSystem> job_system_;
+  inline static Guid const default_mtl_guid_{1, 0};
+  inline static Guid const cube_mesh_guid_{2, 0};
+  inline static Guid const plane_mesh_guid_{3, 0};
+  inline static Guid const sphere_mesh_guid_{4, 0};
 };
 }
 

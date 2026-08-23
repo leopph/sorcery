@@ -102,7 +102,8 @@ auto EditorApp::Update() -> void {
     int static targetFrameRate{timing::GetTargetFrameRate()};
 
     if (game_is_running_) {
-      for (std::vector<SceneObject*> scene_objects; auto const so : Object::FindObjectsOfType(scene_objects)) {
+      for (std::vector<ObjectPtr<SceneObject>> scene_objects;
+           auto const so : GetObjectRegistry().FindObjectsOfType(scene_objects)) {
         if (so->IsUpdatable()) {
           so->Update();
         }
@@ -125,7 +126,8 @@ auto EditorApp::Update() -> void {
         targetFrameRate = timing::GetTargetFrameRate();
         timing::SetTargetFrameRate(-1);
 
-        for (std::vector<SceneObject*> scene_objects; auto const so : Object::FindObjectsOfType(scene_objects)) {
+        for (std::vector<ObjectPtr<SceneObject>> scene_objects;
+             auto const so : GetObjectRegistry().FindObjectsOfType(scene_objects)) {
           if (so->IsUpdatable()) {
             so->Start();
           }
@@ -194,14 +196,14 @@ auto EditorApp::OpenScene(ResourceId const& res_id) -> void {
     return;
   }
 
-  if (auto const new_scene{GetResourceManager().GetOrLoad<Scene>(res_id)}) {
+  if (auto const new_scene{GetResourceManager().Resolve<Scene>(res_id)}) {
     new_scene->Load();
 
     if (scene_) {
       GetResourceManager().Unload(scene_->GetResId());
     }
 
-    scene_.Reset(new_scene);
+    scene_ = MakeResourceRef(new_scene.Get());
     scene_->SetActive();
     selected_object_ = nullptr;
   }
@@ -249,12 +251,12 @@ auto EditorApp::GetScene() const noexcept -> Scene& {
 }
 
 
-auto EditorApp::GetSelectedObject() const noexcept -> Object* {
+auto EditorApp::GetSelectedObject() const noexcept -> ObjectPtr<Object> {
   return selected_object_;
 }
 
 
-auto EditorApp::SetSelectedObject(Object* const obj) noexcept -> void {
+auto EditorApp::SetSelectedObject(ObjectPtr<Object> const obj) noexcept -> void {
   selected_object_ = obj;
 }
 

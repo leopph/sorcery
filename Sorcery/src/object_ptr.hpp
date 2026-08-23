@@ -5,30 +5,39 @@
 #include "Core.hpp"
 #include "Object.hpp"
 #include "observer_ptr.hpp"
-#include "Reflection.hpp"
+#include "reflection.hpp"
 
 
 namespace sorcery {
-template<std::derived_from<Object> T>
+template<typename T>
 class ObjectPtr {
 public:
   ObjectPtr() noexcept = default;
   ObjectPtr(nullptr_t null) noexcept;
-  ObjectPtr(ObserverPtr<T> obj) noexcept;
+  explicit ObjectPtr(ObserverPtr<T> obj) noexcept requires std::derived_from<T, Object>;
+
+  template<typename U> requires
+    std::derived_from<std::remove_cv_t<U>, Object> &&
+    std::derived_from<std::remove_cv_t<T>, Object> &&
+    std::convertible_to<U*, T*>
+  ObjectPtr(ObjectPtr<U> const& other) noexcept;
 
   [[nodiscard]]
-  auto Get() const -> ObserverPtr<T>;
+  auto Get() const -> ObserverPtr<T> requires std::derived_from<T, Object>;
 
   [[nodiscard]]
-  auto operator->() const -> ObserverPtr<T>;
+  auto operator->() const -> ObserverPtr<T> requires std::derived_from<T, Object>;
 
   [[nodiscard]]
-  auto operator*() const -> T&;
+  auto operator*() const -> T& requires std::derived_from<T, Object>;
 
   [[nodiscard]]
   operator bool() const;
 
 private:
+  template<typename>
+  friend class ObjectPtr;
+
   ObjectId id_;
 };
 
@@ -36,6 +45,11 @@ private:
 template<std::derived_from<Object> T>
 [[nodiscard]]
 auto MakeObjectPtr(ObserverPtr<T> object) noexcept -> ObjectPtr<T>;
+
+
+template<std::derived_from<Object> To, std::derived_from<Object> From>
+[[nodiscard]]
+auto ReflCast(ObjectPtr<From> obj) noexcept -> ObjectPtr<To>;
 
 
 namespace detail {
