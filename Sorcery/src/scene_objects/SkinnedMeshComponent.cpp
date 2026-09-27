@@ -4,6 +4,7 @@
 
 #include "../app.hpp"
 #include "../Timing.hpp"
+#include "../rendering/config.hpp"
 #include "../rendering/scene_renderer.hpp"
 #include "wand/wand.hpp"
 
@@ -47,7 +48,7 @@ auto SkinnedMeshComponent::SetMesh(ResourceRef<Mesh> const mesh) noexcept -> voi
     return;
   }
 
-  for (UINT i{0}; i < rendering::RenderManager::GetMaxFramesInFlight(); i++) {
+  for (UINT i{0}; i < rendering::kFramesInFlight; i++) {
     skinned_vertex_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
       wand::BufferDesc{mesh_inst->GetVertexCount() * sizeof(Vector4), sizeof(Vector4), false, true, true},
       wand::CpuAccess::kNone);
@@ -96,25 +97,25 @@ SkinnedMeshComponent::SkinnedMeshComponent() {
 
 
 auto SkinnedMeshComponent::GetSkinnedVertexBuffers() const noexcept -> std::span<
-  wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()> {
+  wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::kFramesInFlight> {
   return skinned_vertex_buffers_;
 }
 
 
 auto SkinnedMeshComponent::GetSkinnedNormalBuffers() const noexcept -> std::span<wand::SharedDeviceChildHandle<
-    wand::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()> {
+    wand::Buffer> const, rendering::kFramesInFlight> {
   return skinned_normal_buffers_;
 }
 
 
 auto SkinnedMeshComponent::GetSkinnedTangentBuffers() const noexcept -> std::span<wand::SharedDeviceChildHandle<
-    wand::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()> {
+    wand::Buffer> const, rendering::kFramesInFlight> {
   return skinned_tangent_buffers_;
 }
 
 
 auto SkinnedMeshComponent::GetBoneMatrixBuffers() const noexcept -> std::span<
-  wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()> {
+  wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::kFramesInFlight> {
   return bone_matrix_buffers_;
 }
 
