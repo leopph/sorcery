@@ -3,6 +3,7 @@
 
 #include "imgui_renderer.hpp"
 
+#include "render_frame.hpp"
 #include "shaders/imgui_shader_interop.h"
 
 #ifndef NDEBUG
@@ -84,9 +85,9 @@ auto ImGuiRenderer::UpdateFonts() -> void {
 }
 
 
-auto ImGuiRenderer::ExtractDrawData() -> void {
+auto ImGuiRenderer::ExtractDrawData(rendering::RenderFrame const& frame) -> void {
   auto const& src_draw_data{*ImGui::GetDrawData()};
-  auto& dst_draw_data{draw_data_[render_manager_->GetCurrentFrameIndex()]};
+  auto& dst_draw_data{draw_data_[frame.GetIndex()]};
 
   dst_draw_data.Valid = src_draw_data.Valid;
   dst_draw_data.CmdListsCount = src_draw_data.CmdListsCount;
@@ -116,8 +117,8 @@ auto ImGuiRenderer::ExtractDrawData() -> void {
 }
 
 
-auto ImGuiRenderer::Render() -> void {
-  auto const frame_idx{render_manager_->GetCurrentFrameIndex()};
+auto ImGuiRenderer::Render(rendering::RenderFrame& frame) -> void {
+  auto const frame_idx{frame.GetIndex()};
 
   auto const draw_data{&draw_data_[frame_idx]};
 
@@ -177,7 +178,7 @@ auto ImGuiRenderer::Render() -> void {
 
   auto const& rt{swap_chain_->GetCurrentTexture()};
 
-  auto& cmd{render_manager_->AcquireCommandList()};
+  auto& cmd{frame.AcquireCommandList()};
   cmd.Begin(pso_.get());
 
   cmd.SetBlendFactor(std::array{0.f, 0.f, 0.f, 0.f});
@@ -242,6 +243,6 @@ auto ImGuiRenderer::Render() -> void {
   }
 
   cmd.End();
-  device_->ExecuteCommandLists(std::span{&cmd, 1});
+  frame.EnqueueCommandList(cmd);
 }
 }

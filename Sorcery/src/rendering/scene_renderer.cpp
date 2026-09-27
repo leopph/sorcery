@@ -264,25 +264,6 @@ SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, Rende
   }, wand::CpuAccess::kNone, std::array{
     D3D12_CLEAR_VALUE{.Format = brdf_integration_map_format_, .Color = {0.F, 0.F, 0.F, 1.F}}
   }.data());
-
-  D3D12_VIEWPORT const brdf_integration_viewport{
-    0.F, 0.F, static_cast<FLOAT>(brdf_integration_map_size_), static_cast<FLOAT>(brdf_integration_map_size_), 0.F, 1.F
-  };
-
-  D3D12_RECT const brdf_integration_scissor_rect{
-    0, 0, static_cast<LONG>(brdf_integration_map_size_), static_cast<LONG>(brdf_integration_map_size_)
-  };
-
-  auto& cmd{render_manager.AcquireCommandList()};
-  cmd.Begin(brdf_integration_pso_.get());
-  cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  cmd.SetRenderTargets(std::array{static_cast<wand::Texture const*>(brdf_integration_map_.get())}, nullptr);
-  cmd.SetViewports(std::span{&brdf_integration_viewport, 1});
-  cmd.SetScissorRects(std::span{&brdf_integration_scissor_rect, 1});
-  cmd.ClearRenderTarget(*brdf_integration_map_, std::array{0.F, 0.F, 0.F, 1.F}, {});
-  cmd.DrawInstanced(3, 1, 0, 0);
-  cmd.End();
-  device_->ExecuteCommandLists(std::span{&cmd, 1});
 }
 
 
@@ -291,8 +272,8 @@ SceneRenderer::~SceneRenderer() {
 }
 
 
-auto SceneRenderer::ExtractCurrentState() -> void {
-  auto& packet{frame_packets_[render_manager_->GetCurrentFrameIndex()]};
+auto SceneRenderer::ExtractCurrentState(RenderFrame const& frame) -> void {
+  auto& packet{frame_packets_[frame.GetIndex()]};
 
   packet.buffers.clear();
   packet.textures.clear();
@@ -416,7 +397,7 @@ auto SceneRenderer::ExtractCurrentState() -> void {
   std::ranges::for_each(static_mesh_components_, extract_from_mesh_comp);
 
   std::ranges::for_each(skinned_mesh_components_,
-    [&extract_from_mesh_comp, &packet, this](SkinnedMeshComponent* const comp) {
+    [&extract_from_mesh_comp, &packet, &frame, this](SkinnedMeshComponent* const comp) {
       auto const mesh{comp->GetMesh().Observe()};
 
       if (!mesh) {
@@ -447,19 +428,19 @@ auto SceneRenderer::ExtractCurrentState() -> void {
       packet.buffers.emplace_back(mesh->GetBoneIndexBuffer());
       auto const bone_index_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
-      packet.buffers.emplace_back(comp->GetSkinnedVertexBuffers()[render_manager_->GetCurrentFrameIndex()]);
+      packet.buffers.emplace_back(comp->GetSkinnedVertexBuffers()[frame.GetIndex()]);
       auto const skinned_pos_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
-      packet.buffers.emplace_back(comp->GetSkinnedVertexBuffers()[render_manager_->GetPreviousFrameIndex()]);
+      packet.buffers.emplace_back(comp->GetSkinnedVertexBuffers()[frame.GetIndex() - 1]);
       auto const prev_skinned_pos_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
-      packet.buffers.emplace_back(comp->GetSkinnedNormalBuffers()[render_manager_->GetCurrentFrameIndex()]);
+      packet.buffers.emplace_back(comp->GetSkinnedNormalBuffers()[frame.GetIndex()]);
       auto const skinned_norm_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
-      packet.buffers.emplace_back(comp->GetSkinnedTangentBuffers()[render_manager_->GetCurrentFrameIndex()]);
+      packet.buffers.emplace_back(comp->GetSkinnedTangentBuffers()[frame.GetIndex()]);
       auto const skinned_tan_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
-      packet.buffers.emplace_back(comp->GetBoneMatrixBuffers()[render_manager_->GetCurrentFrameIndex()]);
+      packet.buffers.emplace_back(comp->GetBoneMatrixBuffers()[frame.GetIndex()]);
       auto const bone_mtx_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
       // Switch the original and skinned buffer indices so that the renderer can treat the skinned mesh as static after
@@ -653,14 +634,19 @@ auto SceneRenderer::ExtractCurrentState() -> void {
 }
 
 
-auto SceneRenderer::Render() -> void {
+auto SceneRenderer::Record(RenderFrame& frame) -> void {
+  if (!gpu_init_work_recorded_) {
+    RecordGpuInitWork(frame);
+    gpu_init_work_recorded_ = true;
+  }
+
   next_per_draw_cb_idx_ = 0;
   next_per_view_cb_idx_ = 0;
 
-  auto const frame_idx{render_manager_->GetCurrentFrameIndex()};
+  auto const frame_idx{frame.GetIndex()};
 
   auto& frame_packet{frame_packets_[frame_idx]};
-  auto const& prev_frame_packet{frame_packets_[render_manager_->GetPreviousFrameIndex()]};
+  auto const& prev_frame_packet{frame_packets_[frame.GetPreviousIndex()]};
 
   gizmo_color_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.gizmo_colors)));
   std::ranges::copy(frame_packet.gizmo_colors, std::begin(gizmo_color_buffer_.GetData()));
@@ -669,7 +655,7 @@ auto SceneRenderer::Render() -> void {
   std::ranges::copy(frame_packet.line_gizmo_vertex_data, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
 
   // Clears all render targets, dispatches skinning and prepares irradiance and prefiltered env maps if needed.
-  auto& prepare_cmd{render_manager_->AcquireCommandList()};
+  auto& prepare_cmd{frame.AcquireCommandList()};
   prepare_cmd.Begin(nullptr);
 
   std::ranges::for_each(frame_packet.render_targets, [&prepare_cmd](std::shared_ptr<RenderTarget> const& rt) {
@@ -918,7 +904,7 @@ auto SceneRenderer::Render() -> void {
   }
 
   prepare_cmd.End();
-  device_->ExecuteCommandLists(std::span{&prepare_cmd, 1});
+  frame.EnqueueCommandList(prepare_cmd);
 
   for (auto& cam_data : frame_packet.cam_data) {
     auto const prev_cam_it{std::ranges::find(prev_frame_packet.cam_data, cam_data.id, &CameraData::id)};
@@ -1025,8 +1011,8 @@ auto SceneRenderer::Render() -> void {
     // Jitter is defined to be in NDC [-1, 1]
     auto const [jitter_x_ndc, jitter_y_ndc]
     {
-      [this, transient_rt_width, transient_rt_height] {
-        auto const jitter_idx{render_manager_->GetCurrentFrameCount() % taa_subpixel_sample_count_};
+      [this, &frame, transient_rt_width, transient_rt_height] {
+        auto const jitter_idx{frame.GetNumber() % taa_subpixel_sample_count_};
 
         if constexpr (true) {
           auto const [r2_x, r2_y]{R2Sequence2d(jitter_idx)};
@@ -1077,21 +1063,22 @@ auto SceneRenderer::Render() -> void {
     CullLights(cam_frust_ws, frame_packet.light_data, visible_light_indices);
 
     // Command list for the camera
-    auto& cam_cmd{render_manager_->AcquireCommandList()};
+    auto& cam_cmd{frame.AcquireCommandList()};
     cam_cmd.Begin(nullptr);
     cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // Shadow pass
     std::array<Matrix4, MAX_CASCADE_COUNT> shadow_view_proj_matrices;
     auto const shadow_cascade_boundaries{CalculateCameraShadowCascadeBoundaries(cam_data, frame_packet.shadow_params)};
-    DrawDirectionalShadowMaps(frame_packet, visible_light_indices, cam_data, viewport_aspect,
-      frame_packet.shadow_params.cascade_count, shadow_cascade_boundaries, shadow_view_proj_matrices, cam_cmd);
+    DrawDirectionalShadowMaps(frame_packet, frame_idx, visible_light_indices, cam_data,
+      viewport_aspect, frame_packet.shadow_params.cascade_count, shadow_cascade_boundaries, shadow_view_proj_matrices,
+      cam_cmd);
 
     UpdatePunctualShadowAtlas(*punctual_shadow_atlas_, frame_packet.light_data, visible_light_indices, cam_data,
       cam_view_proj_mtx, frame_packet.shadow_params.distance);
-    DrawPunctualShadowMaps(*punctual_shadow_atlas_, frame_packet, cam_cmd);
+    DrawPunctualShadowMaps(*punctual_shadow_atlas_, frame_packet, frame_idx, cam_cmd);
 
-    auto& cam_per_view_cb{AcquirePerViewConstantBuffer()};
+    auto& cam_per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
     SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, prev_cam_view_proj_mtx, shadow_cascade_boundaries,
       cam_frust_ws, cam_data.position, cam_data.near_plane, cam_data.far_plane);
 
@@ -1120,7 +1107,7 @@ auto SceneRenderer::Render() -> void {
 
       auto constexpr zero{0.0f};
 
-      auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
+      auto& per_draw_cb{AcquirePerDrawConstantBuffer(frame_idx)};
       SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, cam_view_mtx, cam_proj_mtx,
         instance.prev_local_to_world_mtx, instance.max_abs_scaling);
 
@@ -1512,7 +1499,7 @@ auto SceneRenderer::Render() -> void {
     }
 
     cam_cmd.End();
-    device_->ExecuteCommandLists(std::span{&cam_cmd, 1});
+    frame.EnqueueCommandList(cam_cmd);
   }
 }
 
@@ -2007,7 +1994,7 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
 }
 
 
-auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
+auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet, std::uint32_t const frame_idx,
                                               std::span<unsigned const> const visible_light_indices,
                                               CameraData const& cam_data, float rt_aspect, int const cascade_count,
                                               ShadowCascadeBoundaries const& shadow_cascade_boundaries,
@@ -2173,7 +2160,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
         Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
 
-        auto& per_view_cb{AcquirePerViewConstantBuffer()};
+        auto& per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
         SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, {}, ShadowCascadeBoundaries{},
           shadow_frustum_ws, Vector3{}, shadow_near_clip, shadow_far_clip);
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
@@ -2183,7 +2170,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
           auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
           auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
-          auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
+          auto& per_draw_cb{AcquirePerDrawConstantBuffer(frame_idx)};
           SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, shadowViewMtx, shadowProjMtx, {},
             instance.max_abs_scaling);
 
@@ -2218,8 +2205,8 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet,
 
 
 auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
-                                           SceneRenderer::FramePacket const& frame_packet,
-                                           wand::CommandList& cmd) -> void {
+                                           FramePacket const& frame_packet,
+                                           std::uint32_t const frame_idx, wand::CommandList& cmd) -> void {
   cmd.SetPipelineState(*shadow_pso_);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
@@ -2250,7 +2237,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 
         Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
 
-        auto& per_view_cb{AcquirePerViewConstantBuffer()};
+        auto& per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
         SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, {},
           ShadowCascadeBoundaries{}, shadow_frustum_ws, Vector3{}, 0, 0); // TODO pass proper near and far clip planes
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
@@ -2260,7 +2247,7 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
           auto const& mesh{frame_packet.mesh_data[submesh.mesh_local_idx]};
           auto const& mtl_buf{frame_packet.buffers[submesh.mtl_buf_local_idx]};
 
-          auto& per_draw_cb{AcquirePerDrawConstantBuffer()};
+          auto& per_draw_cb{AcquirePerDrawConstantBuffer(frame_idx)};
           SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, Matrix4::Identity(),
             subcell->shadowViewProjMtx, {}, instance.max_abs_scaling);
 
@@ -2520,7 +2507,7 @@ auto SceneRenderer::CreatePerViewConstantBuffers(UINT const count) -> void {
   for (UINT i{0}; i < count; i++) {
     auto& arr{per_view_cbs_.emplace_back()};
 
-    for (UINT j{0}; j < RenderManager::GetMaxFramesInFlight(); j++) {
+    for (UINT j{0}; j < kFramesInFlight; j++) {
       if (auto opt{ConstantBuffer<ShaderPerViewConstants>::New(*device_, true)}) {
         arr[j] = std::move(*opt);
       }
@@ -2535,7 +2522,7 @@ auto SceneRenderer::CreatePerDrawConstantBuffers(UINT const count) -> void {
   for (UINT i{0}; i < count; i++) {
     auto& arr{per_draw_cbs_.emplace_back()};
 
-    for (UINT j{0}; j < RenderManager::GetMaxFramesInFlight(); j++) {
+    for (UINT j{0}; j < kFramesInFlight; j++) {
       if (auto opt{ConstantBuffer<ShaderPerDrawConstants>::New(*device_, true)}) {
         arr[j] = std::move(*opt);
       }
@@ -2544,21 +2531,23 @@ auto SceneRenderer::CreatePerDrawConstantBuffers(UINT const count) -> void {
 }
 
 
-auto SceneRenderer::AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>& {
+auto SceneRenderer::AcquirePerViewConstantBuffer(
+  std::uint32_t const frame_idx) -> ConstantBuffer<ShaderPerViewConstants>& {
   if (next_per_view_cb_idx_ >= per_view_cbs_.size()) {
     CreatePerViewConstantBuffers(1);
   }
 
-  return per_view_cbs_[next_per_view_cb_idx_++][render_manager_->GetCurrentFrameIndex()];
+  return per_view_cbs_[next_per_view_cb_idx_++][frame_idx];
 }
 
 
-auto SceneRenderer::AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>& {
+auto SceneRenderer::AcquirePerDrawConstantBuffer(
+  std::uint32_t const frame_idx) -> ConstantBuffer<ShaderPerDrawConstants>& {
   if (next_per_draw_cb_idx_ >= per_draw_cbs_.size()) {
     CreatePerDrawConstantBuffers(1);
   }
 
-  return per_draw_cbs_[next_per_draw_cb_idx_++][render_manager_->GetCurrentFrameIndex()];
+  return per_draw_cbs_[next_per_draw_cb_idx_++][frame_idx];
 }
 
 
@@ -2569,6 +2558,29 @@ auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
     desc.height = size.height;
     main_rt_ = RenderTarget::New(*device_, desc);
   }
+}
+
+
+auto SceneRenderer::RecordGpuInitWork(RenderFrame& frame) const -> void {
+  D3D12_VIEWPORT const brdf_integration_viewport{
+    0.F, 0.F, static_cast<FLOAT>(brdf_integration_map_size_), static_cast<FLOAT>(brdf_integration_map_size_), 0.F, 1.F
+  };
+
+  D3D12_RECT const brdf_integration_scissor_rect{
+    0, 0, static_cast<LONG>(brdf_integration_map_size_), static_cast<LONG>(brdf_integration_map_size_)
+  };
+
+  auto& cmd{frame.AcquireCommandList()};
+  cmd.Begin(brdf_integration_pso_.get());
+  cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  cmd.SetRenderTargets(std::array{static_cast<wand::Texture const*>(brdf_integration_map_.get())}, nullptr);
+  cmd.SetViewports(std::span{&brdf_integration_viewport, 1});
+  cmd.SetScissorRects(std::span{&brdf_integration_scissor_rect, 1});
+  cmd.ClearRenderTarget(*brdf_integration_map_, std::array{0.F, 0.F, 0.F, 1.F}, {});
+  cmd.DrawInstanced(3, 1, 0, 0);
+  cmd.End();
+
+  frame.EnqueueCommandList(cmd);
 }
 
 

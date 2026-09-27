@@ -37,8 +37,8 @@ public:
   auto BeginFrame() -> void override;
   auto Update() -> void override;
   auto EndFrame() -> void override;
-  auto PrepareRender() -> void override;
-  auto Render() -> void override;
+  auto PrepareRender(rendering::RenderFrame const& frame) -> void override;
+  auto RecordRender(rendering::RenderFrame& frame) -> void override;
 
   [[nodiscard]] auto GetImGuiIo() const noexcept -> ImGuiIO const&;
   [[nodiscard]] auto GetImGuiIo() noexcept -> ImGuiIO&;
