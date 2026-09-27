@@ -5,7 +5,7 @@
 #include <span>
 
 #include "MeshComponentBase.hpp"
-#include "../rendering/config.hpp"
+#include "../rendering/render_manager.hpp"
 
 
 namespace sorcery {
@@ -26,13 +26,13 @@ public:
   LEOPPHAPI SkinnedMeshComponent();
 
   [[nodiscard]] LEOPPHAPI auto GetSkinnedVertexBuffers() const noexcept -> std::span<
-    wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::kFramesInFlight>;
+    wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()>;
   [[nodiscard]] LEOPPHAPI auto GetSkinnedNormalBuffers() const noexcept -> std::span<
-    wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::kFramesInFlight>;
+    wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()>;
   [[nodiscard]] LEOPPHAPI auto GetSkinnedTangentBuffers() const noexcept -> std::span<
-    wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::kFramesInFlight>;
+    wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()>;
   [[nodiscard]] LEOPPHAPI auto GetBoneMatrixBuffers() const noexcept -> std::span<
-    wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::kFramesInFlight>;
+    wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::RenderManager::GetMaxFramesInFlight()>;
 
   [[nodiscard]] SORCERYAPI
   auto GetCurrentAnimationIndex() const -> std::optional<std::size_t>;
@@ -44,13 +44,13 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetCurrentAnimationTime() const noexcept -> float;
 
 private:
-  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::kFramesInFlight>
+  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
   skinned_vertex_buffers_;
-  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::kFramesInFlight>
+  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
   skinned_normal_buffers_;
-  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::kFramesInFlight>
+  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
   skinned_tangent_buffers_;
-  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::kFramesInFlight>
+  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
   bone_matrix_buffers_;
 
   std::optional<std::size_t> cur_animation_idx_;

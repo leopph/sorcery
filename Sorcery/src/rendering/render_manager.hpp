@@ -1,6 +1,5 @@
 #pragma once
 
-#include "config.hpp"
 #include "render_target.hpp"
 #include "../Core.hpp"
 #include "../Math.hpp"
@@ -29,6 +28,14 @@ public:
   auto operator=(RenderManager const&) -> void = delete;
   auto operator=(RenderManager&&) -> void = delete;
 
+  [[nodiscard]] constexpr static auto GetMaxGpuQueuedFrames() -> UINT;
+  [[nodiscard]] constexpr static auto GetMaxFramesInFlight() -> UINT;
+
+  [[nodiscard]] LEOPPHAPI auto GetCurrentFrameCount() const -> UINT64;
+  [[nodiscard]] LEOPPHAPI auto GetCurrentFrameIndex() const -> UINT;
+  [[nodiscard]] LEOPPHAPI auto GetPreviousFrameIndex() const -> UINT;
+
+  [[nodiscard]] LEOPPHAPI auto AcquireCommandList() -> wand::CommandList&;
   [[nodiscard]] LEOPPHAPI auto AcquireTemporaryRenderTarget(
     RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget>;
 
@@ -59,8 +66,6 @@ private:
   };
 
 
-  [[nodiscard]]
-  auto AcquireCommandList() -> wand::CommandList&;
   auto CreateCommandLists(UINT count) -> void;
   auto AgeTempRenderTargets() -> void;
   auto AgeKeepAliveBuffers() -> void;
@@ -72,7 +77,8 @@ private:
   auto UpdateCounters() -> void;
 
   static UINT constexpr max_tmp_rt_age_{10};
-  static UINT constexpr max_gpu_queued_frames_{kFramesInFlight - 1};
+  static UINT constexpr max_gpu_queued_frames_{1};
+  static UINT constexpr max_frames_in_flight_{max_gpu_queued_frames_ + 1};
 
   static_assert(
     max_tmp_rt_age_ > max_gpu_queued_frames_ &&
@@ -80,10 +86,11 @@ private:
 
   ObserverPtr<wand::GraphicsDevice> device_;
 
+  UINT64 frame_count_{0};
   UINT frame_idx_{0};
   UINT next_cmd_list_idx_{0};
 
-  std::vector<std::array<wand::SharedDeviceChildHandle<wand::CommandList>, kFramesInFlight>> cmd_lists_;
+  std::vector<std::array<wand::SharedDeviceChildHandle<wand::CommandList>, max_frames_in_flight_>> cmd_lists_;
   std::mutex cmd_list_mutex_;
 
   std::vector<TempRenderTargetRecord> tmp_render_targets_;
@@ -100,6 +107,16 @@ private:
   std::vector<KeepAliveRecord> resources_to_keep_alive_;
   std::mutex keep_alive_resources_mutex_;
 };
+
+
+constexpr auto RenderManager::GetMaxGpuQueuedFrames() -> UINT {
+  return max_gpu_queued_frames_;
+}
+
+
+constexpr auto RenderManager::GetMaxFramesInFlight() -> UINT {
+  return max_frames_in_flight_;
+}
 
 
 auto TransformProjectionMatrixForRendering(Matrix4 const& proj_mtx) noexcept -> Matrix4;

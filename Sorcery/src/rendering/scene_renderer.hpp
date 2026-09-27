@@ -5,11 +5,9 @@
 #include <memory>
 
 #include "Camera.hpp"
-#include "config.hpp"
 #include "constant_buffer.hpp"
 #include "directional_shadow_map_array.hpp"
 #include "punctual_shadow_atlas.hpp"
-#include "render_frame.hpp"
 #include "render_manager.hpp"
 #include "render_target.hpp"
 #include "structured_buffer.hpp"
@@ -73,8 +71,8 @@ public:
   auto operator=(SceneRenderer const&) -> void = delete;
   auto operator=(SceneRenderer&&) -> void = delete;
 
-  LEOPPHAPI auto ExtractCurrentState(RenderFrame const& frame) -> void;
-  LEOPPHAPI auto Record(RenderFrame& frame) -> void;
+  LEOPPHAPI auto ExtractCurrentState() -> void;
+  LEOPPHAPI auto Render() -> void;
 
   LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
 
@@ -350,15 +348,13 @@ private:
                                  Matrix4 const& cam_view_proj_mtx, float shadow_distance) -> void;
 
 
-  auto DrawDirectionalShadowMaps(FramePacket const& frame_packet, std::uint32_t frame_idx,
-                                 std::span<unsigned const> visible_light_indices, CameraData const& cam_data,
-                                 float rt_aspect,
-                                 int cascade_count,
+  auto DrawDirectionalShadowMaps(FramePacket const& frame_packet, std::span<unsigned const> visible_light_indices,
+                                 CameraData const& cam_data, float rt_aspect, int cascade_count,
                                  ShadowCascadeBoundaries const& shadow_cascade_boundaries,
                                  std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
                                  wand::CommandList& cmd) -> void;
   auto DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, FramePacket const& frame_packet,
-                              std::uint32_t frame_idx, wand::CommandList& cmd) -> void;
+                              wand::CommandList& cmd) -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
 
@@ -369,12 +365,10 @@ private:
   auto CreatePerViewConstantBuffers(UINT count) -> void;
   auto CreatePerDrawConstantBuffers(UINT count) -> void;
 
-  auto AcquirePerViewConstantBuffer(std::uint32_t frame_idx) -> ConstantBuffer<ShaderPerViewConstants>&;
-  auto AcquirePerDrawConstantBuffer(std::uint32_t frame_idx) -> ConstantBuffer<ShaderPerDrawConstants>&;
+  auto AcquirePerViewConstantBuffer() -> ConstantBuffer<ShaderPerViewConstants>&;
+  auto AcquirePerDrawConstantBuffer() -> ConstantBuffer<ShaderPerDrawConstants>&;
 
   auto OnWindowSize(Extent2D<std::uint32_t> size) -> void;
-
-  auto RecordGpuInitWork(RenderFrame& frame) const -> void;
 
   static auto DrawSubmesh(SubmeshData const& submesh, std::optional<UINT> meshlet_count_param_idx,
                           std::optional<UINT> meshlet_offset_param_idx,
@@ -409,9 +403,9 @@ private:
 
   ObserverPtr<wand::GraphicsDevice> device_;
 
-  std::array<ConstantBuffer<ShaderPerFrameConstants>, kFramesInFlight> per_frame_cbs_;
-  std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, kFramesInFlight>> per_view_cbs_;
-  std::vector<std::array<ConstantBuffer<ShaderPerDrawConstants>, kFramesInFlight>> per_draw_cbs_;
+  std::array<ConstantBuffer<ShaderPerFrameConstants>, RenderManager::GetMaxFramesInFlight()> per_frame_cbs_;
+  std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, RenderManager::GetMaxFramesInFlight()>> per_view_cbs_;
+  std::vector<std::array<ConstantBuffer<ShaderPerDrawConstants>, RenderManager::GetMaxFramesInFlight()>> per_draw_cbs_;
   StructuredBuffer<ShaderLight> light_buffer_;
 
   wand::SharedDeviceChildHandle<wand::Texture> white_tex_;
@@ -453,7 +447,7 @@ private:
   wand::UniqueSamplerHandle samp_bi_wrap_;
   wand::UniqueSamplerHandle samp_point_wrap_;
 
-  std::array<FramePacket, kFramesInFlight> frame_packets_;
+  std::array<FramePacket, RenderManager::GetMaxFramesInFlight()> frame_packets_;
 
   UINT next_per_draw_cb_idx_{0};
   UINT next_per_view_cb_idx_{0};
@@ -494,8 +488,6 @@ private:
   std::shared_ptr<RenderTarget> rt_override_;
 
   EventListenerHandle<Extent2D<unsigned>> window_size_event_listener_{};
-
-  bool gpu_init_work_recorded_{false};
 };
 
 

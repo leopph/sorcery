@@ -18,7 +18,6 @@ namespace sorcery {
 namespace rendering {
 class RenderManager;
 class SceneRenderer;
-class RenderFrame;
 }
 
 
@@ -76,8 +75,8 @@ protected:
   SORCERYAPI virtual auto BeginFrame() -> void;
   virtual auto Update() -> void {}
   virtual auto EndFrame() -> void {}
-  SORCERYAPI virtual auto PrepareRender(rendering::RenderFrame const& frame) -> void;
-  SORCERYAPI virtual auto RecordRender(rendering::RenderFrame& frame) -> void;
+  SORCERYAPI virtual auto PrepareRender() -> void;
+  SORCERYAPI virtual auto Render() -> void;
 
 private:
   struct Data;

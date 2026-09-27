@@ -2,20 +2,14 @@
 
 #include "observer_ptr.hpp"
 #include "../gui_helpers.hpp"
-#include "rendering/config.hpp"
+#include "rendering/render_manager.hpp"
 #include "wand/wand.hpp"
 
 #include <array>
 #include <vector>
 
 
-namespace sorcery {
-namespace rendering {
-class RenderManager;
-}
-
-
-namespace mage {
+namespace sorcery::mage {
 class ImGuiRenderer {
 public:
   ImGuiRenderer(wand::GraphicsDevice& device, wand::SwapChain const& swap_chain,
@@ -23,8 +17,8 @@ public:
 
   auto UpdateFonts() -> void;
 
-  auto ExtractDrawData(rendering::RenderFrame const& frame) -> void;
-  auto Render(rendering::RenderFrame& frame) -> void;
+  auto ExtractDrawData() -> void;
+  auto Render() -> void;
 
 private:
   struct CmdList {
@@ -55,15 +49,14 @@ private:
   wand::UniqueSamplerHandle samp_;
   wand::SharedDeviceChildHandle<wand::Texture> fonts_tex_;
 
-  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::kFramesInFlight>
+  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
   vtx_buffers_;
-  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::kFramesInFlight>
+  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::RenderManager::GetMaxFramesInFlight()>
   idx_buffers_;
 
-  std::array<void*, rendering::kFramesInFlight> vb_ptrs_{};
-  std::array<void*, rendering::kFramesInFlight> ib_ptrs_{};
+  std::array<void*, rendering::RenderManager::GetMaxFramesInFlight()> vb_ptrs_{};
+  std::array<void*, rendering::RenderManager::GetMaxFramesInFlight()> ib_ptrs_{};
 
-  std::array<DrawData, rendering::kFramesInFlight> draw_data_{};
+  std::array<DrawData, rendering::RenderManager::GetMaxFramesInFlight()> draw_data_{};
 };
-}
 }

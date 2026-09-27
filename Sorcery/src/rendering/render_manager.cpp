@@ -22,6 +22,33 @@ RenderManager::~RenderManager() {
 }
 
 
+auto RenderManager::GetCurrentFrameCount() const -> UINT64 {
+  return frame_count_;
+}
+
+
+auto RenderManager::GetCurrentFrameIndex() const -> UINT {
+  return frame_idx_;
+}
+
+
+auto RenderManager::GetPreviousFrameIndex() const -> UINT {
+  return static_cast<UINT>(Mod(
+    static_cast<std::int64_t>(frame_idx_) - 1,
+    static_cast<std::int64_t>(max_frames_in_flight_)
+  ));
+}
+
+
+auto RenderManager::AcquireCommandList() -> wand::CommandList& {
+  std::scoped_lock const lck{cmd_list_mutex_};
+  if (next_cmd_list_idx_ >= cmd_lists_.size()) {
+    CreateCommandLists(1);
+  }
+  return *cmd_lists_[next_cmd_list_idx_++][frame_idx_];
+}
+
+
 auto RenderManager::AcquireTemporaryRenderTarget(RenderTarget::Desc const& desc) -> std::shared_ptr<RenderTarget> {
   std::scoped_lock const lck{tmp_render_targets_mutex_};
   for (auto& [rt, age_in_frames] : tmp_render_targets_) {
@@ -198,22 +225,13 @@ auto RenderManager::EndFrame() -> void {
 }
 
 
-auto RenderManager::AcquireCommandList() -> wand::CommandList& {
-  std::scoped_lock const lck{cmd_list_mutex_};
-  if (next_cmd_list_idx_ >= cmd_lists_.size()) {
-    CreateCommandLists(1);
-  }
-  return *cmd_lists_[next_cmd_list_idx_++][frame_idx_];
-}
-
-
 auto RenderManager::CreateCommandLists(UINT const count) -> void {
   cmd_lists_.reserve(cmd_lists_.size() + count);
 
   for (UINT i{0}; i < count; i++) {
     auto& arr{cmd_lists_.emplace_back()};
 
-    for (UINT j{0}; j < kFramesInFlight; j++) {
+    for (UINT j{0}; j < max_frames_in_flight_; j++) {
       arr[j] = device_->CreateCommandList();
     }
   }
@@ -248,7 +266,7 @@ auto RenderManager::ReleaseUnusedBuffers() -> void {
     [](KeepAliveRecord const& record) {
       // Work could have still been dispatched during the frame the buffers was passed to keep alive.
       // This is why we wait for all gpu queued frames to complete as well as the one we received the buffer in.
-      return record.age > kFramesInFlight;
+      return record.age > max_frames_in_flight_;
     }).begin(), resources_to_keep_alive_.end());
 }
 
@@ -274,7 +292,8 @@ auto RenderManager::WaitForInFlightFrames() const -> void {
 
 
 auto RenderManager::UpdateCounters() -> void {
-  frame_idx_ = (frame_idx_ + 1) % kFramesInFlight;
+  ++frame_count_;
+  frame_idx_ = (frame_idx_ + 1) % max_frames_in_flight_;
   next_cmd_list_idx_ = 0;
 }
 

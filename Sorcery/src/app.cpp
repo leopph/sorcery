@@ -9,7 +9,6 @@
 #include "resource_manager.hpp"
 #include "Timing.hpp"
 #include "Window.hpp"
-#include "rendering/frame_scheduler.hpp"
 #include "rendering/render_manager.hpp"
 #include "rendering/scene_renderer.hpp"
 #include "wand/wand.hpp"
@@ -45,22 +44,25 @@ struct App::Data {
       std::ranges::any_of(args, [](std::string_view const arg) {
         return arg == "-swrendering";
       })
-    } {}
+    },
+    swap_chain{
+      graphics_device.CreateSwapChain(wand::SwapChainDesc{
+        0, 0, 2, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_USAGE_RENDER_TARGET_OUTPUT, DXGI_SCALING_STRETCH
+      }, static_cast<HWND>(window.GetNativeHandle()))
+    },
+    render_manager{graphics_device},
+    scene_renderer{window, graphics_device, render_manager},
+    resource_manager{job_system} {}
 
 
   JobSystem job_system;
   wand::GraphicsDevice graphics_device;
   Window window;
-  wand::SharedDeviceChildHandle<wand::SwapChain> swap_chain{
-    graphics_device.CreateSwapChain(wand::SwapChainDesc{
-      0, 0, 2, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_USAGE_RENDER_TARGET_OUTPUT, DXGI_SCALING_STRETCH
-    }, static_cast<HWND>(window.GetNativeHandle()))
-  };
-  rendering::FrameScheduler frame_scheduler{graphics_device};
-  rendering::RenderManager render_manager{graphics_device};
-  rendering::SceneRenderer scene_renderer{window, graphics_device, render_manager};
+  wand::SharedDeviceChildHandle<wand::SwapChain> swap_chain;
+  rendering::RenderManager render_manager;
+  rendering::SceneRenderer scene_renderer;
   ObjectRegistry object_registry;
-  ResourceManager resource_manager{job_system};
+  ResourceManager resource_manager;
   ObserverPtr<Job> render_job;
 };
 
@@ -154,13 +156,10 @@ auto App::Run() -> void {
       window_resized_ = false;
     }
 
-    auto& frame = data_->frame_scheduler.AcquireFrame();
+    PrepareRender();
 
-    PrepareRender(frame);
-
-    data_->render_job = data_->job_system.CreateJob([this, &frame] {
-      RecordRender(frame);
-      data_->frame_scheduler.SubmitFrame(frame);
+    data_->render_job = data_->job_system.CreateJob([this] {
+      Render();
       data_->graphics_device.Present(*data_->swap_chain);
       data_->render_manager.EndFrame();
     });
@@ -193,13 +192,13 @@ auto App::BeginFrame() -> void {
 }
 
 
-auto App::PrepareRender(rendering::RenderFrame const& frame) -> void {
-  data_->scene_renderer.ExtractCurrentState(frame);
+auto App::PrepareRender() -> void {
+  data_->scene_renderer.ExtractCurrentState();
 }
 
 
-auto App::RecordRender(rendering::RenderFrame& frame) -> void {
-  data_->scene_renderer.Record(frame);
+auto App::Render() -> void {
+  data_->scene_renderer.Render();
 }
 
 
