@@ -36,11 +36,6 @@ auto FrameScheduler::SubmitFrame(RenderFrame& frame) -> void {
 }
 
 
-auto FrameScheduler::GetFrameNumber() const -> std::uint64_t {
-  return next_frame_num_;
-}
-
-
 FrameScheduler::FrameScheduler(wand::GraphicsDevice& device) :
   device_{&device},
   frame_fence_{device.CreateFence(0)} {

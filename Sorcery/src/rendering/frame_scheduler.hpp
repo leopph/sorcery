@@ -17,9 +17,6 @@ public:
   auto AcquireFrame() -> RenderFrame&;
   auto SubmitFrame(RenderFrame& frame) -> void;
 
-  [[nodiscard]]
-  auto GetFrameNumber() const -> std::uint64_t;
-
   explicit FrameScheduler(wand::GraphicsDevice& device);
   FrameScheduler(FrameScheduler const& other) = delete;
   FrameScheduler(FrameScheduler&& other) noexcept = delete;
