@@ -1,6 +1,6 @@
 #pragma once
 
-#include "wand/flags.inl"
+#include "wand/flags.hpp"
 
 
 namespace sorcery::rendering {
