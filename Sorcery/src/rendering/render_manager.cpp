@@ -254,7 +254,9 @@ auto RenderManager::ReleaseUnusedBuffers() -> void {
 
 
 auto RenderManager::RecreateUploadBuffer(UINT64 const size) -> void {
-  upload_buf_ = device_->CreateBuffer(wand::BufferDesc{size, 0, false, false, false}, wand::CpuAccess::kWrite);
+  upload_buf_ = device_->CreateBuffer(wand::BufferDesc{
+    .size = size, .stride = 0, .usage = wand::BufferUsage::kCopySource
+  }, wand::CpuAccess::kWrite);
   upload_buf_->SetDebugName(L"Render Manager Upload Buffer");
   upload_ptr_ = static_cast<std::byte*>(upload_buf_->Map());
 }

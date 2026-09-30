@@ -5,6 +5,7 @@
 
 #include "../app.hpp"
 #include "../rendering/render_manager.hpp"
+#include "wand/flags.hpp"
 
 
 RTTR_REGISTRATION {
@@ -118,7 +119,10 @@ auto Mesh::UploadToGpu(CpuResidencyPolicy const cpu_policy) -> void {
                     : StructuredBuffer<Vector<std::uint32_t, 4>>::New(gd, rm, mesh_data_->bone_indices, false, false,
                       true);
   meshlet_buf_ = StructuredBuffer<MeshletData>::New(gd, rm, mesh_data_->meshlets, false);
-  vertex_idx_buf_ = gd.CreateBuffer(wand::BufferDesc{mesh_data_->vertex_indices.size(), 1, false, true, false},
+  vertex_idx_buf_ = gd.CreateBuffer(wand::BufferDesc{
+      .size = mesh_data_->vertex_indices.size(), .stride = 1,
+      .usage = wand::BufferUsage::kShaderResource | wand::BufferUsage::kCopyDestination
+    },
     wand::CpuAccess::kNone);
   prim_idx_buf_ = StructuredBuffer<MeshletTriangleData>::New(gd, rm, mesh_data_->triangle_indices, false, true, false);
   cull_data_buf_ = StructuredBuffer<MeshletCullData>::New(gd, rm, mesh_data_->cull_data, false, true, false);

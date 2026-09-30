@@ -139,7 +139,8 @@ auto ImGuiRenderer::Render(rendering::RenderFrame& frame) -> void {
   if (auto const vtx_data_byte_size{draw_data->TotalVtxCount * sizeof(ImDrawVert)};
     !vb || vb->GetDesc().size < vtx_data_byte_size) {
     vb = device_->CreateBuffer(wand::BufferDesc{
-      vtx_data_byte_size, static_cast<UINT>(sizeof(ImDrawVert)), false, true, false
+      .size = vtx_data_byte_size, .stride = static_cast<UINT>(sizeof(ImDrawVert)),
+      .usage = wand::BufferUsage::kShaderResource
     }, wand::CpuAccess::kWrite);
     vb->SetDebugName(L"UI Vertex Buffer");
     vb_ptr = vb->Map();
@@ -150,8 +151,10 @@ auto ImGuiRenderer::Render(rendering::RenderFrame& frame) -> void {
 
   if (auto const idx_data_byte_size{draw_data->TotalIdxCount * sizeof(ImDrawIdx)};
     !ib || ib->GetDesc().size < idx_data_byte_size) {
-    ib = device_->CreateBuffer(wand::BufferDesc{idx_data_byte_size, 0, false, false, false},
-      wand::CpuAccess::kWrite);
+    ib = device_->CreateBuffer(wand::BufferDesc{
+      .size = idx_data_byte_size, .stride = static_cast<UINT>(sizeof(ImDrawIdx)),
+      .usage = wand::BufferUsage::kIndexBuffer
+    }, wand::CpuAccess::kWrite);
     ib->SetDebugName(L"UI Index Buffer");
     ib_ptr = ib->Map();
   }

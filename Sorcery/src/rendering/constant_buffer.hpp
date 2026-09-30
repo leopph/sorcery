@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Util.hpp"
+#include "wand/flags.hpp"
 #include "wand/wand.hpp"
 
 #include <cstring>
@@ -37,7 +38,10 @@ auto ConstantBuffer<T>::New(wand::GraphicsDevice& device,
                             bool const cpu_accessible) -> std::optional<ConstantBuffer> {
   auto buf{
     device.CreateBuffer(wand::BufferDesc{
-      static_cast<UINT>(RoundToNextMultiple(sizeof(T), 256)), 0, true, false, false
+      .size = static_cast<UINT>(RoundToNextMultiple(sizeof(T), 256)), .stride = 0,
+      .usage = wand::BufferUsage::kConstantBuffer | (cpu_accessible
+                                                       ? wand::BufferUsage::kNone
+                                                       : wand::BufferUsage::kCopyDestination)
     }, cpu_accessible ? wand::CpuAccess::kWrite : wand::CpuAccess::kNone)
   };
 

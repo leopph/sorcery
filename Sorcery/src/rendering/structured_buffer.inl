@@ -1,5 +1,7 @@
 #pragma once
 
+#include "wand/flags.inl"
+
 
 namespace sorcery::rendering {
 template<typename T>
@@ -14,7 +16,7 @@ template<typename T>
 auto StructuredBuffer<T>::New(wand::GraphicsDevice& device, RenderManager& render_manager,
                               std::span<T const> const data, bool const cpu_accessible, bool const shader_resource,
                               bool const unordered_access) -> StructuredBuffer {
-  return StructuredBuffer(device, render_manager, data, cpu_accessible, shader_resource, unordered_access);
+  return StructuredBuffer{device, render_manager, data, cpu_accessible, shader_resource, unordered_access};
 }
 
 
@@ -97,8 +99,18 @@ auto StructuredBuffer<T>::RecreateBuffer() -> void {
     render_manager_->KeepAliveWhileInUse(buffer_);
   }
 
+  auto usage{wand::BufferUsage::kCopyDestination | wand::BufferUsage::kCopySource};
+
+  if (srv_) {
+    usage |= wand::BufferUsage::kShaderResource;
+  }
+
+  if (uav_) {
+    usage |= wand::BufferUsage::kUnorderedAccess;
+  }
+
   buffer_ = device_->CreateBuffer(wand::BufferDesc{
-    static_cast<UINT>(capacity_ * sizeof(T)), sizeof(T), false, srv_, uav_
+    .size = static_cast<UINT>(capacity_ * sizeof(T)), .stride = sizeof(T), .usage = usage
   }, cpu_accessible_ ? wand::CpuAccess::kWrite : wand::CpuAccess::kNone);
 
   mapped_ptr_ = static_cast<T*>(cpu_accessible_ ? buffer_->Map() : nullptr);
