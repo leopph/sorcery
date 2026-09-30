@@ -81,7 +81,7 @@ auto MeshComponentBase::OnDrawGizmosSelected() -> void {
 
 MeshComponentBase::MeshComponentBase() :
   mesh_{App::Instance().GetResourceManager().GetCubeMesh()} {
-  ResizeMaterialListToSubmeshCount();
+  ResizeMaterialListToSlotCount();
 }
 
 
@@ -95,7 +95,7 @@ auto MeshComponentBase::GetMesh() const noexcept -> ResourceRef<Mesh> {
 
 auto MeshComponentBase::SetMesh(ResourceRef<Mesh> const mesh) noexcept -> void {
   mesh_ = mesh;
-  ResizeMaterialListToSubmeshCount();
+  ResizeMaterialListToSlotCount();
 }
 
 
@@ -106,7 +106,7 @@ auto MeshComponentBase::GetMaterials() const noexcept -> std::vector<ResourceRef
 
 auto MeshComponentBase::SetMaterials(std::vector<ResourceRef<Material>> const& materials) -> void {
   materials_ = materials;
-  ResizeMaterialListToSubmeshCount();
+  ResizeMaterialListToSlotCount();
 }
 
 
@@ -131,7 +131,7 @@ auto MeshComponentBase::SetShowBoundingBoxes(bool const show) -> void {
 }
 
 
-auto MeshComponentBase::ResizeMaterialListToSubmeshCount() -> void {
+auto MeshComponentBase::ResizeMaterialListToSlotCount() -> void {
   auto const mesh = mesh_.Get().Get();
 
   if (!mesh) {
@@ -139,11 +139,11 @@ auto MeshComponentBase::ResizeMaterialListToSubmeshCount() -> void {
     return;
   }
 
-  if (auto const subMeshCount{std::size(mesh->GetSubmeshes())}, mtlCount{std::size(materials_)};
-    subMeshCount != mtlCount) {
-    materials_.resize(subMeshCount);
+  if (auto const slot_count = mesh->GetMaterialSlots().size(), mtl_count = materials_.size();
+    slot_count != mtl_count) {
+    materials_.resize(slot_count);
 
-    for (std::size_t i{mtlCount}; i < subMeshCount; i++) {
+    for (std::size_t i{mtl_count}; i < slot_count; i++) {
       materials_[i] = App::Instance().GetResourceManager().GetDefaultMaterial();
     }
   }

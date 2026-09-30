@@ -48,7 +48,7 @@ public:
   auto SetShowBoundingBoxes(bool show) -> void;
 
 private:
-  auto ResizeMaterialListToSubmeshCount() -> void;
+  auto ResizeMaterialListToSlotCount() -> void;
 
   std::vector<ResourceRef<Material>> materials_;
   ResourceRef<Mesh> mesh_;
