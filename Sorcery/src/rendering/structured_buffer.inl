@@ -99,7 +99,11 @@ auto StructuredBuffer<T>::RecreateBuffer() -> void {
     render_manager_->KeepAliveWhileInUse(buffer_);
   }
 
-  auto usage{wand::BufferUsage::kCopyDestination | wand::BufferUsage::kCopySource};
+  auto usage{wand::BufferUsage::kCopySource};
+
+  if (!cpu_accessible_) {
+    usage |= wand::BufferUsage::kCopyDestination;
+  }
 
   if (srv_) {
     usage |= wand::BufferUsage::kShaderResource;
