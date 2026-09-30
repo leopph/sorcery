@@ -159,36 +159,54 @@ private:
   };
 
 
-  struct MeshData {
+  struct GeometryBatch {
     unsigned pos_buf_local_idx;
     unsigned norm_buf_local_idx;
     unsigned tan_buf_local_idx;
     unsigned uv_buf_local_idx;
+
     unsigned meshlet_buf_local_idx;
     unsigned vtx_idx_buf_local_idx;
     unsigned prim_idx_buf_local_idx;
     unsigned cull_data_buf_local_idx;
+
+    unsigned first_mtl_group;
+    unsigned mtl_group_count;
+
+    unsigned first_instance;
+    unsigned instance_count;
+
+    unsigned skinning_data_local_idx;
+
     AABB bounds;
     unsigned vtx_count;
+    ObjectId src_mesh_id;
     bool idx32;
   };
 
 
+  struct MaterialSlotGroup {
+    unsigned mtl_slot;
+    unsigned first_submesh;
+    unsigned submesh_count;
+  };
+
+
   struct SubmeshData {
-    unsigned mesh_local_idx;
     UINT first_meshlet;
     UINT meshlet_count;
     UINT base_vertex;
-    UINT mtl_buf_local_idx;
     AABB bounds;
   };
 
 
   struct InstanceData {
-    unsigned submesh_local_idx;
     Matrix4 local_to_world_mtx;
     Matrix4 prev_local_to_world_mtx;
     float max_abs_scaling;
+
+    unsigned first_mtl;
+    unsigned mtl_count;
   };
 
 
@@ -246,7 +264,7 @@ private:
 
 
   struct SkinnedMeshData {
-    unsigned mesh_data_local_idx;
+    unsigned geom_batch_local_idx;
     // The referenced mesh data contains an index to skinned vertex buffer
     unsigned original_vertex_buf_local_idx;
     // The referenced mesh data contains an index to skinned normal buffer
@@ -272,10 +290,15 @@ private:
   struct FramePacket {
     std::vector<wand::SharedDeviceChildHandle<wand::Buffer>> buffers;
     std::vector<wand::SharedDeviceChildHandle<wand::Texture>> textures;
+
     std::vector<LightData> light_data;
-    std::vector<MeshData> mesh_data;
+    std::vector<GeometryBatch> geom_batches;
+    std::vector<MaterialSlotGroup> mtl_slot_groups;
     std::vector<SubmeshData> submesh_data;
     std::vector<InstanceData> instance_data;
+
+    std::vector<unsigned> instance_materials;
+
     std::vector<CameraData> cam_data;
     std::vector<std::shared_ptr<RenderTarget>> render_targets;
 
@@ -285,7 +308,7 @@ private:
     std::vector<NodeAnimationData> node_anim_data;
     std::vector<SkeletonNodeData> skeleton_node_data;
     std::vector<BoneData> bone_data;
-    std::vector<SkinnedMeshData> skinned_mesh_data;
+    std::vector<SkinnedMeshData> skinning_data;
 
     std::vector<Vector4> gizmo_colors;
     std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data;
@@ -403,6 +426,7 @@ private:
   static constexpr UINT irradiance_map_size_{64};
   static constexpr UINT prefiltered_env_map_size_{1024};
   static constexpr UINT brdf_integration_map_size_{128};
+  static constexpr unsigned frame_packet_invalid_idx{~0u};
 
   ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<Window> window_;
