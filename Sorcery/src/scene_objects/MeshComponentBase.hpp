@@ -36,7 +36,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> ResourceRef<Mesh>;
   LEOPPHAPI virtual auto SetMesh(ResourceRef<Mesh> mesh) noexcept -> void;
 
-  // The returned vector is the same length as the Mesh's submesh count.
+  // The returned vector is the same length as the material slot list of the mesh.
   [[nodiscard]] LEOPPHAPI auto GetMaterials() const noexcept -> std::vector<ResourceRef<Material>> const&;
   LEOPPHAPI auto SetMaterials(std::vector<ResourceRef<Material>> const& materials) -> void;
   LEOPPHAPI auto SetMaterial(int idx, ResourceRef<Material> const& mtl) -> void;
