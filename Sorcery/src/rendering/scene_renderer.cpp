@@ -348,19 +348,12 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame const& frame) -> void {
       auto const cull_data_buf_local_idx{find_or_emplace_back_buffer(mesh.GetCullDataBuffer())};
 
       auto const mtl_slots = mesh.GetMaterialSlots();
-      auto const first_mtl_group = static_cast<unsigned>(packet.mtl_slot_groups.size());
-      auto const mtl_group_count = static_cast<unsigned>(mtl_slots.size());
-
-      // Deliberately setting instance_count to 0, as it will be set later when instances are added.
-      // Skinning data is also set to invalid. It will be patched when extracting skinned meshes.
-      packet.geom_batches.emplace_back(pos_buf_local_idx, norm_buf_local_idx, tan_buf_local_idx, uv_buf_local_idx,
-        meshlet_buf_local_idx, vtx_idx_buf_local_idx, prim_idx_buf_local_idx, cull_data_buf_local_idx, first_mtl_group,
-        mtl_group_count, static_cast<unsigned>(packet.instance_data.size()), 0u, frame_packet_invalid_idx,
-        mesh.GetBounds(), static_cast<unsigned>(mesh.GetVertexCount()), mesh.GetId(), mesh.Has32BitVertexIndices());
-
       auto const submeshes = mesh.GetSubmeshes();
 
-      for (auto i = 0u; i < mtl_group_count; ++i) {
+      auto const first_mtl_group = static_cast<unsigned>(packet.mtl_slot_groups.size());
+      auto mtl_group_count = 0u;
+
+      for (auto i = 0u; i < static_cast<unsigned>(mtl_slots.size()); ++i) {
         auto first_submesh = static_cast<unsigned>(packet.submesh_data.size());
         auto submesh_count = 0u;
 
@@ -373,8 +366,18 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame const& frame) -> void {
           }
         }
 
-        packet.mtl_slot_groups.emplace_back(i, first_submesh, submesh_count);
+        if (submesh_count != 0) {
+          packet.mtl_slot_groups.emplace_back(i, first_submesh, submesh_count);
+          ++mtl_group_count;
+        }
       }
+
+      // Deliberately setting instance_count to 0, as it will be set later when instances are added.
+      // Skinning data is also set to invalid. It will be patched when extracting skinned meshes.
+      packet.geom_batches.emplace_back(pos_buf_local_idx, norm_buf_local_idx, tan_buf_local_idx, uv_buf_local_idx,
+        meshlet_buf_local_idx, vtx_idx_buf_local_idx, prim_idx_buf_local_idx, cull_data_buf_local_idx, first_mtl_group,
+        mtl_group_count, static_cast<unsigned>(packet.instance_data.size()), 0u, frame_packet_invalid_idx,
+        mesh.GetBounds(), static_cast<unsigned>(mesh.GetVertexCount()), mesh.GetId(), mesh.Has32BitVertexIndices());
 
       return ret;
     }
@@ -444,12 +447,8 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame const& frame) -> void {
       auto const lhs_mesh{lhs->GetMesh().Observe()};
       auto const rhs_mesh{rhs->GetMesh().Observe()};
 
-      if (!lhs_mesh) {
-        return true;
-      }
-
-      if (!rhs_mesh) {
-        return false;
+      if (!lhs_mesh || !rhs_mesh) {
+        return lhs_mesh && !rhs_mesh;
       }
 
       return lhs_mesh->GetId() < rhs_mesh->GetId();
@@ -1226,8 +1225,11 @@ auto SceneRenderer::Record(RenderFrame& frame) -> void {
           INVALID_RES_IDX);
       }
 
-      std::span const mtl_groups{&frame_packet.mtl_slot_groups[geom_batch.first_mtl_group], geom_batch.mtl_group_count};
-      std::span const instances{&frame_packet.instance_data[geom_batch.first_instance], geom_batch.instance_count};
+      auto const instances = std::span{frame_packet.instance_data}.subspan(geom_batch.first_instance,
+        geom_batch.instance_count);
+
+      auto const mtl_groups = std::span{frame_packet.mtl_slot_groups}.subspan(geom_batch.first_mtl_group,
+        geom_batch.mtl_group_count);
 
       for (auto const& instance : instances) {
         auto& per_draw_cb{AcquirePerDrawConstantBuffer(frame_idx)};
@@ -1247,9 +1249,8 @@ auto SceneRenderer::Record(RenderFrame& frame) -> void {
           cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, mtl_idx),
             *frame_packet.buffers[mtl_buf_local_idx]);
 
-          std::span<SubmeshData const> const submeshes{
-            &frame_packet.submesh_data[mtl_group.first_submesh], mtl_group.submesh_count
-          };
+          auto const submeshes = std::span{frame_packet.submesh_data}.subspan(mtl_group.first_submesh,
+            mtl_group.submesh_count);
 
           for (auto const& submesh : submeshes) {
             DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_count),
@@ -2279,10 +2280,11 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet, s
             *frame_packet.buffers[geom_batch.cull_data_buf_local_idx]);
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), geom_batch.idx32);
 
-          std::span const mtl_groups{
-            &frame_packet.mtl_slot_groups[geom_batch.first_mtl_group], geom_batch.mtl_group_count
-          };
-          std::span const instances{&frame_packet.instance_data[geom_batch.first_instance], geom_batch.instance_count};
+          auto const instances = std::span{frame_packet.instance_data}.subspan(geom_batch.first_instance,
+            geom_batch.instance_count);
+
+          auto const mtl_groups = std::span{frame_packet.mtl_slot_groups}.subspan(geom_batch.first_mtl_group,
+            geom_batch.mtl_group_count);
 
           for (auto const& instance : instances) {
             auto& per_draw_cb{AcquirePerDrawConstantBuffer(frame_idx)};
@@ -2302,7 +2304,8 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet, s
               cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx),
                 *frame_packet.buffers[mtl_buf_local_idx]);
 
-              std::span const submeshes{&frame_packet.submesh_data[mtl_group.first_submesh], mtl_group.submesh_count};
+              auto const submeshes = std::span{frame_packet.submesh_data}.subspan(mtl_group.first_submesh,
+                mtl_group.submesh_count);
 
               for (auto const& submesh : submeshes) {
                 DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
@@ -2374,10 +2377,11 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
             *frame_packet.buffers[geom_batch.cull_data_buf_local_idx]);
           cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), geom_batch.idx32);
 
-          std::span const mtl_groups{
-            &frame_packet.mtl_slot_groups[geom_batch.first_mtl_group], geom_batch.mtl_group_count
-          };
-          std::span const instances{&frame_packet.instance_data[geom_batch.first_instance], geom_batch.instance_count};
+          auto const instances = std::span{frame_packet.instance_data}.subspan(geom_batch.first_instance,
+            geom_batch.instance_count);
+
+          auto const mtl_groups = std::span{frame_packet.mtl_slot_groups}.subspan(geom_batch.first_mtl_group,
+            geom_batch.mtl_group_count);
 
           for (auto const& instance : instances) {
             auto& per_draw_cb{AcquirePerDrawConstantBuffer(frame_idx)};
@@ -2397,7 +2401,8 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
               cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx),
                 *frame_packet.buffers[mtl_buf_local_idx]);
 
-              std::span const submeshes{&frame_packet.submesh_data[mtl_group.first_submesh], mtl_group.submesh_count};
+              auto const submeshes = std::span{frame_packet.submesh_data}.subspan(mtl_group.first_submesh,
+                mtl_group.submesh_count);
 
               for (auto const& submesh : submeshes) {
                 DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
