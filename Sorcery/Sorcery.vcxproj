@@ -154,7 +154,11 @@
     <ClCompile Include="src\rendering\command_list_pool.cpp" />
     <ClCompile Include="src\rendering\directional_shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\frame_scheduler.cpp" />
+    <ClCompile Include="src\rendering\frame_uploader.cpp" />
     <ClCompile Include="src\rendering\render_frame.cpp" />
+    <ClCompile Include="src\rendering\render_material.cpp" />
+    <ClCompile Include="src\rendering\render_mesh.cpp" />
+    <ClCompile Include="src\rendering\render_resource_registry.cpp" />
     <ClCompile Include="src\rendering\scene_renderer.cpp" />
     <ClCompile Include="src\rendering\render_manager.cpp" />
     <ClCompile Include="src\resources\prefab.cpp" />
@@ -216,7 +220,11 @@
     <ClInclude Include="src\rendering\config.hpp" />
     <ClInclude Include="src\rendering\directional_shadow_map_array.hpp" />
     <ClInclude Include="src\rendering\frame_scheduler.hpp" />
+    <ClInclude Include="src\rendering\frame_uploader.hpp" />
     <ClInclude Include="src\rendering\render_frame.hpp" />
+    <ClInclude Include="src\rendering\render_material.hpp" />
+    <ClInclude Include="src\rendering\render_mesh.hpp" />
+    <ClInclude Include="src\rendering\render_resource_registry.hpp" />
     <ClInclude Include="src\rendering\scene_renderer.hpp" />
     <ClInclude Include="src\rendering\constant_buffer.hpp" />
     <ClInclude Include="src\rendering\render_manager.hpp" />

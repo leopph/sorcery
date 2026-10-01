@@ -154,7 +154,7 @@ auto ResourceManager::GetSphereMesh() const noexcept -> ResourceRef<Mesh> {
 
 auto ResourceManager::CreateDefaultResources() -> void {
   if (!default_mtl_) {
-    default_mtl_ = std::make_unique<Material>(GpuResidencyPolicy::kMakeResident);
+    default_mtl_ = std::make_unique<Material>();
     default_mtl_->SetResId(default_mtl_res_id_);
     default_mtl_->SetName("Default Material");
     default_resources_.emplace_back(default_mtl_.get());
@@ -334,7 +334,7 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
             scene->Deserialize(YAML::LoadFile(job_data.path_abs.string()), ctx);
             res = std::move(scene);
           } else if (job_data.path_abs.extension() == MATERIAL_RESOURCE_EXT) {
-            auto mtl = std::make_unique<Material>(GpuResidencyPolicy::kDeferUpload);
+            auto mtl = std::make_unique<Material>();
             mtl->Deserialize(YAML::LoadFile(job_data.path_abs.string()), ctx);
             res = std::move(mtl);
           }
@@ -724,7 +724,7 @@ auto ResourceManager::LoadMaterial(
   YamlDeserializeContext const& ctx
 ) -> MaybeNull<std::unique_ptr<Resource>> {
   // TODO rewrite this to spanstream when upgrading to C++23
-  auto mtl = std::make_unique<Material>(GpuResidencyPolicy::kDeferUpload);
+  auto mtl = std::make_unique<Material>();
   mtl->Deserialize(YAML::Load(std::string{
     reinterpret_cast<char const*>(bytes.data()), bytes.size()
   }), ctx);

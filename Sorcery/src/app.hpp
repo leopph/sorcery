@@ -76,7 +76,7 @@ protected:
   SORCERYAPI virtual auto BeginFrame() -> void;
   virtual auto Update() -> void {}
   virtual auto EndFrame() -> void {}
-  SORCERYAPI virtual auto PrepareRender(rendering::RenderFrame const& frame) -> void;
+  SORCERYAPI virtual auto PrepareRender(rendering::RenderFrame& frame) -> void;
   SORCERYAPI virtual auto RecordRender(rendering::RenderFrame& frame) -> void;
 
 private:

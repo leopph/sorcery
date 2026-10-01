@@ -1014,7 +1014,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
     dummy_materials.reserve(material_data.size());
 
     for (std::size_t i{0}; i < material_data.size(); i++) {
-      auto dummy_mtl{std::make_unique<Material>(GpuResidencyPolicy::kDeferUpload)};
+      auto dummy_mtl{std::make_unique<Material>()};
       dummy_mtl->SetResId(ResourceId{Guid::Invalid(), 2 /* prefab + mesh */ + clamp_cast<int>(i)});
       mesh_component->SetMaterial(clamp_cast<int>(i), MakeResourceRef(MakeObserver(dummy_mtl.get())));
       dummy_materials.emplace_back(std::move(dummy_mtl));

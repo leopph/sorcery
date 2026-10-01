@@ -159,7 +159,7 @@ auto EditorApp::EndFrame() -> void {
 }
 
 
-auto EditorApp::PrepareRender(rendering::RenderFrame const& frame) -> void {
+auto EditorApp::PrepareRender(rendering::RenderFrame& frame) -> void {
   App::PrepareRender(frame);
   imgui_renderer_.ExtractDrawData(frame);
 }

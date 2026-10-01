@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "command_list_pool.hpp"
+#include "frame_uploader.hpp"
 #include "../Core.hpp"
 
 
@@ -27,8 +28,12 @@ public:
   SORCERYAPI
   auto EnqueueCommandList(wand::CommandList& cmd) -> void;
 
-  auto KeepAlive(wand::SharedDeviceChildHandle<wand::Buffer> buf) -> void;
-  auto KeepAlive(wand::SharedDeviceChildHandle<wand::Texture> tex) -> void;
+  SORCERYAPI
+  auto UploadBuffer(wand::SharedDeviceChildHandle<wand::Buffer> const& buf, UINT64 byte_offset,
+                    std::span<std::byte const> data) -> void;
+
+  SORCERYAPI
+  auto RecordUploads() -> void;
 
   RenderFrame(RenderFrame const& other) = delete;
   RenderFrame(RenderFrame&& other) noexcept = delete;
@@ -47,6 +52,7 @@ private:
   auto GetQueuedCommandLists() const -> std::span<ObserverPtr<wand::CommandList> const>;
 
   CommandListPool free_cmd_lists_;
+  FrameUploader uploader_;
   std::vector<ObserverPtr<wand::CommandList>> queued_cmd_lists_;
   std::uint32_t idx_;
   std::uint32_t prev_idx_;
@@ -54,6 +60,7 @@ private:
   UINT64 fence_competion_val_{0};
   bool active_{false};
   bool submitted_{false};
+  bool uploads_recorded_{false};
 
   friend class FrameScheduler;
 };

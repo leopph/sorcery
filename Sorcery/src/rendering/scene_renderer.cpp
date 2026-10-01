@@ -1,11 +1,13 @@
 #include "scene_renderer.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstring>
 #include <iterator>
 #include <random>
 
+#include "render_resource_registry.hpp"
 #include "ShadowCascadeBoundary.hpp"
 #include "../app.hpp"
 #include "../random.hpp"
@@ -95,13 +97,29 @@ namespace {
     Matrix4::LookTo(origin, Vector3::Backward(), Vector3::Up()), // -Z
   };
 }
+
+
+[[nodiscard]]
+auto ToShaderBlendMode(MaterialBlendMode const mode) -> int {
+  switch (mode) {
+    case MaterialBlendMode::kOpaque:
+      return BLEND_MODE_OPAQUE;
+    case MaterialBlendMode::kAlphaClip:
+      return BLEND_MODE_ALPHA_CLIP;
+  }
+
+  assert(false && "Invalid material blend mode.");
+  return BLEND_MODE_OPAQUE;
+}
 }
 
 
-SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager) :
+SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager,
+                             RenderResourceRegistry& render_resource_registry) :
   render_manager_{&render_manager},
   window_{&window},
-  device_{&device} {
+  device_{&device},
+  resource_registry_{&render_resource_registry} {
   light_buffer_ = StructuredBuffer<ShaderLight>::New(*device_, *render_manager_, false, true, false);
 
   gizmo_color_buffer_ = StructuredBuffer<Vector4>::New(*device_, *render_manager_, true);
@@ -272,7 +290,7 @@ SceneRenderer::~SceneRenderer() {
 }
 
 
-auto SceneRenderer::ExtractCurrentState(RenderFrame const& frame) -> void {
+auto SceneRenderer::ExtractCurrentState(RenderFrame& frame) -> void {
   auto& packet{frame_packets_[frame.GetIndex()]};
 
   packet.buffers.clear();
@@ -394,7 +412,8 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame const& frame) -> void {
     }
   };
 
-  auto const extract_mesh_comp_into_batch = [&packet, &find_or_emplace_back_buffer, &find_or_emplace_back_texture]
+  auto const extract_mesh_comp_into_batch =
+    [this, &frame, &packet, &find_or_emplace_back_buffer, &find_or_emplace_back_texture]
   (MeshComponentBase& comp, GeometryBatch& geom_batch) {
     auto const& materials = comp.GetMaterials();
     auto const first_mtl = static_cast<unsigned>(packet.instance_materials.size());
@@ -408,7 +427,13 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame const& frame) -> void {
         continue;
       }
 
-      packet.instance_materials.emplace_back(find_or_emplace_back_buffer(mtl->GetBuffer()));
+      auto const [render_mtl, is_new] = resource_registry_->CreateOrGetMaterial(mtl->GetId());
+
+      if (is_new || mtl->GetRevision() != render_mtl->GetRevision()) {
+        SyncMaterial(*mtl, *render_mtl, frame);
+      }
+
+      packet.instance_materials.emplace_back(find_or_emplace_back_buffer(render_mtl->GetBuffer()));
 
       for (auto const tex : {
              mtl->GetAlbedoMap().Observe(),
@@ -1809,6 +1834,37 @@ auto SceneRenderer::Unregister(Camera const& cam) noexcept -> void {
 }
 
 
+auto SceneRenderer::SyncMaterial(Material const& mtl, RenderMaterial& render_mtl, RenderFrame& frame) -> void {
+  auto const albedo_map = mtl.GetAlbedoMap();
+  auto const metallic_map = mtl.GetMetallicMap();
+  auto const roughness_map = mtl.GetRoughnessMap();
+  auto const ao_map = mtl.GetAoMap();
+  auto const normal_map = mtl.GetNormalMap();
+  auto const opacity_map = mtl.GetOpacityMask();
+
+  ShaderMaterial const shader_mtl{
+    .albedo = mtl.GetAlbedoVector(),
+    .metallic = mtl.GetMetallic(),
+    .roughness = mtl.GetRoughness(),
+    .ao = mtl.GetAo(),
+    .alphaThreshold = mtl.GetAlphaThreshold(),
+    .albedo_map_idx = albedo_map ? albedo_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
+    .metallic_map_idx = metallic_map ? metallic_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
+    .roughness_map_idx = roughness_map ? roughness_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
+    .ao_map_idx = ao_map ? ao_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
+    .normal_map_idx = normal_map ? normal_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
+    .opacity_map_idx = opacity_map ? opacity_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
+    .blendMode = ToShaderBlendMode(mtl.GetBlendMode()),
+    .pad = {}
+  };
+
+  frame.UploadBuffer(render_mtl.GetBuffer(), 0,
+    std::span{reinterpret_cast<std::byte const*>(&shader_mtl), sizeof(shader_mtl)});
+
+  render_mtl.SetRevision(mtl.GetRevision());
+}
+
+
 auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,
                                                            ShadowParams const& shadow_params) ->
   ShadowCascadeBoundaries {
@@ -2025,10 +2081,10 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
           };
 
           std::array const shadowFrustumVertices{
-            faceBoundsRotations[i].Rotate(Vector3{lightRange, lightRange, lightRange}) + lightPos,
-            faceBoundsRotations[i].Rotate(Vector3{-lightRange, lightRange, lightRange}) + lightPos,
-            faceBoundsRotations[i].Rotate(Vector3{-lightRange, -lightRange, lightRange}) + lightPos,
-            faceBoundsRotations[i].Rotate(Vector3{lightRange, -lightRange, lightRange}) + lightPos, lightPos,
+            faceBoundsRotations[j].Rotate(Vector3{lightRange, lightRange, lightRange}) + lightPos,
+            faceBoundsRotations[j].Rotate(Vector3{-lightRange, lightRange, lightRange}) + lightPos,
+            faceBoundsRotations[j].Rotate(Vector3{-lightRange, -lightRange, lightRange}) + lightPos,
+            faceBoundsRotations[j].Rotate(Vector3{lightRange, -lightRange, lightRange}) + lightPos, lightPos,
           };
 
           if (auto const cellIdx{determineScreenCoverage(shadowFrustumVertices)}) {

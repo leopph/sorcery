@@ -1223,7 +1223,7 @@ auto ProjectWindow::ExecuteCreateFolder(ProjectItem const& target) const -> void
 auto ProjectWindow::ExecuteCreateMaterial(ProjectItem const& target) -> void {
   std::visit(Overloaded{
     [this](DirectoryProjectItem const& item) {
-      auto mtl{std::make_unique<Material>(GpuResidencyPolicy::kMakeResident)};
+      auto mtl{std::make_unique<Material>()};
       auto const mtl_path_abs{GenerateUniquePath(item.path_abs / "New Material.mtl")};
 
       auto created_mtl{app_->GetResourceDatabase().SaveResourceToFile(std::move(mtl), mtl_path_abs)};

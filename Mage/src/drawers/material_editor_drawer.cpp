@@ -31,7 +31,7 @@ auto MaterialEditorDrawer::Draw(
     if (Vector3 albedoColor{mtl.GetAlbedoVector()}; ImGuiDisabled(!allow_edit, [&] {
       return ImGui::ColorEdit3("##matAlbedoColor", albedoColor.GetData());
     })) {
-      mtl.SetAlbedoVector(albedoColor, GpuResidencyPolicy::kMakeResident);
+      mtl.SetAlbedoVector(albedoColor);
       changed = true;
     }
 
@@ -42,7 +42,7 @@ auto MaterialEditorDrawer::Draw(
     if (f32 metallic{mtl.GetMetallic()}; ImGuiDisabled(!allow_edit, [&] {
       return ImGui::SliderFloat("##matMetallic", &metallic, 0.0f, 1.0f);
     })) {
-      mtl.SetMetallic(metallic, GpuResidencyPolicy::kMakeResident);
+      mtl.SetMetallic(metallic);
       changed = true;
     }
 
@@ -53,7 +53,7 @@ auto MaterialEditorDrawer::Draw(
     if (f32 roughness{mtl.GetRoughness()}; ImGuiDisabled(!allow_edit, [&] {
       return ImGui::SliderFloat("##matRoughness", &roughness, 0.0f, 1.0f);
     })) {
-      mtl.SetRoughness(roughness, GpuResidencyPolicy::kMakeResident);
+      mtl.SetRoughness(roughness);
       changed = true;
     }
 
@@ -64,7 +64,7 @@ auto MaterialEditorDrawer::Draw(
     if (f32 ao{mtl.GetAo()}; ImGuiDisabled(!allow_edit, [&] {
       return ImGui::SliderFloat("##matAo", &ao, 0.0f, 1.0f);
     })) {
-      mtl.SetAo(ao, GpuResidencyPolicy::kMakeResident);
+      mtl.SetAo(ao);
       changed = true;
     }
 
@@ -75,7 +75,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto albedoMap{mtl.GetAlbedoMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return albedoMapPicker.Draw(albedoMap);
     })) {
-      mtl.SetAlbedoMap(MakeResourceRef(albedoMap.Get()), GpuResidencyPolicy::kMakeResident);
+      mtl.SetAlbedoMap(MakeResourceRef(albedoMap.Get()));
       changed = true;
     }
 
@@ -86,7 +86,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto metallicMap{mtl.GetMetallicMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return metallicMapPicker.Draw(metallicMap);
     })) {
-      mtl.SetMetallicMap(MakeResourceRef(metallicMap.Get()), GpuResidencyPolicy::kMakeResident);
+      mtl.SetMetallicMap(MakeResourceRef(metallicMap.Get()));
       changed = true;
     }
 
@@ -97,7 +97,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto roughnessMap{mtl.GetRoughnessMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return roughnessMapPicker.Draw(roughnessMap);
     })) {
-      mtl.SetRoughnessMap(MakeResourceRef(roughnessMap.Get()), GpuResidencyPolicy::kMakeResident);
+      mtl.SetRoughnessMap(MakeResourceRef(roughnessMap.Get()));
       changed = true;
     }
 
@@ -108,7 +108,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto aoMap{mtl.GetAoMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return aoMapPicker.Draw(aoMap);
     })) {
-      mtl.SetAoMap(MakeResourceRef(aoMap.Get()), GpuResidencyPolicy::kMakeResident);
+      mtl.SetAoMap(MakeResourceRef(aoMap.Get()));
       changed = true;
     }
 
@@ -119,7 +119,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto normalMap{mtl.GetNormalMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return normalMapPicker.Draw(normalMap);
     })) {
-      mtl.SetNormalMap(MakeResourceRef(normalMap.Get()), GpuResidencyPolicy::kMakeResident);
+      mtl.SetNormalMap(MakeResourceRef(normalMap.Get()));
       changed = true;
     }
 
@@ -131,7 +131,7 @@ auto MaterialEditorDrawer::Draw(
       blendModeNames[static_cast<int>(mtl.GetBlendMode())])) {
       for (auto i = 0; i < 2; i++) {
         if (ImGui::Selectable(blendModeNames[i], i == static_cast<int>(mtl.GetBlendMode()))) {
-          mtl.SetBlendMode(static_cast<MaterialBlendMode>(i), GpuResidencyPolicy::kMakeResident);
+          mtl.SetBlendMode(static_cast<MaterialBlendMode>(i));
           changed = true;
         }
       }
@@ -146,7 +146,7 @@ auto MaterialEditorDrawer::Draw(
       if (auto thresh{mtl.GetAlphaThreshold()}; ImGuiDisabled(!allow_edit, [&] {
         return ImGui::SliderFloat("##AlphaThresh", &thresh, 0, 1);
       })) {
-        mtl.SetAlphaThreshold(thresh, GpuResidencyPolicy::kMakeResident);
+        mtl.SetAlphaThreshold(thresh);
         changed = true;
       }
 
@@ -157,7 +157,7 @@ auto MaterialEditorDrawer::Draw(
       if (auto opacityMask{mtl.GetOpacityMask().Get()}; ImGuiDisabled(!allow_edit, [&] {
         return opacityMaskPicker.Draw(opacityMask);
       })) {
-        mtl.SetOpacityMask(MakeResourceRef(opacityMask.Get()), GpuResidencyPolicy::kMakeResident);
+        mtl.SetOpacityMask(MakeResourceRef(opacityMask.Get()));
         changed = true;
       }
     }

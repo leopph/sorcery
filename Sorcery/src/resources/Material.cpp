@@ -1,6 +1,5 @@
 #include "Material.hpp"
 
-#include <bit>
 #include <cassert>
 
 #include <spdlog/spdlog.h>
@@ -10,15 +9,14 @@
 #include "../material_resource.hpp"
 #include "../resource_manager.hpp"
 #include "../resource_reference.hpp"
-#include "../rendering/render_manager.hpp"
 
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Material>{"Material"}
-    .property("albedo", &sorcery::Material::GetAlbedoVector, &sorcery::Material::SetAlbedoVectorRefl)
-    .property("metallic", &sorcery::Material::GetMetallic, &sorcery::Material::SetMetallicRefl)
-    .property("roughness", &sorcery::Material::GetRoughness, &sorcery::Material::SetRoughnessRefl)
-    .property("ao", &sorcery::Material::GetAo, &sorcery::Material::SetAoRefl)
+    .property("albedo", &sorcery::Material::GetAlbedoVector, &sorcery::Material::SetAlbedoVector)
+    .property("metallic", &sorcery::Material::GetMetallic, &sorcery::Material::SetMetallic)
+    .property("roughness", &sorcery::Material::GetRoughness, &sorcery::Material::SetRoughness)
+    .property("ao", &sorcery::Material::GetAo, &sorcery::Material::SetAo)
     .property("albedoMap", &sorcery::Material::GetAlbedoMap, &sorcery::Material::SetAlbedoMapRefl)
     .property("metallicMap", &sorcery::Material::GetMetallicMap, &sorcery::Material::SetMetallicMapRefl)
     .property("roughnessMap", &sorcery::Material::GetRoughnessMap, &sorcery::Material::SetRoughnessMapRefl)
@@ -54,20 +52,17 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   auto const data{DeserializeMaterialResourceData(yaml_node, ctx)};
 
   if (!data) {
-    // If we can't deserialize, we still should make sure we have some data on the GPU.
-    UploadToGpu();
-
     spdlog::error("Failed to deserialize material resource data.");
     assert("Failed to deserialize material resource data!" && false);
     return;
   }
 
-  SetAlbedoVector(data->base_color, GpuResidencyPolicy::kDeferUpload);
-  SetMetallic(data->metallic, GpuResidencyPolicy::kDeferUpload);
-  SetRoughness(data->roughness, GpuResidencyPolicy::kDeferUpload);
-  SetAo(data->ao, GpuResidencyPolicy::kDeferUpload);
-  SetBlendMode(data->blend_mode, GpuResidencyPolicy::kDeferUpload);
-  SetAlphaThreshold(data->alpha_threshold, GpuResidencyPolicy::kDeferUpload);
+  SetAlbedoVector(data->base_color);
+  SetMetallic(data->metallic);
+  SetRoughness(data->roughness);
+  SetAo(data->ao);
+  SetBlendMode(data->blend_mode);
+  SetAlphaThreshold(data->alpha_threshold);
 
   struct JobData {
     ResourceId res_id;
@@ -142,99 +137,73 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
     }
   }
 
-  SetAlbedoMap(albedo_map_job_data.tex, GpuResidencyPolicy::kDeferUpload);
-  SetMetallicMap(metallic_map_job_data.tex, GpuResidencyPolicy::kDeferUpload);
-  SetRoughnessMap(roughness_map_job_data.tex, GpuResidencyPolicy::kDeferUpload);
-  SetAoMap(ao_map_job_data.tex, GpuResidencyPolicy::kDeferUpload);
-  SetNormalMap(normal_map_job_data.tex, GpuResidencyPolicy::kDeferUpload);
-  SetOpacityMask(opacity_mask_job_data.tex, GpuResidencyPolicy::kDeferUpload);
-
-  UploadToGpu();
-}
-
-
-Material::Material(GpuResidencyPolicy const gpu_policy) {
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
-}
-
-
-Material::~Material() {
-  App::Instance().GetRenderManager().KeepAliveWhileInUse(cb_.GetBuffer());
+  SetAlbedoMap(albedo_map_job_data.tex);
+  SetMetallicMap(metallic_map_job_data.tex);
+  SetRoughnessMap(roughness_map_job_data.tex);
+  SetAoMap(ao_map_job_data.tex);
+  SetNormalMap(normal_map_job_data.tex);
+  SetOpacityMask(opacity_mask_job_data.tex);
 }
 
 
 auto Material::GetAlbedoVector() const -> Vector3 const& {
-  return cpu_data_.albedo;
+  return albedo_;
 }
 
 
-auto Material::SetAlbedoVector(Vector3 const& albedo_vector, GpuResidencyPolicy const gpu_policy) -> void {
-  cpu_data_.albedo = albedo_vector;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+auto Material::SetAlbedoVector(Vector3 const& albedo_vector) -> void {
+  albedo_ = albedo_vector;
+  ++revision_;
 }
 
 
 auto Material::GetAlbedoColor() const -> Color {
-  auto const mulColorVec{GetAlbedoVector() * 255};
+  auto const mul_color_vec{GetAlbedoVector() * 255};
   return Color{
-    static_cast<std::uint8_t>(mulColorVec[0]), static_cast<std::uint8_t>(mulColorVec[1]),
-    static_cast<std::uint8_t>(mulColorVec[2]), static_cast<std::uint8_t>(mulColorVec[3])
+    static_cast<std::uint8_t>(mul_color_vec[0]), static_cast<std::uint8_t>(mul_color_vec[1]),
+    static_cast<std::uint8_t>(mul_color_vec[2]), 255
   };
 }
 
 
-auto Material::SetAlbedoColor(Color const albedo_color, GpuResidencyPolicy const gpu_policy) -> void {
+auto Material::SetAlbedoColor(Color const albedo_color) -> void {
   SetAlbedoVector(Vector3{
     static_cast<float>(albedo_color.red) / 255.f, static_cast<float>(albedo_color.green) / 255.f,
     static_cast<float>(albedo_color.blue) / 255.f
-  }, gpu_policy);
+  });
 }
 
 
 auto Material::GetMetallic() const -> f32 {
-  return cpu_data_.metallic;
+  return metallic_;
 }
 
 
-auto Material::SetMetallic(f32 const metallic, GpuResidencyPolicy const gpu_policy) -> void {
-  cpu_data_.metallic = metallic;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+auto Material::SetMetallic(f32 const metallic) -> void {
+  metallic_ = metallic;
+  ++revision_;
 }
 
 
 auto Material::GetRoughness() const -> f32 {
-  return cpu_data_.roughness;
+  return roughness_;
 }
 
 
-auto Material::SetRoughness(f32 const roughness, GpuResidencyPolicy const gpu_policy) -> void {
-  cpu_data_.roughness = roughness;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+auto Material::SetRoughness(f32 const roughness) -> void {
+  roughness_ = roughness;
+  ++revision_;
 }
 
 
 auto Material::GetAo() const -> f32 {
-  return cpu_data_.ao;
+  return ao_;
 }
 
 
-auto Material::SetAo(f32 const ao, GpuResidencyPolicy const gpu_policy) -> void {
-  cpu_data_.ao = ao;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+auto Material::SetAo(f32 const ao) -> void {
+  ao_ = ao;
+  ++revision_;
 }
 
 
@@ -243,13 +212,9 @@ auto Material::GetAlbedoMap() const -> ResourceRef<Texture2D> {
 }
 
 
-auto Material::SetAlbedoMap(ResourceRef<Texture2D> const& tex, GpuResidencyPolicy const gpu_policy) -> void {
+auto Material::SetAlbedoMap(ResourceRef<Texture2D> const& tex) -> void {
   albedo_map_ = tex;
-  cpu_data_.albedo_map_idx = albedo_map_ ? albedo_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+  ++revision_;
 }
 
 
@@ -258,13 +223,9 @@ auto Material::GetMetallicMap() const -> ResourceRef<Texture2D> {
 }
 
 
-auto Material::SetMetallicMap(ResourceRef<Texture2D> const& tex, GpuResidencyPolicy const gpu_policy) -> void {
+auto Material::SetMetallicMap(ResourceRef<Texture2D> const& tex) -> void {
   metallic_map_ = tex;
-  cpu_data_.metallic_map_idx = metallic_map_ ? metallic_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+  ++revision_;
 }
 
 
@@ -273,13 +234,9 @@ auto Material::GetRoughnessMap() const -> ResourceRef<Texture2D> {
 }
 
 
-auto Material::SetRoughnessMap(ResourceRef<Texture2D> const& tex, GpuResidencyPolicy const gpu_policy) -> void {
+auto Material::SetRoughnessMap(ResourceRef<Texture2D> const& tex) -> void {
   roughness_map_ = tex;
-  cpu_data_.roughness_map_idx = roughness_map_ ? roughness_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+  ++revision_;
 }
 
 
@@ -288,13 +245,9 @@ auto Material::GetAoMap() const -> ResourceRef<Texture2D> {
 }
 
 
-auto Material::SetAoMap(ResourceRef<Texture2D> const& tex, GpuResidencyPolicy const gpu_policy) -> void {
+auto Material::SetAoMap(ResourceRef<Texture2D> const& tex) -> void {
   ao_map_ = tex;
-  cpu_data_.ao_map_idx = ao_map_ ? ao_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+  ++revision_;
 }
 
 
@@ -303,41 +256,31 @@ auto Material::GetNormalMap() const -> ResourceRef<Texture2D> {
 }
 
 
-auto Material::SetNormalMap(ResourceRef<Texture2D> const& tex, GpuResidencyPolicy const gpu_policy) -> void {
+auto Material::SetNormalMap(ResourceRef<Texture2D> const& tex) -> void {
   normal_map_ = tex;
-  cpu_data_.normal_map_idx = normal_map_ ? normal_map_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+  ++revision_;
 }
 
 
-auto Material::GetBlendMode() const -> BlendMode {
-  return static_cast<BlendMode>(cpu_data_.blendMode);
+auto Material::GetBlendMode() const -> MaterialBlendMode {
+  return blend_mode_;
 }
 
 
-auto Material::SetBlendMode(BlendMode blend_mode, GpuResidencyPolicy const gpu_policy) -> void {
-  cpu_data_.blendMode = static_cast<int>(blend_mode);
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+auto Material::SetBlendMode(MaterialBlendMode const blend_mode) -> void {
+  blend_mode_ = blend_mode;
+  ++revision_;
 }
 
 
 auto Material::GetAlphaThreshold() const -> float {
-  return cpu_data_.alphaThreshold;
+  return alpha_threshold_;
 }
 
 
-auto Material::SetAlphaThreshold(float const threshold, GpuResidencyPolicy const gpu_policy) -> void {
-  cpu_data_.alphaThreshold = threshold;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+auto Material::SetAlphaThreshold(float const threshold) -> void {
+  alpha_threshold_ = threshold;
+  ++revision_;
 }
 
 
@@ -346,91 +289,56 @@ auto Material::GetOpacityMask() const -> ResourceRef<Texture2D> {
 }
 
 
-auto Material::SetOpacityMask(ResourceRef<Texture2D> const& opacity_mask, GpuResidencyPolicy const gpu_policy) -> void {
+auto Material::SetOpacityMask(ResourceRef<Texture2D> const& opacity_mask) -> void {
   opacity_mask_ = opacity_mask;
-  cpu_data_.opacity_map_idx = opacity_mask_ ? opacity_mask_->GetTex()->GetShaderResource() : INVALID_RES_IDX;
-
-  if (gpu_policy == GpuResidencyPolicy::kMakeResident) {
-    UploadToGpu();
-  }
+  ++revision_;
 }
 
 
-auto Material::UploadToGpu() -> void {
-  if (!cb_) {
-    cb_ = rendering::ConstantBuffer<ShaderMaterial>::New(App::Instance().GetGraphicsDevice(), false).value();
-  }
-
-  App::Instance().GetRenderManager().UpdateBuffer(*cb_.GetBuffer(), 0, std::span{
-    std::bit_cast<std::byte const*>(&cpu_data_), sizeof(cpu_data_)
-  });
-}
-
-
-auto Material::GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
-  return cb_.GetBuffer();
-}
-
-
-auto Material::SetAlbedoVectorRefl(Vector3 const& albedo_vector) -> void {
-  SetAlbedoVector(albedo_vector, GpuResidencyPolicy::kMakeResident);
-}
-
-
-auto Material::SetMetallicRefl(f32 const metallic) -> void {
-  SetMetallic(metallic, GpuResidencyPolicy::kMakeResident);
-}
-
-
-auto Material::SetRoughnessRefl(f32 const roughness) -> void {
-  SetRoughness(roughness, GpuResidencyPolicy::kMakeResident);
-}
-
-
-auto Material::SetAoRefl(f32 const ao) -> void {
-  SetAo(ao, GpuResidencyPolicy::kMakeResident);
+auto Material::GetRevision() const -> std::uint64_t {
+  return revision_;
 }
 
 
 // ReSharper disable CppPassValueParameterByConstReference
 // Reflection needs getter and setter to be the same type so no ref here
 auto Material::SetAlbedoMapRefl(ResourceRef<Texture2D> const tex) -> void {
-  SetAlbedoMap(tex, GpuResidencyPolicy::kMakeResident);
+  SetAlbedoMap(tex);
 }
 
 
 auto Material::SetMetallicMapRefl(ResourceRef<Texture2D> const tex) -> void {
-  SetMetallicMap(tex, GpuResidencyPolicy::kMakeResident);
+  SetMetallicMap(tex);
 }
 
 
 auto Material::SetRoughnessMapRefl(ResourceRef<Texture2D> const tex) -> void {
-  SetRoughnessMap(tex, GpuResidencyPolicy::kMakeResident);
+  SetRoughnessMap(tex);
 }
 
 
 auto Material::SetAoMapRefl(ResourceRef<Texture2D> const tex) -> void {
-  SetAoMap(tex, GpuResidencyPolicy::kMakeResident);
+  SetAoMap(tex);
 }
 
 
 auto Material::SetNormalMapRefl(ResourceRef<Texture2D> const tex) -> void {
-  SetNormalMap(tex, GpuResidencyPolicy::kMakeResident);
+  SetNormalMap(tex);
 }
 
 
-auto Material::SetBlendModeRefl(BlendMode const blend_mode) -> void {
-  SetBlendMode(blend_mode, GpuResidencyPolicy::kMakeResident);
+auto Material::SetBlendModeRefl(MaterialBlendMode const blend_mode) -> void {
+  SetBlendMode(blend_mode);
 }
 
 
 auto Material::SetAlphaThresholdRefl(float const threshold) -> void {
-  SetAlphaThreshold(threshold, GpuResidencyPolicy::kMakeResident);
+  SetAlphaThreshold(threshold);
 }
 
 
 auto Material::SetOpacityMaskRefl(ResourceRef<Texture2D> const opacity_mask) -> void {
-  SetOpacityMask(opacity_mask, GpuResidencyPolicy::kMakeResident);
+  SetOpacityMask(opacity_mask);
 }
 
 

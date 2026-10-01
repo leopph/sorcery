@@ -11,6 +11,7 @@
 #include "Window.hpp"
 #include "rendering/frame_scheduler.hpp"
 #include "rendering/render_manager.hpp"
+#include "rendering/render_resource_registry.hpp"
 #include "rendering/scene_renderer.hpp"
 #include "wand/wand.hpp"
 
@@ -58,8 +59,9 @@ struct App::Data {
   };
   rendering::FrameScheduler frame_scheduler{graphics_device};
   rendering::RenderManager render_manager{graphics_device};
-  rendering::SceneRenderer scene_renderer{window, graphics_device, render_manager};
   ObjectRegistry object_registry;
+  rendering::RenderResourceRegistry render_resource_registry{graphics_device, object_registry};
+  rendering::SceneRenderer scene_renderer{window, graphics_device, render_manager, render_resource_registry};
   ResourceManager resource_manager{job_system};
   ObserverPtr<Job> render_job;
 };
@@ -159,9 +161,11 @@ auto App::Run() -> void {
     PrepareRender(frame);
 
     data_->render_job = data_->job_system.CreateJob([this, &frame] {
+      frame.RecordUploads();
       RecordRender(frame);
       data_->frame_scheduler.SubmitFrame(frame);
       data_->graphics_device.Present(*data_->swap_chain);
+      data_->render_resource_registry.CollectGarbage(100uz);
       data_->render_manager.EndFrame();
     });
 
@@ -193,7 +197,7 @@ auto App::BeginFrame() -> void {
 }
 
 
-auto App::PrepareRender(rendering::RenderFrame const& frame) -> void {
+auto App::PrepareRender(rendering::RenderFrame& frame) -> void {
   data_->scene_renderer.ExtractCurrentState(frame);
 }
 

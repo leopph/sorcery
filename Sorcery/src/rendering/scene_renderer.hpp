@@ -26,6 +26,11 @@
 
 
 namespace sorcery::rendering {
+class RenderResourceRegistry;
+class RenderMaterial;
+class RenderMesh;
+
+
 // Passing these enum values to shaders is valid
 enum class ShadowFilteringMode : int {
   kNone        = SHADOW_FILTERING_NONE,
@@ -64,7 +69,8 @@ struct SsrParams {
 
 class SceneRenderer {
 public:
-  LEOPPHAPI SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager);
+  LEOPPHAPI SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager,
+                          RenderResourceRegistry& render_resource_registry);
   SceneRenderer(SceneRenderer const&) = delete;
   SceneRenderer(SceneRenderer&&) = delete;
 
@@ -73,7 +79,7 @@ public:
   auto operator=(SceneRenderer const&) -> void = delete;
   auto operator=(SceneRenderer&&) -> void = delete;
 
-  LEOPPHAPI auto ExtractCurrentState(RenderFrame const& frame) -> void;
+  LEOPPHAPI auto ExtractCurrentState(RenderFrame& frame) -> void;
   LEOPPHAPI auto Record(RenderFrame& frame) -> void;
 
   LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
@@ -348,6 +354,9 @@ private:
   };
 
 
+  static auto SyncMaterial(Material const& mtl, RenderMaterial& render_mtl, RenderFrame& frame) -> void;
+
+
   [[nodiscard]] static auto CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,
                                                                    ShadowParams const& shadow_params) ->
     ShadowCascadeBoundaries;
@@ -430,8 +439,8 @@ private:
 
   ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<Window> window_;
-
   ObserverPtr<wand::GraphicsDevice> device_;
+  ObserverPtr<RenderResourceRegistry> resource_registry_;
 
   std::array<ConstantBuffer<ShaderPerFrameConstants>, kFramesInFlight> per_frame_cbs_;
   std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, kFramesInFlight>> per_view_cbs_;
