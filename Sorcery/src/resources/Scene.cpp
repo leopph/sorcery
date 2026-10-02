@@ -11,6 +11,7 @@
 #include "../job_system.hpp"
 #include "../reflection.hpp"
 #include "../resource_manager.hpp"
+#include "wand/wand.hpp"
 
 
 RTTR_REGISTRATION {

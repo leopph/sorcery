@@ -31,6 +31,7 @@
 #include "Resources/Mesh.hpp"
 #include "resource_import/material_import.hpp"
 #include "resource_import/texture_import.hpp"
+#include "Util.hpp"
 
 
 RTTR_REGISTRATION {
@@ -1002,10 +1003,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
 
     auto mesh_component{std::make_unique<StaticMeshComponent>()};
 
-    auto const dummy_mesh = std::make_unique<Mesh>(mesh_data, ResourceResidencyPolicy{
-      .gpu = GpuResidencyPolicy::kDeferUpload,
-      .cpu = CpuResidencyPolicy::kKeepResident
-    });
+    auto const dummy_mesh = std::make_unique<Mesh>(mesh_data, CpuResidencyPolicy::kKeepResident);
     dummy_mesh->SetResId(ResourceId{Guid::Invalid(), 1 /* prefab is first */});
 
     mesh_component->SetMesh(MakeResourceRef(MakeObserver(dummy_mesh.get())));

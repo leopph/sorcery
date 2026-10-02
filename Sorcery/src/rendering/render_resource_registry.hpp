@@ -53,7 +53,13 @@ private:
 
   template<typename T>
   [[nodiscard]]
+  auto CreateResource() const -> std::unique_ptr<T>;
+
+
+  template<typename T>
+  [[nodiscard]]
   auto CreateOrGetResource(ObjectId const& id) -> QueryResult<T>;
+
 
   ObserverPtr<wand::GraphicsDevice> device_;
   ObserverPtr<ObjectRegistry const> obj_registry_;

@@ -171,6 +171,9 @@ private:
     unsigned tan_buf_local_idx;
     unsigned uv_buf_local_idx;
 
+    unsigned bone_weight_buf_local_idx;
+    unsigned bone_idx_buf_local_idx;
+
     unsigned meshlet_buf_local_idx;
     unsigned vtx_idx_buf_local_idx;
     unsigned prim_idx_buf_local_idx;
@@ -277,8 +280,6 @@ private:
     unsigned original_normal_buf_local_idx;
     // The referenced mesh data contains an index to skinned tangent buffer
     unsigned original_tangent_buf_local_idx;
-    unsigned bone_weight_buf_local_idx;
-    unsigned bone_index_buf_local_idx;
     unsigned bone_matrix_buf_local_idx;
     unsigned prev_frame_vertex_buf_local_idx;
 
@@ -319,6 +320,8 @@ private:
     std::vector<Vector4> gizmo_colors;
     std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data;
 
+    unsigned cube_geom_local_idx;
+
     SsaoParams ssao_params;
     SsrParams ssr_params;
     ShadowParams shadow_params;
@@ -355,6 +358,7 @@ private:
 
 
   static auto SyncMaterial(Material const& mtl, RenderMaterial& render_mtl, RenderFrame& frame) -> void;
+  auto SyncMesh(Mesh& mesh, RenderMesh& render_mesh, RenderFrame& frame) const -> void;
 
 
   [[nodiscard]] static auto CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,

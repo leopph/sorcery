@@ -106,7 +106,7 @@ struct MeshData {
   std::vector<Vector3> tangents;
   std::vector<Vector2> uvs;
   std::vector<Vector4> bone_weights;
-  std::vector<Vector<std::uint32_t, 4>> bone_indices;
+  std::vector<Vector4U> bone_indices;
   std::vector<MeshletData> meshlets;
   std::vector<std::uint8_t> vertex_indices;
   std::vector<MeshletTriangleData> triangle_indices;

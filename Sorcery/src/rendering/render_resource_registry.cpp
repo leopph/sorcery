@@ -7,8 +7,20 @@
 
 
 namespace sorcery::rendering {
+// ReSharper disable CppDefinitionsOrder
+template<>
+auto RenderResourceRegistry::CreateResource<RenderMaterial>() const -> std::unique_ptr<RenderMaterial> {
+  return std::make_unique<RenderMaterial>(*device_);
+}
+
+
+template<>
+auto RenderResourceRegistry::CreateResource<RenderMesh>() const -> std::unique_ptr<RenderMesh> {
+  return std::make_unique<RenderMesh>();
+}
+
+
 template<typename T>
-// ReSharper disable once CppDefinitionsOrder
 auto RenderResourceRegistry::CreateOrGetResource(ObjectId const& id) -> QueryResult<T> {
   assert(id.IsValid());
 
@@ -19,7 +31,7 @@ auto RenderResourceRegistry::CreateOrGetResource(ObjectId const& id) -> QueryRes
   auto& assoc = associations_[id.idx];
 
   if (std::holds_alternative<std::monostate>(assoc.resource) || assoc.generation != id.gen) {
-    auto res = std::make_unique<T>(*device_);
+    auto res = CreateResource<T>();
     auto const obs = MakeObserver(res.get());
     assoc.generation = id.gen;
     assoc.resource = std::move(res);
@@ -29,6 +41,9 @@ auto RenderResourceRegistry::CreateOrGetResource(ObjectId const& id) -> QueryRes
   assert(std::holds_alternative<std::unique_ptr<T>>(assoc.resource));
   return {MakeObserver(std::get<std::unique_ptr<T>>(assoc.resource).get()), false};
 }
+
+
+// ReSharper restore CppDefinitionsOrder
 
 
 RenderResourceRegistry::RenderResourceRegistry(wand::GraphicsDevice& device, ObjectRegistry const& obj_registry) :

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Core.hpp"
-
 #include <concepts>
 #include <filesystem>
 #include <span>
@@ -10,6 +8,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "Core.hpp"
 #include "Math.hpp"
 
 

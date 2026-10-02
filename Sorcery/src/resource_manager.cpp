@@ -179,9 +179,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     cube_data.bounds = cube_data.submeshes[0].bounds;
     cube_data.idx32 = true;
 
-    cube_mesh_ = std::make_unique<Mesh>(cube_data, ResourceResidencyPolicy{
-      .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
-    });
+    cube_mesh_ = std::make_unique<Mesh>(cube_data, CpuResidencyPolicy::kReleaseAfterUpload);
     cube_mesh_->SetResId(cube_mesh_res_id_);
     cube_mesh_->SetName("Cube");
     default_resources_.emplace_back(cube_mesh_.get());
@@ -206,9 +204,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     plane_data.bounds = plane_data.submeshes[0].bounds;
     plane_data.idx32 = true;
 
-    plane_mesh_ = std::make_unique<Mesh>(plane_data, ResourceResidencyPolicy{
-      .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
-    });
+    plane_mesh_ = std::make_unique<Mesh>(plane_data, CpuResidencyPolicy::kReleaseAfterUpload);
     plane_mesh_->SetResId(plane_mesh_res_id_);
     plane_mesh_->SetName("Plane");
     default_resources_.emplace_back(plane_mesh_.get());
@@ -234,9 +230,7 @@ auto ResourceManager::CreateDefaultResources() -> void {
     sphere_data.bounds = sphere_data.submeshes[0].bounds;
     sphere_data.idx32 = true;
 
-    sphere_mesh_ = std::make_unique<Mesh>(sphere_data, ResourceResidencyPolicy{
-      .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
-    });
+    sphere_mesh_ = std::make_unique<Mesh>(sphere_data, CpuResidencyPolicy::kReleaseAfterUpload);
     sphere_mesh_->SetResId(sphere_mesh_res_id_);
     sphere_mesh_->SetName("Sphere");
     default_resources_.emplace_back(sphere_mesh_.get());
@@ -713,9 +707,7 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
 
   assert(cur_bytes.empty());
 
-  return std::make_unique<Mesh>(std::move(mesh_data), ResourceResidencyPolicy{
-    .gpu = GpuResidencyPolicy::kMakeResident, .cpu = CpuResidencyPolicy::kReleaseAfterUpload
-  });
+  return std::make_unique<Mesh>(std::move(mesh_data), CpuResidencyPolicy::kReleaseAfterUpload);
 }
 
 

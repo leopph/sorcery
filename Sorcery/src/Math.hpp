@@ -94,6 +94,9 @@ private:
 using Vector2 = Vector<float, 2>;
 using Vector3 = Vector<float, 3>;
 using Vector4 = Vector<float, 4>;
+using Vector2U = Vector<std::uint32_t, 2>;
+using Vector3U = Vector<std::uint32_t, 3>;
+using Vector4U = Vector<std::uint32_t, 4>;
 
 
 template<typename T, int N>

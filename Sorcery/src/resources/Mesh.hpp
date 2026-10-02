@@ -1,6 +1,7 @@
 #pragma once
 
 #include <concepts>
+#include <cstdint>
 #include <memory>
 #include <span>
 #include <vector>
@@ -9,13 +10,19 @@
 #include "../Bounds.hpp"
 #include "../Math.hpp"
 #include "../mesh_data.hpp"
+#include "../observer_ptr.hpp"
 #include "../resource_residency_policy.hpp"
-#include "../rendering/structured_buffer.hpp"
-#include "wand/buffer.hpp"
-#include "wand/device_child.hpp"
 
 
 namespace sorcery {
+class Mesh;
+
+
+namespace detail {
+auto ClearMeshCpuData(Mesh& mesh) -> void;
+}
+
+
 class Submesh {
 public:
   explicit Submesh(SubmeshData const& data);
@@ -42,74 +49,25 @@ private:
 
 class Mesh final : public Resource {
   RTTR_ENABLE(Resource)
-  // Geometry
-
-  rendering::StructuredBuffer<Vector4> pos_buf_;
-  rendering::StructuredBuffer<Vector4> norm_buf_;
-  rendering::StructuredBuffer<Vector4> tan_buf_;
-  rendering::StructuredBuffer<Vector2> uv_buf_;
-  rendering::StructuredBuffer<Vector4> bone_weight_buf_;
-  rendering::StructuredBuffer<Vector<std::uint32_t, 4>> bone_idx_buf_;
-
-  // Indexing
-
-  rendering::StructuredBuffer<MeshletData> meshlet_buf_;
-  wand::SharedDeviceChildHandle<wand::Buffer> vertex_idx_buf_;
-  rendering::StructuredBuffer<MeshletTriangleData> prim_idx_buf_;
-  rendering::StructuredBuffer<MeshletCullData> cull_data_buf_;
-
-  // CPU info
-
-  std::unique_ptr<MeshData> mesh_data_;
-
-  std::vector<MeshletData> meshlets_;
-  std::vector<MaterialSlotInfo> mtl_slots_;
-  std::vector<Submesh> submeshes_;
-  std::vector<Animation> animations_;
-  std::vector<SkeletonNode> skeleton_;
-  std::vector<Bone> bones_;
-  AABB bounds_;
-  std::size_t vertex_count_{0};
-  std::size_t primitive_count_{0};
-  bool idx32_{false};
 
 public:
   Mesh() = default;
   Mesh(Mesh const&) = delete;
   Mesh(Mesh&& other) noexcept = delete;
-  SORCERYAPI Mesh(MeshData data, ResourceResidencyPolicy data_policy);
+  SORCERYAPI Mesh(MeshData data, CpuResidencyPolicy cpu_data_policy);
 
   ~Mesh() override = default;
 
   auto operator=(Mesh const&) -> void = delete;
   auto operator=(Mesh&& other) noexcept -> void = delete;
 
+  [[nodiscard]] SORCERYAPI
+  auto GetData() const -> ObserverPtr<MeshData const>;
   SORCERYAPI
-  auto SetData(MeshData data, ResourceResidencyPolicy data_policy) -> void;
-
-  SORCERYAPI
-  auto UploadToGpu(CpuResidencyPolicy cpu_policy) -> void;
+  auto SetData(MeshData data, CpuResidencyPolicy cpu_data_policy) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetPositionBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
-  [[nodiscard]] SORCERYAPI
-  auto GetNormalBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
-  [[nodiscard]] SORCERYAPI
-  auto GetTangentBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
-  [[nodiscard]] SORCERYAPI
-  auto GetUvBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
-  [[nodiscard]] SORCERYAPI
-  auto GetBoneWeightBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
-  [[nodiscard]] SORCERYAPI
-  auto GetBoneIndexBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
-  [[nodiscard]] SORCERYAPI
-  auto GetMeshletBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
-  [[nodiscard]] SORCERYAPI
-  auto GetVertexIndexBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
-  [[nodiscard]] SORCERYAPI
-  auto GetPrimitiveIndexBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
-  [[nodiscard]] SORCERYAPI
-  auto GetCullDataBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
+  auto GetCpuDataPolicy() const -> CpuResidencyPolicy;
 
   [[nodiscard]] SORCERYAPI
   auto GetMaterialSlots() const noexcept -> std::span<MaterialSlotInfo const>;
@@ -132,6 +90,27 @@ public:
   auto GetMeshletCount() const noexcept -> std::size_t;
   [[nodiscard]] SORCERYAPI
   auto Has32BitVertexIndices() const noexcept -> bool;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetRevision() const noexcept -> std::uint64_t;
+
+private:
+  std::unique_ptr<MeshData> mesh_data_;
+
+  std::vector<MaterialSlotInfo> mtl_slots_;
+  std::vector<Submesh> submeshes_;
+  std::vector<Animation> animations_;
+  std::vector<SkeletonNode> skeleton_;
+  std::vector<Bone> bones_;
+  AABB bounds_;
+  std::size_t vertex_count_{0};
+  std::size_t primitive_count_{0};
+  std::size_t meshlet_count_{0};
+  std::uint64_t revision_{};
+  bool idx32_{false};
+  CpuResidencyPolicy cpu_data_policy_{CpuResidencyPolicy::kReleaseAfterUpload};
+
+  friend auto detail::ClearMeshCpuData(Mesh& mesh) -> void;
 };
 
 
