@@ -39,9 +39,9 @@ class VertexProcessor {
       prev_pos_os = pos_os;
     }
 
-    const ConstantBuffer<ShaderPerDrawConstants> per_draw_cb = ResourceDescriptorHeap[g_params.per_draw_cb_idx];
-    float4 const pos_ws = mul(pos_os, per_draw_cb.modelMtx);
-    float4 const prev_pos_ws = mul(prev_pos_os, per_draw_cb.prev_model_mtx);
+    const ConstantBuffer<ShaderPerInstanceConstants> per_inst_cb = ResourceDescriptorHeap[g_params.per_inst_cb_idx];
+    float4 const pos_ws = mul(pos_os, per_inst_cb.modelMtx);
+    float4 const prev_pos_ws = mul(prev_pos_os, per_inst_cb.prev_model_mtx);
 
     const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
     float4 const pos_vs = mul(pos_ws, per_view_cb.viewMtx);
@@ -50,11 +50,11 @@ class VertexProcessor {
 
     StructuredBuffer<float4> const normals = ResourceDescriptorHeap[g_params.norm_buf_idx];
     float4 const norm_os = normals[vertex_idx];
-    float3 const norm_ws = normalize(mul(norm_os.xyz, (float3x3)per_draw_cb.invTranspModelMtx));
+    float3 const norm_ws = normalize(mul(norm_os.xyz, (float3x3)per_inst_cb.invTranspModelMtx));
 
     StructuredBuffer<float4> const tangents = ResourceDescriptorHeap[g_params.tan_buf_idx];
     float4 const tan_os = tangents[vertex_idx];
-    float3 tan_ws = normalize(mul(tan_os.xyz, (float3x3)per_draw_cb.modelMtx));
+    float3 tan_ws = normalize(mul(tan_os.xyz, (float3x3)per_inst_cb.modelMtx));
     tan_ws = normalize(tan_ws - dot(tan_ws, norm_ws) * norm_ws);
     float3 const bitan_ws = cross(norm_ws, tan_ws);
     float3x3 const tbn_mtx_ws = float3x3(tan_ws, bitan_ws, norm_ws);
@@ -80,7 +80,7 @@ class VertexProcessor {
 [numthreads(AS_THREAD_GROUP_SIZE, 1, 1)]
 void AsMain(uint const dtid : SV_DispatchThreadID) {
   AmpShaderCore(dtid, g_params.meshlet_offset, g_params.meshlet_count, g_params.cull_data_buf_idx,
-    g_params.per_draw_cb_idx, g_params.per_view_cb_idx);
+    g_params.per_inst_cb_idx, g_params.per_view_cb_idx);
 }
 
 

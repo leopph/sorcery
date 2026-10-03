@@ -26,8 +26,8 @@ class VertexProcessor {
     StructuredBuffer<float4> const positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
     float4 const pos_os = positions[vertex_idx];
 
-    const ConstantBuffer<ShaderPerDrawConstants> per_draw_cb = ResourceDescriptorHeap[g_params.per_draw_cb_idx];
-    float4 const pos_ws = mul(pos_os, per_draw_cb.modelMtx);
+    const ConstantBuffer<ShaderPerInstanceConstants> per_inst_cb = ResourceDescriptorHeap[g_params.per_inst_cb_idx];
+    float4 const pos_ws = mul(pos_os, per_inst_cb.modelMtx);
 
     const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
     float4 const pos_cs = mul(pos_ws, per_view_cb.viewProjMtx);
@@ -55,7 +55,7 @@ class PrimitiveProcessor {
 [numthreads(AS_THREAD_GROUP_SIZE, 1, 1)]
 void AsMain(uint const dtid : SV_DispatchThreadID) {
   AmpShaderCore(dtid, g_params.meshlet_offset, g_params.meshlet_count, g_params.cull_data_buf_idx,
-    g_params.per_draw_cb_idx, g_params.per_view_cb_idx);
+    g_params.per_inst_cb_idx, g_params.per_view_cb_idx);
 }
 
 

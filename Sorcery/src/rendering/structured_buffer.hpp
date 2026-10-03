@@ -1,49 +1,51 @@
 #pragma once
 
-#include "render_manager.hpp"
-#include "../Util.hpp"
-#include "wand/wand.hpp"
-
+#include <cstdint>
 #include <span>
+
+#include "../observer_ptr.hpp"
+#include "wand/wand.hpp"
 
 
 namespace sorcery::rendering {
 template<typename T>
-class StructuredBuffer {
+class MappedStructuredBuffer {
 public:
-  [[nodiscard]] static auto New(wand::GraphicsDevice& device, RenderManager& render_manager,
-                                bool cpu_accessible, bool shader_resource = true,
-                                bool unordered_access = false) -> StructuredBuffer;
-  [[nodiscard]] static auto New(wand::GraphicsDevice& device, RenderManager& render_manager,
-                                std::span<T const> data, bool cpu_accessible, bool shader_resource = true,
-                                bool unordered_access = false) -> StructuredBuffer;
+  explicit MappedStructuredBuffer(wand::GraphicsDevice& device, std::uint64_t element_count = 0,
+                                  bool shader_resource = true, bool unordered_access = false);
+  MappedStructuredBuffer(wand::GraphicsDevice& device, std::span<T const> data, bool shader_resource = true,
+                         bool unordered_access = false);
 
-  StructuredBuffer() = default;
+  [[nodiscard]]
+  auto GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
+  [[nodiscard]]
+  auto GetData() -> std::span<T>;
+  [[nodiscard]]
+  auto GetData() const -> std::span<T const>;
+  [[nodiscard]]
+  auto GetElementCount() const -> std::uint64_t;
 
-  [[nodiscard]] auto GetBuffer() const noexcept -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
-  [[nodiscard]] auto GetData() const noexcept -> std::span<T>;
-  [[nodiscard]] auto GetSize() const -> UINT;
-  [[nodiscard]] auto GetCapacity() const -> UINT;
-  auto Resize(UINT new_size) -> void;
+  // Returns the previously allocated buffer.
+  auto Reallocate(std::uint64_t element_count) -> wand::SharedDeviceChildHandle<wand::Buffer>;
 
 private:
-  StructuredBuffer(wand::GraphicsDevice& device, RenderManager& render_manager, UINT initial_capacity,
-                   bool cpu_accessible, bool shader_resource, bool unordered_access);
-  StructuredBuffer(wand::GraphicsDevice& device, RenderManager& render_manager, std::span<T const> data,
-                   bool cpu_accessible, bool shader_resource, bool unordered_access);
-
-  auto RecreateBuffer() -> void;
-
-  wand::GraphicsDevice* device_{nullptr};
-  RenderManager* render_manager_{nullptr};
-  wand::SharedDeviceChildHandle<wand::Buffer> buffer_;
-  T* mapped_ptr_{nullptr};
-  UINT capacity_{0};
-  UINT size_{0};
-  bool cpu_accessible_{false};
-  bool srv_{false};
-  bool uav_{false};
+  ObserverPtr<wand::GraphicsDevice> device_;
+  wand::SharedDeviceChildHandle<wand::Buffer> buffer_{};
+  std::span<T> data_{};
+  std::uint64_t element_count_{0};
+  bool srv_;
+  bool uav_;
 };
+
+
+template<typename T>
+[[nodiscard]]
+auto CreateStructuredBuffer(
+  wand::GraphicsDevice& device,
+  std::uint64_t element_count,
+  bool shader_resource = true,
+  bool unordered_access = false
+) -> wand::SharedDeviceChildHandle<wand::Buffer>;
 }
 
 

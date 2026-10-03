@@ -2,8 +2,7 @@
 
 #include <cstdint>
 
-#include "constant_buffer.hpp"
-#include "shaders/shader_interop.h"
+#include "wand/wand.hpp"
 
 
 namespace sorcery::rendering {
@@ -23,7 +22,7 @@ public:
   auto SetRevision(std::uint64_t rev) -> void;
 
 private:
-  ConstantBuffer<ShaderMaterial> cb_;
+  wand::SharedDeviceChildHandle<wand::Buffer> cb_;
   std::uint64_t revision_{0};
 };
 }

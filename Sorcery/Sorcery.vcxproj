@@ -308,6 +308,7 @@
     <None Include="src\rendering\shaders\brdf_integration.hlsli" />
     <None Include="src\rendering\shaders\CatmullRom.hlsli" />
     <None Include="src\rendering\shaders\common.hlsli" />
+    <None Include="src\rendering\constant_buffer.inl" />
     <None Include="src\rendering\shaders\depth_only.hlsli" />
     <None Include="src\rendering\shaders\envmap_prefilter.hlsli" />
     <None Include="src\rendering\shaders\fullscreen_tri.hlsli" />

@@ -118,17 +118,11 @@ auto ToShaderBlendMode(MaterialBlendMode const mode) -> int {
 SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager,
                              RenderResourceRegistry& render_resource_registry,
                              RenderInstanceRegistry& render_instance_registry) :
-  render_manager_{&render_manager},
   window_{&window},
   device_{&device},
+  render_manager_{&render_manager},
   resource_registry_{&render_resource_registry},
   instance_registry_{&render_instance_registry} {
-  light_buffer_ = StructuredBuffer<ShaderLight>::New(*device_, *render_manager_, false, true, false);
-
-  gizmo_color_buffer_ = StructuredBuffer<Vector4>::New(*device_, *render_manager_, true);
-
-  line_gizmo_vertex_data_buffer_ = StructuredBuffer<ShaderLineGizmoVertexData>::New(*device_, *render_manager_, true);
-
   main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
     static_cast<UINT>(window_->GetClientAreaSize().width), static_cast<UINT>(window_->GetClientAreaSize().height),
     DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Main RT", false
@@ -142,14 +136,8 @@ SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, Rende
 
   RecreatePipelines();
 
-  for (auto& cb : per_frame_cbs_) {
-    if (auto opt{ConstantBuffer<ShaderPerFrameConstants>::New(*device_, true)}) {
-      cb = std::move(*opt);
-    }
-  }
-
   CreatePerViewConstantBuffers(1);
-  CreatePerDrawConstantBuffers(100);
+  CreatePerInstanceConstantBuffers(100);
 
   samp_cmp_pcf_ge_ = device_->CreateSampler(D3D12_SAMPLER_DESC{
     D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
@@ -246,7 +234,6 @@ SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, Rende
     OnWindowSize(size);
   });
 
-  ssao_samples_buffer_ = StructuredBuffer<Vector4>::New(*device_, *render_manager_, true);
   RecreateSsaoSamples(ssao_params_.sample_count);
 
   ssao_noise_tex_ = device_->CreateTexture(wand::TextureDesc{
@@ -313,6 +300,9 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   packet.skeleton_node_data.clear();
   packet.bone_data.clear();
   packet.skinning_data.clear();
+  packet.ssao_samples.clear();
+
+  // Extract lights
 
   packet.light_data.reserve(lights_.size());
 
@@ -325,165 +315,10 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
       light->GetEntity()->GetTransform().CalculateLocalToWorldMatrixWithoutScale());
   }
 
-  auto const find_or_emplace_back_buffer{
-    [&packet](wand::SharedDeviceChildHandle<wand::Buffer> const& buf) -> unsigned {
-      unsigned idx;
-
-      if (auto const it{std::ranges::find(packet.buffers, buf)}; it != std::ranges::end(packet.buffers)) {
-        idx = static_cast<unsigned>(it - packet.buffers.begin());
-      } else {
-        idx = static_cast<unsigned>(packet.buffers.size());
-        packet.buffers.emplace_back(buf);
-      }
-
-      return idx;
-    }
-  };
-
-  auto const find_or_emplace_back_texture{
-    [&packet](wand::SharedDeviceChildHandle<wand::Texture> const& tex) -> unsigned {
-      unsigned idx;
-
-      if (auto const it{std::ranges::find(packet.textures, tex)}; it != std::ranges::end(packet.textures)) {
-        idx = static_cast<unsigned>(it - packet.textures.begin());
-      } else {
-        idx = static_cast<unsigned>(packet.textures.size());
-        packet.textures.emplace_back(tex);
-      }
-
-      return idx;
-    }
-  };
-
-  auto const emplace_back_mesh{
-    [this, &frame, &packet, &find_or_emplace_back_buffer](Mesh& mesh) {
-      auto const [render_mesh, is_new] = resource_registry_->CreateOrGetMesh(mesh.GetId());
-
-      if (is_new || mesh.GetRevision() != render_mesh->GetRevision()) {
-        SyncMesh(mesh, *render_mesh, frame);
-      }
-
-      auto const ret = static_cast<unsigned>(packet.geom_batches.size());
-
-      auto const pos_buf_local_idx{find_or_emplace_back_buffer(render_mesh->GetPositionBuffer())};
-      auto const norm_buf_local_idx{find_or_emplace_back_buffer(render_mesh->GetNormalBuffer())};
-      auto const tan_buf_local_idx{find_or_emplace_back_buffer(render_mesh->GetTangentBuffer())};
-      auto const uv_buf_local_idx{find_or_emplace_back_buffer(render_mesh->GetUvBuffer())};
-      auto const meshlet_buf_local_idx{find_or_emplace_back_buffer(render_mesh->GetMeshletBuffer())};
-      auto const vtx_idx_buf_local_idx{find_or_emplace_back_buffer(render_mesh->GetVertexIndexBuffer())};
-      auto const prim_idx_buf_local_idx{find_or_emplace_back_buffer(render_mesh->GetPrimitiveIndexBuffer())};
-      auto const cull_data_buf_local_idx{find_or_emplace_back_buffer(render_mesh->GetCullDataBuffer())};
-
-      auto const& bone_weight_buf = render_mesh->GetBoneWeightBuffer();
-      auto const bone_weight_buf_local_idx = bone_weight_buf
-                                               ? find_or_emplace_back_buffer(bone_weight_buf)
-                                               : frame_packet_invalid_idx;
-
-      auto const& bone_idx_buf = render_mesh->GetBoneIndexBuffer();
-      auto const bone_idx_buf_local_idx = bone_idx_buf
-                                            ? find_or_emplace_back_buffer(bone_idx_buf)
-                                            : frame_packet_invalid_idx;
-
-      auto const mtl_slots = mesh.GetMaterialSlots();
-      auto const submeshes = mesh.GetSubmeshes();
-
-      auto const first_mtl_group = static_cast<unsigned>(packet.mtl_slot_groups.size());
-      auto mtl_group_count = 0u;
-
-      for (auto i = 0u; i < static_cast<unsigned>(mtl_slots.size()); ++i) {
-        auto first_submesh = static_cast<unsigned>(packet.submesh_data.size());
-        auto submesh_count = 0u;
-
-        for (auto const& submesh : submeshes) {
-          if (submesh.GetMaterialIndex() == i) {
-            packet.submesh_data.emplace_back(submesh.GetFirstMeshlet(), submesh.GetMeshletCount(),
-              submesh.GetBaseVertex(), submesh.GetBounds());
-
-            ++submesh_count;
-          }
-        }
-
-        if (submesh_count != 0) {
-          packet.mtl_slot_groups.emplace_back(i, first_submesh, submesh_count);
-          ++mtl_group_count;
-        }
-      }
-
-      // Deliberately setting instance_count to 0, as it will be set later when instances are added.
-      // Skinning data is also set to invalid. It will be patched when extracting skinned meshes.
-      packet.geom_batches.emplace_back(pos_buf_local_idx, norm_buf_local_idx, tan_buf_local_idx, uv_buf_local_idx,
-        bone_weight_buf_local_idx, bone_idx_buf_local_idx, meshlet_buf_local_idx, vtx_idx_buf_local_idx,
-        prim_idx_buf_local_idx, cull_data_buf_local_idx, first_mtl_group, mtl_group_count,
-        static_cast<unsigned>(packet.instance_data.size()), 0u, frame_packet_invalid_idx,
-        mesh.GetBounds(), static_cast<unsigned>(mesh.GetVertexCount()), mesh.GetId(), mesh.Has32BitVertexIndices());
-
-      return ret;
-    }
-  };
-
   // Add the default cube mesh to the packet. Used for a couple of passes conditionally.
   // If other default meshes are to be used in the future, they should be added here as well.
   // This is stored as a GeometryBatch in case a component references it.
-  packet.cube_geom_local_idx = emplace_back_mesh(*App::Instance().GetResourceManager().GetCubeMesh());
-
-  auto const find_or_emplace_back_mesh{
-    [&packet, &emplace_back_mesh](Mesh& mesh) -> unsigned {
-      if (auto const it{std::ranges::find(packet.geom_batches, mesh.GetId(), &GeometryBatch::src_mesh_id)};
-        it != std::ranges::end(packet.geom_batches)) {
-        return static_cast<unsigned>(it - std::ranges::begin(packet.geom_batches));
-      }
-
-      return emplace_back_mesh(mesh);
-    }
-  };
-
-  auto const extract_mesh_comp_into_batch =
-    [this, &frame, &packet, &find_or_emplace_back_buffer, &find_or_emplace_back_texture]
-  (MeshComponentBase& comp, GeometryBatch& geom_batch, Matrix4 const& prev_local_to_world_mtx) {
-    auto const& materials = comp.GetMaterials();
-    auto const first_mtl = static_cast<unsigned>(packet.instance_materials.size());
-    auto const mtl_count = static_cast<unsigned>(materials.size());
-
-    for (auto const& mtl_ref : materials) {
-      auto const mtl = mtl_ref.Observe();
-
-      if (!mtl) {
-        packet.instance_materials.emplace_back(frame_packet_invalid_idx);
-        continue;
-      }
-
-      auto const [render_mtl, is_new] = resource_registry_->CreateOrGetMaterial(mtl->GetId());
-
-      if (is_new || mtl->GetRevision() != render_mtl->GetRevision()) {
-        SyncMaterial(*mtl, *render_mtl, frame);
-      }
-
-      packet.instance_materials.emplace_back(find_or_emplace_back_buffer(render_mtl->GetBuffer()));
-
-      for (auto const tex : {
-             mtl->GetAlbedoMap().Observe(),
-             mtl->GetMetallicMap().Observe(),
-             mtl->GetRoughnessMap().Observe(),
-             mtl->GetAoMap().Observe(),
-             mtl->GetNormalMap().Observe(),
-             mtl->GetOpacityMask().Observe()
-           }) {
-        if (tex) {
-          find_or_emplace_back_texture(tex->GetTex());
-        }
-      }
-    }
-
-    auto const& transform{comp.GetEntity()->GetTransform()};
-    auto const local_to_world_mtx{transform.GetLocalToWorldMatrix()};
-    auto const scaling{transform.GetWorldScale()};
-    auto const max_abs_scale{std::max({std::abs(scaling[0]), std::abs(scaling[1]), std::abs(scaling[2])})};
-
-    // We place instances linearly and keep incrementing the instance count of the associated batch.
-    // The caller can create an instance list for a batch by repeatedly calling this function for all instances in-order.
-    packet.instance_data.emplace_back(local_to_world_mtx, prev_local_to_world_mtx, max_abs_scale, first_mtl, mtl_count);
-    ++geom_batch.instance_count;
-  };
+  packet.cube_geom_local_idx = AddMeshToPacket(*App::Instance().GetResourceManager().GetCubeMesh(), frame, packet);
 
   // Extract static mesh components
   // Because they're static, we can batch them for better performance.
@@ -516,9 +351,10 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
     }
 
     // We reuse the same batch for all instances of the same mesh.
-    auto const geom_batch_local_idx = find_or_emplace_back_mesh(*mesh);
+    auto const geom_batch_local_idx = FindOrAddMeshInPacket(*mesh, frame, packet);
     // Because we sorted the components by mesh, we can call this function for each component and it will add instances to the same batch.
-    extract_mesh_comp_into_batch(*comp, packet.geom_batches[geom_batch_local_idx], inst_state.prev_frame_transform);
+    AddMeshComponentToPacket(*comp, packet.geom_batches[geom_batch_local_idx], inst_state.prev_frame_transform, frame,
+      packet);
 
     inst_state.prev_frame_transform = comp->GetEntity()->GetTransform().GetLocalToWorldMatrix();
   }
@@ -540,10 +376,10 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
       SyncSkinnedInstance(*comp, *render_inst);
     }
 
-    auto const geom_batch_local_idx = emplace_back_mesh(*mesh);
+    auto const geom_batch_local_idx = AddMeshToPacket(*mesh, frame, packet);
     auto& geom_batch = packet.geom_batches[geom_batch_local_idx];
     // Because we created a new batch for this comp, this will add a single instance to that batch.
-    extract_mesh_comp_into_batch(*comp, geom_batch, inst_state.prev_frame_transform);
+    AddMeshComponentToPacket(*comp, geom_batch, inst_state.prev_frame_transform, frame, packet);
 
     inst_state.prev_frame_transform = comp->GetEntity()->GetTransform().GetLocalToWorldMatrix();
 
@@ -644,23 +480,11 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
     render_inst->SetLastSkinningFrame(frame.GetNumber());
   }
 
-  auto const find_or_emplace_back_rt{
-    [&packet](std::shared_ptr<RenderTarget> const& rt) -> unsigned {
-      unsigned idx;
-
-      if (auto const it{std::ranges::find(packet.render_targets, rt)}; it != std::ranges::end(packet.render_targets)) {
-        idx = static_cast<unsigned>(it - packet.render_targets.begin());
-      } else {
-        idx = static_cast<unsigned>(packet.render_targets.size());
-        packet.render_targets.emplace_back(rt);
-      }
-
-      return idx;
-    }
-  };
-
+  // Add global render target
   auto const& global_rt{rt_override_ ? rt_override_ : main_rt_};
   packet.render_targets.emplace_back(global_rt); // The global RT is always at index 0!
+
+  // Extract camera data
 
   packet.cam_data.reserve(cameras_.size());
 
@@ -687,12 +511,12 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
       accum_tex_empty = true;
     }
 
-    auto const accum_rt_local_idx{find_or_emplace_back_texture(detail::GetTaaAccumulationRt(*cam)->GetColorTex())};
+    auto const accum_rt_local_idx{FindOrAddTextureInPacket(detail::GetTaaAccumulationRt(*cam)->GetColorTex(), packet)};
 
     unsigned rt_local_idx;
 
     if (cam_rt) {
-      rt_local_idx = find_or_emplace_back_rt(cam_rt);
+      rt_local_idx = FindOrAddRenderTargetInPacket(cam_rt, packet);
     } else {
       rt_local_idx = 0; // The global RT is always at index 0!
     }
@@ -702,12 +526,26 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
       cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, accum_rt_local_idx, cam, accum_tex_empty);
   }
 
-  packet.gizmo_colors = gizmo_colors_;
-  packet.line_gizmo_vertex_data = line_gizmo_vertex_data_;
+  // Add gizmo draw data
 
-  // This has to be cleared here so that the game, while rendering the frame,
-  // can queue new gizmos without a race condition.
-  ClearGizmoDrawQueue();
+  packet.gizmo_data.line_count = line_gizmo_vertex_data_.size();
+
+  if (gizmo_color_buffers_[frame.GetIndex()].GetElementCount() < gizmo_colors_.size()) {
+    gizmo_color_buffers_[frame.GetIndex()].Reallocate(gizmo_colors_.size());
+  }
+
+  std::ranges::copy(gizmo_colors_, std::ranges::begin(gizmo_color_buffers_[frame.GetIndex()].GetData()));
+  gizmo_colors_.clear();
+
+  if (line_gizmo_vertex_data_buffers_[frame.GetIndex()].GetElementCount() < line_gizmo_vertex_data_.size()) {
+    line_gizmo_vertex_data_buffers_[frame.GetIndex()].Reallocate(line_gizmo_vertex_data_.size());
+  }
+
+  std::ranges::copy(line_gizmo_vertex_data_,
+    std::ranges::begin(line_gizmo_vertex_data_buffers_[frame.GetIndex()].GetData()));
+  line_gizmo_vertex_data_.clear();
+
+  // Copy settings
 
   packet.ssao_params = ssao_params_;
   packet.ssr_params = ssr_params_;
@@ -764,6 +602,31 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
     }
   }
 
+  // Handle SSAO sample count change
+
+  packet.upload_ssao_samples = ssao_samples_changed_;
+
+  if (ssao_samples_changed_) {
+    packet.ssao_samples = ssao_samples_;
+
+    auto constexpr ssao_sample_element_size = sizeof(decltype(packet.ssao_samples)::value_type);
+
+    if (auto const ssao_samples_byte_count = packet.ssao_samples.size() * ssao_sample_element_size;
+      !ssao_samples_buffer_ || ssao_samples_buffer_->GetDesc().size < ssao_samples_byte_count) {
+      ssao_samples_buffer_ = device_->CreateBuffer(wand::BufferDesc{
+        .size = ssao_samples_byte_count,
+        .stride = ssao_sample_element_size,
+        .usage = wand::BufferUsage::kShaderResource | wand::BufferUsage::kCopyDestination
+      }, wand::CpuAccess::kNone);
+    }
+
+    ssao_samples_changed_ = false;
+  }
+
+  packet.ssao_samples_buf = ssao_samples_buffer_;
+
+  // Copy used PSOs
+
   packet.shadow_pso = shadow_pso_;
   packet.gbuffer_velocity_pso = gbuffer_velocity_pso_;
   packet.depth_resolve_pso = depth_resolve_pso_;
@@ -791,6 +654,12 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
          original_tangent_buf_local_idx, bone_matrix_buf_local_idx, prev_frame_vertex_buf_local_idx, cur_animation_time,
          node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size, bone_begin_local_idx,
          bone_count] : frame_packet.skinning_data) {
+    // Skip skinning when we are sitting at 0 time.
+    // This happens for example in the editor scene view.
+    if (cur_animation_time == 0) {
+      continue;
+    }
+
     // Compute local node transforms
 
     for (unsigned i{0}; i < node_anim_count; i++) {
@@ -884,6 +753,12 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
 
     frame.UploadBuffer(frame_packet.buffers[bone_matrix_buf_local_idx], 0, as_bytes(std::span{bone_matrices}));
   }
+
+  // Upload SSAO samples if they have changed
+
+  if (frame_packet.upload_ssao_samples) {
+    frame.UploadBuffer(frame_packet.ssao_samples_buf, 0, as_bytes(std::span{frame_packet.ssao_samples}));
+  }
 }
 
 
@@ -893,7 +768,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     gpu_init_work_recorded_ = true;
   }
 
-  next_per_draw_cb_idx_ = 0;
+  next_per_instance_cb_idx_ = 0;
   next_per_view_cb_idx_ = 0;
 
   auto const frame_idx{frame.GetIndex()};
@@ -901,22 +776,16 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
   auto& frame_packet{frame_packets_[frame_idx]};
   auto const& prev_frame_packet{frame_packets_[frame.GetPreviousIndex()]};
 
-  gizmo_color_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.gizmo_colors)));
-  std::ranges::copy(frame_packet.gizmo_colors, std::begin(gizmo_color_buffer_.GetData()));
-
-  line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.line_gizmo_vertex_data)));
-  std::ranges::copy(frame_packet.line_gizmo_vertex_data, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
-
   // Clears all render targets, dispatches skinning and draws irradiance and prefiltered env maps if needed.
-  auto& prepare_cmd{frame.AcquireCommandList()};
-  prepare_cmd.Begin(nullptr);
+  auto& prepass_cmd{frame.AcquireCommandList()};
+  prepass_cmd.Begin(nullptr);
 
-  std::ranges::for_each(frame_packet.render_targets, [&prepare_cmd](std::shared_ptr<RenderTarget> const& rt) {
-    prepare_cmd.ClearRenderTarget(*rt->GetColorTex(), rt->GetDesc().color_clear_value, {});
+  std::ranges::for_each(frame_packet.render_targets, [&prepass_cmd](std::shared_ptr<RenderTarget> const& rt) {
+    prepass_cmd.ClearRenderTarget(*rt->GetColorTex(), rt->GetDesc().color_clear_value, {});
   });
 
   if (!frame_packet.skinning_data.empty()) {
-    prepare_cmd.SetPipelineState(*frame_packet.vtx_skinning_pso);
+    prepass_cmd.SetPipelineState(*frame_packet.vtx_skinning_pso);
   }
 
   for (auto& [geom_batch_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
@@ -928,35 +797,35 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     // Skip skinning when we are sitting at 0 time.
     // This happens for example in the editor scene view.
     if (cur_animation_time == 0) {
-      prepare_cmd.CopyBuffer(
+      prepass_cmd.CopyBuffer(
         *frame_packet.buffers[geom_batch.pos_buf_local_idx], *frame_packet.buffers[original_vertex_buf_local_idx]);
-      prepare_cmd.CopyBuffer(
+      prepass_cmd.CopyBuffer(
         *frame_packet.buffers[geom_batch.norm_buf_local_idx], *frame_packet.buffers[original_normal_buf_local_idx]);
-      prepare_cmd.CopyBuffer(
+      prepass_cmd.CopyBuffer(
         *frame_packet.buffers[geom_batch.tan_buf_local_idx], *frame_packet.buffers[original_tangent_buf_local_idx]);
       continue;
     }
 
-    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_buf_idx),
+    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_buf_idx),
       *frame_packet.buffers[original_vertex_buf_local_idx]);
-    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, norm_buf_idx),
+    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, norm_buf_idx),
       *frame_packet.buffers[original_normal_buf_local_idx]);
-    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, tan_buf_idx),
+    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, tan_buf_idx),
       *frame_packet.buffers[original_tangent_buf_local_idx]);
-    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_weight_buf_idx),
+    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_weight_buf_idx),
       *frame_packet.buffers[geom_batch.bone_weight_buf_local_idx]);
-    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_idx_buf_idx),
+    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_idx_buf_idx),
       *frame_packet.buffers[geom_batch.bone_idx_buf_local_idx]);
-    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_buf_idx),
+    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_buf_idx),
       *frame_packet.buffers[bone_matrix_buf_local_idx]);
-    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_vtx_buf_idx),
+    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_vtx_buf_idx),
       *frame_packet.buffers[geom_batch.pos_buf_local_idx]);
-    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_norm_buf_idx),
+    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_norm_buf_idx),
       *frame_packet.buffers[geom_batch.norm_buf_local_idx]);
-    prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_tan_buf_idx),
+    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_tan_buf_idx),
       *frame_packet.buffers[geom_batch.tan_buf_local_idx]);
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_count), geom_batch.vtx_count);
-    prepare_cmd.Dispatch(
+    prepass_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_count), geom_batch.vtx_count);
+    prepass_cmd.Dispatch(
       static_cast<UINT>(std::ceil(static_cast<float>(geom_batch.vtx_count) / static_cast<float>(SKINNING_CS_THREADS))),
       1, 1);
   }
@@ -972,56 +841,56 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       0, 0, static_cast<LONG>(irradiance_map_desc.width), static_cast<LONG>(irradiance_map_desc.height)
     };
 
-    prepare_cmd.SetPipelineState(*frame_packet.irradiance_pso);
-    prepare_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    prepare_cmd.SetRenderTargets(std::array{frame_packet.irradiance_map.get()}, nullptr);
-    prepare_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&irradiance_viewport), 1});
-    prepare_cmd.SetScissorRects(std::span{&irradiance_scissor, 1});
-    prepare_cmd.ClearRenderTarget(*frame_packet.irradiance_map, std::array{0.F, 0.F, 0.F, 1.F}, {});
+    prepass_cmd.SetPipelineState(*frame_packet.irradiance_pso);
+    prepass_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    prepass_cmd.SetRenderTargets(std::array{frame_packet.irradiance_map.get()}, nullptr);
+    prepass_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&irradiance_viewport), 1});
+    prepass_cmd.SetScissorRects(std::span{&irradiance_scissor, 1});
+    prepass_cmd.ClearRenderTarget(*frame_packet.irradiance_map, std::array{0.F, 0.F, 0.F, 1.F}, {});
 
     auto const& cube_geom = frame_packet.geom_batches[frame_packet.cube_geom_local_idx];
 
-    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, meshlet_buf_idx),
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, meshlet_buf_idx),
       *frame_packet.buffers[cube_geom.meshlet_buf_local_idx]);
-    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, vertex_idx_buf_idx),
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, vertex_idx_buf_idx),
       *frame_packet.buffers[cube_geom.vtx_idx_buf_local_idx]);
-    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, prim_idx_buf_idx),
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, prim_idx_buf_idx),
       *frame_packet.buffers[cube_geom.prim_idx_buf_local_idx]);
-    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, pos_buf_idx),
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, pos_buf_idx),
       *frame_packet.buffers[cube_geom.pos_buf_local_idx]);
-    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, environment_map_idx),
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, environment_map_idx),
       *frame_packet.skybox_cubemap);
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(IrradianceDrawParams, bi_clamp_samp_idx),
+    prepass_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(IrradianceDrawParams, bi_clamp_samp_idx),
       samp_bi_clamp_.Get());
 
     auto const view_matrices{MakeCubeFaceViewMatrices(Vector3::Zero())};
     auto const proj_mtx{TransformProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, .1F, 10.F))};
 
     for (auto i{0U}; i < 6U; i++) {
-      prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(IrradianceDrawParams, rt_idx), i);
+      prepass_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(IrradianceDrawParams, rt_idx), i);
       auto const view_proj_mtx{view_matrices[i] * proj_mtx};
-      prepare_cmd.SetPipelineParameters(PIPELINE_PARAM_INDEX(IrradianceDrawParams, view_proj_mtx),
+      prepass_cmd.SetPipelineParameters(PIPELINE_PARAM_INDEX(IrradianceDrawParams, view_proj_mtx),
         std::span{std::bit_cast<UINT const*>(view_proj_mtx.GetData()), 16});
 
-      DrawSubmesh(1, 0, 0, {}, {}, {}, prepare_cmd);
+      DrawSubmesh(1, 0, 0, {}, {}, {}, prepass_cmd);
     }
   }
 
   if (frame_packet.draw_prefiltered_env_map) {
-    prepare_cmd.SetPipelineState(*frame_packet.envmap_prefilter_pso);
-    prepare_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    prepass_cmd.SetPipelineState(*frame_packet.envmap_prefilter_pso);
+    prepass_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     auto const& cube_geom = frame_packet.geom_batches[frame_packet.cube_geom_local_idx];
-    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, meshlet_buf_idx),
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, meshlet_buf_idx),
       *frame_packet.buffers[cube_geom.meshlet_buf_local_idx]);
-    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, vertex_idx_buf_idx),
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, vertex_idx_buf_idx),
       *frame_packet.buffers[cube_geom.vtx_idx_buf_local_idx]);
-    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, prim_idx_buf_idx),
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, prim_idx_buf_idx),
       *frame_packet.buffers[cube_geom.prim_idx_buf_local_idx]);
-    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, pos_buf_idx),
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, pos_buf_idx),
       *frame_packet.buffers[cube_geom.pos_buf_local_idx]);
-    prepare_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, env_map_idx),
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, env_map_idx),
       *frame_packet.skybox_cubemap);
-    prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, tri_clamp_samp_idx),
+    prepass_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, tri_clamp_samp_idx),
       samp_tri_clamp_.Get());
 
     auto const& envmap_desc{frame_packet.prefiltered_env_map->GetDesc()};
@@ -1040,31 +909,34 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
         0, 0, static_cast<LONG>(mip_width), static_cast<LONG>(mip_height)
       };
 
-      prepare_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&envmap_viewport), 1});
-      prepare_cmd.SetScissorRects(std::span{&envmap_scissor, 1});
-      prepare_cmd.SetRenderTargets(std::array{frame_packet.prefiltered_env_map.get()}, nullptr, mip);
-      prepare_cmd.ClearRenderTarget(*frame_packet.prefiltered_env_map, std::array{0.F, 0.F, 0.F, 1.F}, {}, mip);
+      prepass_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&envmap_viewport), 1});
+      prepass_cmd.SetScissorRects(std::span{&envmap_scissor, 1});
+      prepass_cmd.SetRenderTargets(std::array{frame_packet.prefiltered_env_map.get()}, nullptr, mip);
+      prepass_cmd.ClearRenderTarget(*frame_packet.prefiltered_env_map, std::array{0.F, 0.F, 0.F, 1.F}, {}, mip);
 
       auto const roughness{static_cast<float>(mip) / static_cast<float>(mip_count - 1)};
-      prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, roughness),
+      prepass_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, roughness),
         *std::bit_cast<UINT const*>(&roughness));
 
       auto const view_matrices{MakeCubeFaceViewMatrices(Vector3::Zero())};
       auto const proj_mtx{TransformProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, .1F, 10.F))};
 
       for (auto i{0U}; i < 6U; i++) {
-        prepare_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, rt_idx), i);
+        prepass_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, rt_idx), i);
         auto const view_proj_mtx{view_matrices[i] * proj_mtx};
-        prepare_cmd.SetPipelineParameters(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, view_proj_mtx),
+        prepass_cmd.SetPipelineParameters(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, view_proj_mtx),
           std::span{std::bit_cast<UINT const*>(view_proj_mtx.GetData()), 16});
 
-        DrawSubmesh(1, 0, 0, {}, {}, {}, prepare_cmd);
+        DrawSubmesh(1, 0, 0, {}, {}, {}, prepass_cmd);
       }
     }
   }
 
-  prepare_cmd.End();
-  frame.EnqueueCommandList(prepare_cmd);
+  prepass_cmd.End();
+  frame.EnqueueCommandList(prepass_cmd);
+
+  auto& per_frame_cb{per_frame_cbs_[frame_idx]};
+  SetPerFrameConstants(per_frame_cb, frame_packet.ambient_light, frame_packet.shadow_params);
 
   for (auto& cam_data : frame_packet.cam_data) {
     auto const prev_cam_it{std::ranges::find(prev_frame_packet.cam_data, cam_data.id, &CameraData::id)};
@@ -1153,12 +1025,6 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     auto const velocity_rt{render_manager_->AcquireTemporaryRenderTarget(velocity_rt_desc)};
     auto const color_hdr_rt{render_manager_->AcquireTemporaryRenderTarget(color_hdr_rt_desc)};
 
-    // Fill constant buffers
-
-    auto& per_frame_cb{per_frame_cbs_[frame_idx]};
-    SetPerFrameConstants(per_frame_cb, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height),
-      frame_packet.ambient_light, frame_packet.shadow_params);
-
     auto const cam_view_mtx{
       Camera::CalculateViewMatrix(cam_data.position, cam_data.right, cam_data.up, cam_data.forward)
     };
@@ -1240,7 +1106,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
     SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, prev_cam_view_proj_mtx, shadow_cascade_boundaries,
-      cam_frust_ws, cam_data.position, cam_data.near_plane, cam_data.far_plane);
+      cam_frust_ws, cam_data.position, cam_data.near_plane, cam_data.far_plane, static_cast<int>(transient_rt_width),
+      static_cast<int>(transient_rt_height));
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
@@ -1318,11 +1185,11 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
         geom_batch.mtl_group_count);
 
       for (auto const& instance : instances) {
-        auto& per_draw_cb{AcquirePerDrawConstantBuffer(frame_idx)};
-        SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, cam_view_mtx, cam_proj_mtx,
+        auto& per_inst_cb{AcquirePerInstanceConstantBuffer(frame_idx)};
+        SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, cam_view_mtx, cam_proj_mtx,
           instance.prev_local_to_world_mtx, instance.max_abs_scaling);
-        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_draw_cb_idx),
-          *per_draw_cb.GetBuffer());
+        cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_inst_cb_idx),
+          *per_inst_cb.GetBuffer());
 
         for (auto const& mtl_group : mtl_groups) {
           auto const inst_mtl_local_idx = instance.first_mtl + mtl_group.mtl_slot;
@@ -1370,8 +1237,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
         *depth_sample_rt->GetDepthStencilTex());
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, gbuffer1_tex_idx),
         *gbuffer1_rt->GetColorTex());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx),
-        *ssao_samples_buffer_.GetBuffer());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx), *frame_packet.ssao_samples_buf);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_wrap_samp_idx), samp_point_wrap_.Get());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, radius),
@@ -1416,10 +1282,10 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     // Deferred lighting pass
 
-    auto const light_count{std::ssize(visible_light_indices)};
+    auto const light_count{std::size(visible_light_indices)};
     std::vector<ShaderLight> light_data(light_count);
 
-    for (auto i = 0; i < light_count; i++) {
+    for (auto i = 0uz; i < light_count; i++) {
       light_data[i].color = frame_packet.light_data[visible_light_indices[i]].color;
       light_data[i].intensity = frame_packet.light_data[visible_light_indices[i]].intensity;
       light_data[i].type = static_cast<int>(frame_packet.light_data[visible_light_indices[i]].type);
@@ -1439,7 +1305,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       }
     }
 
-    for (auto i{0}; i < light_count; i++) {
+    for (auto i = 0uz; i < light_count; i++) {
       if (auto const light{frame_packet.light_data[visible_light_indices[i]]};
         light.type == LightComponent::Type::Directional && light.casts_shadow) {
         light_data[i].isCastingShadow = TRUE;
@@ -1455,9 +1321,14 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     punctual_shadow_atlas_->SetLookUpInfo(light_data);
 
-    auto& light_buffer{light_buffer_};
-    light_buffer.Resize(static_cast<int>(light_count));
-    render_manager_->UpdateBuffer(*light_buffer.GetBuffer(), 0, as_bytes(std::span{light_data}));
+    auto& light_buffer{light_buffers_[frame_idx]};
+
+    if (light_buffer.GetElementCount() < light_count) {
+      // Ignored, because light buffers are per-frame.
+      std::ignore = light_buffer.Reallocate(light_count);
+    }
+
+    std::ranges::copy(light_data, std::ranges::begin(light_buffer.GetData()));
 
     cam_cmd.SetPipelineState(*frame_packet.deferred_lighting_pso);
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, gbuffer0_idx),
@@ -1669,12 +1540,12 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     // Gizmo pass
 
-    if (!frame_packet.line_gizmo_vertex_data.empty()) {
+    if (frame_packet.gizmo_data.line_count > 0) {
       cam_cmd.SetPipelineState(*frame_packet.line_gizmo_pso);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GizmoDrawParams, vertex_buf_idx),
-        *line_gizmo_vertex_data_buffer_.GetBuffer());
+        *line_gizmo_vertex_data_buffers_[frame_idx].GetBuffer());
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GizmoDrawParams, color_buf_idx),
-        *gizmo_color_buffer_.GetBuffer());
+        *gizmo_color_buffers_[frame_idx].GetBuffer());
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx),
         *cam_per_view_cb.GetBuffer());
       cam_cmd.SetRenderTargets(std::span{
@@ -1682,7 +1553,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       }, nullptr);
       cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
       cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
-      cam_cmd.DrawInstanced(2, static_cast<UINT>(frame_packet.line_gizmo_vertex_data.size()), 0, 0);
+      cam_cmd.DrawInstanced(2, static_cast<UINT>(frame_packet.gizmo_data.line_count), 0, 0);
     }
 
     cam_cmd.End();
@@ -1896,6 +1767,177 @@ auto SceneRenderer::Unregister(Camera const& cam) noexcept -> void {
 }
 
 
+auto SceneRenderer::FindOrAddBufferInPacket(wand::SharedDeviceChildHandle<wand::Buffer> const& buf,
+                                            ExtractedFrameData& packet) -> std::uint32_t {
+  std::uint32_t idx;
+
+  if (auto const it{std::ranges::find(packet.buffers, buf)}; it != std::ranges::end(packet.buffers)) {
+    idx = static_cast<uint32_t>(it - packet.buffers.begin());
+  } else {
+    idx = static_cast<uint32_t>(packet.buffers.size());
+    packet.buffers.emplace_back(buf);
+  }
+
+  return idx;
+}
+
+
+auto SceneRenderer::FindOrAddTextureInPacket(wand::SharedDeviceChildHandle<wand::Texture> const& tex,
+                                             ExtractedFrameData& packet) -> std::uint32_t {
+  std::uint32_t idx;
+
+  if (auto const it{std::ranges::find(packet.textures, tex)}; it != std::ranges::end(packet.textures)) {
+    idx = static_cast<uint32_t>(it - packet.textures.begin());
+  } else {
+    idx = static_cast<uint32_t>(packet.textures.size());
+    packet.textures.emplace_back(tex);
+  }
+
+  return idx;
+}
+
+
+auto SceneRenderer::AddMeshToPacket(Mesh& mesh, RenderFrame& frame, ExtractedFrameData& packet) const -> std::uint32_t {
+  auto const [render_mesh, is_new] = resource_registry_->CreateOrGetMesh(mesh.GetId());
+
+  if (is_new || mesh.GetRevision() != render_mesh->GetRevision()) {
+    SyncMesh(mesh, *render_mesh, frame);
+  }
+
+  auto const ret = static_cast<unsigned>(packet.geom_batches.size());
+
+  auto const pos_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetPositionBuffer(), packet)};
+  auto const norm_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetNormalBuffer(), packet)};
+  auto const tan_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetTangentBuffer(), packet)};
+  auto const uv_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetUvBuffer(), packet)};
+  auto const meshlet_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetMeshletBuffer(), packet)};
+  auto const vtx_idx_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetVertexIndexBuffer(), packet)};
+  auto const prim_idx_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetPrimitiveIndexBuffer(), packet)};
+  auto const cull_data_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetCullDataBuffer(), packet)};
+
+  auto const& bone_weight_buf = render_mesh->GetBoneWeightBuffer();
+  auto const bone_weight_buf_local_idx = bone_weight_buf
+                                           ? FindOrAddBufferInPacket(bone_weight_buf, packet)
+                                           : frame_packet_invalid_idx;
+
+  auto const& bone_idx_buf = render_mesh->GetBoneIndexBuffer();
+  auto const bone_idx_buf_local_idx = bone_idx_buf
+                                        ? FindOrAddBufferInPacket(bone_idx_buf, packet)
+                                        : frame_packet_invalid_idx;
+
+  auto const mtl_slots = mesh.GetMaterialSlots();
+  auto const submeshes = mesh.GetSubmeshes();
+
+  auto const first_mtl_group = static_cast<unsigned>(packet.mtl_slot_groups.size());
+  auto mtl_group_count = 0u;
+
+  for (auto i = 0u; i < static_cast<unsigned>(mtl_slots.size()); ++i) {
+    auto first_submesh = static_cast<unsigned>(packet.submesh_data.size());
+    auto submesh_count = 0u;
+
+    for (auto const& submesh : submeshes) {
+      if (submesh.GetMaterialIndex() == i) {
+        packet.submesh_data.emplace_back(submesh.GetFirstMeshlet(), submesh.GetMeshletCount(),
+          submesh.GetBaseVertex(), submesh.GetBounds());
+
+        ++submesh_count;
+      }
+    }
+
+    if (submesh_count != 0) {
+      packet.mtl_slot_groups.emplace_back(i, first_submesh, submesh_count);
+      ++mtl_group_count;
+    }
+  }
+
+  // Deliberately setting instance_count to 0, as it will be set later when instances are added.
+  // Skinning data is also set to invalid. It will be patched when extracting skinned meshes.
+  packet.geom_batches.emplace_back(pos_buf_local_idx, norm_buf_local_idx, tan_buf_local_idx, uv_buf_local_idx,
+    bone_weight_buf_local_idx, bone_idx_buf_local_idx, meshlet_buf_local_idx, vtx_idx_buf_local_idx,
+    prim_idx_buf_local_idx, cull_data_buf_local_idx, first_mtl_group, mtl_group_count,
+    static_cast<unsigned>(packet.instance_data.size()), 0u, frame_packet_invalid_idx,
+    mesh.GetBounds(), static_cast<unsigned>(mesh.GetVertexCount()), mesh.GetId(), mesh.Has32BitVertexIndices());
+
+  return ret;
+}
+
+
+auto SceneRenderer::FindOrAddMeshInPacket(Mesh& mesh, RenderFrame& frame, ExtractedFrameData& packet) -> std::uint32_t {
+  if (auto const it{std::ranges::find(packet.geom_batches, mesh.GetId(), &GeometryBatch::src_mesh_id)};
+    it != std::ranges::end(packet.geom_batches)) {
+    return static_cast<std::uint32_t>(it - std::ranges::begin(packet.geom_batches));
+  }
+
+  return AddMeshToPacket(mesh, frame, packet);
+}
+
+
+auto SceneRenderer::AddMeshComponentToPacket(MeshComponentBase const& comp, GeometryBatch& geom_batch,
+                                             Matrix4 const& prev_local_to_world_mtx, RenderFrame& frame,
+                                             ExtractedFrameData& packet) const -> void {
+  auto const& materials = comp.GetMaterials();
+  auto const first_mtl = static_cast<unsigned>(packet.instance_materials.size());
+  auto const mtl_count = static_cast<unsigned>(materials.size());
+
+  for (auto const& mtl_ref : materials) {
+    auto const mtl = mtl_ref.Observe();
+
+    if (!mtl) {
+      packet.instance_materials.emplace_back(frame_packet_invalid_idx);
+      continue;
+    }
+
+    auto const [render_mtl, is_new] = resource_registry_->CreateOrGetMaterial(mtl->GetId());
+
+    if (is_new || mtl->GetRevision() != render_mtl->GetRevision()) {
+      SyncMaterial(*mtl, *render_mtl, frame);
+    }
+
+    packet.instance_materials.emplace_back(FindOrAddBufferInPacket(render_mtl->GetBuffer(), packet));
+
+    for (auto const tex : {
+           mtl->GetAlbedoMap().Observe(),
+           mtl->GetMetallicMap().Observe(),
+           mtl->GetRoughnessMap().Observe(),
+           mtl->GetAoMap().Observe(),
+           mtl->GetNormalMap().Observe(),
+           mtl->GetOpacityMask().Observe()
+         }) {
+      if (tex) {
+        // Return ignored because index is irrelevant, we call this only to make sure the packet contains the textures
+        // the material references.
+        std::ignore = FindOrAddTextureInPacket(tex->GetTex(), packet);
+      }
+    }
+  }
+
+  auto const& transform{comp.GetEntity()->GetTransform()};
+  auto const local_to_world_mtx{transform.GetLocalToWorldMatrix()};
+  auto const scaling{transform.GetWorldScale()};
+  auto const max_abs_scale{std::max({std::abs(scaling[0]), std::abs(scaling[1]), std::abs(scaling[2])})};
+
+  // We place instances linearly and keep incrementing the instance count of the associated batch.
+  // The caller can create an instance list for a batch by repeatedly calling this function for all instances in-order.
+  packet.instance_data.emplace_back(local_to_world_mtx, prev_local_to_world_mtx, max_abs_scale, first_mtl, mtl_count);
+  ++geom_batch.instance_count;
+}
+
+
+auto SceneRenderer::FindOrAddRenderTargetInPacket(std::shared_ptr<RenderTarget> const& rt,
+                                                  ExtractedFrameData& packet) -> std::uint32_t {
+  std::uint32_t idx;
+
+  if (auto const it{std::ranges::find(packet.render_targets, rt)}; it != std::ranges::end(packet.render_targets)) {
+    idx = static_cast<std::uint32_t>(it - packet.render_targets.begin());
+  } else {
+    idx = static_cast<std::uint32_t>(packet.render_targets.size());
+    packet.render_targets.emplace_back(rt);
+  }
+
+  return idx;
+}
+
+
 auto SceneRenderer::SyncMaterial(Material const& mtl, RenderMaterial& render_mtl, RenderFrame& frame) -> void {
   auto const albedo_map = mtl.GetAlbedoMap();
   auto const metallic_map = mtl.GetMetallicMap();
@@ -2077,22 +2119,21 @@ auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData co
 }
 
 
-auto SceneRenderer::SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int const rt_width,
-                                         int const rt_height, Vector3 const& ambient_light,
-                                         ShadowParams const& shadow_params) -> void {
-  cb.Update(ShaderPerFrameConstants{
+auto SceneRenderer::SetPerFrameConstants(MappedConstantBuffer<ShaderPerFrameConstants>& cb,
+                                         Vector3 const& ambient_light, ShadowParams const& shadow_params) -> void {
+  cb.GetData() = ShaderPerFrameConstants{
     .ambientLightColor = ambient_light, .shadowCascadeCount = shadow_params.cascade_count,
-    .screenSize = Vector2{rt_width, rt_height}, .visualizeShadowCascades = shadow_params.visualize_cascades,
+    .visualizeShadowCascades = shadow_params.visualize_cascades,
     .shadowFilteringMode = static_cast<int>(shadow_params.filtering_mode)
-  });
+  };
 }
 
 
-auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
+auto SceneRenderer::SetPerViewConstants(MappedConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
                                         Matrix4 const& proj_mtx, Matrix4 const& prev_view_proj_mtx,
                                         ShadowCascadeBoundaries const& cascade_bounds, Frustum const& frustum_ws,
                                         Vector3 const& view_pos, float const near_clip_plane,
-                                        float const far_clip_plane) -> void {
+                                        float const far_clip_plane, int const rt_width, int const rt_height) -> void {
   ShaderPerViewConstants data;
   data.viewMtx = view_mtx;
   data.invViewMtx = view_mtx.Inverse();
@@ -2109,23 +2150,25 @@ auto SceneRenderer::SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& 
   data.viewPos = view_pos;
   data.near_clip_plane = near_clip_plane;
   data.far_clip_plane = far_clip_plane;
+  data.screenSize = Vector2{rt_width, rt_height};
 
   for (auto i = 0; i < MAX_CASCADE_COUNT; i++) {
     data.shadowCascadeSplitDistances[i] = cascade_bounds[i].farClip;
   }
 
-  cb.Update(data);
+  cb.GetData() = data;
 }
 
 
-auto SceneRenderer::SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
-                                        Matrix4 const& view_mtx, Matrix4 const& proj_mtx,
-                                        Matrix4 const& prev_model_mtx, float const max_abs_scaling) -> void {
-  cb.Update(ShaderPerDrawConstants{
+auto SceneRenderer::SetPerInstanceConstants(MappedConstantBuffer<ShaderPerInstanceConstants>& cb,
+                                            Matrix4 const& model_mtx,
+                                            Matrix4 const& view_mtx, Matrix4 const& proj_mtx,
+                                            Matrix4 const& prev_model_mtx, float const max_abs_scaling) -> void {
+  cb.GetData() = ShaderPerInstanceConstants{
     .modelMtx = model_mtx, .invTranspModelMtx = model_mtx.Inverse().Transpose(), .model_view_mtx = model_mtx * view_mtx,
     .model_view_proj_mtx = model_mtx * view_mtx * proj_mtx, .prev_model_mtx = prev_model_mtx,
     .max_abs_scaling = max_abs_scaling
-  });
+  };
 }
 
 
@@ -2293,7 +2336,7 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
 }
 
 
-auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet, std::uint32_t const frame_idx,
+auto SceneRenderer::DrawDirectionalShadowMaps(ExtractedFrameData const& frame_packet, std::uint32_t const frame_idx,
                                               std::span<unsigned const> const visible_light_indices,
                                               CameraData const& cam_data, float rt_aspect, int const cascade_count,
                                               ShadowCascadeBoundaries const& shadow_cascade_boundaries,
@@ -2461,7 +2504,8 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet, s
 
         auto& per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
         SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, {}, ShadowCascadeBoundaries{},
-          shadow_frustum_ws, Vector3{}, shadow_near_clip, shadow_far_clip);
+          shadow_frustum_ws, Vector3{}, shadow_near_clip, shadow_far_clip, static_cast<int>(shadowMapSize),
+          static_cast<int>(shadowMapSize));
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
         for (auto const& geom_batch : frame_packet.geom_batches) {
@@ -2486,11 +2530,11 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet, s
             geom_batch.mtl_group_count);
 
           for (auto const& instance : instances) {
-            auto& per_draw_cb{AcquirePerDrawConstantBuffer(frame_idx)};
-            SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, shadowViewMtx, shadowProjMtx, {},
+            auto& per_inst_cb{AcquirePerInstanceConstantBuffer(frame_idx)};
+            SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, shadowViewMtx, shadowProjMtx, {},
               instance.max_abs_scaling);
-            cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
-              *per_draw_cb.GetBuffer());
+            cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_inst_cb_idx),
+              *per_inst_cb.GetBuffer());
 
             for (auto const& mtl_group : mtl_groups) {
               auto const inst_mtl_local_idx = instance.first_mtl + mtl_group.mtl_slot;
@@ -2524,7 +2568,7 @@ auto SceneRenderer::DrawDirectionalShadowMaps(FramePacket const& frame_packet, s
 
 
 auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
-                                           FramePacket const& frame_packet,
+                                           ExtractedFrameData const& frame_packet,
                                            std::uint32_t const frame_idx, wand::CommandList& cmd) -> void {
   cmd.SetPipelineState(*shadow_pso_);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
@@ -2558,7 +2602,8 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 
         auto& per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
         SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, {},
-          ShadowCascadeBoundaries{}, shadow_frustum_ws, Vector3{}, 0, 0); // TODO pass proper near and far clip planes
+          ShadowCascadeBoundaries{}, shadow_frustum_ws, Vector3{}, 0, 0, 0,
+          0); // TODO pass proper near and far clip planes and rt size
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
         for (auto const& geom_batch : frame_packet.geom_batches) {
@@ -2583,11 +2628,11 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
             geom_batch.mtl_group_count);
 
           for (auto const& instance : instances) {
-            auto& per_draw_cb{AcquirePerDrawConstantBuffer(frame_idx)};
-            SetPerDrawConstants(per_draw_cb, instance.local_to_world_mtx, Matrix4::Identity(),
+            auto& per_inst_cb{AcquirePerInstanceConstantBuffer(frame_idx)};
+            SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, Matrix4::Identity(),
               subcell->shadowViewProjMtx, {}, instance.max_abs_scaling);
-            cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_draw_cb_idx),
-              *per_draw_cb.GetBuffer());
+            cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_inst_cb_idx),
+              *per_inst_cb.GetBuffer());
 
             for (auto const& mtl_group : mtl_groups) {
               auto const inst_mtl_local_idx = instance.first_mtl + mtl_group.mtl_slot;
@@ -2618,15 +2663,9 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
 }
 
 
-auto SceneRenderer::ClearGizmoDrawQueue() noexcept -> void {
-  gizmo_colors_.clear();
-  line_gizmo_vertex_data_.clear();
-}
-
-
 auto SceneRenderer::RecreateSsaoSamples(int const sample_count) noexcept -> void {
-  ssao_samples_buffer_.Resize(sample_count);
-  auto const ssao_samples{ssao_samples_buffer_.GetData()};
+  ssao_samples_.resize(sample_count);
+  ssao_samples_changed_ = true;
 
   std::uniform_real_distribution dist{0.0f, 1.0f};
   std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
@@ -2640,7 +2679,7 @@ auto SceneRenderer::RecreateSsaoSamples(int const sample_count) noexcept -> void
     scale = std::lerp(0.1f, 1.0f, scale * scale);
     sample *= scale;
 
-    ssao_samples[i] = Vector4{sample, 0};
+    ssao_samples_[i] = Vector4{sample, 0};
   }
 }
 
@@ -2844,34 +2883,31 @@ auto SceneRenderer::CreatePerViewConstantBuffers(UINT const count) -> void {
   per_view_cbs_.reserve(per_view_cbs_.size() + count);
 
   for (UINT i{0}; i < count; i++) {
-    auto& arr{per_view_cbs_.emplace_back()};
-
-    for (UINT j{0}; j < kFramesInFlight; j++) {
-      if (auto opt{ConstantBuffer<ShaderPerViewConstants>::New(*device_, true)}) {
-        arr[j] = std::move(*opt);
+    per_view_cbs_.emplace_back(std::array{
+        MappedConstantBuffer<ShaderPerViewConstants>{*device_},
+        MappedConstantBuffer<ShaderPerViewConstants>{*device_}
       }
-    }
+    );
   }
 }
 
 
-auto SceneRenderer::CreatePerDrawConstantBuffers(UINT const count) -> void {
-  per_draw_cbs_.reserve(per_draw_cbs_.size() + count);
+auto SceneRenderer::CreatePerInstanceConstantBuffers(UINT const count) -> void {
+  per_inst_cbs_.reserve(per_inst_cbs_.size() + count);
 
   for (UINT i{0}; i < count; i++) {
-    auto& arr{per_draw_cbs_.emplace_back()};
-
-    for (UINT j{0}; j < kFramesInFlight; j++) {
-      if (auto opt{ConstantBuffer<ShaderPerDrawConstants>::New(*device_, true)}) {
-        arr[j] = std::move(*opt);
+    per_inst_cbs_.emplace_back(
+      std::array{
+        MappedConstantBuffer<ShaderPerInstanceConstants>{*device_},
+        MappedConstantBuffer<ShaderPerInstanceConstants>{*device_}
       }
-    }
+    );
   }
 }
 
 
 auto SceneRenderer::AcquirePerViewConstantBuffer(
-  std::uint32_t const frame_idx) -> ConstantBuffer<ShaderPerViewConstants>& {
+  std::uint32_t const frame_idx) -> MappedConstantBuffer<ShaderPerViewConstants>& {
   if (next_per_view_cb_idx_ >= per_view_cbs_.size()) {
     CreatePerViewConstantBuffers(1);
   }
@@ -2880,13 +2916,13 @@ auto SceneRenderer::AcquirePerViewConstantBuffer(
 }
 
 
-auto SceneRenderer::AcquirePerDrawConstantBuffer(
-  std::uint32_t const frame_idx) -> ConstantBuffer<ShaderPerDrawConstants>& {
-  if (next_per_draw_cb_idx_ >= per_draw_cbs_.size()) {
-    CreatePerDrawConstantBuffers(1);
+auto SceneRenderer::AcquirePerInstanceConstantBuffer(
+  std::uint32_t const frame_idx) -> MappedConstantBuffer<ShaderPerInstanceConstants>& {
+  if (next_per_instance_cb_idx_ >= per_inst_cbs_.size()) {
+    CreatePerInstanceConstantBuffers(1);
   }
 
-  return per_draw_cbs_[next_per_draw_cb_idx_++][frame_idx];
+  return per_inst_cbs_[next_per_instance_cb_idx_++][frame_idx];
 }
 
 

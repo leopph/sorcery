@@ -299,7 +299,12 @@ private:
   };
 
 
-  struct FramePacket {
+  struct GizmoDrawData {
+    std::uint64_t line_count;
+  };
+
+
+  struct ExtractedFrameData {
     std::vector<wand::SharedDeviceChildHandle<wand::Buffer>> buffers;
     std::vector<wand::SharedDeviceChildHandle<wand::Texture>> textures;
 
@@ -322,8 +327,7 @@ private:
     std::vector<BoneData> bone_data;
     std::vector<SkinnedMeshData> skinning_data;
 
-    std::vector<Vector4> gizmo_colors;
-    std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data;
+    GizmoDrawData gizmo_data;
 
     unsigned cube_geom_local_idx;
 
@@ -344,6 +348,10 @@ private:
 
     Vector3 ambient_light;
 
+    wand::SharedDeviceChildHandle<wand::Buffer> ssao_samples_buf;
+    std::vector<Vector4> ssao_samples;
+    bool upload_ssao_samples;
+
     wand::SharedDeviceChildHandle<wand::PipelineState> shadow_pso;
     wand::SharedDeviceChildHandle<wand::PipelineState> gbuffer_velocity_pso;
     wand::SharedDeviceChildHandle<wand::PipelineState> depth_resolve_pso;
@@ -362,72 +370,193 @@ private:
   };
 
 
-  static auto SyncMaterial(Material const& mtl, RenderMaterial& render_mtl, RenderFrame& frame) -> void;
-  auto SyncMesh(Mesh& mesh, RenderMesh& render_mesh, RenderFrame& frame) const -> void;
-  static auto SyncStaticInstance(StaticMeshComponent const& comp, StaticRenderMeshInstance& inst) -> void;
-  auto SyncSkinnedInstance(SkinnedMeshComponent const& comp, SkinnedRenderMeshInstance& inst) const -> void;
+  struct PreparedCameraData {
+    unsigned first_light;
+    unsigned light_count;
+  };
 
 
-  [[nodiscard]] static auto CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,
-                                                                   ShadowParams const& shadow_params) ->
-    ShadowCascadeBoundaries;
+  struct PreparedFrameData {
+    std::vector<PreparedCameraData> cam_data;
+    std::vector<ShaderLight> lights;
+  };
 
 
-  static auto CullLights(Frustum const& frustum_ws, std::span<LightData const> lights,
-                         std::vector<unsigned>& visible_light_indices) -> void;
+  [[nodiscard]] static
+  auto FindOrAddBufferInPacket(
+    wand::SharedDeviceChildHandle<wand::Buffer> const& buf,
+    ExtractedFrameData& packet
+  ) -> std::uint32_t;
+
+  [[nodiscard]] static
+  auto FindOrAddTextureInPacket(
+    wand::SharedDeviceChildHandle<wand::Texture> const& tex,
+    ExtractedFrameData& packet
+  ) -> std::uint32_t;
+
+  [[nodiscard]]
+  auto AddMeshToPacket(
+    Mesh& mesh,
+    RenderFrame& frame,
+    ExtractedFrameData& packet
+  ) const -> std::uint32_t;
+
+  [[nodiscard]]
+  auto FindOrAddMeshInPacket(
+    Mesh& mesh,
+    RenderFrame& frame,
+    ExtractedFrameData& packet
+  ) -> std::uint32_t;
+
+  auto AddMeshComponentToPacket(
+    MeshComponentBase const& comp,
+    GeometryBatch& geom_batch,
+    Matrix4 const& prev_local_to_world_mtx,
+    RenderFrame& frame,
+    ExtractedFrameData& packet
+  ) const -> void;
+
+  [[nodiscard]] static
+  auto FindOrAddRenderTargetInPacket(
+    std::shared_ptr<RenderTarget> const& rt,
+    ExtractedFrameData& packet
+  ) -> std::uint32_t;
+
+  static
+  auto SyncMaterial(
+    Material const& mtl,
+    RenderMaterial& render_mtl,
+    RenderFrame& frame
+  ) -> void;
+
+  auto SyncMesh(
+    Mesh& mesh,
+    RenderMesh& render_mesh,
+    RenderFrame& frame
+  ) const -> void;
+
+  static
+  auto SyncStaticInstance(
+    StaticMeshComponent const& comp,
+    StaticRenderMeshInstance& inst
+  ) -> void;
+
+  auto SyncSkinnedInstance(
+    SkinnedMeshComponent const& comp,
+    SkinnedRenderMeshInstance& inst
+  ) const -> void;
 
 
-  static auto SetPerFrameConstants(ConstantBuffer<ShaderPerFrameConstants>& cb, int rt_width, int rt_height,
-                                   Vector3 const& ambient_light, ShadowParams const& shadow_params) -> void;
-  static auto SetPerViewConstants(ConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
-                                  Matrix4 const& proj_mtx, Matrix4 const& prev_view_proj_mtx,
-                                  ShadowCascadeBoundaries const& cascade_bounds, Frustum const& frustum_ws,
-                                  Vector3 const& view_pos, float near_clip_plane, float far_clip_plane) -> void;
-  static auto SetPerDrawConstants(ConstantBuffer<ShaderPerDrawConstants>& cb, Matrix4 const& model_mtx,
-                                  Matrix4 const& view_mtx, Matrix4 const& proj_mtx,
-                                  Matrix4 const& prev_model_mtx, float max_abs_scaling) -> void;
+  [[nodiscard]] static
+  auto CalculateCameraShadowCascadeBoundaries(
+    CameraData const& cam_data,
+    ShadowParams const& shadow_params
+  ) -> ShadowCascadeBoundaries;
 
 
-  auto UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas, std::span<LightData const> lights,
-                                 std::span<unsigned const> visible_light_indices, CameraData const& cam_data,
-                                 Matrix4 const& cam_view_proj_mtx, float shadow_distance) -> void;
+  static
+  auto CullLights(
+    Frustum const& frustum_ws,
+    std::span<LightData const> lights,
+    std::vector<unsigned>& visible_light_indices
+  ) -> void;
 
 
-  auto DrawDirectionalShadowMaps(FramePacket const& frame_packet, std::uint32_t frame_idx,
-                                 std::span<unsigned const> visible_light_indices, CameraData const& cam_data,
-                                 float rt_aspect,
-                                 int cascade_count,
-                                 ShadowCascadeBoundaries const& shadow_cascade_boundaries,
-                                 std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
-                                 wand::CommandList& cmd) -> void;
-  auto DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas, FramePacket const& frame_packet,
-                              std::uint32_t frame_idx, wand::CommandList& cmd) -> void;
+  static
+  auto SetPerFrameConstants(
+    MappedConstantBuffer<ShaderPerFrameConstants>& cb,
+    Vector3 const& ambient_light,
+    ShadowParams const& shadow_params
+  ) -> void;
 
-  auto ClearGizmoDrawQueue() noexcept -> void;
+  static
+  auto SetPerViewConstants(
+    MappedConstantBuffer<ShaderPerViewConstants>& cb,
+    Matrix4 const& view_mtx,
+    Matrix4 const& proj_mtx,
+    Matrix4 const& prev_view_proj_mtx,
+    ShadowCascadeBoundaries const& cascade_bounds,
+    Frustum const& frustum_ws,
+    Vector3 const& view_pos,
+    float near_clip_plane,
+    float far_clip_plane,
+    int rt_width,
+    int rt_height
+  ) -> void;
+
+  static
+  auto SetPerInstanceConstants(
+    MappedConstantBuffer<ShaderPerInstanceConstants>& cb,
+    Matrix4 const& model_mtx,
+    Matrix4 const& view_mtx,
+    Matrix4 const& proj_mtx,
+    Matrix4 const& prev_model_mtx,
+    float max_abs_scaling
+  ) -> void;
+
+
+  auto UpdatePunctualShadowAtlas(
+    PunctualShadowAtlas& atlas,
+    std::span<LightData const> lights,
+    std::span<unsigned const> visible_light_indices,
+    CameraData const& cam_data,
+    Matrix4 const& cam_view_proj_mtx,
+    float shadow_distance
+  ) -> void;
+
+
+  auto DrawDirectionalShadowMaps(
+    ExtractedFrameData const& frame_packet,
+    std::uint32_t frame_idx,
+    std::span<unsigned const> visible_light_indices,
+    CameraData const& cam_data,
+    float rt_aspect,
+    int cascade_count,
+    ShadowCascadeBoundaries const& shadow_cascade_boundaries,
+    std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
+    wand::CommandList& cmd
+  ) -> void;
+
+  auto DrawPunctualShadowMaps(
+    PunctualShadowAtlas const& atlas,
+    ExtractedFrameData const& frame_packet,
+    std::uint32_t frame_idx,
+    wand::CommandList& cmd
+  ) -> void;
 
   auto RecreateSsaoSamples(int sample_count) noexcept -> void;
 
   auto RecreatePipelines() -> void;
 
   auto CreatePerViewConstantBuffers(UINT count) -> void;
-  auto CreatePerDrawConstantBuffers(UINT count) -> void;
+  auto CreatePerInstanceConstantBuffers(UINT count) -> void;
 
-  auto AcquirePerViewConstantBuffer(std::uint32_t frame_idx) -> ConstantBuffer<ShaderPerViewConstants>&;
-  auto AcquirePerDrawConstantBuffer(std::uint32_t frame_idx) -> ConstantBuffer<ShaderPerDrawConstants>&;
+  auto AcquirePerViewConstantBuffer(std::uint32_t frame_idx) -> MappedConstantBuffer<ShaderPerViewConstants>&;
+  auto AcquirePerInstanceConstantBuffer(std::uint32_t frame_idx) -> MappedConstantBuffer<ShaderPerInstanceConstants>&;
 
   auto OnWindowSize(Extent2D<std::uint32_t> size) -> void;
 
   auto RecordGpuInitWork(RenderFrame& frame) const -> void;
 
-  static auto DrawSubmesh(SubmeshData const& submesh, std::optional<UINT> meshlet_count_param_idx,
-                          std::optional<UINT> meshlet_offset_param_idx,
-                          std::optional<UINT> base_vertex_param_idx,
-                          wand::CommandList const& cmd) -> void;
-  static auto DrawSubmesh(UINT submesh_meshlet_count, UINT submesh_meshlet_offset,
-                          UINT submesh_base_vertex, std::optional<UINT> meshlet_count_param_idx,
-                          std::optional<UINT> meshlet_offset_param_idx,
-                          std::optional<UINT> base_vertex_param_idx,
-                          wand::CommandList const& cmd) -> void;
+  static
+  auto DrawSubmesh(
+    SubmeshData const& submesh,
+    std::optional<UINT> meshlet_count_param_idx,
+    std::optional<UINT> meshlet_offset_param_idx,
+    std::optional<UINT> base_vertex_param_idx,
+    wand::CommandList const& cmd
+  ) -> void;
+
+  static
+  auto DrawSubmesh(
+    UINT submesh_meshlet_count,
+    UINT submesh_meshlet_offset,
+    UINT submesh_base_vertex,
+    std::optional<UINT> meshlet_count_param_idx,
+    std::optional<UINT> meshlet_offset_param_idx,
+    std::optional<UINT> base_vertex_param_idx,
+    wand::CommandList const& cmd
+  ) -> void;
 
   static DXGI_FORMAT constexpr imprecise_color_buffer_format_{DXGI_FORMAT_R11G11B10_FLOAT};
   static DXGI_FORMAT constexpr precise_color_buffer_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
@@ -448,19 +577,36 @@ private:
   static constexpr UINT brdf_integration_map_size_{128};
   static constexpr unsigned frame_packet_invalid_idx{~0u};
 
-  ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<Window> window_;
   ObserverPtr<wand::GraphicsDevice> device_;
+  ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<RenderResourceRegistry> resource_registry_;
   ObserverPtr<RenderInstanceRegistry> instance_registry_;
 
-  std::array<ConstantBuffer<ShaderPerFrameConstants>, kFramesInFlight> per_frame_cbs_;
-  std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, kFramesInFlight>> per_view_cbs_;
-  std::vector<std::array<ConstantBuffer<ShaderPerDrawConstants>, kFramesInFlight>> per_draw_cbs_;
-  StructuredBuffer<ShaderLight> light_buffer_;
+  std::array<MappedStructuredBuffer<ShaderLight>, kFramesInFlight> light_buffers_{
+    MappedStructuredBuffer<ShaderLight>{*device_, 0, true, false},
+    MappedStructuredBuffer<ShaderLight>{*device_, 0, true, false},
+  };
+  std::array<MappedConstantBuffer<ShaderPerFrameConstants>, kFramesInFlight> per_frame_cbs_{
+    MappedConstantBuffer<ShaderPerFrameConstants>{*device_},
+    MappedConstantBuffer<ShaderPerFrameConstants>{*device_}
+  };
+  std::array<MappedStructuredBuffer<Vector4>, kFramesInFlight> gizmo_color_buffers_{
+    MappedStructuredBuffer<Vector4>{*device_},
+    MappedStructuredBuffer<Vector4>{*device_},
+  };
+  std::array<MappedStructuredBuffer<ShaderLineGizmoVertexData>, kFramesInFlight> line_gizmo_vertex_data_buffers_{
+    MappedStructuredBuffer<ShaderLineGizmoVertexData>{*device_},
+    MappedStructuredBuffer<ShaderLineGizmoVertexData>{*device_}
+  };
+  std::vector<std::array<MappedConstantBuffer<ShaderPerViewConstants>, kFramesInFlight>> per_view_cbs_;
+  std::vector<std::array<MappedConstantBuffer<ShaderPerInstanceConstants>, kFramesInFlight>> per_inst_cbs_;
+
+  wand::SharedDeviceChildHandle<wand::Buffer> ssao_samples_buffer_;
 
   wand::SharedDeviceChildHandle<wand::Texture> white_tex_;
   wand::SharedDeviceChildHandle<wand::Texture> ssao_noise_tex_;
+  wand::SharedDeviceChildHandle<wand::Texture> brdf_integration_map_;
 
   wand::SharedDeviceChildHandle<wand::PipelineState> shadow_pso_;
   wand::SharedDeviceChildHandle<wand::PipelineState> depth_resolve_pso_;
@@ -498,23 +644,20 @@ private:
   wand::UniqueSamplerHandle samp_bi_wrap_;
   wand::UniqueSamplerHandle samp_point_wrap_;
 
-  std::array<FramePacket, kFramesInFlight> frame_packets_;
+  std::array<ExtractedFrameData, kFramesInFlight> frame_packets_;
+  std::array<PreparedFrameData, kFramesInFlight> prepared_data_;
 
-  UINT next_per_draw_cb_idx_{0};
+  UINT next_per_instance_cb_idx_{0};
   UINT next_per_view_cb_idx_{0};
 
   std::unique_ptr<DirectionalShadowMapArray> dir_shadow_map_arr_;
   std::unique_ptr<PunctualShadowAtlas> punctual_shadow_atlas_;
 
   std::vector<Vector4> gizmo_colors_;
-  StructuredBuffer<Vector4> gizmo_color_buffer_;
-
   std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;
-  StructuredBuffer<ShaderLineGizmoVertexData> line_gizmo_vertex_data_buffer_;
 
-  StructuredBuffer<Vector4> ssao_samples_buffer_;
-
-  wand::SharedDeviceChildHandle<wand::Texture> brdf_integration_map_;
+  std::vector<Vector4> ssao_samples_;
+  bool ssao_samples_changed_{false};
 
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
   SsrParams ssr_params_{

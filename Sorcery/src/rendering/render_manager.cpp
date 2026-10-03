@@ -176,12 +176,6 @@ auto RenderManager::CreateReadOnlyTexture(
 }
 
 
-auto RenderManager::KeepAliveWhileInUse(wand::SharedDeviceChildHandle<wand::Buffer> buf) -> void {
-  std::scoped_lock const lock{keep_alive_resources_mutex_};
-  resources_to_keep_alive_.emplace_back(std::move(buf), 0);
-}
-
-
 auto RenderManager::KeepAliveWhileInUse(wand::SharedDeviceChildHandle<wand::Texture> tex) -> void {
   std::scoped_lock const lock{keep_alive_resources_mutex_};
   resources_to_keep_alive_.emplace_back(std::move(tex), 0);

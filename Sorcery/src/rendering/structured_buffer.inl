@@ -1,109 +1,70 @@
 #pragma once
 
+#include <algorithm>
+
 #include "wand/flags.hpp"
 
 
 namespace sorcery::rendering {
 template<typename T>
-auto StructuredBuffer<T>::New(wand::GraphicsDevice& device, RenderManager& render_manager,
-                              bool const cpu_accessible, bool const shader_resource,
-                              bool const unordered_access) -> StructuredBuffer {
-  return StructuredBuffer{device, render_manager, 1, cpu_accessible, shader_resource, unordered_access};
+MappedStructuredBuffer<T>::MappedStructuredBuffer(wand::GraphicsDevice& device, std::uint64_t const element_count,
+                                                  bool const shader_resource, bool const unordered_access) :
+  device_{&device},
+  srv_{shader_resource},
+  uav_{unordered_access} {
+  Reallocate(element_count);
 }
 
 
 template<typename T>
-auto StructuredBuffer<T>::New(wand::GraphicsDevice& device, RenderManager& render_manager,
-                              std::span<T const> const data, bool const cpu_accessible, bool const shader_resource,
-                              bool const unordered_access) -> StructuredBuffer {
-  return StructuredBuffer{device, render_manager, data, cpu_accessible, shader_resource, unordered_access};
+MappedStructuredBuffer<T>::MappedStructuredBuffer(wand::GraphicsDevice& device, std::span<T const> data,
+                                                  bool shader_resource, bool unordered_access) :
+  MappedStructuredBuffer{device, data.size(), shader_resource, unordered_access} {
+  std::ranges::copy(data, std::ranges::begin(data_));
 }
 
 
 template<typename T>
-auto StructuredBuffer<T>::GetBuffer() const noexcept -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
+auto MappedStructuredBuffer<T>::GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
   return buffer_;
 }
 
 
 template<typename T>
-auto StructuredBuffer<T>::GetData() const noexcept -> std::span<T> {
-  return std::span<T>{mapped_ptr_, size_};
+auto MappedStructuredBuffer<T>::GetData() -> std::span<T> {
+  return data_;
 }
 
 
 template<typename T>
-auto StructuredBuffer<T>::GetSize() const -> UINT {
-  return size_;
+auto MappedStructuredBuffer<T>::GetData() const -> std::span<T const> {
+  return data_;
 }
 
 
 template<typename T>
-auto StructuredBuffer<T>::GetCapacity() const -> UINT {
-  return capacity_;
+auto MappedStructuredBuffer<T>::GetElementCount() const -> std::uint64_t {
+  return element_count_;
 }
 
 
 template<typename T>
-auto StructuredBuffer<T>::Resize(UINT const new_size) -> void {
-  auto new_capacity = capacity_;
-
-  while (new_capacity < new_size) {
-    new_capacity *= 2;
+auto MappedStructuredBuffer<T>::Reallocate(
+  std::uint64_t const element_count) -> wand::SharedDeviceChildHandle<wand::Buffer> {
+  if (element_count_ == element_count) {
+    return nullptr;
   }
 
-  if (new_capacity != capacity_) {
-    capacity_ = new_capacity;
-    size_ = new_size;
-    RecreateBuffer();
-  } else if (size_ != new_size) {
-    size_ = new_size;
-  }
-}
+  element_count_ = element_count;
+  auto const old_buf = buffer_;
 
-
-template<typename T>
-StructuredBuffer<T>::StructuredBuffer(wand::GraphicsDevice& device, RenderManager& render_manager,
-                                      UINT const initial_capacity, bool const cpu_accessible,
-                                      bool const shader_resource, bool const unordered_access) :
-  device_{&device},
-  render_manager_{&render_manager},
-  capacity_{initial_capacity},
-  cpu_accessible_{cpu_accessible},
-  srv_{shader_resource},
-  uav_{unordered_access} {
-  RecreateBuffer();
-}
-
-
-template<typename T>
-StructuredBuffer<T>::StructuredBuffer(wand::GraphicsDevice& device, RenderManager& render_manager,
-                                      std::span<T const> const data, bool const cpu_accessible,
-                                      bool const shader_resource, bool const unordered_access) :
-  StructuredBuffer{
-    device, render_manager, static_cast<UINT>(data.size()), cpu_accessible, shader_resource, unordered_access
-  } {
-  Resize(static_cast<UINT>(data.size()));
-
-  if (cpu_accessible_) {
-    std::ranges::copy(data.subspan(0, static_cast<UINT>(data.size())), mapped_ptr_);
-  } else {
-    render_manager.UpdateBuffer(*buffer_, 0, as_bytes(data));
-  }
-}
-
-
-template<typename T>
-auto StructuredBuffer<T>::RecreateBuffer() -> void {
-  if (buffer_) {
-    render_manager_->KeepAliveWhileInUse(buffer_);
+  if (element_count == 0) {
+    buffer_.reset();
+    data_ = std::span<T>{};
+    return old_buf;
   }
 
   auto usage{wand::BufferUsage::kCopySource};
-
-  if (!cpu_accessible_) {
-    usage |= wand::BufferUsage::kCopyDestination;
-  }
 
   if (srv_) {
     usage |= wand::BufferUsage::kShaderResource;
@@ -114,9 +75,30 @@ auto StructuredBuffer<T>::RecreateBuffer() -> void {
   }
 
   buffer_ = device_->CreateBuffer(wand::BufferDesc{
-    .size = static_cast<UINT>(capacity_ * sizeof(T)), .stride = sizeof(T), .usage = usage
-  }, cpu_accessible_ ? wand::CpuAccess::kWrite : wand::CpuAccess::kNone);
+    .size = element_count * sizeof(T), .stride = sizeof(T), .usage = usage
+  }, wand::CpuAccess::kWrite);
 
-  mapped_ptr_ = static_cast<T*>(cpu_accessible_ ? buffer_->Map() : nullptr);
+  data_ = std::span<T>{static_cast<T*>(buffer_->Map()), static_cast<std::size_t>(element_count)};
+
+  return old_buf;
+}
+
+
+template<typename T>
+auto CreateStructuredBuffer(wand::GraphicsDevice& device, std::uint64_t const element_count, bool const shader_resource,
+                            bool const unordered_access) -> wand::SharedDeviceChildHandle<wand::Buffer> {
+  auto usage{wand::BufferUsage::kCopySource | wand::BufferUsage::kCopyDestination};
+
+  if (shader_resource) {
+    usage |= wand::BufferUsage::kShaderResource;
+  }
+
+  if (unordered_access) {
+    usage |= wand::BufferUsage::kUnorderedAccess;
+  }
+
+  return device.CreateBuffer(wand::BufferDesc{
+    .size = element_count * sizeof(T), .stride = sizeof(T), .usage = usage
+  }, wand::CpuAccess::kNone);
 }
 }

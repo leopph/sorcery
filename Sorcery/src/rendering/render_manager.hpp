@@ -39,7 +39,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto CreateReadOnlyTexture(
     DirectX::ScratchImage const& img) -> wand::SharedDeviceChildHandle<wand::Texture>;
 
-  LEOPPHAPI auto KeepAliveWhileInUse(wand::SharedDeviceChildHandle<wand::Buffer> buf) -> void;
   LEOPPHAPI auto KeepAliveWhileInUse(wand::SharedDeviceChildHandle<wand::Texture> tex) -> void;
 
   // At the end of a frame this must be called!

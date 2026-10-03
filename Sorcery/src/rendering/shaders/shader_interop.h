@@ -111,7 +111,6 @@ struct ShaderLineGizmoVertexData {
 struct ShaderPerFrameConstants {
   float3 ambientLightColor;
   uint shadowCascadeCount;
-  float2 screenSize;
   BOOL visualizeShadowCascades;
   int shadowFilteringMode;
 };
@@ -134,14 +133,15 @@ struct ShaderPerViewConstants {
   float4 frustum_planes_ws[6];
 
   float3 viewPos;
-
   float near_clip_plane;
+
   float far_clip_plane;
-  float3 pad;
+  float2 screenSize;
+  float pad;
 };
 
 
-struct ShaderPerDrawConstants {
+struct ShaderPerInstanceConstants {
   row_major float4x4 modelMtx;
   row_major float4x4 invTranspModelMtx;
 
@@ -171,7 +171,7 @@ struct DepthOnlyDrawParams {
   uint samp_idx;
 
   uint rt_idx;
-  uint per_draw_cb_idx;
+  uint per_inst_cb_idx;
   uint per_view_cb_idx;
 };
 
@@ -206,7 +206,7 @@ struct GBufferDrawParams {
   BOOL idx32;
 
   uint mtl_samp_idx;
-  uint per_draw_cb_idx;
+  uint per_inst_cb_idx;
   uint cull_data_buf_idx;
   uint per_view_cb_idx;
 

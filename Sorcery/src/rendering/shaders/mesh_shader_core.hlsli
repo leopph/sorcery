@@ -63,7 +63,7 @@ void MeshShaderCore(uint const gtid,
                     StructuredBuffer<uint> const primitive_idx_buf,
                     out VertexAttributes out_vertices[MESHLET_MAX_VERTS],
 #if !defined(MESH_SHADER_NO_PRIMITIVE_ATTRIBUTES)
-                    out PrimitiveAttributes out_primitives[MESHLET_MAX_PRIMS],
+                    out PrimitiveAttributes out_primitives[MESHLET_MAX_PRIMS], 
 #endif
                     out uint3 out_indices[MESHLET_MAX_PRIMS]) {
   Meshlet const meshlet = meshlets[meshlet_idx];
@@ -115,7 +115,7 @@ void AmpShaderCore(
   bool visible = false;
 
   StructuredBuffer<MeshletCullData> const cull_data = ResourceDescriptorHeap[cull_data_buf_idx];
-  ConstantBuffer<ShaderPerDrawConstants> const per_draw_cb = ResourceDescriptorHeap[per_draw_cb_idx];
+  ConstantBuffer<ShaderPerInstanceConstants> const per_inst_cb = ResourceDescriptorHeap[per_draw_cb_idx];
   ConstantBuffer<ShaderPerViewConstants> const per_view_cb = ResourceDescriptorHeap[per_view_cb_idx];
 
   // Check bounds of meshlet cull data resource
@@ -124,8 +124,8 @@ void AmpShaderCore(
     uint const meshlet_idx = dtid + dispatch_meshlet_offset;
 
     // Do visibility testing for this thread
-    visible = IsMeshletVisible(cull_data[meshlet_idx], per_draw_cb.modelMtx, per_view_cb.frustum_planes_ws,
-      per_draw_cb.max_abs_scaling, per_view_cb.viewPos);
+    visible = IsMeshletVisible(cull_data[meshlet_idx], per_inst_cb.modelMtx, per_view_cb.frustum_planes_ws,
+      per_inst_cb.max_abs_scaling, per_view_cb.viewPos);
   }
 
   // Compact visible meshlets into the export payload array

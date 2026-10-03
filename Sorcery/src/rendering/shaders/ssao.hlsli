@@ -29,15 +29,15 @@ float PsMain(PsIn const vs_out) : SV_Target {
   Texture2D<float3> const noise_tex = ResourceDescriptorHeap[g_params.noise_tex_idx];
   noise_tex.GetDimensions(noise_tex_size.x, noise_tex_size.y);
 
-  const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_params.per_frame_cb_idx];
-  float2 const noise_scale = per_frame_cb.screenSize / noise_tex_size;
+  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
+  float2 const noise_scale = per_view_cb.screenSize / noise_tex_size;
 
   SamplerState const point_wrap_samp = SamplerDescriptorHeap[g_params.point_wrap_samp_idx];
   float3 const noise = normalize(noise_tex.Sample(point_wrap_samp, vs_out.uv * noise_scale).xyz);
 
   Texture2D<float> const depth_tex = ResourceDescriptorHeap[g_params.depth_tex_idx];
   SamplerState const point_clamp_samp = SamplerDescriptorHeap[g_params.point_clamp_samp_idx];
-  const ConstantBuffer<ShaderPerViewConstants> per_view_cb = ResourceDescriptorHeap[g_params.per_view_cb_idx];
+
   float3 const hemisphere_origin_vs = CalculatePositionVsAtUv(depth_tex, point_clamp_samp, per_view_cb, vs_out.uv);
 
   Texture2D<float2> const gbuffer1_tex = ResourceDescriptorHeap[g_params.gbuffer1_tex_idx];

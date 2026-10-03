@@ -1,94 +1,31 @@
 #pragma once
 
-#include "../Util.hpp"
-#include "wand/flags.hpp"
 #include "wand/wand.hpp"
-
-#include <cstring>
-#include <optional>
-#include <utility>
 
 
 namespace sorcery::rendering {
 template<typename T>
-class ConstantBuffer {
+class MappedConstantBuffer {
 public:
-  [[nodiscard]] static auto New(wand::GraphicsDevice& device, bool cpu_accessible) -> std::optional<ConstantBuffer>;
-
-  ConstantBuffer() = default;
-
-  auto Update(T const& val) -> void;
-  [[nodiscard]] auto GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
+  explicit MappedConstantBuffer(wand::GraphicsDevice& device, T const* data = nullptr);
 
   [[nodiscard]]
-  auto IsValid() const -> bool;
-
-  operator bool() const;
+  auto GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
+  [[nodiscard]]
+  auto GetData() -> T&;
+  [[nodiscard]]
+  auto GetData() const -> T const&;
 
 private:
-  ConstantBuffer(wand::SharedDeviceChildHandle<wand::Buffer> buffer, T* ptr);
-
-  wand::SharedDeviceChildHandle<wand::Buffer> buffer_;
-  void* ptr_{nullptr};
+  wand::SharedDeviceChildHandle<wand::Buffer> buffer_{};
+  T* ptr_{nullptr};
 };
 
 
 template<typename T>
-auto ConstantBuffer<T>::New(wand::GraphicsDevice& device,
-                            bool const cpu_accessible) -> std::optional<ConstantBuffer> {
-  auto buf{
-    device.CreateBuffer(wand::BufferDesc{
-      .size = static_cast<UINT>(RoundToNextMultiple(sizeof(T), 256)), .stride = 0,
-      .usage = wand::BufferUsage::kConstantBuffer | (cpu_accessible
-                                                       ? wand::BufferUsage::kNone
-                                                       : wand::BufferUsage::kCopyDestination)
-    }, cpu_accessible ? wand::CpuAccess::kWrite : wand::CpuAccess::kNone)
-  };
-
-  if (!buf) {
-    return std::nullopt;
-  }
-
-  void* ptr{nullptr};
-
-  if (cpu_accessible) {
-    ptr = buf->Map();
-
-    if (!ptr) {
-      return std::nullopt;
-    }
-  }
-
-  return ConstantBuffer{std::move(buf), static_cast<T*>(ptr)};
+[[nodiscard]]
+auto CreateConstantBuffer(wand::GraphicsDevice& device) -> wand::SharedDeviceChildHandle<wand::Buffer>;
 }
 
 
-template<typename T>
-auto ConstantBuffer<T>::Update(T const& val) -> void {
-  std::memcpy(ptr_, &val, sizeof(T));
-}
-
-
-template<typename T>
-auto ConstantBuffer<T>::GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
-  return buffer_;
-}
-
-
-template<typename T>
-auto ConstantBuffer<T>::IsValid() const -> bool {
-  return buffer_.get();
-}
-
-
-template<typename T>
-ConstantBuffer<T>::operator bool() const {
-  return IsValid();
-}
-
-
-template<typename T>
-ConstantBuffer<T>::ConstantBuffer(wand::SharedDeviceChildHandle<wand::Buffer> buffer, T* ptr) :
-  buffer_{std::move(buffer)},
-  ptr_{ptr} {}
-}
+#include "constant_buffer.inl"
