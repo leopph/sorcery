@@ -159,14 +159,14 @@ auto EditorApp::EndFrame() -> void {
 }
 
 
-auto EditorApp::PrepareRender(rendering::RenderFrame& frame) -> void {
-  App::PrepareRender(frame);
+auto EditorApp::ExtractRenderFrame(rendering::RenderFrame& frame) -> void {
+  App::ExtractRenderFrame(frame);
   imgui_renderer_.ExtractDrawData(frame);
 }
 
 
-auto EditorApp::RecordRender(rendering::RenderFrame& frame) -> void {
-  App::RecordRender(frame);
+auto EditorApp::RecordRenderFrame(rendering::RenderFrame& frame) -> void {
+  App::RecordRenderFrame(frame);
   imgui_renderer_.Render(frame);
 }
 

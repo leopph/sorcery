@@ -162,11 +162,12 @@ auto App::Run() -> void {
 
     auto& frame = data_->frame_scheduler.AcquireFrame();
 
-    PrepareRender(frame);
+    ExtractRenderFrame(frame);
 
     data_->render_job = data_->job_system.CreateJob([this, &frame] {
+      PrepareRenderFrame(frame);
       frame.RecordUploads();
-      RecordRender(frame);
+      RecordRenderFrame(frame);
       data_->frame_scheduler.SubmitFrame(frame);
       data_->graphics_device.Present(*data_->swap_chain);
       data_->render_instance_registry.CollectGarbage(100uz);
@@ -202,13 +203,18 @@ auto App::BeginFrame() -> void {
 }
 
 
-auto App::PrepareRender(rendering::RenderFrame& frame) -> void {
-  data_->scene_renderer.ExtractCurrentState(frame);
+auto App::ExtractRenderFrame(rendering::RenderFrame& frame) -> void {
+  data_->scene_renderer.ExtractFrame(frame);
 }
 
 
-auto App::RecordRender(rendering::RenderFrame& frame) -> void {
-  data_->scene_renderer.Record(frame);
+auto App::PrepareRenderFrame(rendering::RenderFrame& frame) -> void {
+  data_->scene_renderer.PrepareFrame(frame);
+}
+
+
+auto App::RecordRenderFrame(rendering::RenderFrame& frame) -> void {
+  data_->scene_renderer.RecordFrame(frame);
 }
 
 

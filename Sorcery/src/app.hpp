@@ -73,11 +73,16 @@ protected:
   SORCERYAPI
   auto WaitRenderJob() -> void;
 
-  SORCERYAPI virtual auto BeginFrame() -> void;
+  SORCERYAPI virtual
+  auto BeginFrame() -> void;
   virtual auto Update() -> void {}
   virtual auto EndFrame() -> void {}
-  SORCERYAPI virtual auto PrepareRender(rendering::RenderFrame& frame) -> void;
-  SORCERYAPI virtual auto RecordRender(rendering::RenderFrame& frame) -> void;
+  SORCERYAPI virtual
+  auto ExtractRenderFrame(rendering::RenderFrame& frame) -> void;
+  SORCERYAPI virtual
+  auto PrepareRenderFrame(rendering::RenderFrame& frame) -> void;
+  SORCERYAPI virtual
+  auto RecordRenderFrame(rendering::RenderFrame& frame) -> void;
 
 private:
   struct Data;

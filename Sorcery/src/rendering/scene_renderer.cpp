@@ -293,7 +293,7 @@ SceneRenderer::~SceneRenderer() {
 }
 
 
-auto SceneRenderer::ExtractCurrentState(RenderFrame& frame) -> void {
+auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   auto& packet{frame_packets_[frame.GetIndex()]};
 
   packet.buffers.clear();
@@ -537,7 +537,7 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame& frame) -> void {
     auto& inst_state = render_inst->GetState();
 
     if (is_new || inst_state.src_mesh_id != mesh->GetId() || inst_state.src_mesh_rev != mesh->GetRevision()) {
-      SyncSkinnedInstance(*comp, *render_inst, frame);
+      SyncSkinnedInstance(*comp, *render_inst);
     }
 
     auto const geom_batch_local_idx = emplace_back_mesh(*mesh);
@@ -782,56 +782,15 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame& frame) -> void {
 }
 
 
-auto SceneRenderer::Record(RenderFrame& frame) -> void {
-  if (!gpu_init_work_recorded_) {
-    RecordGpuInitWork(frame);
-    gpu_init_work_recorded_ = true;
-  }
+auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
+  auto& frame_packet{frame_packets_[frame.GetIndex()]};
 
-  next_per_draw_cb_idx_ = 0;
-  next_per_view_cb_idx_ = 0;
-
-  auto const frame_idx{frame.GetIndex()};
-
-  auto& frame_packet{frame_packets_[frame_idx]};
-  auto const& prev_frame_packet{frame_packets_[frame.GetPreviousIndex()]};
-
-  gizmo_color_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.gizmo_colors)));
-  std::ranges::copy(frame_packet.gizmo_colors, std::begin(gizmo_color_buffer_.GetData()));
-
-  line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.line_gizmo_vertex_data)));
-  std::ranges::copy(frame_packet.line_gizmo_vertex_data, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
-
-  // Clears all render targets, dispatches skinning and prepares irradiance and prefiltered env maps if needed.
-  auto& prepare_cmd{frame.AcquireCommandList()};
-  prepare_cmd.Begin(nullptr);
-
-  std::ranges::for_each(frame_packet.render_targets, [&prepare_cmd](std::shared_ptr<RenderTarget> const& rt) {
-    prepare_cmd.ClearRenderTarget(*rt->GetColorTex(), rt->GetDesc().color_clear_value, {});
-  });
-
-  if (!frame_packet.skinning_data.empty()) {
-    prepare_cmd.SetPipelineState(*frame_packet.vtx_skinning_pso);
-  }
+  // Compute bone matrices for skinning and stage them for upload.
 
   for (auto& [geom_batch_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
          original_tangent_buf_local_idx, bone_matrix_buf_local_idx, prev_frame_vertex_buf_local_idx, cur_animation_time,
          node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size, bone_begin_local_idx,
          bone_count] : frame_packet.skinning_data) {
-    auto const& geom_batch = frame_packet.geom_batches[geom_batch_local_idx];
-
-    // Skip skinning when we are sitting at 0 time.
-    // This happens for example in the editor scene view.
-    if (cur_animation_time == 0) {
-      prepare_cmd.CopyBuffer(
-        *frame_packet.buffers[geom_batch.pos_buf_local_idx], *frame_packet.buffers[original_vertex_buf_local_idx]);
-      prepare_cmd.CopyBuffer(
-        *frame_packet.buffers[geom_batch.norm_buf_local_idx], *frame_packet.buffers[original_normal_buf_local_idx]);
-      prepare_cmd.CopyBuffer(
-        *frame_packet.buffers[geom_batch.tan_buf_local_idx], *frame_packet.buffers[original_tangent_buf_local_idx]);
-      continue;
-    }
-
     // Compute local node transforms
 
     for (unsigned i{0}; i < node_anim_count; i++) {
@@ -923,10 +882,60 @@ auto SceneRenderer::Record(RenderFrame& frame) -> void {
                            skeleton_node_idx].transform;
     }
 
-    render_manager_->UpdateBuffer(*frame_packet.buffers[bone_matrix_buf_local_idx], 0,
-      as_bytes(std::span{bone_matrices}));
+    frame.UploadBuffer(frame_packet.buffers[bone_matrix_buf_local_idx], 0, as_bytes(std::span{bone_matrices}));
+  }
+}
 
-    // Dispatch skinning
+
+auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
+  if (!gpu_init_work_recorded_) {
+    RecordGpuInitWork(frame);
+    gpu_init_work_recorded_ = true;
+  }
+
+  next_per_draw_cb_idx_ = 0;
+  next_per_view_cb_idx_ = 0;
+
+  auto const frame_idx{frame.GetIndex()};
+
+  auto& frame_packet{frame_packets_[frame_idx]};
+  auto const& prev_frame_packet{frame_packets_[frame.GetPreviousIndex()]};
+
+  gizmo_color_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.gizmo_colors)));
+  std::ranges::copy(frame_packet.gizmo_colors, std::begin(gizmo_color_buffer_.GetData()));
+
+  line_gizmo_vertex_data_buffer_.Resize(static_cast<int>(std::ssize(frame_packet.line_gizmo_vertex_data)));
+  std::ranges::copy(frame_packet.line_gizmo_vertex_data, std::begin(line_gizmo_vertex_data_buffer_.GetData()));
+
+  // Clears all render targets, dispatches skinning and draws irradiance and prefiltered env maps if needed.
+  auto& prepare_cmd{frame.AcquireCommandList()};
+  prepare_cmd.Begin(nullptr);
+
+  std::ranges::for_each(frame_packet.render_targets, [&prepare_cmd](std::shared_ptr<RenderTarget> const& rt) {
+    prepare_cmd.ClearRenderTarget(*rt->GetColorTex(), rt->GetDesc().color_clear_value, {});
+  });
+
+  if (!frame_packet.skinning_data.empty()) {
+    prepare_cmd.SetPipelineState(*frame_packet.vtx_skinning_pso);
+  }
+
+  for (auto& [geom_batch_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
+         original_tangent_buf_local_idx, bone_matrix_buf_local_idx, prev_frame_vertex_buf_local_idx, cur_animation_time,
+         node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size, bone_begin_local_idx,
+         bone_count] : frame_packet.skinning_data) {
+    auto const& geom_batch = frame_packet.geom_batches[geom_batch_local_idx];
+
+    // Skip skinning when we are sitting at 0 time.
+    // This happens for example in the editor scene view.
+    if (cur_animation_time == 0) {
+      prepare_cmd.CopyBuffer(
+        *frame_packet.buffers[geom_batch.pos_buf_local_idx], *frame_packet.buffers[original_vertex_buf_local_idx]);
+      prepare_cmd.CopyBuffer(
+        *frame_packet.buffers[geom_batch.norm_buf_local_idx], *frame_packet.buffers[original_normal_buf_local_idx]);
+      prepare_cmd.CopyBuffer(
+        *frame_packet.buffers[geom_batch.tan_buf_local_idx], *frame_packet.buffers[original_tangent_buf_local_idx]);
+      continue;
+    }
 
     prepare_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_buf_idx),
       *frame_packet.buffers[original_vertex_buf_local_idx]);
@@ -1982,7 +1991,7 @@ auto SceneRenderer::SyncStaticInstance(StaticMeshComponent const& comp, StaticRe
 
 
 auto SceneRenderer::SyncSkinnedInstance(SkinnedMeshComponent const& comp,
-                                        SkinnedRenderMeshInstance& inst, RenderFrame const& frame) const -> void {
+                                        SkinnedRenderMeshInstance& inst) const -> void {
   auto const mesh = comp.GetMesh();
   assert(mesh);
 

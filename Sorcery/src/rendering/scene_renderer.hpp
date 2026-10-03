@@ -72,79 +72,80 @@ struct SsrParams {
 
 class SceneRenderer {
 public:
-  LEOPPHAPI SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager,
-                          RenderResourceRegistry& render_resource_registry,
-                          RenderInstanceRegistry& render_instance_registry);
+  SORCERYAPI SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager,
+                           RenderResourceRegistry& render_resource_registry,
+                           RenderInstanceRegistry& render_instance_registry);
   SceneRenderer(SceneRenderer const&) = delete;
   SceneRenderer(SceneRenderer&&) = delete;
 
-  LEOPPHAPI ~SceneRenderer();
+  SORCERYAPI ~SceneRenderer();
 
   auto operator=(SceneRenderer const&) -> void = delete;
   auto operator=(SceneRenderer&&) -> void = delete;
 
-  LEOPPHAPI auto ExtractCurrentState(RenderFrame& frame) -> void;
-  LEOPPHAPI auto Record(RenderFrame& frame) -> void;
+  SORCERYAPI auto ExtractFrame(RenderFrame& frame) -> void;
+  SORCERYAPI auto PrepareFrame(RenderFrame& frame) -> void;
+  SORCERYAPI auto RecordFrame(RenderFrame& frame) -> void;
 
-  LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
+  SORCERYAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
 
   // Global cameras are the ones without a set render target.
-  [[nodiscard]] LEOPPHAPI auto IsRenderingGlobalCameras() const noexcept -> bool;
+  [[nodiscard]] SORCERYAPI auto IsRenderingGlobalCameras() const noexcept -> bool;
   // Global cameras are the ones without a set render target.
-  LEOPPHAPI auto SetRenderGlobalCameras(bool render) noexcept -> void;
+  SORCERYAPI auto SetRenderGlobalCameras(bool render) noexcept -> void;
 
   // If a render target override is set, all cameras not targeting a specific render target
   // will render into the override RT.
-  [[nodiscard]] LEOPPHAPI auto GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> const&;
-  LEOPPHAPI auto SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void;
+  [[nodiscard]] SORCERYAPI auto GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> const&;
+  SORCERYAPI auto SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetCurrentRenderTarget() const -> RenderTarget const&;
+  [[nodiscard]] SORCERYAPI auto GetCurrentRenderTarget() const -> RenderTarget const&;
 
-  [[nodiscard]] LEOPPHAPI auto IsUsingPreciseColorFormat() const noexcept -> bool;
-  LEOPPHAPI auto SetUsePreciseColorFormat(bool precise) noexcept -> void;
+  [[nodiscard]] SORCERYAPI auto IsUsingPreciseColorFormat() const noexcept -> bool;
+  SORCERYAPI auto SetUsePreciseColorFormat(bool precise) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetShadowDistance() const noexcept -> float;
-  LEOPPHAPI auto SetShadowDistance(float distance) noexcept -> void;
+  [[nodiscard]] SORCERYAPI auto GetShadowDistance() const noexcept -> float;
+  SORCERYAPI auto SetShadowDistance(float distance) noexcept -> void;
 
   [[nodiscard]] constexpr static auto GetMaxShadowCascadeCount() noexcept -> unsigned;
-  [[nodiscard]] LEOPPHAPI auto GetShadowCascadeCount() const noexcept -> unsigned;
-  LEOPPHAPI auto SetShadowCascadeCount(unsigned cascade_count) noexcept -> void;
+  [[nodiscard]] SORCERYAPI auto GetShadowCascadeCount() const noexcept -> unsigned;
+  SORCERYAPI auto SetShadowCascadeCount(unsigned cascade_count) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetNormalizedShadowCascadeSplits() const noexcept -> std::span<float const>;
-  LEOPPHAPI auto SetNormalizedShadowCascadeSplit(int idx, float split) noexcept -> void;
+  [[nodiscard]] SORCERYAPI auto GetNormalizedShadowCascadeSplits() const noexcept -> std::span<float const>;
+  SORCERYAPI auto SetNormalizedShadowCascadeSplit(int idx, float split) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto IsVisualizingShadowCascades() const noexcept -> bool;
-  LEOPPHAPI auto VisualizeShadowCascades(bool visualize) noexcept -> void;
+  [[nodiscard]] SORCERYAPI auto IsVisualizingShadowCascades() const noexcept -> bool;
+  SORCERYAPI auto VisualizeShadowCascades(bool visualize) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetShadowFilteringMode() const noexcept -> ShadowFilteringMode;
-  LEOPPHAPI auto SetShadowFilteringMode(ShadowFilteringMode filtering_mode) noexcept -> void;
+  [[nodiscard]] SORCERYAPI auto GetShadowFilteringMode() const noexcept -> ShadowFilteringMode;
+  SORCERYAPI auto SetShadowFilteringMode(ShadowFilteringMode filtering_mode) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto IsSsaoEnabled() const noexcept -> bool;
-  LEOPPHAPI auto SetSsaoEnabled(bool enabled) noexcept -> void;
+  [[nodiscard]] SORCERYAPI auto IsSsaoEnabled() const noexcept -> bool;
+  SORCERYAPI auto SetSsaoEnabled(bool enabled) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetSsaoParams() const noexcept -> SsaoParams const&;
-  LEOPPHAPI auto SetSsaoParams(SsaoParams const& ssao_params) noexcept -> void;
+  [[nodiscard]] SORCERYAPI auto GetSsaoParams() const noexcept -> SsaoParams const&;
+  SORCERYAPI auto SetSsaoParams(SsaoParams const& ssao_params) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto IsSsrEnabled() const noexcept -> bool;
-  LEOPPHAPI auto SetSsrEnabled(bool enabled) noexcept -> void;
+  [[nodiscard]] SORCERYAPI auto IsSsrEnabled() const noexcept -> bool;
+  SORCERYAPI auto SetSsrEnabled(bool enabled) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetSsrParams() const noexcept -> SsrParams const&;
-  LEOPPHAPI auto SetSsrParams(SsrParams const& ssr_params) -> void;
+  [[nodiscard]] SORCERYAPI auto GetSsrParams() const noexcept -> SsrParams const&;
+  SORCERYAPI auto SetSsrParams(SsrParams const& ssr_params) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetGamma() const noexcept -> float;
-  LEOPPHAPI auto SetGamma(float gamma) noexcept -> void;
+  [[nodiscard]] SORCERYAPI auto GetGamma() const noexcept -> float;
+  SORCERYAPI auto SetGamma(float gamma) noexcept -> void;
 
-  LEOPPHAPI auto Register(StaticMeshComponent& static_mesh_component) noexcept -> void;
-  LEOPPHAPI auto Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void;
+  SORCERYAPI auto Register(StaticMeshComponent& static_mesh_component) noexcept -> void;
+  SORCERYAPI auto Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void;
 
-  LEOPPHAPI auto Register(SkinnedMeshComponent& skinned_mesh_component) noexcept -> void;
-  LEOPPHAPI auto Unregister(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void;
+  SORCERYAPI auto Register(SkinnedMeshComponent& skinned_mesh_component) noexcept -> void;
+  SORCERYAPI auto Unregister(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void;
 
-  LEOPPHAPI auto Register(LightComponent const& light_component) noexcept -> void;
-  LEOPPHAPI auto Unregister(LightComponent const& light_component) noexcept -> void;
+  SORCERYAPI auto Register(LightComponent const& light_component) noexcept -> void;
+  SORCERYAPI auto Unregister(LightComponent const& light_component) noexcept -> void;
 
-  LEOPPHAPI auto Register(Camera& cam) noexcept -> void;
-  LEOPPHAPI auto Unregister(Camera const& cam) noexcept -> void;
+  SORCERYAPI auto Register(Camera& cam) noexcept -> void;
+  SORCERYAPI auto Unregister(Camera const& cam) noexcept -> void;
 
 private:
   struct LightData {
@@ -364,8 +365,7 @@ private:
   static auto SyncMaterial(Material const& mtl, RenderMaterial& render_mtl, RenderFrame& frame) -> void;
   auto SyncMesh(Mesh& mesh, RenderMesh& render_mesh, RenderFrame& frame) const -> void;
   static auto SyncStaticInstance(StaticMeshComponent const& comp, StaticRenderMeshInstance& inst) -> void;
-  auto SyncSkinnedInstance(SkinnedMeshComponent const& comp, SkinnedRenderMeshInstance& inst,
-                           RenderFrame const& frame) const -> void;
+  auto SyncSkinnedInstance(SkinnedMeshComponent const& comp, SkinnedRenderMeshInstance& inst) const -> void;
 
 
   [[nodiscard]] static auto CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,

@@ -8,8 +8,8 @@
 #include <string_view>
 
 #include "app.hpp"
-#include "gui_helpers.hpp"
 #include "Event.hpp"
+#include "gui_helpers.hpp"
 #include "MainMenuBar.hpp"
 #include "ResourceDB.hpp"
 #include "Scene.hpp"
@@ -37,8 +37,8 @@ public:
   auto BeginFrame() -> void override;
   auto Update() -> void override;
   auto EndFrame() -> void override;
-  auto PrepareRender(rendering::RenderFrame& frame) -> void override;
-  auto RecordRender(rendering::RenderFrame& frame) -> void override;
+  auto ExtractRenderFrame(rendering::RenderFrame& frame) -> void override;
+  auto RecordRenderFrame(rendering::RenderFrame& frame) -> void override;
 
   [[nodiscard]] auto GetImGuiIo() const noexcept -> ImGuiIO const&;
   [[nodiscard]] auto GetImGuiIo() noexcept -> ImGuiIO&;
