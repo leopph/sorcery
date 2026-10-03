@@ -26,9 +26,12 @@
 
 
 namespace sorcery::rendering {
+class RenderInstanceRegistry;
 class RenderResourceRegistry;
 class RenderMaterial;
 class RenderMesh;
+class StaticRenderMeshInstance;
+class SkinnedRenderMeshInstance;
 
 
 // Passing these enum values to shaders is valid
@@ -70,7 +73,8 @@ struct SsrParams {
 class SceneRenderer {
 public:
   LEOPPHAPI SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager,
-                          RenderResourceRegistry& render_resource_registry);
+                          RenderResourceRegistry& render_resource_registry,
+                          RenderInstanceRegistry& render_instance_registry);
   SceneRenderer(SceneRenderer const&) = delete;
   SceneRenderer(SceneRenderer&&) = delete;
 
@@ -359,6 +363,9 @@ private:
 
   static auto SyncMaterial(Material const& mtl, RenderMaterial& render_mtl, RenderFrame& frame) -> void;
   auto SyncMesh(Mesh& mesh, RenderMesh& render_mesh, RenderFrame& frame) const -> void;
+  static auto SyncStaticInstance(StaticMeshComponent const& comp, StaticRenderMeshInstance& inst) -> void;
+  auto SyncSkinnedInstance(SkinnedMeshComponent const& comp, SkinnedRenderMeshInstance& inst,
+                           RenderFrame const& frame) const -> void;
 
 
   [[nodiscard]] static auto CalculateCameraShadowCascadeBoundaries(CameraData const& cam_data,
@@ -445,6 +452,7 @@ private:
   ObserverPtr<Window> window_;
   ObserverPtr<wand::GraphicsDevice> device_;
   ObserverPtr<RenderResourceRegistry> resource_registry_;
+  ObserverPtr<RenderInstanceRegistry> instance_registry_;
 
   std::array<ConstantBuffer<ShaderPerFrameConstants>, kFramesInFlight> per_frame_cbs_;
   std::vector<std::array<ConstantBuffer<ShaderPerViewConstants>, kFramesInFlight>> per_view_cbs_;

@@ -9,8 +9,9 @@ auto RenderMesh::Init(wand::GraphicsDevice& device, std::uint64_t const vtx_coun
                       std::uint64_t const vtx_idx_byte_count, std::uint64_t const prim_idx_count,
                       std::uint64_t const cull_data_count, bool const has_skinning_data) -> void {
   // We only need UAV access if the mesh can be skinned.
-  auto const geom_buf_usage = wand::BufferUsage::kShaderResource | wand::BufferUsage::kCopyDestination |
-                              (has_skinning_data ? wand::BufferUsage::kUnorderedAccess : wand::BufferUsage::kNone);
+  auto const geom_buf_usage =
+    wand::BufferUsage::kShaderResource | wand::BufferUsage::kCopyDestination | wand::BufferUsage::kCopySource
+    | (has_skinning_data ? wand::BufferUsage::kUnorderedAccess : wand::BufferUsage::kNone);
 
   pos_buf_ = device.CreateBuffer(wand::BufferDesc{
     .size = vtx_count * sizeof(Vector4),

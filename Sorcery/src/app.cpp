@@ -10,6 +10,7 @@
 #include "Timing.hpp"
 #include "Window.hpp"
 #include "rendering/frame_scheduler.hpp"
+#include "rendering/render_instance_registry.hpp"
 #include "rendering/render_manager.hpp"
 #include "rendering/render_resource_registry.hpp"
 #include "rendering/scene_renderer.hpp"
@@ -61,7 +62,10 @@ struct App::Data {
   rendering::RenderManager render_manager{graphics_device};
   ObjectRegistry object_registry;
   rendering::RenderResourceRegistry render_resource_registry{graphics_device, object_registry};
-  rendering::SceneRenderer scene_renderer{window, graphics_device, render_manager, render_resource_registry};
+  rendering::RenderInstanceRegistry render_instance_registry{object_registry};
+  rendering::SceneRenderer scene_renderer{
+    window, graphics_device, render_manager, render_resource_registry, render_instance_registry
+  };
   ResourceManager resource_manager{job_system};
   ObserverPtr<Job> render_job;
 };
@@ -165,6 +169,7 @@ auto App::Run() -> void {
       RecordRender(frame);
       data_->frame_scheduler.SubmitFrame(frame);
       data_->graphics_device.Present(*data_->swap_chain);
+      data_->render_instance_registry.CollectGarbage(100uz);
       data_->render_resource_registry.CollectGarbage(100uz);
       data_->render_manager.EndFrame();
     });

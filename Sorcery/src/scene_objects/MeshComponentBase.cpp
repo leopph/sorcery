@@ -17,16 +17,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto detail::GetPrevModelMtx(MeshComponentBase const& mesh_component) noexcept -> Matrix4 const& {
-  return mesh_component.prev_model_mtx_;
-}
-
-
-auto detail::SetPrevModelMtx(MeshComponentBase& mesh_component, Matrix4 const& mtx) noexcept -> void {
-  mesh_component.prev_model_mtx_ = mtx;
-}
-
-
 auto MeshComponentBase::OnDrawGizmosSelected() -> void {
   Component::OnDrawGizmosSelected();
 

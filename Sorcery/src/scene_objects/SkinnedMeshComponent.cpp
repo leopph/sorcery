@@ -4,9 +4,7 @@
 
 #include "../app.hpp"
 #include "../Timing.hpp"
-#include "../rendering/config.hpp"
 #include "../rendering/scene_renderer.hpp"
-#include "wand/wand.hpp"
 
 
 RTTR_REGISTRATION {
@@ -48,41 +46,6 @@ auto SkinnedMeshComponent::SetMesh(ResourceRef<Mesh> const mesh) noexcept -> voi
     return;
   }
 
-  for (UINT i{0}; i < rendering::kFramesInFlight; i++) {
-    skinned_vertex_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
-      wand::BufferDesc{
-        .size = mesh_inst->GetVertexCount() * sizeof(Vector4), .stride = sizeof(Vector4),
-        .usage = wand::BufferUsage::kShaderResource | wand::BufferUsage::kUnorderedAccess |
-                 wand::BufferUsage::kCopyDestination
-      },
-      wand::CpuAccess::kNone);
-
-    skinned_normal_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
-      wand::BufferDesc{
-        .size = mesh_inst->GetVertexCount() * sizeof(Vector4), .stride = sizeof(Vector4),
-        .usage = wand::BufferUsage::kShaderResource | wand::BufferUsage::kUnorderedAccess |
-                 wand::BufferUsage::kCopyDestination
-      },
-      wand::CpuAccess::kNone);
-
-    skinned_tangent_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
-      wand::BufferDesc{
-        .size = mesh_inst->GetVertexCount() * sizeof(Vector4), .stride = sizeof(Vector4),
-        .usage = wand::BufferUsage::kShaderResource | wand::BufferUsage::kUnorderedAccess |
-                 wand::BufferUsage::kCopyDestination
-      },
-      wand::CpuAccess::kNone);
-
-    if (auto const bones{mesh_inst->GetBones()}; !bones.empty()) {
-      bone_matrix_buffers_[i] = App::Instance().GetGraphicsDevice().CreateBuffer(
-        wand::BufferDesc{
-          .size = mesh_inst->GetBones().size() * sizeof(Matrix4), .stride = sizeof(Matrix4),
-          .usage = wand::BufferUsage::kUnorderedAccess | wand::BufferUsage::kCopyDestination
-        },
-        wand::CpuAccess::kNone);
-    }
-  }
-
   cur_animation_time_ticks_ = 0;
   cur_anim_delta_time_ = 0;
   cur_animation_idx_ = mesh_inst->GetAnimations().empty() ? std::nullopt : std::make_optional(0);
@@ -108,30 +71,6 @@ auto SkinnedMeshComponent::Update() -> void {
 
 SkinnedMeshComponent::SkinnedMeshComponent() {
   SetUpdatable(true);
-}
-
-
-auto SkinnedMeshComponent::GetSkinnedVertexBuffers() const noexcept -> std::span<
-  wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::kFramesInFlight> {
-  return skinned_vertex_buffers_;
-}
-
-
-auto SkinnedMeshComponent::GetSkinnedNormalBuffers() const noexcept -> std::span<wand::SharedDeviceChildHandle<
-    wand::Buffer> const, rendering::kFramesInFlight> {
-  return skinned_normal_buffers_;
-}
-
-
-auto SkinnedMeshComponent::GetSkinnedTangentBuffers() const noexcept -> std::span<wand::SharedDeviceChildHandle<
-    wand::Buffer> const, rendering::kFramesInFlight> {
-  return skinned_tangent_buffers_;
-}
-
-
-auto SkinnedMeshComponent::GetBoneMatrixBuffers() const noexcept -> std::span<
-  wand::SharedDeviceChildHandle<wand::Buffer> const, rendering::kFramesInFlight> {
-  return bone_matrix_buffers_;
 }
 
 

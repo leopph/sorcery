@@ -7,6 +7,7 @@
 #include <iterator>
 #include <random>
 
+#include "render_instance_registry.hpp"
 #include "render_resource_registry.hpp"
 #include "ShadowCascadeBoundary.hpp"
 #include "../app.hpp"
@@ -115,11 +116,13 @@ auto ToShaderBlendMode(MaterialBlendMode const mode) -> int {
 
 
 SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager,
-                             RenderResourceRegistry& render_resource_registry) :
+                             RenderResourceRegistry& render_resource_registry,
+                             RenderInstanceRegistry& render_instance_registry) :
   render_manager_{&render_manager},
   window_{&window},
   device_{&device},
-  resource_registry_{&render_resource_registry} {
+  resource_registry_{&render_resource_registry},
+  instance_registry_{&render_instance_registry} {
   light_buffer_ = StructuredBuffer<ShaderLight>::New(*device_, *render_manager_, false, true, false);
 
   gizmo_color_buffer_ = StructuredBuffer<Vector4>::New(*device_, *render_manager_, true);
@@ -436,7 +439,7 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame& frame) -> void {
 
   auto const extract_mesh_comp_into_batch =
     [this, &frame, &packet, &find_or_emplace_back_buffer, &find_or_emplace_back_texture]
-  (MeshComponentBase& comp, GeometryBatch& geom_batch) {
+  (MeshComponentBase& comp, GeometryBatch& geom_batch, Matrix4 const& prev_local_to_world_mtx) {
     auto const& materials = comp.GetMaterials();
     auto const first_mtl = static_cast<unsigned>(packet.instance_materials.size());
     auto const mtl_count = static_cast<unsigned>(materials.size());
@@ -478,11 +481,8 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame& frame) -> void {
 
     // We place instances linearly and keep incrementing the instance count of the associated batch.
     // The caller can create an instance list for a batch by repeatedly calling this function for all instances in-order.
-    packet.instance_data.emplace_back(local_to_world_mtx, sorcery::detail::GetPrevModelMtx(comp), max_abs_scale,
-      first_mtl, mtl_count);
+    packet.instance_data.emplace_back(local_to_world_mtx, prev_local_to_world_mtx, max_abs_scale, first_mtl, mtl_count);
     ++geom_batch.instance_count;
-
-    sorcery::detail::SetPrevModelMtx(comp, local_to_world_mtx);
   };
 
   // Extract static mesh components
@@ -508,10 +508,19 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame& frame) -> void {
       continue;
     }
 
+    auto const [render_inst, is_new] = instance_registry_->CreateOrGetStaticInstance(comp->GetId());
+    auto& inst_state = render_inst->GetState();
+
+    if (is_new || inst_state.src_mesh_id != mesh->GetId() || inst_state.src_mesh_rev != mesh->GetRevision()) {
+      SyncStaticInstance(*comp, *render_inst);
+    }
+
     // We reuse the same batch for all instances of the same mesh.
     auto const geom_batch_local_idx = find_or_emplace_back_mesh(*mesh);
     // Because we sorted the components by mesh, we can call this function for each component and it will add instances to the same batch.
-    extract_mesh_comp_into_batch(*comp, packet.geom_batches[geom_batch_local_idx]);
+    extract_mesh_comp_into_batch(*comp, packet.geom_batches[geom_batch_local_idx], inst_state.prev_frame_transform);
+
+    inst_state.prev_frame_transform = comp->GetEntity()->GetTransform().GetLocalToWorldMatrix();
   }
 
   // Now come the skinned mesh components. Because their geometry is individually animated, we cannot batch them like static meshes.
@@ -524,10 +533,19 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame& frame) -> void {
       continue;
     }
 
+    auto const [render_inst, is_new] = instance_registry_->CreateOrGetSkinnedInstance(comp->GetId());
+    auto& inst_state = render_inst->GetState();
+
+    if (is_new || inst_state.src_mesh_id != mesh->GetId() || inst_state.src_mesh_rev != mesh->GetRevision()) {
+      SyncSkinnedInstance(*comp, *render_inst, frame);
+    }
+
     auto const geom_batch_local_idx = emplace_back_mesh(*mesh);
     auto& geom_batch = packet.geom_batches[geom_batch_local_idx];
     // Because we created a new batch for this comp, this will add a single instance to that batch.
-    extract_mesh_comp_into_batch(*comp, geom_batch);
+    extract_mesh_comp_into_batch(*comp, geom_batch, inst_state.prev_frame_transform);
+
+    inst_state.prev_frame_transform = comp->GetEntity()->GetTransform().GetLocalToWorldMatrix();
 
     auto const anim{comp->GetCurrentAnimation()};
 
@@ -545,19 +563,27 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame& frame) -> void {
     // Set mesh AABB to infinity to prevent culling
     geom_batch.bounds = inf_aabb;
 
-    packet.buffers.emplace_back(comp->GetSkinnedVertexBuffers()[frame.GetIndex()]);
+    packet.buffers.emplace_back(render_inst->GetSkinnedPositionBuffer(frame.GetIndex()));
     auto const skinned_pos_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
-    packet.buffers.emplace_back(comp->GetSkinnedVertexBuffers()[frame.GetPreviousIndex()]);
-    auto const prev_skinned_pos_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
+    auto const last_skinning_frame = render_inst->GetLastSkinningFrame();
+    auto const prev_skinning_valid = last_skinning_frame && *last_skinning_frame + 1 == frame.GetNumber();
+    unsigned prev_skinned_pos_buf_local_idx;
 
-    packet.buffers.emplace_back(comp->GetSkinnedNormalBuffers()[frame.GetIndex()]);
+    if (prev_skinning_valid) {
+      packet.buffers.emplace_back(render_inst->GetSkinnedPositionBuffer(frame.GetPreviousIndex()));
+      prev_skinned_pos_buf_local_idx = static_cast<unsigned>(packet.buffers.size() - 1);
+    } else {
+      prev_skinned_pos_buf_local_idx = frame_packet_invalid_idx;
+    }
+
+    packet.buffers.emplace_back(render_inst->GetSkinnedNormalBuffer(frame.GetIndex()));
     auto const skinned_norm_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
-    packet.buffers.emplace_back(comp->GetSkinnedTangentBuffers()[frame.GetIndex()]);
+    packet.buffers.emplace_back(render_inst->GetSkinnedTangentBuffer(frame.GetIndex()));
     auto const skinned_tan_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
-    packet.buffers.emplace_back(comp->GetBoneMatrixBuffers()[frame.GetIndex()]);
+    packet.buffers.emplace_back(render_inst->GetBoneMatrixBuffer(frame.GetIndex()));
     auto const bone_mtx_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
 
     // Switch the original and skinned buffer indices so that the renderer can treat the skinned mesh as static after
@@ -613,6 +639,9 @@ auto SceneRenderer::ExtractCurrentState(RenderFrame& frame) -> void {
       static_cast<unsigned>(anim->node_anims.size()), skeleton_begin_local_idx,
       static_cast<unsigned>(mesh->GetSkeleton().size()), bone_begin_local_idx,
       static_cast<unsigned>(mesh->GetBones().size()));
+
+    // Now that we have extracted the skinned mesh data, we can mark the previous skinned vertices as valid for the next frame.
+    render_inst->SetLastSkinningFrame(frame.GetNumber());
   }
 
   auto const find_or_emplace_back_rt{
@@ -1258,10 +1287,16 @@ auto SceneRenderer::Record(RenderFrame& frame) -> void {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, cull_data_buf_idx),
         *frame_packet.buffers[geom_batch.cull_data_buf_local_idx]);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, idx32), geom_batch.idx32);
+
       if (geom_batch.skinning_data_local_idx != frame_packet_invalid_idx) {
-        cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_frame_pos_buf_idx),
-          *frame_packet.buffers[frame_packet.skinning_data[geom_batch.skinning_data_local_idx].
-            prev_frame_vertex_buf_local_idx]);
+        if (auto const& skinning_data = frame_packet.skinning_data[geom_batch.skinning_data_local_idx];
+          skinning_data.prev_frame_vertex_buf_local_idx != frame_packet_invalid_idx) {
+          cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_frame_pos_buf_idx),
+            *frame_packet.buffers[skinning_data.prev_frame_vertex_buf_local_idx]);
+        } else {
+          cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_frame_pos_buf_idx),
+            INVALID_RES_IDX);
+        }
       } else {
         cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_frame_pos_buf_idx),
           INVALID_RES_IDX);
@@ -1932,6 +1967,35 @@ auto SceneRenderer::SyncMesh(Mesh& mesh, RenderMesh& render_mesh, RenderFrame& f
   if (mesh.GetCpuDataPolicy() == CpuResidencyPolicy::kReleaseAfterUpload) {
     sorcery::detail::ClearMeshCpuData(mesh);
   }
+}
+
+
+auto SceneRenderer::SyncStaticInstance(StaticMeshComponent const& comp, StaticRenderMeshInstance& inst) -> void {
+  auto const mesh = comp.GetMesh();
+  assert(mesh);
+
+  auto& state = inst.GetState();
+  state.src_mesh_id = mesh->GetId();
+  state.src_mesh_rev = mesh->GetRevision();
+  state.prev_frame_transform = comp.GetEntity()->GetTransform().GetLocalToWorldMatrix();
+}
+
+
+auto SceneRenderer::SyncSkinnedInstance(SkinnedMeshComponent const& comp,
+                                        SkinnedRenderMeshInstance& inst, RenderFrame const& frame) const -> void {
+  auto const mesh = comp.GetMesh();
+  assert(mesh);
+
+  if (mesh->GetVertexCount() > inst.GetVertexCapacity() || mesh->GetBones().size() > inst.GetBoneCapacity()) {
+    inst.Init(*device_, mesh->GetVertexCount(), mesh->GetBones().size());
+  }
+
+  inst.InvalidateSkinningHistory();
+
+  auto& state = inst.GetState();
+  state.src_mesh_id = mesh->GetId();
+  state.src_mesh_rev = mesh->GetRevision();
+  state.prev_frame_transform = comp.GetEntity()->GetTransform().GetLocalToWorldMatrix();
 }
 
 
