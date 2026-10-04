@@ -28,10 +28,10 @@
 #include "prefab.hpp"
 #include "Serialization.hpp"
 #include "StaticMeshComponent.hpp"
+#include "Util.hpp"
 #include "Resources/Mesh.hpp"
 #include "resource_import/material_import.hpp"
 #include "resource_import/texture_import.hpp"
-#include "Util.hpp"
 
 
 RTTR_REGISTRATION {
@@ -367,8 +367,13 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
           return false;
         }
 
+        auto const tex_name =
+          tex_info.tex->mFilename.Empty()
+            ? std::string{ToUntypedStdSv(src.filename().stem().u8string())} += std::format(" Texture {}", idx)
+            : std::string{tex_info.tex->mFilename.C_Str()};
+
         texture_import_results.emplace_back(tex_result->payload_kind, tex_result->runtime_type,
-          tex_info.tex->mFilename.C_Str(), std::move(tex_result->bytes));
+          tex_name, std::move(tex_result->bytes));
       } else {
         // TODO implement this path
         assert("Found uncompressed embedded texture." && false);
