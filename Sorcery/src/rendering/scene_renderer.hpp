@@ -675,21 +675,11 @@ private:
 
   wand::UniqueSamplerHandle samp_cmp_pcf_ge_;
   wand::UniqueSamplerHandle samp_cmp_pcf_le_;
-  wand::UniqueSamplerHandle samp_cmp_point_ge_;
-  wand::UniqueSamplerHandle samp_cmp_point_le_;
   wand::UniqueSamplerHandle samp_af16_clamp_;
-  wand::UniqueSamplerHandle samp_af8_clamp_;
-  wand::UniqueSamplerHandle samp_af4_clamp_;
-  wand::UniqueSamplerHandle samp_af2_clamp_;
   wand::UniqueSamplerHandle samp_tri_clamp_;
   wand::UniqueSamplerHandle samp_bi_clamp_;
   wand::UniqueSamplerHandle samp_point_clamp_;
   wand::UniqueSamplerHandle samp_af16_wrap_;
-  wand::UniqueSamplerHandle samp_af8_wrap_;
-  wand::UniqueSamplerHandle samp_af4_wrap_;
-  wand::UniqueSamplerHandle samp_af2_wrap_;
-  wand::UniqueSamplerHandle samp_tri_wrap_;
-  wand::UniqueSamplerHandle samp_bi_wrap_;
   wand::UniqueSamplerHandle samp_point_wrap_;
 
   std::array<ExtractedFrameData, kFramesInFlight> frame_packets_;
