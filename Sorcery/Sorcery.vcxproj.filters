@@ -84,7 +84,7 @@
     <ClCompile Include="src\rendering\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\punctual_shadow_atlas.cpp">
+    <ClCompile Include="src\rendering\positional_light_shadow_atlas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\render_target.cpp">
@@ -102,7 +102,7 @@
     <ClCompile Include="src\Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\directional_shadow_map_array.cpp">
+    <ClCompile Include="src\rendering\directional_light_shadow_map_array.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\scene_renderer.cpp">
@@ -299,7 +299,7 @@
     <ClInclude Include="src\rendering\Camera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\punctual_shadow_atlas.hpp">
+    <ClInclude Include="src\rendering\positional_light_shadow_atlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\render_target.hpp">
@@ -326,7 +326,7 @@
     <ClInclude Include="src\serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\directional_shadow_map_array.hpp">
+    <ClInclude Include="src\rendering\directional_light_shadow_map_array.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Window.hpp">

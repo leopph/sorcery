@@ -8,8 +8,8 @@
 #include "Camera.hpp"
 #include "config.hpp"
 #include "constant_buffer.hpp"
-#include "directional_shadow_map_array.hpp"
-#include "punctual_shadow_atlas.hpp"
+#include "directional_light_shadow_map_array.hpp"
+#include "positional_light_shadow_atlas.hpp"
 #include "render_frame.hpp"
 #include "render_manager.hpp"
 #include "render_target.hpp"
@@ -551,8 +551,9 @@ private:
     float max_abs_scaling
   ) -> void;
 
-  auto UpdatePunctualShadowAtlas(
-    PunctualShadowAtlas& atlas,
+  static
+  auto UpdatePositionalShadowAtlas(
+    PositionalLightShadowAtlas& atlas,
     std::span<LightData const> lights,
     std::span<unsigned const> visible_light_indices,
     CameraData const& cam_data,
@@ -560,8 +561,8 @@ private:
     float shadow_distance
   ) -> void;
 
-  auto DrawPunctualShadowMaps(
-    PunctualShadowAtlas const& atlas,
+  auto DrawPositionalShadowMaps(
+    PositionalLightShadowAtlas const& atlas,
     ExtractedFrameData const& frame_packet,
     std::uint32_t frame_idx,
     wand::CommandList& cmd
@@ -689,8 +690,8 @@ private:
   UINT next_per_instance_cb_idx_{0};
   UINT next_per_view_cb_idx_{0};
 
-  std::unique_ptr<DirectionalShadowMapArray> dir_shadow_map_arr_;
-  std::unique_ptr<PunctualShadowAtlas> punctual_shadow_atlas_;
+  std::unique_ptr<DirectionalLightShadowMapArray> dir_shadow_map_arr_;
+  std::unique_ptr<PositionalLightShadowAtlas> pos_shadow_atlas_;
 
   std::vector<Vector4> gizmo_colors_;
   std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;

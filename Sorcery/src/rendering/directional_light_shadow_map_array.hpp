@@ -4,14 +4,14 @@
 
 
 namespace sorcery::rendering {
-class DirectionalShadowMapArray {
-  wand::SharedDeviceChildHandle<wand::Texture> tex_;
-  UINT size_;
-
+class DirectionalLightShadowMapArray {
 public:
-  explicit DirectionalShadowMapArray(wand::GraphicsDevice* device, DXGI_FORMAT depth_format, UINT size);
-
+  explicit DirectionalLightShadowMapArray(wand::GraphicsDevice* device, DXGI_FORMAT depth_format, UINT size);
   [[nodiscard]] auto GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const&;
   [[nodiscard]] auto GetSize() const noexcept -> UINT;
+
+private:
+  wand::SharedDeviceChildHandle<wand::Texture> tex_;
+  UINT size_;
 };
 }

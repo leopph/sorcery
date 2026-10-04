@@ -128,11 +128,11 @@ SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, Rende
     DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Main RT", false
   });
 
-  dir_shadow_map_arr_ = std::make_unique<DirectionalShadowMapArray>(device_.Get(), depth_format_, 4096);
+  dir_shadow_map_arr_ = std::make_unique<DirectionalLightShadowMapArray>(device_.Get(), depth_format_, 4096);
   dir_shadow_map_arr_->GetTex()->SetDebugName(L"Directional Shadow Map Array");
 
-  punctual_shadow_atlas_ = std::make_unique<PunctualShadowAtlas>(device_.Get(), depth_format_, 4096);
-  punctual_shadow_atlas_->GetTex()->SetDebugName(L"Punctual Shadow Atlas");
+  pos_shadow_atlas_ = std::make_unique<PositionalLightShadowAtlas>(device_.Get(), depth_format_, 4096);
+  pos_shadow_atlas_->GetTex()->SetDebugName(L"Punctual Shadow Atlas");
 
   RecreatePipelines();
 
@@ -1086,10 +1086,10 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       RecordDirectionalShadows(frame_packet, frame, *prepared_cam.dir_shadows, cam_cmd);
     }
 
-    UpdatePunctualShadowAtlas(*punctual_shadow_atlas_, frame_packet.light_data, cam_visible_light_indices,
+    UpdatePositionalShadowAtlas(*pos_shadow_atlas_, frame_packet.light_data, cam_visible_light_indices,
       extracted_cam,
       view.view_proj_mtx, frame_packet.shadow_params.distance);
-    DrawPunctualShadowMaps(*punctual_shadow_atlas_, frame_packet, frame_idx, cam_cmd);
+    DrawPositionalShadowMaps(*pos_shadow_atlas_, frame_packet, frame_idx, cam_cmd);
 
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
     SetPerViewConstants(cam_per_view_cb, view.view_mtx, view.proj_mtx, view.view_proj_mtx,
@@ -1302,7 +1302,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       }
     }
 
-    punctual_shadow_atlas_->SetLookUpInfo(shader_lights);
+    pos_shadow_atlas_->SetLookUpInfo(shader_lights);
 
     auto& light_buffer{light_buffers_[frame_idx]};
 
@@ -1327,7 +1327,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, dir_shadow_arr_idx),
       *dir_shadow_map_arr_->GetTex());
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, punc_shadow_atlas_idx),
-      *punctual_shadow_atlas_->GetTex());
+      *pos_shadow_atlas_->GetTex());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, shadow_samp_idx),
 #ifdef REVERSE_Z
       samp_cmp_pcf_ge_.Get()
@@ -1338,8 +1338,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, point_clamp_samp_idx),
       samp_point_clamp_.Get());
     if (light_buffer.GetElementCount() > 0) {
-    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx),
-      *light_buffer.GetBuffer());
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx),
+        *light_buffer.GetBuffer());
     } else {
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx), INVALID_RES_IDX);
     }
@@ -2382,11 +2382,14 @@ auto SceneRenderer::SetPerInstanceConstants(MappedConstantBuffer<ShaderPerInstan
 }
 
 
-auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
-                                              std::span<SceneRenderer::LightData const> const lights,
-                                              std::span<unsigned const> visible_light_indices,
-                                              SceneRenderer::CameraData const& cam_data,
-                                              Matrix4 const& cam_view_proj_mtx, float const shadow_distance) -> void {
+auto SceneRenderer::UpdatePositionalShadowAtlas(
+  PositionalLightShadowAtlas& atlas,
+  std::span<LightData const> const lights,
+  std::span<unsigned const> visible_light_indices,
+  CameraData const& cam_data,
+  Matrix4 const& cam_view_proj_mtx,
+  float const shadow_distance
+) -> void {
   struct LightCascadeIndex {
     int lightIdxIdx;
     int shadowIdx;
@@ -2546,9 +2549,12 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
 }
 
 
-auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
-                                           ExtractedFrameData const& frame_packet,
-                                           std::uint32_t const frame_idx, wand::CommandList& cmd) -> void {
+auto SceneRenderer::DrawPositionalShadowMaps(
+  PositionalLightShadowAtlas const& atlas,
+  ExtractedFrameData const& frame_packet,
+  std::uint32_t const frame_idx,
+  wand::CommandList& cmd
+) -> void {
   cmd.SetPipelineState(*shadow_pso_);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
