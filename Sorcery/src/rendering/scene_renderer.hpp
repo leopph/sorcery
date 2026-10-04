@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "Camera.hpp"
 #include "config.hpp"
@@ -369,23 +370,6 @@ private:
   };
 
 
-  struct PreparedCameraData {
-    ShadowCascadeBoundaries cascade_boundaries;
-
-    std::uint32_t extracted_data_idx;
-
-    std::uint32_t first_visible_light;
-    std::uint32_t visible_light_count;
-
-    std::uint32_t primary_view_idx;
-
-    Matrix4 prev_view_proj_mtx;
-
-    Vector2 jitter_ndc;
-    Vector2 prev_jitter_ndc;
-  };
-
-
   struct PreparedView {
     Matrix4 view_mtx;
     Matrix4 proj_mtx;
@@ -398,6 +382,34 @@ private:
 
     float near_plane;
     float far_plane;
+  };
+
+
+  struct PreparedDirectionalShadows {
+    // Index within this camera's visible-light slice.
+    std::uint32_t visible_light_idx;
+
+    std::uint32_t first_view;
+    std::uint32_t view_count;
+  };
+
+
+  struct PreparedCameraData {
+    ShadowCascadeBoundaries cascade_boundaries;
+
+    std::optional<PreparedDirectionalShadows> dir_shadows;
+
+    std::uint32_t extracted_data_idx;
+
+    std::uint32_t first_visible_light;
+    std::uint32_t visible_light_count;
+
+    std::uint32_t primary_view_idx;
+
+    Matrix4 prev_view_proj_mtx;
+
+    Vector2 jitter_ndc;
+    Vector2 prev_jitter_ndc;
   };
 
 
@@ -472,13 +484,11 @@ private:
     SkinnedRenderMeshInstance& inst
   ) const -> void;
 
-
   [[nodiscard]] static
   auto CalculateCameraShadowCascadeBoundaries(
     CameraData const& cam_data,
     ShadowParams const& shadow_params
   ) -> ShadowCascadeBoundaries;
-
 
   // Places the indices of the surviving lights in the passed container.
   // Returns the number of surviving lights.
@@ -489,6 +499,24 @@ private:
     std::vector<unsigned>& visible_light_indices
   ) -> uint64_t;
 
+  [[nodiscard]] static
+  auto PrepareDirectionalShadows(
+    ExtractedFrameData const& frame_packet,
+    std::span<unsigned const> cam_visible_light_indices,
+    CameraData const& cam_data,
+    ShadowCascadeBoundaries const& shadow_cascade_boundaries,
+    float rt_aspect,
+    std::uint32_t cascade_count,
+    std::uint32_t shadow_map_size,
+    std::vector<PreparedView>& views
+  ) -> std::optional<PreparedDirectionalShadows>;
+
+  auto RecordDirectionalShadows(
+    ExtractedFrameData const& frame_packet,
+    RenderFrame const& frame,
+    PreparedDirectionalShadows const& shadows,
+    wand::CommandList& cmd
+  ) -> void;
 
   static
   auto SetPerFrameConstants(
@@ -522,7 +550,6 @@ private:
     float max_abs_scaling
   ) -> void;
 
-
   auto UpdatePunctualShadowAtlas(
     PunctualShadowAtlas& atlas,
     std::span<LightData const> lights,
@@ -530,19 +557,6 @@ private:
     CameraData const& cam_data,
     Matrix4 const& cam_view_proj_mtx,
     float shadow_distance
-  ) -> void;
-
-
-  auto DrawDirectionalShadowMaps(
-    ExtractedFrameData const& frame_packet,
-    std::uint32_t frame_idx,
-    std::span<unsigned const> visible_light_indices,
-    CameraData const& cam_data,
-    float rt_aspect,
-    int cascade_count,
-    ShadowCascadeBoundaries const& shadow_cascade_boundaries,
-    std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
-    wand::CommandList& cmd
   ) -> void;
 
   auto DrawPunctualShadowMaps(
@@ -568,7 +582,7 @@ private:
 
   auto RecordDepthOnlyPass(
     ExtractedFrameData const& frame_packet,
-    RenderFrame& frame,
+    RenderFrame const& frame,
     PreparedView const& view, std::uint32_t rt_idx, wand::CommandList& cmd
   ) -> void;
 

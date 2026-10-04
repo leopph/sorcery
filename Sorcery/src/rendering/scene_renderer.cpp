@@ -861,14 +861,18 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
     auto const first_visible_light = static_cast<std::uint32_t>(prepared_data_.visible_light_indices.size());
     auto const visible_light_count = static_cast<std::uint32_t>(CullLights(cam_frust_ws, frame_packet.light_data,
       prepared_data_.visible_light_indices));
+    auto const visible_light_indices = std::span{prepared_data_.visible_light_indices}.subspan(first_visible_light,
+      visible_light_count);
 
     auto const primary_view_idx = static_cast<std::uint32_t>(prepared_data_.views.size());
     prepared_data_.views.emplace_back(cam_view_mtx, cam_proj_mtx, cam_view_proj_mtx, cam_frust_ws, cam_viewport,
       cam_scissor, cam_data.near_plane, cam_data.far_plane);
 
     auto const cascades = CalculateCameraShadowCascadeBoundaries(cam_data, frame_packet.shadow_params);
+    auto const dir_shadows = PrepareDirectionalShadows(frame_packet, visible_light_indices, cam_data, cascades,
+      viewport_aspect, frame_packet.shadow_params.cascade_count, dir_shadow_map_arr_->GetSize(), prepared_data_.views);
 
-    prepared_data_.cam_data.emplace_back(cascades, static_cast<std::uint32_t>(i), first_visible_light,
+    prepared_data_.cam_data.emplace_back(cascades, dir_shadows, static_cast<std::uint32_t>(i), first_visible_light,
       visible_light_count, primary_view_idx, prev_cam_view_proj_mtx, cam_data.jitter_ndc,
       prev_cam_data ? prev_cam_data->jitter_ndc : cam_data.jitter_ndc);
   }
@@ -1062,8 +1066,6 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     auto const target_rt_width{target_rt_desc.width};
     auto const target_rt_height{target_rt_desc.height};
 
-    auto const viewport_aspect{view.viewport.Width / view.viewport.Height};
-
     auto const transient_rt_width{static_cast<UINT>(view.viewport.Width)};
     auto const transient_rt_height{static_cast<UINT>(view.viewport.Height)};
 
@@ -1126,16 +1128,16 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     cam_cmd.Begin(nullptr);
     cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    auto const visible_light_indices = std::span{prepared_data_.visible_light_indices}.subspan(
+    auto const cam_visible_light_indices = std::span{prepared_data_.visible_light_indices}.subspan(
       prepared_cam.first_visible_light, prepared_cam.visible_light_count);
 
     // Shadow pass
-    std::array<Matrix4, MAX_CASCADE_COUNT> shadow_view_proj_matrices;
-    DrawDirectionalShadowMaps(frame_packet, frame_idx, visible_light_indices, extracted_cam,
-      viewport_aspect, frame_packet.shadow_params.cascade_count, prepared_cam.cascade_boundaries, shadow_view_proj_matrices,
-      cam_cmd);
+    if (prepared_cam.dir_shadows) {
+      RecordDirectionalShadows(frame_packet, frame, *prepared_cam.dir_shadows, cam_cmd);
+    }
 
-    UpdatePunctualShadowAtlas(*punctual_shadow_atlas_, frame_packet.light_data, visible_light_indices, extracted_cam,
+    UpdatePunctualShadowAtlas(*punctual_shadow_atlas_, frame_packet.light_data, cam_visible_light_indices,
+      extracted_cam,
       view.view_proj_mtx, frame_packet.shadow_params.distance);
     DrawPunctualShadowMaps(*punctual_shadow_atlas_, frame_packet, frame_idx, cam_cmd);
 
@@ -1312,44 +1314,45 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     // Deferred lighting pass
 
-    auto const light_count{std::size(visible_light_indices)};
-    std::vector<ShaderLight> light_data(light_count);
+    auto const light_count = cam_visible_light_indices.size();
+    std::vector<ShaderLight> shader_lights(light_count);
 
     for (auto i = 0uz; i < light_count; i++) {
-      light_data[i].color = frame_packet.light_data[visible_light_indices[i]].color;
-      light_data[i].intensity = frame_packet.light_data[visible_light_indices[i]].intensity;
-      light_data[i].type = static_cast<int>(frame_packet.light_data[visible_light_indices[i]].type);
-      light_data[i].direction = frame_packet.light_data[visible_light_indices[i]].direction;
-      light_data[i].isCastingShadow = FALSE;
-      light_data[i].range = frame_packet.light_data[visible_light_indices[i]].range;
-      light_data[i].halfInnerAngleCos = std::cos(
-        ToRadians(frame_packet.light_data[visible_light_indices[i]].inner_angle / 2.0f));
-      light_data[i].halfOuterAngleCos = std::cos(
-        ToRadians(frame_packet.light_data[visible_light_indices[i]].outer_angle / 2.0f));
-      light_data[i].position = frame_packet.light_data[visible_light_indices[i]].position;
-      light_data[i].depthBias = frame_packet.light_data[visible_light_indices[i]].shadow_depth_bias;
-      light_data[i].normalBias = frame_packet.light_data[visible_light_indices[i]].shadow_normal_bias;
+      shader_lights[i].color = frame_packet.light_data[cam_visible_light_indices[i]].color;
+      shader_lights[i].intensity = frame_packet.light_data[cam_visible_light_indices[i]].intensity;
+      shader_lights[i].type = static_cast<int>(frame_packet.light_data[cam_visible_light_indices[i]].type);
+      shader_lights[i].direction = frame_packet.light_data[cam_visible_light_indices[i]].direction;
+      shader_lights[i].isCastingShadow = FALSE;
+      shader_lights[i].range = frame_packet.light_data[cam_visible_light_indices[i]].range;
+      shader_lights[i].halfInnerAngleCos = std::cos(
+        ToRadians(frame_packet.light_data[cam_visible_light_indices[i]].inner_angle / 2.0f));
+      shader_lights[i].halfOuterAngleCos = std::cos(
+        ToRadians(frame_packet.light_data[cam_visible_light_indices[i]].outer_angle / 2.0f));
+      shader_lights[i].position = frame_packet.light_data[cam_visible_light_indices[i]].position;
+      shader_lights[i].depthBias = frame_packet.light_data[cam_visible_light_indices[i]].shadow_depth_bias;
+      shader_lights[i].normalBias = frame_packet.light_data[cam_visible_light_indices[i]].shadow_normal_bias;
 
-      for (auto& sample : light_data[i].sampleShadowMap) {
+      for (auto& sample : shader_lights[i].sampleShadowMap) {
         sample = FALSE;
       }
     }
 
-    for (auto i = 0uz; i < light_count; i++) {
-      if (auto const light{frame_packet.light_data[visible_light_indices[i]]};
-        light.type == LightComponent::Type::Directional && light.casts_shadow) {
-        light_data[i].isCastingShadow = TRUE;
+    if (prepared_cam.dir_shadows) {
+      auto const visible_light_idx = prepared_cam.dir_shadows->visible_light_idx;
 
-        for (auto cascade_idx{0u}; cascade_idx < frame_packet.shadow_params.cascade_count; cascade_idx++) {
-          light_data[i].sampleShadowMap[cascade_idx] = TRUE;
-          light_data[i].shadowViewProjMatrices[cascade_idx] = shadow_view_proj_matrices[cascade_idx];
-        }
+      auto& shadowing_shader_light = shader_lights[visible_light_idx];
+      shadowing_shader_light.isCastingShadow = TRUE;
 
-        break;
+      auto const shadow_views = std::span{prepared_data_.views}.subspan(prepared_cam.dir_shadows->first_view,
+        prepared_cam.dir_shadows->view_count);
+
+      for (auto cascade_idx = 0uz; cascade_idx < shadow_views.size(); ++cascade_idx) {
+        shadowing_shader_light.sampleShadowMap[cascade_idx] = TRUE;
+        shadowing_shader_light.shadowViewProjMatrices[cascade_idx] = shadow_views[cascade_idx].view_proj_mtx;
       }
     }
 
-    punctual_shadow_atlas_->SetLookUpInfo(light_data);
+    punctual_shadow_atlas_->SetLookUpInfo(shader_lights);
 
     auto& light_buffer{light_buffers_[frame_idx]};
 
@@ -1358,7 +1361,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       std::ignore = light_buffer.Reallocate(light_count);
     }
 
-    std::ranges::copy(light_data, std::ranges::begin(light_buffer.GetData()));
+    std::ranges::copy(shader_lights, std::ranges::begin(light_buffer.GetData()));
 
     cam_cmd.SetPipelineState(*frame_packet.deferred_lighting_pso);
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, gbuffer0_idx),
@@ -1384,9 +1387,12 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     );
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, point_clamp_samp_idx),
       samp_point_clamp_.Get());
-
+    if (light_buffer.GetElementCount() > 0) {
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx),
       *light_buffer.GetBuffer());
+    } else {
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx), INVALID_RES_IDX);
+    }
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_count),
       static_cast<UINT>(light_count));
     cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_view_cb_idx),
@@ -2154,6 +2160,216 @@ auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData co
 }
 
 
+auto SceneRenderer::PrepareDirectionalShadows(
+  ExtractedFrameData const& frame_packet,
+  std::span<unsigned const> const cam_visible_light_indices,
+  CameraData const& cam_data,
+  ShadowCascadeBoundaries const& shadow_cascade_boundaries,
+  float const rt_aspect,
+  std::uint32_t const cascade_count,
+  std::uint32_t const shadow_map_size,
+  std::vector<PreparedView>& views
+) -> std::optional<PreparedDirectionalShadows> {
+  std::optional<std::uint32_t> shadow_casting_light_idx;
+  auto const first_view = static_cast<std::uint32_t>(views.size());
+
+  for (auto i = 0u; i < static_cast<std::uint32_t>(cam_visible_light_indices.size()); ++i) {
+    auto const light_idx = cam_visible_light_indices[i];
+
+    if (auto const light = frame_packet.light_data[light_idx];
+      light.type == LightComponent::Type::Directional && light.casts_shadow) {
+      enum FrustumVertex : std::uint8_t {
+        kFrustumVertexNearTopRight    = 0,
+        kFrustumVertexNearTopLeft     = 1,
+        kFrustumVertexNearBottomLeft  = 2,
+        kFrustumVertexNearBottomRight = 3,
+        kFrustumVertexFarTopRight     = 4,
+        kFrustumVertexFarTopLeft      = 5,
+        kFrustumVertexFarBottomLeft   = 6,
+        kFrustumVertexFarBottomRight  = 7,
+      };
+
+      auto const cam_near = cam_data.near_plane;
+      auto const cam_far = cam_data.far_plane;
+
+      // Order of vertices is CCW from top right, near first
+      auto const frustum_verts_ws = [&cam_data, rt_aspect, cam_near, cam_far] {
+        std::array<Vector3, 8> ret;
+
+        auto const near_world_forward = cam_data.position + cam_data.forward * cam_near;
+        auto const far_world_forward = cam_data.position + cam_data.forward * cam_far;
+
+        switch (cam_data.type) {
+          case Camera::Type::Perspective: {
+            auto const tan_half_fov = std::tan(ToRadians(cam_data.fov_vert_deg / 2.0f));
+            auto const near_extent_y = cam_near * tan_half_fov;
+            auto const near_extent_x = near_extent_y * rt_aspect;
+            auto const far_extent_y = cam_far * tan_half_fov;
+            auto const far_extent_x = far_extent_y * rt_aspect;
+
+            ret[kFrustumVertexNearTopRight] = near_world_forward + cam_data.right * near_extent_x + cam_data.up *
+                                              near_extent_y;
+            ret[kFrustumVertexNearTopLeft] = near_world_forward - cam_data.right * near_extent_x + cam_data.up *
+                                             near_extent_y;
+            ret[kFrustumVertexNearBottomLeft] = near_world_forward - cam_data.right * near_extent_x - cam_data.up *
+                                                near_extent_y;
+            ret[kFrustumVertexNearBottomRight] =
+              near_world_forward + cam_data.right * near_extent_x - cam_data.up * near_extent_y;
+            ret[kFrustumVertexFarTopRight] = far_world_forward + cam_data.right * far_extent_x + cam_data.up *
+                                             far_extent_y;
+            ret[kFrustumVertexFarTopLeft] = far_world_forward - cam_data.right * far_extent_x + cam_data.up *
+                                            far_extent_y;
+            ret[kFrustumVertexFarBottomLeft] = far_world_forward - cam_data.right * far_extent_x - cam_data.up *
+                                               far_extent_y;
+            ret[kFrustumVertexFarBottomRight] = far_world_forward + cam_data.right * far_extent_x - cam_data.up *
+                                                far_extent_y;
+            break;
+          }
+          case Camera::Type::Orthographic: {
+            auto const extent_x = cam_data.size_vert / 2.0f;
+            auto const extent_y = extent_x / rt_aspect;
+
+            ret[kFrustumVertexNearTopRight] = near_world_forward + cam_data.right * extent_x + cam_data.up * extent_y;
+            ret[kFrustumVertexNearTopLeft] = near_world_forward - cam_data.right * extent_x + cam_data.up * extent_y;
+            ret[kFrustumVertexNearBottomLeft] = near_world_forward - cam_data.right * extent_x - cam_data.up * extent_y;
+            ret[kFrustumVertexNearBottomRight] =
+              near_world_forward + cam_data.right * extent_x - cam_data.up * extent_y;
+            ret[kFrustumVertexFarTopRight] = far_world_forward + cam_data.right * extent_x + cam_data.up * extent_y;
+            ret[kFrustumVertexFarTopLeft] = far_world_forward - cam_data.right * extent_x + cam_data.up * extent_y;
+            ret[kFrustumVertexFarBottomLeft] = far_world_forward - cam_data.right * extent_x - cam_data.up * extent_y;
+            ret[kFrustumVertexFarBottomRight] = far_world_forward + cam_data.right * extent_x - cam_data.up * extent_y;
+            break;
+          }
+        }
+
+        return ret;
+      }();
+
+      auto const frustum_depth = cam_far - cam_near;
+
+      for (auto cascade_idx = 0u; cascade_idx < cascade_count; cascade_idx++) {
+        // cascade vertices in world space
+        auto const cascade_verts_ws =
+          [&frustum_verts_ws, &shadow_cascade_boundaries, cascade_idx, cam_near, frustum_depth] {
+            auto const [cascade_near, cascade_far] = shadow_cascade_boundaries[cascade_idx];
+
+            auto const cascade_near_norm = (cascade_near - cam_near) / frustum_depth;
+            auto const cascade_far_norm = (cascade_far - cam_near) / frustum_depth;
+
+            std::array<Vector3, 8> ret;
+
+            for (auto j = 0; j < 4; j++) {
+              auto const& from = frustum_verts_ws[j];
+              auto const& to = frustum_verts_ws[j + 4];
+
+              ret[j] = Lerp(from, to, cascade_near_norm);
+              ret[j + 4] = Lerp(from, to, cascade_far_norm);
+            }
+
+            return ret;
+          }();
+
+        auto cascade_center_ws = Vector3::Zero();
+
+        for (auto const& cascade_vert_ws : cascade_verts_ws) {
+          cascade_center_ws += cascade_vert_ws;
+        }
+
+        cascade_center_ws /= 8.0f;
+
+        auto sphere_radius = 0.0f;
+
+        for (auto const& cascade_vert_ws : cascade_verts_ws) {
+          sphere_radius = std::max(sphere_radius, Distance(cascade_center_ws, cascade_vert_ws));
+        }
+
+        auto const world_units_per_texel = sphere_radius * 2.0f / static_cast<float>(shadow_map_size);
+
+        auto const up = [&light] {
+          auto const dot{Dot(light.direction, Vector3::Up())};
+          return Approximately(dot, 1.0F)
+                   ? Vector3::Backward()
+                   : Approximately(dot, -1.0F)
+                       ? Vector3::Forward()
+                       : Vector3::Up();
+        }();
+
+        auto shadow_view_mtx = Matrix4::LookTo(Vector3::Zero(), light.direction, up);
+        cascade_center_ws = Vector3{Vector4{cascade_center_ws, 1} * shadow_view_mtx};
+        cascade_center_ws /= world_units_per_texel;
+        cascade_center_ws[0] = std::floor(cascade_center_ws[0]);
+        cascade_center_ws[1] = std::floor(cascade_center_ws[1]);
+        cascade_center_ws *= world_units_per_texel;
+        // shadowViewMtx is only rotation, transpose is its inverse
+        cascade_center_ws = Vector3{Vector4{cascade_center_ws, 1} * shadow_view_mtx.Transpose()};
+
+        auto const shadow_near_clip = -sphere_radius - light.shadow_extension;
+        auto const shadow_far_clip = sphere_radius;
+
+        shadow_view_mtx = Matrix4::LookTo(cascade_center_ws, light.direction, up);
+        auto const shadow_proj_mtx = TransformProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(
+          -sphere_radius, sphere_radius, sphere_radius, -sphere_radius, shadow_near_clip, shadow_far_clip));
+
+        auto const shadow_view_proj_mtx = shadow_view_mtx * shadow_proj_mtx;
+
+        Frustum const shadow_frustum_ws{shadow_view_proj_mtx};
+
+        D3D12_VIEWPORT const shadow_viewport{
+          .TopLeftX = 0,
+          .TopLeftY = 0,
+          .Width = static_cast<float>(shadow_map_size),
+          .Height = static_cast<float>(shadow_map_size),
+          .MinDepth = 0,
+          .MaxDepth = 1
+        };
+
+        D3D12_RECT const shadow_scissor{
+          .left = 0,
+          .top = 0,
+          .right = static_cast<LONG>(shadow_map_size),
+          .bottom = static_cast<LONG>(shadow_map_size)
+        };
+
+        views.emplace_back(shadow_view_mtx, shadow_proj_mtx, shadow_view_proj_mtx, shadow_frustum_ws, shadow_viewport,
+          shadow_scissor, shadow_near_clip, shadow_far_clip);
+      }
+
+      shadow_casting_light_idx = i;
+      break;
+    }
+  }
+
+  if (!shadow_casting_light_idx) {
+    return std::nullopt;
+  }
+
+  return PreparedDirectionalShadows{
+    .visible_light_idx = *shadow_casting_light_idx,
+    .first_view = first_view,
+    .view_count = cascade_count
+  };
+}
+
+
+auto SceneRenderer::RecordDirectionalShadows(
+  ExtractedFrameData const& frame_packet,
+  RenderFrame const& frame,
+  PreparedDirectionalShadows const& shadows,
+  wand::CommandList& cmd
+) -> void {
+  cmd.SetPipelineState(*frame_packet.shadow_pso);
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
+  cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
+  cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
+
+  auto const views = std::span{prepared_data_.views}.subspan(shadows.first_view, shadows.view_count);
+
+  for (auto i = 0u; i < static_cast<std::uint32_t>(views.size()); ++i) {
+    RecordDepthOnlyPass(frame_packet, frame, views[i], i, cmd);
+  }
+}
+
+
 auto SceneRenderer::SetPerFrameConstants(MappedConstantBuffer<ShaderPerFrameConstants>& cb,
                                          Vector3 const& ambient_light, ShadowParams const& shadow_params) -> void {
   cb.GetData() = ShaderPerFrameConstants{
@@ -2366,237 +2582,6 @@ auto SceneRenderer::UpdatePunctualShadowAtlas(PunctualShadowAtlas& atlas,
 
     if (i + 1 < 4) {
       std::ranges::copy(lightIndexIndicesInCell[i], std::back_inserter(lightIndexIndicesInCell[i + 1]));
-    }
-  }
-}
-
-
-auto SceneRenderer::DrawDirectionalShadowMaps(ExtractedFrameData const& frame_packet, std::uint32_t const frame_idx,
-                                              std::span<unsigned const> const visible_light_indices,
-                                              CameraData const& cam_data, float rt_aspect, int const cascade_count,
-                                              ShadowCascadeBoundaries const& shadow_cascade_boundaries,
-                                              std::array<Matrix4, MAX_CASCADE_COUNT>& shadow_view_proj_matrices,
-                                              wand::CommandList& cmd) -> void {
-  cmd.SetPipelineState(*shadow_pso_);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
-  cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
-  cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
-
-  for (auto const lightIdx : visible_light_indices) {
-    if (auto const light{frame_packet.light_data[lightIdx]};
-      light.type == LightComponent::Type::Directional && light.casts_shadow) {
-      float const camNear{cam_data.near_plane};
-      float const camFar{cam_data.far_plane};
-
-      enum FrustumVertex : int {
-        FrustumVertex_NearTopRight    = 0,
-        FrustumVertex_NearTopLeft     = 1,
-        FrustumVertex_NearBottomLeft  = 2,
-        FrustumVertex_NearBottomRight = 3,
-        FrustumVertex_FarTopRight     = 4,
-        FrustumVertex_FarTopLeft      = 5,
-        FrustumVertex_FarBottomLeft   = 6,
-        FrustumVertex_FarBottomRight  = 7,
-      };
-
-      // Order of vertices is CCW from top right, near first
-      auto const frustumVertsWS{
-        [&cam_data, rt_aspect, camNear, camFar] {
-          std::array<Vector3, 8> ret;
-
-          Vector3 const nearWorldForward{cam_data.position + cam_data.forward * camNear};
-          Vector3 const farWorldForward{cam_data.position + cam_data.forward * camFar};
-
-          switch (cam_data.type) {
-            case Camera::Type::Perspective: {
-              float const tanHalfFov{std::tan(ToRadians(cam_data.fov_vert_deg / 2.0f))};
-              float const nearExtentY{camNear * tanHalfFov};
-              float const nearExtentX{nearExtentY * rt_aspect};
-              float const farExtentY{camFar * tanHalfFov};
-              float const farExtentX{farExtentY * rt_aspect};
-
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam_data.right * nearExtentX + cam_data.up *
-                                                nearExtentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam_data.right * nearExtentX + cam_data.up *
-                                               nearExtentY;
-              ret[FrustumVertex_NearBottomLeft] =
-                nearWorldForward - cam_data.right * nearExtentX - cam_data.up * nearExtentY;
-              ret[FrustumVertex_NearBottomRight] =
-                nearWorldForward + cam_data.right * nearExtentX - cam_data.up * nearExtentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam_data.right * farExtentX + cam_data.up * farExtentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam_data.right * farExtentX + cam_data.up * farExtentY;
-              ret[FrustumVertex_FarBottomLeft] =
-                farWorldForward - cam_data.right * farExtentX - cam_data.up * farExtentY;
-              ret[FrustumVertex_FarBottomRight] =
-                farWorldForward + cam_data.right * farExtentX - cam_data.up * farExtentY;
-              break;
-            }
-            case Camera::Type::Orthographic: {
-              float const extentX{cam_data.size_vert / 2.0f};
-              float const extentY{extentX / rt_aspect};
-
-              ret[FrustumVertex_NearTopRight] = nearWorldForward + cam_data.right * extentX + cam_data.up * extentY;
-              ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam_data.right * extentX + cam_data.up * extentY;
-              ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam_data.right * extentX - cam_data.up * extentY;
-              ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam_data.right * extentX - cam_data.up * extentY;
-              ret[FrustumVertex_FarTopRight] = farWorldForward + cam_data.right * extentX + cam_data.up * extentY;
-              ret[FrustumVertex_FarTopLeft] = farWorldForward - cam_data.right * extentX + cam_data.up * extentY;
-              ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam_data.right * extentX - cam_data.up * extentY;
-              ret[FrustumVertex_FarBottomRight] = farWorldForward + cam_data.right * extentX - cam_data.up * extentY;
-              break;
-            }
-          }
-
-          return ret;
-        }()
-      };
-
-      auto const frustumDepth{camFar - camNear};
-
-      for (auto cascadeIdx{0}; cascadeIdx < cascade_count; cascadeIdx++) {
-        // cascade vertices in world space
-        auto const cascadeVertsWS{
-          [&frustumVertsWS, &shadow_cascade_boundaries, cascadeIdx, camNear, frustumDepth] {
-            auto const [cascadeNear, cascadeFar]{shadow_cascade_boundaries[cascadeIdx]};
-
-            float const cascadeNearNorm{(cascadeNear - camNear) / frustumDepth};
-            float const cascadeFarNorm{(cascadeFar - camNear) / frustumDepth};
-
-            std::array<Vector3, 8> ret;
-
-            for (auto j = 0; j < 4; j++) {
-              Vector3 const& from{frustumVertsWS[j]};
-              Vector3 const& to{frustumVertsWS[j + 4]};
-
-              ret[j] = Lerp(from, to, cascadeNearNorm);
-              ret[j + 4] = Lerp(from, to, cascadeFarNorm);
-            }
-
-            return ret;
-          }()
-        };
-
-        Vector3 cascadeCenterWS{Vector3::Zero()};
-
-        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
-          cascadeCenterWS += cascadeVertWS;
-        }
-
-        cascadeCenterWS /= 8.0f;
-
-        auto sphereRadius{0.0f};
-
-        for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
-          sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
-        }
-
-        auto const shadowMapSize{dir_shadow_map_arr_->GetSize()};
-        auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
-
-        auto const up{
-          [&light] {
-            auto const dot{Dot(light.direction, Vector3::Up())};
-            return Approximately(dot, 1.0F)
-                     ? Vector3::Backward()
-                     : Approximately(dot, -1.0F)
-                         ? Vector3::Forward()
-                         : Vector3::Up();
-          }()
-        };
-
-        Matrix4 shadowViewMtx{Matrix4::LookTo(Vector3::Zero(), light.direction, up)};
-        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
-        cascadeCenterWS /= worldUnitsPerTexel;
-        cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
-        cascadeCenterWS[1] = std::floor(cascadeCenterWS[1]);
-        cascadeCenterWS *= worldUnitsPerTexel;
-        // shadowViewMtx is only rotation, transpose is its inverse
-        cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Transpose()};
-
-        auto const shadow_near_clip{-sphereRadius - light.shadow_extension};
-        auto const shadow_far_clip{sphereRadius};
-
-        shadowViewMtx = Matrix4::LookTo(cascadeCenterWS, light.direction, up);
-        auto const shadowProjMtx{
-          TransformProjectionMatrixForRendering(Matrix4::OrthographicOffCenter(-sphereRadius, sphereRadius,
-            sphereRadius, -sphereRadius, shadow_near_clip, shadow_far_clip))
-        };
-
-        shadow_view_proj_matrices[cascadeIdx] = shadowViewMtx * shadowProjMtx;
-
-        cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), cascadeIdx);
-
-        D3D12_VIEWPORT const shadowViewport{
-          0, 0, static_cast<float>(shadowMapSize), static_cast<float>(shadowMapSize), 0, 1
-        };
-
-        D3D12_RECT const shadow_scissor{0, 0, static_cast<LONG>(shadowMapSize), static_cast<LONG>(shadowMapSize)};
-
-        cmd.SetViewports(std::array{shadowViewport});
-        cmd.SetScissorRects(std::array{shadow_scissor});
-
-        Frustum const shadow_frustum_ws{shadow_view_proj_matrices[cascadeIdx]};
-
-        auto& per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
-        SetPerViewConstants(per_view_cb, shadowViewMtx, shadowProjMtx, {}, ShadowCascadeBoundaries{},
-          shadow_frustum_ws, Vector3{}, shadow_near_clip, shadow_far_clip, static_cast<int>(shadowMapSize),
-          static_cast<int>(shadowMapSize));
-        cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
-
-        for (auto const& geom_batch : frame_packet.geom_batches) {
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
-            *frame_packet.buffers[geom_batch.pos_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
-            *frame_packet.buffers[geom_batch.uv_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, vertex_idx_buf_idx),
-            *frame_packet.buffers[geom_batch.vtx_idx_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, prim_idx_buf_idx),
-            *frame_packet.buffers[geom_batch.prim_idx_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
-            *frame_packet.buffers[geom_batch.meshlet_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, cull_data_buf_idx),
-            *frame_packet.buffers[geom_batch.cull_data_buf_local_idx]);
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), geom_batch.idx32);
-
-          auto const instances = std::span{frame_packet.instance_data}.subspan(geom_batch.first_instance,
-            geom_batch.instance_count);
-
-          auto const mtl_groups = std::span{frame_packet.mtl_slot_groups}.subspan(geom_batch.first_mtl_group,
-            geom_batch.mtl_group_count);
-
-          for (auto const& instance : instances) {
-            auto& per_inst_cb{AcquirePerInstanceConstantBuffer(frame_idx)};
-            SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, shadowViewMtx, shadowProjMtx, {},
-              instance.max_abs_scaling);
-            cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_inst_cb_idx),
-              *per_inst_cb.GetBuffer());
-
-            for (auto const& mtl_group : mtl_groups) {
-              auto const inst_mtl_local_idx = instance.first_mtl + mtl_group.mtl_slot;
-              auto const& mtl_buf_local_idx{frame_packet.instance_materials[inst_mtl_local_idx]};
-
-              if (mtl_buf_local_idx == frame_packet_invalid_idx) {
-                continue;
-              }
-
-              cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx),
-                *frame_packet.buffers[mtl_buf_local_idx]);
-
-              auto const submeshes = std::span{frame_packet.submesh_data}.subspan(mtl_group.first_submesh,
-                mtl_group.submesh_count);
-
-              for (auto const& submesh : submeshes) {
-                DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
-                  PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
-                  PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex),
-                  cmd);
-              }
-            }
-          }
-        }
-      }
-
-      break;
     }
   }
 }
@@ -2994,7 +2979,7 @@ auto SceneRenderer::RecordGpuInitWork(RenderFrame& frame) const -> void {
 }
 
 
-auto SceneRenderer::RecordDepthOnlyPass(ExtractedFrameData const& frame_packet, RenderFrame& frame,
+auto SceneRenderer::RecordDepthOnlyPass(ExtractedFrameData const& frame_packet, RenderFrame const& frame,
                                         PreparedView const& view, std::uint32_t const rt_idx,
                                         wand::CommandList& cmd) -> void {
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), rt_idx);
