@@ -43,7 +43,7 @@ auto TextureImporter::Import(
   }
 
   results.emplace_back(result->payload_kind, result->runtime_type,
-    std::string{ToUntypedStdSv(src.filename().u8string())}, std::move(result->bytes));
+    std::string{ToUntypedStdSv(src.filename().stem().u8string())}, std::move(result->bytes));
   return true;
 }
 
