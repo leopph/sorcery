@@ -714,7 +714,7 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
   prepared_data_.cam_data.clear();
   prepared_data_.visible_light_indices.clear();
   prepared_data_.views.clear();
-  prepared_data_.pos_shadow_requests.clear();
+  prepared_data_.pos_shadows.clear();
 
   // Prepare camera data
 
@@ -824,13 +824,13 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
     auto const dir_shadows = PrepareDirectionalShadows(frame_packet, visible_light_indices, cam_data, cascades,
       viewport_aspect, frame_packet.shadow_params.cascade_count, dir_shadow_map_arr_->GetSize(), prepared_data_.views);
 
-    auto const first_pos_shadow_req = static_cast<std::uint32_t>(prepared_data_.pos_shadow_requests.size());
-    auto const pos_shadow_req_count = PreparePositionalShadowRequests(frame_packet.light_data, visible_light_indices,
-      cam_data, prepared_data_.views[primary_view_idx], frame_packet.shadow_params.distance,
-      prepared_data_.pos_shadow_requests);
+    auto const first_pos_shadow = static_cast<std::uint32_t>(prepared_data_.pos_shadows.size());
+    auto const pos_shadow_count = PreparePositionalShadows(frame_packet.light_data, visible_light_indices, cam_data,
+      prepared_data_.views[primary_view_idx], frame_packet.shadow_params.distance, pos_shadow_atlas_->GetSize(),
+      prepared_data_.views, prepared_data_.pos_shadows);
 
     prepared_data_.cam_data.emplace_back(cascades, dir_shadows, static_cast<std::uint32_t>(i), first_visible_light,
-      visible_light_count, first_pos_shadow_req, pos_shadow_req_count, primary_view_idx, prev_cam_view_proj_mtx,
+      visible_light_count, first_pos_shadow, pos_shadow_count, primary_view_idx, prev_cam_view_proj_mtx,
       cam_data.jitter_ndc, prev_cam_data ? prev_cam_data->jitter_ndc : cam_data.jitter_ndc);
   }
 }
@@ -1013,7 +1013,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
   for (auto& prepared_cam : prepared_data_.cam_data) {
     auto const& extracted_cam = frame_packet.cam_data[prepared_cam.extracted_data_idx];
-    auto const& view = prepared_data_.views[prepared_cam.primary_view_idx];
+    auto const& cam_view = prepared_data_.views[prepared_cam.primary_view_idx];
 
     // Compute render target dimensions
 
@@ -1023,8 +1023,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     auto const target_rt_width{target_rt_desc.width};
     auto const target_rt_height{target_rt_desc.height};
 
-    auto const transient_rt_width{static_cast<UINT>(view.viewport.Width)};
-    auto const transient_rt_height{static_cast<UINT>(view.viewport.Height)};
+    auto const transient_rt_width{static_cast<UINT>(cam_view.viewport.Width)};
+    auto const transient_rt_height{static_cast<UINT>(cam_view.viewport.Height)};
 
     CD3DX12_VIEWPORT const transient_viewport{
       0.0f, 0.0f, static_cast<FLOAT>(transient_rt_width), static_cast<FLOAT>(transient_rt_height)
@@ -1085,25 +1085,20 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     cam_cmd.Begin(nullptr);
     cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    auto const cam_visible_light_indices = std::span{prepared_data_.visible_light_indices}.subspan(
-      prepared_cam.first_visible_light, prepared_cam.visible_light_count);
-
     // Shadow pass
     if (prepared_cam.dir_shadows) {
-      RecordDirectionalShadows(frame_packet, frame, *prepared_cam.dir_shadows, cam_cmd);
+      RecordDirectionalShadows(frame_packet, frame, *prepared_cam.dir_shadows, prepared_data_.views, cam_cmd);
     }
 
-    auto const cam_pos_shadow_requests = std::span{prepared_data_.pos_shadow_requests}.subspan(
-      prepared_cam.first_pos_shadow_req, prepared_cam.pos_shadow_req_count);
-
-    AllocatePositionalShadows(*pos_shadow_atlas_, cam_pos_shadow_requests, frame_packet.light_data,
-      cam_visible_light_indices);
-    DrawPositionalShadowMaps(*pos_shadow_atlas_, frame_packet, frame_idx, cam_cmd);
+    auto const cam_pos_shadows = std::span{prepared_data_.pos_shadows}.subspan(prepared_cam.first_pos_shadow,
+      prepared_cam.pos_shadow_count);
+    RecordPositionalShadows(frame_packet, frame, cam_pos_shadows, prepared_data_.views, cam_cmd);
 
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
-    SetPerViewConstants(cam_per_view_cb, view.view_mtx, view.proj_mtx, view.view_proj_mtx,
-      prepared_cam.prev_view_proj_mtx, prepared_cam.cascade_boundaries, view.frustum_ws, extracted_cam.position,
-      view.near_plane, view.far_plane, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
+    SetPerViewConstants(cam_per_view_cb, cam_view.view_mtx, cam_view.proj_mtx, cam_view.view_proj_mtx,
+      prepared_cam.prev_view_proj_mtx, prepared_cam.cascade_boundaries, cam_view.frustum_ws, extracted_cam.position,
+      cam_view.near_plane, cam_view.far_plane, static_cast<int>(transient_rt_width),
+      static_cast<int>(transient_rt_height));
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
@@ -1177,7 +1172,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
       for (auto const& instance : instances) {
         auto& per_inst_cb{AcquirePerInstanceConstantBuffer(frame_idx)};
-        SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, view.view_mtx, view.proj_mtx,
+        SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, cam_view.view_mtx, cam_view.proj_mtx,
           instance.prev_local_to_world_mtx, instance.max_abs_scaling);
         cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_inst_cb_idx),
           *per_inst_cb.GetBuffer());
@@ -1273,6 +1268,10 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     // Deferred lighting pass
 
+    // Set general light information
+
+    auto const cam_visible_light_indices = std::span{prepared_data_.visible_light_indices}.subspan(
+      prepared_cam.first_visible_light, prepared_cam.visible_light_count);
     auto const light_count = cam_visible_light_indices.size();
     std::vector<ShaderLight> shader_lights(light_count);
 
@@ -1296,6 +1295,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       }
     }
 
+    // Set directional light shadow data
+
     if (prepared_cam.dir_shadows) {
       auto const visible_light_idx = prepared_cam.dir_shadows->visible_light_idx;
 
@@ -1311,7 +1312,33 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       }
     }
 
-    pos_shadow_atlas_->SetLookUpInfo(shader_lights);
+    // Set positional light shadow data
+
+    for (auto const& pos_shadow : cam_pos_shadows) {
+      auto& light = shader_lights[pos_shadow.visible_light_idx];
+      light.isCastingShadow = TRUE;
+
+      for (auto shadow_idx = 0u; shadow_idx < 6; ++shadow_idx) {
+        if ((pos_shadow.allocated_mask & (1 << shadow_idx)) != 0) {
+          auto const& view = prepared_data_.views[pos_shadow.view_indices[shadow_idx]];
+
+          Vector2 const atlas_offset{
+            view.viewport.TopLeftX / pos_shadow_atlas_->GetSize(),
+            view.viewport.TopLeftY / pos_shadow_atlas_->GetSize(),
+          };
+
+          Vector2 const atlas_scale{
+            view.viewport.Width / pos_shadow_atlas_->GetSize(),
+            view.viewport.Height / pos_shadow_atlas_->GetSize(),
+          };
+
+          light.sampleShadowMap[shadow_idx] = TRUE;
+          light.shadowViewProjMatrices[shadow_idx] = view.view_proj_mtx;
+          light.shadow_atlas_offset[shadow_idx] = atlas_offset;
+          light.shadow_atlas_scale[shadow_idx] = atlas_scale;
+        }
+      }
+    }
 
     auto& light_buffer{light_buffers_[frame_idx]};
 
@@ -1520,8 +1547,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     auto const* const post_process_input_tex{frame_packet.textures[extracted_cam.accum_tex_local_idx].get()};
 
-    cam_cmd.SetViewports(std::span{&view.viewport, 1});
-    cam_cmd.SetScissorRects(std::span{&view.scissor, 1});
+    cam_cmd.SetViewports(std::span{&cam_view.viewport, 1});
+    cam_cmd.SetScissorRects(std::span{&cam_view.scissor, 1});
 
     cam_cmd.SetPipelineState(*frame_packet.post_process_pso);
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx), *post_process_input_tex);
@@ -1546,7 +1573,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       cam_cmd.SetRenderTargets(std::span{
         std::array{static_cast<wand::Texture const*>(target_rt.GetColorTex().get())}.data(), 1
       }, nullptr);
-      cam_cmd.SetScissorRects(std::span{&view.scissor, 1});
+      cam_cmd.SetScissorRects(std::span{&cam_view.scissor, 1});
       cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
       cam_cmd.DrawInstanced(2, static_cast<UINT>(frame_packet.gizmo_data.line_count), 0, 0);
     }
@@ -2310,18 +2337,48 @@ auto SceneRenderer::PrepareDirectionalShadows(
 }
 
 
-auto SceneRenderer::PreparePositionalShadowRequests(
+auto SceneRenderer::PreparePositionalShadows(
   std::span<LightData const> const lights,
   std::span<std::uint32_t const> const visible_light_indices,
   CameraData const& cam,
-  PreparedView const& view,
+  PreparedView const& cam_view,
   float const shadow_distance,
-  std::vector<PositionalShadowRequest>& requests
+  std::uint32_t const atlas_size,
+  std::vector<PreparedView>& views,
+  std::vector<PreparedPositionalShadow>& shadows
 ) -> std::uint32_t {
-  std::uint32_t requests_created{0};
+  auto const first_shadow = static_cast<std::uint32_t>(shadows.size());
+  auto const shadow_count = GeneratePositionalShadowCandidates(lights, visible_light_indices, cam, cam_view,
+    shadow_distance, shadows);
 
+  AllocatePositionalShadows(lights, visible_light_indices, atlas_size, shadows, views);
+
+  // Remove shadows that failed to get any allocation
+
+  auto const first = shadows.begin() + first_shadow;
+  auto const last = first + shadow_count;
+
+  auto const [new_end, old_end] = std::ranges::remove_if(first, last, [](auto const& shadow) {
+    return shadow.allocated_mask == 0;
+  });
+
+  auto const deleted_count = std::distance(new_end, old_end);
+  shadows.erase(new_end, old_end);
+
+  return shadow_count - static_cast<std::uint32_t>(deleted_count);
+}
+
+
+auto SceneRenderer::GeneratePositionalShadowCandidates(
+  std::span<LightData const> const lights,
+  std::span<std::uint32_t const> const visible_light_indices,
+  CameraData const& cam,
+  PreparedView const& cam_view,
+  float const shadow_distance,
+  std::vector<PreparedPositionalShadow>& shadows
+) -> std::uint32_t {
   // return [0, 1] normalized screen coverage
-  auto const computeScreenCoverage = [&cam, &view](std::span<Vector3 const> const vertices_ws) -> float {
+  auto const computeScreenCoverage = [&cam, &cam_view](std::span<Vector3 const> const vertices_ws) -> float {
     if (auto const [min_ws, max_ws] = AABB::FromVertices(vertices_ws);
       min_ws[0] <= cam.position[0] && min_ws[1] <= cam.position[1] && min_ws[2] <= cam.position[2] &&
       max_ws[0] >= cam.position[0] && max_ws[1] >= cam.position[1] && max_ws[2] >= cam.position[2]) {
@@ -2336,7 +2393,7 @@ auto SceneRenderer::PreparePositionalShadowRequests(
 
     for (auto& vertex : vertices_ws) {
       Vector4 vertex4{vertex, 1};
-      vertex4 *= view.view_proj_mtx;
+      vertex4 *= cam_view.view_proj_mtx;
       auto const projected = Vector2{vertex4} / vertex4[3];
       min = Clamp(Min(min, projected), bottom_left, top_right);
       max = Clamp(Max(max, projected), bottom_left, top_right);
@@ -2366,6 +2423,9 @@ auto SceneRenderer::PreparePositionalShadowRequests(
     return std::nullopt;
   };
 
+  shadow_alloc_candidates_.clear();
+  std::uint32_t shadows_created{0};
+
   for (auto i = 0uz; i < visible_light_indices.size(); ++i) {
     if (auto const& light = lights[visible_light_indices[i]];
       light.casts_shadow && (light.type == LightComponent::Type::Spot || light.type == LightComponent::Type::Point)) {
@@ -2374,6 +2434,9 @@ auto SceneRenderer::PreparePositionalShadowRequests(
         Distance(light.position - cam_to_light_dir * light.range, cam.position) > shadow_distance) {
         continue;
       }
+
+      // Whether this light generated any shadow candidates
+      auto has_candidates = false;
 
       if (light.type == LightComponent::Type::Spot) {
         auto light_vertices = CalculateSpotLightLocalVertices(light.range, light.outer_angle);
@@ -2386,8 +2449,9 @@ auto SceneRenderer::PreparePositionalShadowRequests(
 
         if (auto const res_class = classifyScreenCoverage(screen_coverage)) {
           auto const cam_dist = Distance(cam.position, light.position);
-          requests.emplace_back(static_cast<std::uint32_t>(i), 0, *res_class, screen_coverage, cam_dist);
-          ++requests_created;
+          shadow_alloc_candidates_.emplace_back(static_cast<std::uint32_t>(shadows.size()), 0, *res_class,
+            screen_coverage, cam_dist);
+          has_candidates = true;
         }
       } else if (light.type == LightComponent::Type::Point) {
         for (auto j = 0; j < 6; j++) {
@@ -2412,51 +2476,33 @@ auto SceneRenderer::PreparePositionalShadowRequests(
 
           if (auto const res_class = classifyScreenCoverage(screen_coverage)) {
             auto const cam_dist = std::max(0.0f, Distance(cam.position, light.position) - light.range);
-            requests.emplace_back(static_cast<std::uint32_t>(i), j, *res_class, screen_coverage, cam_dist);
-            ++requests_created;
+            shadow_alloc_candidates_.emplace_back(static_cast<std::uint32_t>(shadows.size()), j, *res_class,
+              screen_coverage, cam_dist);
+            has_candidates = true;
           }
         }
+      }
+
+      // If the light has any shadow allocation candidates, generate a structure for it
+      if (has_candidates) {
+        shadows.emplace_back(static_cast<std::uint32_t>(i), 0, std::array{0u, 0u, 0u, 0u, 0u, 0u});
+        ++shadows_created;
       }
     }
   }
 
-  return requests_created;
-}
-
-
-auto SceneRenderer::RecordDirectionalShadows(
-  ExtractedFrameData const& frame_packet,
-  RenderFrame const& frame,
-  PreparedDirectionalShadows const& shadows,
-  wand::CommandList& cmd
-) -> void {
-  cmd.SetPipelineState(*frame_packet.shadow_pso);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
-  cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
-  cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
-
-  auto const views = std::span{prepared_data_.views}.subspan(shadows.first_view, shadows.view_count);
-
-  for (auto i = 0u; i < static_cast<std::uint32_t>(views.size()); ++i) {
-    RecordDepthOnlyPass(frame_packet, frame, views[i], i, cmd);
-  }
+  return shadows_created;
 }
 
 
 auto SceneRenderer::AllocatePositionalShadows(
-  PositionalLightShadowAtlas& atlas,
-  std::span<PositionalShadowRequest> requests,
   std::span<LightData const> const lights,
-  std::span<unsigned const> const visible_light_indices
+  std::span<unsigned const> const visible_light_indices,
+  std::uint32_t const shadow_atlas_size,
+  std::span<PreparedPositionalShadow> const shadows,
+  std::vector<PreparedView>& views
 ) -> void {
-  for (auto i = 0z; i < atlas.GetElementCount(); ++i) {
-    auto& cell = atlas.GetCell(static_cast<int>(i));
-    for (auto j = 0z; j < cell.GetElementCount(); ++j) {
-      cell.GetSubcell(static_cast<int>(j)).reset();
-    }
-  }
-
-  std::ranges::sort(requests, [](auto const& lhs, auto const& rhs) {
+  std::ranges::sort(shadow_alloc_candidates_, [](auto const& lhs, auto const& rhs) {
     if (lhs.priority > rhs.priority) {
       return true;
     }
@@ -2468,44 +2514,152 @@ auto SceneRenderer::AllocatePositionalShadows(
     return lhs.camera_distance < rhs.camera_distance;
   });
 
-  std::uint32_t constexpr static num_res_classes{4};
-  assert(std::cmp_equal(num_res_classes, atlas.GetElementCount()));
+  // Allocation strategy
+  // The atlas is presumed to be square.
+  // The atlas is divided into 4 equal sized square quadrants.
+  // These are subdivided into 1, 4, 16, and 64 equal sized square allocation slots respectively.
+  // Most important shadows go into the biggest allocation slots, while less important
+  // ones go into smaller slots.
+
+  std::uint32_t constexpr static atlas_subdiv{2};
+  std::uint32_t constexpr static num_res_classes{atlas_subdiv * atlas_subdiv};
+  std::array<std::uint32_t, num_res_classes> constexpr static quadrant_subdivs{1, 2, 4, 8};
+  // ReSharper disable once CppTemplateArgumentsCanBeDeduced
+  // Deliberately disabled to keep size and initializer in sync
+  std::array<std::uint32_t, num_res_classes> constexpr static max_allocations_per_class{
+    quadrant_subdivs[0] * quadrant_subdivs[0],
+    quadrant_subdivs[1] * quadrant_subdivs[1],
+    quadrant_subdivs[2] * quadrant_subdivs[2],
+    quadrant_subdivs[3] * quadrant_subdivs[3],
+  };
   std::array<std::uint32_t, num_res_classes> allocations_per_class{0, 0, 0, 0};
 
-  for (auto const& req : requests) {
-    assert(std::cmp_less(req.resolution_class, static_cast<std::uint32_t>(atlas.GetElementCount())));
+  auto const add_shadow_view = [&]
+  (std::uint32_t const res_class, Matrix4 const& view_mtx, Matrix4 const& proj_mtx, float const near_plane,
+   float const far_plane, std::uint32_t const shadow_idx, PreparedPositionalShadow& shadow) {
+    auto const view_proj_mtx = view_mtx * proj_mtx;
 
-    auto res_class = req.resolution_class;
+    Vector2 const quadrant_idx{
+      res_class % atlas_subdiv,
+      res_class / atlas_subdiv
+    };
 
-    while (std::cmp_less(res_class, atlas.GetElementCount())) {
-      auto& cell = atlas.GetCell(res_class);
+    auto const quadrant_subdiv = quadrant_subdivs[res_class];
+    auto const quadrant_occupant_count = allocations_per_class[res_class];
 
-      if (auto& allocs_in_class = allocations_per_class[res_class]; std::cmp_less(allocs_in_class, cell.GetElementCount())) {
-        auto const& light = lights[visible_light_indices[req.visible_light_idx]];
+    Vector2 const alloc_idx{
+      quadrant_occupant_count % quadrant_subdiv,
+      quadrant_occupant_count / quadrant_subdiv
+    };
 
-        auto& subcell = atlas.GetCell(res_class).GetSubcell(allocs_in_class);
+    auto constexpr quadrant_size_norm{1.0f / static_cast<float>(atlas_subdiv)};
+    auto const quadrant_offset_norm = quadrant_size_norm * quadrant_idx;
+
+    auto const quadrant_element_size_norm = 1.0f / static_cast<float>(quadrant_subdiv);
+    auto const quadrant_element_offset_norm = quadrant_element_size_norm * alloc_idx;
+
+    auto const alloc_size = quadrant_size_norm * quadrant_element_size_norm * static_cast<float>(shadow_atlas_size);
+    auto const alloc_offset = (quadrant_offset_norm + quadrant_element_offset_norm * quadrant_size_norm) *
+                              static_cast<float>(shadow_atlas_size);
+
+    D3D12_VIEWPORT const viewport{
+      .TopLeftX = alloc_offset[0],
+      .TopLeftY = alloc_offset[1],
+      .Width = alloc_size,
+      .Height = alloc_size,
+      .MinDepth = 0,
+      .MaxDepth = 1
+    };
+
+    D3D12_RECT const scissor{
+      .left = static_cast<LONG>(alloc_offset[0]),
+      .top = static_cast<LONG>(alloc_offset[1]),
+      .right = static_cast<LONG>(alloc_offset[0] + alloc_size),
+      .bottom = static_cast<LONG>(alloc_offset[1] + alloc_size)
+    };
+
+    auto const view_idx = static_cast<std::uint32_t>(views.size());
+    views.emplace_back(view_mtx, proj_mtx, view_proj_mtx, Frustum{view_proj_mtx}, viewport, scissor, near_plane,
+      far_plane);
+
+    shadow.allocated_mask |= 1 << shadow_idx;
+    shadow.view_indices[shadow_idx] = view_idx;
+  };
+
+  for (auto const& candidate : shadow_alloc_candidates_) {
+    assert(candidate.requested_res_class < num_res_classes);
+
+    auto& shadow = shadows[candidate.prepared_shadow_idx];
+    auto res_class = candidate.requested_res_class;
+
+    while (res_class < num_res_classes) {
+      if (auto& allocs_in_class = allocations_per_class[res_class];
+        allocs_in_class < max_allocations_per_class[res_class]) {
+        auto const& light = lights[visible_light_indices[shadow.visible_light_idx]];
 
         if (light.type == LightComponent::Type::Spot) {
           auto const shadow_view_mtx = Matrix4::LookTo(light.position, light.direction, Vector3::Up());
-          auto const shadow_proj_mtx = Matrix4::PerspectiveFov(ToRadians(light.outer_angle), 1.f, light.range,
-            light.shadow_near_plane);
-          subcell.emplace(shadow_view_mtx * shadow_proj_mtx, req.visible_light_idx, req.shadow_idx);
+          auto const shadow_proj_mtx = TransformProjectionMatrixForRendering(
+            Matrix4::PerspectiveFov(ToRadians(light.outer_angle), 1.0f, light.shadow_near_plane, light.range));
+          add_shadow_view(res_class, shadow_view_mtx, shadow_proj_mtx, light.shadow_near_plane, light.range,
+            candidate.shadow_idx, shadow);
           ++allocs_in_class;
           break;
         }
 
         if (light.type == LightComponent::Type::Point) {
-          auto const face_view_matrices = MakeCubeFaceViewMatrices(light.position);
-          auto const shadow_view_mtx = face_view_matrices[req.shadow_idx];
+          auto const shadow_view_mtx = MakeCubeFaceViewMatrices(light.position)[candidate.shadow_idx];
           auto const shadow_proj_mtx = TransformProjectionMatrixForRendering(
-            Matrix4::PerspectiveFov(ToRadians(90), 1, light.shadow_near_plane, light.range));
-          subcell.emplace(shadow_view_mtx * shadow_proj_mtx, req.visible_light_idx, req.shadow_idx);
+            Matrix4::PerspectiveFov(ToRadians(90), 1.0f, light.shadow_near_plane, light.range));
+          add_shadow_view(res_class, shadow_view_mtx, shadow_proj_mtx, light.shadow_near_plane, light.range,
+            candidate.shadow_idx, shadow);
           ++allocs_in_class;
           break;
         }
       }
 
       ++res_class;
+    }
+  }
+}
+
+
+auto SceneRenderer::RecordDirectionalShadows(
+  ExtractedFrameData const& frame_packet,
+  RenderFrame const& frame,
+  PreparedDirectionalShadows const& shadows,
+  std::span<PreparedView const> const views,
+  wand::CommandList& cmd
+) -> void {
+  cmd.SetPipelineState(*frame_packet.shadow_pso);
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
+  cmd.SetRenderTargets({}, dir_shadow_map_arr_->GetTex().get());
+  cmd.ClearDepthStencil(*dir_shadow_map_arr_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
+
+  auto const shadow_views = views.subspan(shadows.first_view, shadows.view_count);
+  for (auto i = 0u; i < static_cast<std::uint32_t>(shadow_views.size()); ++i) {
+    RecordDepthOnlyPass(frame_packet, frame, shadow_views[i], i, cmd);
+  }
+}
+
+
+auto SceneRenderer::RecordPositionalShadows(
+  ExtractedFrameData const& frame_packet,
+  RenderFrame const& frame,
+  std::span<PreparedPositionalShadow const> const shadows,
+  std::span<PreparedView const> const views,
+  wand::CommandList& cmd
+) -> void {
+  cmd.SetPipelineState(*frame_packet.shadow_pso);
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
+  cmd.SetRenderTargets({}, pos_shadow_atlas_->GetTex().get());
+  cmd.ClearDepthStencil(*pos_shadow_atlas_->GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
+
+  for (auto const& shadow : shadows) {
+    for (auto shadow_idx = 0u; shadow_idx < 6; shadow_idx++) {
+      if ((shadow.allocated_mask & (1 << shadow_idx)) != 0) {
+        RecordDepthOnlyPass(frame_packet, frame, views[shadow.view_indices[shadow_idx]], 0, cmd);
+      }
     }
   }
 }
@@ -2570,105 +2724,6 @@ auto SceneRenderer::SetPerInstanceConstants(MappedConstantBuffer<ShaderPerInstan
     .model_view_proj_mtx = model_mtx * view_mtx * proj_mtx, .prev_model_mtx = prev_model_mtx,
     .max_abs_scaling = max_abs_scaling
   };
-}
-
-
-auto SceneRenderer::DrawPositionalShadowMaps(
-  PositionalLightShadowAtlas const& atlas,
-  ExtractedFrameData const& frame_packet,
-  std::uint32_t const frame_idx,
-  wand::CommandList& cmd
-) -> void {
-  cmd.SetPipelineState(*frame_packet.shadow_pso);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
-  cmd.SetRenderTargets({}, atlas.GetTex().get());
-  cmd.ClearDepthStencil(*atlas.GetTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
-
-  auto const cell_size_norm{atlas.GetNormalizedElementSize()};
-
-  for (auto i = 0; i < atlas.GetElementCount(); i++) {
-    auto const& cell{atlas.GetCell(i)};
-    auto const cell_offset_norm{atlas.GetNormalizedElementOffset(i)};
-    auto const subcell_size{cell_size_norm * cell.GetNormalizedElementSize() * static_cast<float>(atlas.GetSize())};
-
-    for (auto j = 0; j < cell.GetElementCount(); j++) {
-      if (auto const& subcell{cell.GetSubcell(j)}) {
-        auto const subcell_offset{
-          (cell_offset_norm + cell.GetNormalizedElementOffset(j) * cell_size_norm) * static_cast<float>(atlas.GetSize())
-        };
-
-        D3D12_VIEWPORT const viewport{subcell_offset[0], subcell_offset[1], subcell_size, subcell_size, 0, 1};
-        D3D12_RECT const scissor{
-          static_cast<LONG>(subcell_offset[0]), static_cast<LONG>(subcell_offset[1]),
-          static_cast<LONG>(subcell_offset[0] + subcell_size), static_cast<LONG>(subcell_offset[1] + subcell_size)
-        };
-
-        cmd.SetViewports(std::span{&viewport, 1});
-        cmd.SetScissorRects(std::array{scissor});
-
-        Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
-
-        auto& per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
-        SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, subcell->shadowViewProjMtx,
-          {}, ShadowCascadeBoundaries{}, shadow_frustum_ws, Vector3{}, 0, 0, 0,
-          0); // TODO pass proper near and far clip planes and rt size
-        cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
-
-        for (auto const& geom_batch : frame_packet.geom_batches) {
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
-            *frame_packet.buffers[geom_batch.pos_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
-            *frame_packet.buffers[geom_batch.uv_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, vertex_idx_buf_idx),
-            *frame_packet.buffers[geom_batch.vtx_idx_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, prim_idx_buf_idx),
-            *frame_packet.buffers[geom_batch.prim_idx_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
-            *frame_packet.buffers[geom_batch.meshlet_buf_local_idx]);
-          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, cull_data_buf_idx),
-            *frame_packet.buffers[geom_batch.cull_data_buf_local_idx]);
-          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), geom_batch.idx32);
-
-          auto const instances = std::span{frame_packet.instance_data}.subspan(geom_batch.first_instance,
-            geom_batch.instance_count);
-
-          auto const mtl_groups = std::span{frame_packet.mtl_slot_groups}.subspan(geom_batch.first_mtl_group,
-            geom_batch.mtl_group_count);
-
-          for (auto const& instance : instances) {
-            auto& per_inst_cb{AcquirePerInstanceConstantBuffer(frame_idx)};
-            SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, Matrix4::Identity(),
-              subcell->shadowViewProjMtx, {}, instance.max_abs_scaling);
-            cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_inst_cb_idx),
-              *per_inst_cb.GetBuffer());
-
-            for (auto const& mtl_group : mtl_groups) {
-              auto const inst_mtl_local_idx = instance.first_mtl + mtl_group.mtl_slot;
-              auto const& mtl_buf_local_idx{frame_packet.instance_materials[inst_mtl_local_idx]};
-
-              if (mtl_buf_local_idx == frame_packet_invalid_idx) {
-                continue;
-              }
-
-              cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx),
-                *frame_packet.buffers[mtl_buf_local_idx]);
-
-              auto const submeshes = std::span{frame_packet.submesh_data}.subspan(mtl_group.first_submesh,
-                mtl_group.submesh_count);
-
-              for (auto const& submesh : submeshes) {
-                DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
-                  PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
-                  PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex),
-                  cmd);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 

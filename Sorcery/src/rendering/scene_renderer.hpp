@@ -394,22 +394,15 @@ private:
   };
 
 
-  struct PositionalShadowRequest {
+  struct PreparedPositionalShadow {
     // Index into the camera's visible-light slice
     std::uint32_t visible_light_idx;
 
-    // 0 for spotlights, 0-5 for pointlights
-    std::uint32_t shadow_idx;
+    // Bit N means shadow map / cube face N was successfully allocated.
+    std::uint8_t allocated_mask;
 
-    // 0 is greatest resolution, N is the lowest
-    std::uint32_t resolution_class;
-
-    // Higher priority requests have a stronger claim
-    // on their requested resolution tier.
-    float priority;
-
-    // How far the light is from the camera.
-    float camera_distance;
+    // Valid if bit N is set.
+    std::array<std::uint32_t, 6> view_indices;
   };
 
 
@@ -423,8 +416,8 @@ private:
     std::uint32_t first_visible_light;
     std::uint32_t visible_light_count;
 
-    std::uint32_t first_pos_shadow_req;
-    std::uint32_t pos_shadow_req_count;
+    std::uint32_t first_pos_shadow;
+    std::uint32_t pos_shadow_count;
 
     std::uint32_t primary_view_idx;
 
@@ -439,7 +432,23 @@ private:
     std::vector<PreparedCameraData> cam_data;
     std::vector<std::uint32_t> visible_light_indices;
     std::vector<PreparedView> views;
-    std::vector<PositionalShadowRequest> pos_shadow_requests;
+    std::vector<PreparedPositionalShadow> pos_shadows;
+  };
+
+
+  struct ShadowAllocCandidate {
+    std::uint32_t prepared_shadow_idx;
+    std::uint32_t shadow_idx;
+
+    // 0 is greatest resolution, N is the lowest
+    std::uint32_t requested_res_class;
+
+    // Higher priority requests have a stronger claim
+    // on their requested resolution tier.
+    float priority;
+
+    // How far the light is from the camera.
+    float camera_distance;
   };
 
 
@@ -534,30 +543,52 @@ private:
     std::vector<PreparedView>& views
   ) -> std::optional<PreparedDirectionalShadows>;
 
-  // Returns the number of requests placed in the output container.
-  [[nodiscard]] static
-  auto PreparePositionalShadowRequests(
+  // Returns the number of shadows placed in the output container.
+  [[nodiscard]]
+  auto PreparePositionalShadows(
     std::span<LightData const> lights,
     std::span<std::uint32_t const> visible_light_indices,
     CameraData const& cam,
-    PreparedView const& view,
+    PreparedView const& cam_view,
     float shadow_distance,
-    std::vector<PositionalShadowRequest>& requests
+    std::uint32_t atlas_size,
+    std::vector<PreparedView>& views,
+    std::vector<PreparedPositionalShadow>& shadows
   ) -> std::uint32_t;
+
+  // Returns how many lights shadows were created for.
+  [[nodiscard]]
+  auto GeneratePositionalShadowCandidates(
+    std::span<LightData const> lights,
+    std::span<std::uint32_t const> visible_light_indices,
+    CameraData const& cam,
+    PreparedView const& cam_view,
+    float shadow_distance,
+    std::vector<PreparedPositionalShadow>& shadows
+  ) -> std::uint32_t;
+
+  auto AllocatePositionalShadows(
+    std::span<LightData const> lights,
+    std::span<unsigned const> visible_light_indices,
+    std::uint32_t shadow_atlas_size,
+    std::span<PreparedPositionalShadow> shadows,
+    std::vector<PreparedView>& views
+  ) -> void;
 
   auto RecordDirectionalShadows(
     ExtractedFrameData const& frame_packet,
     RenderFrame const& frame,
     PreparedDirectionalShadows const& shadows,
+    std::span<PreparedView const> views,
     wand::CommandList& cmd
   ) -> void;
 
-  static
-  auto AllocatePositionalShadows(
-    PositionalLightShadowAtlas& atlas,
-    std::span<PositionalShadowRequest> requests,
-    std::span<LightData const> lights,
-    std::span<unsigned const> visible_light_indices
+  auto RecordPositionalShadows(
+    ExtractedFrameData const& frame_packet,
+    RenderFrame const& frame,
+    std::span<PreparedPositionalShadow const> shadows,
+    std::span<PreparedView const> views,
+    wand::CommandList& cmd
   ) -> void;
 
   static
@@ -591,13 +622,6 @@ private:
     Matrix4 const& proj_mtx,
     Matrix4 const& prev_model_mtx,
     float max_abs_scaling
-  ) -> void;
-
-  auto DrawPositionalShadowMaps(
-    PositionalLightShadowAtlas const& atlas,
-    ExtractedFrameData const& frame_packet,
-    std::uint32_t frame_idx,
-    wand::CommandList& cmd
   ) -> void;
 
   auto RecreateSsaoSamples(int sample_count) noexcept -> void;
@@ -727,6 +751,8 @@ private:
 
   std::vector<Vector4> gizmo_colors_;
   std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;
+
+  std::vector<ShadowAllocCandidate> shadow_alloc_candidates_;
 
   std::vector<Vector4> ssao_samples_;
   bool ssao_samples_changed_{false};

@@ -55,7 +55,7 @@ void CalculateShadowSamplingCoordinates(float3 const pos_ws, float3 const normal
 #ifdef REVERSE_Z
     -1.0;
 #else
-    1.0;
+  1.0;
 #endif
 
   depth = pos_light_ndc.z + depth_bias_multiplier * shadow_map_texel_size * -depth_bias;
@@ -65,18 +65,19 @@ void CalculateShadowSamplingCoordinates(float3 const pos_ws, float3 const normal
 float SampleShadowCascadeFromAtlas(Texture2D<float> const atlas, uniform SamplerComparisonState const shadow_samp,
                                    ShaderLight const light, uint const shadow_map_idx, float3 const pos_ws,
                                    float3 const normal_ws, uniform int const shadow_filtering_mode) {
-  uint atlas_size;
-  atlas.GetDimensions(atlas_size, atlas_size);
-  float const atlas_texel_size = 1.0 / atlas_size;
-  float const shadow_map_texel_size = atlas_texel_size / light.shadowAtlasCellSizes[shadow_map_idx];
+  uint2 atlas_size;
+  atlas.GetDimensions(atlas_size.x, atlas_size.y);
+  float2 const atlas_texel_size = 1.0 / atlas_size;
+  float2 const shadow_map_texel_size = atlas_texel_size / light.shadow_atlas_scale[shadow_map_idx];
+  float const shadow_map_bias_texel_size = max(shadow_map_texel_size.x, shadow_map_texel_size.y);
 
   float2 uv;
   float depth;
-  CalculateShadowSamplingCoordinates(pos_ws, normal_ws, shadow_map_texel_size, light.depthBias, light.normalBias,
+  CalculateShadowSamplingCoordinates(pos_ws, normal_ws, shadow_map_bias_texel_size, light.depthBias, light.normalBias,
     light.shadowViewProjMatrices[shadow_map_idx], uv, depth);
 
-  uv *= light.shadowAtlasCellSizes[shadow_map_idx];
-  uv += light.shadowAtlasCellOffsets[shadow_map_idx];
+  uv *= light.shadow_atlas_scale[shadow_map_idx];
+  uv += light.shadow_atlas_offset[shadow_map_idx];
 
   switch (shadow_filtering_mode) {
     case SHADOW_FILTERING_NONE:

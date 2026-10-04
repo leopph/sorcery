@@ -67,16 +67,16 @@ struct ShaderLight {
   float halfInnerAngleCos;
   float halfOuterAngleCos;
 
-  float2 shadowAtlasCellOffsets[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
+  float2 shadow_atlas_offset[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
 
-  float shadowAtlasCellSizes[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
+  float2 shadow_atlas_scale[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
+
   BOOL sampleShadowMap[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
-
   float3 position;
-  float depthBias;
 
+  float depthBias;
   float normalBias;
-  float3 pad;
+  float2 pad;
 };
 
 

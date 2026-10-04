@@ -55,23 +55,4 @@ auto ShadowAtlas::GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand:
 auto ShadowAtlas::GetSize() const noexcept -> UINT {
   return size_;
 }
-
-
-auto ShadowAtlas::SetLookUpInfo(std::span<ShaderLight> lights) const -> void {
-  for (auto i = 0; i < GetElementCount(); i++) {
-    auto const& cell{GetCell(i)};
-
-    for (auto j = 0; j < cell.GetElementCount(); j++) {
-      if (auto const& subcell{cell.GetSubcell(j)}) {
-        lights[subcell->visibleLightIdxIdx].isCastingShadow = TRUE;
-        lights[subcell->visibleLightIdxIdx].sampleShadowMap[subcell->shadowMapIdx] = TRUE;
-        lights[subcell->visibleLightIdxIdx].shadowViewProjMatrices[subcell->shadowMapIdx] = subcell->shadowViewProjMtx;
-        lights[subcell->visibleLightIdxIdx].shadowAtlasCellOffsets[subcell->shadowMapIdx] =
-          GetNormalizedElementOffset(i) + cell.GetNormalizedElementOffset(j) * GetNormalizedElementSize();
-        lights[subcell->visibleLightIdxIdx].shadowAtlasCellSizes[subcell->shadowMapIdx] =
-          GetNormalizedElementSize() * cell.GetNormalizedElementSize();
-      }
-    }
-  }
-}
 }
