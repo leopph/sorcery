@@ -1092,9 +1092,9 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     DrawPunctualShadowMaps(*punctual_shadow_atlas_, frame_packet, frame_idx, cam_cmd);
 
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
-    SetPerViewConstants(cam_per_view_cb, view.view_mtx, view.proj_mtx, prepared_cam.prev_view_proj_mtx,
-      prepared_cam.cascade_boundaries, view.frustum_ws, extracted_cam.position, view.near_plane,
-      view.far_plane, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
+    SetPerViewConstants(cam_per_view_cb, view.view_mtx, view.proj_mtx, view.view_proj_mtx,
+      prepared_cam.prev_view_proj_mtx, prepared_cam.cascade_boundaries, view.frustum_ws, extracted_cam.position,
+      view.near_plane, view.far_plane, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
@@ -2330,17 +2330,26 @@ auto SceneRenderer::SetPerFrameConstants(MappedConstantBuffer<ShaderPerFrameCons
 }
 
 
-auto SceneRenderer::SetPerViewConstants(MappedConstantBuffer<ShaderPerViewConstants>& cb, Matrix4 const& view_mtx,
-                                        Matrix4 const& proj_mtx, Matrix4 const& prev_view_proj_mtx,
-                                        ShadowCascadeBoundaries const& cascade_bounds, Frustum const& frustum_ws,
-                                        Vector3 const& view_pos, float const near_clip_plane,
-                                        float const far_clip_plane, int const rt_width, int const rt_height) -> void {
+auto SceneRenderer::SetPerViewConstants(
+  MappedConstantBuffer<ShaderPerViewConstants>& cb,
+  Matrix4 const& view_mtx,
+  Matrix4 const& proj_mtx,
+  Matrix4 const& view_proj_mtx,
+  Matrix4 const& prev_view_proj_mtx,
+  ShadowCascadeBoundaries const& cascade_bounds,
+  Frustum const& frustum_ws,
+  Vector3 const& view_pos,
+  float const near_clip_plane,
+  float const far_clip_plane,
+  int const rt_width,
+  int const rt_height
+) -> void {
   ShaderPerViewConstants data;
   data.viewMtx = view_mtx;
   data.invViewMtx = view_mtx.Inverse();
   data.projMtx = proj_mtx;
   data.invProjMtx = proj_mtx.Inverse();
-  data.viewProjMtx = view_mtx * proj_mtx;
+  data.viewProjMtx = view_proj_mtx;
   data.invViewProjMtx = data.viewProjMtx.Inverse();
   data.prev_view_proj_mtx = prev_view_proj_mtx;
 
@@ -2571,8 +2580,8 @@ auto SceneRenderer::DrawPunctualShadowMaps(PunctualShadowAtlas const& atlas,
         Frustum const shadow_frustum_ws{subcell->shadowViewProjMtx};
 
         auto& per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
-        SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, {},
-          ShadowCascadeBoundaries{}, shadow_frustum_ws, Vector3{}, 0, 0, 0,
+        SetPerViewConstants(per_view_cb, Matrix4::Identity(), subcell->shadowViewProjMtx, subcell->shadowViewProjMtx,
+          {}, ShadowCascadeBoundaries{}, shadow_frustum_ws, Vector3{}, 0, 0, 0,
           0); // TODO pass proper near and far clip planes and rt size
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 
@@ -2937,12 +2946,9 @@ auto SceneRenderer::RecordDepthOnlyPass(ExtractedFrameData const& frame_packet, 
   cmd.SetViewports(std::span{&view.viewport, 1});
   cmd.SetScissorRects(std::span{&view.scissor, 1});
 
-  auto const view_proj_mtx = view.view_mtx * view.proj_mtx;
-  Frustum const shadow_frustum_ws{view_proj_mtx};
-
   auto& per_view_cb{AcquirePerViewConstantBuffer(frame.GetIndex())};
-  SetPerViewConstants(per_view_cb, view.view_mtx, view.proj_mtx, {}, ShadowCascadeBoundaries{},
-    shadow_frustum_ws, Vector3{}, view.near_plane, view.far_plane, static_cast<int>(view.viewport.Width),
+  SetPerViewConstants(per_view_cb, view.view_mtx, view.proj_mtx, view.view_proj_mtx, {}, ShadowCascadeBoundaries{},
+    view.frustum_ws, Vector3{}, view.near_plane, view.far_plane, static_cast<int>(view.viewport.Width),
     static_cast<int>(view.viewport.Height));
   cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
 

@@ -530,6 +530,7 @@ private:
     MappedConstantBuffer<ShaderPerViewConstants>& cb,
     Matrix4 const& view_mtx,
     Matrix4 const& proj_mtx,
+    Matrix4 const& view_proj_mtx,
     Matrix4 const& prev_view_proj_mtx,
     ShadowCascadeBoundaries const& cascade_bounds,
     Frustum const& frustum_ws,
