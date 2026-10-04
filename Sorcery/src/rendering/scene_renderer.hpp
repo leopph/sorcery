@@ -394,6 +394,25 @@ private:
   };
 
 
+  struct PositionalShadowRequest {
+    // Index into the camera's visible-light slice
+    std::uint32_t visible_light_idx;
+
+    // 0 for spotlights, 0-5 for pointlights
+    std::uint32_t shadow_idx;
+
+    // 0 is greatest resolution, N is the lowest
+    std::uint32_t resolution_class;
+
+    // Higher priority requests have a stronger claim
+    // on their requested resolution tier.
+    float priority;
+
+    // How far the light is from the camera.
+    float camera_distance;
+  };
+
+
   struct PreparedCameraData {
     ShadowCascadeBoundaries cascade_boundaries;
 
@@ -403,6 +422,9 @@ private:
 
     std::uint32_t first_visible_light;
     std::uint32_t visible_light_count;
+
+    std::uint32_t first_pos_shadow_req;
+    std::uint32_t pos_shadow_req_count;
 
     std::uint32_t primary_view_idx;
 
@@ -417,6 +439,7 @@ private:
     std::vector<PreparedCameraData> cam_data;
     std::vector<std::uint32_t> visible_light_indices;
     std::vector<PreparedView> views;
+    std::vector<PositionalShadowRequest> pos_shadow_requests;
   };
 
 
@@ -511,11 +534,30 @@ private:
     std::vector<PreparedView>& views
   ) -> std::optional<PreparedDirectionalShadows>;
 
+  // Returns the number of requests placed in the output container.
+  [[nodiscard]] static
+  auto PreparePositionalShadowRequests(
+    std::span<LightData const> lights,
+    std::span<std::uint32_t const> visible_light_indices,
+    CameraData const& cam,
+    PreparedView const& view,
+    float shadow_distance,
+    std::vector<PositionalShadowRequest>& requests
+  ) -> std::uint32_t;
+
   auto RecordDirectionalShadows(
     ExtractedFrameData const& frame_packet,
     RenderFrame const& frame,
     PreparedDirectionalShadows const& shadows,
     wand::CommandList& cmd
+  ) -> void;
+
+  static
+  auto AllocatePositionalShadows(
+    PositionalLightShadowAtlas& atlas,
+    std::span<PositionalShadowRequest> requests,
+    std::span<LightData const> lights,
+    std::span<unsigned const> visible_light_indices
   ) -> void;
 
   static
@@ -549,16 +591,6 @@ private:
     Matrix4 const& proj_mtx,
     Matrix4 const& prev_model_mtx,
     float max_abs_scaling
-  ) -> void;
-
-  static
-  auto UpdatePositionalShadowAtlas(
-    PositionalLightShadowAtlas& atlas,
-    std::span<LightData const> lights,
-    std::span<unsigned const> visible_light_indices,
-    CameraData const& cam_data,
-    Matrix4 const& cam_view_proj_mtx,
-    float shadow_distance
   ) -> void;
 
   auto DrawPositionalShadowMaps(

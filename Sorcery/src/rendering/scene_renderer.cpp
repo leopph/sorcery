@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstring>
 #include <iterator>
+#include <optional>
 #include <random>
 
 #include "render_instance_registry.hpp"
@@ -713,6 +714,7 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
   prepared_data_.cam_data.clear();
   prepared_data_.visible_light_indices.clear();
   prepared_data_.views.clear();
+  prepared_data_.pos_shadow_requests.clear();
 
   // Prepare camera data
 
@@ -822,9 +824,14 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
     auto const dir_shadows = PrepareDirectionalShadows(frame_packet, visible_light_indices, cam_data, cascades,
       viewport_aspect, frame_packet.shadow_params.cascade_count, dir_shadow_map_arr_->GetSize(), prepared_data_.views);
 
+    auto const first_pos_shadow_req = static_cast<std::uint32_t>(prepared_data_.pos_shadow_requests.size());
+    auto const pos_shadow_req_count = PreparePositionalShadowRequests(frame_packet.light_data, visible_light_indices,
+      cam_data, prepared_data_.views[primary_view_idx], frame_packet.shadow_params.distance,
+      prepared_data_.pos_shadow_requests);
+
     prepared_data_.cam_data.emplace_back(cascades, dir_shadows, static_cast<std::uint32_t>(i), first_visible_light,
-      visible_light_count, primary_view_idx, prev_cam_view_proj_mtx, cam_data.jitter_ndc,
-      prev_cam_data ? prev_cam_data->jitter_ndc : cam_data.jitter_ndc);
+      visible_light_count, first_pos_shadow_req, pos_shadow_req_count, primary_view_idx, prev_cam_view_proj_mtx,
+      cam_data.jitter_ndc, prev_cam_data ? prev_cam_data->jitter_ndc : cam_data.jitter_ndc);
   }
 }
 
@@ -1086,9 +1093,11 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       RecordDirectionalShadows(frame_packet, frame, *prepared_cam.dir_shadows, cam_cmd);
     }
 
-    UpdatePositionalShadowAtlas(*pos_shadow_atlas_, frame_packet.light_data, cam_visible_light_indices,
-      extracted_cam,
-      view.view_proj_mtx, frame_packet.shadow_params.distance);
+    auto const cam_pos_shadow_requests = std::span{prepared_data_.pos_shadow_requests}.subspan(
+      prepared_cam.first_pos_shadow_req, prepared_cam.pos_shadow_req_count);
+
+    AllocatePositionalShadows(*pos_shadow_atlas_, cam_pos_shadow_requests, frame_packet.light_data,
+      cam_visible_light_indices);
     DrawPositionalShadowMaps(*pos_shadow_atlas_, frame_packet, frame_idx, cam_cmd);
 
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
@@ -2301,6 +2310,120 @@ auto SceneRenderer::PrepareDirectionalShadows(
 }
 
 
+auto SceneRenderer::PreparePositionalShadowRequests(
+  std::span<LightData const> const lights,
+  std::span<std::uint32_t const> const visible_light_indices,
+  CameraData const& cam,
+  PreparedView const& view,
+  float const shadow_distance,
+  std::vector<PositionalShadowRequest>& requests
+) -> std::uint32_t {
+  std::uint32_t requests_created{0};
+
+  // return [0, 1] normalized screen coverage
+  auto const computeScreenCoverage = [&cam, &view](std::span<Vector3 const> const vertices_ws) -> float {
+    if (auto const [min_ws, max_ws] = AABB::FromVertices(vertices_ws);
+      min_ws[0] <= cam.position[0] && min_ws[1] <= cam.position[1] && min_ws[2] <= cam.position[2] &&
+      max_ws[0] >= cam.position[0] && max_ws[1] >= cam.position[1] && max_ws[2] >= cam.position[2]) {
+      return 1.0f;
+    }
+
+    Vector2 constexpr bottom_left{-1, -1};
+    Vector2 constexpr top_right{1, 1};
+
+    Vector2 min{std::numeric_limits<float>::max()};
+    Vector2 max{std::numeric_limits<float>::lowest()};
+
+    for (auto& vertex : vertices_ws) {
+      Vector4 vertex4{vertex, 1};
+      vertex4 *= view.view_proj_mtx;
+      auto const projected = Vector2{vertex4} / vertex4[3];
+      min = Clamp(Min(min, projected), bottom_left, top_right);
+      max = Clamp(Max(max, projected), bottom_left, top_right);
+    }
+
+    auto const width = max[0] - min[0];
+    auto const height = max[1] - min[1];
+
+    auto const area = width * height;
+    return std::clamp(area / 4.0f, 0.0f, 1.0f);
+  };
+
+  auto const classifyScreenCoverage = [](float const coverage) -> std::optional<std::uint32_t> {
+    if (coverage >= 1) {
+      return std::make_optional(0u);
+    }
+    if (coverage >= 0.25f) {
+      return std::make_optional(1u);
+    }
+    if (coverage >= 0.0625f) {
+      return std::make_optional(2u);
+    }
+    if (coverage >= 0.015625f) {
+      return std::make_optional(3u);
+    }
+
+    return std::nullopt;
+  };
+
+  for (auto i = 0uz; i < visible_light_indices.size(); ++i) {
+    if (auto const& light = lights[visible_light_indices[i]];
+      light.casts_shadow && (light.type == LightComponent::Type::Spot || light.type == LightComponent::Type::Point)) {
+      // Skip the light if its bounding sphere is farther than the shadow distance
+      if (Vector3 const cam_to_light_dir{Normalize(light.position - cam.position)};
+        Distance(light.position - cam_to_light_dir * light.range, cam.position) > shadow_distance) {
+        continue;
+      }
+
+      if (light.type == LightComponent::Type::Spot) {
+        auto light_vertices = CalculateSpotLightLocalVertices(light.range, light.outer_angle);
+
+        for (auto const model_mtx_no_scale = light.local_to_world_mtx_no_scale; auto& vertex : light_vertices) {
+          vertex = Vector3{Vector4{vertex, 1} * model_mtx_no_scale};
+        }
+
+        auto const screen_coverage = computeScreenCoverage(light_vertices);
+
+        if (auto const res_class = classifyScreenCoverage(screen_coverage)) {
+          auto const cam_dist = Distance(cam.position, light.position);
+          requests.emplace_back(static_cast<std::uint32_t>(i), 0, *res_class, screen_coverage, cam_dist);
+          ++requests_created;
+        }
+      } else if (light.type == LightComponent::Type::Point) {
+        for (auto j = 0; j < 6; j++) {
+          std::array static const face_bounds_rotations{
+            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(90)), // +X
+            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(-90)), // -X
+            Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(-90)), // +Y
+            Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(90)), // -Y
+            Quaternion{}, // +Z
+            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(180)) // -Z
+          };
+
+          std::array const shadow_frustum_vertices{
+            face_bounds_rotations[j].Rotate(Vector3{light.range, light.range, light.range}) + light.position,
+            face_bounds_rotations[j].Rotate(Vector3{-light.range, light.range, light.range}) + light.position,
+            face_bounds_rotations[j].Rotate(Vector3{-light.range, -light.range, light.range}) + light.position,
+            face_bounds_rotations[j].Rotate(Vector3{light.range, -light.range, light.range}) + light.position,
+            light.position,
+          };
+
+          auto const screen_coverage = computeScreenCoverage(shadow_frustum_vertices);
+
+          if (auto const res_class = classifyScreenCoverage(screen_coverage)) {
+            auto const cam_dist = std::max(0.0f, Distance(cam.position, light.position) - light.range);
+            requests.emplace_back(static_cast<std::uint32_t>(i), j, *res_class, screen_coverage, cam_dist);
+            ++requests_created;
+          }
+        }
+      }
+    }
+  }
+
+  return requests_created;
+}
+
+
 auto SceneRenderer::RecordDirectionalShadows(
   ExtractedFrameData const& frame_packet,
   RenderFrame const& frame,
@@ -2316,6 +2439,74 @@ auto SceneRenderer::RecordDirectionalShadows(
 
   for (auto i = 0u; i < static_cast<std::uint32_t>(views.size()); ++i) {
     RecordDepthOnlyPass(frame_packet, frame, views[i], i, cmd);
+  }
+}
+
+
+auto SceneRenderer::AllocatePositionalShadows(
+  PositionalLightShadowAtlas& atlas,
+  std::span<PositionalShadowRequest> requests,
+  std::span<LightData const> const lights,
+  std::span<unsigned const> const visible_light_indices
+) -> void {
+  for (auto i = 0z; i < atlas.GetElementCount(); ++i) {
+    auto& cell = atlas.GetCell(static_cast<int>(i));
+    for (auto j = 0z; j < cell.GetElementCount(); ++j) {
+      cell.GetSubcell(static_cast<int>(j)).reset();
+    }
+  }
+
+  std::ranges::sort(requests, [](auto const& lhs, auto const& rhs) {
+    if (lhs.priority > rhs.priority) {
+      return true;
+    }
+
+    if (lhs.priority < rhs.priority) {
+      return false;
+    }
+
+    return lhs.camera_distance < rhs.camera_distance;
+  });
+
+  std::uint32_t constexpr static num_res_classes{4};
+  assert(std::cmp_equal(num_res_classes, atlas.GetElementCount()));
+  std::array<std::uint32_t, num_res_classes> allocations_per_class{0, 0, 0, 0};
+
+  for (auto const& req : requests) {
+    assert(std::cmp_less(req.resolution_class, static_cast<std::uint32_t>(atlas.GetElementCount())));
+
+    auto res_class = req.resolution_class;
+
+    while (std::cmp_less(res_class, atlas.GetElementCount())) {
+      auto& cell = atlas.GetCell(res_class);
+
+      if (auto& allocs_in_class = allocations_per_class[res_class]; std::cmp_less(allocs_in_class, cell.GetElementCount())) {
+        auto const& light = lights[visible_light_indices[req.visible_light_idx]];
+
+        auto& subcell = atlas.GetCell(res_class).GetSubcell(allocs_in_class);
+
+        if (light.type == LightComponent::Type::Spot) {
+          auto const shadow_view_mtx = Matrix4::LookTo(light.position, light.direction, Vector3::Up());
+          auto const shadow_proj_mtx = Matrix4::PerspectiveFov(ToRadians(light.outer_angle), 1.f, light.range,
+            light.shadow_near_plane);
+          subcell.emplace(shadow_view_mtx * shadow_proj_mtx, req.visible_light_idx, req.shadow_idx);
+          ++allocs_in_class;
+          break;
+        }
+
+        if (light.type == LightComponent::Type::Point) {
+          auto const face_view_matrices = MakeCubeFaceViewMatrices(light.position);
+          auto const shadow_view_mtx = face_view_matrices[req.shadow_idx];
+          auto const shadow_proj_mtx = TransformProjectionMatrixForRendering(
+            Matrix4::PerspectiveFov(ToRadians(90), 1, light.shadow_near_plane, light.range));
+          subcell.emplace(shadow_view_mtx * shadow_proj_mtx, req.visible_light_idx, req.shadow_idx);
+          ++allocs_in_class;
+          break;
+        }
+      }
+
+      ++res_class;
+    }
   }
 }
 
@@ -2382,180 +2573,13 @@ auto SceneRenderer::SetPerInstanceConstants(MappedConstantBuffer<ShaderPerInstan
 }
 
 
-auto SceneRenderer::UpdatePositionalShadowAtlas(
-  PositionalLightShadowAtlas& atlas,
-  std::span<LightData const> const lights,
-  std::span<unsigned const> visible_light_indices,
-  CameraData const& cam_data,
-  Matrix4 const& cam_view_proj_mtx,
-  float const shadow_distance
-) -> void {
-  struct LightCascadeIndex {
-    int lightIdxIdx;
-    int shadowIdx;
-  };
-
-  std::array lightIndexIndicesInCell{
-    std::vector<LightCascadeIndex>{}, std::vector<LightCascadeIndex>{},
-    std::vector<LightCascadeIndex>{}, std::vector<LightCascadeIndex>{}
-  };
-
-  auto const& camPos{cam_data.position};
-
-  auto const determineScreenCoverage{
-    [&camPos, &cam_view_proj_mtx](std::span<Vector3 const> const vertices) -> std::optional<int> {
-      std::optional<int> cellIdx;
-
-      if (auto const [worldMin, worldMax]{AABB::FromVertices(vertices)};
-        worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] && worldMax[0] >= camPos[0] &&
-        worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
-        cellIdx = 0;
-      } else {
-        Vector2 const bottomLeft{-1, -1};
-        Vector2 const topRight{1, 1};
-
-        Vector2 min{std::numeric_limits<float>::max()};
-        Vector2 max{std::numeric_limits<float>::lowest()};
-
-        for (auto& vertex : vertices) {
-          Vector4 vertex4{vertex, 1};
-          vertex4 *= cam_view_proj_mtx;
-          auto const projected{Vector2{vertex4} / vertex4[3]};
-          min = Clamp(Min(min, projected), bottomLeft, topRight);
-          max = Clamp(Max(max, projected), bottomLeft, topRight);
-        }
-
-        auto const width{max[0] - min[0]};
-        auto const height{max[1] - min[1]};
-
-        auto const area{width * height};
-        auto const coverage{area / 4};
-
-        if (coverage >= 1) {
-          cellIdx = 0;
-        } else if (coverage >= 0.25f) {
-          cellIdx = 1;
-        } else if (coverage >= 0.0625f) {
-          cellIdx = 2;
-        } else if (coverage >= 0.015625f) {
-          cellIdx = 3;
-        }
-      }
-
-      return cellIdx;
-    }
-  };
-
-  for (auto i = 0; i < static_cast<int>(visible_light_indices.size()); i++) {
-    if (auto const light{lights[visible_light_indices[i]]};
-      light.casts_shadow && (light.type == LightComponent::Type::Spot || light.type == LightComponent::Type::Point)) {
-      Vector3 const& lightPos{light.position};
-      float const lightRange{light.range};
-
-      // Skip the light if its bounding sphere is farther than the shadow distance
-      if (Vector3 const camToLightDir{Normalize(lightPos - camPos)}; Distance(lightPos - camToLightDir * lightRange,
-                                                                       cam_data.position) > shadow_distance) {
-        continue;
-      }
-
-      if (light.type == LightComponent::Type::Spot) {
-        auto lightVertices{CalculateSpotLightLocalVertices(light.range, light.outer_angle)};
-
-        for (auto const modelMtxNoScale{light.local_to_world_mtx_no_scale}; auto& vertex : lightVertices) {
-          vertex = Vector3{Vector4{vertex, 1} * modelMtxNoScale};
-        }
-
-        if (auto const cellIdx{determineScreenCoverage(lightVertices)}) {
-          lightIndexIndicesInCell[*cellIdx].emplace_back(i, 0);
-        }
-      } else if (light.type == LightComponent::Type::Point) {
-        for (auto j = 0; j < 6; j++) {
-          std::array static const faceBoundsRotations{
-            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(90)), // +X
-            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(-90)), // -X
-            Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(-90)), // +Y
-            Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(90)), // -Y
-            Quaternion{}, // +Z
-            Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(180)) // -Z
-          };
-
-          std::array const shadowFrustumVertices{
-            faceBoundsRotations[j].Rotate(Vector3{lightRange, lightRange, lightRange}) + lightPos,
-            faceBoundsRotations[j].Rotate(Vector3{-lightRange, lightRange, lightRange}) + lightPos,
-            faceBoundsRotations[j].Rotate(Vector3{-lightRange, -lightRange, lightRange}) + lightPos,
-            faceBoundsRotations[j].Rotate(Vector3{lightRange, -lightRange, lightRange}) + lightPos, lightPos,
-          };
-
-          if (auto const cellIdx{determineScreenCoverage(shadowFrustumVertices)}) {
-            lightIndexIndicesInCell[*cellIdx].emplace_back(i, j);
-          }
-        }
-      }
-    }
-  }
-
-  for (auto i = 0; i < 4; i++) {
-    std::ranges::sort(lightIndexIndicesInCell[i],
-      [&visible_light_indices, &camPos, &lights](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
-        auto const leftLight{lights[visible_light_indices[lhs.lightIdxIdx]]};
-        auto const rightLight{lights[visible_light_indices[rhs.lightIdxIdx]]};
-
-        auto const leftLightPos{leftLight.position};
-        auto const rightLightPos{rightLight.position};
-
-        auto const leftDist{Distance(leftLightPos, camPos)};
-        auto const rightDist{Distance(camPos, rightLightPos)};
-
-        return leftDist > rightDist;
-      });
-
-    for (auto j = 0; j < atlas.GetCell(i).GetElementCount(); j++) {
-      auto& subcell{atlas.GetCell(i).GetSubcell(j)};
-      subcell.reset();
-
-      if (lightIndexIndicesInCell[i].empty()) {
-        continue;
-      }
-
-      auto const [lightIdxIdx, shadowIdx]{lightIndexIndicesInCell[i].back()};
-      auto const light{lights[visible_light_indices[lightIdxIdx]]};
-      lightIndexIndicesInCell[i].pop_back();
-
-      if (light.type == LightComponent::Type::Spot) {
-        auto const shadowViewMtx{Matrix4::LookTo(light.position, light.direction, Vector3::Up())};
-        auto const shadowProjMtx{
-          Matrix4::PerspectiveFov(ToRadians(light.outer_angle), 1.f, light.range, light.shadow_near_plane)
-        };
-
-        subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
-      } else if (light.type == LightComponent::Type::Point) {
-        auto const lightPos{light.position};
-
-        auto const faceViewMatrices{MakeCubeFaceViewMatrices(lightPos)};
-        auto const shadowViewMtx{faceViewMatrices[shadowIdx]};
-        auto const shadowProjMtx{
-          TransformProjectionMatrixForRendering(Matrix4::PerspectiveFov(ToRadians(90), 1, light.shadow_near_plane,
-            light.range))
-        };
-
-        subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
-      }
-    }
-
-    if (i + 1 < 4) {
-      std::ranges::copy(lightIndexIndicesInCell[i], std::back_inserter(lightIndexIndicesInCell[i + 1]));
-    }
-  }
-}
-
-
 auto SceneRenderer::DrawPositionalShadowMaps(
   PositionalLightShadowAtlas const& atlas,
   ExtractedFrameData const& frame_packet,
   std::uint32_t const frame_idx,
   wand::CommandList& cmd
 ) -> void {
-  cmd.SetPipelineState(*shadow_pso_);
+  cmd.SetPipelineState(*frame_packet.shadow_pso);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), 0);
   cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, samp_idx), samp_af16_wrap_.Get());
   cmd.SetRenderTargets({}, atlas.GetTex().get());
