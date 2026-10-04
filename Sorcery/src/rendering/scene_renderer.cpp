@@ -759,6 +759,119 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
   if (frame_packet.upload_ssao_samples) {
     frame.UploadBuffer(frame_packet.ssao_samples_buf, 0, as_bytes(std::span{frame_packet.ssao_samples}));
   }
+
+  prepared_data_.cam_data.clear();
+  prepared_data_.visible_light_indices.clear();
+  prepared_data_.views.clear();
+
+  // Prepare camera data
+
+  auto const& prev_frame_packet{frame_packets_[frame.GetPreviousIndex()]};
+
+  for (auto i = 0uz; i < frame_packet.cam_data.size(); ++i) {
+    auto& cam_data = frame_packet.cam_data[i];
+    auto const prev_cam_data = [&] {
+      auto const prev_cam_it = std::ranges::find(prev_frame_packet.cam_data, cam_data.id, &CameraData::id);
+      return prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
+               ? &*prev_cam_it
+               : nullptr;
+    }();
+
+    auto& target_rt{*frame_packet.render_targets[cam_data.rt_local_idx]};
+    auto const& target_rt_desc{target_rt.GetDesc()};
+
+    auto const target_rt_width{target_rt_desc.width};
+    auto const target_rt_height{target_rt_desc.height};
+
+    CD3DX12_VIEWPORT const cam_viewport{
+      cam_data.viewport.left * static_cast<FLOAT>(target_rt_width),
+      cam_data.viewport.top * static_cast<float>(target_rt_height),
+      std::max(
+        cam_data.viewport.right * static_cast<float>(target_rt_width) - cam_data.viewport.left * static_cast<
+          FLOAT>(
+          target_rt_width), 1.0f),
+      std::max(
+        cam_data.viewport.bottom * static_cast<float>(target_rt_height) - cam_data.viewport.top * static_cast<
+          float>(
+          target_rt_height), 1.0f),
+    };
+
+    CD3DX12_RECT const cam_scissor{
+      static_cast<LONG>(cam_data.viewport.left * static_cast<FLOAT>(target_rt_width)),
+      static_cast<LONG>(cam_data.viewport.top * static_cast<FLOAT>(target_rt_height)),
+      std::max(static_cast<LONG>(cam_data.viewport.right * static_cast<FLOAT>(target_rt_width)), 1l),
+      std::max(static_cast<LONG>(cam_data.viewport.bottom * static_cast<FLOAT>(target_rt_height)), 1l),
+    };
+
+    auto const cam_view_mtx = Camera::CalculateViewMatrix(cam_data.position, cam_data.right, cam_data.up,
+      cam_data.forward);
+
+    auto const prev_cam_view_mtx = prev_cam_data
+                                     ? Camera::CalculateViewMatrix(prev_cam_data->position,
+                                       prev_cam_data->right, prev_cam_data->up, prev_cam_data->forward)
+                                     : cam_view_mtx;
+
+    auto const viewport_aspect{cam_viewport.Width / cam_viewport.Height};
+
+    auto const transient_rt_width{static_cast<UINT>(cam_viewport.Width)};
+    auto const transient_rt_height{static_cast<UINT>(cam_viewport.Height)};
+
+    // Jitter is defined to be in NDC [-1, 1]
+    // We store this in the cam data so that we can use it in the next frame
+    cam_data.jitter_ndc = [this, &frame, transient_rt_width, transient_rt_height] {
+      auto const jitter_idx{frame.GetNumber() % taa_subpixel_sample_count_};
+
+      if constexpr (true) {
+        auto const [r2_x, r2_y]{R2Sequence2d(jitter_idx)};
+        return Vector2{
+          // R2 is in [0,1]. We are creating the jitter offset in NDC space [-1, 1].
+          // In NDC space, one pixel is 2/W and 2/H in size. The valid jitter range is +- half a pixel.
+          // So this offset needs to be in [-1/W, 1/W] and [-1/H, 1/H].
+          (r2_x - 0.5f) * 2.0f / static_cast<float>(transient_rt_width),
+          (r2_y - 0.5f) * 2.0f / static_cast<float>(transient_rt_height)
+        };
+      } else {
+        auto const halton_x{HaltonSequence(jitter_idx + 1, 2)};
+        auto const halton_y{HaltonSequence(jitter_idx + 1, 3)};
+        return Vector2{
+          (2 * halton_x - 1) / static_cast<float>(transient_rt_width),
+          (2 * halton_y - 1) / static_cast<float>(transient_rt_height)
+        };
+      }
+    }();
+
+    auto const cam_proj_mtx = TransformProjectionMatrixForRendering(
+      Camera::CalculateProjectionMatrix(cam_data.type, cam_data.fov_vert_deg, cam_data.size_vert,
+        viewport_aspect,
+        cam_data.near_plane, cam_data.far_plane) * Matrix4::Translate(Vector3{cam_data.jitter_ndc, 0}));
+
+    auto const prev_cam_proj_mtx = prev_cam_data
+                                     ? TransformProjectionMatrixForRendering(
+                                       Camera::CalculateProjectionMatrix(prev_cam_data->type,
+                                         prev_cam_data->fov_vert_deg, prev_cam_data->size_vert, viewport_aspect,
+                                         prev_cam_data->near_plane, prev_cam_data->far_plane) * Matrix4::Translate(
+                                         Vector3{prev_cam_data->jitter_ndc, 0}))
+                                     : cam_proj_mtx;
+
+    auto const cam_view_proj_mtx{cam_view_mtx * cam_proj_mtx};
+    auto const prev_cam_view_proj_mtx{prev_cam_view_mtx * prev_cam_proj_mtx};
+
+    Frustum const cam_frust_ws{cam_view_proj_mtx};
+
+    auto const first_visible_light = static_cast<std::uint32_t>(prepared_data_.visible_light_indices.size());
+    auto const visible_light_count = static_cast<std::uint32_t>(CullLights(cam_frust_ws, frame_packet.light_data,
+      prepared_data_.visible_light_indices));
+
+    auto const primary_view_idx = static_cast<std::uint32_t>(prepared_data_.views.size());
+    prepared_data_.views.emplace_back(cam_view_mtx, cam_proj_mtx, cam_view_proj_mtx, cam_frust_ws, cam_viewport,
+      cam_scissor, cam_data.near_plane, cam_data.far_plane);
+
+    auto const cascades = CalculateCameraShadowCascadeBoundaries(cam_data, frame_packet.shadow_params);
+
+    prepared_data_.cam_data.emplace_back(cascades, static_cast<std::uint32_t>(i), first_visible_light,
+      visible_light_count, primary_view_idx, prev_cam_view_proj_mtx, cam_data.jitter_ndc,
+      prev_cam_data ? prev_cam_data->jitter_ndc : cam_data.jitter_ndc);
+  }
 }
 
 
@@ -774,7 +887,6 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
   auto const frame_idx{frame.GetIndex()};
 
   auto& frame_packet{frame_packets_[frame_idx]};
-  auto const& prev_frame_packet{frame_packets_[frame.GetPreviousIndex()]};
 
   // Clears all render targets, dispatches skinning and draws irradiance and prefiltered env maps if needed.
   auto& prepass_cmd{frame.AcquireCommandList()};
@@ -938,39 +1050,22 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
   auto& per_frame_cb{per_frame_cbs_[frame_idx]};
   SetPerFrameConstants(per_frame_cb, frame_packet.ambient_light, frame_packet.shadow_params);
 
-  for (auto& cam_data : frame_packet.cam_data) {
-    auto const prev_cam_it{std::ranges::find(prev_frame_packet.cam_data, cam_data.id, &CameraData::id)};
+  for (auto& prepared_cam : prepared_data_.cam_data) {
+    auto const& extracted_cam = frame_packet.cam_data[prepared_cam.extracted_data_idx];
+    auto const& view = prepared_data_.views[prepared_cam.primary_view_idx];
 
     // Compute render target dimensions
 
-    auto& target_rt{*frame_packet.render_targets[cam_data.rt_local_idx]};
+    auto& target_rt{*frame_packet.render_targets[extracted_cam.rt_local_idx]};
     auto const& target_rt_desc{target_rt.GetDesc()};
 
     auto const target_rt_width{target_rt_desc.width};
     auto const target_rt_height{target_rt_desc.height};
 
-    CD3DX12_VIEWPORT const cam_viewport{
-      cam_data.viewport.left * static_cast<FLOAT>(target_rt_width),
-      cam_data.viewport.top * static_cast<float>(target_rt_height),
-      std::max(
-        cam_data.viewport.right * static_cast<float>(target_rt_width) - cam_data.viewport.left * static_cast<FLOAT>(
-          target_rt_width), 1.0f),
-      std::max(
-        cam_data.viewport.bottom * static_cast<float>(target_rt_height) - cam_data.viewport.top * static_cast<float>(
-          target_rt_height), 1.0f),
-    };
+    auto const viewport_aspect{view.viewport.Width / view.viewport.Height};
 
-    CD3DX12_RECT const cam_scissor{
-      static_cast<LONG>(cam_data.viewport.left * static_cast<FLOAT>(target_rt_width)),
-      static_cast<LONG>(cam_data.viewport.top * static_cast<FLOAT>(target_rt_height)),
-      std::max(static_cast<LONG>(cam_data.viewport.right * static_cast<FLOAT>(target_rt_width)), 1l),
-      std::max(static_cast<LONG>(cam_data.viewport.bottom * static_cast<FLOAT>(target_rt_height)), 1l),
-    };
-
-    auto const viewport_aspect{cam_viewport.Width / cam_viewport.Height};
-
-    auto const transient_rt_width{static_cast<UINT>(cam_viewport.Width)};
-    auto const transient_rt_height{static_cast<UINT>(cam_viewport.Height)};
+    auto const transient_rt_width{static_cast<UINT>(view.viewport.Width)};
+    auto const transient_rt_height{static_cast<UINT>(view.viewport.Height)};
 
     CD3DX12_VIEWPORT const transient_viewport{
       0.0f, 0.0f, static_cast<FLOAT>(transient_rt_width), static_cast<FLOAT>(transient_rt_height)
@@ -1025,89 +1120,29 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     auto const velocity_rt{render_manager_->AcquireTemporaryRenderTarget(velocity_rt_desc)};
     auto const color_hdr_rt{render_manager_->AcquireTemporaryRenderTarget(color_hdr_rt_desc)};
 
-    auto const cam_view_mtx{
-      Camera::CalculateViewMatrix(cam_data.position, cam_data.right, cam_data.up, cam_data.forward)
-    };
-    auto const prev_cam_view_mtx{
-      prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
-        ? Camera::CalculateViewMatrix(prev_cam_it->position, prev_cam_it->right, prev_cam_it->up, prev_cam_it->forward)
-        : cam_view_mtx
-    };
-
-    // Jitter is defined to be in NDC [-1, 1]
-    auto const [jitter_x_ndc, jitter_y_ndc]
-    {
-      [this, &frame, transient_rt_width, transient_rt_height] {
-        auto const jitter_idx{frame.GetNumber() % taa_subpixel_sample_count_};
-
-        if constexpr (true) {
-          auto const [r2_x, r2_y]{R2Sequence2d(jitter_idx)};
-          return std::make_pair(
-            // R2 is in [0,1]. We are creating the jitter offset in NDC space [-1, 1].
-            // In NDC space, one pixel is 2/W and 2/H in size. The valid jitter range is +- half a pixel.
-            // So this offset needs to be in [-1/W, 1/W] and [-1/H, 1/H].
-            (r2_x - 0.5f) * 2.0f / static_cast<float>(transient_rt_width),
-            (r2_y - 0.5f) * 2.0f / static_cast<float>(transient_rt_height)
-          );
-        } else {
-          auto const halton_x{HaltonSequence(jitter_idx + 1, 2)};
-          auto const halton_y{HaltonSequence(jitter_idx + 1, 3)};
-          return std::make_pair(
-            (2 * halton_x - 1) / static_cast<float>(transient_rt_width),
-            (2 * halton_y - 1) / static_cast<float>(transient_rt_height)
-          );
-        }
-      }()
-    };
-
-    // We store this in the cam data so that we can use it in the next frame
-    cam_data.jitter_x_ndc = jitter_x_ndc;
-    cam_data.jitter_y_ndc = jitter_y_ndc;
-
-    auto const cam_proj_mtx{
-      TransformProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(cam_data.type, cam_data.fov_vert_deg,
-                                              cam_data.size_vert, viewport_aspect, cam_data.near_plane,
-                                              cam_data.far_plane) * Matrix4::Translate(Vector3{
-                                              jitter_x_ndc, jitter_y_ndc, 0
-                                            }))
-    };
-    auto const prev_cam_proj_mtx{
-      prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
-        ? TransformProjectionMatrixForRendering(Camera::CalculateProjectionMatrix(prev_cam_it->type,
-                                                  prev_cam_it->fov_vert_deg, prev_cam_it->size_vert, viewport_aspect,
-                                                  prev_cam_it->near_plane, prev_cam_it->far_plane) * Matrix4::Translate(
-                                                  Vector3{prev_cam_it->jitter_x_ndc, prev_cam_it->jitter_y_ndc, 0}))
-        : cam_proj_mtx
-    };
-
-    auto const cam_view_proj_mtx{cam_view_mtx * cam_proj_mtx};
-    auto const prev_cam_view_proj_mtx{prev_cam_view_mtx * prev_cam_proj_mtx};
-
-    Frustum const cam_frust_ws{cam_view_proj_mtx};
-
-    std::vector<unsigned> visible_light_indices;
-    CullLights(cam_frust_ws, frame_packet.light_data, visible_light_indices);
 
     // Command list for the camera
     auto& cam_cmd{frame.AcquireCommandList()};
     cam_cmd.Begin(nullptr);
     cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+    auto const visible_light_indices = std::span{prepared_data_.visible_light_indices}.subspan(
+      prepared_cam.first_visible_light, prepared_cam.visible_light_count);
+
     // Shadow pass
     std::array<Matrix4, MAX_CASCADE_COUNT> shadow_view_proj_matrices;
-    auto const shadow_cascade_boundaries{CalculateCameraShadowCascadeBoundaries(cam_data, frame_packet.shadow_params)};
-    DrawDirectionalShadowMaps(frame_packet, frame_idx, visible_light_indices, cam_data,
-      viewport_aspect, frame_packet.shadow_params.cascade_count, shadow_cascade_boundaries, shadow_view_proj_matrices,
+    DrawDirectionalShadowMaps(frame_packet, frame_idx, visible_light_indices, extracted_cam,
+      viewport_aspect, frame_packet.shadow_params.cascade_count, prepared_cam.cascade_boundaries, shadow_view_proj_matrices,
       cam_cmd);
 
-    UpdatePunctualShadowAtlas(*punctual_shadow_atlas_, frame_packet.light_data, visible_light_indices, cam_data,
-      cam_view_proj_mtx, frame_packet.shadow_params.distance);
+    UpdatePunctualShadowAtlas(*punctual_shadow_atlas_, frame_packet.light_data, visible_light_indices, extracted_cam,
+      view.view_proj_mtx, frame_packet.shadow_params.distance);
     DrawPunctualShadowMaps(*punctual_shadow_atlas_, frame_packet, frame_idx, cam_cmd);
 
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
-    SetPerViewConstants(cam_per_view_cb, cam_view_mtx, cam_proj_mtx, prev_cam_view_proj_mtx, shadow_cascade_boundaries,
-      cam_frust_ws, cam_data.position, cam_data.near_plane, cam_data.far_plane, static_cast<int>(transient_rt_width),
-      static_cast<int>(transient_rt_height));
+    SetPerViewConstants(cam_per_view_cb, view.view_mtx, view.proj_mtx, prepared_cam.prev_view_proj_mtx,
+      prepared_cam.cascade_boundaries, view.frustum_ws, extracted_cam.position, view.near_plane,
+      view.far_plane, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
@@ -1132,18 +1167,13 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
     cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_view_cb_idx), *cam_per_view_cb.GetBuffer());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, jitter_x),
-      *std::bit_cast<UINT const*>(&jitter_x_ndc));
+      *std::bit_cast<UINT const*>(&prepared_cam.jitter_ndc[0]));
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, jitter_y),
-      *std::bit_cast<UINT const*>(&jitter_y_ndc));
-    auto constexpr zero{0.0f};
+      *std::bit_cast<UINT const*>(&prepared_cam.jitter_ndc[1]));
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_jitter_x),
-      *std::bit_cast<UINT const*>(prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
-                                    ? &prev_cam_it->jitter_x_ndc
-                                    : &zero));
+      *std::bit_cast<UINT const*>(&prepared_cam.prev_jitter_ndc[0]));
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_jitter_y),
-      *std::bit_cast<UINT const*>(prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
-                                    ? &prev_cam_it->jitter_y_ndc
-                                    : &zero));
+      *std::bit_cast<UINT const*>(&prepared_cam.prev_jitter_ndc[1]));
 
     for (auto const& geom_batch : frame_packet.geom_batches) {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, pos_buf_idx),
@@ -1186,7 +1216,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
       for (auto const& instance : instances) {
         auto& per_inst_cb{AcquirePerInstanceConstantBuffer(frame_idx)};
-        SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, cam_view_mtx, cam_proj_mtx,
+        SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, view.view_mtx, view.proj_mtx,
           instance.prev_local_to_world_mtx, instance.max_abs_scaling);
         cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_inst_cb_idx),
           *per_inst_cb.GetBuffer());
@@ -1480,13 +1510,13 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     }
 
     // TAA resolve
-    if (cam_data.accum_tex_empty) {
+    if (extracted_cam.accum_tex_empty) {
       // We don't have an accumulation texture yet.
       // We can just copy the color HDR render target to the accumulation texture.
-      cam_cmd.CopyTexture(*frame_packet.textures[cam_data.accum_tex_local_idx],
+      cam_cmd.CopyTexture(*frame_packet.textures[extracted_cam.accum_tex_local_idx],
         *color_hdr_rt->GetColorTex());
     } else {
-      auto& accum_tex{*frame_packet.textures[cam_data.accum_tex_local_idx]};
+      auto& accum_tex{*frame_packet.textures[extracted_cam.accum_tex_local_idx]};
       auto const& accum_tex_desc{accum_tex.GetDesc()};
 
       auto const taa_rt{
@@ -1512,9 +1542,9 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, linear_samp_idx),
         samp_bi_clamp_.Get());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, jitter_x),
-        *std::bit_cast<UINT const*>(&jitter_x_ndc));
+        *std::bit_cast<UINT const*>(&prepared_cam.jitter_ndc[0]));
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, jitter_y),
-        *std::bit_cast<UINT const*>(&jitter_y_ndc));
+        *std::bit_cast<UINT const*>(&prepared_cam.jitter_ndc[1]));
 
       cam_cmd.ClearRenderTarget(*taa_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cam_cmd.DrawInstanced(3, 1, 0, 0);
@@ -1523,10 +1553,10 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     // Post-processing pass
 
-    auto const* const post_process_input_tex{frame_packet.textures[cam_data.accum_tex_local_idx].get()};
+    auto const* const post_process_input_tex{frame_packet.textures[extracted_cam.accum_tex_local_idx].get()};
 
-    cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&cam_viewport), 1});
-    cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
+    cam_cmd.SetViewports(std::span{&view.viewport, 1});
+    cam_cmd.SetScissorRects(std::span{&view.scissor, 1});
 
     cam_cmd.SetPipelineState(*frame_packet.post_process_pso);
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(PostProcessDrawParams, in_tex_idx), *post_process_input_tex);
@@ -1551,7 +1581,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       cam_cmd.SetRenderTargets(std::span{
         std::array{static_cast<wand::Texture const*>(target_rt.GetColorTex().get())}.data(), 1
       }, nullptr);
-      cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&cam_scissor), 1});
+      cam_cmd.SetScissorRects(std::span{&view.scissor, 1});
       cam_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
       cam_cmd.DrawInstanced(2, static_cast<UINT>(frame_packet.gizmo_data.line_count), 0, 0);
     }
@@ -2078,13 +2108,14 @@ auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(CameraData const& cam
 
 
 auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData const> const lights,
-                               std::vector<unsigned>& visible_light_indices) -> void {
-  visible_light_indices.clear();
+                               std::vector<unsigned>& visible_light_indices) -> uint64_t {
+  std::uint64_t light_count = 0;
 
   for (unsigned light_idx = 0; light_idx < static_cast<unsigned>(lights.size()); light_idx++) {
     switch (auto const light{lights[light_idx]}; light.type) {
       case LightComponent::Type::Directional: {
         visible_light_indices.emplace_back(light_idx);
+        ++light_count;
         break;
       }
 
@@ -2103,6 +2134,7 @@ auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData co
 
         if (frustum_ws.Intersects(AABB::FromVertices(light_vertices_ws))) {
           visible_light_indices.emplace_back(light_idx);
+          ++light_count;
         }
 
         break;
@@ -2111,11 +2143,14 @@ auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData co
       case LightComponent::Type::Point: {
         if (BoundingSphere const bounds_ws{Vector3{light.position}, light.range}; frustum_ws.Intersects(bounds_ws)) {
           visible_light_indices.emplace_back(light_idx);
+          ++light_count;
         }
         break;
       }
     }
   }
+
+  return light_count;
 }
 
 
@@ -2956,6 +2991,77 @@ auto SceneRenderer::RecordGpuInitWork(RenderFrame& frame) const -> void {
   cmd.End();
 
   frame.EnqueueCommandList(cmd);
+}
+
+
+auto SceneRenderer::RecordDepthOnlyPass(ExtractedFrameData const& frame_packet, RenderFrame& frame,
+                                        PreparedView const& view, std::uint32_t const rt_idx,
+                                        wand::CommandList& cmd) -> void {
+  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, rt_idx), rt_idx);
+
+  cmd.SetViewports(std::span{&view.viewport, 1});
+  cmd.SetScissorRects(std::span{&view.scissor, 1});
+
+  auto const view_proj_mtx = view.view_mtx * view.proj_mtx;
+  Frustum const shadow_frustum_ws{view_proj_mtx};
+
+  auto& per_view_cb{AcquirePerViewConstantBuffer(frame.GetIndex())};
+  SetPerViewConstants(per_view_cb, view.view_mtx, view.proj_mtx, {}, ShadowCascadeBoundaries{},
+    shadow_frustum_ws, Vector3{}, view.near_plane, view.far_plane, static_cast<int>(view.viewport.Width),
+    static_cast<int>(view.viewport.Height));
+  cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
+
+  for (auto const& geom_batch : frame_packet.geom_batches) {
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
+      *frame_packet.buffers[geom_batch.pos_buf_local_idx]);
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
+      *frame_packet.buffers[geom_batch.uv_buf_local_idx]);
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, vertex_idx_buf_idx),
+      *frame_packet.buffers[geom_batch.vtx_idx_buf_local_idx]);
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, prim_idx_buf_idx),
+      *frame_packet.buffers[geom_batch.prim_idx_buf_local_idx]);
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
+      *frame_packet.buffers[geom_batch.meshlet_buf_local_idx]);
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, cull_data_buf_idx),
+      *frame_packet.buffers[geom_batch.cull_data_buf_local_idx]);
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), geom_batch.idx32);
+
+    auto const instances = std::span{frame_packet.instance_data}.subspan(geom_batch.first_instance,
+      geom_batch.instance_count);
+
+    auto const mtl_groups = std::span{frame_packet.mtl_slot_groups}.subspan(geom_batch.first_mtl_group,
+      geom_batch.mtl_group_count);
+
+    for (auto const& instance : instances) {
+      auto& per_inst_cb{AcquirePerInstanceConstantBuffer(frame.GetIndex())};
+      SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, view.view_mtx, view.proj_mtx, {},
+        instance.max_abs_scaling);
+      cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_inst_cb_idx),
+        *per_inst_cb.GetBuffer());
+
+      for (auto const& mtl_group : mtl_groups) {
+        auto const inst_mtl_local_idx = instance.first_mtl + mtl_group.mtl_slot;
+        auto const& mtl_buf_local_idx{frame_packet.instance_materials[inst_mtl_local_idx]};
+
+        if (mtl_buf_local_idx == frame_packet_invalid_idx) {
+          continue;
+        }
+
+        cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx),
+          *frame_packet.buffers[mtl_buf_local_idx]);
+
+        auto const submeshes = std::span{frame_packet.submesh_data}.subspan(mtl_group.first_submesh,
+          mtl_group.submesh_count);
+
+        for (auto const& submesh : submeshes) {
+          DrawSubmesh(submesh, PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_count),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_offset),
+            PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, base_vertex),
+            cmd);
+        }
+      }
+    }
+  }
 }
 
 

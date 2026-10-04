@@ -246,8 +246,7 @@ private:
 
     bool accum_tex_empty;
 
-    float jitter_x_ndc;
-    float jitter_y_ndc;
+    Vector2 jitter_ndc;
   };
 
 
@@ -371,14 +370,41 @@ private:
 
 
   struct PreparedCameraData {
-    unsigned first_light;
-    unsigned light_count;
+    ShadowCascadeBoundaries cascade_boundaries;
+
+    std::uint32_t extracted_data_idx;
+
+    std::uint32_t first_visible_light;
+    std::uint32_t visible_light_count;
+
+    std::uint32_t primary_view_idx;
+
+    Matrix4 prev_view_proj_mtx;
+
+    Vector2 jitter_ndc;
+    Vector2 prev_jitter_ndc;
+  };
+
+
+  struct PreparedView {
+    Matrix4 view_mtx;
+    Matrix4 proj_mtx;
+    Matrix4 view_proj_mtx;
+
+    Frustum frustum_ws;
+
+    D3D12_VIEWPORT viewport;
+    D3D12_RECT scissor;
+
+    float near_plane;
+    float far_plane;
   };
 
 
   struct PreparedFrameData {
     std::vector<PreparedCameraData> cam_data;
-    std::vector<ShaderLight> lights;
+    std::vector<std::uint32_t> visible_light_indices;
+    std::vector<PreparedView> views;
   };
 
 
@@ -454,12 +480,14 @@ private:
   ) -> ShadowCascadeBoundaries;
 
 
-  static
+  // Places the indices of the surviving lights in the passed container.
+  // Returns the number of surviving lights.
+  [[nodiscard]] static
   auto CullLights(
     Frustum const& frustum_ws,
     std::span<LightData const> lights,
     std::vector<unsigned>& visible_light_indices
-  ) -> void;
+  ) -> uint64_t;
 
 
   static
@@ -537,6 +565,12 @@ private:
   auto OnWindowSize(Extent2D<std::uint32_t> size) -> void;
 
   auto RecordGpuInitWork(RenderFrame& frame) const -> void;
+
+  auto RecordDepthOnlyPass(
+    ExtractedFrameData const& frame_packet,
+    RenderFrame& frame,
+    PreparedView const& view, std::uint32_t rt_idx, wand::CommandList& cmd
+  ) -> void;
 
   static
   auto DrawSubmesh(
@@ -645,7 +679,7 @@ private:
   wand::UniqueSamplerHandle samp_point_wrap_;
 
   std::array<ExtractedFrameData, kFramesInFlight> frame_packets_;
-  std::array<PreparedFrameData, kFramesInFlight> prepared_data_;
+  PreparedFrameData prepared_data_;
 
   UINT next_per_instance_cb_idx_{0};
   UINT next_per_view_cb_idx_{0};
