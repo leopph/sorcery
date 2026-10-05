@@ -8,11 +8,12 @@
 #include "Camera.hpp"
 #include "config.hpp"
 #include "constant_buffer.hpp"
-#include "directional_light_shadow_map_array.hpp"
-#include "positional_light_shadow_atlas.hpp"
 #include "render_frame.hpp"
 #include "render_manager.hpp"
 #include "render_target.hpp"
+#include "ShadowCascadeBoundary.hpp"
+#include "shadow_atlas.hpp"
+#include "shadow_map_array.hpp"
 #include "structured_buffer.hpp"
 #include "../Color.hpp"
 #include "../Math.hpp"
@@ -746,8 +747,8 @@ private:
   UINT next_per_instance_cb_idx_{0};
   UINT next_per_view_cb_idx_{0};
 
-  std::unique_ptr<DirectionalLightShadowMapArray> dir_shadow_map_arr_;
-  std::unique_ptr<PositionalLightShadowAtlas> pos_shadow_atlas_;
+  std::unique_ptr<ShadowMapArray> dir_shadow_map_arr_;
+  std::unique_ptr<ShadowAtlas> pos_shadow_atlas_;
 
   std::vector<Vector4> gizmo_colors_;
   std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;

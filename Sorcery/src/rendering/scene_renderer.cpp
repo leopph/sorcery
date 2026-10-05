@@ -129,11 +129,11 @@ SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, Rende
     DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Main RT", false
   });
 
-  dir_shadow_map_arr_ = std::make_unique<DirectionalLightShadowMapArray>(device_.Get(), depth_format_, 4096);
+  dir_shadow_map_arr_ = std::make_unique<ShadowMapArray>(device_.Get(), depth_format_, 4096, MAX_CASCADE_COUNT);
   dir_shadow_map_arr_->GetTex()->SetDebugName(L"Directional Shadow Map Array");
 
-  pos_shadow_atlas_ = std::make_unique<PositionalLightShadowAtlas>(device_.Get(), depth_format_, 4096);
-  pos_shadow_atlas_->GetTex()->SetDebugName(L"Punctual Shadow Atlas");
+  pos_shadow_atlas_ = std::make_unique<ShadowAtlas>(device_.Get(), depth_format_, 4096);
+  pos_shadow_atlas_->GetTex()->SetDebugName(L"Positional Shadow Atlas");
 
   RecreatePipelines();
 
@@ -822,7 +822,8 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
 
     auto const cascades = CalculateCameraShadowCascadeBoundaries(cam_data, frame_packet.shadow_params);
     auto const dir_shadows = PrepareDirectionalShadows(frame_packet, visible_light_indices, cam_data, cascades,
-      viewport_aspect, frame_packet.shadow_params.cascade_count, dir_shadow_map_arr_->GetSize(), prepared_data_.views);
+      viewport_aspect, frame_packet.shadow_params.cascade_count, dir_shadow_map_arr_->GetTexSize(),
+      prepared_data_.views);
 
     auto const first_pos_shadow = static_cast<std::uint32_t>(prepared_data_.pos_shadows.size());
     auto const pos_shadow_count = PreparePositionalShadows(frame_packet.light_data, visible_light_indices, cam_data,

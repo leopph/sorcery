@@ -1,50 +1,40 @@
 #include "shadow_atlas.hpp"
 
+#include "../Math.hpp"
 #include "shaders/shader_interop.h"
 
 
 namespace sorcery::rendering {
-ShadowAtlas::ShadowAtlas(wand::GraphicsDevice* const device, DXGI_FORMAT const depth_format, UINT const size,
-                         int const subdiv_size) :
-  GridLike{subdiv_size},
+ShadowAtlas::ShadowAtlas(wand::GraphicsDevice* const device, DXGI_FORMAT const depth_format, UINT const size) :
   tex_{
     device->CreateTexture(
       wand::TextureDesc{
-        wand::TextureDimension::k2D, size, size, 1, 1, depth_format, 1, true, false, true, false
-      }, wand::CpuAccess::kNone,
-      std::array{D3D12_CLEAR_VALUE{.Format = depth_format, .DepthStencil = {DEPTH_CLEAR_VALUE, 0}}}.data())
+        .dimension = wand::TextureDimension::k2D,
+        .width = size,
+        .height = size,
+        .depth_or_array_size = 1,
+        .mip_levels = 1,
+        .format = depth_format,
+        .sample_count = 1,
+        .depth_stencil = true,
+        .render_target = false,
+        .shader_resource = true,
+        .unordered_access = false
+      }, wand::CpuAccess::kNone, std::array{
+        D3D12_CLEAR_VALUE{
+          .Format = depth_format,
+          .DepthStencil = {
+            .Depth = DEPTH_CLEAR_VALUE,
+            .Stencil = 0
+          }
+        }
+      }.data())
   },
   size_{size} {
   if (!IsPowerOfTwo(size_)) {
     throw std::runtime_error{"Shadow Atlas size must be power of 2."};
   }
 }
-
-
-ShadowAtlas::Cell::Cell(int const subdiv_size) :
-  GridLike{subdiv_size} {
-  subcells_.resize(GetElementCount());
-}
-
-
-auto ShadowAtlas::Cell::GetSubcell(int const idx) const -> std::optional<Subcell> const& {
-  ThrowIfIndexIsInvalid(idx);
-  return subcells_[idx];
-}
-
-
-auto ShadowAtlas::Cell::GetSubcell(int const idx) -> std::optional<Subcell>& {
-  return const_cast<std::optional<Subcell>&>(const_cast<Cell const*>(this)->GetSubcell(idx));
-}
-
-
-auto ShadowAtlas::Cell::Resize(int const subdiv_size) -> void {
-  SetSubdivisionSize(subdiv_size);
-  subcells_.resize(GetElementCount());
-}
-
-
-ShadowAtlas::~ShadowAtlas() = default;
 
 
 auto ShadowAtlas::GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const& {

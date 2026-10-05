@@ -152,7 +152,7 @@
     <ClCompile Include="src\random.cpp" />
     <ClCompile Include="src\rendering\Camera.cpp" />
     <ClCompile Include="src\rendering\command_list_pool.cpp" />
-    <ClCompile Include="src\rendering\directional_light_shadow_map_array.cpp" />
+    <ClCompile Include="src\rendering\shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\frame_scheduler.cpp" />
     <ClCompile Include="src\rendering\frame_uploader.cpp" />
     <ClCompile Include="src\rendering\render_frame.cpp" />
@@ -177,9 +177,7 @@
     <ClCompile Include="src\scene_objects\CameraControllerComponent.cpp" />
     <ClCompile Include="src\scene_objects\Component.cpp" />
     <ClCompile Include="src\Resources\Cubemap.cpp" />
-    <ClCompile Include="src\GridLike.cpp" />
     <ClCompile Include="src\Math.cpp" />
-    <ClCompile Include="src\rendering\positional_light_shadow_atlas.cpp" />
     <ClCompile Include="src\rendering\render_target.cpp" />
     <ClCompile Include="src\Resources\Resource.cpp" />
     <ClCompile Include="src\resource_manager.cpp" />
@@ -221,7 +219,7 @@
     <ClInclude Include="src\random.hpp" />
     <ClInclude Include="src\rendering\command_list_pool.hpp" />
     <ClInclude Include="src\rendering\config.hpp" />
-    <ClInclude Include="src\rendering\directional_light_shadow_map_array.hpp" />
+    <ClInclude Include="src\rendering\shadow_map_array.hpp" />
     <ClInclude Include="src\rendering\frame_scheduler.hpp" />
     <ClInclude Include="src\rendering\frame_uploader.hpp" />
     <ClInclude Include="src\rendering\render_frame.hpp" />
@@ -248,8 +246,6 @@
     <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp" />
     <ClInclude Include="src\rendering\Camera.hpp" />
     <ClInclude Include="src\Resources\Cubemap.hpp" />
-    <ClInclude Include="src\GridLike.hpp" />
-    <ClInclude Include="src\rendering\positional_light_shadow_atlas.hpp" />
     <ClInclude Include="src\rendering\render_target.hpp" />
     <ClInclude Include="src\resource_id.hpp" />
     <ClInclude Include="src\resource_package.hpp" />
