@@ -14,7 +14,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Texture2D::Texture2D(wand::SharedDeviceChildHandle<wand::Texture> tex) noexcept :
+Texture2D::Texture2D(wand::SharedDeviceHandle<wand::Texture> tex) noexcept :
   tex_{std::move(tex)} {
   auto const desc{tex_->GetDesc()};
   m_width_ = static_cast<int>(desc.width);
@@ -50,7 +50,7 @@ Texture2D::~Texture2D() {
 }
 
 
-auto Texture2D::GetTex() const -> wand::SharedDeviceChildHandle<wand::Texture> const& {
+auto Texture2D::GetTex() const -> wand::SharedDeviceHandle<wand::Texture> const& {
   return tex_;
 }
 

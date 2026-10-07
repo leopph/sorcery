@@ -8,18 +8,18 @@
 #include "../resource_ref.hpp"
 #include "../SkyMode.hpp"
 #include "../scene_objects/Entity.hpp"
-#include "wand/device_child.hpp"
+#include "wand/device_object.hpp"
 #include "wand/texture.hpp"
 
 
 namespace sorcery {
 namespace detail {
 [[nodiscard]]
-auto GetIrradianceMap(Scene const& scene) -> wand::SharedDeviceChildHandle<wand::Texture> const&;
+auto GetIrradianceMap(Scene const& scene) -> wand::SharedDeviceHandle<wand::Texture> const&;
 auto RecreateIrradianceMap(Scene& scene, wand::GraphicsDevice& device, DXGI_FORMAT format, UINT size) -> void;
 
 [[nodiscard]]
-auto GetPrefilteredEnvMap(Scene const& scene) -> wand::SharedDeviceChildHandle<wand::Texture> const&;
+auto GetPrefilteredEnvMap(Scene const& scene) -> wand::SharedDeviceHandle<wand::Texture> const&;
 auto RecreatePrefilteredEnvMap(Scene& scene, wand::GraphicsDevice& device, DXGI_FORMAT format, UINT size) -> void;
 }
 
@@ -29,12 +29,12 @@ class Scene final : public NativeResource {
   RTTR_REGISTRATION_FRIEND
 
   friend auto detail::GetIrradianceMap(Scene const& scene)
-    -> wand::SharedDeviceChildHandle<wand::Texture> const&;
+    -> wand::SharedDeviceHandle<wand::Texture> const&;
   friend auto detail::RecreateIrradianceMap(Scene& scene, wand::GraphicsDevice& device, DXGI_FORMAT format,
                                             UINT size) -> void;
 
   friend auto detail::GetPrefilteredEnvMap(Scene const& scene)
-    -> wand::SharedDeviceChildHandle<wand::Texture> const&;
+    -> wand::SharedDeviceHandle<wand::Texture> const&;
   friend auto detail::RecreatePrefilteredEnvMap(Scene& scene, wand::GraphicsDevice& device, DXGI_FORMAT format,
                                                 UINT size) -> void;
 
@@ -95,7 +95,7 @@ private:
   ResourceRef<Cubemap> skybox_{nullptr};
   SkyMode sky_mode_{SkyMode::Color};
   Vector3 sky_color_{0.F, 36.F / 255.F, 1.F};
-  wand::SharedDeviceChildHandle<wand::Texture> irradiance_map_{};
-  wand::SharedDeviceChildHandle<wand::Texture> prefiltered_env_map_{};
+  wand::SharedDeviceHandle<wand::Texture> irradiance_map_{};
+  wand::SharedDeviceHandle<wand::Texture> prefiltered_env_map_{};
 };
 }

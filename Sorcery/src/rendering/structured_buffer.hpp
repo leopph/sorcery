@@ -17,7 +17,7 @@ public:
                          bool unordered_access = false);
 
   [[nodiscard]]
-  auto GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
+  auto GetBufferView() const -> wand::SharedDeviceHandle<wand::BufferView> const&;
   [[nodiscard]]
   auto GetData() -> std::span<T>;
   [[nodiscard]]
@@ -25,12 +25,12 @@ public:
   [[nodiscard]]
   auto GetElementCount() const -> std::uint64_t;
 
-  // Returns the previously allocated buffer.
-  auto Reallocate(std::uint64_t element_count) -> wand::SharedDeviceChildHandle<wand::Buffer>;
+  // Returns the previously allocated buffer view.
+  auto Reallocate(std::uint64_t element_count) -> wand::SharedDeviceHandle<wand::BufferView>;
 
 private:
   ObserverPtr<wand::GraphicsDevice> device_;
-  wand::SharedDeviceChildHandle<wand::Buffer> buffer_{};
+  wand::SharedDeviceHandle<wand::BufferView> buffer_view_{};
   std::span<T> data_{};
   std::uint64_t element_count_{0};
   bool srv_;
@@ -45,7 +45,7 @@ auto CreateStructuredBuffer(
   std::uint64_t element_count,
   bool shader_resource = true,
   bool unordered_access = false
-) -> wand::SharedDeviceChildHandle<wand::Buffer>;
+) -> wand::SharedDeviceHandle<wand::BufferView>;
 }
 
 

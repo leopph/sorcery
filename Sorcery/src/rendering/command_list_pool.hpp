@@ -26,7 +26,7 @@ public:
   auto operator=(CommandListPool&& other) noexcept -> CommandListPool& = delete;
 
 private:
-  std::vector<wand::SharedDeviceChildHandle<wand::CommandList>> cmd_lists_;
+  std::vector<wand::SharedDeviceHandle<wand::CommandList>> cmd_lists_;
   std::mutex mutex_;
   ObserverPtr<wand::GraphicsDevice> device_;
   std::size_t next_cmd_list_idx_{0};

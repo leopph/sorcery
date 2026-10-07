@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <utility>
 
-#include "../Util.hpp"
+#include "../util.hpp"
 #include "shaders/shader_interop.h"
 
 
@@ -129,7 +129,7 @@ auto RenderManager::UpdateTexture(wand::Texture const& tex, UINT const subresour
 
 
 auto RenderManager::CreateReadOnlyTexture(
-  DirectX::ScratchImage const& img) -> wand::SharedDeviceChildHandle<wand::Texture> {
+  DirectX::ScratchImage const& img) -> wand::SharedDeviceHandle<wand::Texture> {
   auto const& meta{img.GetMetadata()};
 
   wand::TextureDesc desc;
@@ -176,7 +176,7 @@ auto RenderManager::CreateReadOnlyTexture(
 }
 
 
-auto RenderManager::KeepAliveWhileInUse(wand::SharedDeviceChildHandle<wand::Texture> tex) -> void {
+auto RenderManager::KeepAliveWhileInUse(wand::SharedDeviceHandle<wand::Texture> tex) -> void {
   std::scoped_lock const lock{keep_alive_resources_mutex_};
   resources_to_keep_alive_.emplace_back(std::move(tex), 0);
 }
@@ -249,7 +249,7 @@ auto RenderManager::ReleaseUnusedBuffers() -> void {
 
 auto RenderManager::RecreateUploadBuffer(UINT64 const size) -> void {
   upload_buf_ = device_->CreateBuffer(wand::BufferDesc{
-    .size = size, .stride = 0, .usage = wand::BufferUsage::kCopySource
+    .size = size, .usage = wand::BufferUsage::kCopySource
   }, wand::CpuAccess::kWrite);
   upload_buf_->SetDebugName(L"Render Manager Upload Buffer");
   upload_ptr_ = static_cast<std::byte*>(upload_buf_->Map());

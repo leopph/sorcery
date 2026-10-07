@@ -49,17 +49,16 @@ public:
   auto operator=(RenderTarget&&) -> void = delete;
 
   [[nodiscard]] LEOPPHAPI auto GetDesc() const noexcept -> Desc const&;
-  [[nodiscard]] LEOPPHAPI auto GetColorTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const&;
-  [[nodiscard]] LEOPPHAPI auto
-  GetDepthStencilTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const&;
+  [[nodiscard]] LEOPPHAPI auto GetColorTex() const noexcept -> wand::SharedDeviceHandle<wand::Texture> const&;
+  [[nodiscard]] LEOPPHAPI auto GetDepthStencilTex() const noexcept -> wand::SharedDeviceHandle<wand::Texture> const&;
 
 private:
-  RenderTarget(Desc desc, wand::SharedDeviceChildHandle<wand::Texture> color_tex,
-               wand::SharedDeviceChildHandle<wand::Texture> depth_stencil_tex);
+  RenderTarget(Desc desc, wand::SharedDeviceHandle<wand::Texture> color_tex,
+               wand::SharedDeviceHandle<wand::Texture> depth_stencil_tex);
 
   Desc desc_;
 
-  wand::SharedDeviceChildHandle<wand::Texture> color_tex_;
-  wand::SharedDeviceChildHandle<wand::Texture> depth_stencil_tex_;
+  wand::SharedDeviceHandle<wand::Texture> color_tex_;
+  wand::SharedDeviceHandle<wand::Texture> depth_stencil_tex_;
 };
 }

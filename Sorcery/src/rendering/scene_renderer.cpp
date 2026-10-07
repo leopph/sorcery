@@ -234,7 +234,7 @@ SceneRenderer::~SceneRenderer() {
 auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   auto& packet{frame_packets_[frame.GetIndex()]};
 
-  packet.buffers.clear();
+  packet.buffer_views.clear();
   packet.textures.clear();
   packet.light_data.clear();
   packet.geom_batches.clear();
@@ -350,28 +350,28 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
     // Set mesh AABB to infinity to prevent culling
     geom_batch.bounds = inf_aabb;
 
-    packet.buffers.emplace_back(render_inst->GetSkinnedPositionBuffer(frame.GetIndex()));
-    auto const skinned_pos_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
+    packet.buffer_views.emplace_back(render_inst->GetSkinnedPositionBuffer(frame.GetIndex()));
+    auto const skinned_pos_buf_local_idx{static_cast<unsigned>(packet.buffer_views.size() - 1)};
 
     auto const last_skinning_frame = render_inst->GetLastSkinningFrame();
     auto const prev_skinning_valid = last_skinning_frame && *last_skinning_frame + 1 == frame.GetNumber();
     unsigned prev_skinned_pos_buf_local_idx;
 
     if (prev_skinning_valid) {
-      packet.buffers.emplace_back(render_inst->GetSkinnedPositionBuffer(frame.GetPreviousIndex()));
-      prev_skinned_pos_buf_local_idx = static_cast<unsigned>(packet.buffers.size() - 1);
+      packet.buffer_views.emplace_back(render_inst->GetSkinnedPositionBuffer(frame.GetPreviousIndex()));
+      prev_skinned_pos_buf_local_idx = static_cast<unsigned>(packet.buffer_views.size() - 1);
     } else {
       prev_skinned_pos_buf_local_idx = frame_packet_invalid_idx;
     }
 
-    packet.buffers.emplace_back(render_inst->GetSkinnedNormalBuffer(frame.GetIndex()));
-    auto const skinned_norm_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
+    packet.buffer_views.emplace_back(render_inst->GetSkinnedNormalBuffer(frame.GetIndex()));
+    auto const skinned_norm_buf_local_idx{static_cast<unsigned>(packet.buffer_views.size() - 1)};
 
-    packet.buffers.emplace_back(render_inst->GetSkinnedTangentBuffer(frame.GetIndex()));
-    auto const skinned_tan_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
+    packet.buffer_views.emplace_back(render_inst->GetSkinnedTangentBuffer(frame.GetIndex()));
+    auto const skinned_tan_buf_local_idx{static_cast<unsigned>(packet.buffer_views.size() - 1)};
 
-    packet.buffers.emplace_back(render_inst->GetBoneMatrixBuffer(frame.GetIndex()));
-    auto const bone_mtx_buf_local_idx{static_cast<unsigned>(packet.buffers.size() - 1)};
+    packet.buffer_views.emplace_back(render_inst->GetBoneMatrixBuffer(frame.GetIndex()));
+    auto const bone_mtx_buf_local_idx{static_cast<unsigned>(packet.buffer_views.size() - 1)};
 
     // Switch the original and skinned buffer indices so that the renderer can treat the skinned mesh as static after
     // the skinning is done
@@ -564,10 +564,14 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
 
     if (auto const ssao_samples_byte_count = packet.ssao_samples.size() * ssao_sample_element_size;
       !ssao_samples_buffer_ || ssao_samples_buffer_->GetDesc().size < ssao_samples_byte_count) {
-      ssao_samples_buffer_ = device_->CreateBuffer(wand::BufferDesc{
+      ssao_samples_buffer_ = CreateBufferWithView(*device_, wand::BufferDesc{
+        .size = ssao_samples_byte_count,
+        .usage = wand::BufferUsage::kShaderResource | wand::BufferUsage::kCopyDestination
+      }, wand::BufferViewDesc{
+        .offset = 0,
         .size = ssao_samples_byte_count,
         .stride = ssao_sample_element_size,
-        .usage = wand::BufferUsage::kShaderResource | wand::BufferUsage::kCopyDestination
+        .usage = wand::BufferViewUsage::kShaderResource
       }, wand::CpuAccess::kNone);
     }
 
@@ -702,7 +706,7 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
                            skeleton_node_idx].transform;
     }
 
-    frame.UploadBuffer(frame_packet.buffers[bone_matrix_buf_local_idx], 0, as_bytes(std::span{bone_matrices}));
+    frame.UploadBuffer(frame_packet.buffer_views[bone_matrix_buf_local_idx], 0, as_bytes(std::span{bone_matrices}));
   }
 
   // Upload SSAO samples if they have changed
@@ -872,32 +876,35 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     // This happens for example in the editor scene view.
     if (cur_animation_time == 0) {
       prepass_cmd.CopyBuffer(
-        *frame_packet.buffers[geom_batch.pos_buf_local_idx], *frame_packet.buffers[original_vertex_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.pos_buf_local_idx]->GetBuffer(),
+        *frame_packet.buffer_views[original_vertex_buf_local_idx]->GetBuffer());
       prepass_cmd.CopyBuffer(
-        *frame_packet.buffers[geom_batch.norm_buf_local_idx], *frame_packet.buffers[original_normal_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.norm_buf_local_idx]->GetBuffer(),
+        *frame_packet.buffer_views[original_normal_buf_local_idx]->GetBuffer());
       prepass_cmd.CopyBuffer(
-        *frame_packet.buffers[geom_batch.tan_buf_local_idx], *frame_packet.buffers[original_tangent_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.tan_buf_local_idx]->GetBuffer(),
+        *frame_packet.buffer_views[original_tangent_buf_local_idx]->GetBuffer());
       continue;
     }
 
-    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_buf_idx),
-      *frame_packet.buffers[original_vertex_buf_local_idx]);
-    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, norm_buf_idx),
-      *frame_packet.buffers[original_normal_buf_local_idx]);
-    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, tan_buf_idx),
-      *frame_packet.buffers[original_tangent_buf_local_idx]);
-    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_weight_buf_idx),
-      *frame_packet.buffers[geom_batch.bone_weight_buf_local_idx]);
-    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_idx_buf_idx),
-      *frame_packet.buffers[geom_batch.bone_idx_buf_local_idx]);
-    prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_buf_idx),
-      *frame_packet.buffers[bone_matrix_buf_local_idx]);
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_buf_idx),
+      *frame_packet.buffer_views[original_vertex_buf_local_idx]);
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, norm_buf_idx),
+      *frame_packet.buffer_views[original_normal_buf_local_idx]);
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, tan_buf_idx),
+      *frame_packet.buffer_views[original_tangent_buf_local_idx]);
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_weight_buf_idx),
+      *frame_packet.buffer_views[geom_batch.bone_weight_buf_local_idx]);
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_idx_buf_idx),
+      *frame_packet.buffer_views[geom_batch.bone_idx_buf_local_idx]);
+    prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, bone_buf_idx),
+      *frame_packet.buffer_views[bone_matrix_buf_local_idx]);
     prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_vtx_buf_idx),
-      *frame_packet.buffers[geom_batch.pos_buf_local_idx]);
+      *frame_packet.buffer_views[geom_batch.pos_buf_local_idx]);
     prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_norm_buf_idx),
-      *frame_packet.buffers[geom_batch.norm_buf_local_idx]);
+      *frame_packet.buffer_views[geom_batch.norm_buf_local_idx]);
     prepass_cmd.SetUnorderedAccess(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, skinned_tan_buf_idx),
-      *frame_packet.buffers[geom_batch.tan_buf_local_idx]);
+      *frame_packet.buffer_views[geom_batch.tan_buf_local_idx]);
     prepass_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(VertexSkinningDrawParams, vtx_count), geom_batch.vtx_count);
     prepass_cmd.Dispatch(
       static_cast<UINT>(std::ceil(static_cast<float>(geom_batch.vtx_count) / static_cast<float>(SKINNING_CS_THREADS))),
@@ -925,13 +932,13 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     auto const& cube_geom = frame_packet.geom_batches[frame_packet.cube_geom_local_idx];
 
     prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, meshlet_buf_idx),
-      *frame_packet.buffers[cube_geom.meshlet_buf_local_idx]);
+      *frame_packet.buffer_views[cube_geom.meshlet_buf_local_idx]);
     prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, vertex_idx_buf_idx),
-      *frame_packet.buffers[cube_geom.vtx_idx_buf_local_idx]);
+      *frame_packet.buffer_views[cube_geom.vtx_idx_buf_local_idx]);
     prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, prim_idx_buf_idx),
-      *frame_packet.buffers[cube_geom.prim_idx_buf_local_idx]);
+      *frame_packet.buffer_views[cube_geom.prim_idx_buf_local_idx]);
     prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, pos_buf_idx),
-      *frame_packet.buffers[cube_geom.pos_buf_local_idx]);
+      *frame_packet.buffer_views[cube_geom.pos_buf_local_idx]);
     prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(IrradianceDrawParams, environment_map_idx),
       *frame_packet.skybox_cubemap);
     prepass_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(IrradianceDrawParams, bi_clamp_samp_idx),
@@ -955,13 +962,13 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     prepass_cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     auto const& cube_geom = frame_packet.geom_batches[frame_packet.cube_geom_local_idx];
     prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, meshlet_buf_idx),
-      *frame_packet.buffers[cube_geom.meshlet_buf_local_idx]);
+      *frame_packet.buffer_views[cube_geom.meshlet_buf_local_idx]);
     prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, vertex_idx_buf_idx),
-      *frame_packet.buffers[cube_geom.vtx_idx_buf_local_idx]);
+      *frame_packet.buffer_views[cube_geom.vtx_idx_buf_local_idx]);
     prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, prim_idx_buf_idx),
-      *frame_packet.buffers[cube_geom.prim_idx_buf_local_idx]);
+      *frame_packet.buffer_views[cube_geom.prim_idx_buf_local_idx]);
     prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, pos_buf_idx),
-      *frame_packet.buffers[cube_geom.pos_buf_local_idx]);
+      *frame_packet.buffer_views[cube_geom.pos_buf_local_idx]);
     prepass_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, env_map_idx),
       *frame_packet.skybox_cubemap);
     prepass_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(EnvmapPrefilterDrawParams, tri_clamp_samp_idx),
@@ -1122,7 +1129,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     cam_cmd.ClearDepthStencil(*depth_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
 
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
-    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_view_cb_idx), *cam_per_view_cb.GetBuffer());
+    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_view_cb_idx),
+      *cam_per_view_cb.GetBufferView());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, jitter_x),
       *std::bit_cast<UINT const*>(&prepared_cam.jitter_ndc[0]));
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, jitter_y),
@@ -1134,28 +1142,28 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     for (auto const& geom_batch : frame_packet.geom_batches) {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, pos_buf_idx),
-        *frame_packet.buffers[geom_batch.pos_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.pos_buf_local_idx]);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, norm_buf_idx),
-        *frame_packet.buffers[geom_batch.norm_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.norm_buf_local_idx]);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, tan_buf_idx),
-        *frame_packet.buffers[geom_batch.tan_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.tan_buf_local_idx]);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, uv_buf_idx),
-        *frame_packet.buffers[geom_batch.uv_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.uv_buf_local_idx]);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, vertex_idx_buf_idx),
-        *frame_packet.buffers[geom_batch.vtx_idx_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.vtx_idx_buf_local_idx]);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, prim_idx_buf_idx),
-        *frame_packet.buffers[geom_batch.prim_idx_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.prim_idx_buf_local_idx]);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, meshlet_buf_idx),
-        *frame_packet.buffers[geom_batch.meshlet_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.meshlet_buf_local_idx]);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, cull_data_buf_idx),
-        *frame_packet.buffers[geom_batch.cull_data_buf_local_idx]);
+        *frame_packet.buffer_views[geom_batch.cull_data_buf_local_idx]);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, idx32), geom_batch.idx32);
 
       if (geom_batch.skinning_data_local_idx != frame_packet_invalid_idx) {
         if (auto const& skinning_data = frame_packet.skinning_data[geom_batch.skinning_data_local_idx];
           skinning_data.prev_frame_vertex_buf_local_idx != frame_packet_invalid_idx) {
           cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_frame_pos_buf_idx),
-            *frame_packet.buffers[skinning_data.prev_frame_vertex_buf_local_idx]);
+            *frame_packet.buffer_views[skinning_data.prev_frame_vertex_buf_local_idx]);
         } else {
           cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, prev_frame_pos_buf_idx),
             INVALID_RES_IDX);
@@ -1176,7 +1184,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
         SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, cam_view.view_mtx, cam_view.proj_mtx,
           instance.prev_local_to_world_mtx, instance.max_abs_scaling);
         cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_inst_cb_idx),
-          *per_inst_cb.GetBuffer());
+          *per_inst_cb.GetBufferView());
 
         for (auto const& mtl_group : mtl_groups) {
           auto const inst_mtl_local_idx = instance.first_mtl + mtl_group.mtl_slot;
@@ -1187,7 +1195,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
           }
 
           cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, mtl_idx),
-            *frame_packet.buffers[mtl_buf_local_idx]);
+            *frame_packet.buffer_views[mtl_buf_local_idx]);
 
           auto const submeshes = std::span{frame_packet.submesh_data}.subspan(mtl_group.first_submesh,
             mtl_group.submesh_count);
@@ -1236,9 +1244,9 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, sample_count),
         frame_packet.ssao_params.sample_count);
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_view_cb_idx),
-        *cam_per_view_cb.GetBuffer());
+        *cam_per_view_cb.GetBufferView());
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx),
-        *per_frame_cb.GetBuffer());
+        *per_frame_cb.GetBufferView());
       cam_cmd.SetRenderTargets(std::span{
         std::array{static_cast<wand::Texture const*>(ssao_rt->GetColorTex().get())}.data(), 1
       }, nullptr);
@@ -1376,16 +1384,16 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       samp_point_clamp_.Get());
     if (light_buffer.GetElementCount() > 0) {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx),
-        *light_buffer.GetBuffer());
+        *light_buffer.GetBufferView());
     } else {
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx), INVALID_RES_IDX);
     }
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_count),
       static_cast<UINT>(light_count));
     cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_view_cb_idx),
-      *cam_per_view_cb.GetBuffer());
+      *cam_per_view_cb.GetBufferView());
     cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_frame_cb_idx),
-      *per_frame_cb.GetBuffer());
+      *per_frame_cb.GetBufferView());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, bi_clamp_samp_idx),
       samp_bi_clamp_.Get());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, tri_clamp_samp_idx),
@@ -1426,7 +1434,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, gbuffer2_tex_idx), *gbuffer2_rt->GetColorTex());
 
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsrDrawParams, per_view_cb_idx), *cam_per_view_cb.GetBuffer());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsrDrawParams, per_view_cb_idx), *cam_per_view_cb.GetBufferView());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_roughness),
         *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_roughness));
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, thickness_vs),
@@ -1486,18 +1494,18 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       auto const& cube_geom = frame_packet.geom_batches[frame_packet.cube_geom_local_idx];
 
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, pos_buf_idx),
-        *frame_packet.buffers[cube_geom.pos_buf_local_idx]);
+        *frame_packet.buffer_views[cube_geom.pos_buf_local_idx]);
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SkyboxDrawParams, per_view_cb_idx),
-        *cam_per_view_cb.GetBuffer());
+        *cam_per_view_cb.GetBufferView());
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, cubemap_idx),
         *frame_packet.skybox_cubemap);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, vertex_idx_buf_idx),
-        *frame_packet.buffers[cube_geom.vtx_idx_buf_local_idx]);
+        *frame_packet.buffer_views[cube_geom.vtx_idx_buf_local_idx]);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, prim_idx_buf_idx),
-        *frame_packet.buffers[cube_geom.prim_idx_buf_local_idx]);
+        *frame_packet.buffer_views[cube_geom.prim_idx_buf_local_idx]);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, meshlet_buf_idx),
-        *frame_packet.buffers[cube_geom.meshlet_buf_local_idx]);
+        *frame_packet.buffer_views[cube_geom.meshlet_buf_local_idx]);
 
       DrawSubmesh(1, 0, 0, {}, {}, {}, cam_cmd);
     }
@@ -1566,11 +1574,11 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     if (frame_packet.gizmo_data.line_count > 0) {
       cam_cmd.SetPipelineState(*frame_packet.line_gizmo_pso);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GizmoDrawParams, vertex_buf_idx),
-        *line_gizmo_vertex_data_buffers_[frame_idx].GetBuffer());
+        *line_gizmo_vertex_data_buffers_[frame_idx].GetBufferView());
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GizmoDrawParams, color_buf_idx),
-        *gizmo_color_buffers_[frame_idx].GetBuffer());
+        *gizmo_color_buffers_[frame_idx].GetBufferView());
       cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx),
-        *cam_per_view_cb.GetBuffer());
+        *cam_per_view_cb.GetBufferView());
       cam_cmd.SetRenderTargets(std::span{
         std::array{static_cast<wand::Texture const*>(target_rt.GetColorTex().get())}.data(), 1
       }, nullptr);
@@ -1790,22 +1798,22 @@ auto SceneRenderer::Unregister(Camera const& cam) noexcept -> void {
 }
 
 
-auto SceneRenderer::FindOrAddBufferInPacket(wand::SharedDeviceChildHandle<wand::Buffer> const& buf,
-                                            ExtractedFrameData& packet) -> std::uint32_t {
+auto SceneRenderer::FindOrAddBufferViewInPacket(wand::SharedDeviceHandle<wand::BufferView> const& buf,
+                                                ExtractedFrameData& packet) -> std::uint32_t {
   std::uint32_t idx;
 
-  if (auto const it{std::ranges::find(packet.buffers, buf)}; it != std::ranges::end(packet.buffers)) {
-    idx = static_cast<uint32_t>(it - packet.buffers.begin());
+  if (auto const it{std::ranges::find(packet.buffer_views, buf)}; it != std::ranges::end(packet.buffer_views)) {
+    idx = static_cast<uint32_t>(it - packet.buffer_views.begin());
   } else {
-    idx = static_cast<uint32_t>(packet.buffers.size());
-    packet.buffers.emplace_back(buf);
+    idx = static_cast<uint32_t>(packet.buffer_views.size());
+    packet.buffer_views.emplace_back(buf);
   }
 
   return idx;
 }
 
 
-auto SceneRenderer::FindOrAddTextureInPacket(wand::SharedDeviceChildHandle<wand::Texture> const& tex,
+auto SceneRenderer::FindOrAddTextureInPacket(wand::SharedDeviceHandle<wand::Texture> const& tex,
                                              ExtractedFrameData& packet) -> std::uint32_t {
   std::uint32_t idx;
 
@@ -1829,23 +1837,23 @@ auto SceneRenderer::AddMeshToPacket(Mesh& mesh, RenderFrame& frame, ExtractedFra
 
   auto const ret = static_cast<unsigned>(packet.geom_batches.size());
 
-  auto const pos_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetPositionBuffer(), packet)};
-  auto const norm_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetNormalBuffer(), packet)};
-  auto const tan_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetTangentBuffer(), packet)};
-  auto const uv_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetUvBuffer(), packet)};
-  auto const meshlet_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetMeshletBuffer(), packet)};
-  auto const vtx_idx_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetVertexIndexBuffer(), packet)};
-  auto const prim_idx_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetPrimitiveIndexBuffer(), packet)};
-  auto const cull_data_buf_local_idx{FindOrAddBufferInPacket(render_mesh->GetCullDataBuffer(), packet)};
+  auto const pos_buf_local_idx{FindOrAddBufferViewInPacket(render_mesh->GetPositionBuffer(), packet)};
+  auto const norm_buf_local_idx{FindOrAddBufferViewInPacket(render_mesh->GetNormalBuffer(), packet)};
+  auto const tan_buf_local_idx{FindOrAddBufferViewInPacket(render_mesh->GetTangentBuffer(), packet)};
+  auto const uv_buf_local_idx{FindOrAddBufferViewInPacket(render_mesh->GetUvBuffer(), packet)};
+  auto const meshlet_buf_local_idx{FindOrAddBufferViewInPacket(render_mesh->GetMeshletBuffer(), packet)};
+  auto const vtx_idx_buf_local_idx{FindOrAddBufferViewInPacket(render_mesh->GetVertexIndexBuffer(), packet)};
+  auto const prim_idx_buf_local_idx{FindOrAddBufferViewInPacket(render_mesh->GetPrimitiveIndexBuffer(), packet)};
+  auto const cull_data_buf_local_idx{FindOrAddBufferViewInPacket(render_mesh->GetCullDataBuffer(), packet)};
 
   auto const& bone_weight_buf = render_mesh->GetBoneWeightBuffer();
   auto const bone_weight_buf_local_idx = bone_weight_buf
-                                           ? FindOrAddBufferInPacket(bone_weight_buf, packet)
+                                           ? FindOrAddBufferViewInPacket(bone_weight_buf, packet)
                                            : frame_packet_invalid_idx;
 
   auto const& bone_idx_buf = render_mesh->GetBoneIndexBuffer();
   auto const bone_idx_buf_local_idx = bone_idx_buf
-                                        ? FindOrAddBufferInPacket(bone_idx_buf, packet)
+                                        ? FindOrAddBufferViewInPacket(bone_idx_buf, packet)
                                         : frame_packet_invalid_idx;
 
   auto const mtl_slots = mesh.GetMaterialSlots();
@@ -1916,7 +1924,7 @@ auto SceneRenderer::AddMeshComponentToPacket(MeshComponentBase const& comp, Geom
       SyncMaterial(*mtl, *render_mtl, frame);
     }
 
-    packet.instance_materials.emplace_back(FindOrAddBufferInPacket(render_mtl->GetBuffer(), packet));
+    packet.instance_materials.emplace_back(FindOrAddBufferViewInPacket(render_mtl->GetBufferView(), packet));
 
     for (auto const tex : {
            mtl->GetAlbedoMap().Observe(),
@@ -1985,7 +1993,7 @@ auto SceneRenderer::SyncMaterial(Material const& mtl, RenderMaterial& render_mtl
     .pad = {}
   };
 
-  frame.UploadBuffer(render_mtl.GetBuffer(), 0,
+  frame.UploadBuffer(render_mtl.GetBufferView(), 0,
     std::span{reinterpret_cast<std::byte const*>(&shader_mtl), sizeof(shader_mtl)});
 
   render_mtl.SetRevision(mtl.GetRevision());
@@ -2017,8 +2025,7 @@ auto SceneRenderer::SyncMesh(Mesh& mesh, RenderMesh& render_mesh, RenderFrame& f
 
   frame.UploadBuffer(render_mesh.GetPositionBuffer(), 0,
     as_bytes(std::span{(to_vec4(mesh_data->positions, 1, vec4_buf))}));
-  frame.UploadBuffer(render_mesh.GetNormalBuffer(), 0,
-    as_bytes(std::span{(to_vec4(mesh_data->normals, 0, vec4_buf))}));
+  frame.UploadBuffer(render_mesh.GetNormalBuffer(), 0, as_bytes(std::span{(to_vec4(mesh_data->normals, 0, vec4_buf))}));
   frame.UploadBuffer(render_mesh.GetTangentBuffer(), 0,
     as_bytes(std::span{(to_vec4(mesh_data->tangents, 0, vec4_buf))}));
   frame.UploadBuffer(render_mesh.GetUvBuffer(), 0, as_bytes(std::span{mesh_data->uvs}));
@@ -3036,21 +3043,21 @@ auto SceneRenderer::RecordDepthOnlyPass(ExtractedFrameData const& frame_packet, 
   SetPerViewConstants(per_view_cb, view.view_mtx, view.proj_mtx, view.view_proj_mtx, {}, ShadowCascadeBoundaries{},
     view.frustum_ws, Vector3{}, view.near_plane, view.far_plane, static_cast<int>(view.viewport.Width),
     static_cast<int>(view.viewport.Height));
-  cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBuffer());
+  cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBufferView());
 
   for (auto const& geom_batch : frame_packet.geom_batches) {
     cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, pos_buf_idx),
-      *frame_packet.buffers[geom_batch.pos_buf_local_idx]);
+      *frame_packet.buffer_views[geom_batch.pos_buf_local_idx]);
     cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, uv_buf_idx),
-      *frame_packet.buffers[geom_batch.uv_buf_local_idx]);
+      *frame_packet.buffer_views[geom_batch.uv_buf_local_idx]);
     cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, vertex_idx_buf_idx),
-      *frame_packet.buffers[geom_batch.vtx_idx_buf_local_idx]);
+      *frame_packet.buffer_views[geom_batch.vtx_idx_buf_local_idx]);
     cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, prim_idx_buf_idx),
-      *frame_packet.buffers[geom_batch.prim_idx_buf_local_idx]);
+      *frame_packet.buffer_views[geom_batch.prim_idx_buf_local_idx]);
     cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, meshlet_buf_idx),
-      *frame_packet.buffers[geom_batch.meshlet_buf_local_idx]);
+      *frame_packet.buffer_views[geom_batch.meshlet_buf_local_idx]);
     cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, cull_data_buf_idx),
-      *frame_packet.buffers[geom_batch.cull_data_buf_local_idx]);
+      *frame_packet.buffer_views[geom_batch.cull_data_buf_local_idx]);
     cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, idx32), geom_batch.idx32);
 
     auto const instances = std::span{frame_packet.instance_data}.subspan(geom_batch.first_instance,
@@ -3064,7 +3071,7 @@ auto SceneRenderer::RecordDepthOnlyPass(ExtractedFrameData const& frame_packet, 
       SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, view.view_mtx, view.proj_mtx, {},
         instance.max_abs_scaling);
       cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_inst_cb_idx),
-        *per_inst_cb.GetBuffer());
+        *per_inst_cb.GetBufferView());
 
       for (auto const& mtl_group : mtl_groups) {
         auto const inst_mtl_local_idx = instance.first_mtl + mtl_group.mtl_slot;
@@ -3075,7 +3082,7 @@ auto SceneRenderer::RecordDepthOnlyPass(ExtractedFrameData const& frame_packet, 
         }
 
         cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, mtl_idx),
-          *frame_packet.buffers[mtl_buf_local_idx]);
+          *frame_packet.buffer_views[mtl_buf_local_idx]);
 
         auto const submeshes = std::span{frame_packet.submesh_data}.subspan(mtl_group.first_submesh,
           mtl_group.submesh_count);

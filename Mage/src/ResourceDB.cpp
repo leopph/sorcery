@@ -9,7 +9,7 @@
 #include "app.hpp"
 #include "reflection.hpp"
 #include "resource_manager.hpp"
-#include "Util.hpp"
+#include "util.hpp"
 #include "ResourceImporters/native_resource_importer.hpp"
 
 

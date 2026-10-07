@@ -9,7 +9,7 @@ RenderMaterial::RenderMaterial(wand::GraphicsDevice& device) :
   cb_{CreateConstantBuffer<ShaderMaterial>(device)} {}
 
 
-auto RenderMaterial::GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
+auto RenderMaterial::GetBufferView() const -> wand::SharedDeviceHandle<wand::BufferView> const& {
   return cb_;
 }
 

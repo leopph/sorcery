@@ -1,7 +1,7 @@
 #include "texture_importer.hpp"
 
 #include "io_helpers.hpp"
-#include "Util.hpp"
+#include "util.hpp"
 
 
 RTTR_REGISTRATION {

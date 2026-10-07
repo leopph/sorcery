@@ -33,7 +33,7 @@ ShadowMapArray::ShadowMapArray(wand::GraphicsDevice* const device, DXGI_FORMAT c
   array_size_{array_size} {}
 
 
-auto ShadowMapArray::GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const& {
+auto ShadowMapArray::GetTex() const noexcept -> wand::SharedDeviceHandle<wand::Texture> const& {
   return tex_;
 }
 

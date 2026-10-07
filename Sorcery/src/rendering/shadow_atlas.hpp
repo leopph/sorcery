@@ -17,12 +17,12 @@ public:
   auto operator=(ShadowAtlas&&) -> void = delete;
 
   [[nodiscard]]
-  auto GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const&;
+  auto GetTex() const noexcept -> wand::SharedDeviceHandle<wand::Texture> const&;
   [[nodiscard]]
   auto GetSize() const noexcept -> UINT;
 
 private:
-  wand::SharedDeviceChildHandle<wand::Texture> tex_;
+  wand::SharedDeviceHandle<wand::Texture> tex_;
   UINT size_;
 };
 }

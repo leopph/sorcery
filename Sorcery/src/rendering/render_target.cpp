@@ -19,8 +19,8 @@ auto RenderTarget::New(wand::GraphicsDevice& device, Desc const& desc) -> std::u
     return nullptr;
   }
 
-  wand::SharedDeviceChildHandle<wand::Texture> color_tex;
-  wand::SharedDeviceChildHandle<wand::Texture> depth_stencil_tex;
+  wand::SharedDeviceHandle<wand::Texture> color_tex;
+  wand::SharedDeviceHandle<wand::Texture> depth_stencil_tex;
 
   if (desc.color_format) {
     CD3DX12_CLEAR_VALUE const clear_value{*desc.color_format, desc.color_clear_value.data()};
@@ -53,18 +53,18 @@ auto RenderTarget::GetDesc() const noexcept -> Desc const& {
 }
 
 
-auto RenderTarget::GetColorTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const& {
+auto RenderTarget::GetColorTex() const noexcept -> wand::SharedDeviceHandle<wand::Texture> const& {
   return color_tex_;
 }
 
 
-auto RenderTarget::GetDepthStencilTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const& {
+auto RenderTarget::GetDepthStencilTex() const noexcept -> wand::SharedDeviceHandle<wand::Texture> const& {
   return depth_stencil_tex_;
 }
 
 
-RenderTarget::RenderTarget(Desc desc, wand::SharedDeviceChildHandle<wand::Texture> color_tex,
-                           wand::SharedDeviceChildHandle<wand::Texture> depth_stencil_tex) :
+RenderTarget::RenderTarget(Desc desc, wand::SharedDeviceHandle<wand::Texture> color_tex,
+                           wand::SharedDeviceHandle<wand::Texture> depth_stencil_tex) :
   desc_{std::move(desc)},
   color_tex_{std::move(color_tex)},
   depth_stencil_tex_{std::move(depth_stencil_tex)} {}

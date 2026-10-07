@@ -1,9 +1,10 @@
 #include "render_frame.hpp"
 
 #include <cassert>
+#include <stdexcept>
 
 #include "config.hpp"
-#include "../Util.hpp"
+#include "../util.hpp"
 
 
 namespace sorcery::rendering {
@@ -35,12 +36,28 @@ auto RenderFrame::EnqueueCommandList(wand::CommandList& cmd) -> void {
 }
 
 
-auto RenderFrame::UploadBuffer(wand::SharedDeviceChildHandle<wand::Buffer> const& buf, UINT64 const byte_offset,
+auto RenderFrame::UploadBuffer(wand::SharedDeviceHandle<wand::Buffer> const& buf, UINT64 const byte_offset,
                                std::span<std::byte const> const data) -> void {
   assert(active_);
   assert(!submitted_);
   assert(!uploads_recorded_);
   uploader_.UploadBuffer(buf, byte_offset, data);
+}
+
+
+auto RenderFrame::UploadBuffer(wand::SharedDeviceHandle<wand::BufferView> const& view, UINT64 const byte_offset,
+                               std::span<std::byte const> const data) -> void {
+  if (!view) {
+    throw std::runtime_error{"Failed to upload buffer view: view is null."};
+  }
+
+  auto const& desc = view->GetDesc();
+
+  if (byte_offset > desc.size || data.size() > desc.size - byte_offset) {
+    throw std::runtime_error{"Failed to upload buffer view: data does not fit in the view."};
+  }
+
+  UploadBuffer(view->GetBuffer(), desc.offset + byte_offset, data);
 }
 
 

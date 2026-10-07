@@ -1,6 +1,6 @@
 #include "Color.hpp"
-#include "Util.hpp"
 #include "reflection.hpp"
+#include "util.hpp"
 
 #include <algorithm>
 

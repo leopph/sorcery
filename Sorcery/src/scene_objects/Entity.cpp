@@ -8,7 +8,7 @@
 
 #include "../app.hpp"
 #include "../object_registry.hpp"
-#include "../Util.hpp"
+#include "../util.hpp"
 #include "../Resources/Scene.hpp"
 
 

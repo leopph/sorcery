@@ -37,9 +37,9 @@ public:
                                std::span<D3D12_SUBRESOURCE_DATA const> data) -> void;
 
   [[nodiscard]] LEOPPHAPI auto CreateReadOnlyTexture(
-    DirectX::ScratchImage const& img) -> wand::SharedDeviceChildHandle<wand::Texture>;
+    DirectX::ScratchImage const& img) -> wand::SharedDeviceHandle<wand::Texture>;
 
-  LEOPPHAPI auto KeepAliveWhileInUse(wand::SharedDeviceChildHandle<wand::Texture> tex) -> void;
+  LEOPPHAPI auto KeepAliveWhileInUse(wand::SharedDeviceHandle<wand::Texture> tex) -> void;
 
   // At the end of a frame this must be called!
   LEOPPHAPI auto EndFrame() -> void;
@@ -52,7 +52,7 @@ private:
 
 
   struct KeepAliveRecord {
-    std::variant<wand::SharedDeviceChildHandle<wand::Buffer>, wand::SharedDeviceChildHandle<
+    std::variant<wand::SharedDeviceHandle<wand::Buffer>, wand::SharedDeviceHandle<
                    wand::Texture>> res;
     UINT age;
   };
@@ -82,16 +82,16 @@ private:
   UINT frame_idx_{0};
   UINT next_cmd_list_idx_{0};
 
-  std::vector<std::array<wand::SharedDeviceChildHandle<wand::CommandList>, kFramesInFlight>> cmd_lists_;
+  std::vector<std::array<wand::SharedDeviceHandle<wand::CommandList>, kFramesInFlight>> cmd_lists_;
   std::mutex cmd_list_mutex_;
 
   std::vector<TempRenderTargetRecord> tmp_render_targets_;
   std::mutex tmp_render_targets_mutex_;
 
-  wand::SharedDeviceChildHandle<wand::Fence> in_flight_frames_fence_;
+  wand::SharedDeviceHandle<wand::Fence> in_flight_frames_fence_;
 
-  wand::SharedDeviceChildHandle<wand::Buffer> upload_buf_;
-  wand::SharedDeviceChildHandle<wand::Fence> upload_fence_;
+  wand::SharedDeviceHandle<wand::Buffer> upload_buf_;
+  wand::SharedDeviceHandle<wand::Fence> upload_fence_;
   std::byte* upload_ptr_{nullptr};
   UINT64 upload_buf_current_offset_{0};
   std::mutex upload_mutex_;

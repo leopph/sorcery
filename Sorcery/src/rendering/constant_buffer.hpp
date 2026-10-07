@@ -10,21 +10,21 @@ public:
   explicit MappedConstantBuffer(wand::GraphicsDevice& device, T const* data = nullptr);
 
   [[nodiscard]]
-  auto GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
+  auto GetBufferView() const -> wand::SharedDeviceHandle<wand::BufferView> const&;
   [[nodiscard]]
   auto GetData() -> T&;
   [[nodiscard]]
   auto GetData() const -> T const&;
 
 private:
-  wand::SharedDeviceChildHandle<wand::Buffer> buffer_{};
+  wand::SharedDeviceHandle<wand::BufferView> buffer_view_{};
   T* ptr_{nullptr};
 };
 
 
 template<typename T>
 [[nodiscard]]
-auto CreateConstantBuffer(wand::GraphicsDevice& device) -> wand::SharedDeviceChildHandle<wand::Buffer>;
+auto CreateConstantBuffer(wand::GraphicsDevice& device) -> wand::SharedDeviceHandle<wand::BufferView>;
 }
 
 

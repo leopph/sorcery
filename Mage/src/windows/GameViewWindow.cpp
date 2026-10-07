@@ -2,7 +2,7 @@
 
 #include "app.hpp"
 #include "scene_renderer.hpp"
-#include "Util.hpp"
+#include "util.hpp"
 #include "../gui_helpers.hpp"
 
 

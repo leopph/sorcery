@@ -53,7 +53,7 @@ struct App::Data {
   JobSystem job_system;
   wand::GraphicsDevice graphics_device;
   Window window;
-  wand::SharedDeviceChildHandle<wand::SwapChain> swap_chain{
+  wand::SharedDeviceHandle<wand::SwapChain> swap_chain{
     graphics_device.CreateSwapChain(wand::SwapChainDesc{
       0, 0, 2, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_USAGE_RENDER_TARGET_OUTPUT, DXGI_SCALING_STRETCH
     }, static_cast<HWND>(window.GetNativeHandle()))

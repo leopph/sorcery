@@ -28,7 +28,7 @@ public:
 
 private:
   ObserverPtr<wand::GraphicsDevice> device_;
-  wand::SharedDeviceChildHandle<wand::Fence> frame_fence_;
+  wand::SharedDeviceHandle<wand::Fence> frame_fence_;
   std::array<std::unique_ptr<RenderFrame>, kFramesInFlight> frames_;
 
   std::uint32_t next_frame_idx_{0};

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../Util.hpp"
-#include "wand/flags.hpp"
+#include "../util.hpp"
 
 
 namespace sorcery::rendering {
@@ -10,12 +9,18 @@ constexpr static auto kConstantBufferSizeRounding = 256;
 
 template<typename T>
 MappedConstantBuffer<T>::MappedConstantBuffer(wand::GraphicsDevice& device, T const* data) {
-  buffer_ = device.CreateBuffer(wand::BufferDesc{
-    .size = static_cast<UINT>(RoundToNextMultiple(sizeof(T), kConstantBufferSizeRounding)), .stride = 0,
+  auto const size = static_cast<UINT>(RoundToNextMultiple(sizeof(T), kConstantBufferSizeRounding));
+  buffer_view_ = CreateBufferWithView(device, wand::BufferDesc{
+    .size = size,
     .usage = wand::BufferUsage::kConstantBuffer
+  }, wand::BufferViewDesc{
+    .offset = 0,
+    .size = size,
+    .stride = 0,
+    .usage = wand::BufferViewUsage::kConstantBuffer
   }, wand::CpuAccess::kWrite);
 
-  ptr_ = static_cast<T*>(buffer_->Map());
+  ptr_ = static_cast<T*>(buffer_view_->GetBuffer()->Map());
 
   if (data) {
     *ptr_ = *data;
@@ -24,8 +29,8 @@ MappedConstantBuffer<T>::MappedConstantBuffer(wand::GraphicsDevice& device, T co
 
 
 template<typename T>
-auto MappedConstantBuffer<T>::GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
-  return buffer_;
+auto MappedConstantBuffer<T>::GetBufferView() const -> wand::SharedDeviceHandle<wand::BufferView> const& {
+  return buffer_view_;
 }
 
 
@@ -42,10 +47,17 @@ auto MappedConstantBuffer<T>::GetData() const -> T const& {
 
 
 template<typename T>
-auto CreateConstantBuffer(wand::GraphicsDevice& device) -> wand::SharedDeviceChildHandle<wand::Buffer> {
-  return device.CreateBuffer(wand::BufferDesc{
-    .size = static_cast<UINT>(RoundToNextMultiple(sizeof(T), kConstantBufferSizeRounding)), .stride = 0,
+auto CreateConstantBuffer(wand::GraphicsDevice& device) -> wand::SharedDeviceHandle<wand::BufferView> {
+  auto const size = static_cast<UINT>(RoundToNextMultiple(sizeof(T), kConstantBufferSizeRounding));
+
+  return CreateBufferWithView(device, wand::BufferDesc{
+    .size = size,
     .usage = wand::BufferUsage::kConstantBuffer | wand::BufferUsage::kCopyDestination
+  }, wand::BufferViewDesc{
+    .offset = 0,
+    .size = size,
+    .stride = 0,
+    .usage = wand::BufferViewUsage::kConstantBuffer
   }, wand::CpuAccess::kNone);
 }
 }

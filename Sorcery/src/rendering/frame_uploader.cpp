@@ -11,7 +11,7 @@ FrameUploader::FrameUploader(wand::GraphicsDevice& device) :
   device_{&device} {}
 
 
-auto FrameUploader::UploadBuffer(wand::SharedDeviceChildHandle<wand::Buffer> const& buf, UINT64 const byte_offset,
+auto FrameUploader::UploadBuffer(wand::SharedDeviceHandle<wand::Buffer> const& buf, UINT64 const byte_offset,
                                  std::span<std::byte const> const data) -> void {
   if (!buf) {
     throw std::runtime_error{"Failed to update buffer: the provided buffer is null."};
@@ -42,7 +42,6 @@ auto FrameUploader::UploadBuffer(wand::SharedDeviceChildHandle<wand::Buffer> con
 
     new_page.buf = device_->CreateBuffer(wand::BufferDesc{
       .size = buf_size,
-      .stride = 0,
       .usage = wand::BufferUsage::kCopySource
     }, wand::CpuAccess::kWrite);
 

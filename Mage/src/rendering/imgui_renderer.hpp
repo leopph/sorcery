@@ -52,13 +52,13 @@ private:
   ObserverPtr<wand::SwapChain const> swap_chain_;
   ObserverPtr<rendering::RenderManager> render_manager_;
 
-  wand::SharedDeviceChildHandle<wand::PipelineState> pso_;
+  wand::SharedDeviceHandle<wand::PipelineState> pso_;
   wand::UniqueSamplerHandle samp_;
-  wand::SharedDeviceChildHandle<wand::Texture> fonts_tex_;
+  wand::SharedDeviceHandle<wand::Texture> fonts_tex_;
 
-  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::kFramesInFlight>
+  std::array<wand::SharedDeviceHandle<wand::BufferView>, rendering::kFramesInFlight>
   vtx_buffers_;
-  std::array<wand::SharedDeviceChildHandle<wand::Buffer>, rendering::kFramesInFlight>
+  std::array<wand::SharedDeviceHandle<wand::Buffer>, rendering::kFramesInFlight>
   idx_buffers_;
 
   std::array<void*, rendering::kFramesInFlight> vb_ptrs_{};

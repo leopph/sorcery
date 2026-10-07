@@ -1,21 +1,21 @@
 #pragma once
 
 #include "Resource.hpp"
-#include "wand/device_child.hpp"
+#include "wand/device_object.hpp"
 #include "wand/texture.hpp"
 
 
 namespace sorcery {
 class Texture2D final : public Resource {
   RTTR_ENABLE(Resource)
-  wand::SharedDeviceChildHandle<wand::Texture> tex_;
+  wand::SharedDeviceHandle<wand::Texture> tex_;
 
   unsigned m_width_;
   unsigned m_height_;
   unsigned m_channel_count_;
 
 public:
-  LEOPPHAPI explicit Texture2D(wand::SharedDeviceChildHandle<wand::Texture> tex) noexcept;
+  LEOPPHAPI explicit Texture2D(wand::SharedDeviceHandle<wand::Texture> tex) noexcept;
   Texture2D(Texture2D const&) = delete;
   Texture2D(Texture2D&&) noexcept = default;
 
@@ -24,7 +24,7 @@ public:
   auto operator=(Texture2D const&) -> void = delete;
   auto operator=(Texture2D&&) noexcept -> void = delete;
 
-  [[nodiscard]] LEOPPHAPI auto GetTex() const -> wand::SharedDeviceChildHandle<wand::Texture> const&;
+  [[nodiscard]] LEOPPHAPI auto GetTex() const -> wand::SharedDeviceHandle<wand::Texture> const&;
 
   [[nodiscard]] LEOPPHAPI auto GetWidth() const noexcept -> unsigned;
   [[nodiscard]] LEOPPHAPI auto GetHeight() const noexcept -> unsigned;

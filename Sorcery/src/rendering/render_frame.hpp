@@ -29,7 +29,11 @@ public:
   auto EnqueueCommandList(wand::CommandList& cmd) -> void;
 
   SORCERYAPI
-  auto UploadBuffer(wand::SharedDeviceChildHandle<wand::Buffer> const& buf, UINT64 byte_offset,
+  auto UploadBuffer(wand::SharedDeviceHandle<wand::Buffer> const& buf, UINT64 byte_offset,
+                    std::span<std::byte const> data) -> void;
+
+  SORCERYAPI
+  auto UploadBuffer(wand::SharedDeviceHandle<wand::BufferView> const& view, UINT64 byte_offset,
                     std::span<std::byte const> data) -> void;
 
   SORCERYAPI

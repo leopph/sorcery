@@ -28,7 +28,7 @@
 #include "prefab.hpp"
 #include "Serialization.hpp"
 #include "StaticMeshComponent.hpp"
-#include "Util.hpp"
+#include "util.hpp"
 #include "Resources/Mesh.hpp"
 #include "resource_import/material_import.hpp"
 #include "resource_import/texture_import.hpp"

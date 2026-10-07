@@ -25,8 +25,8 @@ MappedStructuredBuffer<T>::MappedStructuredBuffer(wand::GraphicsDevice& device, 
 
 
 template<typename T>
-auto MappedStructuredBuffer<T>::GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const& {
-  return buffer_;
+auto MappedStructuredBuffer<T>::GetBufferView() const -> wand::SharedDeviceHandle<wand::BufferView> const& {
+  return buffer_view_;
 }
 
 
@@ -50,35 +50,44 @@ auto MappedStructuredBuffer<T>::GetElementCount() const -> std::uint64_t {
 
 template<typename T>
 auto MappedStructuredBuffer<T>::Reallocate(
-  std::uint64_t const element_count) -> wand::SharedDeviceChildHandle<wand::Buffer> {
+  std::uint64_t const element_count) -> wand::SharedDeviceHandle<wand::BufferView> {
   if (element_count_ == element_count) {
     return nullptr;
   }
 
   element_count_ = element_count;
-  auto const old_buf = buffer_;
+  auto const old_buf = buffer_view_;
 
   if (element_count == 0) {
-    buffer_.reset();
+    buffer_view_.reset();
     data_ = std::span<T>{};
     return old_buf;
   }
 
-  auto usage{wand::BufferUsage::kCopySource};
+  auto buf_usage{wand::BufferUsage::kCopySource};
+  auto view_usage{wand::BufferViewUsage::kNone};
 
   if (srv_) {
-    usage |= wand::BufferUsage::kShaderResource;
+    buf_usage |= wand::BufferUsage::kShaderResource;
+    view_usage |= wand::BufferViewUsage::kShaderResource;
   }
 
   if (uav_) {
-    usage |= wand::BufferUsage::kUnorderedAccess;
+    buf_usage |= wand::BufferUsage::kUnorderedAccess;
+    view_usage |= wand::BufferViewUsage::kUnorderedAccess;
   }
 
-  buffer_ = device_->CreateBuffer(wand::BufferDesc{
-    .size = element_count * sizeof(T), .stride = sizeof(T), .usage = usage
+  buffer_view_ = CreateBufferWithView(*device_, wand::BufferDesc{
+    .size = element_count * sizeof(T),
+    .usage = buf_usage
+  }, wand::BufferViewDesc{
+    .offset = 0,
+    .size = element_count * sizeof(T),
+    .stride = sizeof(T),
+    .usage = view_usage
   }, wand::CpuAccess::kWrite);
 
-  data_ = std::span<T>{static_cast<T*>(buffer_->Map()), static_cast<std::size_t>(element_count)};
+  data_ = std::span<T>{static_cast<T*>(buffer_view_->GetBuffer()->Map()), static_cast<std::size_t>(element_count)};
 
   return old_buf;
 }
@@ -86,19 +95,28 @@ auto MappedStructuredBuffer<T>::Reallocate(
 
 template<typename T>
 auto CreateStructuredBuffer(wand::GraphicsDevice& device, std::uint64_t const element_count, bool const shader_resource,
-                            bool const unordered_access) -> wand::SharedDeviceChildHandle<wand::Buffer> {
-  auto usage{wand::BufferUsage::kCopySource | wand::BufferUsage::kCopyDestination};
+                            bool const unordered_access) -> wand::SharedDeviceHandle<wand::BufferView> {
+  auto buf_usage = wand::BufferUsage::kCopySource | wand::BufferUsage::kCopyDestination;
+  auto view_usage = wand::BufferViewUsage::kNone;
 
   if (shader_resource) {
-    usage |= wand::BufferUsage::kShaderResource;
+    buf_usage |= wand::BufferUsage::kShaderResource;
+    view_usage |= wand::BufferViewUsage::kShaderResource;
   }
 
   if (unordered_access) {
-    usage |= wand::BufferUsage::kUnorderedAccess;
+    buf_usage |= wand::BufferUsage::kUnorderedAccess;
+    view_usage |= wand::BufferViewUsage::kUnorderedAccess;
   }
 
-  return device.CreateBuffer(wand::BufferDesc{
-    .size = element_count * sizeof(T), .stride = sizeof(T), .usage = usage
+  return CreateBufferWithView(device, wand::BufferDesc{
+    .size = element_count * sizeof(T),
+    .usage = buf_usage
+  }, wand::BufferViewDesc{
+    .offset = 0,
+    .size = element_count * sizeof(T),
+    .stride = sizeof(T),
+    .usage = view_usage
   }, wand::CpuAccess::kNone);
 }
 }

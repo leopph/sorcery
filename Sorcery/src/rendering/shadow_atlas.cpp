@@ -37,7 +37,7 @@ ShadowAtlas::ShadowAtlas(wand::GraphicsDevice* const device, DXGI_FORMAT const d
 }
 
 
-auto ShadowAtlas::GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const& {
+auto ShadowAtlas::GetTex() const noexcept -> wand::SharedDeviceHandle<wand::Texture> const& {
   return tex_;
 }
 

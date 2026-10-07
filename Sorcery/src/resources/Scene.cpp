@@ -21,7 +21,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto detail::GetIrradianceMap(Scene const& scene) -> wand::SharedDeviceChildHandle<wand::Texture> const& {
+auto detail::GetIrradianceMap(Scene const& scene) -> wand::SharedDeviceHandle<wand::Texture> const& {
   return scene.irradiance_map_;
 }
 
@@ -49,7 +49,7 @@ auto detail::RecreateIrradianceMap(Scene& scene, wand::GraphicsDevice& device, D
 }
 
 
-auto detail::GetPrefilteredEnvMap(Scene const& scene) -> wand::SharedDeviceChildHandle<wand::Texture> const& {
+auto detail::GetPrefilteredEnvMap(Scene const& scene) -> wand::SharedDeviceHandle<wand::Texture> const& {
   return scene.prefiltered_env_map_;
 }
 

@@ -17,12 +17,12 @@ public:
   auto operator=(RenderMaterial const&) -> RenderMaterial& = delete;
   auto operator=(RenderMaterial&&) noexcept -> RenderMaterial& = delete;
 
-  [[nodiscard]] auto GetBuffer() const -> wand::SharedDeviceChildHandle<wand::Buffer> const&;
+  [[nodiscard]] auto GetBufferView() const -> wand::SharedDeviceHandle<wand::BufferView> const&;
   [[nodiscard]] auto GetRevision() const -> std::uint64_t;
   auto SetRevision(std::uint64_t rev) -> void;
 
 private:
-  wand::SharedDeviceChildHandle<wand::Buffer> cb_;
+  wand::SharedDeviceHandle<wand::BufferView> cb_;
   std::uint64_t revision_{0};
 };
 }

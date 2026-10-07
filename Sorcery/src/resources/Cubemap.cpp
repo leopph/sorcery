@@ -12,7 +12,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Cubemap::Cubemap(wand::SharedDeviceChildHandle<wand::Texture> tex) noexcept :
+Cubemap::Cubemap(wand::SharedDeviceHandle<wand::Texture> tex) noexcept :
   tex_{std::move(tex)} {}
 
 
@@ -21,7 +21,7 @@ Cubemap::~Cubemap() {
 }
 
 
-auto Cubemap::GetTex() const noexcept -> wand::SharedDeviceChildHandle<wand::Texture> const& {
+auto Cubemap::GetTex() const noexcept -> wand::SharedDeviceHandle<wand::Texture> const& {
   return tex_;
 }
 }
