@@ -5,8 +5,11 @@
 #include <cmath>
 #include <cstring>
 #include <iterator>
+#include <limits>
 #include <optional>
 #include <random>
+#include <ranges>
+#include <stdexcept>
 
 #include "render_instance_registry.hpp"
 #include "render_resource_registry.hpp"
@@ -17,6 +20,7 @@
 #include "../Window.hpp"
 #include "../Resources/Scene.hpp"
 #include "../scene_objects/Entity.hpp"
+#include "../scene_objects/LightComponents.hpp"
 #include "../scene_objects/TransformComponent.hpp"
 #include "shaders/shader_interop.h"
 
@@ -112,6 +116,68 @@ auto ToShaderBlendMode(MaterialBlendMode const mode) -> int {
 
   assert(false && "Invalid material blend mode.");
   return BLEND_MODE_OPAQUE;
+}
+
+
+[[nodiscard]]
+auto ToShaderLightType(LightComponent::Type const type) -> int {
+  switch (type) {
+    case LightComponent::Type::Directional:
+      return LIGHT_DIRECTIONAL;
+    case LightComponent::Type::Spot:
+      return LIGHT_SPOT;
+
+    case LightComponent::Type::Point:
+      return LIGHT_POINT;
+  }
+
+  assert(false && "Invalid light type.");
+  return LIGHT_POINT;
+}
+
+
+[[nodiscard]]
+auto GrowCapacity(
+  std::size_t const current,
+  std::size_t const required
+) -> std::size_t {
+  auto capacity = std::max(current, 8uz);
+
+  while (capacity < required) {
+    if (capacity > std::numeric_limits<std::size_t>::max() / 2) {
+      return required;
+    }
+
+    capacity *= 2;
+  }
+
+  return capacity;
+}
+
+
+template<typename T>
+auto EnsureStructuredBufferCapacity(
+  wand::GraphicsDevice& device,
+  wand::SharedDeviceHandle<wand::BufferView>& view,
+  std::size_t const required_count
+) -> void {
+  if (required_count == 0) {
+    return;
+  }
+
+  auto const current_capacity = view ? view->GetDesc().size / sizeof(T) : 0;
+
+  if (current_capacity >= required_count) {
+    return;
+  }
+
+  auto const new_capacity = GrowCapacity(current_capacity, required_count);
+
+  if (new_capacity > std::numeric_limits<UINT64>::max() / sizeof(T)) {
+    throw std::length_error{"Structured buffer size overflow."};
+  }
+
+  view = CreateStructuredBuffer<T>(device, new_capacity, true, false);
 }
 }
 
@@ -715,17 +781,41 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
     frame.UploadBuffer(frame_packet.ssao_samples_buf, 0, as_bytes(std::span{frame_packet.ssao_samples}));
   }
 
+  // Upload lights
+
+  shader_lights_.clear();
+
+  for (auto const& light : frame_packet.light_data) {
+    shader_lights_.emplace_back(light.color, light.intensity, light.direction, ToShaderLightType(light.type),
+      light.position, light.range, std::cos(ToRadians(light.inner_angle / 2)),
+      std::cos(ToRadians(light.outer_angle / 2)));
+  }
+
+  if (!shader_lights_.empty()) {
+    auto& light_buf = light_bufs_[frame.GetIndex()];
+    EnsureStructuredBufferCapacity<ShaderLight>(*device_, light_buf, shader_lights_.size());
+    frame.UploadBuffer(light_buf, 0, as_bytes(std::span{shader_lights_}));
+  }
+
+  // Prepare per camera data
+
+  auto& camera_lighting_data_buf = camera_lighting_data_bufs_[frame.GetIndex()];
+
+  if (!frame_packet.cam_data.empty()) {
+    EnsureCameraLightingBufferCapacity(*device_, camera_lighting_data_buf, frame_packet.cam_data.size());
+  }
+
   prepared_data_.cam_data.clear();
   prepared_data_.visible_light_indices.clear();
   prepared_data_.views.clear();
   prepared_data_.pos_shadows.clear();
-
-  // Prepare camera data
+  shader_visible_lights_.clear();
+  shader_pos_shadows_.clear();
 
   auto const& prev_frame_packet{frame_packets_[frame.GetPreviousIndex()]};
 
-  for (auto i = 0uz; i < frame_packet.cam_data.size(); ++i) {
-    auto& cam_data = frame_packet.cam_data[i];
+  for (auto cam_idx = 0uz; cam_idx < frame_packet.cam_data.size(); ++cam_idx) {
+    auto& cam_data = frame_packet.cam_data[cam_idx];
     auto const prev_cam_data = [&] {
       auto const prev_cam_it = std::ranges::find(prev_frame_packet.cam_data, cam_data.id, &CameraData::id);
       return prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
@@ -834,9 +924,99 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
       prepared_data_.views[primary_view_idx], frame_packet.shadow_params.distance, pos_shadow_atlas_->GetSize(),
       prepared_data_.views, prepared_data_.pos_shadows);
 
-    prepared_data_.cam_data.emplace_back(cascades, dir_shadows, static_cast<std::uint32_t>(i), first_visible_light,
-      visible_light_count, first_pos_shadow, pos_shadow_count, primary_view_idx, prev_cam_view_proj_mtx,
-      cam_data.jitter_ndc, prev_cam_data ? prev_cam_data->jitter_ndc : cam_data.jitter_ndc);
+    for (auto j = 0u; j < visible_light_count; ++j) {
+      shader_visible_lights_.emplace_back(prepared_data_.visible_light_indices[first_visible_light + j], INVALID_IDX);
+    }
+
+    for (auto j = 0u; j < pos_shadow_count; ++j) {
+      auto const pos_shadow_idx = first_pos_shadow + j;
+      auto const& shadow = prepared_data_.pos_shadows[pos_shadow_idx];
+      auto const visible_light_idx = first_visible_light + shadow.visible_light_idx;
+      shader_visible_lights_[visible_light_idx].positional_shadow_idx = pos_shadow_idx;
+
+      auto const& light = frame_packet.light_data[prepared_data_.visible_light_indices[visible_light_idx]];
+
+      ShaderPositionalLightShadow shader_shadow{};
+      shader_shadow.allocated_mask = shadow.allocated_mask;
+      shader_shadow.depth_bias = light.shadow_depth_bias;
+      shader_shadow.normal_bias = light.shadow_normal_bias;
+
+      for (auto shadow_idx = 0u; shadow_idx < 6; ++shadow_idx) {
+        if ((shadow.allocated_mask & (1 << shadow_idx)) != 0) {
+          auto const& view = prepared_data_.views[shadow.view_indices[shadow_idx]];
+
+          Vector2 const atlas_offset{
+            view.viewport.TopLeftX / pos_shadow_atlas_->GetSize(),
+            view.viewport.TopLeftY / pos_shadow_atlas_->GetSize(),
+          };
+
+          Vector2 const atlas_scale{
+            view.viewport.Width / pos_shadow_atlas_->GetSize(),
+            view.viewport.Height / pos_shadow_atlas_->GetSize(),
+          };
+
+          shader_shadow.view_proj_matrices[shadow_idx] = view.view_proj_mtx;
+          shader_shadow.atlas_offsets[shadow_idx] = atlas_offset;
+          shader_shadow.atlas_scales[shadow_idx] = atlas_scale;
+        }
+      }
+
+      shader_pos_shadows_.emplace_back(shader_shadow);
+    }
+
+    ShaderCameraLightingData lighting_data{
+      .first_visible_light = first_visible_light,
+      .visible_light_count = visible_light_count,
+      .pad = {},
+      .dir_shadow = {
+        .split_distances = {},
+        .view_proj_matrices = {},
+        .depth_bias = {},
+        .normal_bias = {},
+        .light_idx = INVALID_IDX,
+      }
+    };
+
+    if (dir_shadows) {
+      auto const shadow_light_idx = prepared_data_.visible_light_indices[
+        first_visible_light + dir_shadows->visible_light_idx];
+      auto const& light = frame_packet.light_data[shadow_light_idx];
+
+      lighting_data.dir_shadow.light_idx = shadow_light_idx;
+      lighting_data.dir_shadow.depth_bias = light.shadow_depth_bias;
+      lighting_data.dir_shadow.normal_bias = light.shadow_normal_bias;
+
+      for (auto j = 0u; j < MAX_CASCADE_COUNT; ++j) {
+        lighting_data.dir_shadow.split_distances[j] = cascades[j].farClip;
+      }
+
+      for (auto j = 0u; j < dir_shadows->view_count; ++j) {
+        lighting_data.dir_shadow.view_proj_matrices[j] = prepared_data_.views[dir_shadows->first_view + j].
+          view_proj_mtx;
+      }
+    }
+
+    frame.UploadBuffer(camera_lighting_data_buf.cbvs[cam_idx], 0, as_bytes(std::span{&lighting_data, 1}));
+
+    prepared_data_.cam_data.emplace_back(cascades, dir_shadows, static_cast<std::uint32_t>(cam_idx),
+      first_visible_light, visible_light_count, first_pos_shadow, pos_shadow_count, primary_view_idx,
+      prev_cam_view_proj_mtx, cam_data.jitter_ndc, prev_cam_data ? prev_cam_data->jitter_ndc : cam_data.jitter_ndc);
+  }
+
+  // Upload visible lights
+
+  if (!shader_visible_lights_.empty()) {
+    auto& vis_light_buf = vis_light_bufs_[frame.GetIndex()];
+    EnsureStructuredBufferCapacity<ShaderVisibleLight>(*device_, vis_light_buf, shader_visible_lights_.size());
+    frame.UploadBuffer(vis_light_buf, 0, as_bytes(std::span{shader_visible_lights_}));
+  }
+
+  // Upload positional shadows
+
+  if (!shader_pos_shadows_.empty()) {
+    auto& pos_shadow_buf = pos_shadow_bufs_[frame.GetIndex()];
+    EnsureStructuredBufferCapacity<ShaderPositionalLightShadow>(*device_, pos_shadow_buf, shader_pos_shadows_.size());
+    frame.UploadBuffer(pos_shadow_buf, 0, as_bytes(std::span{shader_pos_shadows_}));
   }
 }
 
@@ -1019,7 +1199,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
   auto& per_frame_cb{per_frame_cbs_[frame_idx]};
   SetPerFrameConstants(per_frame_cb, frame_packet.ambient_light, frame_packet.shadow_params);
 
-  for (auto& prepared_cam : prepared_data_.cam_data) {
+  for (auto const& [cam_idx, prepared_cam] : std::views::enumerate(prepared_data_.cam_data)) {
     auto const& extracted_cam = frame_packet.cam_data[prepared_cam.extracted_data_idx];
     auto const& cam_view = prepared_data_.views[prepared_cam.primary_view_idx];
 
@@ -1104,9 +1284,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     auto& cam_per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
     SetPerViewConstants(cam_per_view_cb, cam_view.view_mtx, cam_view.proj_mtx, cam_view.view_proj_mtx,
-      prepared_cam.prev_view_proj_mtx, prepared_cam.cascade_boundaries, cam_view.frustum_ws, extracted_cam.position,
-      cam_view.near_plane, cam_view.far_plane, static_cast<int>(transient_rt_width),
-      static_cast<int>(transient_rt_height));
+      prepared_cam.prev_view_proj_mtx, cam_view.frustum_ws, extracted_cam.position, cam_view.near_plane,
+      cam_view.far_plane, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
@@ -1277,87 +1456,6 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     // Deferred lighting pass
 
-    // Set general light information
-
-    auto const cam_visible_light_indices = std::span{prepared_data_.visible_light_indices}.subspan(
-      prepared_cam.first_visible_light, prepared_cam.visible_light_count);
-    auto const light_count = cam_visible_light_indices.size();
-    std::vector<ShaderLight> shader_lights(light_count);
-
-    for (auto i = 0uz; i < light_count; i++) {
-      shader_lights[i].color = frame_packet.light_data[cam_visible_light_indices[i]].color;
-      shader_lights[i].intensity = frame_packet.light_data[cam_visible_light_indices[i]].intensity;
-      shader_lights[i].type = static_cast<int>(frame_packet.light_data[cam_visible_light_indices[i]].type);
-      shader_lights[i].direction = frame_packet.light_data[cam_visible_light_indices[i]].direction;
-      shader_lights[i].isCastingShadow = FALSE;
-      shader_lights[i].range = frame_packet.light_data[cam_visible_light_indices[i]].range;
-      shader_lights[i].halfInnerAngleCos = std::cos(
-        ToRadians(frame_packet.light_data[cam_visible_light_indices[i]].inner_angle / 2.0f));
-      shader_lights[i].halfOuterAngleCos = std::cos(
-        ToRadians(frame_packet.light_data[cam_visible_light_indices[i]].outer_angle / 2.0f));
-      shader_lights[i].position = frame_packet.light_data[cam_visible_light_indices[i]].position;
-      shader_lights[i].depthBias = frame_packet.light_data[cam_visible_light_indices[i]].shadow_depth_bias;
-      shader_lights[i].normalBias = frame_packet.light_data[cam_visible_light_indices[i]].shadow_normal_bias;
-
-      for (auto& sample : shader_lights[i].sampleShadowMap) {
-        sample = FALSE;
-      }
-    }
-
-    // Set directional light shadow data
-
-    if (prepared_cam.dir_shadows) {
-      auto const visible_light_idx = prepared_cam.dir_shadows->visible_light_idx;
-
-      auto& shadowing_shader_light = shader_lights[visible_light_idx];
-      shadowing_shader_light.isCastingShadow = TRUE;
-
-      auto const shadow_views = std::span{prepared_data_.views}.subspan(prepared_cam.dir_shadows->first_view,
-        prepared_cam.dir_shadows->view_count);
-
-      for (auto cascade_idx = 0uz; cascade_idx < shadow_views.size(); ++cascade_idx) {
-        shadowing_shader_light.sampleShadowMap[cascade_idx] = TRUE;
-        shadowing_shader_light.shadowViewProjMatrices[cascade_idx] = shadow_views[cascade_idx].view_proj_mtx;
-      }
-    }
-
-    // Set positional light shadow data
-
-    for (auto const& pos_shadow : cam_pos_shadows) {
-      auto& light = shader_lights[pos_shadow.visible_light_idx];
-      light.isCastingShadow = TRUE;
-
-      for (auto shadow_idx = 0u; shadow_idx < 6; ++shadow_idx) {
-        if ((pos_shadow.allocated_mask & (1 << shadow_idx)) != 0) {
-          auto const& view = prepared_data_.views[pos_shadow.view_indices[shadow_idx]];
-
-          Vector2 const atlas_offset{
-            view.viewport.TopLeftX / pos_shadow_atlas_->GetSize(),
-            view.viewport.TopLeftY / pos_shadow_atlas_->GetSize(),
-          };
-
-          Vector2 const atlas_scale{
-            view.viewport.Width / pos_shadow_atlas_->GetSize(),
-            view.viewport.Height / pos_shadow_atlas_->GetSize(),
-          };
-
-          light.sampleShadowMap[shadow_idx] = TRUE;
-          light.shadowViewProjMatrices[shadow_idx] = view.view_proj_mtx;
-          light.shadow_atlas_offset[shadow_idx] = atlas_offset;
-          light.shadow_atlas_scale[shadow_idx] = atlas_scale;
-        }
-      }
-    }
-
-    auto& light_buffer{light_buffers_[frame_idx]};
-
-    if (light_buffer.GetElementCount() < light_count) {
-      // Ignored, because light buffers are per-frame.
-      std::ignore = light_buffer.Reallocate(light_count);
-    }
-
-    std::ranges::copy(shader_lights, std::ranges::begin(light_buffer.GetData()));
-
     cam_cmd.SetPipelineState(*frame_packet.deferred_lighting_pso);
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, gbuffer0_idx),
       *gbuffer0_rt->GetColorTex());
@@ -1367,12 +1465,58 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       *gbuffer2_rt->GetColorTex());
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, depth_tex_idx),
       *depth_sample_rt->GetDepthStencilTex());
-    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, ssao_tex_idx), *ssao_tex);
 
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, ssao_tex_idx), *ssao_tex);
+    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_view_cb_idx),
+      *cam_per_view_cb.GetBufferView());
+    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, cam_light_data_buf_idx),
+      *camera_lighting_data_bufs_[frame.GetIndex()].cbvs[cam_idx]);
+    if (auto const& pos_shadow_buf = pos_shadow_bufs_[frame.GetIndex()]) {
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, pos_shadow_buf_idx),
+        *pos_shadow_buf);
+    } else {
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, pos_shadow_buf_idx),
+        INVALID_RES_IDX);
+    }
+
+    if (auto const& vis_light_buf = vis_light_bufs_[frame.GetIndex()]) {
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, visible_light_buf_idx),
+        *vis_light_buf);
+    } else {
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, visible_light_buf_idx),
+        INVALID_RES_IDX);
+    }
+    if (auto const& light_buf = light_bufs_[frame.GetIndex()]) {
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx),
+        *light_buf);
+    } else {
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx),
+        INVALID_RES_IDX);
+    }
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, pos_shadow_atlas_idx),
+      *pos_shadow_atlas_->GetTex());
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, dir_shadow_arr_idx),
       *dir_shadow_map_arr_->GetTex());
-    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, punc_shadow_atlas_idx),
-      *pos_shadow_atlas_->GetTex());
+
+    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_frame_cb_idx),
+      *per_frame_cb.GetBufferView());
+    if (frame_packet.irradiance_map) {
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, irradiance_map_idx),
+        *frame_packet.irradiance_map);
+    } else {
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, irradiance_map_idx),
+        INVALID_RES_IDX);
+    }
+    if (frame_packet.prefiltered_env_map) {
+      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, prefiltered_env_map_idx),
+        *frame_packet.prefiltered_env_map);
+    } else {
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, prefiltered_env_map_idx),
+        INVALID_RES_IDX);
+    }
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, brdf_integration_map_idx),
+      *brdf_integration_map_);
+
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, shadow_samp_idx),
 #ifdef REVERSE_Z
       samp_cmp_pcf_ge_.Get()
@@ -1382,40 +1526,11 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     );
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, point_clamp_samp_idx),
       samp_point_clamp_.Get());
-    if (light_buffer.GetElementCount() > 0) {
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx),
-        *light_buffer.GetBufferView());
-    } else {
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_buf_idx), INVALID_RES_IDX);
-    }
-    cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, light_count),
-      static_cast<UINT>(light_count));
-    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_view_cb_idx),
-      *cam_per_view_cb.GetBufferView());
-    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_frame_cb_idx),
-      *per_frame_cb.GetBufferView());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, bi_clamp_samp_idx),
       samp_bi_clamp_.Get());
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, tri_clamp_samp_idx),
       samp_tri_clamp_.Get());
-    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, brdf_integration_map_idx),
-      *brdf_integration_map_);
 
-    if (frame_packet.irradiance_map) {
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, irradiance_map_idx),
-        *frame_packet.irradiance_map);
-    } else {
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, irradiance_map_idx),
-        INVALID_RES_IDX);
-    }
-
-    if (frame_packet.prefiltered_env_map) {
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, prefiltered_env_map_idx),
-        *frame_packet.prefiltered_env_map);
-    } else {
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, prefiltered_env_map_idx),
-        INVALID_RES_IDX);
-    }
 
     cam_cmd.SetRenderTargets(std::span{
       std::array{static_cast<wand::Texture const*>(color_hdr_rt->GetColorTex().get())}.data(), 1
@@ -2632,6 +2747,50 @@ auto SceneRenderer::AllocatePositionalShadows(
 }
 
 
+auto SceneRenderer::EnsureCameraLightingBufferCapacity(
+  wand::GraphicsDevice& device,
+  CameraLightingDataBuffer& storage,
+  std::size_t const required_count
+) -> void {
+  if (required_count <= storage.cbvs.size()) {
+    return;
+  }
+
+  auto constexpr stride = RoundToNextMultiple(
+    sizeof(ShaderCameraLightingData),
+    D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+
+  static_assert(stride <= D3D12_REQ_CONSTANT_BUFFER_ELEMENT_COUNT * 16);
+
+  auto const new_capacity = GrowCapacity(storage.cbvs.size(), required_count);
+
+  if (new_capacity > std::numeric_limits<UINT64>::max() / stride) {
+    throw std::length_error{"Camera lighting buffer size overflow."};
+  }
+
+  auto new_buffer = device.CreateBuffer(wand::BufferDesc{
+    .size = static_cast<UINT64>(new_capacity) * stride,
+    .usage = wand::BufferUsage::kConstantBuffer |
+             wand::BufferUsage::kCopyDestination
+  }, wand::CpuAccess::kNone);
+
+  std::vector<wand::SharedDeviceHandle<wand::BufferView>> new_cbvs;
+  new_cbvs.reserve(new_capacity);
+
+  for (auto i = 0uz; i < new_capacity; ++i) {
+    new_cbvs.emplace_back(device.CreateBufferView(wand::BufferViewDesc{
+      .offset = i * stride,
+      .size = stride,
+      .stride = 0,
+      .usage = wand::BufferViewUsage::kConstantBuffer
+    }, new_buffer));
+  }
+
+  storage.buf = std::move(new_buffer);
+  storage.cbvs = std::move(new_cbvs);
+}
+
+
 auto SceneRenderer::RecordDirectionalShadows(
   ExtractedFrameData const& frame_packet,
   RenderFrame const& frame,
@@ -2676,9 +2835,9 @@ auto SceneRenderer::RecordPositionalShadows(
 auto SceneRenderer::SetPerFrameConstants(MappedConstantBuffer<ShaderPerFrameConstants>& cb,
                                          Vector3 const& ambient_light, ShadowParams const& shadow_params) -> void {
   cb.GetData() = ShaderPerFrameConstants{
-    .ambientLightColor = ambient_light, .shadowCascadeCount = shadow_params.cascade_count,
-    .visualizeShadowCascades = shadow_params.visualize_cascades,
-    .shadowFilteringMode = static_cast<int>(shadow_params.filtering_mode)
+    .ambient_light_color = ambient_light, .dir_shadow_cascade_count = shadow_params.cascade_count,
+    .visualize_dir_shadow_cascades = shadow_params.visualize_cascades,
+    .shadow_filtering_mode = static_cast<int>(shadow_params.filtering_mode)
   };
 }
 
@@ -2689,7 +2848,6 @@ auto SceneRenderer::SetPerViewConstants(
   Matrix4 const& proj_mtx,
   Matrix4 const& view_proj_mtx,
   Matrix4 const& prev_view_proj_mtx,
-  ShadowCascadeBoundaries const& cascade_bounds,
   Frustum const& frustum_ws,
   Vector3 const& view_pos,
   float const near_clip_plane,
@@ -2714,10 +2872,6 @@ auto SceneRenderer::SetPerViewConstants(
   data.near_clip_plane = near_clip_plane;
   data.far_clip_plane = far_clip_plane;
   data.screenSize = Vector2{rt_width, rt_height};
-
-  for (auto i = 0; i < MAX_CASCADE_COUNT; i++) {
-    data.shadowCascadeSplitDistances[i] = cascade_bounds[i].farClip;
-  }
 
   cb.GetData() = data;
 }
@@ -3040,8 +3194,8 @@ auto SceneRenderer::RecordDepthOnlyPass(ExtractedFrameData const& frame_packet, 
   cmd.SetScissorRects(std::span{&view.scissor, 1});
 
   auto& per_view_cb{AcquirePerViewConstantBuffer(frame.GetIndex())};
-  SetPerViewConstants(per_view_cb, view.view_mtx, view.proj_mtx, view.view_proj_mtx, {}, ShadowCascadeBoundaries{},
-    view.frustum_ws, Vector3{}, view.near_plane, view.far_plane, static_cast<int>(view.viewport.Width),
+  SetPerViewConstants(per_view_cb, view.view_mtx, view.proj_mtx, view.view_proj_mtx, {}, view.frustum_ws,
+    Vector3{}, view.near_plane, view.far_plane, static_cast<int>(view.viewport.Width),
     static_cast<int>(view.viewport.Height));
   cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBufferView());
 

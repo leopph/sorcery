@@ -453,6 +453,12 @@ private:
   };
 
 
+  struct CameraLightingDataBuffer {
+    wand::SharedDeviceHandle<wand::Buffer> buf;
+    std::vector<wand::SharedDeviceHandle<wand::BufferView>> cbvs;
+  };
+
+
   [[nodiscard]] static
   auto FindOrAddBufferViewInPacket(
     wand::SharedDeviceHandle<wand::BufferView> const& buf,
@@ -576,6 +582,13 @@ private:
     std::vector<PreparedView>& views
   ) -> void;
 
+  static
+  auto EnsureCameraLightingBufferCapacity(
+    wand::GraphicsDevice& device,
+    CameraLightingDataBuffer& storage,
+    std::size_t required_count
+  ) -> void;
+
   auto RecordDirectionalShadows(
     ExtractedFrameData const& frame_packet,
     RenderFrame const& frame,
@@ -606,7 +619,6 @@ private:
     Matrix4 const& proj_mtx,
     Matrix4 const& view_proj_mtx,
     Matrix4 const& prev_view_proj_mtx,
-    ShadowCascadeBoundaries const& cascade_bounds,
     Frustum const& frustum_ws,
     Vector3 const& view_pos,
     float near_clip_plane,
@@ -690,10 +702,6 @@ private:
   ObserverPtr<RenderResourceRegistry> resource_registry_;
   ObserverPtr<RenderInstanceRegistry> instance_registry_;
 
-  std::array<MappedStructuredBuffer<ShaderLight>, kFramesInFlight> light_buffers_{
-    MappedStructuredBuffer<ShaderLight>{*device_, 0, true, false},
-    MappedStructuredBuffer<ShaderLight>{*device_, 0, true, false},
-  };
   std::array<MappedConstantBuffer<ShaderPerFrameConstants>, kFramesInFlight> per_frame_cbs_{
     MappedConstantBuffer<ShaderPerFrameConstants>{*device_},
     MappedConstantBuffer<ShaderPerFrameConstants>{*device_}
@@ -708,6 +716,10 @@ private:
   };
   std::vector<std::array<MappedConstantBuffer<ShaderPerViewConstants>, kFramesInFlight>> per_view_cbs_;
   std::vector<std::array<MappedConstantBuffer<ShaderPerInstanceConstants>, kFramesInFlight>> per_inst_cbs_;
+  std::array<wand::SharedDeviceHandle<wand::BufferView>, kFramesInFlight> light_bufs_;
+  std::array<wand::SharedDeviceHandle<wand::BufferView>, kFramesInFlight> vis_light_bufs_;
+  std::array<CameraLightingDataBuffer, kFramesInFlight> camera_lighting_data_bufs_;
+  std::array<wand::SharedDeviceHandle<wand::BufferView>, kFramesInFlight> pos_shadow_bufs_;
 
   wand::SharedDeviceHandle<wand::BufferView> ssao_samples_buffer_;
 
@@ -743,6 +755,10 @@ private:
 
   std::array<ExtractedFrameData, kFramesInFlight> frame_packets_;
   PreparedFrameData prepared_data_;
+  std::vector<ShadowAllocCandidate> shadow_alloc_candidates_;
+  std::vector<ShaderLight> shader_lights_;
+  std::vector<ShaderVisibleLight> shader_visible_lights_;
+  std::vector<ShaderPositionalLightShadow> shader_pos_shadows_;
 
   UINT next_per_instance_cb_idx_{0};
   UINT next_per_view_cb_idx_{0};
@@ -752,8 +768,6 @@ private:
 
   std::vector<Vector4> gizmo_colors_;
   std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;
-
-  std::vector<ShadowAllocCandidate> shadow_alloc_candidates_;
 
   std::vector<Vector4> ssao_samples_;
   bool ssao_samples_changed_{false};

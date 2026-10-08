@@ -26,6 +26,7 @@ typedef bool BOOL;
 #endif
 
 #define INVALID_RES_IDX ((uint)-1)
+#define INVALID_IDX ((uint)-1)
 
 #define MESHLET_MAX_VERTS 128
 #define MESHLET_MAX_PRIMS 128
@@ -33,7 +34,6 @@ typedef bool BOOL;
 #define AS_THREAD_GROUP_SIZE 32
 
 #define MAX_CASCADE_COUNT (uint) 4
-#define MAX_PER_LIGHT_SHADOW_MAP_COUNT 6
 
 #define BLEND_MODE_OPAQUE 0
 #define BLEND_MODE_ALPHA_CLIP 1
@@ -53,30 +53,55 @@ typedef bool BOOL;
 #define DEPTH_CLEAR_VALUE 1.0f
 #endif
 
-struct ShaderLight {
-  row_major float4x4 shadowViewProjMatrices[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
+#define LIGHT_DIRECTIONAL 0
+#define LIGHT_SPOT 1
+#define LIGHT_POINT 2
 
+
+struct ShaderLight {
   float3 color;
   float intensity;
-
   float3 direction;
   int type;
-
-  BOOL isCastingShadow;
-  float range;
-  float halfInnerAngleCos;
-  float halfOuterAngleCos;
-
-  float2 shadow_atlas_offset[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
-
-  float2 shadow_atlas_scale[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
-
-  BOOL sampleShadowMap[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
   float3 position;
+  float range;
+  float half_inner_angle_cos;
+  float half_outer_angle_cos;
+};
 
-  float depthBias;
-  float normalBias;
-  float2 pad;
+
+struct ShaderPositionalLightShadow {
+  row_major float4x4 view_proj_matrices[6];
+  float2 atlas_offsets[6];
+  float2 atlas_scales[6];
+  uint allocated_mask;
+  float depth_bias;
+  float normal_bias;
+};
+
+
+struct ShaderVisibleLight {
+  uint light_idx;
+  uint positional_shadow_idx;
+};
+
+
+struct ShaderDirectionalLightShadow {
+  float4 split_distances;
+
+  row_major float4x4 view_proj_matrices[MAX_CASCADE_COUNT];
+
+  float depth_bias;
+  float normal_bias;
+  uint light_idx;
+};
+
+
+struct ShaderCameraLightingData {
+  uint first_visible_light;
+  uint visible_light_count;
+  uint2 pad;
+  ShaderDirectionalLightShadow dir_shadow;
 };
 
 
@@ -109,10 +134,10 @@ struct ShaderLineGizmoVertexData {
 
 
 struct ShaderPerFrameConstants {
-  float3 ambientLightColor;
-  uint shadowCascadeCount;
-  BOOL visualizeShadowCascades;
-  int shadowFilteringMode;
+  float3 ambient_light_color;
+  uint dir_shadow_cascade_count;
+  BOOL visualize_dir_shadow_cascades;
+  int shadow_filtering_mode;
 };
 
 
@@ -127,8 +152,6 @@ struct ShaderPerViewConstants {
   row_major float4x4 invViewProjMtx;
 
   row_major float4x4 prev_view_proj_mtx;
-
-  float4 shadowCascadeSplitDistances;
 
   float4 frustum_planes_ws[6];
 
@@ -226,19 +249,22 @@ struct DeferredLightingDrawParams {
   uint depth_tex_idx;
 
   uint ssao_tex_idx;
-  uint dir_shadow_arr_idx;
-  uint punc_shadow_atlas_idx;
-  uint shadow_samp_idx;
-
-  uint point_clamp_samp_idx;
-  uint light_buf_idx;
-  uint light_count;
   uint per_view_cb_idx;
+  uint cam_light_data_buf_idx;
+  uint pos_shadow_buf_idx;
+
+  uint visible_light_buf_idx;
+  uint light_buf_idx;
+  uint pos_shadow_atlas_idx;
+  uint dir_shadow_arr_idx;
 
   uint per_frame_cb_idx;
   uint irradiance_map_idx;
   uint prefiltered_env_map_idx;
   uint brdf_integration_map_idx;
+
+  uint shadow_samp_idx;
+  uint point_clamp_samp_idx;
   uint bi_clamp_samp_idx;
   uint tri_clamp_samp_idx;
 };
