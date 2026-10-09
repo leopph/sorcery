@@ -806,7 +806,7 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
   }
 
   prepared_data_.cam_data.clear();
-  prepared_data_.visible_light_indices.clear();
+  prepared_data_.culled_light_indices.clear();
   prepared_data_.views.clear();
   prepared_data_.pos_shadows.clear();
   shader_visible_lights_.clear();
@@ -904,37 +904,43 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
 
     Frustum const cam_frust_ws{cam_view_proj_mtx};
 
-    auto const first_visible_light = static_cast<std::uint32_t>(prepared_data_.visible_light_indices.size());
-    auto const visible_light_count = static_cast<std::uint32_t>(CullLights(cam_frust_ws, frame_packet.light_data,
-      prepared_data_.visible_light_indices));
-    auto const visible_light_indices = std::span{prepared_data_.visible_light_indices}.subspan(first_visible_light,
-      visible_light_count);
+    auto const first_culled_light = static_cast<std::uint32_t>(prepared_data_.culled_light_indices.size());
+    auto const culled_light_count = static_cast<std::uint32_t>(CullLights(cam_frust_ws, frame_packet.light_data,
+      prepared_data_.culled_light_indices));
+    auto const cam_culled_light_indices = std::span{prepared_data_.culled_light_indices}.subspan(first_culled_light,
+      culled_light_count);
 
     auto const primary_view_idx = static_cast<std::uint32_t>(prepared_data_.views.size());
     prepared_data_.views.emplace_back(cam_view_mtx, cam_proj_mtx, cam_view_proj_mtx, cam_frust_ws, cam_viewport,
       cam_scissor, cam_data.near_plane, cam_data.far_plane);
 
     auto const cascades = CalculateCameraShadowCascadeBoundaries(cam_data, frame_packet.shadow_params);
-    auto const dir_shadows = PrepareDirectionalShadows(frame_packet, visible_light_indices, cam_data, cascades,
+    auto const dir_shadows = PrepareDirectionalShadows(frame_packet, cam_culled_light_indices, cam_data, cascades,
       viewport_aspect, frame_packet.shadow_params.cascade_count, dir_shadow_map_arr_->GetTexSize(),
       prepared_data_.views);
 
     auto const first_pos_shadow = static_cast<std::uint32_t>(prepared_data_.pos_shadows.size());
-    auto const pos_shadow_count = PreparePositionalShadows(frame_packet.light_data, visible_light_indices, cam_data,
+    auto const pos_shadow_count = PreparePositionalShadows(frame_packet.light_data, cam_culled_light_indices, cam_data,
       prepared_data_.views[primary_view_idx], frame_packet.shadow_params.distance, pos_shadow_atlas_->GetSize(),
       prepared_data_.views, prepared_data_.pos_shadows);
 
-    for (auto j = 0u; j < visible_light_count; ++j) {
-      shader_visible_lights_.emplace_back(prepared_data_.visible_light_indices[first_visible_light + j], INVALID_IDX);
+    auto const first_visible_light = static_cast<std::uint32_t>(shader_visible_lights_.size());
+
+    for (auto j = 0u; j < culled_light_count; ++j) {
+      shader_visible_lights_.emplace_back(prepared_data_.culled_light_indices[first_culled_light + j], INVALID_IDX);
     }
+
+    auto const visible_light_count = static_cast<std::uint32_t>(shader_visible_lights_.size() - first_visible_light);
 
     for (auto j = 0u; j < pos_shadow_count; ++j) {
       auto const pos_shadow_idx = first_pos_shadow + j;
       auto const& shadow = prepared_data_.pos_shadows[pos_shadow_idx];
-      auto const visible_light_idx = first_visible_light + shadow.visible_light_idx;
+
+      auto const visible_light_idx = first_visible_light + shadow.local_culled_light_idx;
       shader_visible_lights_[visible_light_idx].positional_shadow_idx = pos_shadow_idx;
 
-      auto const& light = frame_packet.light_data[prepared_data_.visible_light_indices[visible_light_idx]];
+      auto const light_idx = shader_visible_lights_[visible_light_idx].light_idx;
+      auto const& light = frame_packet.light_data[light_idx];
 
       ShaderPositionalLightShadow shader_shadow{};
       shader_shadow.allocated_mask = shadow.allocated_mask;
@@ -946,13 +952,13 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
           auto const& view = prepared_data_.views[shadow.view_indices[shadow_idx]];
 
           Vector2 const atlas_offset{
-            view.viewport.TopLeftX / pos_shadow_atlas_->GetSize(),
-            view.viewport.TopLeftY / pos_shadow_atlas_->GetSize(),
+            view.viewport.TopLeftX / static_cast<float>(pos_shadow_atlas_->GetSize()),
+            view.viewport.TopLeftY / static_cast<float>(pos_shadow_atlas_->GetSize()),
           };
 
           Vector2 const atlas_scale{
-            view.viewport.Width / pos_shadow_atlas_->GetSize(),
-            view.viewport.Height / pos_shadow_atlas_->GetSize(),
+            view.viewport.Width / static_cast<float>(pos_shadow_atlas_->GetSize()),
+            view.viewport.Height / static_cast<float>(pos_shadow_atlas_->GetSize()),
           };
 
           shader_shadow.view_proj_matrices[shadow_idx] = view.view_proj_mtx;
@@ -978,8 +984,8 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
     };
 
     if (dir_shadows) {
-      auto const shadow_light_idx = prepared_data_.visible_light_indices[
-        first_visible_light + dir_shadows->visible_light_idx];
+      auto const shadow_light_idx = prepared_data_.culled_light_indices[
+        first_culled_light + dir_shadows->local_culled_light_idx];
       auto const& light = frame_packet.light_data[shadow_light_idx];
 
       lighting_data.dir_shadow.light_idx = shadow_light_idx;
@@ -999,8 +1005,8 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
     frame.UploadBuffer(camera_lighting_data_buf.cbvs[cam_idx], 0, as_bytes(std::span{&lighting_data, 1}));
 
     prepared_data_.cam_data.emplace_back(cascades, dir_shadows, static_cast<std::uint32_t>(cam_idx),
-      first_visible_light, visible_light_count, first_pos_shadow, pos_shadow_count, primary_view_idx,
-      prev_cam_view_proj_mtx, cam_data.jitter_ndc, prev_cam_data ? prev_cam_data->jitter_ndc : cam_data.jitter_ndc);
+      first_pos_shadow, pos_shadow_count, primary_view_idx, prev_cam_view_proj_mtx, cam_data.jitter_ndc,
+      prev_cam_data ? prev_cam_data->jitter_ndc : cam_data.jitter_ndc);
   }
 
   // Upload visible lights
@@ -2223,13 +2229,13 @@ auto SceneRenderer::CalculateCameraShadowCascadeBoundaries(CameraData const& cam
 
 
 auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData const> const lights,
-                               std::vector<unsigned>& visible_light_indices) -> uint64_t {
+                               std::vector<unsigned>& culled_light_indices) -> uint64_t {
   std::uint64_t light_count = 0;
 
   for (unsigned light_idx = 0; light_idx < static_cast<unsigned>(lights.size()); light_idx++) {
     switch (auto const light{lights[light_idx]}; light.type) {
       case LightComponent::Type::Directional: {
-        visible_light_indices.emplace_back(light_idx);
+        culled_light_indices.emplace_back(light_idx);
         ++light_count;
         break;
       }
@@ -2248,7 +2254,7 @@ auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData co
         };
 
         if (frustum_ws.Intersects(AABB::FromVertices(light_vertices_ws))) {
-          visible_light_indices.emplace_back(light_idx);
+          culled_light_indices.emplace_back(light_idx);
           ++light_count;
         }
 
@@ -2257,7 +2263,7 @@ auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData co
 
       case LightComponent::Type::Point: {
         if (BoundingSphere const bounds_ws{Vector3{light.position}, light.range}; frustum_ws.Intersects(bounds_ws)) {
-          visible_light_indices.emplace_back(light_idx);
+          culled_light_indices.emplace_back(light_idx);
           ++light_count;
         }
         break;
@@ -2271,7 +2277,7 @@ auto SceneRenderer::CullLights(Frustum const& frustum_ws, std::span<LightData co
 
 auto SceneRenderer::PrepareDirectionalShadows(
   ExtractedFrameData const& frame_packet,
-  std::span<unsigned const> const cam_visible_light_indices,
+  std::span<unsigned const> const cam_culled_light_indices,
   CameraData const& cam_data,
   ShadowCascadeBoundaries const& shadow_cascade_boundaries,
   float const rt_aspect,
@@ -2279,11 +2285,11 @@ auto SceneRenderer::PrepareDirectionalShadows(
   std::uint32_t const shadow_map_size,
   std::vector<PreparedView>& views
 ) -> std::optional<PreparedDirectionalShadows> {
-  std::optional<std::uint32_t> shadow_casting_light_idx;
+  std::optional<std::uint32_t> local_visible_light_idx;
   auto const first_view = static_cast<std::uint32_t>(views.size());
 
-  for (auto i = 0u; i < static_cast<std::uint32_t>(cam_visible_light_indices.size()); ++i) {
-    auto const light_idx = cam_visible_light_indices[i];
+  for (auto i = 0u; i < static_cast<std::uint32_t>(cam_culled_light_indices.size()); ++i) {
+    auto const light_idx = cam_culled_light_indices[i];
 
     if (auto const light = frame_packet.light_data[light_idx];
       light.type == LightComponent::Type::Directional && light.casts_shadow) {
@@ -2443,17 +2449,17 @@ auto SceneRenderer::PrepareDirectionalShadows(
           shadow_scissor, shadow_near_clip, shadow_far_clip);
       }
 
-      shadow_casting_light_idx = i;
+      local_visible_light_idx = i;
       break;
     }
   }
 
-  if (!shadow_casting_light_idx) {
+  if (!local_visible_light_idx) {
     return std::nullopt;
   }
 
   return PreparedDirectionalShadows{
-    .visible_light_idx = *shadow_casting_light_idx,
+    .local_culled_light_idx = *local_visible_light_idx,
     .first_view = first_view,
     .view_count = cascade_count
   };
@@ -2462,7 +2468,7 @@ auto SceneRenderer::PrepareDirectionalShadows(
 
 auto SceneRenderer::PreparePositionalShadows(
   std::span<LightData const> const lights,
-  std::span<std::uint32_t const> const visible_light_indices,
+  std::span<std::uint32_t const> const cam_culled_light_indices,
   CameraData const& cam,
   PreparedView const& cam_view,
   float const shadow_distance,
@@ -2471,10 +2477,10 @@ auto SceneRenderer::PreparePositionalShadows(
   std::vector<PreparedPositionalShadow>& shadows
 ) -> std::uint32_t {
   auto const first_shadow = static_cast<std::uint32_t>(shadows.size());
-  auto const shadow_count = GeneratePositionalShadowCandidates(lights, visible_light_indices, cam, cam_view,
+  auto const shadow_count = GeneratePositionalShadowCandidates(lights, cam_culled_light_indices, cam, cam_view,
     shadow_distance, shadows);
 
-  AllocatePositionalShadows(lights, visible_light_indices, atlas_size, shadows, views);
+  AllocatePositionalShadows(lights, cam_culled_light_indices, atlas_size, shadows, views);
 
   // Remove shadows that failed to get any allocation
 
@@ -2494,7 +2500,7 @@ auto SceneRenderer::PreparePositionalShadows(
 
 auto SceneRenderer::GeneratePositionalShadowCandidates(
   std::span<LightData const> const lights,
-  std::span<std::uint32_t const> const visible_light_indices,
+  std::span<std::uint32_t const> const cam_culled_light_indices,
   CameraData const& cam,
   PreparedView const& cam_view,
   float const shadow_distance,
@@ -2549,8 +2555,8 @@ auto SceneRenderer::GeneratePositionalShadowCandidates(
   shadow_alloc_candidates_.clear();
   std::uint32_t shadows_created{0};
 
-  for (auto i = 0uz; i < visible_light_indices.size(); ++i) {
-    if (auto const& light = lights[visible_light_indices[i]];
+  for (auto i = 0uz; i < cam_culled_light_indices.size(); ++i) {
+    if (auto const& light = lights[cam_culled_light_indices[i]];
       light.casts_shadow && (light.type == LightComponent::Type::Spot || light.type == LightComponent::Type::Point)) {
       // Skip the light if its bounding sphere is farther than the shadow distance
       if (Vector3 const cam_to_light_dir{Normalize(light.position - cam.position)};
@@ -2620,7 +2626,7 @@ auto SceneRenderer::GeneratePositionalShadowCandidates(
 
 auto SceneRenderer::AllocatePositionalShadows(
   std::span<LightData const> const lights,
-  std::span<unsigned const> const visible_light_indices,
+  std::span<unsigned const> const cam_culled_light_indices,
   std::uint32_t const shadow_atlas_size,
   std::span<PreparedPositionalShadow> const shadows,
   std::vector<PreparedView>& views
@@ -2718,7 +2724,7 @@ auto SceneRenderer::AllocatePositionalShadows(
     while (res_class < num_res_classes) {
       if (auto& allocs_in_class = allocations_per_class[res_class];
         allocs_in_class < max_allocations_per_class[res_class]) {
-        auto const& light = lights[visible_light_indices[shadow.visible_light_idx]];
+        auto const& light = lights[cam_culled_light_indices[shadow.local_culled_light_idx]];
 
         if (light.type == LightComponent::Type::Spot) {
           auto const shadow_view_mtx = Matrix4::LookTo(light.position, light.direction, Vector3::Up());

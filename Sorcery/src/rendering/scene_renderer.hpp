@@ -387,8 +387,8 @@ private:
 
 
   struct PreparedDirectionalShadows {
-    // Index within this camera's visible-light slice.
-    std::uint32_t visible_light_idx;
+    // Index into the camera's culled light index slice.
+    std::uint32_t local_culled_light_idx;
 
     std::uint32_t first_view;
     std::uint32_t view_count;
@@ -396,8 +396,8 @@ private:
 
 
   struct PreparedPositionalShadow {
-    // Index into the camera's visible-light slice
-    std::uint32_t visible_light_idx;
+    // Index into the camera's culled light index slice.
+    std::uint32_t local_culled_light_idx;
 
     // Bit N means shadow map / cube face N was successfully allocated.
     std::uint8_t allocated_mask;
@@ -414,9 +414,6 @@ private:
 
     std::uint32_t extracted_data_idx;
 
-    std::uint32_t first_visible_light;
-    std::uint32_t visible_light_count;
-
     std::uint32_t first_pos_shadow;
     std::uint32_t pos_shadow_count;
 
@@ -431,7 +428,7 @@ private:
 
   struct PreparedFrameData {
     std::vector<PreparedCameraData> cam_data;
-    std::vector<std::uint32_t> visible_light_indices;
+    std::vector<std::uint32_t> culled_light_indices;
     std::vector<PreparedView> views;
     std::vector<PreparedPositionalShadow> pos_shadows;
   };
@@ -535,13 +532,13 @@ private:
   auto CullLights(
     Frustum const& frustum_ws,
     std::span<LightData const> lights,
-    std::vector<unsigned>& visible_light_indices
+    std::vector<unsigned>& culled_light_indices
   ) -> uint64_t;
 
   [[nodiscard]] static
   auto PrepareDirectionalShadows(
     ExtractedFrameData const& frame_packet,
-    std::span<unsigned const> cam_visible_light_indices,
+    std::span<unsigned const> cam_culled_light_indices,
     CameraData const& cam_data,
     ShadowCascadeBoundaries const& shadow_cascade_boundaries,
     float rt_aspect,
@@ -554,7 +551,7 @@ private:
   [[nodiscard]]
   auto PreparePositionalShadows(
     std::span<LightData const> lights,
-    std::span<std::uint32_t const> visible_light_indices,
+    std::span<std::uint32_t const> cam_culled_light_indices,
     CameraData const& cam,
     PreparedView const& cam_view,
     float shadow_distance,
@@ -567,7 +564,7 @@ private:
   [[nodiscard]]
   auto GeneratePositionalShadowCandidates(
     std::span<LightData const> lights,
-    std::span<std::uint32_t const> visible_light_indices,
+    std::span<std::uint32_t const> cam_culled_light_indices,
     CameraData const& cam,
     PreparedView const& cam_view,
     float shadow_distance,
@@ -576,7 +573,7 @@ private:
 
   auto AllocatePositionalShadows(
     std::span<LightData const> lights,
-    std::span<unsigned const> visible_light_indices,
+    std::span<unsigned const> cam_culled_light_indices,
     std::uint32_t shadow_atlas_size,
     std::span<PreparedPositionalShadow> shadows,
     std::vector<PreparedView>& views
