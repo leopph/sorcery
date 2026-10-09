@@ -2663,11 +2663,21 @@ auto SceneRenderer::AllocatePositionalShadows(
   };
   std::array<std::uint32_t, num_res_classes> allocations_per_class{0, 0, 0, 0};
 
+  auto const make_guarded_projection = [](Matrix4 const& proj_mtx, float const alloc_size) {
+    // Create a 4 pixel band around each allocation to prevent seams at the edges of shadow maps.
+    // We create a projection matrix that covers a slightly wider area than required, effectively
+    // reducing the pixels covered by the shadowed area. The band then contains useful shadow data.
+    // This allows PCF and other shadow filtering kernels to sample the edges safely.
+
+    auto constexpr static guard_texels = 4.0f;
+    assert(alloc_size > 2.0f * guard_texels);
+    auto const projection_scale = (alloc_size - 2.0f * guard_texels) / alloc_size;
+    return proj_mtx * Matrix4::Scale(Vector3{projection_scale, projection_scale, 1.0f});
+  };
+
   auto const add_shadow_view = [&]
   (std::uint32_t const res_class, Matrix4 const& view_mtx, Matrix4 const& proj_mtx, float const near_plane,
    float const far_plane, std::uint32_t const shadow_idx, PreparedPositionalShadow& shadow) {
-    auto const view_proj_mtx = view_mtx * proj_mtx;
-
     Vector2 const quadrant_idx{
       res_class % atlas_subdiv,
       res_class / atlas_subdiv
@@ -2707,9 +2717,12 @@ auto SceneRenderer::AllocatePositionalShadows(
       .bottom = static_cast<LONG>(alloc_offset[1] + alloc_size)
     };
 
+    auto const guarded_proj_mtx = make_guarded_projection(proj_mtx, alloc_size);
+    auto const guarded_view_proj_mtx = view_mtx * guarded_proj_mtx;
+
     auto const view_idx = static_cast<std::uint32_t>(views.size());
-    views.emplace_back(view_mtx, proj_mtx, view_proj_mtx, Frustum{view_proj_mtx}, viewport, scissor, near_plane,
-      far_plane);
+    views.emplace_back(view_mtx, guarded_proj_mtx, guarded_view_proj_mtx, Frustum{guarded_view_proj_mtx}, viewport,
+      scissor, near_plane, far_plane);
 
     shadow.allocated_mask |= 1 << shadow_idx;
     shadow.view_indices[shadow_idx] = view_idx;
