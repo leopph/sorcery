@@ -11,9 +11,9 @@
 #include "Window.hpp"
 #include "rendering/frame_scheduler.hpp"
 #include "rendering/render_instance_registry.hpp"
-#include "rendering/render_manager.hpp"
 #include "rendering/render_resource_registry.hpp"
 #include "rendering/scene_renderer.hpp"
+#include "rendering/temporary_render_target_pool.hpp"
 #include "rendering/texture_resolver.hpp"
 #include "wand/wand.hpp"
 
@@ -60,13 +60,13 @@ struct App::Data {
     }, static_cast<HWND>(window.GetNativeHandle()))
   };
   rendering::FrameScheduler frame_scheduler{graphics_device};
-  rendering::RenderManager render_manager{graphics_device};
+  rendering::TemporaryRenderTargetPool rt_pool{graphics_device};
   ObjectRegistry object_registry;
   rendering::RenderResourceRegistry render_resource_registry{graphics_device, object_registry};
   rendering::RenderInstanceRegistry render_instance_registry{object_registry};
   rendering::TextureResolver texture_resolver{graphics_device, render_resource_registry};
   rendering::SceneRenderer scene_renderer{
-    window, graphics_device, render_manager, render_resource_registry, render_instance_registry, texture_resolver
+    window, graphics_device, rt_pool, render_resource_registry, render_instance_registry, texture_resolver
   };
   ResourceManager resource_manager{job_system};
   ObserverPtr<Job> render_job;
@@ -114,11 +114,6 @@ auto App::GetWindow() -> Window& {
 
 auto App::GetSwapChain() -> wand::SwapChain& {
   return *data_->swap_chain;
-}
-
-
-auto App::GetRenderManager() -> rendering::RenderManager& {
-  return data_->render_manager;
 }
 
 
@@ -174,7 +169,7 @@ auto App::Run() -> void {
       data_->graphics_device.Present(*data_->swap_chain);
       data_->render_instance_registry.CollectGarbage(100uz);
       data_->render_resource_registry.CollectGarbage(100uz);
-      data_->render_manager.EndFrame();
+      data_->rt_pool.CollectGarbage(frame);
     });
 
     data_->job_system.Run(data_->render_job);

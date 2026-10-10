@@ -16,7 +16,7 @@ class SwapChain;
 
 namespace sorcery {
 namespace rendering {
-class RenderManager;
+class TemporaryRenderTargetPool;
 class SceneRenderer;
 class RenderFrame;
 class TextureResolver;
@@ -51,9 +51,6 @@ public:
 
   [[nodiscard]] SORCERYAPI
   auto GetSwapChain() -> wand::SwapChain&;
-
-  [[nodiscard]] SORCERYAPI
-  auto GetRenderManager() -> rendering::RenderManager&;
 
   [[nodiscard]] SORCERYAPI
   auto GetSceneRenderer() -> rendering::SceneRenderer&;

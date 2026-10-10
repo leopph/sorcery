@@ -11,6 +11,7 @@
 #include <ranges>
 #include <stdexcept>
 
+#include "projection_utils.hpp"
 #include "render_instance_registry.hpp"
 #include "render_resource_registry.hpp"
 #include "ShadowCascadeBoundary.hpp"
@@ -186,14 +187,14 @@ auto EnsureStructuredBufferCapacity(
 SceneRenderer::SceneRenderer(
   Window& window,
   wand::GraphicsDevice& device,
-  RenderManager& render_manager,
+  TemporaryRenderTargetPool& rt_pool,
   RenderResourceRegistry& render_resource_registry,
   RenderInstanceRegistry& render_instance_registry,
   TextureResolver& tex_resolver
 ) :
   window_{&window},
   device_{&device},
-  render_manager_{&render_manager},
+  rt_pool_{&rt_pool},
   resource_registry_{&render_resource_registry},
   instance_registry_{&render_instance_registry},
   tex_resolver_{&tex_resolver} {
@@ -266,29 +267,9 @@ SceneRenderer::SceneRenderer(
   }, wand::CpuAccess::kNone, nullptr);
   ssao_noise_tex_->SetDebugName(L"SSAO Noise");
 
-  std::vector<Vector4> ssao_noise;
-  std::uniform_real_distribution dist{0.0f, 1.0f};
-  std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
-
-  for (auto i{0}; i < SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM; i++) {
-    ssao_noise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
-  }
-
-  render_manager_->UpdateTexture(*ssao_noise_tex_, 0, std::array{
-    D3D12_SUBRESOURCE_DATA{
-      ssao_noise.data(), SSAO_NOISE_TEX_DIM * sizeof(Vector4), SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM * sizeof(Vector4)
-    }
-  });
-
   white_tex_ = device_->CreateTexture(wand::TextureDesc{
     wand::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
   }, wand::CpuAccess::kNone, nullptr);
-
-  std::array<std::uint8_t, 4> constexpr white_tex_data{255, 255, 255, 255};
-
-  render_manager_->UpdateTexture(*white_tex_, 0, std::array{
-    D3D12_SUBRESOURCE_DATA{white_tex_data.data(), sizeof(white_tex_data), sizeof(white_tex_data)}
-  });
 
   brdf_integration_map_ = device_->CreateTexture(wand::TextureDesc{
     wand::TextureDimension::k2D, brdf_integration_map_size_, brdf_integration_map_size_, 1, 1,
@@ -1031,6 +1012,13 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
     EnsureStructuredBufferCapacity<ShaderPositionalLightShadow>(*device_, pos_shadow_buf, shader_pos_shadows_.size());
     frame.UploadBuffer(pos_shadow_buf, 0, as_bytes(std::span{shader_pos_shadows_}));
   }
+
+  // Work needed for initialization
+
+  if (!gpu_init_upload_work_recorded_) {
+    RecordGpuInitUploadWork(frame);
+    gpu_init_upload_work_recorded_ = true;
+  }
 }
 
 
@@ -1272,13 +1260,13 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       1, L"Camera HDR RenderTarget", true, frame_packet.background_color
     };
 
-    auto const depth_rt{render_manager_->AcquireTemporaryRenderTarget(depth_rt_desc)};
-    auto const depth_sample_rt{render_manager_->AcquireTemporaryRenderTarget(depth_sample_rt_desc)};
-    auto const gbuffer0_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer0_rt_desc)};
-    auto const gbuffer1_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer1_rt_desc)};
-    auto const gbuffer2_rt{render_manager_->AcquireTemporaryRenderTarget(gbuffer2_rt_desc)};
-    auto const velocity_rt{render_manager_->AcquireTemporaryRenderTarget(velocity_rt_desc)};
-    auto const color_hdr_rt{render_manager_->AcquireTemporaryRenderTarget(color_hdr_rt_desc)};
+    auto const depth_rt = rt_pool_->Acquire(depth_rt_desc, frame);
+    auto const depth_sample_rt = rt_pool_->Acquire(depth_sample_rt_desc, frame);
+    auto const gbuffer0_rt = rt_pool_->Acquire(gbuffer0_rt_desc, frame);
+    auto const gbuffer1_rt = rt_pool_->Acquire(gbuffer1_rt_desc, frame);
+    auto const gbuffer2_rt = rt_pool_->Acquire(gbuffer2_rt_desc, frame);
+    auto const velocity_rt = rt_pool_->Acquire(velocity_rt_desc, frame);
+    auto const color_hdr_rt = rt_pool_->Acquire(color_hdr_rt_desc, frame);
 
 
     // Command list for the camera
@@ -1411,11 +1399,9 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     // SSAO pass
     if (frame_packet.ssao_enabled) {
-      auto const ssao_rt{
-        render_manager_->AcquireTemporaryRenderTarget(RenderTarget::Desc{
-          transient_rt_width, transient_rt_height, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"
-        })
-      };
+      auto const ssao_rt = rt_pool_->Acquire(RenderTarget::Desc{
+        transient_rt_width, transient_rt_height, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"
+      }, frame);
 
       cam_cmd.SetPipelineState(*frame_packet.ssao_pso);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx),
@@ -1445,13 +1431,11 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       cam_cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cam_cmd.DrawInstanced(3, 1, 0, 0);
 
-      auto const ssao_blur_rt{
-        render_manager_->AcquireTemporaryRenderTarget([&ssao_rt] {
-          auto ret{ssao_rt->GetDesc()};
-          ret.debug_name = L"SSAO Blur RT";
-          return ret;
-        }())
-      };
+      auto const ssao_blur_rt = rt_pool_->Acquire([&ssao_rt] {
+        auto ret{ssao_rt->GetDesc()};
+        ret.debug_name = L"SSAO Blur RT";
+        return ret;
+      }(), frame);
 
       cam_cmd.SetPipelineState(*frame_packet.ssao_blur_pso);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, in_tex_idx),
@@ -1579,7 +1563,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
         1, L"SSR RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
       };
 
-      auto const ssr_rt{render_manager_->AcquireTemporaryRenderTarget(ssr_rt_desc)};
+      auto const ssr_rt = rt_pool_->Acquire(ssr_rt_desc, frame);
 
       cam_cmd.SetRenderTargets(std::span{
         std::array{static_cast<wand::Texture const*>(ssr_rt->GetColorTex().get())}.data(), 1
@@ -1601,7 +1585,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
         1, L"SSR Compose RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
       };
 
-      auto const ssr_compose_rt{render_manager_->AcquireTemporaryRenderTarget(ssr_compose_rt_desc)};
+      auto const ssr_compose_rt = rt_pool_->Acquire(ssr_compose_rt_desc, frame);
       cam_cmd.SetRenderTargets(std::span{
         std::array{static_cast<wand::Texture const*>(ssr_compose_rt->GetColorTex().get())}.data(), 1
       }, nullptr);
@@ -1648,12 +1632,10 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       auto& accum_tex{*frame_packet.textures[extracted_cam.accum_tex_local_idx]};
       auto const& accum_tex_desc{accum_tex.GetDesc()};
 
-      auto const taa_rt{
-        render_manager_->AcquireTemporaryRenderTarget(RenderTarget::Desc{
-          accum_tex_desc.width, accum_tex_desc.height, color_buffer_format_, std::nullopt, 1,
-          L"TAA Resolve RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
-        })
-      };
+      auto const taa_rt = rt_pool_->Acquire(RenderTarget::Desc{
+        accum_tex_desc.width, accum_tex_desc.height, color_buffer_format_, std::nullopt, 1,
+        L"TAA Resolve RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
+      }, frame);
 
       cam_cmd.SetPipelineState(*frame_packet.taa_resolve_pso);
       cam_cmd.SetRenderTargets(std::span{
@@ -3197,7 +3179,36 @@ auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
 }
 
 
+auto SceneRenderer::RecordGpuInitUploadWork(RenderFrame& frame) const -> void {
+  // Upload SSAO tex
+
+  std::vector<Vector4> ssao_noise;
+  std::uniform_real_distribution dist{0.0f, 1.0f};
+  std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
+
+  for (auto i{0}; i < SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM; i++) {
+    ssao_noise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
+  }
+
+  frame.UploadTexture(ssao_noise_tex_, 0, std::array{
+    D3D12_SUBRESOURCE_DATA{
+      ssao_noise.data(), SSAO_NOISE_TEX_DIM * sizeof(Vector4), SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM * sizeof(Vector4)
+    }
+  });
+
+  // Upload White tex
+
+  std::array<std::uint8_t, 4> constexpr white_tex_data{255, 255, 255, 255};
+
+  frame.UploadTexture(white_tex_, 0, std::array{
+    D3D12_SUBRESOURCE_DATA{white_tex_data.data(), sizeof(white_tex_data), sizeof(white_tex_data)}
+  });
+}
+
+
 auto SceneRenderer::RecordGpuInitWork(RenderFrame& frame) const -> void {
+  // Draw BRDF integration map
+
   D3D12_VIEWPORT const brdf_integration_viewport{
     0.F, 0.F, static_cast<FLOAT>(brdf_integration_map_size_), static_cast<FLOAT>(brdf_integration_map_size_), 0.F, 1.F
   };

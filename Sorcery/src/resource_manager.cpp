@@ -9,9 +9,9 @@
 
 #include "app.hpp"
 #include "job_system.hpp"
+#include "mesh_generation.hpp"
 #include "reflection.hpp"
 #include "resource_package.hpp"
-#include "rendering/render_manager.hpp"
 #include "resources/prefab.hpp"
 #include "Resources/Scene.hpp"
 
@@ -214,10 +214,8 @@ auto ResourceManager::CreateDefaultResources() -> void {
     MeshData sphere_data;
     std::vector<std::uint32_t> sphere_indices;
 
-    rendering::GenerateSphereMesh(1, 50, 50, sphere_data.positions, sphere_data.normals,
-      sphere_data.uvs, sphere_indices);
-    CalculateTangents(sphere_data.positions, sphere_data.uvs, sphere_indices,
-      sphere_data.tangents);
+    GenerateSphereMesh(1, 50, 50, sphere_data.positions, sphere_data.normals, sphere_data.uvs, sphere_indices);
+    CalculateTangents(sphere_data.positions, sphere_data.uvs, sphere_indices, sphere_data.tangents);
 
     if (!ComputeMeshlets<std::uint32_t, Vector3>(sphere_indices, sphere_data.positions, sphere_data.meshlets,
       sphere_data.vertex_indices, sphere_data.triangle_indices, sphere_data.cull_data)) {

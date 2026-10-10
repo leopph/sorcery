@@ -100,7 +100,7 @@ private:
 
   ImGuiTextureReferences tex_refs_;
   ImGuiRenderer imgui_renderer_{
-    GetGraphicsDevice(), GetSwapChain(), GetRenderManager(), GetTextureResolver(), tex_refs_
+    GetGraphicsDevice(), GetSwapChain(), GetTextureResolver(), tex_refs_
   };
   EditorDrawerRegistry drawer_registry_{tex_refs_};
   ProjectWindow project_window_{*this, resource_db_, drawer_registry_};

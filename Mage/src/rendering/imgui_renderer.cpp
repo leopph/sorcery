@@ -11,7 +11,6 @@
 #include "texture_resolver.hpp"
 #include "../imgui_texture_references.hpp"
 #include "rendering/render_frame.hpp"
-#include "rendering/render_manager.hpp"
 #include "rendering/render_target.hpp"
 #include "resources/Cubemap.hpp"
 #include "resources/Texture2D.hpp"
@@ -30,13 +29,11 @@ namespace sorcery::mage {
 ImGuiRenderer::ImGuiRenderer(
   wand::GraphicsDevice& device,
   wand::SwapChain const& swap_chain,
-  rendering::RenderManager& render_manager,
   rendering::TextureResolver& tex_resolver,
   ImGuiTextureReferences const& tex_refs
 ) :
   device_{&device},
   swap_chain_{&swap_chain},
-  render_manager_{&render_manager},
   tex_resolver_{&tex_resolver},
   tex_refs_{&tex_refs} {
   auto& io{ImGui::GetIO()};
@@ -78,51 +75,36 @@ ImGuiRenderer::ImGuiRenderer(
 
 
 auto ImGuiRenderer::UpdateFonts() -> void {
-  unsigned char* fonts_tex_pixel_data;
-  int fonts_tex_width;
-  int fonts_tex_height;
-  ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&fonts_tex_pixel_data, &fonts_tex_width, &fonts_tex_height);
-
-  fonts_tex_ = device_->CreateTexture(wand::TextureDesc{
-    wand::TextureDimension::k2D, static_cast<UINT>(fonts_tex_width), static_cast<UINT>(fonts_tex_height), 1, 1,
-    DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
-  }, wand::CpuAccess::kNone, nullptr);
-  fonts_tex_->SetDebugName(L"UI Font Texture");
-
-  render_manager_->UpdateTexture(*fonts_tex_, 0, std::array{
-    D3D12_SUBRESOURCE_DATA{
-      fonts_tex_pixel_data, static_cast<LONG_PTR>(fonts_tex_width) * 4,
-      static_cast<LONG_PTR>(fonts_tex_height) * static_cast<LONG_PTR>(fonts_tex_width) * 4
-    }
-  });
-
-  ImGui::GetIO().Fonts->SetTexID(kFontTexId);
+  auto& fonts = *ImGui::GetIO().Fonts;
+  fonts.Build();
+  fonts.SetTexID(kFontTexId);
+  fonts_dirty_ = true;
 }
 
 
 auto ImGuiRenderer::ExtractFrame(rendering::RenderFrame& frame) -> void {
-  auto const& src_draw_data{*ImGui::GetDrawData()};
-  auto& dst_draw_data{draw_data_[frame.GetIndex()]};
+  auto const& imgui_draw_data = *ImGui::GetDrawData();
+  auto& draw_data = draw_data_[frame.GetIndex()];
 
-  dst_draw_data.valid = src_draw_data.Valid;
-  dst_draw_data.cmd_lists_count = src_draw_data.CmdListsCount;
-  dst_draw_data.total_idx_count = src_draw_data.TotalIdxCount;
-  dst_draw_data.total_vtx_count = src_draw_data.TotalVtxCount;
-  dst_draw_data.display_pos = src_draw_data.DisplayPos;
-  dst_draw_data.display_size = src_draw_data.DisplaySize;
-  dst_draw_data.framebuffer_scale = src_draw_data.FramebufferScale;
+  draw_data.valid = imgui_draw_data.Valid;
+  draw_data.cmd_lists_count = imgui_draw_data.CmdListsCount;
+  draw_data.total_idx_count = imgui_draw_data.TotalIdxCount;
+  draw_data.total_vtx_count = imgui_draw_data.TotalVtxCount;
+  draw_data.display_pos = imgui_draw_data.DisplayPos;
+  draw_data.display_size = imgui_draw_data.DisplaySize;
+  draw_data.framebuffer_scale = imgui_draw_data.FramebufferScale;
 
-  dst_draw_data.cmd_lists.clear();
+  draw_data.cmd_lists.clear();
 
   // We never shrink the CmdLists vector to keep the vectors inside the CmdLists alive and prevent unnecessary
   // allocations. TODO we could just flatten the whole thing into arrays in DrawData and store only indices in DrawLists
-  if (dst_draw_data.cmd_lists_count > dst_draw_data.cmd_lists.size()) {
-    dst_draw_data.cmd_lists.resize(dst_draw_data.cmd_lists_count);
+  if (draw_data.cmd_lists_count > draw_data.cmd_lists.size()) {
+    draw_data.cmd_lists.resize(draw_data.cmd_lists_count);
   }
 
-  for (auto i{0}; i < src_draw_data.CmdListsCount; i++) {
-    auto const& draw_list{*src_draw_data.CmdLists[i]};
-    auto& cmd_list{dst_draw_data.cmd_lists[i]};
+  for (auto i{0}; i < imgui_draw_data.CmdListsCount; i++) {
+    auto const& draw_list{*imgui_draw_data.CmdLists[i]};
+    auto& cmd_list{draw_data.cmd_lists[i]};
 
     cmd_list.cmd_buffer.assign(draw_list.CmdBuffer.begin(), draw_list.CmdBuffer.end());
     cmd_list.idx_buffer.assign(draw_list.IdxBuffer.begin(), draw_list.IdxBuffer.end());
@@ -130,19 +112,43 @@ auto ImGuiRenderer::ExtractFrame(rendering::RenderFrame& frame) -> void {
     cmd_list.flags = draw_list.Flags;
   }
 
-  dst_draw_data.textures.clear();
+  draw_data.textures.clear();
 
   for (auto const& ref : tex_refs_->GetReferences()) {
     if (auto const tex = std::get_if<ObjectPtr<Texture2D>>(&ref)) {
       auto const observed = tex->Get();
-      dst_draw_data.textures.emplace_back(observed ? tex_resolver_->Resolve(*observed, frame) : nullptr);
+      draw_data.textures.emplace_back(observed ? tex_resolver_->Resolve(*observed, frame) : nullptr);
     } else if (auto const cubemap = std::get_if<ObjectPtr<Cubemap>>(&ref)) {
       auto const observed = cubemap->Get();
-      dst_draw_data.textures.emplace_back(observed ? tex_resolver_->Resolve(*observed, frame) : nullptr);
+      draw_data.textures.emplace_back(observed ? tex_resolver_->Resolve(*observed, frame) : nullptr);
     } else {
-      dst_draw_data.textures.emplace_back(std::get<std::shared_ptr<rendering::RenderTarget>>(ref)->GetColorTex());
+      draw_data.textures.emplace_back(std::get<std::shared_ptr<rendering::RenderTarget>>(ref)->GetColorTex());
     }
   }
+
+  if (fonts_dirty_) {
+    unsigned char* fonts_tex_pixel_data;
+    int fonts_tex_width;
+    int fonts_tex_height;
+    ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&fonts_tex_pixel_data, &fonts_tex_width, &fonts_tex_height);
+
+    font_tex_ = device_->CreateTexture(wand::TextureDesc{
+      wand::TextureDimension::k2D, static_cast<UINT>(fonts_tex_width), static_cast<UINT>(fonts_tex_height), 1, 1,
+      DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
+    }, wand::CpuAccess::kNone, nullptr);
+    font_tex_->SetDebugName(L"UI Font Texture");
+
+    frame.UploadTexture(font_tex_, 0, std::array{
+      D3D12_SUBRESOURCE_DATA{
+        fonts_tex_pixel_data, static_cast<LONG_PTR>(fonts_tex_width) * 4,
+        static_cast<LONG_PTR>(fonts_tex_height) * static_cast<LONG_PTR>(fonts_tex_width) * 4
+      }
+    });
+
+    fonts_dirty_ = false;
+  }
+
+  draw_data.font_tex = font_tex_;
 }
 
 
@@ -295,7 +301,7 @@ auto ImGuiRenderer::ResolveImGuiTexture(
   assert(draw_data.textures.size() <= kFontTexId && "ImGui texture reference list overlaps font tex ID!");
 
   if (id == kFontTexId) {
-    return MakeObserver(fonts_tex_.get());
+    return MakeObserver(draw_data.font_tex.get());
   }
 
   if (id >= draw_data.textures.size()) {

@@ -108,7 +108,7 @@
     <ClCompile Include="src\WindowImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\render_manager.cpp">
+    <ClCompile Include="src\rendering\temporary_render_target_pool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\job_system.cpp">
@@ -217,6 +217,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\texture_resolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mesh_generation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rendering\projection_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -335,7 +341,7 @@
     <ClInclude Include="src\rendering\constant_buffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\render_manager.hpp">
+    <ClInclude Include="src\rendering\temporary_render_target_pool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\observer_ptr.hpp">
@@ -477,6 +483,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\texture_resolver.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mesh_generation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\projection_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

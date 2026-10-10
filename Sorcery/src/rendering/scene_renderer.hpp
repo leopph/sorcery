@@ -9,12 +9,12 @@
 #include "config.hpp"
 #include "constant_buffer.hpp"
 #include "render_frame.hpp"
-#include "render_manager.hpp"
 #include "render_target.hpp"
 #include "ShadowCascadeBoundary.hpp"
 #include "shadow_atlas.hpp"
 #include "shadow_map_array.hpp"
 #include "structured_buffer.hpp"
+#include "temporary_render_target_pool.hpp"
 #include "../Color.hpp"
 #include "../Math.hpp"
 #include "../util.hpp"
@@ -83,7 +83,7 @@ public:
   SORCERYAPI SceneRenderer(
     Window& window,
     wand::GraphicsDevice& device,
-    RenderManager& render_manager,
+    TemporaryRenderTargetPool& rt_pool,
     RenderResourceRegistry& render_resource_registry,
     RenderInstanceRegistry& render_instance_registry,
     TextureResolver& tex_resolver
@@ -664,6 +664,7 @@ private:
 
   auto OnWindowSize(Extent2D<std::uint32_t> size) -> void;
 
+  auto RecordGpuInitUploadWork(RenderFrame& frame) const -> void;
   auto RecordGpuInitWork(RenderFrame& frame) const -> void;
 
   auto RecordDepthOnlyPass(
@@ -713,7 +714,7 @@ private:
 
   ObserverPtr<Window> window_;
   ObserverPtr<wand::GraphicsDevice> device_;
-  ObserverPtr<RenderManager> render_manager_;
+  ObserverPtr<TemporaryRenderTargetPool> rt_pool_;
   ObserverPtr<RenderResourceRegistry> resource_registry_;
   ObserverPtr<RenderInstanceRegistry> instance_registry_;
   ObserverPtr<TextureResolver> tex_resolver_;
@@ -812,6 +813,7 @@ private:
 
   EventListenerHandle<Extent2D<unsigned>> window_size_event_listener_{};
 
+  bool gpu_init_upload_work_recorded_{false};
   bool gpu_init_work_recorded_{false};
 };
 

@@ -12,7 +12,6 @@
 
 namespace sorcery {
 namespace rendering {
-class RenderManager;
 class RenderFrame;
 class TextureResolver;
 }
@@ -27,7 +26,6 @@ public:
   ImGuiRenderer(
     wand::GraphicsDevice& device,
     wand::SwapChain const& swap_chain,
-    rendering::RenderManager& render_manager,
     rendering::TextureResolver& tex_resolver,
     ImGuiTextureReferences const& tex_refs
   );
@@ -63,6 +61,7 @@ private:
     ImVec2 display_size;
     ImVec2 framebuffer_scale;
     std::vector<wand::SharedDeviceHandle<wand::Texture>> textures;
+    wand::SharedDeviceHandle<wand::Texture> font_tex;
   };
 
 
@@ -72,13 +71,12 @@ private:
 
   ObserverPtr<wand::GraphicsDevice> device_;
   ObserverPtr<wand::SwapChain const> swap_chain_;
-  ObserverPtr<rendering::RenderManager> render_manager_;
   ObserverPtr<rendering::TextureResolver> tex_resolver_;
   ObserverPtr<ImGuiTextureReferences const> tex_refs_;
 
   wand::SharedDeviceHandle<wand::PipelineState> pso_;
   wand::UniqueSamplerHandle samp_;
-  wand::SharedDeviceHandle<wand::Texture> fonts_tex_;
+  wand::SharedDeviceHandle<wand::Texture> font_tex_;
 
   std::array<wand::SharedDeviceHandle<wand::BufferView>, rendering::kFramesInFlight>
   vtx_buffers_;
@@ -89,6 +87,8 @@ private:
   std::array<void*, rendering::kFramesInFlight> ib_ptrs_{};
 
   std::array<DrawData, rendering::kFramesInFlight> draw_data_{};
+
+  bool fonts_dirty_{false};
 
   ImTextureID const static kFontTexId;
 };
