@@ -25,7 +25,8 @@ auto EditorDrawerRegistry::RegisterDrawer(std::unique_ptr<EditorDrawerBase> draw
 }
 
 
-EditorDrawerRegistry::EditorDrawerRegistry() {
+EditorDrawerRegistry::EditorDrawerRegistry(ImGuiTextureReferences& tex_refs) :
+  tex_refs_{&tex_refs} {
   RegisterDrawer(std::make_unique<ObjectEditorDrawer>());
   RegisterDrawer(std::make_unique<MaterialEditorDrawer>());
   RegisterDrawer(std::make_unique<MeshEditorDrawer>());

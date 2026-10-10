@@ -19,6 +19,7 @@ namespace rendering {
 class RenderManager;
 class SceneRenderer;
 class RenderFrame;
+class TextureResolver;
 }
 
 
@@ -70,6 +71,9 @@ public:
   auto Instance() -> App&;
 
 protected:
+  [[nodiscard]] SORCERYAPI
+  auto GetTextureResolver() -> rendering::TextureResolver&;
+
   SORCERYAPI
   auto WaitRenderJob() -> void;
 

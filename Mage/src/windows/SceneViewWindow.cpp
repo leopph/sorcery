@@ -10,6 +10,10 @@
 
 
 namespace sorcery::mage {
+SceneViewWindow::SceneViewWindow(ImGuiTextureReferences& tex_refs) :
+  tex_refs_{&tex_refs} {}
+
+
 SceneViewWindow::~SceneViewWindow() {
   App::Instance().GetSceneRenderer().Unregister(cam_);
 }
@@ -161,7 +165,7 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
       selectedObject->OnDrawGizmosSelected();
     }
 
-    ImGui::Image(std::bit_cast<ImTextureID>(cam_.GetRenderTarget()->GetColorTex().get()), contentRegionSize);
+    ImGui::Image(tex_refs_->Reference(cam_.GetRenderTarget()), contentRegionSize);
 
     if (ImGui::BeginDragDropTarget()) {
       if (auto const* const payload{ImGui::GetDragDropPayload()};

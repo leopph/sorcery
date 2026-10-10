@@ -1,8 +1,5 @@
 #include "Cubemap.hpp"
 
-#include "../app.hpp"
-#include "../rendering/render_manager.hpp"
-
 #include <utility>
 
 
@@ -12,16 +9,28 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Cubemap::Cubemap(wand::SharedDeviceHandle<wand::Texture> tex) noexcept :
-  tex_{std::move(tex)} {}
-
-
-Cubemap::~Cubemap() {
-  App::Instance().GetRenderManager().KeepAliveWhileInUse(tex_);
+auto detail::ClearCubemapCpuData(Cubemap& cubemap) -> void {
+  cubemap.data_.reset();
 }
 
 
-auto Cubemap::GetTex() const noexcept -> wand::SharedDeviceHandle<wand::Texture> const& {
-  return tex_;
+Cubemap::Cubemap(DirectX::ScratchImage image, CpuResidencyPolicy const cpu_data_policy) :
+  data_{std::make_unique<DirectX::ScratchImage>(std::move(image))},
+  metadata_{data_->GetMetadata()},
+  cpu_policy_{cpu_data_policy} {}
+
+
+auto Cubemap::GetData() const -> ObserverPtr<DirectX::ScratchImage const> {
+  return MakeObserver(data_.get());
+}
+
+
+auto Cubemap::GetMetadata() const -> DirectX::TexMetadata const& {
+  return metadata_;
+}
+
+
+auto Cubemap::GetCpuDataPolicy() const -> CpuResidencyPolicy {
+  return cpu_policy_;
 }
 }

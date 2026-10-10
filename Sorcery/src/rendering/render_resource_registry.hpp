@@ -8,6 +8,7 @@
 
 #include "render_material.hpp"
 #include "render_mesh.hpp"
+#include "render_texture.hpp"
 #include "../object_id.hpp"
 #include "../observer_ptr.hpp"
 #include "wand/wand.hpp"
@@ -35,13 +36,17 @@ public:
   [[nodiscard]]
   auto CreateOrGetMesh(ObjectId const& id) -> QueryResult<RenderMesh>;
 
+  [[nodiscard]]
+  auto CreateOrGetTexture(ObjectId const& id) -> QueryResult<RenderTexture>;
+
   auto CollectGarbage(std::size_t budget) -> void;
 
 private:
   using RenderResource = std::variant<
     std::monostate,
     std::unique_ptr<RenderMaterial>,
-    std::unique_ptr<RenderMesh>
+    std::unique_ptr<RenderMesh>,
+    std::unique_ptr<RenderTexture>
   >;
 
 

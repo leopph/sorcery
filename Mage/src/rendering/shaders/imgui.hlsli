@@ -21,10 +21,10 @@ struct PsIn {
 
 
 PsIn VsMain(uint vertex_id : SV_VertexID) {
-  vertex_id = (uint) ((int) vertex_id + g_draw_call_params.base_vertex);
+  vertex_id = (uint)((int)vertex_id + g_draw_call_params.base_vertex);
 
-  const StructuredBuffer<VertexData> vertex_data_buf = ResourceDescriptorHeap[g_draw_params.vb_idx];
-  const VertexData vertex_data = vertex_data_buf[vertex_id];
+  StructuredBuffer<VertexData> const vertex_data_buf = ResourceDescriptorHeap[g_draw_params.vb_idx];
+  VertexData const vertex_data = vertex_data_buf[vertex_id];
 
   PsIn vertex_out;
   vertex_out.pos_cs = mul(float4(vertex_data.pos_os, 0, 1), g_draw_params.proj_mtx);
@@ -35,9 +35,14 @@ PsIn VsMain(uint vertex_id : SV_VertexID) {
 }
 
 
-float4 PsMain(const PsIn vertex_out) : SV_Target {
-  const SamplerState samp = SamplerDescriptorHeap[g_draw_params.samp_idx];
-  const Texture2D tex = ResourceDescriptorHeap[g_draw_params.tex_idx];
+float4 PsMain(PsIn const vertex_out) : SV_Target {
+  SamplerState const samp = SamplerDescriptorHeap[g_draw_params.samp_idx];
+
+  if (g_draw_params.tex_idx == INVALID_RES_IDX) {
+    return vertex_out.color;
+  }
+
+  Texture2D const tex = ResourceDescriptorHeap[g_draw_params.tex_idx];
   return vertex_out.color * tex.Sample(samp, vertex_out.uv);
 }
 

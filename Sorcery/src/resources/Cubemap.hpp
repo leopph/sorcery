@@ -1,25 +1,53 @@
 #pragma once
 
+#include <cstddef>
+#include <memory>
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <DirectXTex.h>
+
 #include "Resource.hpp"
-#include "wand/device_object.hpp"
-#include "wand/texture.hpp"
+#include "../observer_ptr.hpp"
+#include "../resource_residency_policy.hpp"
 
 
 namespace sorcery {
+class Cubemap;
+
+
+namespace detail {
+auto ClearCubemapCpuData(Cubemap& cubemap) -> void;
+}
+
+
 class Cubemap final : public Resource {
   RTTR_ENABLE(Resource)
-  wand::SharedDeviceHandle<wand::Texture> tex_;
 
 public:
-  LEOPPHAPI explicit Cubemap(wand::SharedDeviceHandle<wand::Texture> tex) noexcept;
-  Cubemap(Cubemap const&) = delete;
-  Cubemap(Cubemap&&) noexcept = delete;
+  SORCERYAPI Cubemap(DirectX::ScratchImage image, CpuResidencyPolicy cpu_data_policy);
+  Cubemap(Cubemap const& other) = delete;
+  Cubemap(Cubemap&& other) noexcept = delete;
 
-  LEOPPHAPI ~Cubemap() override;
+  ~Cubemap() override = default;
 
-  auto operator=(Cubemap const&) -> void = delete;
-  auto operator=(Cubemap&&) noexcept -> void = delete;
+  auto operator=(Cubemap const& other) -> Cubemap& = delete;
+  auto operator=(Cubemap&& other) noexcept -> Cubemap& = delete;
 
-  [[nodiscard]] LEOPPHAPI auto GetTex() const noexcept -> wand::SharedDeviceHandle<wand::Texture> const&;
+  [[nodiscard]] SORCERYAPI
+  auto GetData() const -> ObserverPtr<DirectX::ScratchImage const>;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetMetadata() const -> DirectX::TexMetadata const&;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetCpuDataPolicy() const -> CpuResidencyPolicy;
+
+private:
+  std::unique_ptr<DirectX::ScratchImage> data_;
+  DirectX::TexMetadata metadata_;
+  CpuResidencyPolicy cpu_policy_;
+
+  friend auto detail::ClearCubemapCpuData(Cubemap& cubemap) -> void;
 };
 }

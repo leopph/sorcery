@@ -7,15 +7,17 @@
 #include <ImGuizmo.h>
 
 #include "../StandaloneCamera.hpp"
+#include "observer_ptr.hpp"
 
 
 namespace sorcery::mage {
 class EditorApp;
+class ImGuiTextureReferences;
 
 
 class SceneViewWindow {
 public:
-  SceneViewWindow() = default;
+  explicit SceneViewWindow(ImGuiTextureReferences& tex_refs);
   SceneViewWindow(SceneViewWindow const&) = delete;
   SceneViewWindow(SceneViewWindow&&) = delete;
 
@@ -56,6 +58,7 @@ private:
     GizmoModeOption{ImGuizmo::MODE::LOCAL, "Local"}, GizmoModeOption{ImGuizmo::MODE::WORLD, "World"}
   };
 
+  ObserverPtr<ImGuiTextureReferences> tex_refs_;
   StandaloneCamera cam_{Vector3{}, Quaternion{}, 5.0f, 0.1f, 1000.0f, 60};
   std::optional<FocusMoveInfo> focus_target_;
   int gizmo_op_idx_{0};

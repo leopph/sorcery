@@ -152,6 +152,7 @@
     <ClCompile Include="src\random.cpp" />
     <ClCompile Include="src\rendering\Camera.cpp" />
     <ClCompile Include="src\rendering\command_list_pool.cpp" />
+    <ClCompile Include="src\rendering\render_texture.cpp" />
     <ClCompile Include="src\rendering\shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\frame_scheduler.cpp" />
     <ClCompile Include="src\rendering\frame_uploader.cpp" />
@@ -164,6 +165,7 @@
     <ClCompile Include="src\rendering\render_manager.cpp" />
     <ClCompile Include="src\rendering\skinned_render_mesh_instance.cpp" />
     <ClCompile Include="src\rendering\static_render_mesh_instance.cpp" />
+    <ClCompile Include="src\rendering\texture_resolver.cpp" />
     <ClCompile Include="src\resources\prefab.cpp" />
     <ClCompile Include="src\resource_id.cpp" />
     <ClCompile Include="src\resource_import\material_import.cpp" />
@@ -219,6 +221,7 @@
     <ClInclude Include="src\random.hpp" />
     <ClInclude Include="src\rendering\command_list_pool.hpp" />
     <ClInclude Include="src\rendering\config.hpp" />
+    <ClInclude Include="src\rendering\render_texture.hpp" />
     <ClInclude Include="src\rendering\shadow_map_array.hpp" />
     <ClInclude Include="src\rendering\frame_scheduler.hpp" />
     <ClInclude Include="src\rendering\frame_uploader.hpp" />
@@ -233,6 +236,7 @@
     <ClInclude Include="src\rendering\render_manager.hpp" />
     <ClInclude Include="src\rendering\skinned_render_mesh_instance.hpp" />
     <ClInclude Include="src\rendering\static_render_mesh_instance.hpp" />
+    <ClInclude Include="src\rendering\texture_resolver.hpp" />
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\reflection.hpp" />
     <ClInclude Include="src\resources\prefab.hpp" />

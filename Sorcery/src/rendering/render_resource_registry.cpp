@@ -20,6 +20,12 @@ auto RenderResourceRegistry::CreateResource<RenderMesh>() const -> std::unique_p
 }
 
 
+template<>
+auto RenderResourceRegistry::CreateResource<RenderTexture>() const -> std::unique_ptr<RenderTexture> {
+  return std::make_unique<RenderTexture>();
+}
+
+
 template<typename T>
 auto RenderResourceRegistry::CreateOrGetResource(ObjectId const& id) -> QueryResult<T> {
   assert(id.IsValid());
@@ -58,6 +64,11 @@ auto RenderResourceRegistry::CreateOrGetMaterial(ObjectId const& id) -> QueryRes
 
 auto RenderResourceRegistry::CreateOrGetMesh(ObjectId const& id) -> QueryResult<RenderMesh> {
   return CreateOrGetResource<RenderMesh>(id);
+}
+
+
+auto RenderResourceRegistry::CreateOrGetTexture(ObjectId const& id) -> QueryResult<RenderTexture> {
+  return CreateOrGetResource<RenderTexture>(id);
 }
 
 

@@ -132,6 +132,9 @@
     <ClCompile Include="src\drawers\import_settings_editor_draw_helpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\imgui_texture_references.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\imgui.hlsli" />
@@ -267,6 +270,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\drawers\import_settings_editor_draw_helpers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui_texture_references.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

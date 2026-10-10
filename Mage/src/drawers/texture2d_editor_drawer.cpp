@@ -3,6 +3,7 @@
 #include <imgui.h>
 
 #include "editor_drawer_registry.hpp"
+#include "../imgui_texture_references.hpp"
 
 
 namespace sorcery::mage {
@@ -58,6 +59,6 @@ auto Texture2DEditorDrawer::Draw(
     displaySize.y = imgHeight * widthRatio;
   }
 
-  ImGui::Image(std::bit_cast<ImTextureID>(obj.GetTex().get()), displaySize);
+  ImGui::Image(ctx.tex_refs->Reference(obj), displaySize);
 }
 }

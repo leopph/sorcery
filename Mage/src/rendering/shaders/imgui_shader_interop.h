@@ -10,6 +10,9 @@ using float2 = sorcery::Vector2;
 using uint = std::uint32_t;
 #endif
 
+#define INVALID_RES_IDX ((uint)-1)
+
+
 // This should match ImDrawVert
 struct VertexData {
   float2 pos_os;

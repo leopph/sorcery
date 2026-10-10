@@ -20,7 +20,8 @@ auto EditorDrawerRegistry::DrawAs(T& obj, bool allow_edit, bool& changed) -> voi
 template<typename T>
 auto EditorDrawerRegistry::DrawAs(rttr::type const& type, T& obj, bool allow_edit, bool& changed) -> void {
   EditorDrawerContext const ctx{
-    .registry = ObserverPtr{this}
+    .registry = ObserverPtr{this},
+    .tex_refs = tex_refs_
   };
 
   // If the exact passed type has a drawer, use that one

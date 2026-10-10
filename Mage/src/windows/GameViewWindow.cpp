@@ -4,10 +4,12 @@
 #include "scene_renderer.hpp"
 #include "util.hpp"
 #include "../gui_helpers.hpp"
+#include "../imgui_texture_references.hpp"
 
 
 namespace sorcery::mage {
-GameViewWindow::GameViewWindow() {
+GameViewWindow::GameViewWindow(ImGuiTextureReferences& tex_refs) :
+  tex_refs_{&tex_refs} {
   App::Instance().GetSceneRenderer().SetRenderGlobalCameras(was_visible_);
 }
 
@@ -90,7 +92,7 @@ auto GameViewWindow::Draw(bool const game_is_running) -> void {
     App::Instance().GetSceneRenderer().SetRenderTargetOverride(rt_override_);
   }
 
-  ImGui::Image(std::bit_cast<ImTextureID>(rt_override_->GetColorTex().get()), [content_region_size, this] {
+  ImGui::Image(tex_refs_->Reference(rt_override_), [content_region_size, this] {
     auto const& desc{rt_override_->GetDesc()};
     auto const scale{
       std::min(content_region_size.x / static_cast<float>(desc.width),

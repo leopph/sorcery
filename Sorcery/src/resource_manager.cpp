@@ -370,19 +370,13 @@ auto ResourceManager::LoadTexture(std::span<std::byte const> const bytes) -> May
     return nullptr;
   }
 
-  auto tex{App::Instance().GetRenderManager().CreateReadOnlyTexture(img)};
-
-  if (!tex) {
-    return nullptr;
-  }
-
   std::unique_ptr<Resource> ret;
 
   if (meta.dimension == DirectX::TEX_DIMENSION_TEXTURE2D) {
     if (meta.IsCubemap()) {
-      ret = std::make_unique<Cubemap>(std::move(tex));
+      ret = std::make_unique<Cubemap>(std::move(img), CpuResidencyPolicy::kReleaseAfterUpload);
     } else {
-      ret = std::make_unique<Texture2D>(std::move(tex));
+      ret = std::make_unique<Texture2D>(std::move(img), CpuResidencyPolicy::kReleaseAfterUpload);
     }
   } else {
     return nullptr;

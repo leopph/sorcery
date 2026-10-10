@@ -10,6 +10,7 @@
 #include "app.hpp"
 #include "Event.hpp"
 #include "gui_helpers.hpp"
+#include "imgui_texture_references.hpp"
 #include "MainMenuBar.hpp"
 #include "ResourceDB.hpp"
 #include "Scene.hpp"
@@ -33,12 +34,6 @@ public:
 
   auto operator=(EditorApp const&) -> void = delete;
   auto operator=(EditorApp&&) -> void = delete;
-
-  auto BeginFrame() -> void override;
-  auto Update() -> void override;
-  auto EndFrame() -> void override;
-  auto ExtractRenderFrame(rendering::RenderFrame& frame) -> void override;
-  auto RecordRenderFrame(rendering::RenderFrame& frame) -> void override;
 
   [[nodiscard]] auto GetImGuiIo() const noexcept -> ImGuiIO const&;
   [[nodiscard]] auto GetImGuiIo() noexcept -> ImGuiIO&;
@@ -65,6 +60,13 @@ public:
 
   template<typename Callable>
   auto ExecuteInBusyEditor(Callable&& callable) -> void;
+
+protected:
+  auto BeginFrame() -> void override;
+  auto Update() -> void override;
+  auto EndFrame() -> void override;
+  auto ExtractRenderFrame(rendering::RenderFrame& frame) -> void override;
+  auto RecordRenderFrame(rendering::RenderFrame& frame) -> void override;
 
 private:
   struct BusyExecutionContext {
@@ -96,13 +98,14 @@ private:
 
   bool game_is_running_{false};
 
-  ImGuiRenderer imgui_renderer_{GetGraphicsDevice(), GetSwapChain(), GetRenderManager()};
-
-  EditorDrawerRegistry drawer_registry_;
-
+  ImGuiTextureReferences tex_refs_;
+  ImGuiRenderer imgui_renderer_{
+    GetGraphicsDevice(), GetSwapChain(), GetRenderManager(), GetTextureResolver(), tex_refs_
+  };
+  EditorDrawerRegistry drawer_registry_{tex_refs_};
   ProjectWindow project_window_{*this, resource_db_, drawer_registry_};
-  SceneViewWindow scene_view_window_;
-  GameViewWindow game_view_window_;
+  SceneViewWindow scene_view_window_{tex_refs_};
+  GameViewWindow game_view_window_{tex_refs_};
   PropertiesWindow properties_window_{*this, drawer_registry_};
   SettingsWindow editor_settings_window_{*this, scene_view_window_.GetCamera()};
   MainMenuBar main_menu_bar_{*this, editor_settings_window_};

@@ -14,6 +14,7 @@
 #include "rendering/render_manager.hpp"
 #include "rendering/render_resource_registry.hpp"
 #include "rendering/scene_renderer.hpp"
+#include "rendering/texture_resolver.hpp"
 #include "wand/wand.hpp"
 
 
@@ -63,8 +64,9 @@ struct App::Data {
   ObjectRegistry object_registry;
   rendering::RenderResourceRegistry render_resource_registry{graphics_device, object_registry};
   rendering::RenderInstanceRegistry render_instance_registry{object_registry};
+  rendering::TextureResolver texture_resolver{graphics_device, render_resource_registry};
   rendering::SceneRenderer scene_renderer{
-    window, graphics_device, render_manager, render_resource_registry, render_instance_registry
+    window, graphics_device, render_manager, render_resource_registry, render_instance_registry, texture_resolver
   };
   ResourceManager resource_manager{job_system};
   ObserverPtr<Job> render_job;
@@ -188,6 +190,11 @@ auto App::Instance() -> App& {
   }
 
   return *instance_;
+}
+
+
+auto App::GetTextureResolver() -> rendering::TextureResolver& {
+  return data_->texture_resolver;
 }
 
 

@@ -22,4 +22,14 @@ auto RenderMaterial::GetRevision() const -> std::uint64_t {
 auto RenderMaterial::SetRevision(std::uint64_t const rev) -> void {
   revision_ = rev;
 }
+
+
+auto RenderMaterial::GetTextureIds() const -> std::array<ObjectId, 6> const& {
+  return tex_ids_;
+}
+
+
+auto RenderMaterial::SetTextureIds(std::array<ObjectId, 6> const& ids) -> void {
+  tex_ids_ = ids;
+}
 }

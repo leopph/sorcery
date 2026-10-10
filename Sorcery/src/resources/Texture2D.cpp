@@ -2,11 +2,6 @@
 
 #include <utility>
 
-#include <DirectXTex.h>
-
-#include "../app.hpp"
-#include "../rendering/render_manager.hpp"
-
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Texture2D>{"Texture2D"};
@@ -14,15 +9,18 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Texture2D::Texture2D(wand::SharedDeviceHandle<wand::Texture> tex) noexcept :
-  tex_{std::move(tex)} {
-  auto const desc{tex_->GetDesc()};
-  m_width_ = static_cast<int>(desc.width);
-  m_height_ = static_cast<int>(desc.height);
-  m_channel_count_ =
-    DirectX::IsCompressed(desc.format)
-      ? [&desc] {
-        switch (DirectX::MakeTypeless(desc.format)) {
+auto detail::ClearTex2DCpuData(Texture2D& tex) -> void {
+  tex.data_.reset();
+}
+
+
+Texture2D::Texture2D(DirectX::ScratchImage image, CpuResidencyPolicy const cpu_data_policy) :
+  data_{std::make_unique<DirectX::ScratchImage>(std::move(image))},
+  metadata_{data_->GetMetadata()},
+  channel_count_{
+    DirectX::IsCompressed(metadata_.format)
+      ? [](DXGI_FORMAT const format) {
+        switch (DirectX::MakeTypeless(format)) {
           case DXGI_FORMAT_BC1_TYPELESS:
             return 3;
           case DXGI_FORMAT_BC2_TYPELESS:
@@ -40,32 +38,38 @@ Texture2D::Texture2D(wand::SharedDeviceHandle<wand::Texture> tex) noexcept :
           default:
             return 0;
         }
-      }()
-      : static_cast<unsigned>(DirectX::BitsPerPixel(desc.format) / DirectX::BitsPerColor(desc.format));
+      }(metadata_.format)
+      : static_cast<unsigned>(DirectX::BitsPerPixel(metadata_.format) / DirectX::BitsPerColor(metadata_.format))
+  },
+  cpu_policy_{cpu_data_policy} {}
+
+
+auto Texture2D::GetData() const -> ObserverPtr<DirectX::ScratchImage const> {
+  return MakeObserver(data_.get());
 }
 
 
-Texture2D::~Texture2D() {
-  App::Instance().GetRenderManager().KeepAliveWhileInUse(tex_);
+auto Texture2D::GetMetadata() const -> DirectX::TexMetadata const& {
+  return metadata_;
 }
 
 
-auto Texture2D::GetTex() const -> wand::SharedDeviceHandle<wand::Texture> const& {
-  return tex_;
+auto Texture2D::GetCpuDataPolicy() const -> CpuResidencyPolicy {
+  return cpu_policy_;
 }
 
 
-auto Texture2D::GetWidth() const noexcept -> unsigned {
-  return m_width_;
+auto Texture2D::GetWidth() const -> std::size_t {
+  return metadata_.width;
 }
 
 
-auto Texture2D::GetHeight() const noexcept -> unsigned {
-  return m_height_;
+auto Texture2D::GetHeight() const -> std::size_t {
+  return metadata_.height;
 }
 
 
-auto Texture2D::GetChannelCount() const noexcept -> unsigned {
-  return m_channel_count_;
+auto Texture2D::GetChannelCount() const -> unsigned {
+  return channel_count_;
 }
 }

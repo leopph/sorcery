@@ -27,13 +27,19 @@
 #include "wand/wand.hpp"
 
 
-namespace sorcery::rendering {
+namespace sorcery {
+class Cubemap;
+
+
+namespace rendering {
 class RenderInstanceRegistry;
 class RenderResourceRegistry;
 class RenderMaterial;
 class RenderMesh;
+class RenderTexture;
 class StaticRenderMeshInstance;
 class SkinnedRenderMeshInstance;
+class TextureResolver;
 
 
 // Passing these enum values to shaders is valid
@@ -74,9 +80,14 @@ struct SsrParams {
 
 class SceneRenderer {
 public:
-  SORCERYAPI SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager,
-                           RenderResourceRegistry& render_resource_registry,
-                           RenderInstanceRegistry& render_instance_registry);
+  SORCERYAPI SceneRenderer(
+    Window& window,
+    wand::GraphicsDevice& device,
+    RenderManager& render_manager,
+    RenderResourceRegistry& render_resource_registry,
+    RenderInstanceRegistry& render_instance_registry,
+    TextureResolver& tex_resolver
+  );
   SceneRenderer(SceneRenderer const&) = delete;
   SceneRenderer(SceneRenderer&&) = delete;
 
@@ -456,6 +467,12 @@ private:
   };
 
 
+  struct ResolvedMaterialTextures {
+    std::array<ObjectId, 6> obj_ids{};
+    std::array<std::uint32_t, 6> srv_indices{};
+  };
+
+
   [[nodiscard]] static
   auto FindOrAddBufferViewInPacket(
     wand::SharedDeviceHandle<wand::BufferView> const& buf,
@@ -499,6 +516,7 @@ private:
   static
   auto SyncMaterial(
     Material const& mtl,
+    ResolvedMaterialTextures const& textures,
     RenderMaterial& render_mtl,
     RenderFrame& frame
   ) -> void;
@@ -698,6 +716,7 @@ private:
   ObserverPtr<RenderManager> render_manager_;
   ObserverPtr<RenderResourceRegistry> resource_registry_;
   ObserverPtr<RenderInstanceRegistry> instance_registry_;
+  ObserverPtr<TextureResolver> tex_resolver_;
 
   std::array<MappedConstantBuffer<ShaderPerFrameConstants>, kFramesInFlight> per_frame_cbs_{
     MappedConstantBuffer<ShaderPerFrameConstants>{*device_},
@@ -799,5 +818,6 @@ private:
 
 constexpr auto SceneRenderer::GetMaxShadowCascadeCount() noexcept -> unsigned {
   return MAX_CASCADE_COUNT;
+}
 }
 }

@@ -14,6 +14,7 @@
 #include "render_instance_registry.hpp"
 #include "render_resource_registry.hpp"
 #include "ShadowCascadeBoundary.hpp"
+#include "texture_resolver.hpp"
 #include "../app.hpp"
 #include "../random.hpp"
 #include "../resource_manager.hpp"
@@ -182,14 +183,20 @@ auto EnsureStructuredBufferCapacity(
 }
 
 
-SceneRenderer::SceneRenderer(Window& window, wand::GraphicsDevice& device, RenderManager& render_manager,
-                             RenderResourceRegistry& render_resource_registry,
-                             RenderInstanceRegistry& render_instance_registry) :
+SceneRenderer::SceneRenderer(
+  Window& window,
+  wand::GraphicsDevice& device,
+  RenderManager& render_manager,
+  RenderResourceRegistry& render_resource_registry,
+  RenderInstanceRegistry& render_instance_registry,
+  TextureResolver& tex_resolver
+) :
   window_{&window},
   device_{&device},
   render_manager_{&render_manager},
   resource_registry_{&render_resource_registry},
-  instance_registry_{&render_instance_registry} {
+  instance_registry_{&render_instance_registry},
+  tex_resolver_{&tex_resolver} {
   main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
     static_cast<UINT>(window_->GetClientAreaSize().width), static_cast<UINT>(window_->GetClientAreaSize().height),
     DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Main RT", false
@@ -592,7 +599,7 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
 
     if (active_scene->GetSkyMode() == SkyMode::Skybox) {
       if (auto const cubemap{active_scene->GetSkybox().Observe()}) {
-        packet.skybox_cubemap = cubemap->GetTex();
+        packet.skybox_cubemap = tex_resolver_->Resolve(*cubemap, frame);
 
         if (auto const irradiance_map{sorcery::detail::GetIrradianceMap(*active_scene)};
           !irradiance_map ||
@@ -2039,28 +2046,42 @@ auto SceneRenderer::AddMeshComponentToPacket(MeshComponentBase const& comp, Geom
       continue;
     }
 
+    std::array const textures{
+      mtl->GetAlbedoMap().Observe(),
+      mtl->GetMetallicMap().Observe(),
+      mtl->GetRoughnessMap().Observe(),
+      mtl->GetAoMap().Observe(),
+      mtl->GetNormalMap().Observe(),
+      mtl->GetOpacityMask().Observe()
+    };
+
+    ResolvedMaterialTextures resolved;
+    resolved.srv_indices.fill(INVALID_RES_IDX);
+
+    for (auto i = 0uz; i < textures.size(); ++i) {
+      auto const tex = textures[i];
+
+      if (!tex) {
+        continue;
+      }
+
+      auto const gpu_tex = tex_resolver_->Resolve(*tex, frame);
+
+      resolved.obj_ids[i] = tex->GetId();
+      resolved.srv_indices[i] = gpu_tex->GetShaderResource();
+
+      // Return ignored because index is irrelevant, we call this only to make sure the packet contains the textures
+      // the material references.
+      std::ignore = FindOrAddTextureInPacket(gpu_tex, packet);
+    }
+
     auto const [render_mtl, is_new] = resource_registry_->CreateOrGetMaterial(mtl->GetId());
 
-    if (is_new || mtl->GetRevision() != render_mtl->GetRevision()) {
-      SyncMaterial(*mtl, *render_mtl, frame);
+    if (is_new || mtl->GetRevision() != render_mtl->GetRevision() || resolved.obj_ids != render_mtl->GetTextureIds()) {
+      SyncMaterial(*mtl, resolved, *render_mtl, frame);
     }
 
     packet.instance_materials.emplace_back(FindOrAddBufferViewInPacket(render_mtl->GetBufferView(), packet));
-
-    for (auto const tex : {
-           mtl->GetAlbedoMap().Observe(),
-           mtl->GetMetallicMap().Observe(),
-           mtl->GetRoughnessMap().Observe(),
-           mtl->GetAoMap().Observe(),
-           mtl->GetNormalMap().Observe(),
-           mtl->GetOpacityMask().Observe()
-         }) {
-      if (tex) {
-        // Return ignored because index is irrelevant, we call this only to make sure the packet contains the textures
-        // the material references.
-        std::ignore = FindOrAddTextureInPacket(tex->GetTex(), packet);
-      }
-    }
   }
 
   auto const& transform{comp.GetEntity()->GetTransform()};
@@ -2090,26 +2111,20 @@ auto SceneRenderer::FindOrAddRenderTargetInPacket(std::shared_ptr<RenderTarget> 
 }
 
 
-auto SceneRenderer::SyncMaterial(Material const& mtl, RenderMaterial& render_mtl, RenderFrame& frame) -> void {
-  auto const albedo_map = mtl.GetAlbedoMap();
-  auto const metallic_map = mtl.GetMetallicMap();
-  auto const roughness_map = mtl.GetRoughnessMap();
-  auto const ao_map = mtl.GetAoMap();
-  auto const normal_map = mtl.GetNormalMap();
-  auto const opacity_map = mtl.GetOpacityMask();
-
+auto SceneRenderer::SyncMaterial(Material const& mtl, ResolvedMaterialTextures const& textures,
+                                 RenderMaterial& render_mtl, RenderFrame& frame) -> void {
   ShaderMaterial const shader_mtl{
     .albedo = mtl.GetAlbedoVector(),
     .metallic = mtl.GetMetallic(),
     .roughness = mtl.GetRoughness(),
     .ao = mtl.GetAo(),
     .alphaThreshold = mtl.GetAlphaThreshold(),
-    .albedo_map_idx = albedo_map ? albedo_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
-    .metallic_map_idx = metallic_map ? metallic_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
-    .roughness_map_idx = roughness_map ? roughness_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
-    .ao_map_idx = ao_map ? ao_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
-    .normal_map_idx = normal_map ? normal_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
-    .opacity_map_idx = opacity_map ? opacity_map->GetTex()->GetShaderResource() : INVALID_RES_IDX,
+    .albedo_map_idx = textures.srv_indices[0],
+    .metallic_map_idx = textures.srv_indices[1],
+    .roughness_map_idx = textures.srv_indices[2],
+    .ao_map_idx = textures.srv_indices[3],
+    .normal_map_idx = textures.srv_indices[4],
+    .opacity_map_idx = textures.srv_indices[5],
     .blendMode = ToShaderBlendMode(mtl.GetBlendMode()),
     .pad = {}
   };
@@ -2118,6 +2133,7 @@ auto SceneRenderer::SyncMaterial(Material const& mtl, RenderMaterial& render_mtl
     std::span{reinterpret_cast<std::byte const*>(&shader_mtl), sizeof(shader_mtl)});
 
   render_mtl.SetRevision(mtl.GetRevision());
+  render_mtl.SetTextureIds(textures.obj_ids);
 }
 
 

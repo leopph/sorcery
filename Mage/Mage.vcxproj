@@ -149,6 +149,7 @@
     <ClCompile Include="src\drawers\texture_importer_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\transform_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\texture2d_editor_drawer.cpp" />
+    <ClCompile Include="src\imgui_texture_references.cpp" />
     <ClCompile Include="src\rendering\imgui_renderer.cpp" />
     <ClCompile Include="src\ResourceImporters\model_importer.cpp" />
     <ClCompile Include="src\ResourceImporters\native_resource_importer.cpp" />
@@ -199,6 +200,7 @@
     <ClInclude Include="src\drawers\skinned_mesh_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\texture2d_editor_drawer.hpp" />
     <ClInclude Include="src\gui_helpers.hpp" />
+    <ClInclude Include="src\imgui_texture_references.hpp" />
     <ClInclude Include="src\rendering\shaders\imgui_shader_interop.h" />
     <ClInclude Include="src\rendering\imgui_renderer.hpp" />
     <ClInclude Include="src\ResourceImporters\model_importer.hpp" />

@@ -87,90 +87,6 @@ EditorApp::~EditorApp() {
 }
 
 
-auto EditorApp::BeginFrame() -> void {
-  App::BeginFrame();
-  ImGui_ImplWin32_NewFrame();
-  ImGui::NewFrame();
-  ImGuizmo::BeginFrame();
-}
-
-
-auto EditorApp::Update() -> void {
-  if (GetProjectDirectoryAbsolute().empty()) {
-    DrawStartupScreen(*this);
-  } else {
-    int static targetFrameRate{timing::GetTargetFrameRate()};
-
-    if (game_is_running_) {
-      for (std::vector<ObjectPtr<SceneObject>> scene_objects;
-           auto const so : GetObjectRegistry().FindObjectsOfType(scene_objects)) {
-        if (so->IsUpdatable()) {
-          so->Update();
-        }
-      }
-
-      if (GetKeyDown(Key::Escape)) {
-        game_is_running_ = false;
-        GetWindow().SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
-        GetWindow().SetCursorLock(std::nullopt);
-        GetWindow().SetCursorHiding(false);
-        timing::SetTargetFrameRate(targetFrameRate);
-        GetScene().Load();
-        SetSelectedObject(nullptr);
-      }
-    } else {
-      if (GetKeyDown(Key::F5)) {
-        game_is_running_ = true;
-        GetWindow().SetEventHandler(nullptr);
-        GetScene().Save();
-        targetFrameRate = timing::GetTargetFrameRate();
-        timing::SetTargetFrameRate(-1);
-
-        for (std::vector<ObjectPtr<SceneObject>> scene_objects;
-             auto const so : GetObjectRegistry().FindObjectsOfType(scene_objects)) {
-          if (so->IsUpdatable()) {
-            so->Start();
-          }
-        }
-      }
-    }
-
-    ImGui::DockSpaceOverViewport();
-
-    if (IsEditorBusy()) {
-      DrawLoadingScreen(*this);
-    }
-
-    entity_hierarchy_window_.Draw();
-    game_view_window_.Draw(game_is_running_);
-    scene_view_window_.Draw(*this);
-
-    main_menu_bar_.Draw();
-    editor_settings_window_.Draw();
-    properties_window_.Draw();
-    project_window_.Draw();
-    DrawPerformanceCounterWindow();
-  }
-}
-
-
-auto EditorApp::EndFrame() -> void {
-  ImGui::Render();
-}
-
-
-auto EditorApp::ExtractRenderFrame(rendering::RenderFrame& frame) -> void {
-  App::ExtractRenderFrame(frame);
-  imgui_renderer_.ExtractDrawData(frame);
-}
-
-
-auto EditorApp::RecordRenderFrame(rendering::RenderFrame& frame) -> void {
-  App::RecordRenderFrame(frame);
-  imgui_renderer_.Render(frame);
-}
-
-
 auto EditorApp::GetImGuiIo() const noexcept -> ImGuiIO const& {
   return *imgui_io_;
 }
@@ -374,6 +290,91 @@ auto EditorApp::SetGuiDarkMode(bool const darkMode) noexcept -> void {
 
   GetWindow().UseImmersiveDarkMode(darkMode);
   dark_mode_ = darkMode;
+}
+
+
+auto EditorApp::BeginFrame() -> void {
+  App::BeginFrame();
+  tex_refs_.Reset();
+  ImGui_ImplWin32_NewFrame();
+  ImGui::NewFrame();
+  ImGuizmo::BeginFrame();
+}
+
+
+auto EditorApp::Update() -> void {
+  if (GetProjectDirectoryAbsolute().empty()) {
+    DrawStartupScreen(*this);
+  } else {
+    int static targetFrameRate{timing::GetTargetFrameRate()};
+
+    if (game_is_running_) {
+      for (std::vector<ObjectPtr<SceneObject>> scene_objects;
+           auto const so : GetObjectRegistry().FindObjectsOfType(scene_objects)) {
+        if (so->IsUpdatable()) {
+          so->Update();
+        }
+      }
+
+      if (GetKeyDown(Key::Escape)) {
+        game_is_running_ = false;
+        GetWindow().SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
+        GetWindow().SetCursorLock(std::nullopt);
+        GetWindow().SetCursorHiding(false);
+        timing::SetTargetFrameRate(targetFrameRate);
+        GetScene().Load();
+        SetSelectedObject(nullptr);
+      }
+    } else {
+      if (GetKeyDown(Key::F5)) {
+        game_is_running_ = true;
+        GetWindow().SetEventHandler(nullptr);
+        GetScene().Save();
+        targetFrameRate = timing::GetTargetFrameRate();
+        timing::SetTargetFrameRate(-1);
+
+        for (std::vector<ObjectPtr<SceneObject>> scene_objects;
+             auto const so : GetObjectRegistry().FindObjectsOfType(scene_objects)) {
+          if (so->IsUpdatable()) {
+            so->Start();
+          }
+        }
+      }
+    }
+
+    ImGui::DockSpaceOverViewport();
+
+    if (IsEditorBusy()) {
+      DrawLoadingScreen(*this);
+    }
+
+    entity_hierarchy_window_.Draw();
+    game_view_window_.Draw(game_is_running_);
+    scene_view_window_.Draw(*this);
+
+    main_menu_bar_.Draw();
+    editor_settings_window_.Draw();
+    properties_window_.Draw();
+    project_window_.Draw();
+    DrawPerformanceCounterWindow();
+  }
+}
+
+
+auto EditorApp::EndFrame() -> void {
+  ImGui::Render();
+}
+
+
+auto EditorApp::ExtractRenderFrame(rendering::RenderFrame& frame) -> void {
+  App::ExtractRenderFrame(frame);
+  imgui_renderer_.ExtractFrame(frame);
+}
+
+
+auto EditorApp::RecordRenderFrame(rendering::RenderFrame& frame) -> void {
+  App::RecordRenderFrame(frame);
+  imgui_renderer_.RecordFrame(frame);
 }
 
 

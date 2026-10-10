@@ -4,10 +4,17 @@
 #include "imgui_renderer.hpp"
 
 #include <bit>
+#include <cassert>
 #include <limits>
 
+#include "object_ptr.hpp"
+#include "texture_resolver.hpp"
+#include "../imgui_texture_references.hpp"
 #include "rendering/render_frame.hpp"
 #include "rendering/render_manager.hpp"
+#include "rendering/render_target.hpp"
+#include "resources/Cubemap.hpp"
+#include "resources/Texture2D.hpp"
 #include "shaders/imgui_shader_interop.h"
 
 #ifndef NDEBUG
@@ -20,11 +27,18 @@
 
 
 namespace sorcery::mage {
-ImGuiRenderer::ImGuiRenderer(wand::GraphicsDevice& device, wand::SwapChain const& swap_chain,
-                             rendering::RenderManager& render_manager) :
+ImGuiRenderer::ImGuiRenderer(
+  wand::GraphicsDevice& device,
+  wand::SwapChain const& swap_chain,
+  rendering::RenderManager& render_manager,
+  rendering::TextureResolver& tex_resolver,
+  ImGuiTextureReferences const& tex_refs
+) :
   device_{&device},
   swap_chain_{&swap_chain},
-  render_manager_{&render_manager} {
+  render_manager_{&render_manager},
+  tex_resolver_{&tex_resolver},
+  tex_refs_{&tex_refs} {
   auto& io{ImGui::GetIO()};
   io.BackendRendererName = "Sorcery ImGui Renderer";
   io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
@@ -82,61 +96,75 @@ auto ImGuiRenderer::UpdateFonts() -> void {
     }
   });
 
-  ImGui::GetIO().Fonts->SetTexID(std::bit_cast<ImTextureID>(fonts_tex_.get()));
+  ImGui::GetIO().Fonts->SetTexID(kFontTexId);
 }
 
 
-auto ImGuiRenderer::ExtractDrawData(rendering::RenderFrame const& frame) -> void {
+auto ImGuiRenderer::ExtractFrame(rendering::RenderFrame& frame) -> void {
   auto const& src_draw_data{*ImGui::GetDrawData()};
   auto& dst_draw_data{draw_data_[frame.GetIndex()]};
 
-  dst_draw_data.Valid = src_draw_data.Valid;
-  dst_draw_data.CmdListsCount = src_draw_data.CmdListsCount;
-  dst_draw_data.TotalIdxCount = src_draw_data.TotalIdxCount;
-  dst_draw_data.TotalVtxCount = src_draw_data.TotalVtxCount;
-  dst_draw_data.DisplayPos = src_draw_data.DisplayPos;
-  dst_draw_data.DisplaySize = src_draw_data.DisplaySize;
-  dst_draw_data.FramebufferScale = src_draw_data.FramebufferScale;
+  dst_draw_data.valid = src_draw_data.Valid;
+  dst_draw_data.cmd_lists_count = src_draw_data.CmdListsCount;
+  dst_draw_data.total_idx_count = src_draw_data.TotalIdxCount;
+  dst_draw_data.total_vtx_count = src_draw_data.TotalVtxCount;
+  dst_draw_data.display_pos = src_draw_data.DisplayPos;
+  dst_draw_data.display_size = src_draw_data.DisplaySize;
+  dst_draw_data.framebuffer_scale = src_draw_data.FramebufferScale;
 
-  dst_draw_data.CmdLists.clear();
+  dst_draw_data.cmd_lists.clear();
 
   // We never shrink the CmdLists vector to keep the vectors inside the CmdLists alive and prevent unnecessary
   // allocations. TODO we could just flatten the whole thing into arrays in DrawData and store only indices in DrawLists
-  if (dst_draw_data.CmdListsCount > dst_draw_data.CmdLists.size()) {
-    dst_draw_data.CmdLists.resize(dst_draw_data.CmdListsCount);
+  if (dst_draw_data.cmd_lists_count > dst_draw_data.cmd_lists.size()) {
+    dst_draw_data.cmd_lists.resize(dst_draw_data.cmd_lists_count);
   }
 
   for (auto i{0}; i < src_draw_data.CmdListsCount; i++) {
     auto const& draw_list{*src_draw_data.CmdLists[i]};
-    auto& cmd_list{dst_draw_data.CmdLists[i]};
+    auto& cmd_list{dst_draw_data.cmd_lists[i]};
 
-    cmd_list.CmdBuffer.assign(draw_list.CmdBuffer.begin(), draw_list.CmdBuffer.end());
-    cmd_list.IdxBuffer.assign(draw_list.IdxBuffer.begin(), draw_list.IdxBuffer.end());
-    cmd_list.VtxBuffer.assign(draw_list.VtxBuffer.begin(), draw_list.VtxBuffer.end());
-    cmd_list.Flags = draw_list.Flags;
+    cmd_list.cmd_buffer.assign(draw_list.CmdBuffer.begin(), draw_list.CmdBuffer.end());
+    cmd_list.idx_buffer.assign(draw_list.IdxBuffer.begin(), draw_list.IdxBuffer.end());
+    cmd_list.vtx_buffer.assign(draw_list.VtxBuffer.begin(), draw_list.VtxBuffer.end());
+    cmd_list.flags = draw_list.Flags;
+  }
+
+  dst_draw_data.textures.clear();
+
+  for (auto const& ref : tex_refs_->GetReferences()) {
+    if (auto const tex = std::get_if<ObjectPtr<Texture2D>>(&ref)) {
+      auto const observed = tex->Get();
+      dst_draw_data.textures.emplace_back(observed ? tex_resolver_->Resolve(*observed, frame) : nullptr);
+    } else if (auto const cubemap = std::get_if<ObjectPtr<Cubemap>>(&ref)) {
+      auto const observed = cubemap->Get();
+      dst_draw_data.textures.emplace_back(observed ? tex_resolver_->Resolve(*observed, frame) : nullptr);
+    } else {
+      dst_draw_data.textures.emplace_back(std::get<std::shared_ptr<rendering::RenderTarget>>(ref)->GetColorTex());
+    }
   }
 }
 
 
-auto ImGuiRenderer::Render(rendering::RenderFrame& frame) -> void {
+auto ImGuiRenderer::RecordFrame(rendering::RenderFrame& frame) -> void {
   auto const frame_idx{frame.GetIndex()};
 
   auto const draw_data{&draw_data_[frame_idx]};
 
   // Avoid rendering when minimized
-  if (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f) {
+  if (draw_data->display_size.x <= 0.0f || draw_data->display_size.y <= 0.0f) {
     return;
   }
 
   auto const proj_mtx{
-    Matrix4::OrthographicOffCenter(draw_data->DisplayPos.x, draw_data->DisplayPos.x + draw_data->DisplaySize.x,
-      draw_data->DisplayPos.y, draw_data->DisplayPos.y + draw_data->DisplaySize.y, -1, 1)
+    Matrix4::OrthographicOffCenter(draw_data->display_pos.x, draw_data->display_pos.x + draw_data->display_size.x,
+      draw_data->display_pos.y, draw_data->display_pos.y + draw_data->display_size.y, -1, 1)
   };
 
   auto& vb{vtx_buffers_[frame_idx]};
   auto& vb_ptr{(vb_ptrs_[frame_idx])};
 
-  if (auto const vtx_data_byte_size{draw_data->TotalVtxCount * sizeof(ImDrawVert)};
+  if (auto const vtx_data_byte_size{draw_data->total_vtx_count * sizeof(ImDrawVert)};
     !vb || vb->GetDesc().size < vtx_data_byte_size) {
     vb = CreateBufferWithView(*device_, wand::BufferDesc{
       .size = vtx_data_byte_size,
@@ -154,7 +182,7 @@ auto ImGuiRenderer::Render(rendering::RenderFrame& frame) -> void {
   auto& ib{idx_buffers_[frame_idx]};
   auto& ib_ptr{ib_ptrs_[frame_idx]};
 
-  if (auto const idx_data_byte_size{draw_data->TotalIdxCount * sizeof(ImDrawIdx)};
+  if (auto const idx_data_byte_size{draw_data->total_idx_count * sizeof(ImDrawIdx)};
     !ib || ib->GetDesc().size < idx_data_byte_size) {
     ib = device_->CreateBuffer(wand::BufferDesc{
       .size = idx_data_byte_size,
@@ -177,12 +205,12 @@ auto ImGuiRenderer::Render(rendering::RenderFrame& frame) -> void {
   auto vtx_dst{static_cast<ImDrawVert*>(vb_ptr)};
   auto idx_dst{static_cast<ImDrawIdx*>(ib_ptr)};
 
-  for (auto i{0}; i < draw_data->CmdListsCount; i++) {
-    auto const imgui_cmd{draw_data->CmdLists[i]};
-    std::memcpy(vtx_dst, imgui_cmd.VtxBuffer.data(), imgui_cmd.VtxBuffer.size() * sizeof(ImDrawVert));
-    std::memcpy(idx_dst, imgui_cmd.IdxBuffer.data(), imgui_cmd.IdxBuffer.size() * sizeof(ImDrawIdx));
-    vtx_dst += imgui_cmd.VtxBuffer.size();
-    idx_dst += imgui_cmd.IdxBuffer.size();
+  for (auto i{0}; i < draw_data->cmd_lists_count; i++) {
+    auto const imgui_cmd{draw_data->cmd_lists[i]};
+    std::memcpy(vtx_dst, imgui_cmd.vtx_buffer.data(), imgui_cmd.vtx_buffer.size() * sizeof(ImDrawVert));
+    std::memcpy(idx_dst, imgui_cmd.idx_buffer.data(), imgui_cmd.idx_buffer.size() * sizeof(ImDrawIdx));
+    vtx_dst += imgui_cmd.vtx_buffer.size();
+    idx_dst += imgui_cmd.idx_buffer.size();
   }
 
   auto const& rt{swap_chain_->GetCurrentTexture()};
@@ -199,7 +227,7 @@ auto ImGuiRenderer::Render(rendering::RenderFrame& frame) -> void {
   cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   cmd.SetRenderTargets(std::span{std::array{(&rt)}.data(), 1}, nullptr);
   cmd.SetViewports(std::array<D3D12_VIEWPORT, 1>{
-    CD3DX12_VIEWPORT{0.0f, 0.0f, draw_data->DisplaySize.x, draw_data->DisplaySize.y}
+    CD3DX12_VIEWPORT{0.0f, 0.0f, draw_data->display_size.x, draw_data->display_size.y}
   });
 
   cmd.ClearRenderTarget(rt, std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
@@ -209,12 +237,12 @@ auto ImGuiRenderer::Render(rendering::RenderFrame& frame) -> void {
   auto global_vtx_offset{0};
   auto global_idx_offset{0};
 
-  auto const& clip_off{draw_data->DisplayPos};
-  for (auto i{0}; i < draw_data->CmdListsCount; i++) {
-    auto const& imgui_cmd{draw_data->CmdLists[i]};
+  auto const& clip_off{draw_data->display_pos};
+  for (auto i{0}; i < draw_data->cmd_lists_count; i++) {
+    auto const& imgui_cmd{draw_data->cmd_lists[i]};
 
-    for (auto j{0}; j < imgui_cmd.CmdBuffer.size(); j++) {
-      auto const& draw_cmd{imgui_cmd.CmdBuffer[j]};
+    for (auto j{0}; j < imgui_cmd.cmd_buffer.size(); j++) {
+      auto const& draw_cmd{imgui_cmd.cmd_buffer[j]};
 
       if (draw_cmd.UserCallback != nullptr) {
         // TODO honor user callback
@@ -240,18 +268,43 @@ auto ImGuiRenderer::Render(rendering::RenderFrame& frame) -> void {
           }
         });
 
-        cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ImGuiDrawParams, tex_idx),
-          *std::bit_cast<wand::Texture*>(draw_cmd.GetTexID()));
+        if (auto const tex = ResolveImGuiTexture(draw_cmd.GetTexID(), frame_idx)) {
+          cmd.SetShaderResource(PIPELINE_PARAM_INDEX(ImGuiDrawParams, tex_idx), *tex);
+        } else {
+          cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(ImGuiDrawParams, tex_idx), INVALID_RES_IDX);
+        }
 
         cmd.DrawIndexedInstanced(draw_cmd.ElemCount, 1, draw_cmd.IdxOffset + global_idx_offset,
           draw_cmd.VtxOffset + global_vtx_offset, 0);
       }
     }
-    global_idx_offset += static_cast<int>(imgui_cmd.IdxBuffer.size());
-    global_vtx_offset += static_cast<int>(imgui_cmd.VtxBuffer.size());
+    global_idx_offset += static_cast<int>(imgui_cmd.idx_buffer.size());
+    global_vtx_offset += static_cast<int>(imgui_cmd.vtx_buffer.size());
   }
 
   cmd.End();
   frame.EnqueueCommandList(cmd);
 }
+
+
+auto ImGuiRenderer::ResolveImGuiTexture(
+  ImTextureID const id,
+  std::uint32_t const frame_idx
+) const -> ObserverPtr<wand::Texture> {
+  auto const& draw_data = draw_data_[frame_idx];
+  assert(draw_data.textures.size() <= kFontTexId && "ImGui texture reference list overlaps font tex ID!");
+
+  if (id == kFontTexId) {
+    return MakeObserver(fonts_tex_.get());
+  }
+
+  if (id >= draw_data.textures.size()) {
+    return nullptr;
+  }
+
+  return MakeObserver(draw_data.textures[id].get());
+}
+
+
+ImTextureID const ImGuiRenderer::kFontTexId{std::numeric_limits<ImTextureID>::max()};
 }
