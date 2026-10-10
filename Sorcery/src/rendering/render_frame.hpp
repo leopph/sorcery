@@ -37,6 +37,10 @@ public:
                     std::span<std::byte const> data) -> void;
 
   SORCERYAPI
+  auto UploadTexture(wand::SharedDeviceHandle<wand::Texture> const& tex, UINT first_subresource,
+                     std::span<D3D12_SUBRESOURCE_DATA const> data) -> void;
+
+  SORCERYAPI
   auto RecordUploads() -> void;
 
   RenderFrame(RenderFrame const& other) = delete;

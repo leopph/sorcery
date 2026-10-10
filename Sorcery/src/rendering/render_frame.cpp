@@ -61,6 +61,16 @@ auto RenderFrame::UploadBuffer(wand::SharedDeviceHandle<wand::BufferView> const&
 }
 
 
+auto RenderFrame::UploadTexture(wand::SharedDeviceHandle<wand::Texture> const& tex, UINT const first_subresource,
+                                std::span<D3D12_SUBRESOURCE_DATA const> const data) -> void {
+  assert(active_);
+  assert(!submitted_);
+  assert(!uploads_recorded_);
+
+  uploader_.UploadTexture(tex, first_subresource, data);
+}
+
+
 auto RenderFrame::RecordUploads() -> void {
   assert(active_);
   assert(!submitted_);
