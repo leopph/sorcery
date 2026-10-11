@@ -4,7 +4,7 @@
 
 #include "../app.hpp"
 #include "../Timing.hpp"
-#include "../rendering/scene_renderer.hpp"
+#include "../rendering/render_scene.hpp"
 
 
 RTTR_REGISTRATION {
@@ -26,12 +26,12 @@ auto SkinnedMeshComponent::Clone() -> std::unique_ptr<SceneObject> {
 
 auto SkinnedMeshComponent::OnAfterEnteringScene(Scene const& scene) -> void {
   Component::OnAfterEnteringScene(scene);
-  App::Instance().GetSceneRenderer().Register(*this);
+  App::Instance().GetRenderScene().Register(*this);
 }
 
 
 auto SkinnedMeshComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  App::Instance().GetSceneRenderer().Unregister(*this);
+  App::Instance().GetRenderScene().Unregister(*this);
   Component::OnBeforeExitingScene(scene);
 }
 

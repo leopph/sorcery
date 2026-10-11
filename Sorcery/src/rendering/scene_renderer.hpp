@@ -15,13 +15,13 @@
 #include "shadow_map_array.hpp"
 #include "structured_buffer.hpp"
 #include "temporary_render_target_pool.hpp"
+#include "../Bounds.hpp"
 #include "../Color.hpp"
 #include "../Math.hpp"
-#include "../util.hpp"
+#include "../mesh_data.hpp"
+#include "../object_id.hpp"
 #include "../Window.hpp"
 #include "../scene_objects/LightComponents.hpp"
-#include "../scene_objects/SkinnedMeshComponent.hpp"
-#include "../scene_objects/StaticMeshComponent.hpp"
 #include "shaders/shader_interop.h"
 #include "shaders/shadow_filtering_modes.h"
 #include "wand/wand.hpp"
@@ -29,6 +29,11 @@
 
 namespace sorcery {
 class Cubemap;
+class Material;
+class Mesh;
+class MeshComponentBase;
+class StaticMeshComponent;
+class SkinnedMeshComponent;
 
 
 namespace rendering {
@@ -40,6 +45,7 @@ class RenderTexture;
 class StaticRenderMeshInstance;
 class SkinnedRenderMeshInstance;
 class TextureResolver;
+class RenderScene;
 
 
 // Passing these enum values to shaders is valid
@@ -86,7 +92,8 @@ public:
     TemporaryRenderTargetPool& rt_pool,
     RenderResourceRegistry& render_resource_registry,
     RenderInstanceRegistry& render_instance_registry,
-    TextureResolver& tex_resolver
+    TextureResolver& tex_resolver,
+    RenderScene const& render_scene
   );
   SceneRenderer(SceneRenderer const&) = delete;
   SceneRenderer(SceneRenderer&&) = delete;
@@ -147,18 +154,6 @@ public:
 
   [[nodiscard]] SORCERYAPI auto GetGamma() const noexcept -> float;
   SORCERYAPI auto SetGamma(float gamma) noexcept -> void;
-
-  SORCERYAPI auto Register(StaticMeshComponent& static_mesh_component) noexcept -> void;
-  SORCERYAPI auto Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void;
-
-  SORCERYAPI auto Register(SkinnedMeshComponent& skinned_mesh_component) noexcept -> void;
-  SORCERYAPI auto Unregister(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void;
-
-  SORCERYAPI auto Register(LightComponent const& light_component) noexcept -> void;
-  SORCERYAPI auto Unregister(LightComponent const& light_component) noexcept -> void;
-
-  SORCERYAPI auto Register(Camera& cam) noexcept -> void;
-  SORCERYAPI auto Unregister(Camera const& cam) noexcept -> void;
 
 private:
   struct LightData {
@@ -718,6 +713,7 @@ private:
   ObserverPtr<RenderResourceRegistry> resource_registry_;
   ObserverPtr<RenderInstanceRegistry> instance_registry_;
   ObserverPtr<TextureResolver> tex_resolver_;
+  ObserverPtr<RenderScene const> render_scene_;
 
   std::array<MappedConstantBuffer<ShaderPerFrameConstants>, kFramesInFlight> per_frame_cbs_{
     MappedConstantBuffer<ShaderPerFrameConstants>{*device_},
@@ -771,6 +767,7 @@ private:
   wand::UniqueSamplerHandle samp_point_wrap_;
 
   std::array<ExtractedFrameData, kFramesInFlight> frame_packets_;
+  std::vector<ObserverPtr<StaticMeshComponent>> sorted_static_mesh_comps_;
   PreparedFrameData prepared_data_;
   std::vector<ShadowAllocCandidate> shadow_alloc_candidates_;
   std::vector<ShaderLight> shader_lights_;
@@ -802,11 +799,6 @@ private:
   bool render_global_cameras_{true};
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
-
-  std::vector<StaticMeshComponent*> static_mesh_components_;
-  std::vector<SkinnedMeshComponent*> skinned_mesh_components_;
-  std::vector<LightComponent const*> lights_;
-  std::vector<Camera*> cameras_;
 
   std::shared_ptr<RenderTarget> main_rt_;
   std::shared_ptr<RenderTarget> rt_override_;

@@ -1,7 +1,7 @@
 #include "StaticMeshComponent.hpp"
 
 #include "../app.hpp"
-#include "../rendering/scene_renderer.hpp"
+#include "../rendering/render_scene.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::StaticMeshComponent>{"Static Mesh Component"}
@@ -17,12 +17,12 @@ auto StaticMeshComponent::Clone() -> std::unique_ptr<SceneObject> {
 
 auto StaticMeshComponent::OnAfterEnteringScene(Scene const& scene) -> void {
   Component::OnAfterEnteringScene(scene);
-  App::Instance().GetSceneRenderer().Register(*this);
+  App::Instance().GetRenderScene().Register(*this);
 }
 
 
 auto StaticMeshComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  App::Instance().GetSceneRenderer().Unregister(*this);
+  App::Instance().GetRenderScene().Unregister(*this);
   Component::OnBeforeExitingScene(scene);
 }
 }

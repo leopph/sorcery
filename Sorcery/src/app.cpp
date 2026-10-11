@@ -12,6 +12,7 @@
 #include "rendering/frame_scheduler.hpp"
 #include "rendering/render_instance_registry.hpp"
 #include "rendering/render_resource_registry.hpp"
+#include "rendering/render_scene.hpp"
 #include "rendering/scene_renderer.hpp"
 #include "rendering/temporary_render_target_pool.hpp"
 #include "rendering/texture_resolver.hpp"
@@ -65,8 +66,9 @@ struct App::Data {
   rendering::RenderResourceRegistry render_resource_registry{graphics_device, object_registry};
   rendering::RenderInstanceRegistry render_instance_registry{object_registry};
   rendering::TextureResolver texture_resolver{graphics_device, render_resource_registry};
+  rendering::RenderScene render_scene;
   rendering::SceneRenderer scene_renderer{
-    window, graphics_device, rt_pool, render_resource_registry, render_instance_registry, texture_resolver
+    window, graphics_device, rt_pool, render_resource_registry, render_instance_registry, texture_resolver, render_scene
   };
   ResourceManager resource_manager{job_system};
   ObserverPtr<Job> render_job;
@@ -119,6 +121,11 @@ auto App::GetSwapChain() -> wand::SwapChain& {
 
 auto App::GetSceneRenderer() -> rendering::SceneRenderer& {
   return data_->scene_renderer;
+}
+
+
+auto App::GetRenderScene() -> rendering::RenderScene& {
+  return data_->render_scene;
 }
 
 

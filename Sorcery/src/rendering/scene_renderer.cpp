@@ -14,6 +14,7 @@
 #include "projection_utils.hpp"
 #include "render_instance_registry.hpp"
 #include "render_resource_registry.hpp"
+#include "render_scene.hpp"
 #include "ShadowCascadeBoundary.hpp"
 #include "texture_resolver.hpp"
 #include "../app.hpp"
@@ -22,7 +23,8 @@
 #include "../Window.hpp"
 #include "../Resources/Scene.hpp"
 #include "../scene_objects/Entity.hpp"
-#include "../scene_objects/LightComponents.hpp"
+#include "../scene_objects/SkinnedMeshComponent.hpp"
+#include "../scene_objects/StaticMeshComponent.hpp"
 #include "../scene_objects/TransformComponent.hpp"
 #include "shaders/shader_interop.h"
 
@@ -190,14 +192,16 @@ SceneRenderer::SceneRenderer(
   TemporaryRenderTargetPool& rt_pool,
   RenderResourceRegistry& render_resource_registry,
   RenderInstanceRegistry& render_instance_registry,
-  TextureResolver& tex_resolver
+  TextureResolver& tex_resolver,
+  RenderScene const& render_scene
 ) :
   window_{&window},
   device_{&device},
   rt_pool_{&rt_pool},
   resource_registry_{&render_resource_registry},
   instance_registry_{&render_instance_registry},
-  tex_resolver_{&tex_resolver} {
+  tex_resolver_{&tex_resolver},
+  render_scene_{&render_scene} {
   main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
     static_cast<UINT>(window_->GetClientAreaSize().width), static_cast<UINT>(window_->GetClientAreaSize().height),
     DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Main RT", false
@@ -309,9 +313,10 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
 
   // Extract lights
 
-  packet.light_data.reserve(lights_.size());
+  auto const lights = render_scene_->GetLightComponents();
+  packet.light_data.reserve(lights.size());
 
-  for (auto const light : lights_) {
+  for (auto const light : lights) {
     packet.light_data.emplace_back(light->GetColor(), light->GetIntensity(), light->GetDirection(),
       light->GetEntity()->GetTransform().GetWorldPosition(), light->GetType(), light->GetRange(),
       light->GetInnerAngle(),
@@ -328,11 +333,16 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   // Extract static mesh components
   // Because they're static, we can batch them for better performance.
 
+  {
+    auto static_meshes = render_scene_->GetStaticMeshComponents();
+    sorted_static_mesh_comps_.assign(static_meshes.begin(), static_meshes.end());
+  }
+
   // Sorting static mesh components gives the basis for batch extraction
-  std::ranges::sort(static_mesh_components_,
-    [](MeshComponentBase const* const lhs, MeshComponentBase const* const rhs) {
-      auto const lhs_mesh{lhs->GetMesh().Observe()};
-      auto const rhs_mesh{rhs->GetMesh().Observe()};
+  std::ranges::sort(sorted_static_mesh_comps_,
+    [](ObserverPtr<MeshComponentBase const> const lhs, ObserverPtr<MeshComponentBase const> const rhs) {
+      auto const lhs_mesh = lhs->GetMesh().Observe();
+      auto const rhs_mesh = rhs->GetMesh().Observe();
 
       if (!lhs_mesh || !rhs_mesh) {
         return lhs_mesh && !rhs_mesh;
@@ -341,8 +351,8 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
       return lhs_mesh->GetId() < rhs_mesh->GetId();
     });
 
-  for (auto* const comp : static_mesh_components_) {
-    auto const mesh{comp->GetMesh().Observe()};
+  for (auto const comp : sorted_static_mesh_comps_) {
+    auto const mesh = comp->GetMesh().Observe();
 
     if (!mesh) {
       continue;
@@ -367,8 +377,8 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   // Now come the skinned mesh components. Because their geometry is individually animated, we cannot batch them like static meshes.
   // Each component will have its own batch.
 
-  for (auto* const comp : skinned_mesh_components_) {
-    auto const mesh{comp->GetMesh().Observe()};
+  for (auto const comp : render_scene_->GetSkinnedMeshComponents()) {
+    auto const mesh = comp->GetMesh().Observe();
 
     if (!mesh) {
       continue;
@@ -491,9 +501,10 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
 
   // Extract camera data
 
-  packet.cam_data.reserve(cameras_.size());
+  auto const cameras = render_scene_->GetCameras();
+  packet.cam_data.reserve(cameras.size());
 
-  for (auto const cam : cameras_) {
+  for (auto const cam : cameras) {
     auto const& cam_rt{cam->GetRenderTarget()};
 
     if (!cam_rt && !render_global_cameras_) {
@@ -528,7 +539,8 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
 
     packet.cam_data.emplace_back(cam->GetPosition(), cam->GetRightAxis(), cam->GetUpAxis(), cam->GetForwardAxis(),
       cam->GetNearClipPlane(), cam->GetFarClipPlane(), cam->GetType(), cam->GetVerticalPerspectiveFov(),
-      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, accum_rt_local_idx, cam, accum_tex_empty);
+      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, accum_rt_local_idx, cam.Get(),
+      accum_tex_empty);
   }
 
   // Add gizmo draw data
@@ -1865,46 +1877,6 @@ auto SceneRenderer::GetGamma() const noexcept -> f32 {
 
 auto SceneRenderer::SetGamma(f32 const gamma) noexcept -> void {
   inv_gamma_ = 1.f / gamma;
-}
-
-
-auto SceneRenderer::Register(StaticMeshComponent& static_mesh_component) noexcept -> void {
-  static_mesh_components_.emplace_back(std::addressof(static_mesh_component));
-}
-
-
-auto SceneRenderer::Unregister(StaticMeshComponent const& static_mesh_component) noexcept -> void {
-  std::erase(static_mesh_components_, std::addressof(static_mesh_component));
-}
-
-
-auto SceneRenderer::Register(SkinnedMeshComponent& skinned_mesh_component) noexcept -> void {
-  skinned_mesh_components_.emplace_back(std::addressof(skinned_mesh_component));
-}
-
-
-auto SceneRenderer::Unregister(SkinnedMeshComponent const& skinned_mesh_component) noexcept -> void {
-  std::erase(skinned_mesh_components_, std::addressof(skinned_mesh_component));
-}
-
-
-auto SceneRenderer::Register(LightComponent const& light_component) noexcept -> void {
-  lights_.emplace_back(std::addressof(light_component));
-}
-
-
-auto SceneRenderer::Unregister(LightComponent const& light_component) noexcept -> void {
-  std::erase(lights_, std::addressof(light_component));
-}
-
-
-auto SceneRenderer::Register(Camera& cam) noexcept -> void {
-  cameras_.emplace_back(&cam);
-}
-
-
-auto SceneRenderer::Unregister(Camera const& cam) noexcept -> void {
-  std::erase(cameras_, &cam);
 }
 
 

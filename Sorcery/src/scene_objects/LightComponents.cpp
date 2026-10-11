@@ -7,6 +7,7 @@
 #include "TransformComponent.hpp"
 #include "../app.hpp"
 #include "../Color.hpp"
+#include "../rendering/render_scene.hpp"
 #include "../rendering/scene_renderer.hpp"
 
 
@@ -65,12 +66,12 @@ auto LightComponent::Clone() -> std::unique_ptr<SceneObject> {
 
 auto LightComponent::OnAfterEnteringScene(Scene const& scene) -> void {
   Component::OnAfterEnteringScene(scene);
-  App::Instance().GetSceneRenderer().Register(*this);
+  App::Instance().GetRenderScene().Register(*this);
 }
 
 
 auto LightComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  App::Instance().GetSceneRenderer().Unregister(*this);
+  App::Instance().GetRenderScene().Unregister(*this);
   Component::OnBeforeExitingScene(scene);
 }
 

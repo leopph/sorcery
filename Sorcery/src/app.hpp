@@ -20,6 +20,7 @@ class TemporaryRenderTargetPool;
 class SceneRenderer;
 class RenderFrame;
 class TextureResolver;
+class RenderScene;
 }
 
 
@@ -54,6 +55,9 @@ public:
 
   [[nodiscard]] SORCERYAPI
   auto GetSceneRenderer() -> rendering::SceneRenderer&;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetRenderScene() -> rendering::RenderScene&;
 
   [[nodiscard]] SORCERYAPI
   auto GetObjectRegistry() -> ObjectRegistry&;

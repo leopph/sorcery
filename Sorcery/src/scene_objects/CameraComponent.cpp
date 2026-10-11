@@ -4,7 +4,7 @@
 #include "TransformComponent.hpp"
 #include "../app.hpp"
 #include "../reflection.hpp"
-#include "../rendering/scene_renderer.hpp"
+#include "../rendering/render_scene.hpp"
 
 
 RTTR_REGISTRATION {
@@ -32,12 +32,12 @@ auto CameraComponent::Clone() -> std::unique_ptr<SceneObject> {
 
 auto CameraComponent::OnAfterEnteringScene(Scene const& scene) -> void {
   Component::OnAfterEnteringScene(scene);
-  App::Instance().GetSceneRenderer().Register(*this);
+  App::Instance().GetRenderScene().Register(*this);
 }
 
 
 auto CameraComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  App::Instance().GetSceneRenderer().Unregister(*this);
+  App::Instance().GetRenderScene().Unregister(*this);
   Component::OnBeforeExitingScene(scene);
 }
 

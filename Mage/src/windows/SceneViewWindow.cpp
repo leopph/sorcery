@@ -2,11 +2,11 @@
 
 #include "Platform.hpp"
 #include "prefab.hpp"
-#include "scene_renderer.hpp"
 #include "Timing.hpp"
 #include "Window.hpp"
 #include "../editor_app.hpp"
 #include "../StandaloneCamera.hpp"
+#include "rendering/render_scene.hpp"
 
 
 namespace sorcery::mage {
@@ -15,7 +15,7 @@ SceneViewWindow::SceneViewWindow(ImGuiTextureReferences& tex_refs) :
 
 
 SceneViewWindow::~SceneViewWindow() {
-  App::Instance().GetSceneRenderer().Unregister(cam_);
+  App::Instance().GetRenderScene().Unregister(cam_);
 }
 
 
@@ -28,9 +28,9 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
   auto const is_visible{ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)};
 
   if (is_visible && !was_visible_) {
-    App::Instance().GetSceneRenderer().Register(cam_);
+    App::Instance().GetRenderScene().Register(cam_);
   } else if (!is_visible && was_visible_) {
-    App::Instance().GetSceneRenderer().Unregister(cam_);
+    App::Instance().GetRenderScene().Unregister(cam_);
   }
 
   if (is_visible) {
