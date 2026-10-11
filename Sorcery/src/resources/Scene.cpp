@@ -189,7 +189,7 @@ auto Scene::Load() -> void {
         data->cubemap = MakeResourceRef(App::Instance().GetResourceManager().Resolve<Cubemap>(data->res_id).Get());
       }, &skybox_job_data);
 
-      App::Instance().GetJobSystem().Run(skybox_job);
+      App::Instance().GetJobSystem().Submit(skybox_job);
     }
   }
 

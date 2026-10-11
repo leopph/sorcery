@@ -9,10 +9,10 @@
 
 
 namespace sorcery {
-template<JobArgument Data>
-auto JobSystem::CreateJob(JobFuncType const func, Data&& data) -> ObserverPtr<Job> {
+template<JobPayload Payload>
+auto JobSystem::CreateJob(JobFuncType const func, Payload&& payload) -> ObserverPtr<Job> {
   auto const job = CreateJob(func);
-  std::construct_at(std::bit_cast<std::remove_cvref_t<Data>*>(job->data.data()), std::forward<Data>(data));
+  std::construct_at(std::bit_cast<std::remove_cvref_t<Payload>*>(job->payload.data()), std::forward<Payload>(payload));
   return job;
 }
 
@@ -25,11 +25,11 @@ auto JobSystem::CreateJob(Callable&& callable) -> ObserverPtr<Job> {
 }
 
 
-template<JobArgument Callable, JobArgument Data> requires (
-  std::invocable<Callable, Data> && !std::convertible_to<Callable, JobFuncType> && sizeof(Callable) + sizeof(Data) <=
-  kMaxJobDataSize)
-auto JobSystem::CreateJob(Callable&& callable, Data&& data) -> ObserverPtr<Job> {
-  return CreateJob([job_callable{std::forward<Callable>(callable)}, job_data{std::forward<Data>(data)}] {
+template<JobPayload Callable, JobPayload Payload> requires (
+  std::invocable<Callable, Payload> && !std::convertible_to<Callable, JobFuncType> && sizeof(Callable) + sizeof(Payload) <=
+  kJobPayloadCapacity)
+auto JobSystem::CreateJob(Callable&& callable, Payload&& payload) -> ObserverPtr<Job> {
+  return CreateJob([job_callable{std::forward<Callable>(callable)}, job_data{std::forward<Payload>(payload)}] {
     job_callable(job_data);
   });
 }
@@ -72,7 +72,7 @@ auto JobSystem::CreateParallelForJob(void (*func)(T& data), std::span<T> data) -
         }
       }, SubJobData{job_data.func, job_data.data.subspan(dispatched_element_count, element_count)}));
 
-      job_data.system->Run(sub_jobs.back());
+      job_data.system->Submit(sub_jobs.back());
       dispatched_element_count += element_count;
     }
 

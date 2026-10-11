@@ -139,7 +139,7 @@ auto DeserializeEntitySet(
       App::Instance().GetResourceManager().Resolve(target_res_id);
     }, res_id));
 
-    App::Instance().GetJobSystem().Run(resource_loading_jobs.back());
+    App::Instance().GetJobSystem().Submit(resource_loading_jobs.back());
   }
 
   // Deserialize the scene objects

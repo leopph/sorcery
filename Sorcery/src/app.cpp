@@ -172,7 +172,7 @@ auto App::Run() -> void {
       data_->rt_pool.CollectGarbage(frame);
     });
 
-    data_->job_system.Run(data_->render_job);
+    data_->job_system.Submit(data_->render_job);
 
     timing::OnFrameEnd();
   }

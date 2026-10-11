@@ -341,7 +341,7 @@ auto ResourceManager::InternalLoadResource(ResourceId const& res_id,
         });
         created_job = true;
         loader_jobs->emplace(res_id, loader_job);
-        job_system_->Run(loader_job);
+        job_system_->Submit(loader_job);
       }
     }
   }

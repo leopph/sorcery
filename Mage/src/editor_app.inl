@@ -8,7 +8,7 @@
 namespace sorcery::mage {
 template<typename Callable>
 auto EditorApp::ExecuteInBusyEditor(Callable&& callable) -> void {
-  GetJobSystem().Run(GetJobSystem().CreateJob([this, callable = std::forward<Callable>(callable)] {
+  GetJobSystem().Submit(GetJobSystem().CreateJob([this, callable = std::forward<Callable>(callable)] {
     BusyExecutionContext const exec_context{OnEnterBusyExecution()};
 
     try {

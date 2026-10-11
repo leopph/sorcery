@@ -96,37 +96,37 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   if (data->base_color_map.IsValid()) {
     albedo_map_job_data.res_id = data->base_color_map;
     albedo_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &albedo_map_job_data);
-    App::Instance().GetJobSystem().Run(albedo_map_job);
+    App::Instance().GetJobSystem().Submit(albedo_map_job);
   }
 
   if (data->metallic_map.IsValid()) {
     metallic_map_job_data.res_id = data->metallic_map;
     metallic_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &metallic_map_job_data);
-    App::Instance().GetJobSystem().Run(metallic_map_job);
+    App::Instance().GetJobSystem().Submit(metallic_map_job);
   }
 
   if (data->roughness_map.IsValid()) {
     roughness_map_job_data.res_id = data->roughness_map;
     roughness_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &roughness_map_job_data);
-    App::Instance().GetJobSystem().Run(roughness_map_job);
+    App::Instance().GetJobSystem().Submit(roughness_map_job);
   }
 
   if (data->ao_map.IsValid()) {
     ao_map_job_data.res_id = data->ao_map;
     ao_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &ao_map_job_data);
-    App::Instance().GetJobSystem().Run(ao_map_job);
+    App::Instance().GetJobSystem().Submit(ao_map_job);
   }
 
   if (data->normal_map.IsValid()) {
     normal_map_job_data.res_id = data->normal_map;
     normal_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &normal_map_job_data);
-    App::Instance().GetJobSystem().Run(normal_map_job);
+    App::Instance().GetJobSystem().Submit(normal_map_job);
   }
 
   if (data->opacity_map.IsValid()) {
     opacity_mask_job_data.res_id = data->opacity_map;
     opacity_mask_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &opacity_mask_job_data);
-    App::Instance().GetJobSystem().Run(opacity_mask_job);
+    App::Instance().GetJobSystem().Submit(opacity_mask_job);
   }
 
   for (auto const job : {

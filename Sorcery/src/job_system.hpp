@@ -19,12 +19,12 @@
 
 namespace sorcery {
 using JobFuncType = void(*)(void* data);
-constexpr auto kMaxJobDataSize{55};
+constexpr auto kJobPayloadCapacity{55};
 
 
 struct Job {
   JobFuncType func{nullptr};
-  std::array<char, kMaxJobDataSize> data{};
+  std::array<char, kJobPayloadCapacity> payload{};
   std::atomic_bool is_complete{true};
 };
 
@@ -32,12 +32,12 @@ struct Job {
 static_assert(sizeof(Job) == 64);
 
 template<typename T>
-concept JobArgument = sizeof(T) <= kMaxJobDataSize &&
-                      std::is_copy_constructible_v<T> &&
-                      std::is_trivially_destructible_v<T>;
+concept JobPayload = sizeof(T) <= kJobPayloadCapacity &&
+                     std::is_copy_constructible_v<T> &&
+                     std::is_trivially_destructible_v<T>;
 
 template<typename T>
-concept JobCallable = JobArgument<T> && std::invocable<T>;
+concept JobCallable = JobPayload<T> && std::invocable<T>;
 
 
 class JobSystem {
@@ -57,27 +57,27 @@ public:
   [[nodiscard]] SORCERYAPI static
   auto CreateJob(JobFuncType func) -> ObserverPtr<Job>;
 
-  template<JobArgument Data>
+  template<JobPayload Payload>
   [[nodiscard]] static
-  auto CreateJob(JobFuncType func, Data&& data) -> ObserverPtr<Job>;
+  auto CreateJob(JobFuncType func, Payload&& payload) -> ObserverPtr<Job>;
 
   template<JobCallable Callable>
   [[nodiscard]] static
   auto CreateJob(Callable&& callable) -> ObserverPtr<Job>;
 
-  template<JobArgument Callable, JobArgument Data>
-    requires (std::invocable<Callable, Data> &&
+  template<JobPayload Callable, JobPayload Payload>
+    requires (std::invocable<Callable, Payload> &&
               !std::convertible_to<Callable, JobFuncType> &&
-              sizeof(Callable) + sizeof(Data) <= kMaxJobDataSize)
+              sizeof(Callable) + sizeof(Payload) <= kJobPayloadCapacity)
   [[nodiscard]] static
-  auto CreateJob(Callable&& callable, Data&& data) -> ObserverPtr<Job>;
+  auto CreateJob(Callable&& callable, Payload&& payload) -> ObserverPtr<Job>;
 
   template<typename T>
   [[nodiscard]]
   auto CreateParallelForJob(void (*func)(T& data), std::span<T> data) -> ObserverPtr<Job>;
 
   SORCERYAPI
-  auto Run(ObserverPtr<Job> job) -> void;
+  auto Submit(ObserverPtr<Job> job) -> void;
 
   SORCERYAPI
   auto Wait(ObserverPtr<Job const> job) -> void;
@@ -88,22 +88,22 @@ private:
   auto Execute(Job& job) -> void;
 
   [[nodiscard]]
-  auto TryFindJob() -> ObserverPtr<Job>;
+  auto TryTakeJob() -> ObserverPtr<Job>;
 
   auto NotifyWork() -> void;
   auto NotifyCompletion() -> void;
 
   std::uint32_t thread_count_;
-  std::uint32_t worker_count_;
+  std::uint32_t worker_count_{thread_count_ - 1};
   std::atomic_uint64_t work_epoch_{0};
-  std::atomic_uint64_t progress_epoch_{0};
+  std::atomic_uint64_t wait_epoch_{0};
   std::unique_ptr<WorkStealingQueue<ObserverPtr<Job>>[]> job_queues_;
   std::unique_ptr<std::jthread[]> workers_;
 
-  constexpr static auto kMaxJobCount{4096};
-  constexpr static auto kInvalidThreadIdx{std::numeric_limits<std::uint32_t>::max()};
-  thread_local static std::size_t allocated_job_count_;
-  thread_local static std::array<Job, kMaxJobCount> jobs_;
+  constexpr static std::uint32_t kJobSlotsPerThread{4096};
+  constexpr static std::uint32_t kInvalidThreadIdx{std::numeric_limits<std::uint32_t>::max()};
+  thread_local static std::size_t next_job_slot_;
+  thread_local static std::array<Job, kJobSlotsPerThread> job_slots_;
   thread_local static std::uint32_t this_thread_idx_;
 };
 }

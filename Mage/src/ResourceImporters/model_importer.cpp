@@ -684,7 +684,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
         }
       }));
 
-    App::Instance().GetJobSystem().Run(meshletize_jobs.back());
+    App::Instance().GetJobSystem().Submit(meshletize_jobs.back());
   }
 
   for (auto const job : meshletize_jobs) {
