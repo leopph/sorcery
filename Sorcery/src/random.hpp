@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Core.hpp"
-
 #include <cstdint>
 #include <random>
 #include <utility>
+
+#include "sorcery/Core.hpp"
 
 
 namespace sorcery {

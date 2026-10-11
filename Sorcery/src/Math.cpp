@@ -1,16 +1,17 @@
-#include "Math.hpp"
-#include "reflection.hpp"
+#include "sorcery/Math.hpp"
+
+#include "sorcery/reflection.hpp"
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Vector2>{ "Vector 2" }
+  rttr::registration::class_<sorcery::Vector2>{"Vector 2"}
     .constructor()(rttr::policy::ctor::as_object)
     .property("data", &sorcery::Vector2::mData);
 
-  rttr::registration::class_<sorcery::Vector3>{ "Vector 3" }
+  rttr::registration::class_<sorcery::Vector3>{"Vector 3"}
     .constructor()(rttr::policy::ctor::as_object)
     .property("data", &sorcery::Vector3::mData);
 
-  rttr::registration::class_<sorcery::Vector4>{ "Vector 4" }
+  rttr::registration::class_<sorcery::Vector4>{"Vector 4"}
     .constructor()(rttr::policy::ctor::as_object)
     .property("data", &sorcery::Vector4::mData);
 
@@ -26,7 +27,7 @@ RTTR_REGISTRATION {
     .constructor()(rttr::policy::ctor::as_object)
     .property("data", &sorcery::Matrix4::mData); TODO */
 
-  rttr::registration::class_<sorcery::Quaternion>{ "Quaternion" }
+  rttr::registration::class_<sorcery::Quaternion>{"Quaternion"}
     .constructor()(rttr::policy::ctor::as_object)
     .property("x", &sorcery::Quaternion::x)
     .property("y", &sorcery::Quaternion::y)

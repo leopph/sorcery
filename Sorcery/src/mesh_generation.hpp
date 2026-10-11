@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "Math.hpp"
+#include "sorcery/Math.hpp"
 
 
 namespace sorcery {

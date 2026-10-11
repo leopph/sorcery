@@ -4,10 +4,11 @@
 #include <cstdint>
 #include <memory>
 
-#include "config.hpp"
-#include "render_frame.hpp"
-#include "../observer_ptr.hpp"
 #include "wand/wand.hpp"
+
+#include "sorcery/observer_ptr.hpp"
+#include "sorcery/host/rendering/render_frame.hpp"
+#include "sorcery/rendering/config.hpp"
 
 
 namespace sorcery::rendering {

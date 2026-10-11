@@ -1,13 +1,13 @@
-#include "entity_serialization.hpp"
+#include "sorcery/entity_serialization.hpp"
 
-#include "app.hpp"
-#include "job_system.hpp"
-#include "resource_manager.hpp"
-#include "Serialization.hpp"
-#include "resources/Resource.hpp"
-#include "scene_objects/Component.hpp"
-#include "scene_objects/Entity.hpp"
-#include "scene_objects/SceneObject.hpp"
+#include "sorcery/Serialization.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/job_system.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/resources/Resource.hpp"
+#include "sorcery/scene/Component.hpp"
+#include "sorcery/scene/Entity.hpp"
+#include "sorcery/scene/SceneObject.hpp"
 
 
 namespace sorcery {

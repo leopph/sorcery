@@ -1,7 +1,7 @@
 #pragma once
 
 #include "editor_drawer.h"
-#include "LightComponents.hpp"
+#include "sorcery/scene/LightComponents.hpp"
 
 
 namespace sorcery::mage {

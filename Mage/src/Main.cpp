@@ -5,7 +5,7 @@
 
 #include "command_line_processor.hpp"
 #include "editor_app.hpp"
-#include "Platform.hpp"
+#include "sorcery/host/platform.hpp"
 
 
 extern "C" {

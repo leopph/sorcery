@@ -1,20 +1,24 @@
-#include "Image.hpp"
+#include "sorcery/Image.hpp"
 
 #include <algorithm>
 #include <utility>
 
 
 namespace sorcery {
-Image::Image(int const width, int const height, int const channelCount, std::unique_ptr<std::uint8_t[]> bytes, bool const isSrgb) noexcept :
+Image::Image(int const width, int const height, int const channelCount, std::unique_ptr<std::uint8_t[]> bytes,
+             bool const isSrgb) noexcept :
   mData{std::move(bytes)},
   mWidth{width},
   mHeight{height},
   mChannelCount{channelCount},
-  mIsSrgb{isSrgb} { }
+  mIsSrgb{isSrgb} {}
 
 
 Image::Image(Image const& other) :
-  mData{std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(other.mWidth) * other.mHeight * other.mChannelCount)},
+  mData{
+    std::make_unique_for_overwrite<std::uint8_t[]>(
+      static_cast<std::size_t>(other.mWidth) * other.mHeight * other.mChannelCount)
+  },
   mWidth(other.mWidth),
   mHeight(other.mHeight),
   mChannelCount(other.mChannelCount) {
@@ -34,7 +38,8 @@ Image::Image(Image&& other) noexcept :
 
 
 auto Image::operator=(Image const& other) -> Image& {
-  mData = std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(other.mWidth) * other.mHeight * other.mChannelCount);
+  mData = std::make_unique_for_overwrite<std::uint8_t[]>(
+    static_cast<std::size_t>(other.mWidth) * other.mHeight * other.mChannelCount);
   mWidth = other.mWidth;
   mHeight = other.mHeight;
   mChannelCount = other.mChannelCount;
@@ -93,9 +98,12 @@ auto Image::ExtractChannel(int const channelIdx) -> Image {
   ret.mChannelCount = 1;
   ret.mData = std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(mWidth) * mHeight);
 
-  auto thisNewData{std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(mWidth) * mHeight * (mChannelCount - 1))};
+  auto thisNewData{
+    std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(mWidth) * mHeight * (mChannelCount - 1))
+  };
 
-  for (auto pixel{0}, extract{0}, remaining{0}; pixel < mWidth * mHeight * mChannelCount; pixel += mChannelCount, extract++) {
+  for (auto pixel{0}, extract{0}, remaining{0}; pixel < mWidth * mHeight * mChannelCount;
+       pixel += mChannelCount, extract++) {
     ret.mData[extract] = mData[pixel + channelIdx];
 
     for (auto chanOffset = 0; chanOffset < mChannelCount; chanOffset++) {
@@ -117,7 +125,9 @@ auto Image::AppendChannel(std::uint8_t const value) noexcept -> void {
   auto const newChannelCount{mChannelCount + 1};
   auto const pixelCount{mWidth * mHeight};
 
-  auto newData{std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(mWidth) * mHeight * newChannelCount)};
+  auto newData{
+    std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(mWidth) * mHeight * newChannelCount)
+  };
 
   for (auto i{0}; i < pixelCount; i++) {
     for (auto j{0}; j < mChannelCount; j++) {
@@ -140,7 +150,10 @@ auto Image::GetRow(int const rowIdx) const noexcept -> std::span<std::uint8_t co
   if (IsEmpty()) {
     return {};
   }
-  return {mData.get() + static_cast<std::ptrdiff_t>(rowIdx) * mWidth * mChannelCount, static_cast<std::size_t>(mWidth * mChannelCount)};
+  return {
+    mData.get() + static_cast<std::ptrdiff_t>(rowIdx) * mWidth * mChannelCount,
+    static_cast<std::size_t>(mWidth * mChannelCount)
+  };
 }
 
 

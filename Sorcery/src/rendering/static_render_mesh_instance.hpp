@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render_mesh_instance_state.hpp"
+#include "rendering/render_mesh_instance_state.hpp"
 
 
 namespace sorcery::rendering {

@@ -1,4 +1,4 @@
-#include "mesh_data.hpp"
+#include "sorcery/mesh_data.hpp"
 
 #include "rendering/shaders/shader_interop.h"
 

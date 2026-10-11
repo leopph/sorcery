@@ -1,4 +1,4 @@
-#include "resource_manager.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
 
 #include <cassert>
 #include <ranges>
@@ -7,13 +7,12 @@
 #include <DirectXTex.h>
 #include <wrl/client.h>
 
-#include "app.hpp"
-#include "job_system.hpp"
 #include "mesh_generation.hpp"
-#include "reflection.hpp"
-#include "resource_package.hpp"
-#include "resources/prefab.hpp"
-#include "Resources/Scene.hpp"
+#include "sorcery/reflection.hpp"
+#include "sorcery/host/job_system.hpp"
+#include "sorcery/host/assets/resource_package.hpp"
+#include "sorcery/resources/prefab.hpp"
+#include "sorcery/resources/Scene.hpp"
 
 using Microsoft::WRL::ComPtr;
 

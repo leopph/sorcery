@@ -1,8 +1,8 @@
 #include "native_resource_importer.hpp"
 
-#include "resource_manager.hpp"
-#include "../Resources/Material.hpp"
-#include "../Resources/Scene.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/resources/Material.hpp"
+#include "sorcery/resources/Scene.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::mage::NativeResourceImporter>{"Native Resource Importer"}.

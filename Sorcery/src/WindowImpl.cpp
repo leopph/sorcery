@@ -7,7 +7,7 @@
 #include <hidusage.h>
 #include <Objbase.h>
 
-#include "Platform.hpp"
+#include "sorcery/host/platform.hpp"
 
 
 namespace sorcery {

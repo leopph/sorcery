@@ -1,7 +1,7 @@
-#include "resource_ref.hpp"
+#include "sorcery/resource_ref.hpp"
 
-#include "app.hpp"
-#include "resource_manager.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
 
 
 namespace sorcery::detail {

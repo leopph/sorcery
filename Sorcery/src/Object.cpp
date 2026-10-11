@@ -1,7 +1,7 @@
-#include "Object.hpp"
+#include "sorcery/Object.hpp"
 
-#include "app.hpp"
-#include "object_registry.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/object_registry.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Object>{"Object"}

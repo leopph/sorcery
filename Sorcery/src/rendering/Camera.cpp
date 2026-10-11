@@ -1,4 +1,4 @@
-#include "Camera.hpp"
+#include "sorcery/rendering/Camera.hpp"
 
 #include <algorithm>
 #include <utility>

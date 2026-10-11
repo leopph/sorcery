@@ -1,9 +1,11 @@
-#include "texture_resolver.hpp"
+#include "sorcery/host/rendering/texture_resolver.hpp"
 
 #include <cassert>
 
-#include "../resources/Cubemap.hpp"
-#include "../resources/Texture2D.hpp"
+#include "rendering/render_resource_registry.hpp"
+#include "sorcery/host/rendering/render_frame.hpp"
+#include "sorcery/resources/Cubemap.hpp"
+#include "sorcery/resources/Texture2D.hpp"
 
 
 namespace sorcery::rendering {

@@ -3,13 +3,13 @@
 #include <filesystem>
 #include <map>
 
-#include "Event.hpp"
-#include "Guid.hpp"
-#include "NativeResource.hpp"
-#include "observer_ptr.hpp"
-#include "resource_manager.hpp"
-#include "resource_package.hpp"
 #include "ResourceImporters/resource_importer.hpp"
+#include "sorcery/event.hpp"
+#include "sorcery/Guid.hpp"
+#include "sorcery/observer_ptr.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/host/assets/resource_package.hpp"
+#include "sorcery/resources/NativeResource.hpp"
 
 
 namespace sorcery::mage {

@@ -1,4 +1,4 @@
-#include "texture_import.hpp"
+#include "sorcery/host/assets/texture_import.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -7,8 +7,8 @@
 #define NOMINMAX
 #include <DirectXTex.h>
 
-#include "../Resources/Cubemap.hpp"
-#include "../resources/Texture2D.hpp"
+#include "sorcery/Resources/Cubemap.hpp"
+#include "sorcery/resources/Texture2D.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::enumeration<sorcery::TextureImportType>("Texture Import Type")(

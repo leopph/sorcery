@@ -1,7 +1,7 @@
 #include "imgui_texture_references.hpp"
 
-#include "resources/Cubemap.hpp"
-#include "resources/Texture2D.hpp"
+#include "sorcery/resources/Cubemap.hpp"
+#include "sorcery/resources/Texture2D.hpp"
 
 
 namespace sorcery::mage {

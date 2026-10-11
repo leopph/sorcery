@@ -1,7 +1,7 @@
 #pragma once
 
 #include "editor_drawer.h"
-#include "OscillateComponent.h"
+#include "sorcery/scene/OscillateComponent.h"
 
 
 namespace sorcery::mage {

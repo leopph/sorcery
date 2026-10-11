@@ -1,22 +1,23 @@
-#include "app.hpp"
+#include "sorcery/host/app.hpp"
 
 #include <charconv>
 #include <stdexcept>
 
-#include "job_system.hpp"
-#include "object_registry.hpp"
-#include "Platform.hpp"
-#include "resource_manager.hpp"
-#include "Timing.hpp"
-#include "Window.hpp"
+#include "wand/wand.hpp"
+
 #include "rendering/frame_scheduler.hpp"
 #include "rendering/render_instance_registry.hpp"
 #include "rendering/render_resource_registry.hpp"
-#include "rendering/render_scene.hpp"
 #include "rendering/scene_renderer.hpp"
 #include "rendering/temporary_render_target_pool.hpp"
-#include "rendering/texture_resolver.hpp"
-#include "wand/wand.hpp"
+#include "sorcery/timing.hpp"
+#include "sorcery/host/job_system.hpp"
+#include "sorcery/host/object_registry.hpp"
+#include "sorcery/host/platform.hpp"
+#include "sorcery/host/window.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/host/rendering/render_scene.hpp"
+#include "sorcery/host/rendering/texture_resolver.hpp"
 
 
 namespace sorcery {

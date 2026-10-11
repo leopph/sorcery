@@ -5,26 +5,24 @@
 #include <memory>
 #include <optional>
 
-#include "Camera.hpp"
-#include "config.hpp"
-#include "constant_buffer.hpp"
-#include "render_frame.hpp"
-#include "render_target.hpp"
-#include "ShadowCascadeBoundary.hpp"
-#include "shadow_atlas.hpp"
-#include "shadow_map_array.hpp"
-#include "structured_buffer.hpp"
-#include "temporary_render_target_pool.hpp"
-#include "../Bounds.hpp"
-#include "../Color.hpp"
-#include "../Math.hpp"
-#include "../mesh_data.hpp"
-#include "../object_id.hpp"
-#include "../Window.hpp"
-#include "../scene_objects/LightComponents.hpp"
-#include "shaders/shader_interop.h"
-#include "shaders/shadow_filtering_modes.h"
-#include "wand/wand.hpp"
+#include <wand/wand.hpp>
+
+#include "rendering/constant_buffer.hpp"
+#include "rendering/ShadowCascadeBoundary.hpp"
+#include "rendering/shadow_atlas.hpp"
+#include "rendering/shadow_map_array.hpp"
+#include "rendering/structured_buffer.hpp"
+#include "rendering/temporary_render_target_pool.hpp"
+#include "sorcery/Bounds.hpp"
+#include "sorcery/Color.hpp"
+#include "sorcery/Math.hpp"
+#include "sorcery/mesh_data.hpp"
+#include "sorcery/object_id.hpp"
+#include "sorcery/host/window.hpp"
+#include "sorcery/rendering/Camera.hpp"
+#include "sorcery/rendering/config.hpp"
+#include "sorcery/rendering/render_target.hpp"
+#include "sorcery/scene/LightComponents.hpp"
 
 
 namespace sorcery {
@@ -46,15 +44,15 @@ class StaticRenderMeshInstance;
 class SkinnedRenderMeshInstance;
 class TextureResolver;
 class RenderScene;
+class RenderFrame;
 
 
-// Passing these enum values to shaders is valid
-enum class ShadowFilteringMode : int {
-  kNone        = SHADOW_FILTERING_NONE,
-  kHardwarePcf = SHADOW_FILTERING_HARDWARE_PCF,
-  kPcf3X3      = SHADOW_FILTERING_PCF_3x3,
-  kPcfTent3X3  = SHADOW_FILTERING_PCF_TENT_3x3,
-  kPcfTent5X5  = SHADOW_FILTERING_PCF_TENT_5x5
+enum class ShadowFilteringMode : std::uint8_t {
+  kNone,
+  kHardwarePcf,
+  kPcf3X3,
+  kPcfTent3X3,
+  kPcfTent5X5
 };
 
 

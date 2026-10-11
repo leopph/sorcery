@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "editor_drawer.h"
-#include "observer_ptr.hpp"
+#include "sorcery/observer_ptr.hpp"
 
 
 namespace sorcery::mage {

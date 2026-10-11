@@ -7,14 +7,14 @@
 #include <cassert>
 #include <limits>
 
-#include "object_ptr.hpp"
-#include "texture_resolver.hpp"
 #include "../imgui_texture_references.hpp"
-#include "rendering/render_frame.hpp"
-#include "rendering/render_target.hpp"
-#include "resources/Cubemap.hpp"
-#include "resources/Texture2D.hpp"
 #include "shaders/imgui_shader_interop.h"
+#include "sorcery/object_ptr.hpp"
+#include "sorcery/host/rendering/render_frame.hpp"
+#include "sorcery/host/rendering/texture_resolver.hpp"
+#include "sorcery/rendering/render_target.hpp"
+#include "sorcery/resources/Cubemap.hpp"
+#include "sorcery/resources/Texture2D.hpp"
 
 #ifndef NDEBUG
 #include "shaders/generated/Debug/imgui_ps.h"

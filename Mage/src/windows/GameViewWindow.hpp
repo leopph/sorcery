@@ -1,7 +1,7 @@
 #pragma once
 
-#include "observer_ptr.hpp"
-#include "rendering/render_target.hpp"
+#include "sorcery/observer_ptr.hpp"
+#include "sorcery/rendering/render_target.hpp"
 
 
 namespace sorcery::mage {

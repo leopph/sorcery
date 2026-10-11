@@ -18,7 +18,7 @@
     <ClCompile Include="src\Timing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\Entity.cpp">
+    <ClCompile Include="src\scene\Entity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Color.cpp">
@@ -48,19 +48,19 @@
     <ClCompile Include="src\Resources\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\Component.cpp">
+    <ClCompile Include="src\scene\Component.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\TransformComponent.cpp">
+    <ClCompile Include="src\scene\TransformComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\CameraComponent.cpp">
+    <ClCompile Include="src\scene\CameraComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\MeshComponentBase.cpp">
+    <ClCompile Include="src\scene\MeshComponentBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\LightComponents.cpp">
+    <ClCompile Include="src\scene\LightComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Resources\Texture2D.cpp">
@@ -90,7 +90,7 @@
     <ClCompile Include="src\Resources\Resource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\SceneObject.cpp">
+    <ClCompile Include="src\scene\SceneObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Math.cpp">
@@ -120,13 +120,13 @@
     <ClCompile Include="src\app.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\StaticMeshComponent.cpp">
+    <ClCompile Include="src\scene\StaticMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\SkinnedMeshComponent.cpp">
+    <ClCompile Include="src\scene\SkinnedMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\CameraControllerComponent.cpp">
+    <ClCompile Include="src\scene\CameraControllerComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\mesh_data.cpp">
@@ -138,7 +138,7 @@
     <ClCompile Include="src\viewport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_objects\OscillateComponent.cpp">
+    <ClCompile Include="src\scene\OscillateComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\resource_id.cpp">
@@ -230,70 +230,70 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\scene_objects\Entity.hpp">
+    <ClInclude Include="include\sorcery\scene\Entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core.hpp">
+    <ClInclude Include="include\sorcery\Core.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Math.hpp">
+    <ClInclude Include="include\sorcery\Math.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Color.hpp">
+    <ClInclude Include="include\sorcery\Color.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Timing.hpp">
+    <ClInclude Include="include\sorcery\timing.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Platform.hpp">
+    <ClInclude Include="include\sorcery\host\platform.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Event.hpp">
+    <ClInclude Include="include\sorcery\event.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\Scene.hpp">
+    <ClInclude Include="include\sorcery\resources\Scene.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Object.hpp">
+    <ClInclude Include="include\sorcery\Object.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Bounds.hpp">
+    <ClInclude Include="include\sorcery\Bounds.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Image.hpp">
+    <ClInclude Include="include\sorcery\Image.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\Material.hpp">
+    <ClInclude Include="include\sorcery\resources\Material.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Guid.hpp">
+    <ClInclude Include="include\sorcery\Guid.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\Mesh.hpp">
+    <ClInclude Include="include\sorcery\resources\Mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\Component.hpp">
+    <ClInclude Include="include\sorcery\scene\Component.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\TransformComponent.hpp">
+    <ClInclude Include="include\sorcery\scene\TransformComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\CameraComponent.hpp">
+    <ClInclude Include="include\sorcery\scene\CameraComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\StaticMeshComponent.hpp">
+    <ClInclude Include="include\sorcery\scene\StaticMeshComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\LightComponents.hpp">
+    <ClInclude Include="include\sorcery\scene\LightComponents.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\Texture2D.hpp">
+    <ClInclude Include="include\sorcery\resources\Texture2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\SceneObject.hpp">
+    <ClInclude Include="include\sorcery\scene\SceneObject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\Cubemap.hpp">
+    <ClInclude Include="include\sorcery\resources\Cubemap.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\shaders\shadow_filtering_modes.h">
@@ -302,10 +302,10 @@
     <ClInclude Include="src\rendering\shadow_atlas.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\Camera.hpp">
+    <ClInclude Include="include\sorcery\rendering\Camera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\render_target.hpp">
+    <ClInclude Include="include\sorcery\rendering\render_target.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\structured_buffer.hpp">
@@ -314,31 +314,31 @@
     <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_manager.hpp">
+    <ClInclude Include="include\sorcery\host\assets\resource_manager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\Resource.hpp">
+    <ClInclude Include="include\sorcery\resources\Resource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\reflection.hpp">
+    <ClInclude Include="include\sorcery\reflection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\NativeResource.hpp">
+    <ClInclude Include="include\sorcery\resources\NativeResource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\serialization.hpp">
+    <ClInclude Include="include\sorcery\serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\shadow_map_array.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Window.hpp">
+    <ClInclude Include="include\sorcery\host\window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\WindowImpl.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SkyMode.hpp">
+    <ClInclude Include="include\sorcery\SkyMode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\constant_buffer.hpp">
@@ -347,112 +347,112 @@
     <ClInclude Include="src\rendering\temporary_render_target_pool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\observer_ptr.hpp">
+    <ClInclude Include="include\sorcery\observer_ptr.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\scene_renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\job_system.hpp">
+    <ClInclude Include="include\sorcery\host\job_system.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\mutex.hpp">
+    <ClInclude Include="include\sorcery\mutex.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\random.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\app.hpp">
+    <ClInclude Include="include\sorcery\host\app.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\MeshComponentBase.hpp">
+    <ClInclude Include="include\sorcery\scene\MeshComponentBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\SkinnedMeshComponent.hpp">
+    <ClInclude Include="include\sorcery\scene\SkinnedMeshComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\CameraControllerComponent.hpp">
+    <ClInclude Include="include\sorcery\scene\CameraControllerComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\mesh_data.hpp">
+    <ClInclude Include="include\sorcery\mesh_data.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\char_encoding_helpers.hpp">
+    <ClInclude Include="include\sorcery\char_encoding_helpers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\extent.hpp">
+    <ClInclude Include="include\sorcery\extent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\point.hpp">
+    <ClInclude Include="include\sorcery\point.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\viewport.hpp">
+    <ClInclude Include="include\sorcery\viewport.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene_objects\OscillateComponent.h">
+    <ClInclude Include="include\sorcery\scene\OscillateComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_id.hpp">
+    <ClInclude Include="include\sorcery\resource_id.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_package.hpp">
+    <ClInclude Include="include\sorcery\host\assets\resource_package.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_reference.hpp">
+    <ClInclude Include="include\sorcery\resource_reference.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\material_resource.hpp">
+    <ClInclude Include="include\sorcery\host\assets\material_resource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\material_blend_mode.hpp">
+    <ClInclude Include="include\sorcery\material_blend_mode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_import\texture_import.hpp">
+    <ClInclude Include="include\sorcery\host\assets\texture_import.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_import\material_import.hpp">
+    <ClInclude Include="include\sorcery\host\assets\material_import.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\vector_stream.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_import\mesh_import.hpp">
+    <ClInclude Include="include\sorcery\host\assets\mesh_import.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\io_helpers.hpp">
+    <ClInclude Include="include\sorcery\io_helpers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resources\prefab.hpp">
+    <ClInclude Include="include\sorcery\resources\prefab.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\entity_serialization.hpp">
+    <ClInclude Include="include\sorcery\entity_serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_residency_policy.hpp">
+    <ClInclude Include="include\sorcery\resource_residency_policy.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\object_registry.hpp">
+    <ClInclude Include="include\sorcery\host\object_registry.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\object_id.hpp">
+    <ClInclude Include="include\sorcery\object_id.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\object_ptr.hpp">
+    <ClInclude Include="include\sorcery\object_ptr.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_ref.hpp">
+    <ClInclude Include="include\sorcery\resource_ref.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\frame_scheduler.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\render_frame.hpp">
+    <ClInclude Include="include\sorcery\host\rendering\render_frame.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\command_list_pool.hpp">
+    <ClInclude Include="include\sorcery\host\rendering\command_list_pool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\config.hpp">
+    <ClInclude Include="include\sorcery\rendering\config.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\render_resource_registry.hpp">
@@ -464,10 +464,10 @@
     <ClInclude Include="src\rendering\render_mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\frame_uploader.hpp">
+    <ClInclude Include="include\sorcery\host\rendering\frame_uploader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\util.hpp">
+    <ClInclude Include="include\sorcery\util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\render_instance_registry.hpp">
@@ -485,7 +485,7 @@
     <ClInclude Include="src\rendering\render_texture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\texture_resolver.hpp">
+    <ClInclude Include="include\sorcery\host\rendering\texture_resolver.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\mesh_generation.hpp">
@@ -494,7 +494,7 @@
     <ClInclude Include="src\rendering\projection_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\render_scene.hpp">
+    <ClInclude Include="include\sorcery\host\rendering\render_scene.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -513,16 +513,16 @@
     <None Include="src\rendering\structured_buffer.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\job_system.inl">
+    <None Include="include\sorcery\host\job_system.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\object.inl">
+    <None Include="include\sorcery\object.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\scene_objects\entity.inl">
+    <None Include="include\sorcery\scene\entity.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\resource_manager.inl">
+    <None Include="include\sorcery\host\assets\resource_manager.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\rendering\shaders\lighting.hlsli" />
@@ -532,15 +532,15 @@
     <None Include="src\rendering\shaders\ssr.hlsli" />
     <None Include="src\rendering\shaders\fullscreen_tri.hlsli" />
     <None Include="src\rendering\shaders\raytrace.hlsli" />
-    <None Include="src\util.inl">
+    <None Include="include\sorcery\util.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\viewport.inl">
+    <None Include="include\sorcery\viewport.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\rendering\shaders\taa_resolve.hlsli" />
     <None Include="src\rendering\shaders\CatmullRom.hlsli" />
-    <None Include="src\resources\mesh.inl">
+    <None Include="include\sorcery\resources\mesh.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\rendering\shaders\meshlet_culling.hlsli" />
@@ -549,22 +549,22 @@
     <None Include="src\rendering\shaders\envmap_prefilter.hlsli" />
     <None Include="src\rendering\shaders\brdf_integration.hlsli" />
     <None Include="src\rendering\shaders\tonemapping.hlsli" />
-    <None Include="src\serialization.inl">
+    <None Include="include\sorcery\serialization.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\object_ptr.inl">
+    <None Include="include\sorcery\object_ptr.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\observer_ptr.inl">
+    <None Include="include\sorcery\observer_ptr.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\resource_ref.inl">
+    <None Include="include\sorcery\resource_ref.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\reflection.inl">
+    <None Include="include\sorcery\reflection.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\object_registry.inl">
+    <None Include="include\sorcery\host\object_registry.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\rendering\constant_buffer.inl">

@@ -7,15 +7,15 @@
 #include <string>
 #include <string_view>
 
-#include "app.hpp"
-#include "Event.hpp"
 #include "gui_helpers.hpp"
 #include "imgui_texture_references.hpp"
 #include "MainMenuBar.hpp"
 #include "ResourceDB.hpp"
-#include "Scene.hpp"
 #include "drawers/editor_drawer_registry.hpp"
 #include "rendering/imgui_renderer.hpp"
+#include "sorcery/event.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/resources/Scene.hpp"
 #include "windows/EntityHierarchyWindow.hpp"
 #include "windows/GameViewWindow.hpp"
 #include "windows/ProjectWindow.hpp"

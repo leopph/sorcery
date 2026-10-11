@@ -6,11 +6,12 @@
 
 #include <spdlog/spdlog.h>
 
-#include "app.hpp"
-#include "reflection.hpp"
-#include "resource_manager.hpp"
-#include "util.hpp"
 #include "ResourceImporters/native_resource_importer.hpp"
+#include "sorcery/char_encoding_helpers.hpp"
+#include "sorcery/reflection.hpp"
+#include "sorcery/util.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
 
 
 namespace sorcery::mage {
@@ -26,7 +27,7 @@ auto ResourceDB::Refresh() -> void {
   std::map<Guid, ResourceFileInfo> new_res_file_info_by_guid;
   std::map<ResourceId, ResourceInfo> new_res_info_by_id;
 
-  spdlog::trace("Scanning resource directory at [{}].", ToUntypedStdSv(res_dir_abs_.u8string()));
+  spdlog::trace("Scanning resource directory at [{}].", ToUntypedSv(res_dir_abs_.u8string()));
 
   std::vector<std::filesystem::path> meta_file_paths;
   std::vector<std::filesystem::path> res_file_paths;
@@ -41,10 +42,10 @@ auto ResourceDB::Refresh() -> void {
 
     if (IsMetaFile(entry.path())) {
       meta_file_paths.emplace_back(entry.path());
-      spdlog::trace("Found meta file at [{}].", ToUntypedStdSv(entry.path().u8string()));
+      spdlog::trace("Found meta file at [{}].", ToUntypedSv(entry.path().u8string()));
     } else {
       res_file_paths.emplace_back(entry.path());
-      spdlog::trace("Found resource file at [{}].", ToUntypedStdSv(entry.path().u8string()));
+      spdlog::trace("Found resource file at [{}].", ToUntypedSv(entry.path().u8string()));
     }
   }
 
@@ -52,7 +53,7 @@ auto ResourceDB::Refresh() -> void {
 
   for (auto const& meta_path_abs : meta_file_paths) {
     if (auto const res_path_abs{std::filesystem::path{meta_path_abs}.replace_extension()}; !exists(res_path_abs)) {
-      spdlog::trace("Removing orphaned meta file at [{}].", ToUntypedStdSv(meta_path_abs.u8string()));
+      spdlog::trace("Removing orphaned meta file at [{}].", ToUntypedSv(meta_path_abs.u8string()));
       remove(meta_path_abs);
     }
   }
@@ -76,13 +77,13 @@ auto ResourceDB::Refresh() -> void {
 
     if (!exists(meta_path_abs) || !ReadMeta(res_path_abs, &guid, &importer)) {
       spdlog::trace("Couldn't read meta file for resource at [{}]. Attempting to import as new.",
-        ToUntypedStdSv(res_path_abs.u8string()));
+        ToUntypedSv(res_path_abs.u8string()));
 
       importer = CreateNewImporterForResourceFile(res_path_abs);
 
       if (!importer) {
         spdlog::trace("Couldn't create importer for resource file at [{}]. Removing resource and meta files.",
-          ToUntypedStdSv(res_path_abs.u8string()));
+          ToUntypedSv(res_path_abs.u8string()));
         cleanup_res_and_meta_files();
         continue;
       }
@@ -91,7 +92,7 @@ auto ResourceDB::Refresh() -> void {
 
       if (!WriteMeta(res_path_abs, guid, *importer)) {
         spdlog::trace("Failed to write new meta file for resource file at [{}]. Removing resource and meta files.",
-          ToUntypedStdSv(res_path_abs.u8string()));
+          ToUntypedSv(res_path_abs.u8string()));
         cleanup_res_and_meta_files();
         continue;
       }
@@ -99,12 +100,12 @@ auto ResourceDB::Refresh() -> void {
       if (!InternalImportResource(res_path_abs, new_guid_by_src_abs_path, new_res_file_info_by_guid, new_res_info_by_id,
         *importer, guid)) {
         spdlog::trace("Failed to import resource at file [{}]. Removing resource and meta files.",
-          ToUntypedStdSv(res_path_abs.u8string()));
+          ToUntypedSv(res_path_abs.u8string()));
         cleanup_res_and_meta_files();
         continue;
       }
 
-      spdlog::trace("Imported resource file [{}] with guid [{}] as new.", ToUntypedStdSv(res_path_abs.u8string()),
+      spdlog::trace("Imported resource file [{}] with guid [{}] as new.", ToUntypedSv(res_path_abs.u8string()),
         new_guid_by_src_abs_path[res_path_abs].ToString());
 
       // We reimported the source, the database is up-to-date, nothing else to do for this resource file.
@@ -115,7 +116,7 @@ auto ResourceDB::Refresh() -> void {
 
     if (!importer->IsNativeImporter()) {
       spdlog::trace("Resource at file [{}] is not a native resource. Checking for binary cache.",
-        ToUntypedStdSv(res_path_abs.u8string()));
+        ToUntypedSv(res_path_abs.u8string()));
 
       auto const cache_file_path_abs{MakeExternalResourceBinaryPathAbs(guid)};
 
@@ -129,19 +130,19 @@ auto ResourceDB::Refresh() -> void {
       if (!exists(cache_file_path_abs) || last_write_time(res_path_abs) > last_write_time(cache_file_path_abs) ||
           last_write_time(meta_path_abs) > last_write_time(cache_file_path_abs)) {
         spdlog::trace("Binary cache for external resource at file [{}] is out of date. Attempting to reimport.",
-          ToUntypedStdSv(res_path_abs.u8string()));
+          ToUntypedSv(res_path_abs.u8string()));
 
         if (!InternalImportResource(res_path_abs, new_guid_by_src_abs_path, new_res_file_info_by_guid,
           new_res_info_by_id, *importer, guid)) {
           spdlog::trace(
             "Failed to reimport external resource at file [{}]. Removing resource, meta, and binary cache files.",
-            ToUntypedStdSv(res_path_abs.u8string()));
+            ToUntypedSv(res_path_abs.u8string()));
           cleanup_res_meta_and_cache_files();
           continue;
         }
 
         spdlog::trace("Reimported resource file [{}] with guid [{}] due to out-of-date binary cache.",
-          ToUntypedStdSv(res_path_abs.u8string()), new_guid_by_src_abs_path[res_path_abs].ToString());
+          ToUntypedSv(res_path_abs.u8string()), new_guid_by_src_abs_path[res_path_abs].ToString());
 
         // We reimported the source, the database is up-to-date, nothing else to do for this resource file.
         continue;
@@ -157,7 +158,7 @@ auto ResourceDB::Refresh() -> void {
 
       if (!package_info) {
         spdlog::error("Failed to peek binary resource package for external resource at file [{}].",
-          ToUntypedStdSv(res_path_abs.u8string()));
+          ToUntypedSv(res_path_abs.u8string()));
         cleanup_res_and_meta_files();
         continue;
       }
@@ -188,7 +189,7 @@ auto ResourceDB::Refresh() -> void {
           .name = results[0].name
         });
       } else {
-        spdlog::error("Failed to query native resource type from file [{}].", ToUntypedStdSv(res_path_abs.u8string()));
+        spdlog::error("Failed to query native resource type from file [{}].", ToUntypedSv(res_path_abs.u8string()));
       }
     } else {
       for (std::size_t i{0}; i < package_info->entries.size(); ++i) {
@@ -202,7 +203,7 @@ auto ResourceDB::Refresh() -> void {
       }
     }
 
-    spdlog::trace("Done processing resource file [{}] with guid [{}].", ToUntypedStdSv(res_path_abs.u8string()),
+    spdlog::trace("Done processing resource file [{}] with guid [{}].", ToUntypedSv(res_path_abs.u8string()),
       guid.ToString());
   }
 

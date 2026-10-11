@@ -8,10 +8,10 @@
 
 #include <imgui.h>
 
-#include "Object.hpp"
-#include "object_ptr.hpp"
-#include "resource_manager.hpp"
-#include "Resources/Resource.hpp"
+#include "sorcery/Object.hpp"
+#include "sorcery/object_ptr.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/resources/Resource.hpp"
 
 
 namespace sorcery::mage {

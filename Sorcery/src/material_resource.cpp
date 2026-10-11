@@ -1,9 +1,9 @@
-#include "material_resource.hpp"
-
-#include "Serialization.hpp"
+#include "sorcery/host/assets/material_resource.hpp"
 
 #include <cassert>
 #include <cstdint>
+
+#include "sorcery/Serialization.hpp"
 
 
 namespace sorcery {

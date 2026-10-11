@@ -6,10 +6,10 @@
 #include <variant>
 #include <vector>
 
-#include "skinned_render_mesh_instance.hpp"
-#include "static_render_mesh_instance.hpp"
-#include "../object_id.hpp"
-#include "../observer_ptr.hpp"
+#include "rendering/skinned_render_mesh_instance.hpp"
+#include "rendering/static_render_mesh_instance.hpp"
+#include "sorcery/object_id.hpp"
+#include "sorcery/observer_ptr.hpp"
 
 
 namespace sorcery {

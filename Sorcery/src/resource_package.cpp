@@ -1,16 +1,16 @@
-#include "resource_package.hpp"
+#include "sorcery/host/assets/resource_package.hpp"
 
 #include <algorithm>
 #include <fstream>
 
-#include "Serialization.hpp"
 #include "vector_stream.hpp"
-#include "resources/Cubemap.hpp"
-#include "resources/Material.hpp"
-#include "resources/Mesh.hpp"
-#include "resources/prefab.hpp"
-#include "resources/Scene.hpp"
-#include "resources/Texture2D.hpp"
+#include "sorcery/Serialization.hpp"
+#include "sorcery/resources/Cubemap.hpp"
+#include "sorcery/resources/Material.hpp"
+#include "sorcery/resources/Mesh.hpp"
+#include "sorcery/resources/prefab.hpp"
+#include "sorcery/resources/Scene.hpp"
+#include "sorcery/resources/Texture2D.hpp"
 
 
 namespace sorcery {

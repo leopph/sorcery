@@ -1,7 +1,7 @@
 #pragma once
 
 #include "editor_drawer.h"
-#include "TransformComponent.hpp"
+#include "sorcery/scene/TransformComponent.hpp"
 
 
 namespace sorcery::mage {

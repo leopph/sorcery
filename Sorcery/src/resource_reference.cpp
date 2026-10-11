@@ -1,6 +1,6 @@
-#include "resource_reference.hpp"
+#include "sorcery/resource_reference.hpp"
 
-#include "Serialization.hpp"
+#include "sorcery/Serialization.hpp"
 
 
 namespace sorcery {

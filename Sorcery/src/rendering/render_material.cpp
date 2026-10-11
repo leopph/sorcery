@@ -1,7 +1,7 @@
 #include "render_material.hpp"
 
-#include "constant_buffer.hpp"
-#include "shaders/shader_interop.h"
+#include "rendering/constant_buffer.hpp"
+#include "rendering/shaders/shader_interop.h"
 
 
 namespace sorcery::rendering {

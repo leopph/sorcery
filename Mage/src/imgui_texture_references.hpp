@@ -7,7 +7,7 @@
 
 #include <imgui.h>
 
-#include "object_ptr.hpp"
+#include "sorcery/object_ptr.hpp"
 
 
 namespace sorcery {

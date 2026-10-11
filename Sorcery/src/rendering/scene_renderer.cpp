@@ -1,4 +1,4 @@
-#include "scene_renderer.hpp"
+#include "rendering/scene_renderer.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -11,85 +11,85 @@
 #include <ranges>
 #include <stdexcept>
 
-#include "projection_utils.hpp"
-#include "render_instance_registry.hpp"
-#include "render_resource_registry.hpp"
-#include "render_scene.hpp"
-#include "ShadowCascadeBoundary.hpp"
-#include "texture_resolver.hpp"
-#include "../app.hpp"
-#include "../random.hpp"
-#include "../resource_manager.hpp"
-#include "../Window.hpp"
-#include "../Resources/Scene.hpp"
-#include "../scene_objects/Entity.hpp"
-#include "../scene_objects/SkinnedMeshComponent.hpp"
-#include "../scene_objects/StaticMeshComponent.hpp"
-#include "../scene_objects/TransformComponent.hpp"
-#include "shaders/shader_interop.h"
+#include "random.hpp"
+#include "rendering/projection_utils.hpp"
+#include "rendering/render_instance_registry.hpp"
+#include "rendering/render_resource_registry.hpp"
+#include "rendering/ShadowCascadeBoundary.hpp"
+#include "rendering/shaders/shader_interop.h"
+#include "rendering/shaders/shadow_filtering_modes.h"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/host/rendering/render_scene.hpp"
+#include "sorcery/host/rendering/texture_resolver.hpp"
+#include "sorcery/Resources/Scene.hpp"
+#include "sorcery/scene/Entity.hpp"
+#include "sorcery/scene/SkinnedMeshComponent.hpp"
+#include "sorcery/scene/StaticMeshComponent.hpp"
+#include "sorcery/scene/TransformComponent.hpp"
 
 #ifndef NDEBUG
-#include "shaders/generated/Debug/brdf_integration_ps.h"
-#include "shaders/generated/Debug/brdf_integration_vs.h"
-#include "shaders/generated/Debug/deferred_lighting_ps.h"
-#include "shaders/generated/Debug/deferred_lighting_vs.h"
-#include "shaders/generated/Debug/depth_only_as.h"
-#include "shaders/generated/Debug/depth_only_ms.h"
-#include "shaders/generated/Debug/depth_only_ps.h"
-#include "shaders/generated/Debug/depth_resolve_cs.h"
-#include "shaders/generated/Debug/envmap_prefilter_ms.h"
-#include "shaders/generated/Debug/envmap_prefilter_ps.h"
-#include "shaders/generated/Debug/gbuffer_velocity_as.h"
-#include "shaders/generated/Debug/gbuffer_velocity_ms.h"
-#include "shaders/generated/Debug/gbuffer_velocity_ps.h"
-#include "shaders/generated/Debug/gizmos_line_vs.h"
-#include "shaders/generated/Debug/gizmos_ps.h"
-#include "shaders/generated/Debug/irradiance_ms.h"
-#include "shaders/generated/Debug/irradiance_ps.h"
-#include "shaders/generated/Debug/post_process_ps.h"
-#include "shaders/generated/Debug/post_process_vs.h"
-#include "shaders/generated/Debug/skybox_ms.h"
-#include "shaders/generated/Debug/skybox_ps.h"
-#include "shaders/generated/Debug/ssao_blur_ps.h"
-#include "shaders/generated/Debug/ssao_main_ps.h"
-#include "shaders/generated/Debug/ssao_vs.h"
-#include "shaders/generated/Debug/ssr_compose_ps.h"
-#include "shaders/generated/Debug/ssr_ps.h"
-#include "shaders/generated/Debug/ssr_vs.h"
-#include "shaders/generated/Debug/taa_resolve_ps.h"
-#include "shaders/generated/Debug/taa_resolve_vs.h"
-#include "shaders/generated/Debug/vtx_skinning_cs.h"
+#include "rendering/shaders/generated/Debug/brdf_integration_ps.h"
+#include "rendering/shaders/generated/Debug/brdf_integration_vs.h"
+#include "rendering/shaders/generated/Debug/deferred_lighting_ps.h"
+#include "rendering/shaders/generated/Debug/deferred_lighting_vs.h"
+#include "rendering/shaders/generated/Debug/depth_only_as.h"
+#include "rendering/shaders/generated/Debug/depth_only_ms.h"
+#include "rendering/shaders/generated/Debug/depth_only_ps.h"
+#include "rendering/shaders/generated/Debug/depth_resolve_cs.h"
+#include "rendering/shaders/generated/Debug/envmap_prefilter_ms.h"
+#include "rendering/shaders/generated/Debug/envmap_prefilter_ps.h"
+#include "rendering/shaders/generated/Debug/gbuffer_velocity_as.h"
+#include "rendering/shaders/generated/Debug/gbuffer_velocity_ms.h"
+#include "rendering/shaders/generated/Debug/gbuffer_velocity_ps.h"
+#include "rendering/shaders/generated/Debug/gizmos_line_vs.h"
+#include "rendering/shaders/generated/Debug/gizmos_ps.h"
+#include "rendering/shaders/generated/Debug/irradiance_ms.h"
+#include "rendering/shaders/generated/Debug/irradiance_ps.h"
+#include "rendering/shaders/generated/Debug/post_process_ps.h"
+#include "rendering/shaders/generated/Debug/post_process_vs.h"
+#include "rendering/shaders/generated/Debug/skybox_ms.h"
+#include "rendering/shaders/generated/Debug/skybox_ps.h"
+#include "rendering/shaders/generated/Debug/ssao_blur_ps.h"
+#include "rendering/shaders/generated/Debug/ssao_main_ps.h"
+#include "rendering/shaders/generated/Debug/ssao_vs.h"
+#include "rendering/shaders/generated/Debug/ssr_compose_ps.h"
+#include "rendering/shaders/generated/Debug/ssr_ps.h"
+#include "rendering/shaders/generated/Debug/ssr_vs.h"
+#include "rendering/shaders/generated/Debug/taa_resolve_ps.h"
+#include "rendering/shaders/generated/Debug/taa_resolve_vs.h"
+#include "rendering/shaders/generated/Debug/vtx_skinning_cs.h"
 #else
-#include "shaders/generated/Release//envmap_prefilter_ms.h"
-#include "shaders/generated/Release//envmap_prefilter_ps.h"
-#include "shaders/generated/Release/brdf_integration_ps.h"
-#include "shaders/generated/Release/brdf_integration_vs.h"
-#include "shaders/generated/Release/deferred_lighting_ps.h"
-#include "shaders/generated/Release/deferred_lighting_vs.h"
-#include "shaders/generated/Release/depth_only_as.h"
-#include "shaders/generated/Release/depth_only_ms.h"
-#include "shaders/generated/Release/depth_only_ps.h"
-#include "shaders/generated/Release/depth_resolve_cs.h"
-#include "shaders/generated/Release/gbuffer_velocity_as.h"
-#include "shaders/generated/Release/gbuffer_velocity_ms.h"
-#include "shaders/generated/Release/gbuffer_velocity_ps.h"
-#include "shaders/generated/Release/gizmos_line_vs.h"
-#include "shaders/generated/Release/gizmos_ps.h"
-#include "shaders/generated/Release/irradiance_ms.h"
-#include "shaders/generated/Release/irradiance_ps.h"
-#include "shaders/generated/Release/post_process_ps.h"
-#include "shaders/generated/Release/post_process_vs.h"
-#include "shaders/generated/Release/skybox_ms.h"
-#include "shaders/generated/Release/skybox_ps.h"
-#include "shaders/generated/Release/ssao_blur_ps.h"
-#include "shaders/generated/Release/ssao_main_ps.h"
-#include "shaders/generated/Release/ssao_vs.h"
-#include "shaders/generated/Release/ssr_compose_ps.h"
-#include "shaders/generated/Release/ssr_ps.h"
-#include "shaders/generated/Release/ssr_vs.h"
-#include "shaders/generated/Release/taa_resolve_ps.h"
-#include "shaders/generated/Release/taa_resolve_vs.h"
-#include "shaders/generated/Release/vtx_skinning_cs.h"
+#include "rendering/shaders/generated/Release//envmap_prefilter_ms.h"
+#include "rendering/shaders/generated/Release//envmap_prefilter_ps.h"
+#include "rendering/shaders/generated/Release/brdf_integration_ps.h"
+#include "rendering/shaders/generated/Release/brdf_integration_vs.h"
+#include "rendering/shaders/generated/Release/deferred_lighting_ps.h"
+#include "rendering/shaders/generated/Release/deferred_lighting_vs.h"
+#include "rendering/shaders/generated/Release/depth_only_as.h"
+#include "rendering/shaders/generated/Release/depth_only_ms.h"
+#include "rendering/shaders/generated/Release/depth_only_ps.h"
+#include "rendering/shaders/generated/Release/depth_resolve_cs.h"
+#include "rendering/shaders/generated/Release/gbuffer_velocity_as.h"
+#include "rendering/shaders/generated/Release/gbuffer_velocity_ms.h"
+#include "rendering/shaders/generated/Release/gbuffer_velocity_ps.h"
+#include "rendering/shaders/generated/Release/gizmos_line_vs.h"
+#include "rendering/shaders/generated/Release/gizmos_ps.h"
+#include "rendering/shaders/generated/Release/irradiance_ms.h"
+#include "rendering/shaders/generated/Release/irradiance_ps.h"
+#include "rendering/shaders/generated/Release/post_process_ps.h"
+#include "rendering/shaders/generated/Release/post_process_vs.h"
+#include "rendering/shaders/generated/Release/skybox_ms.h"
+#include "rendering/shaders/generated/Release/skybox_ps.h"
+#include "rendering/shaders/generated/Release/ssao_blur_ps.h"
+#include "rendering/shaders/generated/Release/ssao_main_ps.h"
+#include "rendering/shaders/generated/Release/ssao_vs.h"
+#include "rendering/shaders/generated/Release/ssr_compose_ps.h"
+#include "rendering/shaders/generated/Release/ssr_ps.h"
+#include "rendering/shaders/generated/Release/ssr_vs.h"
+#include "rendering/shaders/generated/Release/taa_resolve_ps.h"
+#include "rendering/shaders/generated/Release/taa_resolve_vs.h"
+#include "rendering/shaders/generated/Release/vtx_skinning_cs.h"
 #endif
 
 
@@ -112,10 +112,8 @@ namespace {
 [[nodiscard]]
 auto ToShaderBlendMode(MaterialBlendMode const mode) -> int {
   switch (mode) {
-    case MaterialBlendMode::kOpaque:
-      return BLEND_MODE_OPAQUE;
-    case MaterialBlendMode::kAlphaClip:
-      return BLEND_MODE_ALPHA_CLIP;
+    case MaterialBlendMode::kOpaque: return BLEND_MODE_OPAQUE;
+    case MaterialBlendMode::kAlphaClip: return BLEND_MODE_ALPHA_CLIP;
   }
 
   assert(false && "Invalid material blend mode.");
@@ -126,17 +124,28 @@ auto ToShaderBlendMode(MaterialBlendMode const mode) -> int {
 [[nodiscard]]
 auto ToShaderLightType(LightComponent::Type const type) -> int {
   switch (type) {
-    case LightComponent::Type::Directional:
-      return LIGHT_DIRECTIONAL;
-    case LightComponent::Type::Spot:
-      return LIGHT_SPOT;
-
-    case LightComponent::Type::Point:
-      return LIGHT_POINT;
+    case LightComponent::Type::Directional: return LIGHT_DIRECTIONAL;
+    case LightComponent::Type::Spot: return LIGHT_SPOT;
+    case LightComponent::Type::Point: return LIGHT_POINT;
   }
 
   assert(false && "Invalid light type.");
   return LIGHT_POINT;
+}
+
+
+[[nodiscard]]
+auto ToShaderShadowFilteringMode(ShadowFilteringMode const mode) -> int {
+  switch (mode) {
+    case ShadowFilteringMode::kNone: return SHADOW_FILTERING_NONE;
+    case ShadowFilteringMode::kHardwarePcf: return SHADOW_FILTERING_HARDWARE_PCF;
+    case ShadowFilteringMode::kPcf3X3: return SHADOW_FILTERING_PCF_3x3;
+    case ShadowFilteringMode::kPcfTent3X3: return SHADOW_FILTERING_PCF_TENT_3x3;
+    case ShadowFilteringMode::kPcfTent5X5: return SHADOW_FILTERING_PCF_TENT_5x5;
+  }
+
+  assert(false && "Invalid shadow filtering mode.");
+  return SHADOW_FILTERING_NONE;
 }
 
 
@@ -2826,7 +2835,7 @@ auto SceneRenderer::SetPerFrameConstants(MappedConstantBuffer<ShaderPerFrameCons
   cb.GetData() = ShaderPerFrameConstants{
     .ambient_light_color = ambient_light, .dir_shadow_cascade_count = shadow_params.cascade_count,
     .visualize_dir_shadow_cascades = shadow_params.visualize_cascades,
-    .shadow_filtering_mode = static_cast<int>(shadow_params.filtering_mode)
+    .shadow_filtering_mode = ToShaderShadowFilteringMode(shadow_params.filtering_mode)
   };
 }
 

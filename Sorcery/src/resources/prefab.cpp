@@ -1,8 +1,8 @@
-#include "prefab.hpp"
+#include "sorcery/resources/prefab.hpp"
 
 #include <queue>
 
-#include "../scene_objects/Entity.hpp"
+#include "sorcery/scene/Entity.hpp"
 
 
 RTTR_REGISTRATION {

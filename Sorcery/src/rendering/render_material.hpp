@@ -3,8 +3,9 @@
 #include <array>
 #include <cstdint>
 
-#include "../object_id.hpp"
 #include "wand/wand.hpp"
+
+#include "sorcery/object_id.hpp"
 
 
 namespace sorcery::rendering {

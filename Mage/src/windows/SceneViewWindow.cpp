@@ -1,12 +1,12 @@
 #include "SceneViewWindow.hpp"
 
-#include "Platform.hpp"
-#include "prefab.hpp"
-#include "Timing.hpp"
-#include "Window.hpp"
 #include "../editor_app.hpp"
 #include "../StandaloneCamera.hpp"
-#include "rendering/render_scene.hpp"
+#include "sorcery/timing.hpp"
+#include "sorcery/host/platform.hpp"
+#include "sorcery/host/window.hpp"
+#include "sorcery/host/rendering/render_scene.hpp"
+#include "sorcery/resources/prefab.hpp"
 
 
 namespace sorcery::mage {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rendering/Camera.hpp"
+#include "sorcery/rendering/Camera.hpp"
 
 
 namespace sorcery::mage {
@@ -11,7 +11,8 @@ public:
   [[nodiscard]] auto GetUpAxis() const noexcept -> Vector3 override;
   [[nodiscard]] auto GetForwardAxis() const noexcept -> Vector3 override;
 
-  StandaloneCamera(Vector3 const& position, Quaternion const& orientation, float speed, float nearClip, float farClip, float vertFovDeg);
+  StandaloneCamera(Vector3 const& position, Quaternion const& orientation, float speed, float nearClip, float farClip,
+                   float vertFovDeg);
 
   Vector3 position;
   Quaternion orientation;

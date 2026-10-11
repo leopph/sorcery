@@ -1,10 +1,10 @@
-#include "render_frame.hpp"
+#include "sorcery/host/rendering/render_frame.hpp"
 
 #include <cassert>
 #include <stdexcept>
 
-#include "config.hpp"
-#include "../util.hpp"
+#include "sorcery/util.hpp"
+#include "sorcery/rendering/config.hpp"
 
 
 namespace sorcery::rendering {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "observer_ptr.hpp"
+#include "sorcery/observer_ptr.hpp"
 
 
 namespace sorcery::mage {

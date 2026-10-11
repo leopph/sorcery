@@ -4,9 +4,9 @@
 
 #include <imgui_stdlib.h>
 
-#include "app.hpp"
-#include "object_registry.hpp"
-#include "reflection.hpp"
+#include "sorcery/reflection.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/object_registry.hpp"
 
 
 namespace sorcery::mage {

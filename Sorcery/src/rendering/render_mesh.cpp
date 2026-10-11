@@ -1,7 +1,7 @@
 #include "render_mesh.hpp"
 
-#include "../mesh_data.hpp"
-#include "../util.hpp"
+#include "sorcery/mesh_data.hpp"
+#include "sorcery/util.hpp"
 
 
 namespace sorcery::rendering {

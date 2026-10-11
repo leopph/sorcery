@@ -7,7 +7,7 @@
 #include <ImGuizmo.h>
 
 #include "../StandaloneCamera.hpp"
-#include "observer_ptr.hpp"
+#include "sorcery/observer_ptr.hpp"
 
 
 namespace sorcery::mage {

@@ -1,4 +1,4 @@
-#include "frame_uploader.hpp"
+#include "sorcery/host/rendering/frame_uploader.hpp"
 
 #include <algorithm>
 #include <cassert>

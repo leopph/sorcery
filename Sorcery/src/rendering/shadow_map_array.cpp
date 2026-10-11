@@ -1,6 +1,6 @@
 #include "shadow_map_array.hpp"
 
-#include "shaders/shader_interop.h"
+#include "rendering/shaders/shader_interop.h"
 
 
 namespace sorcery::rendering {

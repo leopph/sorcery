@@ -1,7 +1,8 @@
 #include "texture_importer.hpp"
 
-#include "io_helpers.hpp"
-#include "util.hpp"
+#include "sorcery/char_encoding_helpers.hpp"
+#include "sorcery/io_helpers.hpp"
+#include "sorcery/util.hpp"
 
 
 RTTR_REGISTRATION {
@@ -43,7 +44,7 @@ auto TextureImporter::Import(
   }
 
   results.emplace_back(result->payload_kind, result->runtime_type,
-    std::string{ToUntypedStdSv(src.filename().stem().u8string())}, std::move(result->bytes));
+    std::string{ToUntypedSv(src.filename().stem().u8string())}, std::move(result->bytes));
   return true;
 }
 

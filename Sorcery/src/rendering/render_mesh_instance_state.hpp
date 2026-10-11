@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include "../Math.hpp"
-#include "../object_id.hpp"
+#include "sorcery/Math.hpp"
+#include "sorcery/object_id.hpp"
 
 
 namespace sorcery::rendering {

@@ -1,8 +1,9 @@
-#include "Color.hpp"
-#include "reflection.hpp"
-#include "util.hpp"
+#include "sorcery/Color.hpp"
 
 #include <algorithm>
+
+#include "sorcery/reflection.hpp"
+#include "sorcery/util.hpp"
 
 
 RTTR_REGISTRATION {

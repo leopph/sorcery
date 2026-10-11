@@ -1,17 +1,16 @@
-#include "Scene.hpp"
+#include "sorcery/resources/Scene.hpp"
 
 #include <algorithm>
 #include <ranges>
 
-#include "../app.hpp"
-#include "../resource_reference.hpp"
-#include "../Serialization.hpp"
-#undef FindResource
-#include "../entity_serialization.hpp"
-#include "../job_system.hpp"
-#include "../reflection.hpp"
-#include "../resource_manager.hpp"
 #include "wand/wand.hpp"
+
+#include "sorcery/entity_serialization.hpp"
+#include "sorcery/reflection.hpp"
+#include "sorcery/resource_reference.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/job_system.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
 
 
 RTTR_REGISTRATION {

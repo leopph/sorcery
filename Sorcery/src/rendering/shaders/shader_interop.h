@@ -5,7 +5,7 @@
 
 #include <cstdint>
 
-#include "../../Math.hpp"
+#include "sorcery/Math.hpp"
 
 
 namespace sorcery {

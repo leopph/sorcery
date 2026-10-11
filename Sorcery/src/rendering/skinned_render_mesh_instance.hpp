@@ -4,9 +4,10 @@
 #include <cstdint>
 #include <optional>
 
-#include "config.hpp"
-#include "render_mesh_instance_state.hpp"
 #include "wand/wand.hpp"
+
+#include "rendering/render_mesh_instance_state.hpp"
+#include "sorcery/rendering/config.hpp"
 
 
 namespace sorcery::rendering {

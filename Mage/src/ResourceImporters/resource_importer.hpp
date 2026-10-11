@@ -1,7 +1,7 @@
 #pragma once
 
-#include "reflection.hpp"
-#include "resource_package.hpp"
+#include "sorcery/reflection.hpp"
+#include "sorcery/host/assets/resource_package.hpp"
 
 #include <filesystem>
 #include <string>

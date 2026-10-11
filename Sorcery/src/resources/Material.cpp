@@ -1,14 +1,14 @@
-#include "Material.hpp"
+#include "sorcery/resources/Material.hpp"
 
 #include <cassert>
 
 #include <spdlog/spdlog.h>
 
-#include "../app.hpp"
-#include "../job_system.hpp"
-#include "../material_resource.hpp"
-#include "../resource_manager.hpp"
-#include "../resource_reference.hpp"
+#include "sorcery/resource_reference.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/job_system.hpp"
+#include "sorcery/host/assets/material_resource.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
 
 
 RTTR_REGISTRATION {

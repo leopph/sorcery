@@ -1,4 +1,4 @@
-#include "Guid.hpp"
+#include "sorcery/Guid.hpp"
 
 #include <combaseapi.h>
 
@@ -13,7 +13,7 @@ auto Guid::Invalid() noexcept -> Guid {
 
 Guid::Guid(std::uint64_t const lowBits, std::uint64_t const highBits) :
   mLowBits{lowBits},
-  mHighBits{highBits} { }
+  mHighBits{highBits} {}
 
 
 auto Guid::Generate() -> Guid {
@@ -21,7 +21,7 @@ auto Guid::Generate() -> Guid {
 
   while (!ret.IsValid()) {
     GUID guid;
-    while (CoCreateGuid(&guid) != S_OK) { }
+    while (CoCreateGuid(&guid) != S_OK) {}
     std::memcpy(&ret, &guid, 16);
   }
 

@@ -7,11 +7,11 @@
 #include <string>
 #include <variant>
 
-#include "Event.hpp"
-#include "Guid.hpp"
-#include "observer_ptr.hpp"
-#include "resource_id.hpp"
 #include "../ResourceImporters/resource_importer.hpp"
+#include "sorcery/event.hpp"
+#include "sorcery/Guid.hpp"
+#include "sorcery/observer_ptr.hpp"
+#include "sorcery/resource_id.hpp"
 
 
 namespace sorcery::mage {

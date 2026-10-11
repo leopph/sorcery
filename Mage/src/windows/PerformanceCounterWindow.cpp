@@ -5,7 +5,7 @@
 
 #include <implot.h>
 
-#include "Timing.hpp"
+#include "sorcery/timing.hpp"
 
 
 namespace sorcery::mage {

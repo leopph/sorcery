@@ -1,7 +1,7 @@
 #pragma once
 
 #include "editor_drawer.h"
-#include "SkinnedMeshComponent.hpp"
+#include "sorcery/scene/SkinnedMeshComponent.hpp"
 
 
 namespace sorcery::mage {

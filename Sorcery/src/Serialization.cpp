@@ -1,11 +1,12 @@
-#include "Serialization.hpp"
-
-#include "app.hpp"
-#include "resource_manager.hpp"
-#include "resource_reference.hpp"
-#include "Resources/Resource.hpp"
+#include "sorcery/Serialization.hpp"
 
 #include <cassert>
+
+#include "sorcery/resource_reference.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/resources/Resource.hpp"
+
 
 static_assert(
   std::endian::native == std::endian::little &&

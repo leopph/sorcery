@@ -1,7 +1,7 @@
 #include "shadow_atlas.hpp"
 
-#include "../Math.hpp"
-#include "shaders/shader_interop.h"
+#include "rendering/shaders/shader_interop.h"
+#include "sorcery/Math.hpp"
 
 
 namespace sorcery::rendering {

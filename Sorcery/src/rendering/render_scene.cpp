@@ -1,4 +1,4 @@
-#include "render_scene.hpp"
+#include "sorcery/host/rendering/render_scene.hpp"
 
 
 namespace sorcery::rendering {

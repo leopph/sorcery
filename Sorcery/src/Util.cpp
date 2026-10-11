@@ -1,4 +1,4 @@
-#include "util.hpp"
+#include "sorcery/util.hpp"
 
 #include <cctype>
 #include <format>
@@ -165,15 +165,5 @@ auto IsSubpath(std::filesystem::path const& path, std::filesystem::path const& b
       std::end(canonicalBase))
   };
   return baseIt == std::end(canonicalBase);
-}
-
-
-auto ToUntypedStdSv(std::u8string_view const sv) -> std::string_view {
-  return std::string_view{reinterpret_cast<char const*>(sv.data()), sv.size()};
-}
-
-
-auto ToUtf8StdSv(std::string_view const sv) -> std::u8string_view {
-  return std::u8string_view{reinterpret_cast<char8_t const*>(sv.data()), sv.size()};
 }
 }

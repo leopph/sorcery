@@ -1,6 +1,7 @@
 #include "command_line_processor.hpp"
 
-#include "Platform.hpp"
+#include <cwchar>
+#include <stdexcept>
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -8,8 +9,7 @@
 
 #include <shellapi.h>
 
-#include <cwchar>
-#include <stdexcept>
+#include "sorcery/host/platform.hpp"
 
 
 namespace sorcery::mage {

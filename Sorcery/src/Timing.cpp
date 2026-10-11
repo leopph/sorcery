@@ -1,4 +1,4 @@
-#include "Timing.hpp"
+#include "sorcery/timing.hpp"
 
 #include <chrono>
 
@@ -12,8 +12,8 @@ std::chrono::nanoseconds gFullTime;
 float gLastFrameTimeSeconds;
 float gFullTimeSeconds;
 
-int gTargetFrameRate{ -1 };
-std::chrono::nanoseconds gMinFrameTime{ 0 };
+int gTargetFrameRate{-1};
+std::chrono::nanoseconds gMinFrameTime{0};
 }
 
 
@@ -55,6 +55,6 @@ auto GetTargetFrameRate() noexcept -> int {
 
 auto SetTargetFrameRate(int const targetFrameRate) noexcept -> void {
   gTargetFrameRate = targetFrameRate;
-  gMinFrameTime = std::chrono::nanoseconds{ static_cast<int>(1e9f / static_cast<float>(targetFrameRate)) };
+  gMinFrameTime = std::chrono::nanoseconds{static_cast<int>(1e9f / static_cast<float>(targetFrameRate))};
 }
 }

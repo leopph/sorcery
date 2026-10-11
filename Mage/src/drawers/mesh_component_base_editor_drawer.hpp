@@ -1,7 +1,7 @@
 #pragma once
 
 #include "editor_drawer.h"
-#include "MeshComponentBase.hpp"
+#include "sorcery/scene/MeshComponentBase.hpp"
 
 
 namespace sorcery::mage {

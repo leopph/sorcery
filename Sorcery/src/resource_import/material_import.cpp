@@ -1,9 +1,9 @@
-#include "material_import.hpp"
+#include "sorcery/host/assets/material_import.hpp"
 
 #include <ranges>
 
-#include "../reflection.hpp"
-#include "../resources/Material.hpp"
+#include "sorcery/reflection.hpp"
+#include "sorcery/resources/Material.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::MaterialImportSettings>("Material Import Settings")

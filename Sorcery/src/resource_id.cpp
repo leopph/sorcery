@@ -1,4 +1,4 @@
-#include "resource_id.hpp"
+#include "sorcery/resource_id.hpp"
 
 #include <sstream>
 

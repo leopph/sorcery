@@ -1,0 +1,24 @@
+#pragma once
+
+#define RTTR_DLL // This is necessary because rttr defines RTTR_API as __declspec(dllimport) only if RTTR_DLL is defined, which it is when building RTTR, but of course not when consuming it
+// For some reason RTTR headers include Windows.h so there are some mitigations
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <rttr/registration>
+#include <rttr/registration_friend>
+
+#define REFLECT_REGISTER_SCENE_OBJECT_CTOR constructor<>()(::rttr::policy::ctor::as_raw_ptr)
+#define REFLECT_REGISTER_COMPONENT_CTOR REFLECT_REGISTER_SCENE_OBJECT_CTOR
+#define REFLECT_REGISTER_ENTITY_CTOR REFLECT_REGISTER_SCENE_OBJECT_CTOR
+
+#define REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR constructor<>()(::rttr::policy::ctor::as_raw_ptr)
+
+
+namespace sorcery {
+template<typename To, typename From>
+[[nodiscard]]
+auto ReflCast(From obj) noexcept -> To;
+}
+
+
+#include <sorcery/reflection.inl>

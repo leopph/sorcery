@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <vector>
 
-#include "observer_ptr.hpp"
+#include "sorcery/observer_ptr.hpp"
 #include "../gui_helpers.hpp"
-#include "rendering/config.hpp"
+#include "sorcery/rendering/config.hpp"
 #include "wand/wand.hpp"
 
 

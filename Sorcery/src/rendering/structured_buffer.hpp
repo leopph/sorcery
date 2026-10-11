@@ -3,8 +3,9 @@
 #include <cstdint>
 #include <span>
 
-#include "../observer_ptr.hpp"
 #include "wand/wand.hpp"
+
+#include "sorcery/observer_ptr.hpp"
 
 
 namespace sorcery::rendering {

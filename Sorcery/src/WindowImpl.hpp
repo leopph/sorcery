@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Window.hpp"
+#include "sorcery/host/Window.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX

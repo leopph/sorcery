@@ -4,11 +4,12 @@
 #include <memory>
 #include <vector>
 
-#include "config.hpp"
-#include "render_frame.hpp"
-#include "render_target.hpp"
-#include "../observer_ptr.hpp"
 #include "wand/graphics_device.hpp"
+
+#include "sorcery/observer_ptr.hpp"
+#include "sorcery/host/rendering/render_frame.hpp"
+#include "sorcery/rendering/config.hpp"
+#include "sorcery/rendering/render_target.hpp"
 
 
 namespace sorcery::rendering {

@@ -7,11 +7,12 @@
 #include <nfd.hpp>
 #include <spdlog/spdlog.h>
 
-#include "Material.hpp"
-#include "Platform.hpp"
-#include "util.hpp"
 #include "../editor_app.hpp"
 #include "../drawers/editor_drawer_registry.hpp"
+#include "sorcery/char_encoding_helpers.hpp"
+#include "sorcery/util.hpp"
+#include "sorcery/host/platform.hpp"
+#include "sorcery/resources/Material.hpp"
 
 
 namespace sorcery::mage {
@@ -552,7 +553,7 @@ auto ProjectWindow::DrawDragSource(ProjectItem const& item) const -> void {
   std::visit(Overloaded{
     [this](DirectoryProjectItem const& dir_item) {
       auto const path_str{dir_item.path_abs.u8string()};
-      auto const path_sv{ToUntypedStdSv(path_str)};
+      auto const path_sv{ToUntypedSv(path_str)};
       ImGui::SetDragDropPayload(kDirNodeDragDropTypeStr.data(), path_sv.data(), path_sv.size());
     },
     [this](NativeResourceFileProjectItem const& res_item) {
@@ -609,7 +610,7 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
           static_cast<char const*>(payload->Data), clamp_cast<std::size_t>(payload->DataSize)
         };
 
-        std::filesystem::path const src_abs{ToUtf8StdSv(src_abs_sv)};
+        std::filesystem::path const src_abs{ToUtf8Sv(src_abs_sv)};
 
         if (std::error_code ec;
           IsResourceRootDirectory(src_abs) ||
@@ -915,7 +916,7 @@ auto ProjectWindow::CommitResourceFileRename(Guid const& guid, std::string_view 
   auto const& old_path_res_dir_rel{info->src_path_res_dir_rel};
 
   auto const new_filename{
-    std::string{new_name}.append(ToUntypedStdSv(old_path_res_dir_rel.extension().u8string()))
+    std::string{new_name}.append(ToUntypedSv(old_path_res_dir_rel.extension().u8string()))
   };
 
   auto const new_path_res_dir_rel{old_path_res_dir_rel.parent_path() / new_filename};
@@ -994,7 +995,7 @@ auto ProjectWindow::DrawImportSettingsDialog() -> void {
 
   auto& ctx{*import_settings_ctx_};
 
-  ImGui::SeparatorText(ToUntypedStdSv(ctx.src_path_res_dir_rel.filename().u8string()).data());
+  ImGui::SeparatorText(ToUntypedSv(ctx.src_path_res_dir_rel.filename().u8string()).data());
 
   auto changed_this_frame{false};
   drawer_registry_->Draw(*ctx.importer, true, changed_this_frame);
@@ -1163,7 +1164,7 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
 
     if (!exists(src_path_abs)) {
       auto const err_msg{
-        std::format("Failed to import {}. File does not exist.", ToUntypedStdSv(src_path_abs.u8string()))
+        std::format("Failed to import {}. File does not exist.", ToUntypedSv(src_path_abs.u8string()))
       };
       spdlog::error(err_msg);
       DisplayError(err_msg);
@@ -1172,7 +1173,7 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
 
     if (exists(dst_path_abs)) {
       auto const err_msg{
-        std::format("Failed to import {}. File already exists.", ToUntypedStdSv(dst_path_abs.u8string()))
+        std::format("Failed to import {}. File already exists.", ToUntypedSv(dst_path_abs.u8string()))
       };
       spdlog::error(err_msg);
       DisplayError(err_msg);
@@ -1184,7 +1185,7 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
 
     if (ec) {
       auto const err_msg{
-        std::format("Failed to import {}. Copy failed.", ToUntypedStdSv(src_path_abs.u8string()))
+        std::format("Failed to import {}. Copy failed.", ToUntypedSv(src_path_abs.u8string()))
       };
       spdlog::error(err_msg);
       DisplayError(err_msg);
@@ -1210,7 +1211,7 @@ auto ProjectWindow::ExecuteCreateFolder(ProjectItem const& target) const -> void
   create_directory(new_folder_path_abs, err);
 
   if (err) {
-    auto const err_msg{std::format("Failed to create directory: {}.", ToUntypedStdSv(new_folder_path_abs.u8string()))};
+    auto const err_msg{std::format("Failed to create directory: {}.", ToUntypedSv(new_folder_path_abs.u8string()))};
     spdlog::error(err_msg);
     DisplayError(err_msg);
     return;
@@ -1230,7 +1231,7 @@ auto ProjectWindow::ExecuteCreateMaterial(ProjectItem const& target) -> void {
 
       if (!created_mtl) {
         auto const err_msg{
-          std::format("Failed to create new material at {}.", ToUntypedStdSv(mtl_path_abs.u8string()))
+          std::format("Failed to create new material at {}.", ToUntypedSv(mtl_path_abs.u8string()))
         };
         spdlog::error(err_msg);
         DisplayError(err_msg);
@@ -1264,7 +1265,7 @@ auto ProjectWindow::ExecuteCreateScene(ProjectItem const& target) -> void {
 
       if (!created_scene) {
         auto const err_msg{
-          std::format("Failed to create new scene at {}.", ToUntypedStdSv(scene_path_abs.u8string()))
+          std::format("Failed to create new scene at {}.", ToUntypedSv(scene_path_abs.u8string()))
         };
         spdlog::error(err_msg);
         DisplayError(err_msg);
@@ -1365,7 +1366,7 @@ auto ProjectWindow::ExecuteDeleteDirectory(DirectoryProjectItem const& target) -
   }
 
   if (!app_->GetResourceDatabase().DeleteDirectory(target.path_abs)) {
-    auto const err_msg{std::format("Failed to delete folder: {}", ToUntypedStdSv(target.path_abs.u8string()))};
+    auto const err_msg{std::format("Failed to delete folder: {}", ToUntypedSv(target.path_abs.u8string()))};
     spdlog::error(err_msg);
     DisplayError(err_msg);
     return;
@@ -1635,8 +1636,8 @@ auto ProjectWindow::ExecuteMoveToFolder(ProjectItem const& target) -> void {
         }
 
         if (!resource_db_->MoveDirectory(move_to_folder_ctx->src_abs, dst_abs)) {
-          spdlog::error("Failed to move directory {} to {}.", ToUntypedStdSv(move_to_folder_ctx->src_abs.u8string()),
-            ToUntypedStdSv(dst_abs.u8string()));
+          spdlog::error("Failed to move directory {} to {}.", ToUntypedSv(move_to_folder_ctx->src_abs.u8string()),
+            ToUntypedSv(dst_abs.u8string()));
           DisplayError("Failed to move folder.");
         }
       } else {
@@ -1662,8 +1663,8 @@ auto ProjectWindow::ExecuteMoveToFolder(ProjectItem const& target) -> void {
 
         if (!resource_db_->MoveResourceFile(guid, dst_res_dir_rel)) {
           spdlog::error("Failed to move resource file {} to {}.",
-            ToUntypedStdSv(move_to_folder_ctx->src_abs.u8string()),
-            ToUntypedStdSv(dst_abs.u8string()));
+            ToUntypedSv(move_to_folder_ctx->src_abs.u8string()),
+            ToUntypedSv(dst_abs.u8string()));
           DisplayError("Failed to move resource file.");
         }
       }

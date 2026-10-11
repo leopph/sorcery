@@ -2,8 +2,8 @@
 #define IMGUI_SHADER_INTEROP_H
 
 #ifdef __cplusplus
-#include "Math.hpp"
 #include <cstdint>
+#include "sorcery/Math.hpp"
 #define row_major
 using float4x4 = sorcery::Matrix4;
 using float2 = sorcery::Vector2;

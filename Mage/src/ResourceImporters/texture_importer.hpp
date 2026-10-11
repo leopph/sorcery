@@ -4,7 +4,7 @@
 #include <string_view>
 
 #include "resource_importer.hpp"
-#include "texture_import.hpp"
+#include "sorcery/host/assets/texture_import.hpp"
 
 
 namespace sorcery::mage {

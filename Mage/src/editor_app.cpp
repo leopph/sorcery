@@ -5,14 +5,14 @@
 #include <implot.h>
 #include <nfd.hpp>
 
-#include "char_encoding_helpers.hpp"
 #include "gui_helpers.hpp"
 #include "LoadingScreen.hpp"
-#include "Platform.hpp"
-#include "resource_manager.hpp"
 #include "StartupScreen.hpp"
-#include "Timing.hpp"
-#include "Window.hpp"
+#include "sorcery/char_encoding_helpers.hpp"
+#include "sorcery/timing.hpp"
+#include "sorcery/host/platform.hpp"
+#include "sorcery/host/window.hpp"
+#include "sorcery/host/assets/resource_manager.hpp"
 #include "windows/PerformanceCounterWindow.hpp"
 
 extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
@@ -146,7 +146,7 @@ auto EditorApp::SaveCurrentSceneToFile() -> void {
     constexpr nfdu8filteritem_t filter{"Scene files", ResourceManager::SCENE_RESOURCE_EXT.substr(1).data()};
     if (NFD::UniquePath dst;
       SaveDialog(dst, &filter, 1,
-        ToUntypedStrView(resource_db_.GetResourceDirectoryAbsolutePath().u8string()).data()) == NFD_OKAY) {
+        ToUntypedSv(resource_db_.GetResourceDirectoryAbsolutePath().u8string()).data()) == NFD_OKAY) {
       auto dst_res_dir_rel{relative(std::filesystem::path{dst.get()}, resource_db_.GetResourceDirectoryAbsolutePath())};
 
       if (dst_res_dir_rel.extension() != ResourceManager::SCENE_RESOURCE_EXT) {

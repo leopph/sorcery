@@ -1,10 +1,10 @@
 #include "GameViewWindow.hpp"
 
-#include "app.hpp"
-#include "scene_renderer.hpp"
-#include "util.hpp"
 #include "../gui_helpers.hpp"
 #include "../imgui_texture_references.hpp"
+#include "rendering/scene_renderer.hpp"
+#include "sorcery/util.hpp"
+#include "sorcery/host/app.hpp"
 
 
 namespace sorcery::mage {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../util.hpp"
+#include "sorcery/util.hpp"
 
 
 namespace sorcery::rendering {

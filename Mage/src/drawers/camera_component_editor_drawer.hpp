@@ -1,7 +1,7 @@
 #pragma once
 
-#include "CameraComponent.hpp"
 #include "editor_drawer.h"
+#include "sorcery/scene/CameraComponent.hpp"
 
 
 namespace sorcery::mage {

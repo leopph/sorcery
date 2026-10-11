@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Cubemap.hpp"
 #include "../gui_helpers.hpp"
 #include "../StandaloneCamera.hpp"
+#include "sorcery/resources/Cubemap.hpp"
 
 #include <string_view>
 

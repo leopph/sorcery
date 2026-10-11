@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include "../object_registry.hpp"
+#include "sorcery/host/object_registry.hpp"
 
 
 namespace sorcery::rendering {

@@ -2,8 +2,8 @@
 
 #include <functional>
 
-#include "prefab.hpp"
 #include "../editor_app.hpp"
+#include "sorcery/resources/prefab.hpp"
 
 
 namespace sorcery::mage {

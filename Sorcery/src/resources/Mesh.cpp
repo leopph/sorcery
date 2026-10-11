@@ -1,4 +1,4 @@
-#include "Mesh.hpp"
+#include "sorcery/resources/Mesh.hpp"
 
 #include <algorithm>
 #include <stdexcept>

@@ -1,12 +1,12 @@
 #include "SettingsWindow.hpp"
 
-#include "app.hpp"
-#include "scene_renderer.hpp"
-#include "Timing.hpp"
+#include <limits>
+
 #include "../editor_app.hpp"
 #include "../gui_helpers.hpp"
-
-#include <limits>
+#include "rendering/scene_renderer.hpp"
+#include "sorcery/timing.hpp"
+#include "sorcery/host/app.hpp"
 
 
 namespace sorcery::mage {

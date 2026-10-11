@@ -2,10 +2,10 @@
 
 #include <limits>
 
-#include "reflection.hpp"
 #include "../editor_app.hpp"
 #include "../gui_helpers.hpp"
 #include "../drawers/editor_drawer_registry.hpp"
+#include "sorcery/reflection.hpp"
 
 
 namespace sorcery::mage {

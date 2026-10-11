@@ -1,7 +1,7 @@
 #pragma once
 
 #include "editor_drawer.h"
-#include "Entity.hpp"
+#include "sorcery/scene/Entity.hpp"
 
 
 namespace sorcery::mage {

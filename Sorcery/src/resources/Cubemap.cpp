@@ -1,4 +1,4 @@
-#include "Cubemap.hpp"
+#include "sorcery/resources/Cubemap.hpp"
 
 #include <utility>
 

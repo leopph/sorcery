@@ -1,7 +1,7 @@
-#include "object_ptr.hpp"
+#include "sorcery/object_ptr.hpp"
 
-#include "app.hpp"
-#include "object_registry.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/object_registry.hpp"
 
 
 namespace sorcery::detail {

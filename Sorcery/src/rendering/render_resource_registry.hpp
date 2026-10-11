@@ -6,12 +6,13 @@
 #include <variant>
 #include <vector>
 
-#include "render_material.hpp"
-#include "render_mesh.hpp"
-#include "render_texture.hpp"
-#include "../object_id.hpp"
-#include "../observer_ptr.hpp"
 #include "wand/wand.hpp"
+
+#include "rendering/render_material.hpp"
+#include "rendering/render_mesh.hpp"
+#include "rendering/render_texture.hpp"
+#include "sorcery/object_id.hpp"
+#include "sorcery/observer_ptr.hpp"
 
 
 namespace sorcery {

@@ -1,4 +1,4 @@
-#include "Resource.hpp"
+#include "sorcery/resources/Resource.hpp"
 
 
 namespace sorcery {

@@ -20,18 +20,19 @@
 #include <assimp/scene.h>
 #include <spdlog/spdlog.h>
 
-#include "App.hpp"
-#include "Entity.hpp"
-#include "entity_serialization.hpp"
-#include "job_system.hpp"
-#include "Platform.hpp"
-#include "prefab.hpp"
-#include "Serialization.hpp"
-#include "StaticMeshComponent.hpp"
-#include "util.hpp"
-#include "Resources/Mesh.hpp"
-#include "resource_import/material_import.hpp"
-#include "resource_import/texture_import.hpp"
+#include "sorcery/char_encoding_helpers.hpp"
+#include "sorcery/entity_serialization.hpp"
+#include "sorcery/Serialization.hpp"
+#include "sorcery/util.hpp"
+#include "sorcery/host/app.hpp"
+#include "sorcery/host/job_system.hpp"
+#include "sorcery/host/platform.hpp"
+#include "sorcery/host/assets/material_import.hpp"
+#include "sorcery/host/assets/texture_import.hpp"
+#include "sorcery/Resources/Mesh.hpp"
+#include "sorcery/resources/prefab.hpp"
+#include "sorcery/scene/Entity.hpp"
+#include "sorcery/scene/StaticMeshComponent.hpp"
 
 
 RTTR_REGISTRATION {
@@ -143,13 +144,13 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
   importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
 
   auto const scene{
-    importer.ReadFile(std::string{ToUntypedStdSv(src.u8string())},
+    importer.ReadFile(std::string{ToUntypedSv(src.u8string())},
       aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded | aiProcess_TransformUVCoords |
       aiProcess_RemoveComponent)
   };
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    DisplayError(std::format("Failed to import model at {}: {}.", ToUntypedStdSv(src.u8string()),
+    DisplayError(std::format("Failed to import model at {}: {}.", ToUntypedSv(src.u8string()),
       importer.GetErrorString()));
     return false;
   }
@@ -369,7 +370,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
 
         auto const tex_name =
           tex_info.tex->mFilename.Empty()
-            ? std::string{ToUntypedStdSv(src.filename().stem().u8string())} += std::format(" Texture {}", idx)
+            ? std::string{ToUntypedSv(src.filename().stem().u8string())} += std::format(" Texture {}", idx)
             : std::string{tex_info.tex->mFilename.C_Str()};
 
         texture_import_results.emplace_back(tex_result->payload_kind, tex_result->runtime_type,
@@ -1004,7 +1005,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
 
   {
     auto const entity{std::make_unique<Entity>()};
-    entity->SetName(std::string{ToUntypedStdSv(src.filename().stem().u8string())});
+    entity->SetName(std::string{ToUntypedSv(src.filename().stem().u8string())});
 
     auto mesh_component{std::make_unique<StaticMeshComponent>()};
 
@@ -1046,7 +1047,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<Resourc
   // Write mesh bytes to output
 
   results.emplace_back(ResourcePackagePayloadKind::kMesh, rttr::type::get<Mesh>(),
-    std::string{ToUntypedStdSv(src.stem().u8string())}, std::move(bytes));
+    std::string{ToUntypedSv(src.stem().u8string())}, std::move(bytes));
 
   // Serialize materials
 

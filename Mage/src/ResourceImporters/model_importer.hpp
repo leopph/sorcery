@@ -2,10 +2,10 @@
 
 #include <cstdint>
 
-#include "material_import.hpp"
-#include "mesh_import.hpp"
 #include "resource_importer.hpp"
-#include "texture_import.hpp"
+#include "sorcery/host/assets/material_import.hpp"
+#include "sorcery/host/assets/mesh_import.hpp"
+#include "sorcery/host/assets/texture_import.hpp"
 
 
 namespace sorcery::mage {
