@@ -4,7 +4,7 @@
 
 #include <sorcery/Core.hpp>
 #include <sorcery/host/rendering/command_list_pool.hpp>
-#include <sorcery/host/rendering/frame_uploader.hpp>
+#include <sorcery/host/rendering/upload_arena.hpp>
 
 
 namespace sorcery::rendering {
@@ -28,20 +28,8 @@ public:
   SORCERYAPI
   auto EnqueueCommandList(wand::CommandList& cmd) -> void;
 
-  SORCERYAPI
-  auto UploadBuffer(wand::SharedDeviceHandle<wand::Buffer> const& buf, UINT64 byte_offset,
-                    std::span<std::byte const> data) -> void;
-
-  SORCERYAPI
-  auto UploadBuffer(wand::SharedDeviceHandle<wand::BufferView> const& view, UINT64 byte_offset,
-                    std::span<std::byte const> data) -> void;
-
-  SORCERYAPI
-  auto UploadTexture(wand::SharedDeviceHandle<wand::Texture> const& tex, UINT first_subresource,
-                     std::span<D3D12_SUBRESOURCE_DATA const> data) -> void;
-
-  SORCERYAPI
-  auto RecordUploads() -> void;
+  [[nodiscard]] SORCERYAPI
+  auto GetUploadArena() -> UploadArena&;
 
   RenderFrame(RenderFrame const& other) = delete;
   RenderFrame(RenderFrame&& other) noexcept = delete;
@@ -60,7 +48,7 @@ private:
   auto GetQueuedCommandLists() const -> std::span<ObserverPtr<wand::CommandList> const>;
 
   CommandListPool free_cmd_lists_;
-  FrameUploader uploader_;
+  UploadArena upload_arena_;
   std::vector<ObserverPtr<wand::CommandList>> queued_cmd_lists_;
   std::uint32_t idx_;
   std::uint32_t prev_idx_;
@@ -68,7 +56,6 @@ private:
   UINT64 fence_competion_val_{0};
   bool active_{false};
   bool submitted_{false};
-  bool uploads_recorded_{false};
 
   friend class FrameScheduler;
 };

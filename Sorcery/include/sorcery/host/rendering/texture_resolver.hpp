@@ -18,7 +18,7 @@ class Cubemap;
 namespace rendering {
 class RenderResourceRegistry;
 class RenderTexture;
-class RenderFrame;
+class UploadArena;
 
 
 class TextureResolver {
@@ -33,13 +33,26 @@ public:
   auto operator=(TextureResolver&& other) noexcept -> TextureResolver& = delete;
 
   [[nodiscard]] SORCERYAPI
-  auto Resolve(Texture2D& tex, RenderFrame& frame) const -> wand::SharedDeviceHandle<wand::Texture>;
+  auto Resolve(
+    Texture2D& tex,
+    UploadArena& upload_arena,
+    wand::CommandList& cmd
+  ) const -> wand::SharedDeviceHandle<wand::Texture>;
 
   [[nodiscard]] SORCERYAPI
-  auto Resolve(Cubemap& cubemap, RenderFrame& frame) const -> wand::SharedDeviceHandle<wand::Texture>;
+  auto Resolve(
+    Cubemap& cubemap,
+    UploadArena& upload_arena,
+    wand::CommandList& cmd
+  ) const -> wand::SharedDeviceHandle<wand::Texture>;
 
 private:
-  auto Upload(DirectX::ScratchImage const& img, RenderTexture& render_tex, RenderFrame& frame) const -> void;
+  auto Upload(
+    DirectX::ScratchImage const& img,
+    RenderTexture& render_tex,
+    UploadArena& upload_arena,
+    wand::CommandList& cmd
+  ) const -> void;
 
   ObserverPtr<wand::GraphicsDevice> device_;
   ObserverPtr<RenderResourceRegistry> registry_;

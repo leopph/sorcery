@@ -299,7 +299,10 @@ SceneRenderer::~SceneRenderer() {
 
 
 auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
-  auto& packet{frame_packets_[frame.GetIndex()]};
+  auto& cmd = frame.AcquireCommandList();
+  cmd.Begin(nullptr);
+
+  auto& packet = frame_packets_[frame.GetIndex()];
 
   packet.buffer_views.clear();
   packet.textures.clear();
@@ -337,7 +340,8 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   // Add the default cube mesh to the packet. Used for a couple of passes conditionally.
   // If other default meshes are to be used in the future, they should be added here as well.
   // This is stored as a GeometryBatch in case a component references it.
-  packet.cube_geom_local_idx = AddMeshToPacket(*App::Instance().GetResourceManager().GetCubeMesh(), frame, packet);
+  packet.cube_geom_local_idx =
+    AddMeshToPacket(*App::Instance().GetResourceManager().GetCubeMesh(), frame, cmd, packet);
 
   // Extract static mesh components
   // Because they're static, we can batch them for better performance.
@@ -375,10 +379,10 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
     }
 
     // We reuse the same batch for all instances of the same mesh.
-    auto const geom_batch_local_idx = FindOrAddMeshInPacket(*mesh, frame, packet);
+    auto const geom_batch_local_idx = FindOrAddMeshInPacket(*mesh, frame, cmd, packet);
     // Because we sorted the components by mesh, we can call this function for each component and it will add instances to the same batch.
-    AddMeshComponentToPacket(*comp, packet.geom_batches[geom_batch_local_idx], inst_state.prev_frame_transform, frame,
-      packet);
+    AddMeshComponentToPacket(*comp, packet.geom_batches[geom_batch_local_idx], inst_state.prev_frame_transform,
+      frame.GetUploadArena(), cmd, packet);
 
     inst_state.prev_frame_transform = comp->GetEntity()->GetTransform().GetLocalToWorldMatrix();
   }
@@ -400,10 +404,10 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
       SyncSkinnedInstance(*comp, *render_inst);
     }
 
-    auto const geom_batch_local_idx = AddMeshToPacket(*mesh, frame, packet);
+    auto const geom_batch_local_idx = AddMeshToPacket(*mesh, frame, cmd, packet);
     auto& geom_batch = packet.geom_batches[geom_batch_local_idx];
     // Because we created a new batch for this comp, this will add a single instance to that batch.
-    AddMeshComponentToPacket(*comp, geom_batch, inst_state.prev_frame_transform, frame, packet);
+    AddMeshComponentToPacket(*comp, geom_batch, inst_state.prev_frame_transform, frame.GetUploadArena(), cmd, packet);
 
     inst_state.prev_frame_transform = comp->GetEntity()->GetTransform().GetLocalToWorldMatrix();
 
@@ -601,7 +605,7 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
 
     if (active_scene->GetSkyMode() == SkyMode::Skybox) {
       if (auto const cubemap{active_scene->GetSkybox().Observe()}) {
-        packet.skybox_cubemap = tex_resolver_->Resolve(*cubemap, frame);
+        packet.skybox_cubemap = tex_resolver_->Resolve(*cubemap, frame.GetUploadArena(), cmd);
 
         if (auto const irradiance_map{sorcery::detail::GetIrradianceMap(*active_scene)};
           !irradiance_map ||
@@ -672,11 +676,17 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   packet.vtx_skinning_pso = vtx_skinning_pso_;
   packet.irradiance_pso = irradiance_pso_;
   packet.envmap_prefilter_pso = envmap_prefilter_pso_;
+
+  cmd.End();
+  frame.EnqueueCommandList(cmd);
 }
 
 
 auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
-  auto& frame_packet{frame_packets_[frame.GetIndex()]};
+  auto& cmd = frame.AcquireCommandList();
+  cmd.Begin(nullptr);
+
+  auto& frame_packet = frame_packets_[frame.GetIndex()];
 
   // Compute bone matrices for skinning and stage them for upload.
 
@@ -781,13 +791,15 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
                            skeleton_node_idx].transform;
     }
 
-    frame.UploadBuffer(frame_packet.buffer_views[bone_matrix_buf_local_idx], 0, as_bytes(std::span{bone_matrices}));
+    frame.GetUploadArena().UploadBuffer(cmd, frame_packet.buffer_views[bone_matrix_buf_local_idx], 0,
+      as_bytes(std::span{bone_matrices}));
   }
 
   // Upload SSAO samples if they have changed
 
   if (frame_packet.upload_ssao_samples) {
-    frame.UploadBuffer(frame_packet.ssao_samples_buf, 0, as_bytes(std::span{frame_packet.ssao_samples}));
+    frame.GetUploadArena().UploadBuffer(cmd, frame_packet.ssao_samples_buf, 0,
+      as_bytes(std::span{frame_packet.ssao_samples}));
   }
 
   // Upload lights
@@ -803,7 +815,7 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
   if (!shader_lights_.empty()) {
     auto& light_buf = light_bufs_[frame.GetIndex()];
     EnsureStructuredBufferCapacity<ShaderLight>(*device_, light_buf, shader_lights_.size());
-    frame.UploadBuffer(light_buf, 0, as_bytes(std::span{shader_lights_}));
+    frame.GetUploadArena().UploadBuffer(cmd, light_buf, 0, as_bytes(std::span{shader_lights_}));
   }
 
   // Prepare per camera data
@@ -1011,7 +1023,8 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
       }
     }
 
-    frame.UploadBuffer(camera_lighting_data_buf.cbvs[cam_idx], 0, as_bytes(std::span{&lighting_data, 1}));
+    frame.GetUploadArena().UploadBuffer(cmd, camera_lighting_data_buf.cbvs[cam_idx], 0,
+      as_bytes(std::span{&lighting_data, 1}));
 
     prepared_data_.cam_data.emplace_back(cascades, dir_shadows, static_cast<std::uint32_t>(cam_idx),
       first_pos_shadow, pos_shadow_count, primary_view_idx, prev_cam_view_proj_mtx, cam_data.jitter_ndc,
@@ -1023,7 +1036,7 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
   if (!shader_visible_lights_.empty()) {
     auto& vis_light_buf = vis_light_bufs_[frame.GetIndex()];
     EnsureStructuredBufferCapacity<ShaderVisibleLight>(*device_, vis_light_buf, shader_visible_lights_.size());
-    frame.UploadBuffer(vis_light_buf, 0, as_bytes(std::span{shader_visible_lights_}));
+    frame.GetUploadArena().UploadBuffer(cmd, vis_light_buf, 0, as_bytes(std::span{shader_visible_lights_}));
   }
 
   // Upload positional shadows
@@ -1031,15 +1044,18 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
   if (!shader_pos_shadows_.empty()) {
     auto& pos_shadow_buf = pos_shadow_bufs_[frame.GetIndex()];
     EnsureStructuredBufferCapacity<ShaderPositionalLightShadow>(*device_, pos_shadow_buf, shader_pos_shadows_.size());
-    frame.UploadBuffer(pos_shadow_buf, 0, as_bytes(std::span{shader_pos_shadows_}));
+    frame.GetUploadArena().UploadBuffer(cmd, pos_shadow_buf, 0, as_bytes(std::span{shader_pos_shadows_}));
   }
 
   // Work needed for initialization
 
   if (!gpu_init_upload_work_recorded_) {
-    RecordGpuInitUploadWork(frame);
+    RecordGpuInitUploadWork(frame, cmd);
     gpu_init_upload_work_recorded_ = true;
   }
+
+  cmd.End();
+  frame.EnqueueCommandList(cmd);
 }
 
 
@@ -1904,8 +1920,10 @@ auto SceneRenderer::FindOrAddBufferViewInPacket(wand::SharedDeviceHandle<wand::B
 }
 
 
-auto SceneRenderer::FindOrAddTextureInPacket(wand::SharedDeviceHandle<wand::Texture> const& tex,
-                                             ExtractedFrameData& packet) -> std::uint32_t {
+auto SceneRenderer::FindOrAddTextureInPacket(
+  wand::SharedDeviceHandle<wand::Texture> const& tex,
+  ExtractedFrameData& packet
+) -> std::uint32_t {
   std::uint32_t idx;
 
   if (auto const it{std::ranges::find(packet.textures, tex)}; it != std::ranges::end(packet.textures)) {
@@ -1919,11 +1937,16 @@ auto SceneRenderer::FindOrAddTextureInPacket(wand::SharedDeviceHandle<wand::Text
 }
 
 
-auto SceneRenderer::AddMeshToPacket(Mesh& mesh, RenderFrame& frame, ExtractedFrameData& packet) const -> std::uint32_t {
+auto SceneRenderer::AddMeshToPacket(
+  Mesh& mesh,
+  RenderFrame& frame,
+  wand::CommandList& cmd,
+  ExtractedFrameData& packet
+) const -> std::uint32_t {
   auto const [render_mesh, is_new] = resource_registry_->CreateOrGetMesh(mesh.GetId());
 
   if (is_new || mesh.GetRevision() != render_mesh->GetRevision()) {
-    SyncMesh(mesh, *render_mesh, frame);
+    SyncMesh(mesh, *render_mesh, frame, cmd);
   }
 
   auto const ret = static_cast<unsigned>(packet.geom_batches.size());
@@ -1984,19 +2007,29 @@ auto SceneRenderer::AddMeshToPacket(Mesh& mesh, RenderFrame& frame, ExtractedFra
 }
 
 
-auto SceneRenderer::FindOrAddMeshInPacket(Mesh& mesh, RenderFrame& frame, ExtractedFrameData& packet) -> std::uint32_t {
+auto SceneRenderer::FindOrAddMeshInPacket(
+  Mesh& mesh,
+  RenderFrame& frame,
+  wand::CommandList& cmd,
+  ExtractedFrameData& packet
+) -> std::uint32_t {
   if (auto const it{std::ranges::find(packet.geom_batches, mesh.GetId(), &GeometryBatch::src_mesh_id)};
     it != std::ranges::end(packet.geom_batches)) {
     return static_cast<std::uint32_t>(it - std::ranges::begin(packet.geom_batches));
   }
 
-  return AddMeshToPacket(mesh, frame, packet);
+  return AddMeshToPacket(mesh, frame, cmd, packet);
 }
 
 
-auto SceneRenderer::AddMeshComponentToPacket(MeshComponentBase const& comp, GeometryBatch& geom_batch,
-                                             Matrix4 const& prev_local_to_world_mtx, RenderFrame& frame,
-                                             ExtractedFrameData& packet) const -> void {
+auto SceneRenderer::AddMeshComponentToPacket(
+  MeshComponentBase const& comp,
+  GeometryBatch& geom_batch,
+  Matrix4 const& prev_local_to_world_mtx,
+  UploadArena& upload_arena,
+  wand::CommandList& cmd,
+  ExtractedFrameData& packet
+) const -> void {
   auto const& materials = comp.GetMaterials();
   auto const first_mtl = static_cast<unsigned>(packet.instance_materials.size());
   auto const mtl_count = static_cast<unsigned>(materials.size());
@@ -2028,7 +2061,7 @@ auto SceneRenderer::AddMeshComponentToPacket(MeshComponentBase const& comp, Geom
         continue;
       }
 
-      auto const gpu_tex = tex_resolver_->Resolve(*tex, frame);
+      auto const gpu_tex = tex_resolver_->Resolve(*tex, upload_arena, cmd);
 
       resolved.obj_ids[i] = tex->GetId();
       resolved.srv_indices[i] = gpu_tex->GetShaderResource();
@@ -2041,7 +2074,7 @@ auto SceneRenderer::AddMeshComponentToPacket(MeshComponentBase const& comp, Geom
     auto const [render_mtl, is_new] = resource_registry_->CreateOrGetMaterial(mtl->GetId());
 
     if (is_new || mtl->GetRevision() != render_mtl->GetRevision() || resolved.obj_ids != render_mtl->GetTextureIds()) {
-      SyncMaterial(*mtl, resolved, *render_mtl, frame);
+      SyncMaterial(*mtl, resolved, *render_mtl, upload_arena, cmd);
     }
 
     packet.instance_materials.emplace_back(FindOrAddBufferViewInPacket(render_mtl->GetBufferView(), packet));
@@ -2074,8 +2107,13 @@ auto SceneRenderer::FindOrAddRenderTargetInPacket(std::shared_ptr<RenderTarget> 
 }
 
 
-auto SceneRenderer::SyncMaterial(Material const& mtl, ResolvedMaterialTextures const& textures,
-                                 RenderMaterial& render_mtl, RenderFrame& frame) -> void {
+auto SceneRenderer::SyncMaterial(
+  Material const& mtl,
+  ResolvedMaterialTextures const& textures,
+  RenderMaterial& render_mtl,
+  UploadArena& upload_arena,
+  wand::CommandList& cmd
+) -> void {
   ShaderMaterial const shader_mtl{
     .albedo = mtl.GetAlbedoVector(),
     .metallic = mtl.GetMetallic(),
@@ -2092,15 +2130,21 @@ auto SceneRenderer::SyncMaterial(Material const& mtl, ResolvedMaterialTextures c
     .pad = {}
   };
 
-  frame.UploadBuffer(render_mtl.GetBufferView(), 0,
-    std::span{reinterpret_cast<std::byte const*>(&shader_mtl), sizeof(shader_mtl)});
+  upload_arena.UploadBuffer(cmd, render_mtl.GetBufferView(), 0, std::span{
+    reinterpret_cast<std::byte const*>(&shader_mtl), sizeof(shader_mtl)
+  });
 
   render_mtl.SetRevision(mtl.GetRevision());
   render_mtl.SetTextureIds(textures.obj_ids);
 }
 
 
-auto SceneRenderer::SyncMesh(Mesh& mesh, RenderMesh& render_mesh, RenderFrame& frame) const -> void {
+auto SceneRenderer::SyncMesh(
+  Mesh& mesh,
+  RenderMesh& render_mesh,
+  RenderFrame& frame,
+  wand::CommandList& cmd
+) const -> void {
   auto const mesh_data = mesh.GetData();
   assert(mesh_data);
 
@@ -2123,25 +2167,31 @@ auto SceneRenderer::SyncMesh(Mesh& mesh, RenderMesh& render_mesh, RenderFrame& f
 
   std::vector<Vector4> vec4_buf;
 
-  frame.UploadBuffer(render_mesh.GetPositionBuffer(), 0,
+  frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetPositionBuffer(), 0,
     as_bytes(std::span{(to_vec4(mesh_data->positions, 1, vec4_buf))}));
-  frame.UploadBuffer(render_mesh.GetNormalBuffer(), 0, as_bytes(std::span{(to_vec4(mesh_data->normals, 0, vec4_buf))}));
-  frame.UploadBuffer(render_mesh.GetTangentBuffer(), 0,
+  frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetNormalBuffer(), 0,
+    as_bytes(std::span{(to_vec4(mesh_data->normals, 0, vec4_buf))}));
+  frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetTangentBuffer(), 0,
     as_bytes(std::span{(to_vec4(mesh_data->tangents, 0, vec4_buf))}));
-  frame.UploadBuffer(render_mesh.GetUvBuffer(), 0, as_bytes(std::span{mesh_data->uvs}));
+  frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetUvBuffer(), 0, as_bytes(std::span{mesh_data->uvs}));
 
   if (!mesh_data->bone_weights.empty()) {
-    frame.UploadBuffer(render_mesh.GetBoneWeightBuffer(), 0, as_bytes(std::span{mesh_data->bone_weights}));
+    frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetBoneWeightBuffer(), 0,
+      as_bytes(std::span{mesh_data->bone_weights}));
   }
 
   if (!mesh_data->bone_indices.empty()) {
-    frame.UploadBuffer(render_mesh.GetBoneIndexBuffer(), 0, as_bytes(std::span{mesh_data->bone_indices}));
+    frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetBoneIndexBuffer(), 0,
+      as_bytes(std::span{mesh_data->bone_indices}));
   }
 
-  frame.UploadBuffer(render_mesh.GetMeshletBuffer(), 0, as_bytes(std::span{mesh_data->meshlets}));
-  frame.UploadBuffer(render_mesh.GetVertexIndexBuffer(), 0, as_bytes(std::span{mesh_data->vertex_indices}));
-  frame.UploadBuffer(render_mesh.GetPrimitiveIndexBuffer(), 0, as_bytes(std::span{mesh_data->triangle_indices}));
-  frame.UploadBuffer(render_mesh.GetCullDataBuffer(), 0, as_bytes(std::span{mesh_data->cull_data}));
+  frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetMeshletBuffer(), 0, as_bytes(std::span{mesh_data->meshlets}));
+  frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetVertexIndexBuffer(), 0,
+    as_bytes(std::span{mesh_data->vertex_indices}));
+  frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetPrimitiveIndexBuffer(), 0,
+    as_bytes(std::span{mesh_data->triangle_indices}));
+  frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetCullDataBuffer(), 0,
+    as_bytes(std::span{mesh_data->cull_data}));
 
   render_mesh.SetRevision(mesh.GetRevision());
 
@@ -3160,7 +3210,7 @@ auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
 }
 
 
-auto SceneRenderer::RecordGpuInitUploadWork(RenderFrame& frame) const -> void {
+auto SceneRenderer::RecordGpuInitUploadWork(RenderFrame& frame, wand::CommandList& cmd) const -> void {
   // Upload SSAO tex
 
   std::vector<Vector4> ssao_noise;
@@ -3171,7 +3221,7 @@ auto SceneRenderer::RecordGpuInitUploadWork(RenderFrame& frame) const -> void {
     ssao_noise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
   }
 
-  frame.UploadTexture(ssao_noise_tex_, 0, std::array{
+  frame.GetUploadArena().UploadTexture(cmd, ssao_noise_tex_, 0, std::array{
     D3D12_SUBRESOURCE_DATA{
       ssao_noise.data(), SSAO_NOISE_TEX_DIM * sizeof(Vector4), SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM * sizeof(Vector4)
     }
@@ -3181,7 +3231,7 @@ auto SceneRenderer::RecordGpuInitUploadWork(RenderFrame& frame) const -> void {
 
   std::array<std::uint8_t, 4> constexpr white_tex_data{255, 255, 255, 255};
 
-  frame.UploadTexture(white_tex_, 0, std::array{
+  frame.GetUploadArena().UploadTexture(cmd, white_tex_, 0, std::array{
     D3D12_SUBRESOURCE_DATA{white_tex_data.data(), sizeof(white_tex_data), sizeof(white_tex_data)}
   });
 }

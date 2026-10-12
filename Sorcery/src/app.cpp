@@ -171,7 +171,6 @@ auto App::Run() -> void {
 
     data_->render_job = data_->job_system.CreateJob([this, &frame] {
       PrepareRenderFrame(frame);
-      frame.RecordUploads();
       RecordRenderFrame(frame);
       data_->frame_scheduler.SubmitFrame(frame);
       data_->graphics_device.Present(*data_->swap_chain);

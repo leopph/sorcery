@@ -1,4 +1,4 @@
-#include "sorcery/host/rendering/frame_uploader.hpp"
+#include "sorcery/host/rendering/upload_arena.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -9,14 +9,18 @@
 
 
 namespace sorcery::rendering {
-FrameUploader::FrameUploader(wand::GraphicsDevice& device) :
+UploadArena::UploadArena(wand::GraphicsDevice& device) :
   device_{&device} {}
 
 
-auto FrameUploader::UploadBuffer(wand::SharedDeviceHandle<wand::Buffer> const& buf, UINT64 const byte_offset,
-                                 std::span<std::byte const> const data) -> void {
+auto UploadArena::UploadBuffer(
+  wand::CommandList& cmd,
+  wand::SharedDeviceHandle<wand::Buffer> const& buf,
+  UINT64 const byte_offset,
+  std::span<std::byte const> const data
+) -> void {
   if (!buf) {
-    throw std::runtime_error{"Failed to upload buffer: the provided buffer is null."};
+    throw std::runtime_error{"Failed to upload buffer: buffer is null."};
   }
 
   if (data.empty()) {
@@ -25,7 +29,7 @@ auto FrameUploader::UploadBuffer(wand::SharedDeviceHandle<wand::Buffer> const& b
 
   if (auto const buf_size = buf->GetDesc().size;
     byte_offset > buf_size || data.size() > buf_size - byte_offset) {
-    throw std::runtime_error{"Failed to upload buffer: the provided data does not fit in the destination buffer."};
+    throw std::runtime_error{"Failed to upload buffer: data does not fit in destination buffer."};
   }
 
   auto const alloc = AllocateUploadSpace(data.size(), 1);
@@ -33,18 +37,36 @@ auto FrameUploader::UploadBuffer(wand::SharedDeviceHandle<wand::Buffer> const& b
 
   std::memcpy(page.mapped_ptr + alloc.offset, data.data(), data.size());
 
-  uploads_.emplace_back(BufferUpload{
-    .buf = buf,
-    .data_size = data.size(),
-    .page_offset = alloc.offset,
-    .dst_offset = byte_offset,
-    .page_idx = alloc.page_idx
-  });
+  cmd.CopyBufferRegion(*buf, byte_offset, *page.buf, alloc.offset, data.size());
 }
 
 
-auto FrameUploader::UploadTexture(wand::SharedDeviceHandle<wand::Texture> const& tex, UINT const first_subresource,
-                                  std::span<D3D12_SUBRESOURCE_DATA const> const data) -> void {
+auto UploadArena::UploadBuffer(
+  wand::CommandList& cmd,
+  wand::SharedDeviceHandle<wand::BufferView> const& view,
+  UINT64 const byte_offset,
+  std::span<std::byte const> const data
+) -> void {
+  if (!view) {
+    throw std::runtime_error{"Failed to upload buffer view: view is null."};
+  }
+
+  auto const& desc = view->GetDesc();
+
+  if (byte_offset > desc.size || data.size() > desc.size - byte_offset) {
+    throw std::runtime_error{"Failed to upload buffer view: data does not fit in desination view."};
+  }
+
+  UploadBuffer(cmd, view->GetBuffer(), desc.offset + byte_offset, data);
+}
+
+
+auto UploadArena::UploadTexture(
+  wand::CommandList& cmd,
+  wand::SharedDeviceHandle<wand::Texture> const& tex,
+  UINT const first_subresource,
+  std::span<D3D12_SUBRESOURCE_DATA const> const data
+) -> void {
   if (!tex) {
     throw std::runtime_error{"Failed to upload texture: the provided texture is null."};
   }
@@ -91,48 +113,20 @@ auto FrameUploader::UploadTexture(wand::SharedDeviceHandle<wand::Texture> const&
     MemcpySubresource(&dst, &data[i], row_sizes[i], row_counts[i], layout.Footprint.Depth);
   }
 
-  uploads_.emplace_back(TextureUpload{
-    .tex = tex,
-    .first_subresource = first_subresource,
-    .layouts = std::move(layouts),
-    .page_idx = alloc.page_idx
-  });
-}
-
-
-auto FrameUploader::IsEmpty() const -> bool {
-  return uploads_.empty();
-}
-
-
-auto FrameUploader::Record(wand::CommandList& cmd) const -> void {
-  for (auto const& upload : uploads_) {
-    if (auto const* const buf_upload = std::get_if<BufferUpload>(&upload)) {
-      cmd.CopyBufferRegion(*buf_upload->buf, buf_upload->dst_offset, *upload_pages_[buf_upload->page_idx].buf,
-        buf_upload->page_offset, buf_upload->data_size);
-    } else {
-      auto const& tex_upload = std::get<TextureUpload>(upload);
-      auto const& src = *upload_pages_[tex_upload.page_idx].buf;
-
-      for (auto i = 0uz; i < tex_upload.layouts.size(); ++i) {
-        cmd.CopyTextureRegion(*tex_upload.tex, tex_upload.first_subresource + static_cast<UINT>(i), 0, 0, 0, src,
-          tex_upload.layouts[i]);
-      }
-    }
+  for (auto i = 0uz; i < layouts.size(); ++i) {
+    cmd.CopyTextureRegion(*tex, first_subresource + static_cast<UINT>(i), 0, 0, 0, *page.buf, layouts[i]);
   }
 }
 
 
-auto FrameUploader::Reset() -> void {
-  uploads_.clear();
-
+auto UploadArena::Reset() -> void {
   for (auto& page : upload_pages_) {
     page.current_offset = 0;
   }
 }
 
 
-auto FrameUploader::AllocateUploadSpace(UINT64 const size, UINT64 const alignment) -> UploadAllocation {
+auto UploadArena::AllocateUploadSpace(UINT64 const size, UINT64 const alignment) -> UploadAllocation {
   assert(alignment > 0);
 
   for (auto i = 0uz; i < upload_pages_.size(); ++i) {
@@ -174,5 +168,5 @@ auto FrameUploader::AllocateUploadSpace(UINT64 const size, UINT64 const alignmen
 }
 
 
-std::uint64_t const FrameUploader::kUploadBufferPageMinSize{4ull * 1024ull * 1024ull}; // 4 MB
+std::uint64_t const UploadArena::kUploadBufferPageMinSize{4ull * 1024ull * 1024ull}; // 4 MB
 }

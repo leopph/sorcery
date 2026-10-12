@@ -45,6 +45,7 @@ class SkinnedRenderMeshInstance;
 class TextureResolver;
 class RenderScene;
 class RenderFrame;
+class UploadArena;
 
 
 enum class ShadowFilteringMode : std::uint8_t {
@@ -482,22 +483,22 @@ private:
   auto AddMeshToPacket(
     Mesh& mesh,
     RenderFrame& frame,
-    ExtractedFrameData& packet
+    wand::CommandList& cmd, ExtractedFrameData& packet
   ) const -> std::uint32_t;
 
   [[nodiscard]]
   auto FindOrAddMeshInPacket(
     Mesh& mesh,
     RenderFrame& frame,
-    ExtractedFrameData& packet
+    wand::CommandList& cmd, ExtractedFrameData& packet
   ) -> std::uint32_t;
 
   auto AddMeshComponentToPacket(
     MeshComponentBase const& comp,
     GeometryBatch& geom_batch,
     Matrix4 const& prev_local_to_world_mtx,
-    RenderFrame& frame,
-    ExtractedFrameData& packet
+    UploadArena& upload_arena,
+    wand::CommandList& cmd, ExtractedFrameData& packet
   ) const -> void;
 
   [[nodiscard]] static
@@ -511,13 +512,14 @@ private:
     Material const& mtl,
     ResolvedMaterialTextures const& textures,
     RenderMaterial& render_mtl,
-    RenderFrame& frame
+    UploadArena& upload_arena,
+    wand::CommandList& cmd
   ) -> void;
 
   auto SyncMesh(
     Mesh& mesh,
     RenderMesh& render_mesh,
-    RenderFrame& frame
+    RenderFrame& frame, wand::CommandList& cmd
   ) const -> void;
 
   static
@@ -657,7 +659,7 @@ private:
 
   auto OnWindowSize(Extent2D<std::uint32_t> size) -> void;
 
-  auto RecordGpuInitUploadWork(RenderFrame& frame) const -> void;
+  auto RecordGpuInitUploadWork(RenderFrame& frame, wand::CommandList& cmd) const -> void;
   auto RecordGpuInitWork(RenderFrame& frame) const -> void;
 
   auto RecordDepthOnlyPass(

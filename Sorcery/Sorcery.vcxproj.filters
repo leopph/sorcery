@@ -201,7 +201,7 @@
     <ClCompile Include="src\rendering\render_mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\frame_uploader.cpp">
+    <ClCompile Include="src\rendering\upload_arena.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\render_instance_registry.cpp">
@@ -464,7 +464,7 @@
     <ClInclude Include="src\rendering\render_mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\host\rendering\frame_uploader.hpp">
+    <ClInclude Include="include\sorcery\host\rendering\upload_arena.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\util.hpp">

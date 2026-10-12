@@ -83,6 +83,9 @@ auto ImGuiRenderer::UpdateFonts() -> void {
 
 
 auto ImGuiRenderer::ExtractFrame(rendering::RenderFrame& frame) -> void {
+  auto& cmd = frame.AcquireCommandList();
+  cmd.Begin(nullptr);
+
   auto const& imgui_draw_data = *ImGui::GetDrawData();
   auto& draw_data = draw_data_[frame.GetIndex()];
 
@@ -117,10 +120,14 @@ auto ImGuiRenderer::ExtractFrame(rendering::RenderFrame& frame) -> void {
   for (auto const& ref : tex_refs_->GetReferences()) {
     if (auto const tex = std::get_if<ObjectPtr<Texture2D>>(&ref)) {
       auto const observed = tex->Get();
-      draw_data.textures.emplace_back(observed ? tex_resolver_->Resolve(*observed, frame) : nullptr);
+      draw_data.textures.emplace_back(observed
+                                        ? tex_resolver_->Resolve(*observed, frame.GetUploadArena(), cmd)
+                                        : nullptr);
     } else if (auto const cubemap = std::get_if<ObjectPtr<Cubemap>>(&ref)) {
       auto const observed = cubemap->Get();
-      draw_data.textures.emplace_back(observed ? tex_resolver_->Resolve(*observed, frame) : nullptr);
+      draw_data.textures.emplace_back(observed
+                                        ? tex_resolver_->Resolve(*observed, frame.GetUploadArena(), cmd)
+                                        : nullptr);
     } else {
       draw_data.textures.emplace_back(std::get<std::shared_ptr<rendering::RenderTarget>>(ref)->GetColorTex());
     }
@@ -138,7 +145,7 @@ auto ImGuiRenderer::ExtractFrame(rendering::RenderFrame& frame) -> void {
     }, wand::CpuAccess::kNone, nullptr);
     font_tex_->SetDebugName(L"UI Font Texture");
 
-    frame.UploadTexture(font_tex_, 0, std::array{
+    frame.GetUploadArena().UploadTexture(cmd, font_tex_, 0, std::array{
       D3D12_SUBRESOURCE_DATA{
         fonts_tex_pixel_data, static_cast<LONG_PTR>(fonts_tex_width) * 4,
         static_cast<LONG_PTR>(fonts_tex_height) * static_cast<LONG_PTR>(fonts_tex_width) * 4
@@ -149,6 +156,9 @@ auto ImGuiRenderer::ExtractFrame(rendering::RenderFrame& frame) -> void {
   }
 
   draw_data.font_tex = font_tex_;
+
+  cmd.End();
+  frame.EnqueueCommandList(cmd);
 }
 
 

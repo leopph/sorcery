@@ -156,7 +156,7 @@
     <ClCompile Include="src\rendering\render_texture.cpp" />
     <ClCompile Include="src\rendering\shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\frame_scheduler.cpp" />
-    <ClCompile Include="src\rendering\frame_uploader.cpp" />
+    <ClCompile Include="src\rendering\upload_arena.cpp" />
     <ClCompile Include="src\rendering\render_frame.cpp" />
     <ClCompile Include="src\rendering\render_instance_registry.cpp" />
     <ClCompile Include="src\rendering\render_material.cpp" />
@@ -228,7 +228,7 @@
     <ClInclude Include="src\rendering\render_texture.hpp" />
     <ClInclude Include="src\rendering\shadow_map_array.hpp" />
     <ClInclude Include="src\rendering\frame_scheduler.hpp" />
-    <ClInclude Include="include\sorcery\host\rendering\frame_uploader.hpp" />
+    <ClInclude Include="include\sorcery\host\rendering\upload_arena.hpp" />
     <ClInclude Include="include\sorcery\host\rendering\render_frame.hpp" />
     <ClInclude Include="src\rendering\render_instance_registry.hpp" />
     <ClInclude Include="src\rendering\render_material.hpp" />

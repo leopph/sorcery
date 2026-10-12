@@ -3,7 +3,7 @@
 #include <cassert>
 
 #include "rendering/render_resource_registry.hpp"
-#include "sorcery/host/rendering/render_frame.hpp"
+#include "sorcery/host/rendering/upload_arena.hpp"
 #include "sorcery/resources/Cubemap.hpp"
 #include "sorcery/resources/Texture2D.hpp"
 
@@ -14,14 +14,18 @@ TextureResolver::TextureResolver(wand::GraphicsDevice& device, RenderResourceReg
   registry_{&registry} {}
 
 
-auto TextureResolver::Resolve(Texture2D& tex, RenderFrame& frame) const -> wand::SharedDeviceHandle<wand::Texture> {
+auto TextureResolver::Resolve(
+  Texture2D& tex,
+  UploadArena& upload_arena,
+  wand::CommandList& cmd
+) const -> wand::SharedDeviceHandle<wand::Texture> {
   auto const [render_tex, is_new] = registry_->CreateOrGetTexture(tex.GetId());
 
   if (is_new) {
     auto const img = tex.GetData();
     assert(img);
 
-    Upload(*img, *render_tex, frame);
+    Upload(*img, *render_tex, upload_arena, cmd);
 
     if (tex.GetCpuDataPolicy() == CpuResidencyPolicy::kReleaseAfterUpload) {
       detail::ClearTex2DCpuData(tex);
@@ -32,14 +36,18 @@ auto TextureResolver::Resolve(Texture2D& tex, RenderFrame& frame) const -> wand:
 }
 
 
-auto TextureResolver::Resolve(Cubemap& cubemap, RenderFrame& frame) const -> wand::SharedDeviceHandle<wand::Texture> {
+auto TextureResolver::Resolve(
+  Cubemap& cubemap,
+  UploadArena& upload_arena,
+  wand::CommandList& cmd
+) const -> wand::SharedDeviceHandle<wand::Texture> {
   auto const [render_tex, is_new] = registry_->CreateOrGetTexture(cubemap.GetId());
 
   if (is_new) {
     auto const img = cubemap.GetData();
     assert(img);
 
-    Upload(*img, *render_tex, frame);
+    Upload(*img, *render_tex, upload_arena, cmd);
 
     if (cubemap.GetCpuDataPolicy() == CpuResidencyPolicy::kReleaseAfterUpload) {
       detail::ClearCubemapCpuData(cubemap);
@@ -50,8 +58,12 @@ auto TextureResolver::Resolve(Cubemap& cubemap, RenderFrame& frame) const -> wan
 }
 
 
-auto TextureResolver::Upload(DirectX::ScratchImage const& img, RenderTexture& render_tex,
-                             RenderFrame& frame) const -> void {
+auto TextureResolver::Upload(
+  DirectX::ScratchImage const& img,
+  RenderTexture& render_tex,
+  UploadArena& upload_arena,
+  wand::CommandList& cmd
+) const -> void {
   render_tex.Init(*device_, img.GetMetadata());
 
   std::vector<D3D12_SUBRESOURCE_DATA> subresource_data;
@@ -64,6 +76,6 @@ auto TextureResolver::Upload(DirectX::ScratchImage const& img, RenderTexture& re
       static_cast<LONG_PTR>(subimg.slicePitch));
   }
 
-  frame.UploadTexture(render_tex.GetTexture(), 0, subresource_data);
+  upload_arena.UploadTexture(cmd, render_tex.GetTexture(), 0, subresource_data);
 }
 }

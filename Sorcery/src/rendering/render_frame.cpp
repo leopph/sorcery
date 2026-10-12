@@ -1,10 +1,6 @@
 #include "sorcery/host/rendering/render_frame.hpp"
 
 #include <cassert>
-#include <stdexcept>
-
-#include "sorcery/util.hpp"
-#include "sorcery/rendering/config.hpp"
 
 
 namespace sorcery::rendering {
@@ -36,70 +32,20 @@ auto RenderFrame::EnqueueCommandList(wand::CommandList& cmd) -> void {
 }
 
 
-auto RenderFrame::UploadBuffer(wand::SharedDeviceHandle<wand::Buffer> const& buf, UINT64 const byte_offset,
-                               std::span<std::byte const> const data) -> void {
-  assert(active_);
-  assert(!submitted_);
-  assert(!uploads_recorded_);
-  uploader_.UploadBuffer(buf, byte_offset, data);
-}
-
-
-auto RenderFrame::UploadBuffer(wand::SharedDeviceHandle<wand::BufferView> const& view, UINT64 const byte_offset,
-                               std::span<std::byte const> const data) -> void {
-  if (!view) {
-    throw std::runtime_error{"Failed to upload buffer view: view is null."};
-  }
-
-  auto const& desc = view->GetDesc();
-
-  if (byte_offset > desc.size || data.size() > desc.size - byte_offset) {
-    throw std::runtime_error{"Failed to upload buffer view: data does not fit in the view."};
-  }
-
-  UploadBuffer(view->GetBuffer(), desc.offset + byte_offset, data);
-}
-
-
-auto RenderFrame::UploadTexture(wand::SharedDeviceHandle<wand::Texture> const& tex, UINT const first_subresource,
-                                std::span<D3D12_SUBRESOURCE_DATA const> const data) -> void {
-  assert(active_);
-  assert(!submitted_);
-  assert(!uploads_recorded_);
-
-  uploader_.UploadTexture(tex, first_subresource, data);
-}
-
-
-auto RenderFrame::RecordUploads() -> void {
-  assert(active_);
-  assert(!submitted_);
-  assert(!uploads_recorded_);
-  assert(queued_cmd_lists_.empty());
-
-  uploads_recorded_ = true;
-
-  if (uploader_.IsEmpty()) {
-    return;
-  }
-
-  auto& cmd = AcquireCommandList();
-  cmd.Begin(nullptr);
-  uploader_.Record(cmd);
-  cmd.End();
-  EnqueueCommandList(cmd);
+auto RenderFrame::GetUploadArena() -> UploadArena& {
+  return upload_arena_;
 }
 
 
 RenderFrame::RenderFrame(wand::GraphicsDevice& device, std::uint32_t const idx, std::uint32_t const prev_idx) :
   free_cmd_lists_{device},
-  uploader_{device},
+  upload_arena_{device},
   idx_{idx},
   prev_idx_{prev_idx} {}
 
 
 auto RenderFrame::ResetForReuse(std::uint64_t const frame_num) -> void {
-  uploader_.Reset();
+  upload_arena_.Reset();
   free_cmd_lists_.Reset();
   queued_cmd_lists_.clear();
 
@@ -107,7 +53,6 @@ auto RenderFrame::ResetForReuse(std::uint64_t const frame_num) -> void {
 
   active_ = true;
   submitted_ = false;
-  uploads_recorded_ = false;
 }
 
 
