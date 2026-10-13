@@ -91,8 +91,9 @@ auto SettingsWindow::Draw() -> void {
       std::numeric_limits<float>::max() / 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsaoParams(ssaoParams);
     }
-    if (ImGui::DragInt("Sample Count", &ssaoParams.sample_count, 1, 0, std::numeric_limits<int>::max(), "%d",
-      ImGuiSliderFlags_AlwaysClamp)) {
+    if (constexpr std::uint32_t min{1}, max{std::numeric_limits<std::uint32_t>::max()};
+      ImGui::DragScalar("Sample Count", ImGuiDataType_U32, &ssaoParams.sample_count, 1, &min, &max, "%d",
+        ImGuiSliderFlags_AlwaysClamp)) {
       App::Instance().GetSceneRenderer().SetSsaoParams(ssaoParams);
     }
 

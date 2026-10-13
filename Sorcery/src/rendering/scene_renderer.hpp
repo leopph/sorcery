@@ -11,6 +11,8 @@
 #include "rendering/ShadowCascadeBoundary.hpp"
 #include "rendering/shadow_atlas.hpp"
 #include "rendering/shadow_map_array.hpp"
+#include "rendering/ssao_params.hpp"
+#include "rendering/ssao_pass.hpp"
 #include "rendering/structured_buffer.hpp"
 #include "rendering/temporary_render_target_pool.hpp"
 #include "sorcery/Bounds.hpp"
@@ -54,14 +56,6 @@ enum class ShadowFilteringMode : std::uint8_t {
   kPcf3X3,
   kPcfTent3X3,
   kPcfTent5X5
-};
-
-
-struct SsaoParams {
-  float radius;
-  float bias;
-  float power;
-  int sample_count;
 };
 
 
@@ -337,7 +331,6 @@ private:
 
     unsigned cube_geom_local_idx;
 
-    SsaoParams ssao_params;
     SsrParams ssr_params;
     ShadowParams shadow_params;
     float inv_gamma;
@@ -345,6 +338,8 @@ private:
     bool ssr_enabled;
     DXGI_FORMAT color_buffer_format;
     std::array<float, 4> background_color;
+
+    SsaoPass::FrameData ssao_data;
 
     wand::SharedDeviceHandle<wand::Texture> skybox_cubemap;
     wand::SharedDeviceHandle<wand::Texture> irradiance_map;
@@ -354,10 +349,6 @@ private:
 
     Vector3 ambient_light;
 
-    wand::SharedDeviceHandle<wand::BufferView> ssao_samples_buf;
-    std::vector<Vector4> ssao_samples;
-    bool upload_ssao_samples;
-
     wand::SharedDeviceHandle<wand::PipelineState> shadow_pso;
     wand::SharedDeviceHandle<wand::PipelineState> gbuffer_velocity_pso;
     wand::SharedDeviceHandle<wand::PipelineState> depth_resolve_pso;
@@ -365,8 +356,6 @@ private:
     wand::SharedDeviceHandle<wand::PipelineState> deferred_lighting_pso;
     wand::SharedDeviceHandle<wand::PipelineState> post_process_pso;
     wand::SharedDeviceHandle<wand::PipelineState> skybox_pso;
-    wand::SharedDeviceHandle<wand::PipelineState> ssao_pso;
-    wand::SharedDeviceHandle<wand::PipelineState> ssao_blur_pso;
     wand::SharedDeviceHandle<wand::PipelineState> ssr_compose_pso;
     wand::SharedDeviceHandle<wand::PipelineState> ssr_pso;
     wand::SharedDeviceHandle<wand::PipelineState> taa_resolve_pso;
@@ -647,8 +636,6 @@ private:
     float max_abs_scaling
   ) -> void;
 
-  auto RecreateSsaoSamples(int sample_count) noexcept -> void;
-
   auto RecreatePipelines() -> void;
 
   auto CreatePerViewConstantBuffers(UINT count) -> void;
@@ -692,7 +679,6 @@ private:
   static DXGI_FORMAT constexpr precise_color_buffer_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
   static DXGI_FORMAT constexpr depth_format_{DXGI_FORMAT_D32_FLOAT};
   static DXGI_FORMAT constexpr render_target_format_{DXGI_FORMAT_R8G8B8A8_UNORM};
-  static DXGI_FORMAT constexpr ssao_buffer_format_{DXGI_FORMAT_R8_UNORM};
   static DXGI_FORMAT constexpr normal_buffer_format_{DXGI_FORMAT_R8G8B8A8_SNORM};
   static DXGI_FORMAT constexpr gbuffer0_format_{DXGI_FORMAT_R8G8B8A8_UNORM};
   static DXGI_FORMAT constexpr gbuffer1_format_{DXGI_FORMAT_R16G16_FLOAT};
@@ -734,10 +720,7 @@ private:
   std::array<CameraLightingDataBuffer, kFramesInFlight> camera_lighting_data_bufs_;
   std::array<wand::SharedDeviceHandle<wand::BufferView>, kFramesInFlight> pos_shadow_bufs_;
 
-  wand::SharedDeviceHandle<wand::BufferView> ssao_samples_buffer_;
-
   wand::SharedDeviceHandle<wand::Texture> white_tex_;
-  wand::SharedDeviceHandle<wand::Texture> ssao_noise_tex_;
   wand::SharedDeviceHandle<wand::Texture> brdf_integration_map_;
 
   wand::SharedDeviceHandle<wand::PipelineState> shadow_pso_;
@@ -747,8 +730,7 @@ private:
   wand::SharedDeviceHandle<wand::PipelineState> deferred_lighting_pso_;
   wand::SharedDeviceHandle<wand::PipelineState> post_process_pso_;
   wand::SharedDeviceHandle<wand::PipelineState> skybox_pso_;
-  wand::SharedDeviceHandle<wand::PipelineState> ssao_pso_;
-  wand::SharedDeviceHandle<wand::PipelineState> ssao_blur_pso_;
+
   wand::SharedDeviceHandle<wand::PipelineState> ssr_compose_pso_;
   wand::SharedDeviceHandle<wand::PipelineState> ssr_pso_;
   wand::SharedDeviceHandle<wand::PipelineState> taa_pso_;
@@ -774,6 +756,8 @@ private:
   std::vector<ShaderVisibleLight> shader_visible_lights_;
   std::vector<ShaderPositionalLightShadow> shader_pos_shadows_;
 
+  SsaoPass ssao_pass_;
+
   UINT next_per_instance_cb_idx_{0};
   UINT next_per_view_cb_idx_{0};
 
@@ -782,9 +766,6 @@ private:
 
   std::vector<Vector4> gizmo_colors_;
   std::vector<ShaderLineGizmoVertexData> line_gizmo_vertex_data_;
-
-  std::vector<Vector4> ssao_samples_;
-  bool ssao_samples_changed_{false};
 
   SsaoParams ssao_params_{.radius = 0.1f, .bias = 0.025f, .power = 6.0f, .sample_count = 12};
   SsrParams ssr_params_{

@@ -16,6 +16,7 @@
 #include "rendering/render_instance_registry.hpp"
 #include "rendering/render_resource_registry.hpp"
 #include "rendering/ShadowCascadeBoundary.hpp"
+#include "rendering/view_context.hpp"
 #include "rendering/shaders/shader_interop.h"
 #include "rendering/shaders/shadow_filtering_modes.h"
 #include "sorcery/host/app.hpp"
@@ -50,9 +51,6 @@
 #include "rendering/shaders/generated/Debug/post_process_vs.h"
 #include "rendering/shaders/generated/Debug/skybox_ms.h"
 #include "rendering/shaders/generated/Debug/skybox_ps.h"
-#include "rendering/shaders/generated/Debug/ssao_blur_ps.h"
-#include "rendering/shaders/generated/Debug/ssao_main_ps.h"
-#include "rendering/shaders/generated/Debug/ssao_vs.h"
 #include "rendering/shaders/generated/Debug/ssr_compose_ps.h"
 #include "rendering/shaders/generated/Debug/ssr_ps.h"
 #include "rendering/shaders/generated/Debug/ssr_vs.h"
@@ -81,9 +79,6 @@
 #include "rendering/shaders/generated/Release/post_process_vs.h"
 #include "rendering/shaders/generated/Release/skybox_ms.h"
 #include "rendering/shaders/generated/Release/skybox_ps.h"
-#include "rendering/shaders/generated/Release/ssao_blur_ps.h"
-#include "rendering/shaders/generated/Release/ssao_main_ps.h"
-#include "rendering/shaders/generated/Release/ssao_vs.h"
 #include "rendering/shaders/generated/Release/ssr_compose_ps.h"
 #include "rendering/shaders/generated/Release/ssr_ps.h"
 #include "rendering/shaders/generated/Release/ssr_vs.h"
@@ -210,7 +205,8 @@ SceneRenderer::SceneRenderer(
   resource_registry_{&render_resource_registry},
   instance_registry_{&render_instance_registry},
   tex_resolver_{&tex_resolver},
-  render_scene_{&render_scene} {
+  render_scene_{&render_scene},
+  ssao_pass_{*device_, *rt_pool_} {
   main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
     static_cast<UINT>(window_->GetClientAreaSize().width), static_cast<UINT>(window_->GetClientAreaSize().height),
     DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Main RT", false
@@ -272,14 +268,6 @@ SceneRenderer::SceneRenderer(
     OnWindowSize(size);
   });
 
-  RecreateSsaoSamples(ssao_params_.sample_count);
-
-  ssao_noise_tex_ = device_->CreateTexture(wand::TextureDesc{
-    wand::TextureDimension::k2D, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,
-    false, false, true, false
-  }, wand::CpuAccess::kNone, nullptr);
-  ssao_noise_tex_->SetDebugName(L"SSAO Noise");
-
   white_tex_ = device_->CreateTexture(wand::TextureDesc{
     wand::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
   }, wand::CpuAccess::kNone, nullptr);
@@ -321,7 +309,6 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   packet.skeleton_node_data.clear();
   packet.bone_data.clear();
   packet.skinning_data.clear();
-  packet.ssao_samples.clear();
 
   // Extract lights
 
@@ -577,7 +564,6 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
 
   // Copy settings
 
-  packet.ssao_params = ssao_params_;
   packet.ssr_params = ssr_params_;
   packet.shadow_params = shadow_params_;
 
@@ -632,32 +618,9 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
     }
   }
 
-  // Handle SSAO sample count change
+  // Passes
 
-  packet.upload_ssao_samples = ssao_samples_changed_;
-
-  if (ssao_samples_changed_) {
-    packet.ssao_samples = ssao_samples_;
-
-    auto constexpr ssao_sample_element_size = sizeof(decltype(packet.ssao_samples)::value_type);
-
-    if (auto const ssao_samples_byte_count = packet.ssao_samples.size() * ssao_sample_element_size;
-      !ssao_samples_buffer_ || ssao_samples_buffer_->GetDesc().size < ssao_samples_byte_count) {
-      ssao_samples_buffer_ = CreateBufferWithView(*device_, wand::BufferDesc{
-        .size = ssao_samples_byte_count,
-        .usage = wand::BufferUsage::kShaderResource | wand::BufferUsage::kCopyDestination
-      }, wand::BufferViewDesc{
-        .offset = 0,
-        .size = ssao_samples_byte_count,
-        .stride = ssao_sample_element_size,
-        .usage = wand::BufferViewUsage::kShaderResource
-      }, wand::CpuAccess::kNone);
-    }
-
-    ssao_samples_changed_ = false;
-  }
-
-  packet.ssao_samples_buf = ssao_samples_buffer_;
+  ssao_pass_.ExtractFrame(packet.ssao_data, ssao_params_);
 
   // Copy used PSOs
 
@@ -668,8 +631,6 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   packet.deferred_lighting_pso = deferred_lighting_pso_;
   packet.post_process_pso = post_process_pso_;
   packet.skybox_pso = skybox_pso_;
-  packet.ssao_pso = ssao_pso_;
-  packet.ssao_blur_pso = ssao_blur_pso_;
   packet.ssr_compose_pso = ssr_compose_pso_;
   packet.ssr_pso = ssr_pso_;
   packet.taa_resolve_pso = taa_pso_;
@@ -795,12 +756,9 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
       as_bytes(std::span{bone_matrices}));
   }
 
-  // Upload SSAO samples if they have changed
+  // SSAO
 
-  if (frame_packet.upload_ssao_samples) {
-    frame.GetUploadArena().UploadBuffer(cmd, frame_packet.ssao_samples_buf, 0,
-      as_bytes(std::span{frame_packet.ssao_samples}));
-  }
+  ssao_pass_.PrepareFrame(cmd, frame, frame_packet.ssao_data);
 
   // Upload lights
 
@@ -1305,6 +1263,19 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     auto const velocity_rt = rt_pool_->Acquire(velocity_rt_desc, frame);
     auto const color_hdr_rt = rt_pool_->Acquire(color_hdr_rt_desc, frame);
 
+    auto& cam_per_view_cb = AcquirePerViewConstantBuffer(frame_idx);
+    SetPerViewConstants(cam_per_view_cb, cam_view.view_mtx, cam_view.proj_mtx, cam_view.view_proj_mtx,
+      prepared_cam.prev_view_proj_mtx, cam_view.frustum_ws, extracted_cam.position, cam_view.near_plane,
+      cam_view.far_plane, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
+
+    ViewContext const view_ctx{
+      .width = transient_rt_width,
+      .height = transient_rt_height,
+      .samp_point_clamp = samp_point_clamp_.Get(),
+      .samp_point_wrap = samp_point_wrap_.Get(),
+      .per_view_cb = MakeObserver(cam_per_view_cb.GetBufferView().get()),
+      .per_frame_cb = MakeObserver(per_frame_cb.GetBufferView().get())
+    };
 
     // Command list for the camera
     auto& cam_cmd{frame.AcquireCommandList()};
@@ -1319,11 +1290,6 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     auto const cam_pos_shadows = std::span{prepared_data_.pos_shadows}.subspan(prepared_cam.first_pos_shadow,
       prepared_cam.pos_shadow_count);
     RecordPositionalShadows(frame_packet, frame, cam_pos_shadows, prepared_data_.views, cam_cmd);
-
-    auto& cam_per_view_cb{AcquirePerViewConstantBuffer(frame_idx)};
-    SetPerViewConstants(cam_per_view_cb, cam_view.view_mtx, cam_view.proj_mtx, cam_view.view_proj_mtx,
-      prepared_cam.prev_view_proj_mtx, cam_view.frustum_ws, extracted_cam.position, cam_view.near_plane,
-      cam_view.far_plane, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
 
     cam_cmd.SetViewports(std::span{static_cast<D3D12_VIEWPORT const*>(&transient_viewport), 1});
     cam_cmd.SetScissorRects(std::span{static_cast<D3D12_RECT const*>(&transient_scissor), 1});
@@ -1432,60 +1398,16 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     // shader reource/depth read state, but the current architecture doesn't allow that.
     cam_cmd.CopyTexture(*depth_sample_rt->GetDepthStencilTex(), *depth_rt->GetDepthStencilTex());
 
-    auto ssao_tex{white_tex_.get()};
+    auto ssao_tex = MakeObserver(white_tex_.get());
 
     // SSAO pass
     if (frame_packet.ssao_enabled) {
-      auto const ssao_rt = rt_pool_->Acquire(RenderTarget::Desc{
-        transient_rt_width, transient_rt_height, ssao_buffer_format_, std::nullopt, 1, L"SSAO RT"
-      }, frame);
+      auto const ssao_output = ssao_pass_.Record(cam_cmd, frame, frame_packet.ssao_data, view_ctx, SsaoPass::Input{
+        .depth_sample_tex = MakeObserver(depth_sample_rt->GetDepthStencilTex().get()),
+        .gbuffer1_tex = MakeObserver(gbuffer1_rt->GetColorTex().get()),
+      });
 
-      cam_cmd.SetPipelineState(*frame_packet.ssao_pso);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx),
-        *ssao_noise_tex_);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, depth_tex_idx),
-        *depth_sample_rt->GetDepthStencilTex());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, gbuffer1_tex_idx),
-        *gbuffer1_rt->GetColorTex());
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx), *frame_packet.ssao_samples_buf);
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_wrap_samp_idx), samp_point_wrap_.Get());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, radius),
-        *std::bit_cast<UINT*>(&frame_packet.ssao_params.radius));
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, bias),
-        *std::bit_cast<UINT*>(&frame_packet.ssao_params.bias));
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, power),
-        *std::bit_cast<UINT*>(&frame_packet.ssao_params.power));
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, sample_count),
-        frame_packet.ssao_params.sample_count);
-      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_view_cb_idx),
-        *cam_per_view_cb.GetBufferView());
-      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx),
-        *per_frame_cb.GetBufferView());
-      cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<wand::Texture const*>(ssao_rt->GetColorTex().get())}.data(), 1
-      }, nullptr);
-      cam_cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
-      cam_cmd.DrawInstanced(3, 1, 0, 0);
-
-      auto const ssao_blur_rt = rt_pool_->Acquire([&ssao_rt] {
-        auto ret{ssao_rt->GetDesc()};
-        ret.debug_name = L"SSAO Blur RT";
-        return ret;
-      }(), frame);
-
-      cam_cmd.SetPipelineState(*frame_packet.ssao_blur_pso);
-      cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, in_tex_idx),
-        *ssao_rt->GetColorTex());
-      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, point_clamp_samp_idx),
-        samp_point_clamp_.Get());
-      cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<wand::Texture const*>(ssao_blur_rt->GetColorTex().get())}.data(), 1
-      }, nullptr);
-      cam_cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
-      cam_cmd.DrawInstanced(3, 1, 0, 0);
-
-      ssao_tex = ssao_blur_rt->GetColorTex().get();
+      ssao_tex = ssao_output.ssao_tex;
     }
 
     // Deferred lighting pass
@@ -1596,7 +1518,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
         *std::bit_cast<UINT const*>(&frame_packet.ssr_params.ray_start_bias_vs));
 
       RenderTarget::Desc const ssr_rt_desc{
-        transient_rt_width, transient_rt_height, color_buffer_format_, std::nullopt,
+        transient_rt_width, transient_rt_height, frame_packet.color_buffer_format, std::nullopt,
         1, L"SSR RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
       };
 
@@ -1670,7 +1592,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       auto const& accum_tex_desc{accum_tex.GetDesc()};
 
       auto const taa_rt = rt_pool_->Acquire(RenderTarget::Desc{
-        accum_tex_desc.width, accum_tex_desc.height, color_buffer_format_, std::nullopt, 1,
+        accum_tex_desc.width, accum_tex_desc.height, frame_packet.color_buffer_format, std::nullopt, 1,
         L"TAA Resolve RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
       }, frame);
 
@@ -1867,10 +1789,6 @@ auto SceneRenderer::GetSsaoParams() const noexcept -> SsaoParams const& {
 
 
 auto SceneRenderer::SetSsaoParams(SsaoParams const& ssao_params) noexcept -> void {
-  if (ssao_params_.sample_count != ssao_params.sample_count) {
-    RecreateSsaoSamples(ssao_params.sample_count);
-  }
-
   ssao_params_ = ssao_params;
 }
 
@@ -2937,27 +2855,6 @@ auto SceneRenderer::SetPerInstanceConstants(MappedConstantBuffer<ShaderPerInstan
 }
 
 
-auto SceneRenderer::RecreateSsaoSamples(int const sample_count) noexcept -> void {
-  ssao_samples_.resize(sample_count);
-  ssao_samples_changed_ = true;
-
-  std::uniform_real_distribution dist{0.0f, 1.0f};
-  std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
-
-  for (auto i{0}; i < sample_count; i++) {
-    Vector3 sample{dist(gen) * 2 - 1, dist(gen) * 2 - 1, dist(gen)};
-    Normalize(sample);
-    sample *= dist(gen);
-
-    auto scale{static_cast<float>(i) / static_cast<float>(sample_count)};
-    scale = std::lerp(0.1f, 1.0f, scale * scale);
-    sample *= scale;
-
-    ssao_samples_[i] = Vector4{sample, 0};
-  }
-}
-
-
 auto SceneRenderer::RecreatePipelines() -> void {
   CD3DX12_DEPTH_STENCIL_DESC1 const depth_stencil_write{
     TRUE, D3D12_DEPTH_WRITE_MASK_ALL,
@@ -3001,9 +2898,6 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
   CD3DX12_RT_FORMAT_ARRAY const color_format{
     D3D12_RT_FORMAT_ARRAY{.RTFormats = {color_buffer_format_}, .NumRenderTargets = 1}
-  };
-  CD3DX12_RT_FORMAT_ARRAY const ssao_format{
-    D3D12_RT_FORMAT_ARRAY{.RTFormats = {ssao_buffer_format_}, .NumRenderTargets = 1}
   };
   CD3DX12_RT_FORMAT_ARRAY const gbuffer_velocity_format{
     D3D12_RT_FORMAT_ARRAY{
@@ -3071,22 +2965,6 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
   skybox_pso_ = device_->CreatePipelineState(skybox_pso_desc, sizeof(SkyboxDrawParams) / 4);
 
-  wand::PipelineDesc const ssao_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_main_ps_bytes, ARRAYSIZE(g_ssao_main_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = ssao_format,
-  };
-
-  ssao_pso_ = device_->CreatePipelineState(ssao_pso_desc, sizeof(SsaoDrawParams) / 4);
-
-  wand::PipelineDesc const ssao_blur_pso_desc{
-    .vs = CD3DX12_SHADER_BYTECODE{&g_ssao_vs_bytes, ARRAYSIZE(g_ssao_vs_bytes)},
-    .ps = CD3DX12_SHADER_BYTECODE{&g_ssao_blur_ps_bytes, ARRAYSIZE(g_ssao_blur_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = ssao_format
-  };
-
-  ssao_blur_pso_ = device_->CreatePipelineState(ssao_blur_pso_desc, sizeof(SsaoBlurDrawParams) / 4);
-
   wand::PipelineDesc const ssr_compose_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_ssr_vs_bytes, ARRAYSIZE(g_ssr_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_ssr_compose_ps_bytes, ARRAYSIZE(g_ssr_compose_ps_bytes)},
@@ -3150,6 +3028,8 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
 
   brdf_integration_pso_ = device_->CreatePipelineState(brdf_integration_pso_desc, 0);
+
+  ssao_pass_.RecreatePipelines();
 }
 
 
@@ -3211,22 +3091,6 @@ auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
 
 
 auto SceneRenderer::RecordGpuInitUploadWork(RenderFrame& frame, wand::CommandList& cmd) const -> void {
-  // Upload SSAO tex
-
-  std::vector<Vector4> ssao_noise;
-  std::uniform_real_distribution dist{0.0f, 1.0f};
-  std::default_random_engine gen; // NOLINT(cert-msc51-cpp)
-
-  for (auto i{0}; i < SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM; i++) {
-    ssao_noise.emplace_back(dist(gen) * 2 - 1, dist(gen) * 2 - 1, 0, 0);
-  }
-
-  frame.GetUploadArena().UploadTexture(cmd, ssao_noise_tex_, 0, std::array{
-    D3D12_SUBRESOURCE_DATA{
-      ssao_noise.data(), SSAO_NOISE_TEX_DIM * sizeof(Vector4), SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM * sizeof(Vector4)
-    }
-  });
-
   // Upload White tex
 
   std::array<std::uint8_t, 4> constexpr white_tex_data{255, 255, 255, 255};

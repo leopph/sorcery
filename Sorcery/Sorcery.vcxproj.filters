@@ -228,6 +228,9 @@
     <ClCompile Include="src\rendering\render_scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\rendering\ssao_pass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\sorcery\scene\Entity.hpp">
@@ -495,6 +498,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\host\rendering\render_scene.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\ssao_pass.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\view_context.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\ssao_params.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

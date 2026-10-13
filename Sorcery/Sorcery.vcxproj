@@ -156,6 +156,7 @@
     <ClCompile Include="src\rendering\render_texture.cpp" />
     <ClCompile Include="src\rendering\shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\frame_scheduler.cpp" />
+    <ClCompile Include="src\rendering\ssao_pass.cpp" />
     <ClCompile Include="src\rendering\upload_arena.cpp" />
     <ClCompile Include="src\rendering\render_frame.cpp" />
     <ClCompile Include="src\rendering\render_instance_registry.cpp" />
@@ -206,6 +207,7 @@
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
     <ClInclude Include="include\sorcery\host\app.hpp" />
+    <ClInclude Include="src\rendering\ssao_params.hpp" />
     <ClInclude Include="include\sorcery\io_helpers.hpp" />
     <ClInclude Include="include\sorcery\material_blend_mode.hpp" />
     <ClInclude Include="include\sorcery\char_encoding_helpers.hpp" />
@@ -237,6 +239,7 @@
     <ClInclude Include="src\rendering\render_resource_registry.hpp" />
     <ClInclude Include="src\rendering\scene_renderer.hpp" />
     <ClInclude Include="src\rendering\constant_buffer.hpp" />
+    <ClInclude Include="src\rendering\ssao_pass.hpp" />
     <ClInclude Include="src\rendering\temporary_render_target_pool.hpp" />
     <ClInclude Include="src\rendering\skinned_render_mesh_instance.hpp" />
     <ClInclude Include="src\rendering\static_render_mesh_instance.hpp" />
@@ -271,6 +274,7 @@
     <ClCompile Include="src\scene\TransformComponent.cpp" />
     <ClInclude Include="include\sorcery\SkyMode.hpp" />
     <ClInclude Include="include\sorcery\util.hpp" />
+    <ClInclude Include="src\rendering\view_context.hpp" />
     <ClInclude Include="src\vector_stream.hpp" />
     <ClInclude Include="include\sorcery\viewport.hpp" />
     <ClInclude Include="include\sorcery\host\window.hpp" />
