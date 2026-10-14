@@ -235,16 +235,31 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
           selected_entity->GetTransform().GetWorldPosition() - cam_.GetForwardAxis() * 2, 0.0f);
       }
 
-      // TODO this breaks if the transform is a child of a rotated transform
-      if (Matrix4 modelMat{selected_entity->GetTransform().GetLocalToWorldMatrix()}; Manipulate(
-        camViewMtx.GetData(),
-        camProjMtx.GetData(), gizmo_op_options_[gizmo_op_idx_].op, gizmo_mode_options_[gizmo_mode_idx_].mode,
-        modelMat.GetData())) {
+      auto const gizmo_op = gizmo_op_options_[gizmo_op_idx_].op;
+      auto& transform = selected_entity->GetTransform();
+
+      if (auto model_mtx = transform.GetLocalToWorldMatrix();
+        Manipulate(camViewMtx.GetData(), camProjMtx.GetData(), gizmo_op, gizmo_mode_options_[gizmo_mode_idx_].mode,
+          model_mtx.GetData())) {
         Vector3 pos, euler, scale;
-        ImGuizmo::DecomposeMatrixToComponents(modelMat.GetData(), pos.GetData(), euler.GetData(), scale.GetData());
-        selected_entity->GetTransform().SetWorldPosition(pos);
-        selected_entity->GetTransform().SetWorldRotation(Quaternion::FromEulerAngles(euler));
-        selected_entity->GetTransform().SetWorldScale(scale);
+        ImGuizmo::DecomposeMatrixToComponents(model_mtx.GetData(), pos.GetData(), euler.GetData(), scale.GetData());
+
+        switch (gizmo_op) {
+          case ImGuizmo::TRANSLATE: {
+            transform.SetWorldPosition(pos);
+            break;
+          }
+          case ImGuizmo::ROTATE: {
+            transform.SetWorldRotation(Quaternion::FromEulerAngles(euler));
+            break;
+          }
+          case ImGuizmo::SCALE: {
+            transform.SetWorldScale(scale);
+            break;
+          }
+          default:
+            break;
+        }
       }
     }
   } else {
