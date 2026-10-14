@@ -1267,6 +1267,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     auto const velocity_rt = rt_pool_->Acquire(velocity_rt_desc, frame);
     auto const color_hdr_rt = rt_pool_->Acquire(color_hdr_rt_desc, frame);
 
+    // Do not use after updating and view context creation.
+    // Underlying vector may be reallocated and this reference can dangle.
     auto& cam_per_view_cb = AcquirePerViewConstantBuffer(frame_idx);
     SetPerViewConstants(cam_per_view_cb, cam_view.view_mtx, cam_view.proj_mtx, cam_view.view_proj_mtx,
       prepared_cam.prev_view_proj_mtx, cam_view.frustum_ws, extracted_cam.position, cam_view.near_plane,
@@ -1316,8 +1318,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     cam_cmd.ClearDepthStencil(*depth_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
 
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, mtl_samp_idx), samp_af16_wrap_.Get());
-    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_view_cb_idx),
-      *cam_per_view_cb.GetBufferView());
+    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_view_cb_idx), *view_ctx.per_view_cb);
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, jitter_x),
       *std::bit_cast<UINT const*>(&prepared_cam.jitter_ndc[0]));
     cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(GBufferDrawParams, jitter_y),
@@ -1427,8 +1428,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       *depth_sample_rt->GetDepthStencilTex());
 
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, ssao_tex_idx), *ssao_tex);
-    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_view_cb_idx),
-      *cam_per_view_cb.GetBufferView());
+    cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, per_view_cb_idx), *view_ctx.per_view_cb);
     cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, cam_light_data_buf_idx),
       *camera_lighting_data_bufs_[frame.GetIndex()].cbvs[cam_idx]);
     if (auto const& pos_shadow_buf = pos_shadow_bufs_[frame.GetIndex()]) {
@@ -1509,7 +1509,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsrDrawParams, gbuffer2_tex_idx), *gbuffer2_rt->GetColorTex());
 
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, point_clamp_samp_idx), samp_point_clamp_.Get());
-      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsrDrawParams, per_view_cb_idx), *cam_per_view_cb.GetBufferView());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsrDrawParams, per_view_cb_idx), *view_ctx.per_view_cb);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, max_roughness),
         *std::bit_cast<UINT const*>(&frame_packet.ssr_params.max_roughness));
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsrDrawParams, thickness_vs),
@@ -1570,8 +1570,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, pos_buf_idx),
         *frame_packet.buffer_views[cube_geom.pos_buf_local_idx]);
-      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SkyboxDrawParams, per_view_cb_idx),
-        *cam_per_view_cb.GetBufferView());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SkyboxDrawParams, per_view_cb_idx), *view_ctx.per_view_cb);
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SkyboxDrawParams, cubemap_idx),
         *frame_packet.skybox_cubemap);
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SkyboxDrawParams, samp_idx), samp_af16_clamp_.Get());
@@ -1650,8 +1649,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
         *line_gizmo_vertex_data_buffers_[frame_idx].GetBufferView());
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(GizmoDrawParams, color_buf_idx),
         *gizmo_color_buffers_[frame_idx].GetBufferView());
-      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx),
-        *cam_per_view_cb.GetBufferView());
+      cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GizmoDrawParams, per_view_cb_idx), *view_ctx.per_view_cb);
       cam_cmd.SetRenderTargets(std::span{
         std::array{static_cast<wand::Texture const*>(target_rt.GetColorTex().get())}.data(), 1
       }, nullptr);
