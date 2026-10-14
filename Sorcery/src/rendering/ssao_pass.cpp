@@ -93,6 +93,8 @@ auto SsaoPass::PrepareFrame(
         .SlicePitch = SSAO_NOISE_TEX_DIM * SSAO_NOISE_TEX_DIM * sizeof(Vector4)
       }
     });
+
+    cmd.Seal(*noise_tex_);
   }
 }
 

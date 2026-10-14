@@ -77,5 +77,6 @@ auto TextureResolver::Upload(
   }
 
   upload_arena.UploadTexture(cmd, render_tex.GetTexture(), 0, subresource_data);
+  cmd.Seal(*render_tex.GetTexture());
 }
 }

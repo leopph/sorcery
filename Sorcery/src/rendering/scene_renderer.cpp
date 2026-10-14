@@ -1131,6 +1131,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
       DrawSubmesh(1, 0, 0, {}, {}, {}, prepass_cmd);
     }
+
+    prepass_cmd.Seal(*frame_packet.irradiance_map);
   }
 
   if (frame_packet.draw_prefiltered_env_map) {
@@ -1187,6 +1189,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
         DrawSubmesh(1, 0, 0, {}, {}, {}, prepass_cmd);
       }
     }
+
+    prepass_cmd.Seal(*frame_packet.prefiltered_env_map);
   }
 
   prepass_cmd.End();
@@ -2087,29 +2091,45 @@ auto SceneRenderer::SyncMesh(
 
   frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetPositionBuffer(), 0,
     as_bytes(std::span{(to_vec4(mesh_data->positions, 1, vec4_buf))}));
+  cmd.Seal(*render_mesh.GetPositionBuffer()->GetBuffer());
+
   frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetNormalBuffer(), 0,
     as_bytes(std::span{(to_vec4(mesh_data->normals, 0, vec4_buf))}));
+  cmd.Seal(*render_mesh.GetNormalBuffer()->GetBuffer());
+
   frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetTangentBuffer(), 0,
     as_bytes(std::span{(to_vec4(mesh_data->tangents, 0, vec4_buf))}));
+  cmd.Seal(*render_mesh.GetTangentBuffer()->GetBuffer());
+
   frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetUvBuffer(), 0, as_bytes(std::span{mesh_data->uvs}));
+  cmd.Seal(*render_mesh.GetUvBuffer()->GetBuffer());
 
   if (!mesh_data->bone_weights.empty()) {
     frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetBoneWeightBuffer(), 0,
       as_bytes(std::span{mesh_data->bone_weights}));
+    cmd.Seal(*render_mesh.GetBoneWeightBuffer()->GetBuffer());
   }
 
   if (!mesh_data->bone_indices.empty()) {
     frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetBoneIndexBuffer(), 0,
       as_bytes(std::span{mesh_data->bone_indices}));
+    cmd.Seal(*render_mesh.GetBoneIndexBuffer()->GetBuffer());
   }
 
   frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetMeshletBuffer(), 0, as_bytes(std::span{mesh_data->meshlets}));
+  cmd.Seal(*render_mesh.GetMeshletBuffer()->GetBuffer());
+
   frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetVertexIndexBuffer(), 0,
     as_bytes(std::span{mesh_data->vertex_indices}));
+  cmd.Seal(*render_mesh.GetVertexIndexBuffer()->GetBuffer());
+
   frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetPrimitiveIndexBuffer(), 0,
     as_bytes(std::span{mesh_data->triangle_indices}));
+  cmd.Seal(*render_mesh.GetPrimitiveIndexBuffer()->GetBuffer());
+
   frame.GetUploadArena().UploadBuffer(cmd, render_mesh.GetCullDataBuffer(), 0,
     as_bytes(std::span{mesh_data->cull_data}));
+  cmd.Seal(*render_mesh.GetCullDataBuffer()->GetBuffer());
 
   render_mesh.SetRevision(mesh.GetRevision());
 
@@ -3098,6 +3118,8 @@ auto SceneRenderer::RecordGpuInitUploadWork(RenderFrame& frame, wand::CommandLis
   frame.GetUploadArena().UploadTexture(cmd, white_tex_, 0, std::array{
     D3D12_SUBRESOURCE_DATA{white_tex_data.data(), sizeof(white_tex_data), sizeof(white_tex_data)}
   });
+
+  cmd.Seal(*white_tex_);
 }
 
 
@@ -3120,6 +3142,7 @@ auto SceneRenderer::RecordGpuInitWork(RenderFrame& frame) const -> void {
   cmd.SetScissorRects(std::span{&brdf_integration_scissor_rect, 1});
   cmd.ClearRenderTarget(*brdf_integration_map_, std::array{0.F, 0.F, 0.F, 1.F}, {});
   cmd.DrawInstanced(3, 1, 0, 0);
+  cmd.Seal(*brdf_integration_map_);
   cmd.End();
 
   frame.EnqueueCommandList(cmd);
