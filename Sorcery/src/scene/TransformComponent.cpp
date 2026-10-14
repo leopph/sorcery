@@ -75,7 +75,7 @@ auto TransformComponent::GetWorldPosition() const -> Vector3 const& {
 
 auto TransformComponent::SetWorldPosition(Vector3 const& newPos) -> void {
   if (mParent != nullptr) {
-    SetLocalPosition(mParent->mWorldRotation.Conjugate().Rotate(newPos) - mParent->mWorldPosition);
+    SetLocalPosition(mParent->mWorldRotation.Conjugate().Rotate(newPos - mParent->mWorldPosition));
   } else {
     SetLocalPosition(newPos);
   }
