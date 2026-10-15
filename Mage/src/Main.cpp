@@ -3,8 +3,8 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/msvc_sink.h>
 
-#include "command_line_processor.hpp"
 #include "editor_app.hpp"
+#include "sorcery/host/command_line_args.hpp"
 #include "sorcery/host/platform.hpp"
 
 
@@ -17,15 +17,14 @@ __declspec(dllexport) extern char const* const D3D12SDKPath{".\\D3D12\\"};
 #ifdef NDEBUG
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE,
                      _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
-
 #else
 auto main(int argc, char* argv[]) -> int {
 #endif
   try {
 #ifdef NDEBUG
-    sorcery::mage::CommandLineProcessor const cmd_proc{lpCmdLine};
+    sorcery::CommandLineArgs const args{lpCmdLine};
 #else
-    sorcery::mage::CommandLineProcessor const cmd_proc{argc, argv};
+    sorcery::CommandLineArgs const args{argc, argv};
 #endif
 
 #ifndef NDEBUG
@@ -37,12 +36,8 @@ auto main(int argc, char* argv[]) -> int {
     spdlog::set_level(spdlog::level::info);
 #endif
 
-    auto const args{cmd_proc.GetArgs()};
-
-    if (auto const it{std::ranges::find_if(args, [](auto const arg) { return arg.starts_with("--log-level="); })};
-      it != args.end()) {
-      if (auto const log_level_arg{it->substr(12)};
-        log_level_arg == "trace") {
+    if (auto const log_level_arg = args.GetArg("log-level")) {
+      if (log_level_arg == "trace") {
         spdlog::set_level(spdlog::level::trace);
       } else if (log_level_arg == "debug") {
         spdlog::set_level(spdlog::level::debug);

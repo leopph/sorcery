@@ -47,20 +47,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)\</IntDir>
+    <OutDir>$(ProjectDir)..\bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)..\int\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>Mage</TargetName>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
-    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)vcpkg_installed\;$(SolutionDir)deps\work-stealing-queue\</ExternalIncludePath>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)vcpkg_installed\;$(ProjectDir)..\deps\work-stealing-queue\</ExternalIncludePath>
     <CopyLocalProjectReference>true</CopyLocalProjectReference>
     <CopyLocalDebugSymbols>true</CopyLocalDebugSymbols>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)\</IntDir>
+    <OutDir>$(ProjectDir)..\bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)..\int\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>Mage</TargetName>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
-    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)vcpkg_installed\;$(SolutionDir)deps\work-stealing-queue\</ExternalIncludePath>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)vcpkg_installed\;$(ProjectDir)..\deps\work-stealing-queue\</ExternalIncludePath>
     <CopyLocalProjectReference>true</CopyLocalProjectReference>
     <CopyLocalDebugSymbols>true</CopyLocalDebugSymbols>
   </PropertyGroup>
@@ -128,7 +128,6 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\command_line_processor.cpp" />
     <ClCompile Include="src\drawers\camera_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\camera_controller_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\component_editor_drawer.cpp" />
@@ -177,7 +176,6 @@
     <None Include="src\rendering\shaders\imgui.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\command_line_processor.hpp" />
     <ClInclude Include="src\drawers\camera_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\camera_controller_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\component_editor_drawer.hpp" />

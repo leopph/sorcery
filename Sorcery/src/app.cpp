@@ -11,6 +11,8 @@
 #include "rendering/scene_renderer.hpp"
 #include "rendering/temporary_render_target_pool.hpp"
 #include "sorcery/timing.hpp"
+#include "sorcery/host/command_line_args.hpp"
+#include "sorcery/host/game_module.hpp"
 #include "sorcery/host/job_system.hpp"
 #include "sorcery/host/object_registry.hpp"
 #include "sorcery/host/platform.hpp"
@@ -22,20 +24,13 @@
 
 namespace sorcery {
 struct App::Data {
-  explicit Data(std::span<std::string_view const> const args) :
+  explicit Data(CommandLineArgs const& args) :
     job_system{
-      [args] {
+      [&args] {
         unsigned thread_count{0};
 
-        for (auto const arg : args) {
-          if (arg.starts_with("-threads=")) {
-            auto const thread_count_sv{arg.substr(9)};
-            if (std::from_chars(thread_count_sv.data(), thread_count_sv.data() + thread_count_sv.size(),
-                  thread_count).ec
-                == std::errc{}) {
-              break;
-            }
-          }
+        if (auto const threads_arg = args.GetArg("threads")) {
+          std::from_chars(threads_arg->data(), threads_arg->data() + threads_arg->size(), thread_count);
         }
 
         return thread_count;
@@ -47,9 +42,7 @@ struct App::Data {
 #else
       false,
 #endif
-      std::ranges::any_of(args, [](std::string_view const arg) {
-        return arg == "-swrendering";
-      })
+      args.HasArg("swrendering")
     } {}
 
 
@@ -63,6 +56,7 @@ struct App::Data {
   };
   rendering::FrameScheduler frame_scheduler{graphics_device};
   rendering::TemporaryRenderTargetPool rt_pool{graphics_device};
+  GameModule game_module;
   ObjectRegistry object_registry;
   rendering::RenderResourceRegistry render_resource_registry{graphics_device, object_registry};
   rendering::RenderInstanceRegistry render_instance_registry{object_registry};
@@ -76,7 +70,7 @@ struct App::Data {
 };
 
 
-App::App(std::span<std::string_view const> const args) :
+App::App(CommandLineArgs const& args) :
   data_{std::make_unique<Data>(args)} {
   if (instance_) {
     throw std::logic_error{"App already exists!"};
@@ -197,6 +191,11 @@ auto App::Instance() -> App& {
 
 auto App::GetTextureResolver() -> rendering::TextureResolver& {
   return data_->texture_resolver;
+}
+
+
+auto App::GetGameModule() -> GameModule& {
+  return data_->game_module;
 }
 
 

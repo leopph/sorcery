@@ -19,9 +19,7 @@ auto EntityEditorDrawer::Draw(
 
   if (ImGui::BeginTable("Property Widgets", 2)) {
     ImGui::TableNextRow();
-
     ImGui::TableSetColumnIndex(0);
-    ImGui::PushItemWidth(FLT_MIN);
     ImGui::Text("Name");
 
     ImGui::TableSetColumnIndex(1);
@@ -31,6 +29,7 @@ auto EntityEditorDrawer::Draw(
     })) {
       obj.SetName(entityName);
     }
+    ImGui::PopItemWidth();
 
     ImGui::EndTable();
   }
@@ -46,13 +45,16 @@ auto EntityEditorDrawer::Draw(
       ImGui::Separator();
       if (ImGui::BeginTable("Component Property Table", 2, ImGuiTableFlags_SizingStretchSame)) {
         ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::PushItemWidth(FLT_MIN);
+
         ImGui::TableSetColumnIndex(1);
         ImGui::PushItemWidth(-FLT_MIN);
-        ImGui::TableSetColumnIndex(0);
 
+        ImGui::TableSetColumnIndex(0);
         ctx.registry->Draw(*components[i], allow_edit, changed);
+
+        ImGui::TableSetColumnIndex(1);
+        ImGui::PopItemWidth();
+
         ImGui::EndTable();
       }
 

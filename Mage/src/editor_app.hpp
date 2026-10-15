@@ -26,7 +26,7 @@
 namespace sorcery::mage {
 class EditorApp final : public App {
 public:
-  explicit EditorApp(std::span<std::string_view const> args = {});
+  explicit EditorApp(CommandLineArgs const& args);
   EditorApp(EditorApp const&) = delete;
   EditorApp(EditorApp&&) = delete;
 
@@ -108,7 +108,7 @@ private:
   GameViewWindow game_view_window_{tex_refs_};
   PropertiesWindow properties_window_{*this, drawer_registry_};
   SettingsWindow editor_settings_window_{*this, scene_view_window_.GetCamera()};
-  MainMenuBar main_menu_bar_{*this, editor_settings_window_};
+  MainMenuBar main_menu_bar_{*this, editor_settings_window_, GetGameModule()};
   EntityHierarchyWindow entity_hierarchy_window_{*this};
 
   static std::string_view const window_title_base_;

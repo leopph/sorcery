@@ -10,16 +10,19 @@
 #include "StartupScreen.hpp"
 #include "sorcery/char_encoding_helpers.hpp"
 #include "sorcery/timing.hpp"
+#include "sorcery/host/command_line_args.hpp"
+#include "sorcery/host/game_module.hpp"
 #include "sorcery/host/platform.hpp"
 #include "sorcery/host/window.hpp"
 #include "sorcery/host/assets/resource_manager.hpp"
 #include "windows/PerformanceCounterWindow.hpp"
 
+
 extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 
 
 namespace sorcery::mage {
-EditorApp::EditorApp(std::span<std::string_view const> const args) :
+EditorApp::EditorApp(CommandLineArgs const& args) :
   App{args},
   imgui_ctx_{ImGui::CreateContext()},
   imgui_io_{&ImGui::GetIO()},
@@ -52,23 +55,19 @@ EditorApp::EditorApp(std::span<std::string_view const> const args) :
 
   NFD::Init();
 
-  auto project_loaded{false};
-
-  for (auto const arg : args) {
-    if (arg.starts_with("-project=")) {
-      OpenProject(std::filesystem::absolute(arg.substr(9)));
-      project_loaded = true;
-      break;
-    }
+  if (auto const game_mod_arg = args.GetArg("game-module")) {
+    GetGameModule().Load(std::filesystem::absolute(ToUtf8Sv(*game_mod_arg)));
   }
 
-  if (project_loaded) {
-    for (auto const arg : args) {
-      if (arg.starts_with("-scene=")) {
-        OpenScene(ResourceId{GetResourceDatabase().PathToGuid(arg.substr(7)), 0});
-        break;
-      }
-    }
+  auto project_loaded{false};
+
+  if (auto const proj_arg = args.GetArg("project")) {
+    OpenProject(std::filesystem::absolute(ToUtf8Sv(*proj_arg)));
+    project_loaded = true;
+  }
+
+  if (auto const scene_arg{args.GetArg("scene")}; project_loaded && scene_arg) {
+    OpenScene(ResourceId{GetResourceDatabase().PathToGuid(ToUtf8Sv(*scene_arg)), 0});
   }
 }
 

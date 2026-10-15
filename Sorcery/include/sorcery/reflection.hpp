@@ -13,11 +13,18 @@
 
 #define REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR constructor<>()(::rttr::policy::ctor::as_raw_ptr)
 
+#define SORCERY_GAME_MODULE_REGISTRATION RTTR_PLUGIN_REGISTRATION
+
 
 namespace sorcery {
 template<typename To, typename From>
 [[nodiscard]]
 auto ReflCast(From obj) noexcept -> To;
+
+
+namespace reflection {
+inline constexpr char kHideInInspector[] = "sorcery.editor.hidden";
+}
 }
 
 

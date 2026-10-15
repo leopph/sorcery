@@ -2,7 +2,16 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::SceneObject>{"Scene Object"}
-    .property("updatable", &sorcery::SceneObject::IsUpdatable, &sorcery::SceneObject::SetUpdatable);
+    .property(
+      "updatable",
+      &sorcery::SceneObject::IsUpdatable,
+      &sorcery::SceneObject::SetUpdatable
+    )(
+      rttr::metadata(
+        sorcery::reflection::kHideInInspector,
+        true
+      )
+    );
 }
 
 

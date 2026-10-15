@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <utility>
 
 #include <imgui_stdlib.h>
 
@@ -125,55 +126,130 @@ decltype(auto) ImGuiDisabled(bool const disabled, F&& func) {
 
 template<typename T>
 auto DrawReflectedProperties(T& obj, bool const allow_edit, bool& changed) -> void {
-  for (auto const& prop : rttr::type::get(obj).get_properties()) {
-    if (prop.get_type().is_arithmetic()) {
-      auto propValue{prop.get_value(obj)};
-      assert(propValue.is_valid());
+  DrawReflectedProperties(obj, allow_edit, changed, []([[maybe_unused]] rttr::property const& prop) {
+    return true;
+  });
+}
 
-      if (propValue.template is_type<bool>()) {
-        if (auto boolValue{propValue.template get_value<bool>()}; ImGuiDisabled(!allow_edit, [&] {
-          return ImGui::Checkbox(prop.get_name().data(), &boolValue);
+
+template<typename T, typename Predicate>
+auto DrawReflectedProperties(T& obj, bool const allow_edit, bool& changed, Predicate&& pred) -> void {
+  DrawReflectedProperties(rttr::type::get(obj), obj, allow_edit, changed, std::forward<Predicate>(pred));
+}
+
+
+template<typename T, typename Predicate>
+auto DrawReflectedProperties(rttr::type const& type, T& obj, bool const allow_edit, bool& changed,
+                             Predicate&& pred) -> void {
+  auto const in_table = ImGui::TableGetColumnCount() >= 2;
+
+  for (auto const& prop : type.get_properties()) {
+    if (!pred(prop)) {
+      continue;
+    }
+
+    if (auto const hidden = prop.get_metadata(reflection::kHideInInspector);
+      hidden.is_valid() && hidden.is_type<bool>() && hidden.get_value<bool>()) {
+      continue;
+    }
+
+    if (!prop.get_type().is_arithmetic() &&
+        !prop.get_type().is_enumeration()) {
+      continue;
+    }
+
+    auto const prop_name = prop.get_name().to_string();
+
+    if (in_table) {
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::TextUnformatted(prop_name.c_str());
+      ImGui::TableSetColumnIndex(1);
+    }
+
+    ImGui::PushID(prop_name.c_str());
+    auto const* const label = in_table ? "##value" : prop_name.c_str();
+
+    // If arithmetic
+
+    if (prop.get_type().is_arithmetic()) {
+      auto prop_value = prop.get_value(obj);
+      assert(prop_value.is_valid());
+
+      // If bool
+
+      if (prop_value.template is_type<bool>()) {
+        if (auto bool_val = prop_value.template get_value<bool>(); ImGuiDisabled(!allow_edit, [&] {
+          return ImGui::Checkbox(label, &bool_val);
         })) {
-          [[maybe_unused]] auto const success{prop.set_value(obj, boolValue)};
+          [[maybe_unused]] auto const success = prop.set_value(obj, bool_val);
           assert(success);
           changed = true;
         }
       } else {
-        auto success{false};
-        auto propValueStr{propValue.to_string(&success)};
-        assert(success);
+        // This applies to all controls except the bool checkbox
+        ImGui::SetNextItemWidth(-FLT_MIN);
+
+        // If float
+
+        if (prop_value.template is_type<float>()) {
+          if (auto float_val = prop_value.template get_value<float>(); ImGuiDisabled(!allow_edit, [&] {
+            return ImGui::DragFloat(label, &float_val);
+          })) {
+            [[maybe_unused]] auto const success = prop.set_value(obj, float_val);
+            assert(success);
+            changed = true;
+          }
+        } else {
+          // If other arithmetic
+
+          auto success = false;
+          auto prop_value_str = prop_value.to_string(&success);
+          assert(success);
+
+          if (ImGuiDisabled(!allow_edit, [&] {
+            return ImGui::InputText(label, &prop_value_str);
+          })) {
+            if (rttr::variant new_val{prop_value_str}; new_val.convert(prop.get_type())) {
+              success = prop.set_value(obj, new_val);
+              assert(success);
+              changed = true;
+            }
+          }
+        }
+      }
+    } else {
+      // If not arithmetic
+
+      ImGui::SetNextItemWidth(-FLT_MIN);
+
+      // If enum
+
+      if (prop.get_type().is_enumeration()) {
+        auto const enumeration = prop.get_enumeration();
+        assert(enumeration.is_valid());
+
+        auto const prop_val = prop.get_value(obj);
+        assert(prop_val.is_valid());
 
         if (ImGuiDisabled(!allow_edit, [&] {
-          return ImGui::InputText(prop.get_name().data(), &propValueStr);
+          return ImGui::BeginCombo(label, enumeration.value_to_name(prop_val).data());
         })) {
-          if (rttr::variant newValue{propValueStr}; newValue.convert(prop.get_type())) {
-            success = prop.set_value(obj, newValue);
-            assert(success);
-            changed = true;
+          for (auto const& name : enumeration.get_names()) {
+            if (auto const value_of_name = enumeration.name_to_value(name); ImGui::Selectable(name.data(),
+              prop_val == value_of_name)) {
+              [[maybe_unused]] auto const success = prop.set_value(obj, value_of_name);
+              assert(success);
+              changed = true;
+            }
           }
-        }
-      }
-    } else if (prop.get_type().is_enumeration()) {
-      auto const enumeration{prop.get_enumeration()};
-      assert(enumeration.is_valid());
-      auto const propValue{prop.get_value(obj)};
-      assert(propValue.is_valid());
 
-      if (ImGuiDisabled(!allow_edit, [&] {
-        return ImGui::BeginCombo(prop.get_name().data(), enumeration.value_to_name(propValue).data());
-      })) {
-        for (auto const& name : enumeration.get_names()) {
-          if (auto const valueOfName{enumeration.name_to_value(name)}; ImGui::Selectable(name.data(),
-            propValue == valueOfName)) {
-            [[maybe_unused]] auto const success{prop.set_value(obj, valueOfName)};
-            assert(success);
-            changed = true;
-          }
+          ImGui::EndCombo();
         }
-
-        ImGui::EndCombo();
       }
     }
+
+    ImGui::PopID();
   }
 }
 }

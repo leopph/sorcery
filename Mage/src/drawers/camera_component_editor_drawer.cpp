@@ -21,7 +21,7 @@ auto CameraComponentEditorDrawer::Draw(
   constexpr char const* typeOptions[]{"Perspective", "Orthographic"};
   int selection{obj.GetType() == CameraComponent::Type::Perspective ? 0 : 1};
   if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::Combo("###CameraType", &selection, typeOptions, 2);
+    return ImGui::Combo("##CameraType", &selection, typeOptions, 2);
   })) {
     obj.SetType(selection == 0 ? CameraComponent::Type::Perspective : CameraComponent::Type::Orthographic);
   }
@@ -33,7 +33,7 @@ auto CameraComponentEditorDrawer::Draw(
     ImGui::TableNextColumn();
     float value{obj.GetVerticalPerspectiveFov()};
     if (ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::DragFloat("FOV", &value);
+      return ImGui::DragFloat("##FOV", &value);
     })) {
       obj.SetVerticalPerspectiveFov(value);
     }
@@ -42,7 +42,7 @@ auto CameraComponentEditorDrawer::Draw(
     ImGui::TableNextColumn();
     float value{obj.GetVerticalOrthographicSize()};
     if (ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::DragFloat("OrthoSize", &value);
+      return ImGui::DragFloat("##OrthoSize", &value);
     })) {
       obj.SetVerticalOrthographicSize(value);
     }
@@ -54,7 +54,7 @@ auto CameraComponentEditorDrawer::Draw(
 
   float nearValue{obj.GetNearClipPlane()};
   if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::DragFloat("NearClip", &nearValue);
+    return ImGui::DragFloat("##NearClip", &nearValue);
   })) {
     obj.SetNearClipPlane(nearValue);
   }
@@ -65,7 +65,7 @@ auto CameraComponentEditorDrawer::Draw(
 
   float farValue{obj.GetFarClipPlane()};
   if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::DragFloat("FarClip", &farValue);
+    return ImGui::DragFloat("##FarClip", &farValue);
   })) {
     obj.SetFarClipPlane(farValue);
   }
@@ -129,7 +129,7 @@ auto CameraComponentEditorDrawer::Draw(
 
   Vector4 color{obj.GetBackgroundColor()};
   if (ImGuiDisabled(!allow_edit, [&] {
-    return ImGui::ColorEdit4("###backgroundColor", color.GetData());
+    return ImGui::ColorEdit4("##backgroundColor", color.GetData());
   })) {
     obj.SetBackgroundColor(color);
   }

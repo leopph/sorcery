@@ -75,9 +75,6 @@
     <ClCompile Include="src\rendering\imgui_renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\command_line_processor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\drawers\editor_drawer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -210,9 +207,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gui_helpers.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\command_line_processor.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\drawers\editor_drawer.h">

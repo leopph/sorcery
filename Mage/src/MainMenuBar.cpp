@@ -4,13 +4,15 @@
 
 #include "editor_app.hpp"
 #include "sorcery/char_encoding_helpers.hpp"
+#include "sorcery/host/game_module.hpp"
 #include "windows/SettingsWindow.hpp"
 
 
 namespace sorcery::mage {
-MainMenuBar::MainMenuBar(EditorApp& app, SettingsWindow& editor_settings_window) :
+MainMenuBar::MainMenuBar(EditorApp& app, SettingsWindow& editor_settings_window, GameModule& game_module) :
   app_{&app},
-  editor_settings_window_{&editor_settings_window} {}
+  editor_settings_window_{&editor_settings_window},
+  game_module_{&game_module} {}
 
 
 auto MainMenuBar::Draw() -> void {
@@ -57,6 +59,21 @@ auto MainMenuBar::Draw() -> void {
 
         if (NFD::UniquePathN dst_path; PickFolder(dst_path, default_path_abs.c_str()) == NFD_OKAY) {
           app_->OpenProject(dst_path.get());
+        }
+      }
+
+      ImGui::Separator();
+
+      if (ImGui::MenuItem("Load Game Module", nullptr, false, !game_module_->IsLoaded())) {
+        constexpr nfdu8filteritem_t filter_item{
+          .name = "Dynamic Library",
+          .spec = "dll"
+        };
+
+        NFD::UniquePathU8 path_abs{nullptr};
+
+        if (OpenDialog(path_abs, &filter_item, 1) == NFD_OKAY) {
+          game_module_->Load(ToUtf8Sv(path_abs.get()));
         }
       }
 

@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 
 #include <sorcery/Core.hpp>
@@ -37,6 +39,12 @@ auto CopyToClipboard(std::wstring_view str) -> bool;
 
 [[nodiscard]] SORCERYAPI
 auto ShowInFileExplorer(std::filesystem::path const& path) -> bool;
+
+[[nodiscard]] SORCERYAPI
+auto GetMessageForErrorCode(std::uint64_t error) -> std::optional<std::wstring>;
+
+[[nodiscard]] SORCERYAPI
+auto GetLastErrorMessage() -> std::optional<std::wstring>;
 
 
 enum class Key : int {

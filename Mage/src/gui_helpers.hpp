@@ -62,6 +62,12 @@ auto DrawSpinner(char const* label, float radius, int thickness, ImU32 const& co
 
 template<typename T>
 auto DrawReflectedProperties(T& obj, bool allow_edit, bool& changed) -> void;
+
+template<typename T, typename Predicate>
+auto DrawReflectedProperties(T& obj, bool allow_edit, bool& changed, Predicate&& pred) -> void;
+
+template<typename T, typename Predicate>
+auto DrawReflectedProperties(rttr::type const& type, T& obj, bool allow_edit, bool& changed, Predicate&& pred) -> void;
 }
 
 

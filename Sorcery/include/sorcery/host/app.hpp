@@ -1,8 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <span>
-#include <string_view>
 
 #include <sorcery/Core.hpp>
 #include <sorcery/observer_ptr.hpp>
@@ -15,6 +13,14 @@ class SwapChain;
 
 
 namespace sorcery {
+class CommandLineArgs;
+class Window;
+class JobSystem;
+class ObjectRegistry;
+class ResourceManager;
+class GameModule;
+
+
 namespace rendering {
 class TemporaryRenderTargetPool;
 class SceneRenderer;
@@ -24,15 +30,9 @@ class RenderScene;
 }
 
 
-class Window;
-class JobSystem;
-class ObjectRegistry;
-class ResourceManager;
-
-
 class App {
 public:
-  SORCERYAPI explicit App(std::span<std::string_view const> args = {});
+  SORCERYAPI explicit App(CommandLineArgs const& args);
   App(App const&) = delete;
   App(App&&) = delete;
 
@@ -74,6 +74,9 @@ public:
 protected:
   [[nodiscard]] SORCERYAPI
   auto GetTextureResolver() -> rendering::TextureResolver&;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetGameModule() -> GameModule&;
 
   SORCERYAPI
   auto WaitRenderJob() -> void;

@@ -253,4 +253,26 @@ auto ShowInFileExplorer(std::filesystem::path const& path) -> bool {
   ShellExecuteW(nullptr, L"open", L"explorer.exe", select_cmd.c_str(), nullptr,SW_SHOWNORMAL);
   return true;
 }
+
+
+auto GetMessageForErrorCode(std::uint64_t const error) -> std::optional<std::wstring> {
+  auto const dw_error = static_cast<DWORD>(error);
+
+  std::wstring message(1024, L'\0');
+
+  auto const length = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dw_error, 0,
+    message.data(), static_cast<DWORD>(message.size()), nullptr);
+
+  if (length == 0) {
+    return std::nullopt;
+  }
+
+  message.resize(length);
+  return message;
+}
+
+
+auto GetLastErrorMessage() -> std::optional<std::wstring> {
+  return GetMessageForErrorCode(GetLastError());
+}
 }
