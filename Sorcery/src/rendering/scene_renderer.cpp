@@ -511,35 +511,31 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
       continue;
     }
 
-    auto const& vp{cam->GetViewport()};
+    auto const& normalized_vp = cam->GetViewport();
 
-    auto accum_tex_empty{false};
+    auto accum_tex_empty = false;
 
-    if (auto const accum_rt{detail::GetTaaAccumulationRt(*cam)};
-      !accum_rt || accum_rt->GetDesc().color_format != color_buffer_format_ ||
-      accum_rt->GetDesc().width != (cam_rt ? cam_rt : global_rt)->GetDesc().width * GetWidth(vp) ||
-      accum_rt->GetDesc().height != (cam_rt ? cam_rt : global_rt)->GetDesc().height * GetHeight(vp)) {
+    auto const& actual_rt = cam_rt ? cam_rt : global_rt;
+    auto const& rt_desc = actual_rt->GetDesc();
+    auto const vp_width = static_cast<unsigned>(static_cast<float>(rt_desc.width) * GetWidth(normalized_vp));
+    auto const vp_height = static_cast<unsigned>(static_cast<float>(rt_desc.height) * GetHeight(normalized_vp));
+
+    if (auto const history_rt = detail::GetTaaAccumulationRt(*cam);
+      !history_rt || history_rt->GetDesc().width != vp_width || history_rt->GetDesc().height != vp_height) {
       detail::RecreateTaaAccumulationRt(*cam, *device_, Extent2D{
-          static_cast<unsigned>((cam_rt ? cam_rt : global_rt)->GetDesc().width * GetWidth(vp)),
-          static_cast<unsigned>((cam_rt ? cam_rt : global_rt)->GetDesc().height * GetHeight(vp))
-        },
-        color_buffer_format_);
+        .width = vp_width, .height = vp_height
+      }, kTaaHistoryFormat);
       accum_tex_empty = true;
     }
 
-    auto const accum_rt_local_idx{FindOrAddTextureInPacket(detail::GetTaaAccumulationRt(*cam)->GetColorTex(), packet)};
+    auto const history_rt_local_idx = FindOrAddTextureInPacket(
+      detail::GetTaaAccumulationRt(*cam)->GetColorTex(), packet);
 
-    unsigned rt_local_idx;
-
-    if (cam_rt) {
-      rt_local_idx = FindOrAddRenderTargetInPacket(cam_rt, packet);
-    } else {
-      rt_local_idx = 0; // The global RT is always at index 0!
-    }
+    auto const rt_local_idx = FindOrAddRenderTargetInPacket(actual_rt, packet);
 
     packet.cam_data.emplace_back(cam->GetPosition(), cam->GetRightAxis(), cam->GetUpAxis(), cam->GetForwardAxis(),
       cam->GetNearClipPlane(), cam->GetFarClipPlane(), cam->GetType(), cam->GetVerticalPerspectiveFov(),
-      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, accum_rt_local_idx, cam.Get(),
+      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, history_rt_local_idx, cam.Get(),
       accum_tex_empty);
   }
 
@@ -1585,24 +1581,24 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     }
 
     // TAA resolve
-    if (extracted_cam.accum_tex_empty) {
-      // We don't have an accumulation texture yet.
-      // We can just copy the color HDR render target to the accumulation texture.
-      cam_cmd.CopyTexture(*frame_packet.textures[extracted_cam.accum_tex_local_idx],
-        *color_hdr_rt->GetColorTex());
-    } else {
-      auto& accum_tex{*frame_packet.textures[extracted_cam.accum_tex_local_idx]};
-      auto const& accum_tex_desc{accum_tex.GetDesc()};
+
+    {
+      auto& accum_tex = *frame_packet.textures[extracted_cam.accum_tex_local_idx];
+      auto const& accum_tex_desc = accum_tex.GetDesc();
 
       auto const taa_rt = rt_pool_->Acquire(RenderTarget::Desc{
-        accum_tex_desc.width, accum_tex_desc.height, frame_packet.color_buffer_format, std::nullopt, 1,
-        L"TAA Resolve RT", false, std::array{0.0f, 0.0f, 0.0f, 1.0f}
+        .width = accum_tex_desc.width,
+        .height = accum_tex_desc.height,
+        .color_format = kTaaHistoryFormat,
+        .depth_stencil_format = std::nullopt,
+        .sample_count = 1,
+        .debug_name = L"TAA Resolve RT",
+        .enable_unordered_access = false,
+        .color_clear_value = std::array{0.0f, 0.0f, 0.0f, 1.0f}
       }, frame);
 
       cam_cmd.SetPipelineState(*frame_packet.taa_resolve_pso);
-      cam_cmd.SetRenderTargets(std::span{
-        std::array{static_cast<wand::Texture const*>(taa_rt->GetColorTex().get())}.data(), 1
-      }, nullptr);
+      cam_cmd.SetRenderTargets(std::array{static_cast<wand::Texture const*>(taa_rt->GetColorTex().get())}, nullptr);
 
       cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, color_tex_idx),
         *color_hdr_rt->GetColorTex());
@@ -1615,9 +1611,11 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, linear_samp_idx),
         samp_bi_clamp_.Get());
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, jitter_x),
-        *std::bit_cast<UINT const*>(&prepared_cam.jitter_ndc[0]));
+        std::bit_cast<UINT const>(prepared_cam.jitter_ndc[0]));
       cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, jitter_y),
-        *std::bit_cast<UINT const*>(&prepared_cam.jitter_ndc[1]));
+        std::bit_cast<UINT const>(prepared_cam.jitter_ndc[1]));
+      cam_cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(TaaResolveDrawParams, reset_history),
+        extracted_cam.accum_tex_empty ? 1u : 0u);
 
       cam_cmd.ClearRenderTarget(*taa_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
       cam_cmd.DrawInstanced(3, 1, 0, 0);
@@ -3003,7 +3001,10 @@ auto SceneRenderer::RecreatePipelines() -> void {
   wand::PipelineDesc const taa_resolve_pso_desc{
     .vs = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_vs_bytes, ARRAYSIZE(g_taa_resolve_vs_bytes)},
     .ps = CD3DX12_SHADER_BYTECODE{&g_taa_resolve_ps_bytes, ARRAYSIZE(g_taa_resolve_ps_bytes)},
-    .depth_stencil_state = depth_stencil_disabled, .rt_formats = color_format
+    .depth_stencil_state = depth_stencil_disabled,
+    .rt_formats = CD3DX12_RT_FORMAT_ARRAY{
+      D3D12_RT_FORMAT_ARRAY{.RTFormats = {kTaaHistoryFormat}, .NumRenderTargets = 1}
+    }
   };
 
   taa_pso_ = device_->CreatePipelineState(taa_resolve_pso_desc, sizeof(TaaResolveDrawParams) / 4);

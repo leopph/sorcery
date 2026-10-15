@@ -358,6 +358,7 @@ struct TaaResolveDrawParams {
   uint linear_samp_idx;
   float jitter_x;
   float jitter_y;
+  BOOL reset_history;
 };
 
 

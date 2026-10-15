@@ -117,7 +117,7 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
   float2 historyTexCoord = ps_in.uv.xy - motionVector;
   float3 sourceSample = sourceSampleTotal / sourceSampleWeight;
 
-  if (any(historyTexCoord != saturate(historyTexCoord))) {
+  if (g_params.reset_history || any(historyTexCoord != saturate(historyTexCoord))) {
     return float4(sourceSample, 1);
   }
 
