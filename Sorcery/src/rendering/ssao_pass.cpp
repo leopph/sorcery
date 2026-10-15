@@ -7,6 +7,8 @@
 #include <span>
 #include <stdexcept>
 
+#include "wand/command_list_helpers.hpp"
+
 #include "rendering/temporary_render_target_pool.hpp"
 #include "rendering/shaders/shader_interop.h"
 #include "sorcery/rendering/render_target.hpp"
@@ -108,6 +110,8 @@ auto SsaoPass::Record(
 ) const -> Output {
   // Anything Extract can replace goes through FrameData, and only immutable state is read from members
 
+  wand::ScopedEvent const event{cmd, L"SSAO"};
+
   auto const ssao_rt = rt_pool_->Acquire(RenderTarget::Desc{
     .width = view_ctx.width,
     .height = view_ctx.height,
@@ -121,24 +125,27 @@ auto SsaoPass::Record(
     throw std::runtime_error{"Failed to acquire SSAO RT."};
   }
 
-  cmd.SetPipelineState(*data.ssao_pso);
-  cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx), *noise_tex_);
-  cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, depth_tex_idx), *input.depth_sample_tex);
-  cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, gbuffer1_tex_idx), *input.gbuffer1_tex);
-  cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx), *data.samples_buf);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_clamp_samp_idx), view_ctx.samp_point_clamp);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_wrap_samp_idx), view_ctx.samp_point_wrap);
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, radius), std::bit_cast<UINT>(data.params.radius));
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, bias), std::bit_cast<UINT>(data.params.bias));
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, power), std::bit_cast<UINT>(data.params.power));
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, sample_count), data.params.sample_count);
-  cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_view_cb_idx), *view_ctx.per_view_cb);
-  cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx), *view_ctx.per_frame_cb);
-  cmd.SetRenderTargets(std::span{
-    std::array{static_cast<wand::Texture const*>(ssao_rt->GetColorTex().get())}.data(), 1
-  }, nullptr);
-  cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
-  cmd.DrawInstanced(3, 1, 0, 0);
+  {
+    wand::ScopedEvent const e{cmd, L"Main"};
+    cmd.SetPipelineState(*data.ssao_pso);
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, noise_tex_idx), *noise_tex_);
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, depth_tex_idx), *input.depth_sample_tex);
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, gbuffer1_tex_idx), *input.gbuffer1_tex);
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoDrawParams, samp_buf_idx), *data.samples_buf);
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_clamp_samp_idx), view_ctx.samp_point_clamp);
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, point_wrap_samp_idx), view_ctx.samp_point_wrap);
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, radius), std::bit_cast<UINT>(data.params.radius));
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, bias), std::bit_cast<UINT>(data.params.bias));
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, power), std::bit_cast<UINT>(data.params.power));
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoDrawParams, sample_count), data.params.sample_count);
+    cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_view_cb_idx), *view_ctx.per_view_cb);
+    cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(SsaoDrawParams, per_frame_cb_idx), *view_ctx.per_frame_cb);
+    cmd.SetRenderTargets(std::span{
+      std::array{static_cast<wand::Texture const*>(ssao_rt->GetColorTex().get())}.data(), 1
+    }, nullptr);
+    cmd.ClearRenderTarget(*ssao_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
+    cmd.DrawInstanced(3, 1, 0, 0);
+  }
 
   auto const ssao_blur_rt = rt_pool_->Acquire([&ssao_rt] {
     auto ret{ssao_rt->GetDesc()};
@@ -150,15 +157,18 @@ auto SsaoPass::Record(
     throw std::runtime_error{"Failed to acquire SSAO Blur RT."};
   }
 
-  cmd.SetPipelineState(*data.blur_pso);
-  cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, in_tex_idx),
-    *ssao_rt->GetColorTex());
-  cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, point_clamp_samp_idx), view_ctx.samp_point_clamp);
-  cmd.SetRenderTargets(std::span{
-    std::array{static_cast<wand::Texture const*>(ssao_blur_rt->GetColorTex().get())}.data(), 1
-  }, nullptr);
-  cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
-  cmd.DrawInstanced(3, 1, 0, 0);
+  {
+    wand::ScopedEvent const e{cmd, L"Blur"};
+    cmd.SetPipelineState(*data.blur_pso);
+    cmd.SetShaderResource(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, in_tex_idx),
+      *ssao_rt->GetColorTex());
+    cmd.SetPipelineParameter(PIPELINE_PARAM_INDEX(SsaoBlurDrawParams, point_clamp_samp_idx), view_ctx.samp_point_clamp);
+    cmd.SetRenderTargets(std::span{
+      std::array{static_cast<wand::Texture const*>(ssao_blur_rt->GetColorTex().get())}.data(), 1
+    }, nullptr);
+    cmd.ClearRenderTarget(*ssao_blur_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 1.0f}, {});
+    cmd.DrawInstanced(3, 1, 0, 0);
+  }
 
   return Output{
     .ssao_tex = MakeObserver(ssao_blur_rt->GetColorTex().get())
