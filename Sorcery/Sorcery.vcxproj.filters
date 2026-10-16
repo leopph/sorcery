@@ -27,7 +27,7 @@
     <ClCompile Include="src\Platform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resources\Scene.cpp">
+    <ClCompile Include="src\assets\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Object.cpp">
@@ -39,13 +39,13 @@
     <ClCompile Include="src\Bounds.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resources\Material.cpp">
+    <ClCompile Include="src\assets\Material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Guid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resources\Mesh.cpp">
+    <ClCompile Include="src\assets\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\scene\Component.cpp">
@@ -63,10 +63,10 @@
     <ClCompile Include="src\scene\LightComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resources\Texture2D.cpp">
+    <ClCompile Include="src\assets\Texture2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resources\Cubemap.cpp">
+    <ClCompile Include="src\assets\Cubemap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\util.cpp">
@@ -84,10 +84,10 @@
     <ClCompile Include="src\rendering\render_target.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\resource_manager.cpp">
+    <ClCompile Include="src\asset_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resources\Resource.cpp">
+    <ClCompile Include="src\assets\Asset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\scene\SceneObject.cpp">
@@ -141,34 +141,34 @@
     <ClCompile Include="src\scene\OscillateComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\resource_id.cpp">
+    <ClCompile Include="src\asset_id.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\resource_package.cpp">
+    <ClCompile Include="src\asset_package.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\resource_reference.cpp">
+    <ClCompile Include="src\asset_reference.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\material_resource.cpp">
+    <ClCompile Include="src\material_asset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\resource_import\texture_import.cpp">
+    <ClCompile Include="src\asset_import\texture_import.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\resource_import\material_import.cpp">
+    <ClCompile Include="src\asset_import\material_import.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\vector_stream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\resource_import\mesh_import.cpp">
+    <ClCompile Include="src\asset_import\mesh_import.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\io_helpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\resources\prefab.cpp">
+    <ClCompile Include="src\assets\prefab.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\entity_serialization.cpp">
@@ -180,7 +180,7 @@
     <ClCompile Include="src\object_ptr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\resource_ref.cpp">
+    <ClCompile Include="src\asset_ref.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\command_list_pool.cpp">
@@ -260,7 +260,7 @@
     <ClInclude Include="include\sorcery\event.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resources\Scene.hpp">
+    <ClInclude Include="include\sorcery\assets\Scene.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\Object.hpp">
@@ -272,13 +272,13 @@
     <ClInclude Include="include\sorcery\Image.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resources\Material.hpp">
+    <ClInclude Include="include\sorcery\assets\Material.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\Guid.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resources\Mesh.hpp">
+    <ClInclude Include="include\sorcery\assets\Mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\scene\Component.hpp">
@@ -296,13 +296,13 @@
     <ClInclude Include="include\sorcery\scene\LightComponents.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resources\Texture2D.hpp">
+    <ClInclude Include="include\sorcery\assets\Texture2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\scene\SceneObject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resources\Cubemap.hpp">
+    <ClInclude Include="include\sorcery\assets\Cubemap.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\shaders\shadow_filtering_modes.h">
@@ -323,16 +323,16 @@
     <ClInclude Include="src\rendering\ShadowCascadeBoundary.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\host\assets\resource_manager.hpp">
+    <ClInclude Include="include\sorcery\host\assets\asset_manager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resources\Resource.hpp">
+    <ClInclude Include="include\sorcery\assets\Asset.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\reflection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resources\NativeResource.hpp">
+    <ClInclude Include="include\sorcery\assets\NativeAsset.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\serialization.hpp">
@@ -401,16 +401,16 @@
     <ClInclude Include="include\sorcery\scene\OscillateComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resource_id.hpp">
+    <ClInclude Include="include\sorcery\asset_id.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\host\assets\resource_package.hpp">
+    <ClInclude Include="include\sorcery\host\assets\asset_package.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resource_reference.hpp">
+    <ClInclude Include="include\sorcery\asset_reference.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\host\assets\material_resource.hpp">
+    <ClInclude Include="include\sorcery\host\assets\material_asset.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\material_blend_mode.hpp">
@@ -431,13 +431,13 @@
     <ClInclude Include="include\sorcery\io_helpers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resources\prefab.hpp">
+    <ClInclude Include="include\sorcery\assets\prefab.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\entity_serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resource_residency_policy.hpp">
+    <ClInclude Include="include\sorcery\asset_residency_policy.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\host\object_registry.hpp">
@@ -449,7 +449,7 @@
     <ClInclude Include="include\sorcery\object_ptr.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\resource_ref.hpp">
+    <ClInclude Include="include\sorcery\asset_ref.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\frame_scheduler.hpp">
@@ -546,7 +546,7 @@
     <None Include="include\sorcery\scene\entity.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="include\sorcery\host\assets\resource_manager.inl">
+    <None Include="include\sorcery\host\assets\asset_manager.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\rendering\shaders\lighting.hlsli" />
@@ -564,7 +564,7 @@
     </None>
     <None Include="src\rendering\shaders\taa_resolve.hlsli" />
     <None Include="src\rendering\shaders\CatmullRom.hlsli" />
-    <None Include="include\sorcery\resources\mesh.inl">
+    <None Include="include\sorcery\assets\mesh.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\rendering\shaders\meshlet_culling.hlsli" />
@@ -582,7 +582,7 @@
     <None Include="include\sorcery\observer_ptr.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="include\sorcery\resource_ref.inl">
+    <None Include="include\sorcery\asset_ref.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="include\sorcery\reflection.inl">

@@ -14,9 +14,9 @@ auto MaterialEditorDrawer::Draw(
   bool const allow_edit,
   bool& changed
 ) -> void {
-  ctx.registry->DrawAs<NativeResource>(mtl, allow_edit, changed);
+  ctx.registry->DrawAs<NativeAsset>(mtl, allow_edit, changed);
 
-  if (ImGui::BeginTable(std::format("{}", mtl.GetResId().GetGuid().ToString()).c_str(), 2,
+  if (ImGui::BeginTable(std::format("{}", mtl.GetAssetId().GetGuid().ToString()).c_str(), 2,
     ImGuiTableFlags_SizingStretchSame)) {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
@@ -75,7 +75,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto albedoMap{mtl.GetAlbedoMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return albedoMapPicker.Draw(albedoMap);
     })) {
-      mtl.SetAlbedoMap(MakeResourceRef(albedoMap.Get()));
+      mtl.SetAlbedoMap(MakeAssetRef(albedoMap.Get()));
       changed = true;
     }
 
@@ -86,7 +86,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto metallicMap{mtl.GetMetallicMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return metallicMapPicker.Draw(metallicMap);
     })) {
-      mtl.SetMetallicMap(MakeResourceRef(metallicMap.Get()));
+      mtl.SetMetallicMap(MakeAssetRef(metallicMap.Get()));
       changed = true;
     }
 
@@ -97,7 +97,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto roughnessMap{mtl.GetRoughnessMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return roughnessMapPicker.Draw(roughnessMap);
     })) {
-      mtl.SetRoughnessMap(MakeResourceRef(roughnessMap.Get()));
+      mtl.SetRoughnessMap(MakeAssetRef(roughnessMap.Get()));
       changed = true;
     }
 
@@ -108,7 +108,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto aoMap{mtl.GetAoMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return aoMapPicker.Draw(aoMap);
     })) {
-      mtl.SetAoMap(MakeResourceRef(aoMap.Get()));
+      mtl.SetAoMap(MakeAssetRef(aoMap.Get()));
       changed = true;
     }
 
@@ -119,7 +119,7 @@ auto MaterialEditorDrawer::Draw(
     if (auto normalMap{mtl.GetNormalMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
       return normalMapPicker.Draw(normalMap);
     })) {
-      mtl.SetNormalMap(MakeResourceRef(normalMap.Get()));
+      mtl.SetNormalMap(MakeAssetRef(normalMap.Get()));
       changed = true;
     }
 
@@ -157,7 +157,7 @@ auto MaterialEditorDrawer::Draw(
       if (auto opacityMask{mtl.GetOpacityMask().Get()}; ImGuiDisabled(!allow_edit, [&] {
         return opacityMaskPicker.Draw(opacityMask);
       })) {
-        mtl.SetOpacityMask(MakeResourceRef(opacityMask.Get()));
+        mtl.SetOpacityMask(MakeAssetRef(opacityMask.Get()));
         changed = true;
       }
     }

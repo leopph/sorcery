@@ -5,7 +5,7 @@
 
 #include "rendering/scene_renderer.hpp"
 #include "sorcery/host/app.hpp"
-#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/host/assets/asset_manager.hpp"
 #include "sorcery/scene/Entity.hpp"
 
 
@@ -69,7 +69,7 @@ auto MeshComponentBase::OnDrawGizmosSelected() -> void {
 
 
 MeshComponentBase::MeshComponentBase() :
-  mesh_{App::Instance().GetResourceManager().GetCubeMesh()} {
+  mesh_{App::Instance().GetAssetManager().GetCubeMesh()} {
   ResizeMaterialListToSlotCount();
 }
 
@@ -77,29 +77,29 @@ MeshComponentBase::MeshComponentBase() :
 MeshComponentBase::~MeshComponentBase() = default;
 
 
-auto MeshComponentBase::GetMesh() const noexcept -> ResourceRef<Mesh> {
+auto MeshComponentBase::GetMesh() const noexcept -> AssetRef<Mesh> {
   return mesh_;
 }
 
 
-auto MeshComponentBase::SetMesh(ResourceRef<Mesh> const mesh) noexcept -> void {
+auto MeshComponentBase::SetMesh(AssetRef<Mesh> const mesh) noexcept -> void {
   mesh_ = mesh;
   ResizeMaterialListToSlotCount();
 }
 
 
-auto MeshComponentBase::GetMaterials() const noexcept -> std::vector<ResourceRef<Material>> const& {
+auto MeshComponentBase::GetMaterials() const noexcept -> std::vector<AssetRef<Material>> const& {
   return materials_;
 }
 
 
-auto MeshComponentBase::SetMaterials(std::vector<ResourceRef<Material>> const& materials) -> void {
+auto MeshComponentBase::SetMaterials(std::vector<AssetRef<Material>> const& materials) -> void {
   materials_ = materials;
   ResizeMaterialListToSlotCount();
 }
 
 
-auto MeshComponentBase::SetMaterial(int const idx, ResourceRef<Material> const& mtl) -> void {
+auto MeshComponentBase::SetMaterial(int const idx, AssetRef<Material> const& mtl) -> void {
   if (idx >= std::ssize(materials_)) {
     throw std::runtime_error{
       std::format("Invalid index {} while attempting to replace material on mesh component.", idx)
@@ -133,7 +133,7 @@ auto MeshComponentBase::ResizeMaterialListToSlotCount() -> void {
     materials_.resize(slot_count);
 
     for (std::size_t i{mtl_count}; i < slot_count; i++) {
-      materials_[i] = App::Instance().GetResourceManager().GetDefaultMaterial();
+      materials_[i] = App::Instance().GetAssetManager().GetDefaultMaterial();
     }
   }
 }

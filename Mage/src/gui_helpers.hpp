@@ -10,8 +10,8 @@
 
 #include "sorcery/Object.hpp"
 #include "sorcery/object_ptr.hpp"
-#include "sorcery/host/assets/resource_manager.hpp"
-#include "sorcery/resources/Resource.hpp"
+#include "sorcery/host/assets/asset_manager.hpp"
+#include "sorcery/assets/Asset.hpp"
 
 
 namespace sorcery::mage {
@@ -33,7 +33,7 @@ public:
   [[nodiscard]] auto Draw(ObjectPtr<T>& target_obj, bool allow_null = true) noexcept -> bool;
 
 private:
-  using StoredType = std::conditional_t<std::derived_from<T, Resource>, ResourceManager::ResourceInfo, ObserverPtr<T>>;
+  using StoredType = std::conditional_t<std::derived_from<T, Asset>, AssetManager::AssetInfo, ObserverPtr<T>>;
 
   auto QueryObjects(bool insert_null) noexcept -> void;
 

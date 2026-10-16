@@ -9,7 +9,7 @@
 
 #include <sorcery/Core.hpp>
 #include <sorcery/reflection.hpp>
-#include <sorcery/host/assets/resource_package.hpp>
+#include <sorcery/host/assets/asset_package.hpp>
 
 
 namespace sorcery {
@@ -36,7 +36,7 @@ struct TextureImportSource {
 struct TextureImportResult {
   std::vector<std::byte> bytes;
   rttr::type runtime_type;
-  ResourcePackagePayloadKind payload_kind;
+  AssetPackagePayloadKind payload_kind;
 };
 
 

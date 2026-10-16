@@ -20,10 +20,10 @@
 #include "rendering/shaders/shader_interop.h"
 #include "rendering/shaders/shadow_filtering_modes.h"
 #include "sorcery/host/app.hpp"
-#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/host/assets/asset_manager.hpp"
 #include "sorcery/host/rendering/render_scene.hpp"
 #include "sorcery/host/rendering/texture_resolver.hpp"
-#include "sorcery/Resources/Scene.hpp"
+#include "sorcery/assets/Scene.hpp"
 #include "sorcery/scene/Entity.hpp"
 #include "sorcery/scene/SkinnedMeshComponent.hpp"
 #include "sorcery/scene/StaticMeshComponent.hpp"
@@ -328,7 +328,7 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   // If other default meshes are to be used in the future, they should be added here as well.
   // This is stored as a GeometryBatch in case a component references it.
   packet.cube_geom_local_idx =
-    AddMeshToPacket(*App::Instance().GetResourceManager().GetCubeMesh(), frame, cmd, packet);
+    AddMeshToPacket(*App::Instance().GetAssetManager().GetCubeMesh(), frame, cmd, packet);
 
   // Extract static mesh components
   // Because they're static, we can batch them for better performance.

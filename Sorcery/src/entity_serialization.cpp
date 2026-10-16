@@ -3,8 +3,8 @@
 #include "sorcery/Serialization.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/job_system.hpp"
-#include "sorcery/host/assets/resource_manager.hpp"
-#include "sorcery/resources/Resource.hpp"
+#include "sorcery/host/assets/asset_manager.hpp"
+#include "sorcery/assets/Asset.hpp"
 #include "sorcery/scene/Component.hpp"
 #include "sorcery/scene/Entity.hpp"
 #include "sorcery/scene/SceneObject.hpp"
@@ -50,7 +50,7 @@ auto SerializeEntitySet(
   YAML::Node ret_node;
 
   YamlSerializeContext const yaml_serialize_ctx{
-    .resource_ref_serialization = ctx.resource_ref_serialization
+    .asset_ref_serialization = ctx.asset_ref_serialization
   };
 
   for (auto const* const obj : scene_objects) {
@@ -68,12 +68,12 @@ auto DeserializeEntitySet(
   YAML::Node const& scene_objects_node,
   YamlDeserializeContext const& ctx
 ) -> std::vector<std::unique_ptr<Entity>> {
-  // Discover all resource references in the scene objects and preload them
+  // Discover all asset references in the scene objects and preload them
 
-  std::vector<ResourceId> required_resource_ids;
+  std::vector<AssetId> required_asset_ids;
 
-  std::function<void(YAML::Node const&, rttr::type const&)> discover_resource_references;
-  discover_resource_references = [&ctx, &discover_resource_references, &required_resource_ids](
+  std::function<void(YAML::Node const&, rttr::type const&)> discover_asset_references;
+  discover_asset_references = [&ctx, &discover_asset_references, &required_asset_ids](
     YAML::Node const& node, rttr::type const& type) -> void {
       if (!node.IsDefined()) {
         return;
@@ -82,10 +82,10 @@ auto DeserializeEntitySet(
       auto const actual_type{type.is_wrapper() ? type.get_wrapped_type() : type};
 
       if (node.IsMap() && actual_type.is_pointer() && actual_type.get_raw_type().is_derived_from(
-            rttr::type::get<Resource>())) {
-        if (auto const res_id{DeserializeResourceId(node, ctx).value_or(ResourceId::Invalid())};
-          res_id.IsValid()) {
-          required_resource_ids.emplace_back(res_id);
+            rttr::type::get<Asset>())) {
+        if (auto const asset_id{DeserializeAssetId(node, ctx).value_or(AssetId::Invalid())};
+          asset_id.IsValid()) {
+          required_asset_ids.emplace_back(asset_id);
           return;
         }
       }
@@ -93,7 +93,7 @@ auto DeserializeEntitySet(
       if (node.IsSequence() && actual_type.is_sequential_container()) {
         if (auto const template_args{actual_type.get_template_arguments()}; !template_args.empty()) {
           for (auto const& elem : node) {
-            discover_resource_references(elem, *template_args.begin());
+            discover_asset_references(elem, *template_args.begin());
           }
         }
 
@@ -102,7 +102,7 @@ auto DeserializeEntitySet(
 
       if (node.IsMap() && actual_type.is_class()) {
         for (auto const& prop : actual_type.get_properties()) {
-          discover_resource_references(node[prop.get_name().to_string()], prop.get_type());
+          discover_asset_references(node[prop.get_name().to_string()], prop.get_type());
         }
       }
     };
@@ -122,24 +122,24 @@ auto DeserializeEntitySet(
     auto const scene_obj{static_cast<SceneObject*>(MakeUniqueObject(type).release())};
     scene_objects.emplace_back(scene_obj);
     ptr_fix_up[static_cast<int>(std::ssize(ptr_fix_up)) + 1] = scene_obj;
-    discover_resource_references(scene_obj_node["properties"], type);
+    discover_asset_references(scene_obj_node["properties"], type);
   }
 
-  // Preload all resources used by the new scene objects
+  // Preload all assets used by the new scene objects
 
-  std::ranges::sort(required_resource_ids, std::less{});
+  std::ranges::sort(required_asset_ids, std::less{});
 
-  required_resource_ids.erase(std::ranges::unique(required_resource_ids).begin(), required_resource_ids.end());
+  required_asset_ids.erase(std::ranges::unique(required_asset_ids).begin(), required_asset_ids.end());
 
-  std::vector<ObserverPtr<Job>> resource_loading_jobs;
-  resource_loading_jobs.reserve(required_resource_ids.size());
+  std::vector<ObserverPtr<Job>> asset_loading_jobs;
+  asset_loading_jobs.reserve(required_asset_ids.size());
 
-  for (auto const& res_id : required_resource_ids) {
-    resource_loading_jobs.emplace_back(App::Instance().GetJobSystem().CreateJob([](ResourceId const& target_res_id) {
-      App::Instance().GetResourceManager().Resolve(target_res_id);
-    }, res_id));
+  for (auto const& asset_id : required_asset_ids) {
+    asset_loading_jobs.emplace_back(App::Instance().GetJobSystem().CreateJob([](AssetId const& target_asset_id) {
+      App::Instance().GetAssetManager().Resolve(target_asset_id);
+    }, asset_id));
 
-    App::Instance().GetJobSystem().Submit(resource_loading_jobs.back());
+    App::Instance().GetJobSystem().Submit(asset_loading_jobs.back());
   }
 
   // Deserialize the scene objects
@@ -162,7 +162,7 @@ auto DeserializeEntitySet(
       ctx, deserialize_scene_obj_ptr);
   }
 
-  for (auto const job : resource_loading_jobs) {
+  for (auto const job : asset_loading_jobs) {
     App::Instance().GetJobSystem().Wait(job);
   }
 

@@ -13,8 +13,8 @@
 #include "sorcery/host/rendering/render_frame.hpp"
 #include "sorcery/host/rendering/texture_resolver.hpp"
 #include "sorcery/rendering/render_target.hpp"
-#include "sorcery/resources/Cubemap.hpp"
-#include "sorcery/resources/Texture2D.hpp"
+#include "sorcery/assets/Cubemap.hpp"
+#include "sorcery/assets/Texture2D.hpp"
 
 #ifndef NDEBUG
 #include "shaders/generated/Debug/imgui_ps.h"

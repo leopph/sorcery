@@ -10,12 +10,12 @@
 #include "gui_helpers.hpp"
 #include "imgui_texture_references.hpp"
 #include "MainMenuBar.hpp"
-#include "ResourceDB.hpp"
+#include "AssetDB.hpp"
 #include "drawers/editor_drawer_registry.hpp"
 #include "rendering/imgui_renderer.hpp"
 #include "sorcery/event.hpp"
 #include "sorcery/host/app.hpp"
-#include "sorcery/resources/Scene.hpp"
+#include "sorcery/assets/Scene.hpp"
 #include "windows/EntityHierarchyWindow.hpp"
 #include "windows/GameViewWindow.hpp"
 #include "windows/ProjectWindow.hpp"
@@ -38,10 +38,10 @@ public:
   [[nodiscard]] auto GetImGuiIo() const noexcept -> ImGuiIO const&;
   [[nodiscard]] auto GetImGuiIo() noexcept -> ImGuiIO&;
 
-  [[nodiscard]] auto GetResourceDatabase() const noexcept -> ResourceDB const&;
-  [[nodiscard]] auto GetResourceDatabase() noexcept -> ResourceDB&;
+  [[nodiscard]] auto GetAssetDatabase() const noexcept -> AssetDB const&;
+  [[nodiscard]] auto GetAssetDatabase() noexcept -> AssetDB&;
 
-  auto OpenScene(ResourceId const& res_id) -> void;
+  auto OpenScene(AssetId const& asset_id) -> void;
   auto OpenNewScene() -> void;
   auto SaveCurrentSceneToFile() -> void;
   [[nodiscard]] auto GetScene() const noexcept -> Scene&;
@@ -85,9 +85,9 @@ private:
   ObserverPtr<ImGuiIO> imgui_io_;
   std::string imgui_io_ini_path_;
 
-  ResourceRef<Scene> scene_;
+  AssetRef<Scene> scene_;
   ObjectPtr<Object> selected_object_{nullptr};
-  ResourceDB resource_db_{selected_object_};
+  AssetDB asset_db_{selected_object_};
 
   std::filesystem::path proj_dir_abs_;
 
@@ -103,7 +103,7 @@ private:
     GetGraphicsDevice(), GetSwapChain(), GetTextureResolver(), tex_refs_
   };
   EditorDrawerRegistry drawer_registry_{tex_refs_};
-  ProjectWindow project_window_{*this, resource_db_, drawer_registry_};
+  ProjectWindow project_window_{*this, asset_db_, drawer_registry_};
   SceneViewWindow scene_view_window_{tex_refs_};
   GameViewWindow game_view_window_{tex_refs_};
   PropertiesWindow properties_window_{*this, drawer_registry_};

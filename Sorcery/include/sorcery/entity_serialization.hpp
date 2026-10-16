@@ -11,7 +11,7 @@
 #pragma warning (pop)
 
 #include "Core.hpp"
-#include "resource_reference.hpp"
+#include "asset_reference.hpp"
 
 
 namespace sorcery {
@@ -19,8 +19,8 @@ class Entity;
 
 
 struct EntitySerializationContext {
-  ResourceRefSerialization resource_ref_serialization{
-    ResourceRefSerialization::kGlobal
+  AssetRefSerialization asset_ref_serialization{
+    AssetRefSerialization::kGlobal
   };
 };
 

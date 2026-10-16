@@ -82,26 +82,26 @@ auto ModelImporterEditorDrawer::Draw(
   ImGui::Separator();
 
   auto subres_settings{
-    std::ranges::to<std::vector<ModelImporter::SubresourceImportSettings>>(obj.GetSubresourceImportSettings())
+    std::ranges::to<std::vector<ModelImporter::SubassetImportSettings>>(obj.GetSubassetImportSettings())
   };
 
   for (auto idx{0}; auto& settings : subres_settings) {
-    ImGui::SeparatorText(std::format("Subresource {} ({})", idx,
-      settings.kind == ModelImporter::SubresourceKind::kMaterial ? "Material" : "Texture").c_str());
+    ImGui::SeparatorText(std::format("Subasset {} ({})", idx,
+      settings.kind == ModelImporter::SubassetKind::kMaterial ? "Material" : "Texture").c_str());
 
     ImGui::PushID(idx++);
 
     switch (settings.kind) {
-      case ModelImporter::SubresourceKind::kMaterial: {
+      case ModelImporter::SubassetKind::kMaterial: {
         if (DrawMaterialImportSettings(settings.material_settings, allow_edit, changed)) {
-          obj.SetSubresourceImportSettings(subres_settings);
+          obj.SetSubassetImportSettings(subres_settings);
         }
         break;
       }
 
-      case ModelImporter::SubresourceKind::kTexture: {
+      case ModelImporter::SubassetKind::kTexture: {
         if (DrawTextureImportSettings(settings.texture_settings, allow_edit, changed)) {
-          obj.SetSubresourceImportSettings(subres_settings);
+          obj.SetSubassetImportSettings(subres_settings);
         }
         break;
       }

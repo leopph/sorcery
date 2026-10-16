@@ -1,7 +1,7 @@
 #pragma once
 
-#include <sorcery/host/assets/material_resource.hpp>
-#include <sorcery/host/assets/resource_package.hpp>
+#include <sorcery/host/assets/material_asset.hpp>
+#include <sorcery/host/assets/asset_package.hpp>
 
 
 namespace sorcery {
@@ -11,13 +11,13 @@ struct MaterialImportSettings {};
 struct MaterialImportResult {
   std::vector<std::byte> bytes;
   rttr::type runtime_type;
-  ResourcePackagePayloadKind payload_kind;
+  AssetPackagePayloadKind payload_kind;
 };
 
 
 [[nodiscard]] SORCERYAPI
 auto ImportMaterial(
-  MaterialResourceData const& src,
+  MaterialAssetData const& src,
   MaterialImportSettings const& settings
 ) -> MaterialImportResult;
 }

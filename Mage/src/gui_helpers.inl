@@ -27,10 +27,10 @@ auto ObjectPicker<T>::Draw(ObjectPtr<T>& target_obj, bool const allow_null) noex
     for (auto const obj : objects_) {
       auto constexpr fmt{"{}##SelectableObjectPicker{}"};
 
-      if constexpr (std::derived_from<T, Resource>) {
+      if constexpr (std::derived_from<T, Asset>) {
         if (ImGui::Selectable(std::format(fmt, obj.id.IsValid() ? obj.name : kNullDisplayName,
           popup_id_).c_str())) {
-          target_obj = App::Instance().GetResourceManager().Resolve<T>(obj.id);
+          target_obj = App::Instance().GetAssetManager().Resolve<T>(obj.id);
           ret = true;
         }
       } else {
@@ -76,11 +76,11 @@ template<std::derived_from<Object> T>
 auto ObjectPicker<T>::QueryObjects(bool const insert_null) noexcept -> void {
   objects_.clear();
 
-  if constexpr (std::derived_from<T, Resource>) {
-    App::Instance().GetResourceManager().GetInfoForResourcesOfType<T>(objects_);
+  if constexpr (std::derived_from<T, Asset>) {
+    App::Instance().GetAssetManager().GetInfoForAssetsOfType<T>(objects_);
 
-    std::erase_if(objects_, [this](auto const& res_info) {
-      return !Contains(res_info.name, filter_);
+    std::erase_if(objects_, [this](auto const& asset_info) {
+      return !Contains(asset_info.name, filter_);
     });
 
     std::ranges::sort(objects_, [](auto const& lhs, auto const& rhs) {
@@ -89,7 +89,7 @@ auto ObjectPicker<T>::QueryObjects(bool const insert_null) noexcept -> void {
 
     if (insert_null) {
       objects_.insert(std::begin(objects_),
-        ResourceManager::ResourceInfo{ResourceId::Invalid(), std::string{}, rttr::type::get<T>()});
+        AssetManager::AssetInfo{AssetId::Invalid(), std::string{}, rttr::type::get<T>()});
     }
   } else {
     App::Instance().GetObjectRegistry().FindObjectsOfType(objects_);

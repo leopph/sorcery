@@ -148,10 +148,10 @@
     <ClCompile Include="src\drawers\texture2d_editor_drawer.cpp" />
     <ClCompile Include="src\imgui_texture_references.cpp" />
     <ClCompile Include="src\rendering\imgui_renderer.cpp" />
-    <ClCompile Include="src\ResourceImporters\model_importer.cpp" />
-    <ClCompile Include="src\ResourceImporters\native_resource_importer.cpp" />
-    <ClCompile Include="src\ResourceImporters\resource_importer.cpp" />
-    <ClCompile Include="src\ResourceImporters\texture_importer.cpp" />
+    <ClCompile Include="src\AssetImporters\model_importer.cpp" />
+    <ClCompile Include="src\AssetImporters\native_asset_importer.cpp" />
+    <ClCompile Include="src\AssetImporters\asset_importer.cpp" />
+    <ClCompile Include="src\AssetImporters\texture_importer.cpp" />
     <ClCompile Include="src\StandaloneCamera.cpp" />
     <ClCompile Include="src\editor_app.cpp" />
     <ClCompile Include="src\windows\SettingsWindow.cpp" />
@@ -163,7 +163,7 @@
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\windows\PerformanceCounterWindow.cpp" />
     <ClCompile Include="src\windows\ProjectWindow.cpp" />
-    <ClCompile Include="src\ResourceDB.cpp" />
+    <ClCompile Include="src\AssetDB.cpp" />
     <ClCompile Include="src\windows\SceneViewWindow.cpp" />
     <ClCompile Include="src\StartupScreen.cpp" />
     <ClCompile Include="src\gui_helpers.cpp" />
@@ -199,10 +199,10 @@
     <ClInclude Include="src\imgui_texture_references.hpp" />
     <ClInclude Include="src\rendering\shaders\imgui_shader_interop.h" />
     <ClInclude Include="src\rendering\imgui_renderer.hpp" />
-    <ClInclude Include="src\ResourceImporters\model_importer.hpp" />
-    <ClInclude Include="src\ResourceImporters\native_resource_importer.hpp" />
-    <ClInclude Include="src\ResourceImporters\resource_importer.hpp" />
-    <ClInclude Include="src\ResourceImporters\texture_importer.hpp" />
+    <ClInclude Include="src\AssetImporters\model_importer.hpp" />
+    <ClInclude Include="src\AssetImporters\native_asset_importer.hpp" />
+    <ClInclude Include="src\AssetImporters\asset_importer.hpp" />
+    <ClInclude Include="src\AssetImporters\texture_importer.hpp" />
     <ClInclude Include="src\StandaloneCamera.hpp" />
     <ClInclude Include="src\editor_app.hpp" />
     <ClInclude Include="src\windows\SettingsWindow.hpp" />
@@ -211,7 +211,7 @@
     <ClInclude Include="src\LoadingScreen.hpp" />
     <ClInclude Include="src\MainMenuBar.hpp" />
     <ClInclude Include="src\windows\PropertiesWindow.hpp" />
-    <ClInclude Include="src\ResourceDB.hpp" />
+    <ClInclude Include="src\AssetDB.hpp" />
     <ClInclude Include="src\windows\PerformanceCounterWindow.hpp" />
     <ClInclude Include="src\windows\ProjectWindow.hpp" />
     <ClInclude Include="src\windows\SceneViewWindow.hpp" />

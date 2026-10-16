@@ -6,7 +6,7 @@
 #include "sorcery/host/platform.hpp"
 #include "sorcery/host/window.hpp"
 #include "sorcery/host/rendering/render_scene.hpp"
-#include "sorcery/resources/prefab.hpp"
+#include "sorcery/assets/prefab.hpp"
 
 
 namespace sorcery::mage {

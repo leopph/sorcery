@@ -9,7 +9,7 @@
 #include "sorcery/util.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/object_registry.hpp"
-#include "sorcery/resources/Scene.hpp"
+#include "sorcery/assets/Scene.hpp"
 
 
 RTTR_REGISTRATION {

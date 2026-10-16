@@ -219,7 +219,7 @@ auto SettingsWindow::Draw() -> void {
       }
     } else if (activeScene.GetSkyMode() == SkyMode::Skybox) {
       if (auto skybox{activeScene.GetSkybox().Get()}; mSkyboxPicker.Draw(skybox)) {
-        activeScene.SetSkybox(MakeResourceRef(skybox.Get()));
+        activeScene.SetSkybox(MakeAssetRef(skybox.Get()));
       }
     } else {
       ImGui::TextColored(ImVec4{1, 1, 0, 1}, "%s", "Unknown sky mode.");

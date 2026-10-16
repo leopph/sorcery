@@ -14,7 +14,7 @@
 #include "sorcery/host/game_module.hpp"
 #include "sorcery/host/platform.hpp"
 #include "sorcery/host/window.hpp"
-#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/host/assets/asset_manager.hpp"
 #include "windows/PerformanceCounterWindow.hpp"
 
 
@@ -67,7 +67,7 @@ EditorApp::EditorApp(CommandLineArgs const& args) :
   }
 
   if (auto const scene_arg{args.GetArg("scene")}; project_loaded && scene_arg) {
-    OpenScene(ResourceId{GetResourceDatabase().PathToGuid(ToUtf8Sv(*scene_arg)), 0});
+    OpenScene(AssetId{GetAssetDatabase().PathToGuid(ToUtf8Sv(*scene_arg)), 0});
   }
 }
 
@@ -96,29 +96,29 @@ auto EditorApp::GetImGuiIo() noexcept -> ImGuiIO& {
 }
 
 
-auto EditorApp::GetResourceDatabase() const noexcept -> ResourceDB const& {
-  return resource_db_;
+auto EditorApp::GetAssetDatabase() const noexcept -> AssetDB const& {
+  return asset_db_;
 }
 
 
-auto EditorApp::GetResourceDatabase() noexcept -> ResourceDB& {
-  return resource_db_;
+auto EditorApp::GetAssetDatabase() noexcept -> AssetDB& {
+  return asset_db_;
 }
 
 
-auto EditorApp::OpenScene(ResourceId const& res_id) -> void {
-  if (!res_id.IsValid() || (scene_ && scene_->GetResId() == res_id)) {
+auto EditorApp::OpenScene(AssetId const& asset_id) -> void {
+  if (!asset_id.IsValid() || (scene_ && scene_->GetAssetId() == asset_id)) {
     return;
   }
 
-  if (auto const new_scene{GetResourceManager().Resolve<Scene>(res_id)}) {
+  if (auto const new_scene{GetAssetManager().Resolve<Scene>(asset_id)}) {
     new_scene->Load();
 
     if (scene_) {
-      GetResourceManager().Unload(scene_->GetResId());
+      GetAssetManager().Unload(scene_->GetAssetId());
     }
 
-    scene_ = MakeResourceRef(new_scene.Get());
+    scene_ = MakeAssetRef(new_scene.Get());
     scene_->SetActive();
     selected_object_ = nullptr;
   }
@@ -127,10 +127,10 @@ auto EditorApp::OpenScene(ResourceId const& res_id) -> void {
 
 auto EditorApp::OpenNewScene() -> void {
   if (scene_) {
-    GetResourceManager().Unload(scene_->GetResId());
+    GetAssetManager().Unload(scene_->GetAssetId());
   }
 
-  scene_ = GetResourceManager().Add(std::make_unique<Scene>());
+  scene_ = GetAssetManager().Add(std::make_unique<Scene>());
   scene_->SetActive();
   selected_object_ = nullptr;
 }
@@ -139,21 +139,21 @@ auto EditorApp::OpenNewScene() -> void {
 auto EditorApp::SaveCurrentSceneToFile() -> void {
   assert(scene_);
   scene_->Save();
-  if (resource_db_.IsSavedResource(*scene_)) {
-    resource_db_.SaveResourceToFile(*scene_);
+  if (asset_db_.IsSavedAsset(*scene_)) {
+    asset_db_.SaveAssetToFile(*scene_);
   } else {
-    constexpr nfdu8filteritem_t filter{"Scene files", ResourceManager::SCENE_RESOURCE_EXT.substr(1).data()};
+    constexpr nfdu8filteritem_t filter{"Scene files", AssetManager::SCENE_ASSET_EXT.substr(1).data()};
     if (NFD::UniquePath dst;
       SaveDialog(dst, &filter, 1,
-        ToUntypedSv(resource_db_.GetResourceDirectoryAbsolutePath().u8string()).data()) == NFD_OKAY) {
-      auto dst_res_dir_rel{relative(std::filesystem::path{dst.get()}, resource_db_.GetResourceDirectoryAbsolutePath())};
+        ToUntypedSv(asset_db_.GetAssetDirectoryAbsolutePath().u8string()).data()) == NFD_OKAY) {
+      auto dst_asset_dir_rel{relative(std::filesystem::path{dst.get()}, asset_db_.GetAssetDirectoryAbsolutePath())};
 
-      if (dst_res_dir_rel.extension() != ResourceManager::SCENE_RESOURCE_EXT) {
-        dst_res_dir_rel += ResourceManager::SCENE_RESOURCE_EXT;
+      if (dst_asset_dir_rel.extension() != AssetManager::SCENE_ASSET_EXT) {
+        dst_asset_dir_rel += AssetManager::SCENE_ASSET_EXT;
       }
 
-      if (!dst_res_dir_rel.empty()) {
-        resource_db_.SaveResourceToFile(GetResourceManager().Remove<Scene>(scene_->GetResId()), dst_res_dir_rel);
+      if (!dst_asset_dir_rel.empty()) {
+        asset_db_.SaveAssetToFile(GetAssetManager().Remove<Scene>(scene_->GetAssetId()), dst_asset_dir_rel);
       }
     }
   }
@@ -183,8 +183,8 @@ auto EditorApp::GetProjectDirectoryAbsolute() const noexcept -> std::filesystem:
 
 auto EditorApp::OpenProject(std::filesystem::path const& targetPath) -> void {
   proj_dir_abs_ = absolute(targetPath);
-  GetResourceManager().UnloadAll();
-  resource_db_.ChangeProjectDir(proj_dir_abs_);
+  GetAssetManager().UnloadAll();
+  asset_db_.ChangeProjectDir(proj_dir_abs_);
   GetWindow().SetTitle(std::string{window_title_base_} + " - " + targetPath.stem().string());
 
   OpenNewScene();
@@ -398,7 +398,7 @@ auto EditorApp::OnFinishBusyExecution(BusyExecutionContext const& busyExecutionC
 
 auto EditorApp::OnWindowFocusGain() -> void {
   if (!proj_dir_abs_.empty()) {
-    resource_db_.Refresh();
+    asset_db_.Refresh();
   }
 }
 

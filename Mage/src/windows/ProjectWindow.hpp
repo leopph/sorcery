@@ -7,22 +7,22 @@
 #include <string>
 #include <variant>
 
-#include "../ResourceImporters/resource_importer.hpp"
+#include "../AssetImporters/asset_importer.hpp"
 #include "sorcery/event.hpp"
 #include "sorcery/Guid.hpp"
 #include "sorcery/observer_ptr.hpp"
-#include "sorcery/resource_id.hpp"
+#include "sorcery/asset_id.hpp"
 
 
 namespace sorcery::mage {
 class EditorApp;
-class ResourceDB;
+class AssetDB;
 class EditorDrawerRegistry;
 
 
 class ProjectWindow {
 public:
-  explicit ProjectWindow(EditorApp& context, ResourceDB& resource_db, EditorDrawerRegistry& drawer_registry);
+  explicit ProjectWindow(EditorApp& context, AssetDB& asset_db, EditorDrawerRegistry& drawer_registry);
   ProjectWindow(ProjectWindow const& other) = delete;
   ProjectWindow(ProjectWindow&& other) noexcept = delete;
 
@@ -46,44 +46,44 @@ private:
   };
 
 
-  struct ResourcePackageFileProjectItem {
+  struct AssetPackageFileProjectItem {
     Guid guid;
 
     [[nodiscard]] friend
     auto operator==(
-      ResourcePackageFileProjectItem const& lhs,
-      ResourcePackageFileProjectItem const& rhs
+      AssetPackageFileProjectItem const& lhs,
+      AssetPackageFileProjectItem const& rhs
     ) -> bool = default;
   };
 
 
-  struct NativeResourceFileProjectItem {
+  struct NativeAssetFileProjectItem {
     Guid guid;
 
     [[nodiscard]] friend
     auto operator==(
-      NativeResourceFileProjectItem const& lhs,
-      NativeResourceFileProjectItem const& rhs
+      NativeAssetFileProjectItem const& lhs,
+      NativeAssetFileProjectItem const& rhs
     ) -> bool = default;
   };
 
 
-  struct SubresourceProjectItem {
-    ResourceId id;
+  struct SubassetProjectItem {
+    AssetId id;
 
     [[nodiscard]] friend
     auto operator==(
-      SubresourceProjectItem const& lhs,
-      SubresourceProjectItem const& rhs
+      SubassetProjectItem const& lhs,
+      SubassetProjectItem const& rhs
     ) -> bool = default;
   };
 
 
   using ProjectItem = std::variant<
     DirectoryProjectItem,
-    ResourcePackageFileProjectItem,
-    NativeResourceFileProjectItem,
-    SubresourceProjectItem
+    AssetPackageFileProjectItem,
+    NativeAssetFileProjectItem,
+    SubassetProjectItem
   >;
 
 
@@ -126,9 +126,9 @@ private:
     kReimportFile,
     kOpenImportSettings,
     kCopyGuid,
-    kCopyResourceId,
-    kUnloadResource,
-    kUnloadAllResourcesInFile,
+    kCopyAssetId,
+    kUnloadAsset,
+    kUnloadAllAssetsInFile,
 
     kMoveToFolder
   };
@@ -141,8 +141,8 @@ private:
 
 
   struct ImportSettingsContext {
-    std::filesystem::path src_path_res_dir_rel;
-    std::unique_ptr<ResourceImporter> importer;
+    std::filesystem::path src_path_asset_dir_rel;
+    std::unique_ptr<AssetImporter> importer;
     bool dirty{false};
   };
 
@@ -151,13 +151,13 @@ private:
   auto IsDirectory(ProjectTreeNode const& node) -> bool;
 
   [[nodiscard]] static
-  auto IsResourcePackageFile(ProjectTreeNode const& node) -> bool;
+  auto IsAssetPackageFile(ProjectTreeNode const& node) -> bool;
 
   [[nodiscard]] static
-  auto IsNativeResourceFile(ProjectTreeNode const& node) -> bool;
+  auto IsNativeAssetFile(ProjectTreeNode const& node) -> bool;
 
   [[nodiscard]] static
-  auto IsSubresource(ProjectTreeNode const& node) -> bool;
+  auto IsSubasset(ProjectTreeNode const& node) -> bool;
 
   [[nodiscard]] static
   auto ShouldDrawAsTree(ProjectTreeNode const& node) -> bool;
@@ -171,9 +171,9 @@ private:
 
   auto DrawContextMenu(ProjectItem const& item) -> void;
   auto DrawDirectoryContextMenu(DirectoryProjectItem const& item) -> void;
-  auto DrawNativeResourceFileContextMenu(NativeResourceFileProjectItem const& item) -> void;
-  auto DrawResourcePackageFileContextMenu(ResourcePackageFileProjectItem const& item) -> void;
-  auto DrawSubresourceContextMenu(SubresourceProjectItem const& item) -> void;
+  auto DrawNativeAssetFileContextMenu(NativeAssetFileProjectItem const& item) -> void;
+  auto DrawAssetPackageFileContextMenu(AssetPackageFileProjectItem const& item) -> void;
+  auto DrawSubassetContextMenu(SubassetProjectItem const& item) -> void;
 
   [[nodiscard]]
   auto CanDrag(ProjectItem const& item) const -> bool;
@@ -200,13 +200,13 @@ private:
   [[nodiscard]]
   auto CommitDirectoryRename(DirectoryProjectItem const& item, std::string_view new_name) -> bool;
   [[nodiscard]]
-  auto CommitResourceFileRename(Guid const& guid, std::string_view new_name) -> bool;
+  auto CommitAssetFileRename(Guid const& guid, std::string_view new_name) -> bool;
 
   [[nodiscard]]
-  auto IsResourceRootDirectory(DirectoryProjectItem const& item) const -> bool;
+  auto IsAssetRootDirectory(DirectoryProjectItem const& item) const -> bool;
 
   [[nodiscard]]
-  auto IsResourceRootDirectory(std::filesystem::path const& path_abs) const -> bool;
+  auto IsAssetRootDirectory(std::filesystem::path const& path_abs) const -> bool;
 
   [[nodiscard]]
   auto CanDelete(ProjectItem const& item) const -> bool;
@@ -221,19 +221,19 @@ private:
   auto BeginRename(ProjectItem const& target) -> void;
   auto ExecuteDelete(ProjectItem const& target) -> void;
   auto ExecuteDeleteDirectory(DirectoryProjectItem const& target) -> void;
-  auto ExecuteDeleteResourceFile(Guid const& target) -> void;
+  auto ExecuteDeleteAssetFile(Guid const& target) -> void;
   auto ExecuteShowInExplorer(ProjectItem const& target) const -> void;
   auto ExecuteReimport(ProjectItem const& target) const -> void;
   auto OpenImportSettings(ProjectItem const& target) -> void;
   auto ExecuteCopyGuid(ProjectItem const& target) const -> void;
-  auto ExecuteCopyResourceId(ProjectItem const& target) const -> void;
-  auto ExecuteUnloadResource(ProjectItem const& target) -> void;
-  auto ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -> void;
-  auto ExecuteUnloadResourceById(ResourceId const& target) -> void;
+  auto ExecuteCopyAssetId(ProjectItem const& target) const -> void;
+  auto ExecuteUnloadAsset(ProjectItem const& target) -> void;
+  auto ExecuteUnloadAllAssetsInFile(ProjectItem const& target) -> void;
+  auto ExecuteUnloadAssetById(AssetId const& target) -> void;
   auto ExecuteMoveToFolder(ProjectItem const& target) -> void;
 
   ObserverPtr<EditorApp> app_;
-  ObserverPtr<ResourceDB> resource_db_;
+  ObserverPtr<AssetDB> asset_db_;
   ObserverPtr<EditorDrawerRegistry> drawer_registry_;
   EventListenerHandle<> database_changed_listener_;
 
@@ -249,6 +249,6 @@ private:
 
   constexpr static std::string_view kContextMenuId{"ContextMenu"};
   constexpr static std::string_view kDirNodeDragDropTypeStr{"DRAG_DROP_DIR_TYPE"};
-  constexpr static std::string_view kResPackNodeDragDropTypeStr{"DRAG_DROP_RES_PACK_TYPE"};
+  constexpr static std::string_view kAssetPackNodeDragDropTypeStr{"DRAG_DROP_ASSET_PACK_TYPE"};
 };
 }

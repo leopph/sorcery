@@ -29,16 +29,16 @@ auto MainMenuBar::Draw() -> void {
       }
 
       if (ImGui::MenuItem("Open Scene")) {
-        constexpr nfdu8filteritem_t filter_item{"Scene", ResourceManager::SCENE_RESOURCE_EXT.substr(1).data()};
-        auto& res_db{app_->GetResourceDatabase()};
-        auto const& res_dir_abs_path{res_db.GetResourceDirectoryAbsolutePath()};
-        auto const default_path_str{ToUntypedStr(res_dir_abs_path.u8string())};
+        constexpr nfdu8filteritem_t filter_item{"Scene", AssetManager::SCENE_ASSET_EXT.substr(1).data()};
+        auto& asset_db{app_->GetAssetDatabase()};
+        auto const& asset_dir_abs_path{asset_db.GetAssetDirectoryAbsolutePath()};
+        auto const default_path_str{ToUntypedStr(asset_dir_abs_path.u8string())};
 
         if (NFD::UniquePathU8 dst_path_abs{nullptr};
           OpenDialog(dst_path_abs, &filter_item, 1, default_path_str.c_str()) == NFD_OKAY) {
-          if (auto const dst_path_res_dir_rel{relative(ToUtf8Sv(dst_path_abs.get()), res_dir_abs_path)};
-            !dst_path_res_dir_rel.empty()) {
-            app_->OpenScene(ResourceId{res_db.PathToGuid(dst_path_res_dir_rel), 0});
+          if (auto const dst_path_asset_dir_rel{relative(ToUtf8Sv(dst_path_abs.get()), asset_dir_abs_path)};
+            !dst_path_asset_dir_rel.empty()) {
+            app_->OpenScene(AssetId{asset_db.PathToGuid(dst_path_asset_dir_rel), 0});
           }
         }
       }

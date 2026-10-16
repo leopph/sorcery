@@ -23,8 +23,8 @@ auto PropertiesWindow::Draw() const -> void {
     if (auto const selected_obj{app_->GetSelectedObject()}) {
       auto editable{true};
 
-      if (auto const res{ReflCast<Resource>(selected_obj)};
-        res && !app_->GetResourceDatabase().IsResourceEditable(res->GetResId())) {
+      if (auto const asset{ReflCast<Asset>(selected_obj)};
+        asset && !app_->GetAssetDatabase().IsAssetEditable(asset->GetAssetId())) {
         editable = false;
       }
 
@@ -32,9 +32,9 @@ auto PropertiesWindow::Draw() const -> void {
       drawer_registry_->Draw(*selected_obj, editable, changed);
 
       if (changed) {
-        if (auto const native_res{ReflCast<NativeResource>(selected_obj)};
-          native_res && app_->GetResourceDatabase().IsSavedResource(*native_res)) {
-          app_->GetResourceDatabase().SaveResourceToFile(*native_res);
+        if (auto const native_asset{ReflCast<NativeAsset>(selected_obj)};
+          native_asset && app_->GetAssetDatabase().IsSavedAsset(*native_asset)) {
+          app_->GetAssetDatabase().SaveAssetToFile(*native_asset);
         }
       }
     }

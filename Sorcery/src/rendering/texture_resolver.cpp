@@ -4,8 +4,8 @@
 
 #include "rendering/render_resource_registry.hpp"
 #include "sorcery/host/rendering/upload_arena.hpp"
-#include "sorcery/resources/Cubemap.hpp"
-#include "sorcery/resources/Texture2D.hpp"
+#include "sorcery/assets/Cubemap.hpp"
+#include "sorcery/assets/Texture2D.hpp"
 
 
 namespace sorcery::rendering {

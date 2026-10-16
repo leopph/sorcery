@@ -17,7 +17,7 @@ class CommandLineArgs;
 class Window;
 class JobSystem;
 class ObjectRegistry;
-class ResourceManager;
+class AssetManager;
 class GameModule;
 
 
@@ -63,7 +63,7 @@ public:
   auto GetObjectRegistry() -> ObjectRegistry&;
 
   [[nodiscard]] SORCERYAPI
-  auto GetResourceManager() -> ResourceManager&;
+  auto GetAssetManager() -> AssetManager&;
 
   SORCERYAPI
   auto Run() -> void;

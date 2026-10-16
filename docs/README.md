@@ -23,14 +23,14 @@ Sorcery includes **Mage**, a custom editor built with Dear ImGui.
 - Scene hierarchy, entity inspection, and transform manipulation.
 - Editable materials, lights, cameras, and scene properties.
 - Model and texture import, with configurable import settings.
-- Asset management with resource identifiers, metadata, and serialized resource formats.
+- Asset management with asset identifiers, metadata, and serialized asset formats.
 - Interactive rendering settings, shadow visualization, and performance inspection.
 
 ### Engine architecture
 Beyond rendering, Sorcery is also a place to experiment with the systems that make an engine work:
 
 - **Entity-component model** - hierarchical transforms, custom components, updateable behaviors, and scene serialization.
-- **Resource management** - custom binary asset formats, resource references, and on-demand loading.
+- **Asset management** - custom binary asset formats, asset references, and on-demand loading.
 - **Rendering infrastructure** - frame scheduling, GPU command submission, frame-scoped uploads, and GPU resource lifetime management.
 - **Custom maths** - a linear algebra implementation using x86-64 SIMD intrinsics.
 - **Supporting infrastructure** - a job system, reflection, serialization, and object lifetime tracking.

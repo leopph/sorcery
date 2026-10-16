@@ -36,7 +36,7 @@ auto SkinnedMeshComponent::OnBeforeExitingScene(Scene const& scene) -> void {
 }
 
 
-auto SkinnedMeshComponent::SetMesh(ResourceRef<Mesh> const mesh) noexcept -> void {
+auto SkinnedMeshComponent::SetMesh(AssetRef<Mesh> const mesh) noexcept -> void {
   MeshComponentBase::SetMesh(mesh);
 
   auto const mesh_inst = mesh.Get().Get();

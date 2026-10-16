@@ -2,7 +2,7 @@
 
 #include "../gui_helpers.hpp"
 #include "../StandaloneCamera.hpp"
-#include "sorcery/resources/Cubemap.hpp"
+#include "sorcery/assets/Cubemap.hpp"
 
 #include <string_view>
 

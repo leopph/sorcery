@@ -3,7 +3,7 @@
 #include <functional>
 
 #include "../editor_app.hpp"
-#include "sorcery/resources/prefab.hpp"
+#include "sorcery/assets/prefab.hpp"
 
 
 namespace sorcery::mage {

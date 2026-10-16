@@ -57,19 +57,19 @@
     <ClCompile Include="src\windows\SettingsWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceDB.cpp">
+    <ClCompile Include="src\AssetDB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceImporters\model_importer.cpp">
+    <ClCompile Include="src\AssetImporters\model_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceImporters\native_resource_importer.cpp">
+    <ClCompile Include="src\AssetImporters\native_asset_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceImporters\resource_importer.cpp">
+    <ClCompile Include="src\AssetImporters\asset_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceImporters\texture_importer.cpp">
+    <ClCompile Include="src\AssetImporters\texture_importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\imgui_renderer.cpp">
@@ -185,19 +185,19 @@
     <ClInclude Include="src\windows\SettingsWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceDB.hpp">
+    <ClInclude Include="src\AssetDB.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceImporters\model_importer.hpp">
+    <ClInclude Include="src\AssetImporters\model_importer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceImporters\native_resource_importer.hpp">
+    <ClInclude Include="src\AssetImporters\native_asset_importer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceImporters\resource_importer.hpp">
+    <ClInclude Include="src\AssetImporters\asset_importer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceImporters\texture_importer.hpp">
+    <ClInclude Include="src\AssetImporters\texture_importer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\imgui_renderer.hpp">

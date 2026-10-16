@@ -12,21 +12,21 @@
 #include "sorcery/char_encoding_helpers.hpp"
 #include "sorcery/util.hpp"
 #include "sorcery/host/platform.hpp"
-#include "sorcery/resources/Material.hpp"
+#include "sorcery/assets/Material.hpp"
 
 
 namespace sorcery::mage {
-ProjectWindow::ProjectWindow(EditorApp& context, ResourceDB& resource_db, EditorDrawerRegistry& drawer_registry) :
+ProjectWindow::ProjectWindow(EditorApp& context, AssetDB& asset_db, EditorDrawerRegistry& drawer_registry) :
   app_{&context},
-  resource_db_{&resource_db},
+  asset_db_{&asset_db},
   drawer_registry_{&drawer_registry},
   database_changed_listener_{
-    resource_db.OnDatabaseChanged.add_listener([this] { should_rebuild_hierarchy_on_next_draw_ = true; })
+    asset_db.OnDatabaseChanged.add_listener([this] { should_rebuild_hierarchy_on_next_draw_ = true; })
   } {}
 
 
 ProjectWindow::~ProjectWindow() {
-  resource_db_->OnDatabaseChanged.remove_listener(database_changed_listener_);
+  asset_db_->OnDatabaseChanged.remove_listener(database_changed_listener_);
 }
 
 
@@ -34,9 +34,9 @@ auto ProjectWindow::RebuildHierarchy() -> void {
   spdlog::debug("Starting project window hierarchy rebuild.");
 
   root_node_ = ProjectTreeNode{
-    .item = DirectoryProjectItem{.path_abs = resource_db_->GetResourceDirectoryAbsolutePath()},
-    .display_name = resource_db_->GetResourceDirectoryAbsolutePath().filename().string(),
-    .imgui_id = std::format("##{}", resource_db_->GetResourceDirectoryAbsolutePath().string()),
+    .item = DirectoryProjectItem{.path_abs = asset_db_->GetAssetDirectoryAbsolutePath()},
+    .display_name = asset_db_->GetAssetDirectoryAbsolutePath().filename().string(),
+    .imgui_id = std::format("##{}", asset_db_->GetAssetDirectoryAbsolutePath().string()),
     .children = {}
   };
 
@@ -62,50 +62,50 @@ auto ProjectWindow::RebuildHierarchy() -> void {
           .children = {}
         });
       } else if (entry.is_regular_file()) {
-        if (ResourceDB::IsMetaFile(entry.path())) {
+        if (AssetDB::IsMetaFile(entry.path())) {
           continue;
         }
 
-        auto const res_dir_rel{relative(entry.path(), resource_db_->GetResourceDirectoryAbsolutePath())};
-        auto const guid{resource_db_->PathToGuid(res_dir_rel)};
+        auto const asset_dir_rel{relative(entry.path(), asset_db_->GetAssetDirectoryAbsolutePath())};
+        auto const guid{asset_db_->PathToGuid(asset_dir_rel)};
 
         if (!guid.IsValid()) {
           continue;
         }
 
-        auto const file_info{resource_db_->GetFileInfo(guid)};
+        auto const file_info{asset_db_->GetFileInfo(guid)};
 
         if (!file_info) {
           continue;
         }
 
-        if (file_info->is_native_resource) {
+        if (file_info->is_native_asset) {
           current_node->children.emplace_back(ProjectTreeNode{
-            .item = NativeResourceFileProjectItem{.guid = guid},
+            .item = NativeAssetFileProjectItem{.guid = guid},
             .display_name = entry.path().filename().string(),
             .imgui_id = std::format("##{}", entry.path().string()),
             .children = {}
           });
         } else {
-          std::vector<ObserverPtr<ResourceDB::ResourceInfo const>> subresources;
-          resource_db_->GetResourcesInFile(guid, subresources);
+          std::vector<ObserverPtr<AssetDB::AssetInfo const>> subassets;
+          asset_db_->GetAssetsInFile(guid, subassets);
 
-          std::vector<ProjectTreeNode> subresource_nodes;
+          std::vector<ProjectTreeNode> subasset_nodes;
 
-          for (auto const& subresource : subresources) {
-            subresource_nodes.emplace_back(ProjectTreeNode{
-              .item = SubresourceProjectItem{.id = subresource->id},
-              .display_name = subresource->name,
-              .imgui_id = std::format("##{}", std::string{subresource->id}),
+          for (auto const& subasset : subassets) {
+            subasset_nodes.emplace_back(ProjectTreeNode{
+              .item = SubassetProjectItem{.id = subasset->id},
+              .display_name = subasset->name,
+              .imgui_id = std::format("##{}", std::string{subasset->id}),
               .children = {}
             });
           }
 
           current_node->children.emplace_back(ProjectTreeNode{
-            .item = ResourcePackageFileProjectItem{.guid = guid},
+            .item = AssetPackageFileProjectItem{.guid = guid},
             .display_name = entry.path().filename().string(),
             .imgui_id = std::format("##{}", entry.path().string()),
-            .children = std::move(subresource_nodes)
+            .children = std::move(subasset_nodes)
           });
         }
       }
@@ -113,8 +113,8 @@ auto ProjectWindow::RebuildHierarchy() -> void {
 
     // Sort children by name.
     // Folders first, then files.
-    // Subresources are not sorted.
-    if (!std::holds_alternative<ResourcePackageFileProjectItem>(current_node->item)) {
+    // Subassets are not sorted.
+    if (!std::holds_alternative<AssetPackageFileProjectItem>(current_node->item)) {
       auto const not_dir_range{
         std::ranges::partition(current_node->children, [](ProjectTreeNode const& node) {
           return IsDirectory(node);
@@ -166,23 +166,23 @@ auto ProjectWindow::IsDirectory(ProjectTreeNode const& node) -> bool {
 }
 
 
-auto ProjectWindow::IsResourcePackageFile(ProjectTreeNode const& node) -> bool {
-  return std::holds_alternative<ResourcePackageFileProjectItem>(node.item);
+auto ProjectWindow::IsAssetPackageFile(ProjectTreeNode const& node) -> bool {
+  return std::holds_alternative<AssetPackageFileProjectItem>(node.item);
 }
 
 
-auto ProjectWindow::IsNativeResourceFile(ProjectTreeNode const& node) -> bool {
-  return std::holds_alternative<NativeResourceFileProjectItem>(node.item);
+auto ProjectWindow::IsNativeAssetFile(ProjectTreeNode const& node) -> bool {
+  return std::holds_alternative<NativeAssetFileProjectItem>(node.item);
 }
 
 
-auto ProjectWindow::IsSubresource(ProjectTreeNode const& node) -> bool {
-  return std::holds_alternative<SubresourceProjectItem>(node.item);
+auto ProjectWindow::IsSubasset(ProjectTreeNode const& node) -> bool {
+  return std::holds_alternative<SubassetProjectItem>(node.item);
 }
 
 
 auto ProjectWindow::ShouldDrawAsTree(ProjectTreeNode const& node) -> bool {
-  return IsDirectory(node) || IsResourcePackageFile(node);
+  return IsDirectory(node) || IsAssetPackageFile(node);
 }
 
 
@@ -267,16 +267,16 @@ auto ProjectWindow::SetEditorSelectionTo(ProjectItem const& item) const -> void 
       app_->SetSelectedObject(nullptr);
     },
 
-    [this](NativeResourceFileProjectItem const& file) {
-      app_->SetSelectedObject(App::Instance().GetResourceManager().Resolve(ResourceId{file.guid, 0}));
+    [this](NativeAssetFileProjectItem const& file) {
+      app_->SetSelectedObject(App::Instance().GetAssetManager().Resolve(AssetId{file.guid, 0}));
     },
 
-    [this](ResourcePackageFileProjectItem const&) {
+    [this](AssetPackageFileProjectItem const&) {
       app_->SetSelectedObject(nullptr);
     },
 
-    [this](SubresourceProjectItem const& resource) {
-      app_->SetSelectedObject(App::Instance().GetResourceManager().Resolve(resource.id));
+    [this](SubassetProjectItem const& asset) {
+      app_->SetSelectedObject(App::Instance().GetAssetManager().Resolve(asset.id));
     }
   }, item);
 }
@@ -290,24 +290,24 @@ auto ProjectWindow::ValidateSelection() -> void {
   std::visit(Overloaded{
     [&](DirectoryProjectItem const& item) {
       if (!std::filesystem::is_directory(item.path_abs) || relative(item.path_abs,
-            resource_db_->GetResourceDirectoryAbsolutePath()).empty()) {
+            asset_db_->GetAssetDirectoryAbsolutePath()).empty()) {
         ClearSelection();
       }
     },
-    [&](NativeResourceFileProjectItem const& item) {
-      if (!resource_db_->GetFileInfo(item.guid)) {
+    [&](NativeAssetFileProjectItem const& item) {
+      if (!asset_db_->GetFileInfo(item.guid)) {
         ClearSelection();
       }
     },
-    [&](ResourcePackageFileProjectItem const& item) {
-      if (!resource_db_->GetFileInfo(item.guid)) {
+    [&](AssetPackageFileProjectItem const& item) {
+      if (!asset_db_->GetFileInfo(item.guid)) {
         ClearSelection();
       }
     },
-    [&](SubresourceProjectItem const& item) {
-      if (!resource_db_->GetResourceInfo(item.id)) {
-        if (resource_db_->GetFileInfo(item.id.GetGuid())) {
-          selected_item_ = ResourcePackageFileProjectItem{item.id.GetGuid()};
+    [&](SubassetProjectItem const& item) {
+      if (!asset_db_->GetAssetInfo(item.id)) {
+        if (asset_db_->GetFileInfo(item.id.GetGuid())) {
+          selected_item_ = AssetPackageFileProjectItem{item.id.GetGuid()};
         } else {
           ClearSelection();
         }
@@ -326,14 +326,14 @@ auto ProjectWindow::DrawContextMenu(ProjectItem const& item) -> void {
     [this](DirectoryProjectItem const& folder) {
       DrawDirectoryContextMenu(folder);
     },
-    [this](NativeResourceFileProjectItem const& file) {
-      DrawNativeResourceFileContextMenu(file);
+    [this](NativeAssetFileProjectItem const& file) {
+      DrawNativeAssetFileContextMenu(file);
     },
-    [this](ResourcePackageFileProjectItem const& file) {
-      DrawResourcePackageFileContextMenu(file);
+    [this](AssetPackageFileProjectItem const& file) {
+      DrawAssetPackageFileContextMenu(file);
     },
-    [this](SubresourceProjectItem const& resource) {
-      DrawSubresourceContextMenu(resource);
+    [this](SubassetProjectItem const& asset) {
+      DrawSubassetContextMenu(asset);
     }
   }, item);
 
@@ -371,7 +371,7 @@ auto ProjectWindow::DrawDirectoryContextMenu(DirectoryProjectItem const& item) -
 
   ImGui::Separator();
 
-  if (ImGui::MenuItem("Import New Resource")) {
+  if (ImGui::MenuItem("Import New Asset")) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kImportFilesIntoFolder,
       .target = item
@@ -405,7 +405,7 @@ auto ProjectWindow::DrawDirectoryContextMenu(DirectoryProjectItem const& item) -
 }
 
 
-auto ProjectWindow::DrawNativeResourceFileContextMenu(NativeResourceFileProjectItem const& item) -> void {
+auto ProjectWindow::DrawNativeAssetFileContextMenu(NativeAssetFileProjectItem const& item) -> void {
   if (ImGui::MenuItem("Rename", nullptr, false, CanRename(item))) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kBeginRename,
@@ -436,9 +436,9 @@ auto ProjectWindow::DrawNativeResourceFileContextMenu(NativeResourceFileProjectI
     };
   }
 
-  if (ImGui::MenuItem("Copy Resource ID")) {
+  if (ImGui::MenuItem("Copy Asset ID")) {
     pending_command_ = ProjectCommand{
-      .kind = ProjectCommandKind::kCopyResourceId,
+      .kind = ProjectCommandKind::kCopyAssetId,
       .target = item
     };
   }
@@ -447,14 +447,14 @@ auto ProjectWindow::DrawNativeResourceFileContextMenu(NativeResourceFileProjectI
 
   if (ImGui::MenuItem("Unload")) {
     pending_command_ = ProjectCommand{
-      .kind = ProjectCommandKind::kUnloadResource,
+      .kind = ProjectCommandKind::kUnloadAsset,
       .target = item
     };
   }
 }
 
 
-auto ProjectWindow::DrawResourcePackageFileContextMenu(ResourcePackageFileProjectItem const& item) -> void {
+auto ProjectWindow::DrawAssetPackageFileContextMenu(AssetPackageFileProjectItem const& item) -> void {
   if (ImGui::MenuItem("Reimport")) {
     pending_command_ = ProjectCommand{
       .kind = ProjectCommandKind::kReimportFile,
@@ -503,19 +503,19 @@ auto ProjectWindow::DrawResourcePackageFileContextMenu(ResourcePackageFileProjec
 
   ImGui::Separator();
 
-  if (ImGui::MenuItem("Unload All Resources")) {
+  if (ImGui::MenuItem("Unload All Assets")) {
     pending_command_ = ProjectCommand{
-      .kind = ProjectCommandKind::kUnloadAllResourcesInFile,
+      .kind = ProjectCommandKind::kUnloadAllAssetsInFile,
       .target = item
     };
   }
 }
 
 
-auto ProjectWindow::DrawSubresourceContextMenu(SubresourceProjectItem const& item) -> void {
-  if (ImGui::MenuItem("Copy Resource ID")) {
+auto ProjectWindow::DrawSubassetContextMenu(SubassetProjectItem const& item) -> void {
+  if (ImGui::MenuItem("Copy Asset ID")) {
     pending_command_ = ProjectCommand{
-      .kind = ProjectCommandKind::kCopyResourceId,
+      .kind = ProjectCommandKind::kCopyAssetId,
       .target = item
     };
   }
@@ -524,7 +524,7 @@ auto ProjectWindow::DrawSubresourceContextMenu(SubresourceProjectItem const& ite
 
   if (ImGui::MenuItem("Unload")) {
     pending_command_ = ProjectCommand{
-      .kind = ProjectCommandKind::kUnloadResource,
+      .kind = ProjectCommandKind::kUnloadAsset,
       .target = item
     };
   }
@@ -533,10 +533,10 @@ auto ProjectWindow::DrawSubresourceContextMenu(SubresourceProjectItem const& ite
 
 auto ProjectWindow::CanDrag(ProjectItem const& item) const -> bool {
   return (std::holds_alternative<DirectoryProjectItem>(item) &&
-          !IsResourceRootDirectory(std::get<DirectoryProjectItem>(item))) ||
-         std::holds_alternative<NativeResourceFileProjectItem>(item) ||
-         std::holds_alternative<ResourcePackageFileProjectItem>(item) ||
-         std::holds_alternative<SubresourceProjectItem>(item);
+          !IsAssetRootDirectory(std::get<DirectoryProjectItem>(item))) ||
+         std::holds_alternative<NativeAssetFileProjectItem>(item) ||
+         std::holds_alternative<AssetPackageFileProjectItem>(item) ||
+         std::holds_alternative<SubassetProjectItem>(item);
 }
 
 
@@ -556,11 +556,11 @@ auto ProjectWindow::DrawDragSource(ProjectItem const& item) const -> void {
       auto const path_sv{ToUntypedSv(path_str)};
       ImGui::SetDragDropPayload(kDirNodeDragDropTypeStr.data(), path_sv.data(), path_sv.size());
     },
-    [this](NativeResourceFileProjectItem const& res_item) {
-      auto const obj{app_->GetResourceManager().Resolve(ResourceId{res_item.guid, 0})};
+    [this](NativeAssetFileProjectItem const& asset_item) {
+      auto const obj{app_->GetAssetManager().Resolve(AssetId{asset_item.guid, 0})};
 
       if (!obj) {
-        spdlog::error("Failed to load native resource when creating drag source. Ignoring.");
+        spdlog::error("Failed to load native asset when creating drag source. Ignoring.");
         return;
       }
 
@@ -569,14 +569,14 @@ auto ProjectWindow::DrawDragSource(ProjectItem const& item) const -> void {
       };
       ImGui::SetDragDropPayload(ObjectDragDropPayload::kTypeStr.data(), &payload, sizeof(payload));
     },
-    [this](ResourcePackageFileProjectItem const& res_pack_item) {
-      ImGui::SetDragDropPayload(kResPackNodeDragDropTypeStr.data(), &res_pack_item.guid, sizeof(res_pack_item.guid));
+    [this](AssetPackageFileProjectItem const& asset_pack_item) {
+      ImGui::SetDragDropPayload(kAssetPackNodeDragDropTypeStr.data(), &asset_pack_item.guid, sizeof(asset_pack_item.guid));
     },
-    [this](SubresourceProjectItem const& subres_item) {
-      auto const obj{app_->GetResourceManager().Resolve(subres_item.id)};
+    [this](SubassetProjectItem const& subres_item) {
+      auto const obj{app_->GetAssetManager().Resolve(subres_item.id)};
 
       if (!obj) {
-        spdlog::error("Failed to load subresource when creating drag source. Ignoring.");
+        spdlog::error("Failed to load subasset when creating drag source. Ignoring.");
         return;
       }
 
@@ -613,7 +613,7 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
         std::filesystem::path const src_abs{ToUtf8Sv(src_abs_sv)};
 
         if (std::error_code ec;
-          IsResourceRootDirectory(src_abs) ||
+          IsAssetRootDirectory(src_abs) ||
           IsSubpath(dir_target.path_abs, src_abs) ||
           equivalent(src_abs.parent_path(), dir_target.path_abs, ec) ||
           ec) {
@@ -636,23 +636,23 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
         return;
       }
 
-      if (payload->IsDataType(kResPackNodeDragDropTypeStr.data())) {
+      if (payload->IsDataType(kAssetPackNodeDragDropTypeStr.data())) {
         auto const* const guid{static_cast<Guid const*>(payload->Data)};
-        auto const src_res_dir_rel{resource_db_->GuidToPath(*guid)};
+        auto const src_asset_dir_rel{asset_db_->GuidToPath(*guid)};
 
-        if (src_res_dir_rel.empty()) {
-          spdlog::error("Failed to get resource package path during drop. Ignoring.");
+        if (src_asset_dir_rel.empty()) {
+          spdlog::error("Failed to get asset package path during drop. Ignoring.");
           DisplayError("Failed to move file.");
           return;
         }
 
-        auto const src_abs{resource_db_->GetResourceDirectoryAbsolutePath() / src_res_dir_rel};
+        auto const src_abs{asset_db_->GetAssetDirectoryAbsolutePath() / src_asset_dir_rel};
 
         if (std::error_code ec; equivalent(src_abs.parent_path(), dir_target.path_abs, ec) || ec) {
           return;
         }
 
-        ImGui::AcceptDragDropPayload(kResPackNodeDragDropTypeStr.data());
+        ImGui::AcceptDragDropPayload(kAssetPackNodeDragDropTypeStr.data());
 
         if (payload->IsDelivery()) {
           move_to_folder_ctx_ = MoveToFolderContext{
@@ -669,21 +669,21 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
       }
 
       if (payload->IsDataType(ObjectDragDropPayload::kTypeStr.data())) {
-        auto const res{ReflCast<NativeResource*>(static_cast<ObjectDragDropPayload const*>(payload->Data)->ptr)};
+        auto const asset{ReflCast<NativeAsset*>(static_cast<ObjectDragDropPayload const*>(payload->Data)->ptr)};
 
-        if (!res || !resource_db_->IsResourceEditable(res->GetResId())) {
+        if (!asset || !asset_db_->IsAssetEditable(asset->GetAssetId())) {
           return;
         }
 
-        auto const file_info{resource_db_->GetFileInfo(res->GetResId().GetGuid())};
+        auto const file_info{asset_db_->GetFileInfo(asset->GetAssetId().GetGuid())};
 
         if (!file_info) {
-          spdlog::error("Failed to get file info for drop target resource. Ignoring.");
+          spdlog::error("Failed to get file info for drop target asset. Ignoring.");
           DisplayError("Failed to move file.");
           return;
         }
 
-        auto const src_abs{resource_db_->GetResourceDirectoryAbsolutePath() / file_info->src_path_res_dir_rel};
+        auto const src_abs{asset_db_->GetAssetDirectoryAbsolutePath() / file_info->src_path_asset_dir_rel};
 
         if (std::error_code ec; equivalent(src_abs.parent_path(), dir_target.path_abs, ec) || ec) {
           return;
@@ -703,14 +703,14 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
         }
       }
     },
-    []([[maybe_unused]] NativeResourceFileProjectItem const& res_item) {
-      spdlog::error("Tried to drop onto a native resource file. Ignoring.");
+    []([[maybe_unused]] NativeAssetFileProjectItem const& asset_item) {
+      spdlog::error("Tried to drop onto a native asset file. Ignoring.");
     },
-    []([[maybe_unused]] ResourcePackageFileProjectItem const& res_pack_item) {
-      spdlog::error("Tried to drop onto a resource package file. Ignoring.");
+    []([[maybe_unused]] AssetPackageFileProjectItem const& asset_pack_item) {
+      spdlog::error("Tried to drop onto an asset package file. Ignoring.");
     },
-    []([[maybe_unused]] SubresourceProjectItem const& subres_item) {
-      spdlog::error("Tried to drop onto a subresource. Ignoring.");
+    []([[maybe_unused]] SubassetProjectItem const& subres_item) {
+      spdlog::error("Tried to drop onto a subasset. Ignoring.");
     }
   }, item);
 
@@ -721,16 +721,16 @@ auto ProjectWindow::DrawDropTarget(ProjectItem const& item) -> void {
 auto ProjectWindow::CanRename(ProjectItem const& item) const -> bool {
   return std::visit(Overloaded{
     [this]([[maybe_unused]] DirectoryProjectItem const& dir_item) {
-      // Don't allow renaming the root resource directory.
-      return !IsResourceRootDirectory(dir_item);
+      // Don't allow renaming the root asset directory.
+      return !IsAssetRootDirectory(dir_item);
     },
-    []([[maybe_unused]] NativeResourceFileProjectItem const& res_item) {
+    []([[maybe_unused]] NativeAssetFileProjectItem const& asset_item) {
       return true;
     },
-    []([[maybe_unused]] ResourcePackageFileProjectItem const& res_pack_item) {
+    []([[maybe_unused]] AssetPackageFileProjectItem const& asset_pack_item) {
       return true;
     },
-    []([[maybe_unused]] SubresourceProjectItem const& subres_item) {
+    []([[maybe_unused]] SubassetProjectItem const& subres_item) {
       return false;
     }
   }, item);
@@ -853,15 +853,15 @@ auto ProjectWindow::CommitRename() -> void {
         return CommitDirectoryRename(item, new_name);
       },
 
-      [&](NativeResourceFileProjectItem const& item) {
-        return CommitResourceFileRename(item.guid, new_name);
+      [&](NativeAssetFileProjectItem const& item) {
+        return CommitAssetFileRename(item.guid, new_name);
       },
 
-      [&](ResourcePackageFileProjectItem const& item) {
-        return CommitResourceFileRename(item.guid, new_name);
+      [&](AssetPackageFileProjectItem const& item) {
+        return CommitAssetFileRename(item.guid, new_name);
       },
 
-      [this]([[maybe_unused]] SubresourceProjectItem const& item) {
+      [this]([[maybe_unused]] SubassetProjectItem const& item) {
         return false;
       }
     }, rename_ctx_->target)
@@ -886,12 +886,12 @@ auto ProjectWindow::CommitDirectoryRename(DirectoryProjectItem const& item, std:
   }
 
   if (std::filesystem::exists(dst_path_abs)) {
-    rename_ctx_->error_msg = "A folder or resource with that name already exists.";
+    rename_ctx_->error_msg = "A folder or asset with that name already exists.";
     rename_ctx_->focus_requested = true;
     return false;
   }
 
-  if (!resource_db_->MoveDirectory(src_path_abs, dst_path_abs)) {
+  if (!asset_db_->MoveDirectory(src_path_abs, dst_path_abs)) {
     rename_ctx_->error_msg = "Failed to rename folder.";
     rename_ctx_->focus_requested = true;
     return false;
@@ -905,28 +905,28 @@ auto ProjectWindow::CommitDirectoryRename(DirectoryProjectItem const& item, std:
 }
 
 
-auto ProjectWindow::CommitResourceFileRename(Guid const& guid, std::string_view const new_name) -> bool {
-  auto info = resource_db_->GetFileInfo(guid);
+auto ProjectWindow::CommitAssetFileRename(Guid const& guid, std::string_view const new_name) -> bool {
+  auto info = asset_db_->GetFileInfo(guid);
 
   if (!info) {
-    rename_ctx_->error_msg = "Resource file no longer exists.";
+    rename_ctx_->error_msg = "Asset file no longer exists.";
     return false;
   }
 
-  auto const& old_path_res_dir_rel{info->src_path_res_dir_rel};
+  auto const& old_path_asset_dir_rel{info->src_path_asset_dir_rel};
 
   auto const new_filename{
-    std::string{new_name}.append(ToUntypedSv(old_path_res_dir_rel.extension().u8string()))
+    std::string{new_name}.append(ToUntypedSv(old_path_asset_dir_rel.extension().u8string()))
   };
 
-  auto const new_path_res_dir_rel{old_path_res_dir_rel.parent_path() / new_filename};
+  auto const new_path_asset_dir_rel{old_path_asset_dir_rel.parent_path() / new_filename};
 
-  if (old_path_res_dir_rel == new_path_res_dir_rel) {
+  if (old_path_asset_dir_rel == new_path_asset_dir_rel) {
     return true;
   }
 
   auto const dst_path_abs{
-    resource_db_->GetResourceDirectoryAbsolutePath() / new_path_res_dir_rel
+    asset_db_->GetAssetDirectoryAbsolutePath() / new_path_asset_dir_rel
   };
 
   if (std::filesystem::exists(dst_path_abs)) {
@@ -935,8 +935,8 @@ auto ProjectWindow::CommitResourceFileRename(Guid const& guid, std::string_view 
     return false;
   }
 
-  if (!resource_db_->MoveResourceFile(guid, new_path_res_dir_rel)) {
-    rename_ctx_->error_msg = "Failed to rename resource file.";
+  if (!asset_db_->MoveAssetFile(guid, new_path_asset_dir_rel)) {
+    rename_ctx_->error_msg = "Failed to rename asset file.";
     rename_ctx_->focus_requested = true;
     return false;
   }
@@ -945,29 +945,29 @@ auto ProjectWindow::CommitResourceFileRename(Guid const& guid, std::string_view 
 }
 
 
-auto ProjectWindow::IsResourceRootDirectory(DirectoryProjectItem const& item) const -> bool {
-  return IsResourceRootDirectory(item.path_abs);
+auto ProjectWindow::IsAssetRootDirectory(DirectoryProjectItem const& item) const -> bool {
+  return IsAssetRootDirectory(item.path_abs);
 }
 
 
-auto ProjectWindow::IsResourceRootDirectory(std::filesystem::path const& path_abs) const -> bool {
+auto ProjectWindow::IsAssetRootDirectory(std::filesystem::path const& path_abs) const -> bool {
   std::error_code ec;
-  return exists(path_abs) && equivalent(path_abs, resource_db_->GetResourceDirectoryAbsolutePath(), ec) && !ec;
+  return exists(path_abs) && equivalent(path_abs, asset_db_->GetAssetDirectoryAbsolutePath(), ec) && !ec;
 }
 
 
 auto ProjectWindow::CanDelete(ProjectItem const& item) const -> bool {
   return std::visit(Overloaded{
     [this](DirectoryProjectItem const& dir_item) {
-      return !IsResourceRootDirectory(dir_item);
+      return !IsAssetRootDirectory(dir_item);
     },
-    []([[maybe_unused]] NativeResourceFileProjectItem const& native_res_item) {
+    []([[maybe_unused]] NativeAssetFileProjectItem const& native_asset_item) {
       return true;
     },
-    []([[maybe_unused]] ResourcePackageFileProjectItem const& res_package_item) {
+    []([[maybe_unused]] AssetPackageFileProjectItem const& asset_package_item) {
       return true;
     },
-    []([[maybe_unused]] SubresourceProjectItem const& subres_item) {
+    []([[maybe_unused]] SubassetProjectItem const& subres_item) {
       return false;
     }
   }, item);
@@ -995,7 +995,7 @@ auto ProjectWindow::DrawImportSettingsDialog() -> void {
 
   auto& ctx{*import_settings_ctx_};
 
-  ImGui::SeparatorText(ToUntypedSv(ctx.src_path_res_dir_rel.filename().u8string()).data());
+  ImGui::SeparatorText(ToUntypedSv(ctx.src_path_asset_dir_rel.filename().u8string()).data());
 
   auto changed_this_frame{false};
   drawer_registry_->Draw(*ctx.importer, true, changed_this_frame);
@@ -1006,7 +1006,7 @@ auto ProjectWindow::DrawImportSettingsDialog() -> void {
   ImGui::BeginDisabled(!ctx.dirty);
 
   if (ImGui::Button("Apply and reimport")) {
-    if (resource_db_->ImportResourceFile(ctx.src_path_res_dir_rel, ctx.importer.get())) {
+    if (asset_db_->ImportAssetFile(ctx.src_path_asset_dir_rel, ctx.importer.get())) {
       import_settings_ctx_.reset();
       ImGui::CloseCurrentPopup();
       ImGui::EndDisabled();
@@ -1090,18 +1090,18 @@ auto ProjectWindow::ExecutePendingCommand() -> void {
       break;
     }
 
-    case ProjectCommandKind::kCopyResourceId: {
-      ExecuteCopyResourceId(command->target);
+    case ProjectCommandKind::kCopyAssetId: {
+      ExecuteCopyAssetId(command->target);
       break;
     }
 
-    case ProjectCommandKind::kUnloadResource: {
-      ExecuteUnloadResource(command->target);
+    case ProjectCommandKind::kUnloadAsset: {
+      ExecuteUnloadAsset(command->target);
       break;
     }
 
-    case ProjectCommandKind::kUnloadAllResourcesInFile: {
-      ExecuteUnloadAllResourcesInFile(command->target);
+    case ProjectCommandKind::kUnloadAllAssetsInFile: {
+      ExecuteUnloadAllAssetsInFile(command->target);
       break;
     }
 
@@ -1119,16 +1119,16 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
       [](DirectoryProjectItem const& folder) -> std::optional<std::filesystem::path> {
         return folder.path_abs;
       },
-      []([[maybe_unused]] ResourcePackageFileProjectItem const& file) -> std::optional<std::filesystem::path> {
-        spdlog::error("Import command received a resource package instead of a directory as target, ignoring.");
+      []([[maybe_unused]] AssetPackageFileProjectItem const& file) -> std::optional<std::filesystem::path> {
+        spdlog::error("Import command received an asset package instead of a directory as target, ignoring.");
         return std::nullopt;
       },
-      []([[maybe_unused]] NativeResourceFileProjectItem const& file) -> std::optional<std::filesystem::path> {
-        spdlog::error("Import command received a native resource instead of a directory as target, ignoring.");
+      []([[maybe_unused]] NativeAssetFileProjectItem const& file) -> std::optional<std::filesystem::path> {
+        spdlog::error("Import command received a native asset instead of a directory as target, ignoring.");
         return std::nullopt;
       },
-      []([[maybe_unused]] SubresourceProjectItem const& resource) -> std::optional<std::filesystem::path> {
-        spdlog::error("Import command received a subresource instead of a directory as target, ignoring.");
+      []([[maybe_unused]] SubassetProjectItem const& asset) -> std::optional<std::filesystem::path> {
+        spdlog::error("Import command received a subasset instead of a directory as target, ignoring.");
         return std::nullopt;
       }
     }, target)
@@ -1192,7 +1192,7 @@ auto ProjectWindow::ExecuteImport(ProjectItem const& target) const -> void {
       return;
     }
 
-    resource_db_->Refresh();
+    asset_db_->Refresh();
   }
 }
 
@@ -1217,7 +1217,7 @@ auto ProjectWindow::ExecuteCreateFolder(ProjectItem const& target) const -> void
     return;
   }
 
-  resource_db_->Refresh();
+  asset_db_->Refresh();
 }
 
 
@@ -1227,7 +1227,7 @@ auto ProjectWindow::ExecuteCreateMaterial(ProjectItem const& target) -> void {
       auto mtl{std::make_unique<Material>()};
       auto const mtl_path_abs{GenerateUniquePath(item.path_abs / "New Material.mtl")};
 
-      auto created_mtl{app_->GetResourceDatabase().SaveResourceToFile(std::move(mtl), mtl_path_abs)};
+      auto created_mtl{app_->GetAssetDatabase().SaveAssetToFile(std::move(mtl), mtl_path_abs)};
 
       if (!created_mtl) {
         auto const err_msg{
@@ -1238,18 +1238,18 @@ auto ProjectWindow::ExecuteCreateMaterial(ProjectItem const& target) -> void {
         return;
       }
 
-      SelectItem(NativeResourceFileProjectItem{
-        created_mtl->GetResId().GetGuid()
+      SelectItem(NativeAssetFileProjectItem{
+        created_mtl->GetAssetId().GetGuid()
       });
     },
-    []([[maybe_unused]] NativeResourceFileProjectItem const& item) {
-      spdlog::error("Tried to create material at a native resource file target. Ignoring.");
+    []([[maybe_unused]] NativeAssetFileProjectItem const& item) {
+      spdlog::error("Tried to create material at a native asset file target. Ignoring.");
     },
-    []([[maybe_unused]] ResourcePackageFileProjectItem const& item) {
-      spdlog::error("Tried to create material at a resource package file target. Ignoring.");
+    []([[maybe_unused]] AssetPackageFileProjectItem const& item) {
+      spdlog::error("Tried to create material at an asset package file target. Ignoring.");
     },
-    []([[maybe_unused]] SubresourceProjectItem const& item) {
-      spdlog::error("Tried to create material and a subresource target. Ignoring.");
+    []([[maybe_unused]] SubassetProjectItem const& item) {
+      spdlog::error("Tried to create material and a subasset target. Ignoring.");
     }
   }, target);
 }
@@ -1261,7 +1261,7 @@ auto ProjectWindow::ExecuteCreateScene(ProjectItem const& target) -> void {
       auto scene{std::make_unique<Scene>()};
       auto const scene_path_abs{GenerateUniquePath(item.path_abs / "New Scene.scene")};
 
-      auto created_scene{app_->GetResourceDatabase().SaveResourceToFile(std::move(scene), scene_path_abs)};
+      auto created_scene{app_->GetAssetDatabase().SaveAssetToFile(std::move(scene), scene_path_abs)};
 
       if (!created_scene) {
         auto const err_msg{
@@ -1272,18 +1272,18 @@ auto ProjectWindow::ExecuteCreateScene(ProjectItem const& target) -> void {
         return;
       }
 
-      SelectItem(NativeResourceFileProjectItem{
-        created_scene->GetResId().GetGuid()
+      SelectItem(NativeAssetFileProjectItem{
+        created_scene->GetAssetId().GetGuid()
       });
     },
-    []([[maybe_unused]] NativeResourceFileProjectItem const& item) {
-      spdlog::error("Tried to create scene at a native resource file target. Ignoring.");
+    []([[maybe_unused]] NativeAssetFileProjectItem const& item) {
+      spdlog::error("Tried to create scene at a native asset file target. Ignoring.");
     },
-    []([[maybe_unused]] ResourcePackageFileProjectItem const& item) {
-      spdlog::error("Tried to create scene at a resource package file target. Ignoring.");
+    []([[maybe_unused]] AssetPackageFileProjectItem const& item) {
+      spdlog::error("Tried to create scene at an asset package file target. Ignoring.");
     },
-    []([[maybe_unused]] SubresourceProjectItem const& item) {
-      spdlog::error("Tried to create scene and a subresource target. Ignoring.");
+    []([[maybe_unused]] SubassetProjectItem const& item) {
+      spdlog::error("Tried to create scene and a subasset target. Ignoring.");
     }
   }, target);
 }
@@ -1304,23 +1304,23 @@ auto ProjectWindow::BeginRename(ProjectItem const& target) -> void {
         return item.path_abs.filename().string();
       },
 
-      [this](NativeResourceFileProjectItem const& item) -> std::optional<std::string> {
-        auto const info{resource_db_->GetFileInfo(item.guid)};
+      [this](NativeAssetFileProjectItem const& item) -> std::optional<std::string> {
+        auto const info{asset_db_->GetFileInfo(item.guid)};
         if (!info) {
           return std::nullopt;
         }
-        return info->src_path_res_dir_rel.stem().string();
+        return info->src_path_asset_dir_rel.stem().string();
       },
 
-      [this](ResourcePackageFileProjectItem const& item) -> std::optional<std::string> {
-        auto const info{resource_db_->GetFileInfo(item.guid)};
+      [this](AssetPackageFileProjectItem const& item) -> std::optional<std::string> {
+        auto const info{asset_db_->GetFileInfo(item.guid)};
         if (!info) {
           return std::nullopt;
         }
-        return info->src_path_res_dir_rel.stem().string();
+        return info->src_path_asset_dir_rel.stem().string();
       },
 
-      [](SubresourceProjectItem const&) -> std::optional<std::string> {
+      [](SubassetProjectItem const&) -> std::optional<std::string> {
         return std::nullopt;
       }
     }, target)
@@ -1344,28 +1344,28 @@ auto ProjectWindow::ExecuteDelete(ProjectItem const& target) -> void {
     [this](DirectoryProjectItem const& item) {
       ExecuteDeleteDirectory(item);
     },
-    [this](NativeResourceFileProjectItem const& item) {
-      ExecuteDeleteResourceFile(item.guid);
+    [this](NativeAssetFileProjectItem const& item) {
+      ExecuteDeleteAssetFile(item.guid);
     },
-    [this](ResourcePackageFileProjectItem const& item) {
-      ExecuteDeleteResourceFile(item.guid);
+    [this](AssetPackageFileProjectItem const& item) {
+      ExecuteDeleteAssetFile(item.guid);
     },
-    []([[maybe_unused]] SubresourceProjectItem const& item) {
-      spdlog::error("Tried deleting a subresource. Ignoring.");
+    []([[maybe_unused]] SubassetProjectItem const& item) {
+      spdlog::error("Tried deleting a subasset. Ignoring.");
     }
   }, target);
 }
 
 
 auto ProjectWindow::ExecuteDeleteDirectory(DirectoryProjectItem const& target) -> void {
-  if (IsResourceRootDirectory(target)) {
-    auto constexpr err_msg{"Tried deleting resource root directory. Ignoring."};
+  if (IsAssetRootDirectory(target)) {
+    auto constexpr err_msg{"Tried deleting asset root directory. Ignoring."};
     spdlog::error(err_msg);
     DisplayError(err_msg);
     return;
   }
 
-  if (!app_->GetResourceDatabase().DeleteDirectory(target.path_abs)) {
+  if (!app_->GetAssetDatabase().DeleteDirectory(target.path_abs)) {
     auto const err_msg{std::format("Failed to delete folder: {}", ToUntypedSv(target.path_abs.u8string()))};
     spdlog::error(err_msg);
     DisplayError(err_msg);
@@ -1376,13 +1376,13 @@ auto ProjectWindow::ExecuteDeleteDirectory(DirectoryProjectItem const& target) -
 }
 
 
-auto ProjectWindow::ExecuteDeleteResourceFile(Guid const& target) -> void {
-  if (!app_->GetResourceDatabase().GetFileInfo(target)) {
-    spdlog::error("Tried deleting resource file with GUID {} that does not exist. Ignoring.", target.ToString());
+auto ProjectWindow::ExecuteDeleteAssetFile(Guid const& target) -> void {
+  if (!app_->GetAssetDatabase().GetFileInfo(target)) {
+    spdlog::error("Tried deleting asset file with GUID {} that does not exist. Ignoring.", target.ToString());
     return;
   }
 
-  app_->GetResourceDatabase().DeleteResourceFile(target);
+  app_->GetAssetDatabase().DeleteAssetFile(target);
   ClearSelection();
 }
 
@@ -1395,32 +1395,32 @@ auto ProjectWindow::ExecuteShowInExplorer(ProjectItem const& target) const -> vo
         DisplayError("Failed to open File Explorer.");
       }
     },
-    [this](NativeResourceFileProjectItem const& item) {
-      auto const path_res_dir_rel{resource_db_->GuidToPath(item.guid)};
-      if (path_res_dir_rel.empty()) {
-        spdlog::error("Tried showing a native resource file in explorer, but failed to get its path.");
+    [this](NativeAssetFileProjectItem const& item) {
+      auto const path_asset_dir_rel{asset_db_->GuidToPath(item.guid)};
+      if (path_asset_dir_rel.empty()) {
+        spdlog::error("Tried showing a native asset file in explorer, but failed to get its path.");
         DisplayError("Failed to get file path.");
         return;
       }
-      if (!ShowInFileExplorer(resource_db_->GetResourceDirectoryAbsolutePath() / path_res_dir_rel)) {
-        spdlog::error("Failed to show native resource file in explorer.");
+      if (!ShowInFileExplorer(asset_db_->GetAssetDirectoryAbsolutePath() / path_asset_dir_rel)) {
+        spdlog::error("Failed to show native asset file in explorer.");
         DisplayError("Failed to open File Explorer.");
       }
     },
-    [this](ResourcePackageFileProjectItem const& item) {
-      auto const path_res_dir_rel{resource_db_->GuidToPath(item.guid)};
-      if (path_res_dir_rel.empty()) {
-        spdlog::error("Tried showing a resource package file in explorer, but failed to get its path.");
+    [this](AssetPackageFileProjectItem const& item) {
+      auto const path_asset_dir_rel{asset_db_->GuidToPath(item.guid)};
+      if (path_asset_dir_rel.empty()) {
+        spdlog::error("Tried showing an asset package file in explorer, but failed to get its path.");
         DisplayError("Failed to get file path.");
         return;
       }
-      if (!ShowInFileExplorer(resource_db_->GetResourceDirectoryAbsolutePath() / path_res_dir_rel)) {
-        spdlog::error("Failed to show resource package file in explorer.");
+      if (!ShowInFileExplorer(asset_db_->GetAssetDirectoryAbsolutePath() / path_asset_dir_rel)) {
+        spdlog::error("Failed to show asset package file in explorer.");
         DisplayError("Failed to open File Explorer.");
       }
     },
-    []([[maybe_unused]] SubresourceProjectItem const& item) {
-      spdlog::error("Tried showing a subresource in explorer. Ignoring.");
+    []([[maybe_unused]] SubassetProjectItem const& item) {
+      spdlog::error("Tried showing a subasset in explorer. Ignoring.");
     }
   }, target);
 }
@@ -1431,11 +1431,11 @@ auto ProjectWindow::ExecuteReimport(ProjectItem const& target) const -> void {
     []([[maybe_unused]] DirectoryProjectItem const& item) {
       spdlog::error("Tried reimporting a folder. Ignoring.");
     },
-    []([[maybe_unused]] NativeResourceFileProjectItem const& item) {
-      spdlog::error("Tried reimporting a native resource. Ignoring.");
+    []([[maybe_unused]] NativeAssetFileProjectItem const& item) {
+      spdlog::error("Tried reimporting a native asset. Ignoring.");
     },
-    [this](ResourcePackageFileProjectItem const& item) {
-      auto const file_info{resource_db_->GetFileInfo(item.guid)};
+    [this](AssetPackageFileProjectItem const& item) {
+      auto const file_info{asset_db_->GetFileInfo(item.guid)};
 
       if (!file_info) {
         spdlog::error("Tried to reimport but failed to get file info.");
@@ -1443,8 +1443,8 @@ auto ProjectWindow::ExecuteReimport(ProjectItem const& target) const -> void {
         return;
       }
 
-      auto const src_path_abs{resource_db_->GetResourceDirectoryAbsolutePath() / file_info->src_path_res_dir_rel};
-      auto const importer{ResourceDB::GetImporterForResourceFile(src_path_abs)};
+      auto const src_path_abs{asset_db_->GetAssetDirectoryAbsolutePath() / file_info->src_path_asset_dir_rel};
+      auto const importer{AssetDB::GetImporterForAssetFile(src_path_abs)};
 
       if (!importer) {
         spdlog::error("Tried to reimport but failed to get importer.");
@@ -1452,14 +1452,14 @@ auto ProjectWindow::ExecuteReimport(ProjectItem const& target) const -> void {
         return;
       }
 
-      if (!resource_db_->ImportResourceFile(file_info->src_path_res_dir_rel, importer.get())) {
+      if (!asset_db_->ImportAssetFile(file_info->src_path_asset_dir_rel, importer.get())) {
         auto constexpr err_msg{"Failed to reimport."};
         spdlog::error(err_msg);
         DisplayError(err_msg);
       }
     },
-    []([[maybe_unused]] SubresourceProjectItem const& item) {
-      spdlog::error("Tried reimporting a subresource. Ignoring.");
+    []([[maybe_unused]] SubassetProjectItem const& item) {
+      spdlog::error("Tried reimporting a subasset. Ignoring.");
     }
   }, target);
 }
@@ -1471,12 +1471,12 @@ auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {
       spdlog::error("Tried opening import settings for a folder. Ignoring.");
     },
 
-    []([[maybe_unused]] NativeResourceFileProjectItem const&) {
-      spdlog::error("Tried opening import settings for a native resource. Ignoring.");
+    []([[maybe_unused]] NativeAssetFileProjectItem const&) {
+      spdlog::error("Tried opening import settings for a native asset. Ignoring.");
     },
 
-    [this](ResourcePackageFileProjectItem const& item) {
-      auto const file_info{resource_db_->GetFileInfo(item.guid)};
+    [this](AssetPackageFileProjectItem const& item) {
+      auto const file_info{asset_db_->GetFileInfo(item.guid)};
 
       if (!file_info) {
         spdlog::error("Tried opening import settings but failed to get file info.");
@@ -1484,8 +1484,8 @@ auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {
         return;
       }
 
-      auto const src_path_abs{resource_db_->GetResourceDirectoryAbsolutePath() / file_info->src_path_res_dir_rel};
-      auto importer{ResourceDB::GetImporterForResourceFile(src_path_abs)};
+      auto const src_path_abs{asset_db_->GetAssetDirectoryAbsolutePath() / file_info->src_path_asset_dir_rel};
+      auto importer{AssetDB::GetImporterForAssetFile(src_path_abs)};
 
       if (!importer) {
         spdlog::error("Tried opening import settings but failed to get importer.");
@@ -1494,7 +1494,7 @@ auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {
       }
 
       import_settings_ctx_ = ImportSettingsContext{
-        .src_path_res_dir_rel = file_info->src_path_res_dir_rel,
+        .src_path_asset_dir_rel = file_info->src_path_asset_dir_rel,
         .importer = std::move(importer),
         .dirty = false
       };
@@ -1502,8 +1502,8 @@ auto ProjectWindow::OpenImportSettings(ProjectItem const& target) -> void {
       open_import_settings_dialog_ = true;
     },
 
-    []([[maybe_unused]] SubresourceProjectItem const&) {
-      spdlog::error("Tried opening import settings for a subresource. Ignoring.");
+    []([[maybe_unused]] SubassetProjectItem const&) {
+      spdlog::error("Tried opening import settings for a subasset. Ignoring.");
     }
   }, target);
 }
@@ -1514,87 +1514,87 @@ auto ProjectWindow::ExecuteCopyGuid(ProjectItem const& target) const -> void {
     []([[maybe_unused]] DirectoryProjectItem const& item) {
       spdlog::error("Tried copying GUID of a directory. Ignoring.");
     },
-    [this](NativeResourceFileProjectItem const& item) {
+    [this](NativeAssetFileProjectItem const& item) {
       if (!CopyToClipboard(item.guid.ToString())) {
         spdlog::error("Failed to copy GUID to clipboard.");
       }
     },
-    [this](ResourcePackageFileProjectItem const& item) {
+    [this](AssetPackageFileProjectItem const& item) {
       if (!CopyToClipboard(item.guid.ToString())) {
         spdlog::error("Failed to copy GUID to clipboard.");
       }
     },
-    []([[maybe_unused]] SubresourceProjectItem const& item) {
-      spdlog::error("Tried copying GUID of a subresource. Ignoring.");
+    []([[maybe_unused]] SubassetProjectItem const& item) {
+      spdlog::error("Tried copying GUID of a subasset. Ignoring.");
     }
   }, target);
 }
 
 
-auto ProjectWindow::ExecuteCopyResourceId(ProjectItem const& target) const -> void {
+auto ProjectWindow::ExecuteCopyAssetId(ProjectItem const& target) const -> void {
   std::visit(Overloaded{
     [this]([[maybe_unused]] DirectoryProjectItem const& item) {
-      spdlog::error("Tried copying resource ID of a directory. Ignoring.");
+      spdlog::error("Tried copying asset ID of a directory. Ignoring.");
     },
-    [this](NativeResourceFileProjectItem const& item) {
-      if (!CopyToClipboard(ResourceId{item.guid, 0}.ToString())) {
-        spdlog::error("Failed to copy resource ID to clipboard.");
+    [this](NativeAssetFileProjectItem const& item) {
+      if (!CopyToClipboard(AssetId{item.guid, 0}.ToString())) {
+        spdlog::error("Failed to copy asset ID to clipboard.");
       }
     },
-    [this]([[maybe_unused]] ResourcePackageFileProjectItem const& item) {
-      spdlog::error("Tried copying resource ID of a resource package file. Ignoring.");
+    [this]([[maybe_unused]] AssetPackageFileProjectItem const& item) {
+      spdlog::error("Tried copying asset ID of an asset package file. Ignoring.");
     },
-    [this](SubresourceProjectItem const& item) {
+    [this](SubassetProjectItem const& item) {
       if (!CopyToClipboard(item.id.ToString())) {
-        spdlog::error("Failed to copy resource ID to clipboard.");
+        spdlog::error("Failed to copy asset ID to clipboard.");
       }
     }
   }, target);
 }
 
 
-auto ProjectWindow::ExecuteUnloadResource(ProjectItem const& target) -> void {
+auto ProjectWindow::ExecuteUnloadAsset(ProjectItem const& target) -> void {
   std::visit(Overloaded{
     []([[maybe_unused]] DirectoryProjectItem const& item) {
       spdlog::error("Tried unloading a directory. Ignoring.");
     },
-    [this](NativeResourceFileProjectItem const& item) {
-      ExecuteUnloadResourceById(ResourceId{item.guid, 0});
+    [this](NativeAssetFileProjectItem const& item) {
+      ExecuteUnloadAssetById(AssetId{item.guid, 0});
     },
-    [this]([[maybe_unused]] ResourcePackageFileProjectItem const& item) {
-      spdlog::error("Tried unloading a resource package file. Ignoring.");
+    [this]([[maybe_unused]] AssetPackageFileProjectItem const& item) {
+      spdlog::error("Tried unloading an asset package file. Ignoring.");
     },
-    [this](SubresourceProjectItem const& item) {
-      ExecuteUnloadResourceById(item.id);
+    [this](SubassetProjectItem const& item) {
+      ExecuteUnloadAssetById(item.id);
     }
   }, target);
 }
 
 
-auto ProjectWindow::ExecuteUnloadAllResourcesInFile(ProjectItem const& target) -> void {
+auto ProjectWindow::ExecuteUnloadAllAssetsInFile(ProjectItem const& target) -> void {
   std::visit(Overloaded{
     [this]([[maybe_unused]] DirectoryProjectItem const& item) {
-      spdlog::error("Tried unloading all resources of a directory. Ignoring.");
+      spdlog::error("Tried unloading all assets of a directory. Ignoring.");
     },
-    [this]([[maybe_unused]] NativeResourceFileProjectItem const& item) {
-      spdlog::error("Tried unloading all resources of a native resource file. Ignoring.");
+    [this]([[maybe_unused]] NativeAssetFileProjectItem const& item) {
+      spdlog::error("Tried unloading all assets of a native asset file. Ignoring.");
     },
-    [this](ResourcePackageFileProjectItem const& item) {
-      std::vector<ObserverPtr<ResourceDB::ResourceInfo const>> subresources;
-      resource_db_->GetResourcesInFile(item.guid, subresources);
-      for (auto const& subresource : subresources) {
-        ExecuteUnloadResourceById(subresource->id);
+    [this](AssetPackageFileProjectItem const& item) {
+      std::vector<ObserverPtr<AssetDB::AssetInfo const>> subassets;
+      asset_db_->GetAssetsInFile(item.guid, subassets);
+      for (auto const& subasset : subassets) {
+        ExecuteUnloadAssetById(subasset->id);
       }
     },
-    [this]([[maybe_unused]] SubresourceProjectItem const& item) {
-      spdlog::error("Tried unloading all resources in a subresource. Ignoring.");
+    [this]([[maybe_unused]] SubassetProjectItem const& item) {
+      spdlog::error("Tried unloading all assets in a subasset. Ignoring.");
     }
   }, target);
 }
 
 
-auto ProjectWindow::ExecuteUnloadResourceById(ResourceId const& target) -> void {
-  App::Instance().GetResourceManager().Unload(target);
+auto ProjectWindow::ExecuteUnloadAssetById(AssetId const& target) -> void {
+  App::Instance().GetAssetManager().Unload(target);
   ClearSelection();
 }
 
@@ -1635,48 +1635,48 @@ auto ProjectWindow::ExecuteMoveToFolder(ProjectItem const& target) -> void {
           return;
         }
 
-        if (!resource_db_->MoveDirectory(move_to_folder_ctx->src_abs, dst_abs)) {
+        if (!asset_db_->MoveDirectory(move_to_folder_ctx->src_abs, dst_abs)) {
           spdlog::error("Failed to move directory {} to {}.", ToUntypedSv(move_to_folder_ctx->src_abs.u8string()),
             ToUntypedSv(dst_abs.u8string()));
           DisplayError("Failed to move folder.");
         }
       } else {
-        if (!IsSubpath(move_to_folder_ctx->src_abs, resource_db_->GetResourceDirectoryAbsolutePath())) {
-          spdlog::error("Tried moving a file that is not in resource directory. Ignoring.");
+        if (!IsSubpath(move_to_folder_ctx->src_abs, asset_db_->GetAssetDirectoryAbsolutePath())) {
+          spdlog::error("Tried moving a file that is not in asset directory. Ignoring.");
           return;
         }
 
-        auto const src_res_dir_rel{
-          relative(move_to_folder_ctx->src_abs, resource_db_->GetResourceDirectoryAbsolutePath())
+        auto const src_asset_dir_rel{
+          relative(move_to_folder_ctx->src_abs, asset_db_->GetAssetDirectoryAbsolutePath())
         };
 
-        auto const dst_res_dir_rel{
-          relative(dst_abs, resource_db_->GetResourceDirectoryAbsolutePath())
+        auto const dst_asset_dir_rel{
+          relative(dst_abs, asset_db_->GetAssetDirectoryAbsolutePath())
         };
 
-        auto const guid{resource_db_->PathToGuid(src_res_dir_rel)};
+        auto const guid{asset_db_->PathToGuid(src_asset_dir_rel)};
 
         if (!guid.IsValid()) {
-          spdlog::error("Tried moving a file that is not in resource database. Ignoring.");
+          spdlog::error("Tried moving a file that is not in asset database. Ignoring.");
           return;
         }
 
-        if (!resource_db_->MoveResourceFile(guid, dst_res_dir_rel)) {
-          spdlog::error("Failed to move resource file {} to {}.",
+        if (!asset_db_->MoveAssetFile(guid, dst_asset_dir_rel)) {
+          spdlog::error("Failed to move asset file {} to {}.",
             ToUntypedSv(move_to_folder_ctx->src_abs.u8string()),
             ToUntypedSv(dst_abs.u8string()));
-          DisplayError("Failed to move resource file.");
+          DisplayError("Failed to move asset file.");
         }
       }
     },
-    []([[maybe_unused]] NativeResourceFileProjectItem const& item) {
-      spdlog::error("Tried moving into a native resource file. Ignoring.");
+    []([[maybe_unused]] NativeAssetFileProjectItem const& item) {
+      spdlog::error("Tried moving into a native asset file. Ignoring.");
     },
-    []([[maybe_unused]] ResourcePackageFileProjectItem const& item) {
-      spdlog::error("Tried moving into a resource package file. Ignoring.");
+    []([[maybe_unused]] AssetPackageFileProjectItem const& item) {
+      spdlog::error("Tried moving into an asset package file. Ignoring.");
     },
-    []([[maybe_unused]] SubresourceProjectItem const& item) {
-      spdlog::error("Tried moving into a subresource. Ignoring.");
+    []([[maybe_unused]] SubassetProjectItem const& item) {
+      spdlog::error("Tried moving into a subasset. Ignoring.");
     }
   }, target);
 }

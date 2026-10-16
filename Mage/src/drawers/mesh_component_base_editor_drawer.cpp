@@ -21,7 +21,7 @@ auto MeshComponentBaseEditorDrawer::Draw(
   if (auto mesh{obj.GetMesh().Get()}; ImGuiDisabled(!allow_edit, [&] {
     return meshPicker.Draw(mesh, true);
   })) {
-    obj.SetMesh(MakeResourceRef(mesh.Get()));
+    obj.SetMesh(MakeAssetRef(mesh.Get()));
   }
 
   if (auto const mesh{obj.GetMesh()}) {
@@ -46,7 +46,7 @@ auto MeshComponentBaseEditorDrawer::Draw(
       if (auto mtl{mtls[i].Get()}; ImGuiDisabled(!allow_edit, [&] {
         return mtlPickers[i].Draw(mtl, true);
       })) {
-        obj.SetMaterial(i, MakeResourceRef(mtl.Get()));
+        obj.SetMaterial(i, MakeAssetRef(mtl.Get()));
       }
     }
   }

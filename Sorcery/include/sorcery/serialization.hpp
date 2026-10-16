@@ -21,7 +21,7 @@
 #include "Math.hpp"
 #include "Object.hpp"
 #include "reflection.hpp"
-#include "resource_reference.hpp"
+#include "asset_reference.hpp"
 
 
 namespace YAML {

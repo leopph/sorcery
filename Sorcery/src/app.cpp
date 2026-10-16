@@ -17,7 +17,7 @@
 #include "sorcery/host/object_registry.hpp"
 #include "sorcery/host/platform.hpp"
 #include "sorcery/host/window.hpp"
-#include "sorcery/host/assets/resource_manager.hpp"
+#include "sorcery/host/assets/asset_manager.hpp"
 #include "sorcery/host/rendering/render_scene.hpp"
 #include "sorcery/host/rendering/texture_resolver.hpp"
 
@@ -65,7 +65,7 @@ struct App::Data {
   rendering::SceneRenderer scene_renderer{
     window, graphics_device, rt_pool, render_resource_registry, render_instance_registry, texture_resolver, render_scene
   };
-  ResourceManager resource_manager{job_system};
+  AssetManager asset_manager{job_system};
   ObserverPtr<Job> render_job;
 };
 
@@ -78,7 +78,7 @@ App::App(CommandLineArgs const& args) :
 
   instance_.Reset(this);
 
-  data_->resource_manager.CreateDefaultResources();
+  data_->asset_manager.CreateDefaultAssets();
 
   data_->window.OnWindowSize.add_listener([this](Extent2D<unsigned>) {
     window_resized_ = true;
@@ -129,8 +129,8 @@ auto App::GetObjectRegistry() -> ObjectRegistry& {
 }
 
 
-auto App::GetResourceManager() -> ResourceManager& {
-  return data_->resource_manager;
+auto App::GetAssetManager() -> AssetManager& {
+  return data_->asset_manager;
 }
 
 

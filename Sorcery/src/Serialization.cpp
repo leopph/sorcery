@@ -2,10 +2,10 @@
 
 #include <cassert>
 
-#include "sorcery/resource_reference.hpp"
+#include "sorcery/asset_reference.hpp"
 #include "sorcery/host/app.hpp"
-#include "sorcery/host/assets/resource_manager.hpp"
-#include "sorcery/resources/Resource.hpp"
+#include "sorcery/host/assets/asset_manager.hpp"
+#include "sorcery/assets/Asset.hpp"
 
 
 static_assert(
@@ -153,17 +153,17 @@ auto ReflectionSerializeToYaml(
     // std::remove_cv<T>
     auto const raw_type{ptr_type.get_raw_type()};
 
-    // std::derived_from<T, Resource>
-    if (raw_type.is_derived_from(rttr::type::get<Resource>())) {
+    // std::derived_from<T, Asset>
+    if (raw_type.is_derived_from(rttr::type::get<Asset>())) {
       // if the original type is a wrapper, we extract the pointer here
-      auto const res{(variant_type.is_pointer() ? v : v.extract_wrapped_value()).get_value<Resource*>()};
-      auto const res_id{res ? res->GetResId() : ResourceId::Invalid()};
+      auto const asset{(variant_type.is_pointer() ? v : v.extract_wrapped_value()).get_value<Asset*>()};
+      auto const asset_id{asset ? asset->GetAssetId() : AssetId::Invalid()};
 
-      switch (ctx.resource_ref_serialization) {
-        case ResourceRefSerialization::kGlobal:
-          return SerializeGlobalResourceId(res_id);
-        case ResourceRefSerialization::kLocal:
-          return SerializeLocalResourceId(res_id.GetIdxInFile());
+      switch (ctx.asset_ref_serialization) {
+        case AssetRefSerialization::kGlobal:
+          return SerializeGlobalAssetId(asset_id);
+        case AssetRefSerialization::kLocal:
+          return SerializeLocalAssetId(asset_id.GetIdxInFile());
       }
     }
   }
@@ -387,21 +387,21 @@ auto ReflectionDeserializeFromYaml(
     // std::remove_cv<T>
     auto const raw_type{ptr_type.get_raw_type()};
 
-    // std::derived_from<T, Resource>
-    if (raw_type.is_derived_from(rttr::type::get<Resource>())) {
-      auto const res_id{DeserializeResourceId(node, ctx)};
+    // std::derived_from<T, Asset>
+    if (raw_type.is_derived_from(rttr::type::get<Asset>())) {
+      auto const asset_id{DeserializeAssetId(node, ctx)};
 
-      if (res_id->IsValid()) {
-        auto const res = App::Instance().GetResourceManager().Resolve(*res_id);
+      if (asset_id->IsValid()) {
+        auto const asset = App::Instance().GetAssetManager().Resolve(*asset_id);
 
-        if (res) {
-          rttr::variant res_var{res};
+        if (asset) {
+          rttr::variant asset_var{asset};
 
-          // dynamic_cast<T*>(res)
-          if (res_var.convert(ptr_type)) {
+          // dynamic_cast<T*>(asset)
+          if (asset_var.convert(ptr_type)) {
             // if the original type is a wrapper, we wrap the pointer here
-            if (res_var.convert(variant_type)) {
-              v = res_var;
+            if (asset_var.convert(variant_type)) {
+              v = asset_var;
             }
           }
         }

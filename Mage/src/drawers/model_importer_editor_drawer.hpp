@@ -1,7 +1,7 @@
 #pragma once
 
 #include "editor_drawer.h"
-#include "../ResourceImporters/model_importer.hpp"
+#include "../AssetImporters/model_importer.hpp"
 
 
 namespace sorcery::mage {

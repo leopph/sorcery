@@ -7,7 +7,7 @@
 
 namespace sorcery::mage {
 auto MeshEditorDrawer::Draw(EditorDrawerContext const& ctx, Mesh& mesh, bool const allow_edit, bool& changed) -> void {
-  ctx.registry->DrawAs<Resource>(mesh, allow_edit, changed);
+  ctx.registry->DrawAs<Asset>(mesh, allow_edit, changed);
 
   ImGui::Text("%s: %d", "Vertex Count", mesh.GetVertexCount());
   ImGui::Text("%s: %d", "Triangle Count", mesh.GetPrimitiveCount());

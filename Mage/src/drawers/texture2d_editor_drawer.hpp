@@ -1,7 +1,7 @@
 #pragma once
 
 #include "editor_drawer.h"
-#include "sorcery/resources/Texture2D.hpp"
+#include "sorcery/assets/Texture2D.hpp"
 
 
 namespace sorcery::mage {
