@@ -52,6 +52,8 @@
     <TargetName>Sorcery</TargetName>
     <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)vcpkg_installed\;$(ProjectDir)..\deps\work-stealing-queue\</ExternalIncludePath>
     <PublicIncludeDirectories>$(ProjectDir)include</PublicIncludeDirectories>
+    <CopyLocalProjectReference>true</CopyLocalProjectReference>
+    <CopyLocalDebugSymbols>true</CopyLocalDebugSymbols>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)..\bin\$(Configuration)\</OutDir>
@@ -59,6 +61,8 @@
     <TargetName>Sorcery</TargetName>
     <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)vcpkg_installed\;$(ProjectDir)..\deps\work-stealing-queue\</ExternalIncludePath>
     <PublicIncludeDirectories>$(ProjectDir)include</PublicIncludeDirectories>
+    <CopyLocalProjectReference>true</CopyLocalProjectReference>
+    <CopyLocalDebugSymbols>true</CopyLocalDebugSymbols>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
