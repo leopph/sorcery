@@ -19,11 +19,11 @@
 #include "rendering/view_context.hpp"
 #include "rendering/shaders/shader_interop.h"
 #include "rendering/shaders/shadow_filtering_modes.h"
+#include "sorcery/assets/Scene.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
 #include "sorcery/host/rendering/render_scene.hpp"
 #include "sorcery/host/rendering/texture_resolver.hpp"
-#include "sorcery/assets/Scene.hpp"
 #include "sorcery/scene/Entity.hpp"
 #include "sorcery/scene/SkinnedMeshComponent.hpp"
 #include "sorcery/scene/StaticMeshComponent.hpp"
@@ -1366,7 +1366,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       for (auto const& instance : instances) {
         auto& per_inst_cb{AcquirePerInstanceConstantBuffer(frame_idx)};
         SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, cam_view.view_mtx, cam_view.proj_mtx,
-          instance.prev_local_to_world_mtx, instance.max_abs_scaling);
+          instance.prev_local_to_world_mtx, instance.max_abs_scaling,
+          geom_batch.skinning_data_local_idx != frame_packet_invalid_idx);
         cam_cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(GBufferDrawParams, per_inst_cb_idx),
           *per_inst_cb.GetBufferView());
 
@@ -2859,14 +2860,23 @@ auto SceneRenderer::SetPerViewConstants(
 }
 
 
-auto SceneRenderer::SetPerInstanceConstants(MappedConstantBuffer<ShaderPerInstanceConstants>& cb,
-                                            Matrix4 const& model_mtx,
-                                            Matrix4 const& view_mtx, Matrix4 const& proj_mtx,
-                                            Matrix4 const& prev_model_mtx, float const max_abs_scaling) -> void {
+auto SceneRenderer::SetPerInstanceConstants(
+  MappedConstantBuffer<ShaderPerInstanceConstants>& cb,
+  Matrix4 const& model_mtx,
+  Matrix4 const& view_mtx,
+  Matrix4 const& proj_mtx,
+  Matrix4 const& prev_model_mtx,
+  float const max_abs_scaling,
+  bool const disable_meshlet_culling
+) -> void {
   cb.GetData() = ShaderPerInstanceConstants{
-    .modelMtx = model_mtx, .invTranspModelMtx = model_mtx.Inverse().Transpose(), .model_view_mtx = model_mtx * view_mtx,
-    .model_view_proj_mtx = model_mtx * view_mtx * proj_mtx, .prev_model_mtx = prev_model_mtx,
-    .max_abs_scaling = max_abs_scaling
+    .modelMtx = model_mtx,
+    .invTranspModelMtx = model_mtx.Inverse().Transpose(),
+    .model_view_mtx = model_mtx * view_mtx,
+    .model_view_proj_mtx = model_mtx * view_mtx * proj_mtx,
+    .prev_model_mtx = prev_model_mtx,
+    .max_abs_scaling = max_abs_scaling,
+    .disable_meshlet_culling = disable_meshlet_culling
   };
 }
 
@@ -3186,7 +3196,7 @@ auto SceneRenderer::RecordDepthOnlyPass(ExtractedFrameData const& frame_packet, 
     for (auto const& instance : instances) {
       auto& per_inst_cb{AcquirePerInstanceConstantBuffer(frame.GetIndex())};
       SetPerInstanceConstants(per_inst_cb, instance.local_to_world_mtx, view.view_mtx, view.proj_mtx, {},
-        instance.max_abs_scaling);
+        instance.max_abs_scaling, geom_batch.skinning_data_local_idx != frame_packet_invalid_idx);
       cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_inst_cb_idx),
         *per_inst_cb.GetBufferView());
 

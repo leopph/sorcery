@@ -124,8 +124,9 @@ void AmpShaderCore(
     uint const meshlet_idx = dtid + dispatch_meshlet_offset;
 
     // Do visibility testing for this thread
-    visible = IsMeshletVisible(cull_data[meshlet_idx], per_inst_cb.modelMtx, per_view_cb.frustum_planes_ws,
-      per_inst_cb.max_abs_scaling, per_view_cb.viewPos);
+    // TODO meshlet culling support for skinned meshes
+    visible = per_inst_cb.disable_meshlet_culling || IsMeshletVisible(cull_data[meshlet_idx], per_inst_cb.modelMtx,
+                per_view_cb.frustum_planes_ws, per_inst_cb.max_abs_scaling, per_view_cb.viewPos);
   }
 
   // Compact visible meshlets into the export payload array

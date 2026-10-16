@@ -174,6 +174,7 @@ struct ShaderPerInstanceConstants {
   row_major float4x4 prev_model_mtx;
 
   float max_abs_scaling;
+  BOOL disable_meshlet_culling;
 };
 
 

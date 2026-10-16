@@ -633,7 +633,7 @@ private:
     Matrix4 const& view_mtx,
     Matrix4 const& proj_mtx,
     Matrix4 const& prev_model_mtx,
-    float max_abs_scaling
+    float max_abs_scaling, bool disable_meshlet_culling
   ) -> void;
 
   auto RecreatePipelines() -> void;
