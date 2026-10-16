@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <concepts>
 #include <limits>
@@ -1916,17 +1917,32 @@ inline auto Quaternion::FromEulerAngles(Vector3 const& euler) noexcept -> Quater
 
 
 inline auto Quaternion::ToEulerAngles() const noexcept -> Vector3 {
+  assert(NormSquared() > 0 && "Zero quaternion is not a valid rotation");
+  auto const q = Normalized();
+
+  auto const sin_yaw = std::clamp(-2 * (q.x * q.z - q.w * q.y), -1.0f, 1.0f);
+
   Vector3 angles;
 
-  auto const pitch_y{2 * (w * x + y * z)};
-  auto const pitch_x{w * w - x * x - y * y + z * z};
-  angles[0] = std::atan2(pitch_y, pitch_x);
+  if (std::abs(sin_yaw) >= 1.0f - 1e-6f) {
+    // Gimbal lock, choosing x=0
+    angles[0] = 0;
+    angles[1] = std::copysign(PI * 0.5f, sin_yaw);
 
-  angles[1] = std::asin(std::clamp(-2 * (x * z - w * y), -1.0f, 1.0f));
+    auto const roll_y = 2 * (q.w * q.z - q.x * q.y);
+    auto const roll_x = 1 - 2 * (q.x * q.x + q.z * q.z);
+    angles[2] = std::atan2(roll_y, roll_x);
+  } else {
+    auto const pitch_y = 2 * (q.w * q.x + q.y * q.z);
+    auto const pitch_x = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
+    angles[0] = std::atan2(pitch_y, pitch_x);
 
-  auto const roll_y{2 * (w * z + x * y)};
-  auto const roll_x{w * w + x * x - y * y - z * z};
-  angles[2] = std::atan2(roll_y, roll_x);
+    angles[1] = std::asin(sin_yaw);
+
+    auto const roll_y = 2 * (q.w * q.z + q.x * q.y);
+    auto const roll_x = q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z;
+    angles[2] = std::atan2(roll_y, roll_x);
+  }
 
   for (auto i = 0; i < 3; i++) {
     angles[i] = ToDegrees(angles[i]);
