@@ -298,6 +298,8 @@ inline auto operator/=(Vector4& left, Vector4 const& right) noexcept -> Vector4&
 
 template<typename T, int N, int M> requires(N > 1 && M > 1)
 class Matrix {
+  RTTR_REGISTRATION_FRIEND
+
 public:
   [[nodiscard]] constexpr auto Determinant() const noexcept -> T requires(N == M);
   [[nodiscard]] constexpr auto Transpose() const noexcept -> Matrix<T, M, N>;
@@ -2138,3 +2140,18 @@ inline auto Slerp(Quaternion const& from, Quaternion const& to, float const amou
            : from_term + to_term;
 }
 }
+
+
+// There is a bug in RTTR. Its specialization for a template with one type argument followed by two non-type arguments
+// contains invalid C++. As a temporary fix, we're doing a partial specialization here to be able to reflect matrices.
+template<typename T, int N, int M>
+struct rttr::detail::template_type_trait<sorcery::Matrix<T, N, M>>
+  : std::true_type {
+  static auto get_template_arguments() -> std::vector<rttr::type> {
+    return {
+      rttr::type::get<T>(),
+      rttr::type::get<int>(),
+      rttr::type::get<int>()
+    };
+  }
+};
