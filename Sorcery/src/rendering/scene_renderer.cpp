@@ -194,7 +194,8 @@ template<typename T, typename Interpolate>
 [[nodiscard]]
 auto SampleKeys(
   std::span<AnimationKey<std::type_identity_t<T>> const> const keys,
-  float time,
+  float const time,
+  float const duration,
   T const& fallback,
   Interpolate interpolate
 ) -> T {
@@ -202,19 +203,42 @@ auto SampleKeys(
     return (current_time - from_time) / (to_time - from_time);
   };
 
+  if (keys.empty()) {
+    return fallback;
+  }
+
   if (keys.size() == 1) {
     return keys[0].value;
   }
 
+  std::optional<std::size_t> next_key_idx;
+
   for (auto i = 0uz; i < keys.size(); ++i) {
-    if (auto const& cur_key = keys[i]; cur_key.timestamp > time) {
-      auto const& prev_key = i == 0 ? keys[keys.size() - 1] : keys[i - 1];
-      return interpolate(prev_key.value, cur_key.value,
-        calc_interpolation_factor(prev_key.timestamp, cur_key.timestamp, time));
+    if (keys[i].timestamp > time) {
+      next_key_idx = i;
+      break;
     }
   }
 
-  return fallback;
+  // If we're after the last or before the first key, interpolate with a wraparound
+  if (!next_key_idx || next_key_idx == 0) {
+    auto const& first_key = keys.front();
+    auto const& last_key = keys.back();
+
+    auto const from_time = last_key.timestamp;
+    auto const to_time = first_key.timestamp + duration;
+    assert(to_time > from_time);
+
+    auto const extended_time = next_key_idx == 0 ? duration + time : time;
+    auto const factor = (extended_time - from_time) / (to_time - from_time);
+    return interpolate(last_key.value, first_key.value, factor);
+  }
+
+  auto const& next_key = keys[*next_key_idx];
+  auto const& prev_key = keys[*next_key_idx - 1];
+
+  return interpolate(prev_key.value, next_key.value,
+    calc_interpolation_factor(prev_key.timestamp, next_key.timestamp, time));
 }
 }
 
@@ -515,7 +539,7 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
 
     packet.skinning_data.emplace_back(static_cast<unsigned>(geom_batch_local_idx),
       orig_pos_buf_local_idx, orig_norm_buf_local_idx, orig_tan_buf_local_idx, bone_mtx_buf_local_idx,
-      prev_skinned_pos_buf_local_idx, comp->GetCurrentAnimationTime(), node_anim_begin_local_idx,
+      prev_skinned_pos_buf_local_idx, comp->GetCurrentAnimationTime(), anim->duration, node_anim_begin_local_idx,
       static_cast<unsigned>(anim->node_anims.size()), skeleton_begin_local_idx,
       static_cast<unsigned>(mesh->GetSkeleton().size()), bone_begin_local_idx,
       static_cast<unsigned>(mesh->GetBones().size()), comp->IsPlaying());
@@ -678,8 +702,8 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
 
   for (auto& [geom_batch_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
          original_tangent_buf_local_idx, bone_matrix_buf_local_idx, prev_frame_vertex_buf_local_idx, cur_animation_time,
-         node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size, bone_begin_local_idx,
-         bone_count, playing] : frame_packet.skinning_data) {
+         anim_duration, node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size,
+         bone_begin_local_idx, bone_count, playing] : frame_packet.skinning_data) {
     if (!playing) {
       continue;
     }
@@ -693,19 +717,19 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
 
       auto const pos = SampleKeys(
         std::span{frame_packet.anim_pos_keys}.subspan(pos_key_begin_local_idx, pos_key_count),
-        cur_animation_time, Vector3{}, [](auto const& lhs, auto const& rhs, auto const factor) {
+        cur_animation_time, anim_duration, Vector3{}, [](auto const& lhs, auto const& rhs, auto const factor) {
           return Lerp(lhs, rhs, factor);
         });
 
       auto const rot = SampleKeys(
         std::span{frame_packet.anim_rot_keys}.subspan(rot_key_begin_local_idx, rot_key_count),
-        cur_animation_time, Quaternion{}, [](auto const& lhs, auto const& rhs, auto const factor) {
+        cur_animation_time, anim_duration, Quaternion{}, [](auto const& lhs, auto const& rhs, auto const factor) {
           return Slerp(lhs, rhs, factor);
         });
 
       auto const scale = SampleKeys(
         std::span{frame_packet.anim_scaling_keys}.subspan(scaling_key_begin_local_idx, scaling_key_count),
-        cur_animation_time, Vector3{1}, [](auto const& lhs, auto const& rhs, auto const factor) {
+        cur_animation_time, anim_duration, Vector3{1}, [](auto const& lhs, auto const& rhs, auto const factor) {
           return Lerp(lhs, rhs, factor);
         });
 
@@ -1023,8 +1047,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
   for (auto& [geom_batch_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
          original_tangent_buf_local_idx, bone_matrix_buf_local_idx, prev_frame_vertex_buf_local_idx, cur_animation_time,
-         node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size, bone_begin_local_idx,
-         bone_count, playing] : frame_packet.skinning_data) {
+         anim_duration, node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size,
+         bone_begin_local_idx, bone_count, playing] : frame_packet.skinning_data) {
     auto const& geom_batch = frame_packet.geom_batches[geom_batch_local_idx];
 
     if (!playing) {

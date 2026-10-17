@@ -289,6 +289,7 @@ private:
     unsigned prev_frame_vertex_buf_local_idx;
 
     float cur_animation_time;
+    float anim_duration;
 
     unsigned node_anim_begin_local_idx;
     unsigned node_anim_count;
