@@ -2,6 +2,7 @@
 
 #include <charconv>
 #include <stdexcept>
+#include <utility>
 
 #include "wand/wand.hpp"
 
@@ -11,6 +12,7 @@
 #include "rendering/scene_renderer.hpp"
 #include "rendering/temporary_render_target_pool.hpp"
 #include "sorcery/timing.hpp"
+#include "sorcery/util.hpp"
 #include "sorcery/host/command_line_args.hpp"
 #include "sorcery/host/game_module.hpp"
 #include "sorcery/host/job_system.hpp"
@@ -89,7 +91,7 @@ App::App(CommandLineArgs const& args) :
 
 
 App::~App() {
-  WaitRenderJob();
+  WaitRenderJobNoThrow();
   data_->graphics_device.WaitIdle();
 }
 
@@ -146,9 +148,7 @@ auto App::Run() -> void {
 
     EndFrame();
 
-    if (data_->render_job) {
-      data_->job_system.Wait(data_->render_job);
-    }
+    WaitRenderJob();
 
     if (window_resized_) {
       if (auto const [width, height]{data_->window.GetClientAreaSize()}; width != 0 && height != 0) {
@@ -200,8 +200,19 @@ auto App::GetGameModule() -> GameModule& {
 
 
 auto App::WaitRenderJob() -> void {
-  if (data_->render_job) {
-    data_->job_system.Wait(data_->render_job);
+  // Exchange with null so a failed job is only consumed once
+  if (auto const job = std::exchange(data_->render_job, nullptr)) {
+    data_->job_system.Wait(job);
+  }
+}
+
+
+auto App::WaitRenderJobNoThrow() noexcept -> void {
+  // Exchange with null so a failed job is only consumed once
+  if (auto const job = std::exchange(data_->render_job, nullptr)) {
+    if (auto const ex_ptr = data_->job_system.TryWait(job)) {
+      LogException("Render job failed during shutdown", ex_ptr);
+    }
   }
 }
 

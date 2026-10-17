@@ -2,6 +2,7 @@
 
 #include <bit>
 #include <memory>
+#include <new>
 #include <utility>
 #include <vector>
 
@@ -20,7 +21,7 @@ auto JobSystem::CreateJob(JobFuncType const func, Payload&& payload) -> Observer
 template<JobCallable Callable>
 auto JobSystem::CreateJob(Callable&& callable) -> ObserverPtr<Job> {
   return CreateJob([](void* const data_ptr) {
-    (*std::bit_cast<Callable*>(data_ptr))();
+    (*std::launder(std::bit_cast<Callable*>(data_ptr)))();
   }, std::forward<Callable>(callable));
 }
 
@@ -66,7 +67,7 @@ auto JobSystem::CreateParallelForJob(void (*func)(T& data), std::span<T> data) -
       }
 
       sub_jobs.emplace_back(job_data.system->CreateJob([](void* const sub_data_ptr) {
-        auto const& sub_job_data = *std::bit_cast<SubJobData*>(sub_data_ptr);
+        auto const& sub_job_data = *std::launder(std::bit_cast<SubJobData*>(sub_data_ptr));
 
         for (auto& elem : sub_job_data.data) {
           sub_job_data.func(elem);
@@ -77,9 +78,7 @@ auto JobSystem::CreateParallelForJob(void (*func)(T& data), std::span<T> data) -
       dispatched_element_count += element_count;
     }
 
-    for (auto const sub_job : sub_jobs) {
-      job_data.system->Wait(sub_job);
-    }
+    job_data.system->WaitAll(sub_jobs);
   }, JobData{func, this, data, worker_count_ + 1});
 }
 }

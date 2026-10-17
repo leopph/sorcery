@@ -5,6 +5,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <limits>
 #include <memory>
 #include <span>
@@ -22,14 +23,28 @@ using JobFuncType = void(*)(void* data);
 constexpr auto kJobPayloadCapacity{55};
 
 
+enum class JobState : std::uint8_t {
+  kCreated,
+  kQueued,
+  kRunning,
+  kCompleted,
+  kFailed
+};
+
+
+[[nodiscard]] constexpr
+auto IsFinished(JobState const state) noexcept { return state >= JobState::kCompleted; }
+
+
 struct Job {
   JobFuncType func{nullptr};
-  std::array<char, kJobPayloadCapacity> payload{};
-  std::atomic_bool is_complete{true};
+  alignas(std::exception_ptr) std::array<char, kJobPayloadCapacity> payload{};
+  std::atomic<JobState> state{JobState::kCompleted};
 };
 
 
 static_assert(sizeof(Job) == 64);
+static_assert(sizeof(std::exception_ptr) <= kJobPayloadCapacity);
 
 template<typename T>
 concept JobPayload = sizeof(T) <= kJobPayloadCapacity &&
@@ -79,19 +94,34 @@ public:
   SORCERYAPI
   auto Submit(ObserverPtr<Job> job) -> void;
 
+  // Waits until `job` has finished. Rethrows the exception on failure.
   SORCERYAPI
   auto Wait(ObserverPtr<Job const> job) -> void;
 
-private:
-  auto WorkerLoop(std::stop_token const& stop_token, std::uint32_t thread_idx) -> void;
+  // Waits until `job` has finished. Returns the exception on failure, null otherwise.
+  [[nodiscard]] SORCERYAPI
+  auto TryWait(ObserverPtr<Job const> job) noexcept -> std::exception_ptr;
 
-  auto Execute(Job& job) -> void;
+  // Waits until every job in `jobs` has finished, even if some fail, then rethrows the exception
+  // of the first failed job in span order. Exceptions of later failed jobs are discarded.
+  SORCERYAPI
+  auto WaitAll(std::span<ObserverPtr<Job> const> jobs) -> void;
+
+  // Waits until every job in `jobs` has finished, even if some fail, then returns the exception
+  // of the first failed job (null if none failed) in span order. Exceptions of later failed jobs are discarded.
+  [[nodiscard]] SORCERYAPI
+  auto TryWaitAll(std::span<ObserverPtr<Job> const> jobs) noexcept -> std::exception_ptr;
+
+private:
+  auto WorkerLoop(std::stop_token const& stop_token, std::uint32_t thread_idx) noexcept -> void;
+
+  auto Execute(Job& job) noexcept -> void;
 
   [[nodiscard]]
-  auto TryTakeJob() -> ObserverPtr<Job>;
+  auto TryTakeJob() noexcept -> ObserverPtr<Job>;
 
-  auto NotifyWork() -> void;
-  auto NotifyCompletion() -> void;
+  auto NotifyWork() noexcept -> void;
+  auto NotifyCompletion() noexcept -> void;
 
   std::uint32_t thread_count_;
   std::uint32_t worker_count_{thread_count_ - 1};

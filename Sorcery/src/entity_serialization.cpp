@@ -1,10 +1,11 @@
 #include "sorcery/entity_serialization.hpp"
 
 #include "sorcery/Serialization.hpp"
+#include "sorcery/util.hpp"
+#include "sorcery/assets/Asset.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/job_system.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
-#include "sorcery/assets/Asset.hpp"
 #include "sorcery/scene/Component.hpp"
 #include "sorcery/scene/Entity.hpp"
 #include "sorcery/scene/SceneObject.hpp"
@@ -131,15 +132,15 @@ auto DeserializeEntitySet(
 
   required_asset_ids.erase(std::ranges::unique(required_asset_ids).begin(), required_asset_ids.end());
 
-  std::vector<ObserverPtr<Job>> asset_loading_jobs;
-  asset_loading_jobs.reserve(required_asset_ids.size());
+  std::vector<ObserverPtr<Job>> asset_preload_jobs;
+  asset_preload_jobs.reserve(required_asset_ids.size());
 
   for (auto const& asset_id : required_asset_ids) {
-    asset_loading_jobs.emplace_back(App::Instance().GetJobSystem().CreateJob([](AssetId const& target_asset_id) {
+    asset_preload_jobs.emplace_back(App::Instance().GetJobSystem().CreateJob([](AssetId const& target_asset_id) {
       App::Instance().GetAssetManager().Resolve(target_asset_id);
     }, asset_id));
 
-    App::Instance().GetJobSystem().Submit(asset_loading_jobs.back());
+    App::Instance().GetJobSystem().Submit(asset_preload_jobs.back());
   }
 
   // Deserialize the scene objects
@@ -162,9 +163,7 @@ auto DeserializeEntitySet(
       ctx, deserialize_scene_obj_ptr);
   }
 
-  for (auto const job : asset_loading_jobs) {
-    App::Instance().GetJobSystem().Wait(job);
-  }
+  LogException("Failed to preload asset", App::Instance().GetJobSystem().TryWaitAll(asset_preload_jobs));
 
   std::vector<std::unique_ptr<Entity>> ret;
 

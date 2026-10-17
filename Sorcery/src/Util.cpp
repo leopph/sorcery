@@ -4,6 +4,8 @@
 #include <format>
 #include <stdexcept>
 
+#include <spdlog/spdlog.h>
+
 
 namespace sorcery {
 auto Contains(std::string_view const src, std::string_view const target) -> bool {
@@ -165,5 +167,25 @@ auto IsSubpath(std::filesystem::path const& path, std::filesystem::path const& b
       std::end(canonicalBase))
   };
   return baseIt == std::end(canonicalBase);
+}
+
+
+auto LogException(std::string_view context, std::exception_ptr const& ex) noexcept -> void {
+  if (!ex) {
+    return;
+  }
+
+  try {
+    try {
+      std::rethrow_exception(ex);
+    } catch (std::exception const& e) {
+      spdlog::error("{}: {}", context, e.what());
+    } catch (...) {
+      spdlog::error("{}: unknown exception", context);
+    }
+  } catch (...) {
+    // Explicitly discard the exception.
+    // There's nothing we can do with it.
+  }
 }
 }

@@ -81,6 +81,9 @@ protected:
   SORCERYAPI
   auto WaitRenderJob() -> void;
 
+  SORCERYAPI
+  auto WaitRenderJobNoThrow() noexcept -> void;
+
   SORCERYAPI virtual
   auto BeginFrame() -> void;
   virtual auto Update() -> void {}

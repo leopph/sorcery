@@ -9,10 +9,11 @@
 
 #include "mesh_generation.hpp"
 #include "sorcery/reflection.hpp"
-#include "sorcery/host/job_system.hpp"
-#include "sorcery/host/assets/asset_package.hpp"
+#include "sorcery/util.hpp"
 #include "sorcery/assets/prefab.hpp"
 #include "sorcery/assets/Scene.hpp"
+#include "sorcery/host/job_system.hpp"
+#include "sorcery/host/assets/asset_package.hpp"
 
 using Microsoft::WRL::ComPtr;
 
@@ -85,7 +86,7 @@ auto AssetManager::IsLoaded(AssetId const& asset_id) -> bool {
 
 
 auto AssetManager::UpdateMappings(std::map<AssetId, AssetDescription> asset_mappings,
-                                     std::map<Guid, std::filesystem::path> file_mappings) -> void {
+                                  std::map<Guid, std::filesystem::path> file_mappings) -> void {
   while (true) {
     auto self_asset_mappings{asset_mappings_.TryLock()};
     auto self_file_mappings{file_mappings_.TryLock()};
@@ -236,27 +237,33 @@ auto AssetManager::CreateDefaultAssets() -> void {
 
 
 auto AssetManager::AssetIdLess::operator()(std::unique_ptr<Asset> const& lhs,
-                                                 std::unique_ptr<Asset> const& rhs) const noexcept -> bool {
+                                           std::unique_ptr<Asset> const& rhs) const noexcept -> bool {
   return lhs->GetAssetId() < rhs->GetAssetId();
 }
 
 
 auto AssetManager::AssetIdLess::operator()(std::unique_ptr<Asset> const& lhs,
-                                                 AssetId const& rhs) const noexcept -> bool {
+                                           AssetId const& rhs) const noexcept -> bool {
   return lhs->GetAssetId() < rhs;
 }
 
 
 auto AssetManager::AssetIdLess::operator()(AssetId const& lhs,
-                                                 std::unique_ptr<Asset> const& rhs) const noexcept -> bool {
+                                           std::unique_ptr<Asset> const& rhs) const noexcept -> bool {
   return lhs < rhs->GetAssetId();
 }
 
 
 auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
-                                           AssetDescription const& desc) -> ObjectPtr<Asset> {
+                                     AssetDescription const& desc) -> ObjectPtr<Asset> {
   ObserverPtr<Job> loader_job;
   auto created_job{false};
+
+  ScopedDefer const erase_created_job{
+    [&]() noexcept {
+      if (created_job) { loader_jobs_.Lock()->erase(asset_id); }
+    }
+  };
 
   struct JobData {
     AssetId const* asset_id;
@@ -347,10 +354,6 @@ auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
 
   assert(loader_job);
   job_system_->Wait(loader_job);
-
-  if (created_job) {
-    loader_jobs_.Lock()->erase(asset_id);
-  }
 
   {
     auto const assets{loaded_assets_.LockShared()};

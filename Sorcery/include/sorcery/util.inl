@@ -1,10 +1,30 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <utility>
 
 
 namespace sorcery {
+template<class... Ts>
+consteval auto Overloaded<Ts...>::operator()(auto) const -> void {
+  static_assert(false, "Unsupported type");
+}
+
+
+template<typename Callable>
+  requires std::is_nothrow_invocable_v<Callable&>
+ScopedDefer<Callable>::ScopedDefer(Callable f) :
+  callable_{std::move(f)} {}
+
+
+template<typename Callable>
+  requires std::is_nothrow_invocable_v<Callable&>
+ScopedDefer<Callable>::~ScopedDefer() {
+  std::invoke(callable_);
+}
+
+
 template<std::integral To, std::integral From>
 constexpr auto clamp_cast(From const what) -> To {
   if constexpr (std::cmp_less_equal(std::numeric_limits<To>::min(), std::numeric_limits<From>::min())) {
@@ -81,11 +101,5 @@ constexpr auto AlignsTo(T const value, T const alignment) -> bool {
 template<std::integral T>
 constexpr auto Mod(T dividend, T modulus) -> T {
   return (dividend % modulus + modulus) % modulus;
-}
-
-
-template<class... Ts>
-consteval auto Overloaded<Ts...>::operator()(auto) const -> void {
-  static_assert(false, "Unsupported type");
 }
 }

@@ -73,7 +73,7 @@ EditorApp::EditorApp(CommandLineArgs const& args) :
 
 
 EditorApp::~EditorApp() {
-  WaitRenderJob();
+  WaitRenderJobNoThrow();
   GetGraphicsDevice().WaitIdle();
 
   NFD::Quit();

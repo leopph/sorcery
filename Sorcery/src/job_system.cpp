@@ -3,12 +3,25 @@
 #include <algorithm>
 #include <bit>
 #include <cassert>
-#include <exception>
-#include <iostream>
+#include <memory>
+#include <new>
 #include <stdexcept>
+#include <utility>
 
 
 namespace sorcery {
+namespace {
+[[nodiscard]] auto ErrorSlot(Job& job) noexcept -> std::exception_ptr* {
+  return std::launder(reinterpret_cast<std::exception_ptr*>(job.payload.data()));
+}
+
+
+[[nodiscard]] auto ErrorSlot(Job const& job) noexcept -> std::exception_ptr const* {
+  return std::launder(reinterpret_cast<std::exception_ptr const*>(job.payload.data()));
+}
+}
+
+
 JobSystem::JobSystem(std::uint32_t const max_thread_count) :
   thread_count_{
     [max_thread_count] {
@@ -46,12 +59,18 @@ auto JobSystem::CreateJob(JobFuncType const func) -> ObserverPtr<Job> {
   assert(std::has_single_bit(kJobSlotsPerThread));
   ObserverPtr const job{&job_slots_[next_job_slot_++ & kJobSlotsPerThread - 1]};
 
-  if (!job->is_complete) {
+  auto const job_state = job->state.load(std::memory_order_acquire);
+
+  if (!IsFinished(job_state)) {
     throw std::runtime_error{"Failed to allocate job: too many concurrent jobs!"};
   }
 
+  if (job_state == JobState::kFailed) {
+    std::destroy_at(ErrorSlot(*job));
+  }
+
   job->func = func;
-  job->is_complete = false;
+  job->state.store(JobState::kCreated, std::memory_order_relaxed);
   return job;
 }
 
@@ -59,13 +78,24 @@ auto JobSystem::CreateJob(JobFuncType const func) -> ObserverPtr<Job> {
 auto JobSystem::Submit(ObserverPtr<Job> const job) -> void {
   assert(this_thread_idx_ != kInvalidThreadIdx && this_thread_idx_ < thread_count_ &&
     "JobSystem used from unknown thread!");
+  [[maybe_unused]] auto const old_state = job->state.exchange(JobState::kQueued, std::memory_order_relaxed);
+  assert(old_state == JobState::kCreated);
   job_queues_[this_thread_idx_].push(job);
   NotifyWork();
 }
 
 
 auto JobSystem::Wait(ObserverPtr<Job const> const job) -> void {
-  while (!job->is_complete.load(std::memory_order_acquire)) {
+  if (auto const ex = TryWait(job)) {
+    std::rethrow_exception(ex);
+  }
+}
+
+
+auto JobSystem::TryWait(ObserverPtr<Job const> const job) noexcept -> std::exception_ptr {
+  auto const is_finished = [&] { return IsFinished(job->state.load(std::memory_order_acquire)); };
+
+  while (!is_finished()) {
     auto const epoch = wait_epoch_.load(std::memory_order_acquire);
 
     if (auto const other = TryTakeJob()) {
@@ -73,16 +103,42 @@ auto JobSystem::Wait(ObserverPtr<Job const> const job) -> void {
       continue;
     }
 
-    if (job->is_complete.load(std::memory_order_acquire)) {
+    if (is_finished()) {
       break;
     }
 
     wait_epoch_.wait(epoch, std::memory_order_acquire);
   }
+
+  if (job->state.load(std::memory_order_acquire) == JobState::kFailed) {
+    return *ErrorSlot(*job);
+  }
+
+  return nullptr;
 }
 
 
-auto JobSystem::WorkerLoop(std::stop_token const& stop_token, std::uint32_t const thread_idx) -> void {
+auto JobSystem::WaitAll(std::span<ObserverPtr<Job> const> const jobs) -> void {
+  if (auto const ex = TryWaitAll(jobs)) {
+    std::rethrow_exception(ex);
+  }
+}
+
+
+auto JobSystem::TryWaitAll(std::span<ObserverPtr<Job> const> const jobs) noexcept -> std::exception_ptr {
+  std::exception_ptr first;
+
+  for (auto const job : jobs) {
+    if (auto ex = TryWait(job); ex && !first) {
+      first = std::move(ex);
+    }
+  }
+
+  return first;
+}
+
+
+auto JobSystem::WorkerLoop(std::stop_token const& stop_token, std::uint32_t const thread_idx) noexcept -> void {
   this_thread_idx_ = thread_idx;
 
   while (true) {
@@ -102,22 +158,23 @@ auto JobSystem::WorkerLoop(std::stop_token const& stop_token, std::uint32_t cons
 }
 
 
-auto JobSystem::Execute(Job& job) -> void {
+auto JobSystem::Execute(Job& job) noexcept -> void {
+  auto final_state = JobState::kCompleted;
+  job.state.store(JobState::kRunning, std::memory_order_relaxed);
+
   try {
     job.func(job.payload.data());
-  } catch (std::exception const& ex) {
-    // TODO replace with more robust handling
-    std::cerr << "Exception while executing job: " << ex.what() << '\n';
   } catch (...) {
-    std::cerr << "Unknown exception while executing job.\n";
+    std::construct_at(ErrorSlot(job), std::current_exception());
+    final_state = JobState::kFailed;
   }
 
-  job.is_complete.store(true, std::memory_order_release);
+  job.state.store(final_state, std::memory_order_release);
   NotifyCompletion();
 }
 
 
-auto JobSystem::TryTakeJob() -> ObserverPtr<Job> {
+auto JobSystem::TryTakeJob() noexcept -> ObserverPtr<Job> {
   assert(this_thread_idx_ != kInvalidThreadIdx && this_thread_idx_ < thread_count_ &&
     "JobSystem used from unknown thread!");
 
@@ -137,7 +194,7 @@ auto JobSystem::TryTakeJob() -> ObserverPtr<Job> {
 }
 
 
-auto JobSystem::NotifyWork() -> void {
+auto JobSystem::NotifyWork() noexcept -> void {
   work_epoch_.fetch_add(1, std::memory_order_release);
   work_epoch_.notify_one();
 
@@ -146,7 +203,7 @@ auto JobSystem::NotifyWork() -> void {
 }
 
 
-auto JobSystem::NotifyCompletion() -> void {
+auto JobSystem::NotifyCompletion() noexcept -> void {
   wait_epoch_.fetch_add(1, std::memory_order_release);
   wait_epoch_.notify_all();
 }

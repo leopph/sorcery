@@ -1,14 +1,17 @@
 #include "sorcery/assets/Material.hpp"
 
+#include <array>
 #include <cassert>
+#include <cstddef>
 
 #include <spdlog/spdlog.h>
 
 #include "sorcery/asset_reference.hpp"
+#include "sorcery/util.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/job_system.hpp"
-#include "sorcery/host/assets/material_asset.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
+#include "sorcery/host/assets/material_asset.hpp"
 
 
 RTTR_REGISTRATION {
@@ -75,67 +78,78 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
     }
   };
 
-  ObserverPtr<Job> albedo_map_job{};
   JobData albedo_map_job_data{};
-
-  ObserverPtr<Job> metallic_map_job{};
   JobData metallic_map_job_data{};
-
-  ObserverPtr<Job> roughness_map_job{};
   JobData roughness_map_job_data{};
-
-  ObserverPtr<Job> ao_map_job{};
   JobData ao_map_job_data{};
-
-  ObserverPtr<Job> normal_map_job{};
   JobData normal_map_job_data{};
-
-  ObserverPtr<Job> opacity_mask_job{};
   JobData opacity_mask_job_data{};
+
+  std::array<ObserverPtr<Job>, 6> jobs{};
+  auto job_count = 0uz;
 
   if (data->base_color_map.IsValid()) {
     albedo_map_job_data.asset_id = data->base_color_map;
+
+    auto& albedo_map_job = jobs[job_count];
     albedo_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &albedo_map_job_data);
     App::Instance().GetJobSystem().Submit(albedo_map_job);
+
+    ++job_count;
   }
 
   if (data->metallic_map.IsValid()) {
     metallic_map_job_data.asset_id = data->metallic_map;
+
+    auto& metallic_map_job = jobs[job_count];
     metallic_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &metallic_map_job_data);
     App::Instance().GetJobSystem().Submit(metallic_map_job);
+
+    ++job_count;
   }
 
   if (data->roughness_map.IsValid()) {
     roughness_map_job_data.asset_id = data->roughness_map;
+
+    auto& roughness_map_job = jobs[job_count];
     roughness_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &roughness_map_job_data);
     App::Instance().GetJobSystem().Submit(roughness_map_job);
+
+    ++job_count;
   }
 
   if (data->ao_map.IsValid()) {
     ao_map_job_data.asset_id = data->ao_map;
+
+    auto& ao_map_job = jobs[job_count];
     ao_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &ao_map_job_data);
     App::Instance().GetJobSystem().Submit(ao_map_job);
+
+    ++job_count;
   }
 
   if (data->normal_map.IsValid()) {
     normal_map_job_data.asset_id = data->normal_map;
+
+    auto& normal_map_job = jobs[job_count];
     normal_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &normal_map_job_data);
     App::Instance().GetJobSystem().Submit(normal_map_job);
+
+    ++job_count;
   }
 
   if (data->opacity_map.IsValid()) {
     opacity_mask_job_data.asset_id = data->opacity_map;
+
+    auto& opacity_mask_job = jobs[job_count];
     opacity_mask_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &opacity_mask_job_data);
     App::Instance().GetJobSystem().Submit(opacity_mask_job);
+
+    ++job_count;
   }
 
-  for (auto const job : {
-         albedo_map_job, metallic_map_job, roughness_map_job, ao_map_job, normal_map_job, opacity_mask_job
-       }) {
-    if (job) {
-      App::Instance().GetJobSystem().Wait(job);
-    }
-  }
+  LogException("Failed to load material texture",
+    App::Instance().GetJobSystem().TryWaitAll(std::span{jobs}.first(job_count)));
 
   SetAlbedoMap(albedo_map_job_data.tex);
   SetMetallicMap(metallic_map_job_data.tex);

@@ -57,7 +57,11 @@ auto main(int argc, char* argv[]) -> int {
     sorcery::mage::EditorApp app{args};
     app.Run();
   } catch (std::exception const& ex) {
+    spdlog::error("App execution failed: {}", ex.what());
     sorcery::DisplayError(ex.what());
+  } catch (...) {
+    spdlog::error("App execution failed with unknown exception.");
+    sorcery::DisplayError("Unknown error.");
   }
   return 0;
 }

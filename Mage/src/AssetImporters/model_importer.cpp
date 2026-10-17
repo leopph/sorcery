@@ -331,7 +331,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   std::vector<AssetImportResult> texture_import_results;
 
   if (import_textures_) {
-    for (auto const& [idx, tex_info] : tex_infos | std::views::enumerate) {
+    for (auto const [idx, tex_info] : tex_infos | std::views::enumerate) {
       auto const subasset_idx{material_data.size() + idx};
 
       {
@@ -688,9 +688,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     App::Instance().GetJobSystem().Submit(meshletize_jobs.back());
   }
 
-  for (auto const job : meshletize_jobs) {
-    App::Instance().GetJobSystem().Wait(job);
-  }
+  App::Instance().GetJobSystem().WaitAll(meshletize_jobs);
 
   // Combine geometry
 
