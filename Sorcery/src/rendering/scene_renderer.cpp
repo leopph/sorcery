@@ -489,7 +489,7 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
       prev_skinned_pos_buf_local_idx, comp->GetCurrentAnimationTime(), node_anim_begin_local_idx,
       static_cast<unsigned>(anim->node_anims.size()), skeleton_begin_local_idx,
       static_cast<unsigned>(mesh->GetSkeleton().size()), bone_begin_local_idx,
-      static_cast<unsigned>(mesh->GetBones().size()));
+      static_cast<unsigned>(mesh->GetBones().size()), comp->IsPlaying());
 
     // Now that we have extracted the skinned mesh data, we can mark the previous skinned vertices as valid for the next frame.
     render_inst->SetLastSkinningFrame(frame.GetNumber());
@@ -650,10 +650,8 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
   for (auto& [geom_batch_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
          original_tangent_buf_local_idx, bone_matrix_buf_local_idx, prev_frame_vertex_buf_local_idx, cur_animation_time,
          node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size, bone_begin_local_idx,
-         bone_count] : frame_packet.skinning_data) {
-    // Skip skinning when we are sitting at 0 time.
-    // This happens for example in the editor scene view.
-    if (cur_animation_time == 0) {
+         bone_count, playing] : frame_packet.skinning_data) {
+    if (!playing) {
       continue;
     }
 
@@ -1041,12 +1039,10 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
   for (auto& [geom_batch_local_idx, original_vertex_buf_local_idx, original_normal_buf_local_idx,
          original_tangent_buf_local_idx, bone_matrix_buf_local_idx, prev_frame_vertex_buf_local_idx, cur_animation_time,
          node_anim_begin_local_idx, node_anim_count, skeleton_begin_local_idx, skeleton_size, bone_begin_local_idx,
-         bone_count] : frame_packet.skinning_data) {
+         bone_count, playing] : frame_packet.skinning_data) {
     auto const& geom_batch = frame_packet.geom_batches[geom_batch_local_idx];
 
-    // Skip skinning when we are sitting at 0 time.
-    // This happens for example in the editor scene view.
-    if (cur_animation_time == 0) {
+    if (!playing) {
       prepass_cmd.CopyBuffer(
         *frame_packet.buffer_views[geom_batch.pos_buf_local_idx]->GetBuffer(),
         *frame_packet.buffer_views[original_vertex_buf_local_idx]->GetBuffer());

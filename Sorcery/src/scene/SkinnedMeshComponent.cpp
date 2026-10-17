@@ -54,15 +54,15 @@ auto SkinnedMeshComponent::SetMesh(AssetRef<Mesh> const mesh) noexcept -> void {
 
 auto SkinnedMeshComponent::Start() -> void {
   MeshComponentBase::Start();
-  cur_animation_time_ticks_ = 0;
-  cur_anim_delta_time_ = 0;
+  Play();
 }
 
 
 auto SkinnedMeshComponent::Update() -> void {
-  if (auto const mesh{GetMesh()}; mesh && cur_animation_idx_ && *cur_animation_idx_ < mesh->GetAnimations().size()) {
-    auto const& [name, duration, ticks_per_second, node_anims]{mesh->GetAnimations()[*cur_animation_idx_]};
-    auto const actual_ticks_per_second{ticks_per_second == 0 ? 25.0f : ticks_per_second};
+  if (auto const mesh = GetMesh();
+    IsPlaying() && mesh && cur_animation_idx_ && *cur_animation_idx_ < mesh->GetAnimations().size()) {
+    auto const& [name, duration, ticks_per_second, node_anims] = mesh->GetAnimations()[*cur_animation_idx_];
+    auto const actual_ticks_per_second = ticks_per_second == 0 ? 25.0f : ticks_per_second;
     cur_anim_delta_time_ += timing::GetFrameTime();
     cur_animation_time_ticks_ = std::fmod(cur_anim_delta_time_ * actual_ticks_per_second, duration);
   }
@@ -83,6 +83,29 @@ auto SkinnedMeshComponent::SetCurrentAnimationIndex(std::optional<size_t> const 
   if (!idx || *idx < GetMesh()->GetAnimations().size()) {
     cur_animation_idx_ = idx;
   }
+}
+
+
+auto SkinnedMeshComponent::Play() -> void {
+  if (!cur_animation_idx_) {
+    return;
+  }
+
+  cur_anim_delta_time_ = 0;
+  cur_animation_time_ticks_ = 0;
+  is_playing_ = true;
+}
+
+
+auto SkinnedMeshComponent::Stop() -> void {
+  is_playing_ = false;
+  cur_anim_delta_time_ = 0;
+  cur_animation_time_ticks_ = 0;
+}
+
+
+auto SkinnedMeshComponent::IsPlaying() const -> bool {
+  return is_playing_;
 }
 
 

@@ -296,6 +296,7 @@ private:
     unsigned skeleton_size;
     unsigned bone_begin_local_idx;
     unsigned bone_count;
+    bool playing;
   };
 
 

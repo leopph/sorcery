@@ -11,17 +11,26 @@ class SkinnedMeshComponent final : public MeshComponentBase {
   RTTR_ENABLE(MeshComponentBase)
 
 public:
-  LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
-  [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
-  LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
-  LEOPPHAPI auto OnBeforeExitingScene(Scene const& scene) -> void override;
+  SORCERYAPI
+  auto OnDrawGizmosSelected() -> void override;
 
-  LEOPPHAPI auto SetMesh(AssetRef<Mesh> mesh) noexcept -> void override;
+  [[nodiscard]] SORCERYAPI
+  auto Clone() -> std::unique_ptr<SceneObject> override;
 
-  LEOPPHAPI auto Start() -> void override;
-  LEOPPHAPI auto Update() -> void override;
+  SORCERYAPI
+  auto OnAfterEnteringScene(Scene const& scene) -> void override;
+  SORCERYAPI
+  auto OnBeforeExitingScene(Scene const& scene) -> void override;
 
-  LEOPPHAPI SkinnedMeshComponent();
+  SORCERYAPI
+  auto SetMesh(AssetRef<Mesh> mesh) noexcept -> void override;
+
+  SORCERYAPI
+  auto Start() -> void override;
+  SORCERYAPI
+  auto Update() -> void override;
+
+  SORCERYAPI SkinnedMeshComponent();
 
   [[nodiscard]] SORCERYAPI
   auto GetCurrentAnimationIndex() const -> std::optional<std::size_t>;
@@ -29,12 +38,23 @@ public:
   SORCERYAPI
   auto SetCurrentAnimationIndex(std::optional<size_t> idx) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetCurrentAnimation() const -> std::optional<Animation>;
-  [[nodiscard]] LEOPPHAPI auto GetCurrentAnimationTime() const noexcept -> float;
+  SORCERYAPI
+  auto Play() -> void;
+  SORCERYAPI
+  auto Stop() -> void;
+  [[nodiscard]]
+  SORCERYAPI
+  auto IsPlaying() const -> bool;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetCurrentAnimation() const -> std::optional<Animation>;
+  [[nodiscard]] SORCERYAPI
+  auto GetCurrentAnimationTime() const noexcept -> float;
 
 private:
   std::optional<std::size_t> cur_animation_idx_;
   float cur_animation_time_ticks_{0};
   float cur_anim_delta_time_{0};
+  bool is_playing_{false};
 };
 }
