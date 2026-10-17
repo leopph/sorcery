@@ -10,6 +10,7 @@
 #include <random>
 #include <ranges>
 #include <stdexcept>
+#include <type_traits>
 
 #include "random.hpp"
 #include "rendering/projection_utils.hpp"
@@ -186,6 +187,34 @@ auto EnsureStructuredBufferCapacity(
   }
 
   view = CreateStructuredBuffer<T>(device, new_capacity, true, false);
+}
+
+
+template<typename T, typename Interpolate>
+[[nodiscard]]
+auto SampleKeys(
+  std::span<AnimationKey<std::type_identity_t<T>> const> const keys,
+  float time,
+  T const& fallback,
+  Interpolate interpolate
+) -> T {
+  auto const calc_interpolation_factor = [](float const from_time, float const to_time, float const current_time) {
+    return (current_time - from_time) / (to_time - from_time);
+  };
+
+  if (keys.size() == 1) {
+    return keys[0].value;
+  }
+
+  for (auto i = 0uz; i < keys.size(); ++i) {
+    if (auto const& cur_key = keys[i]; cur_key.timestamp > time) {
+      auto const& prev_key = i == 0 ? keys[keys.size() - 1] : keys[i - 1];
+      return interpolate(prev_key.value, cur_key.value,
+        calc_interpolation_factor(prev_key.timestamp, cur_key.timestamp, time));
+    }
+  }
+
+  return fallback;
 }
 }
 
@@ -657,72 +686,28 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
 
     // Compute local node transforms
 
-    for (unsigned i{0}; i < node_anim_count; i++) {
+    for (auto i = 0u; i < node_anim_count; i++) {
       auto const& [pos_key_begin_local_idx, pos_key_count, rot_key_begin_local_idx, rot_key_count,
-        scaling_key_begin_local_idx, scaling_key_count, node_idx]{
-        frame_packet.node_anim_data[node_anim_begin_local_idx + i]
-      };
+        scaling_key_begin_local_idx, scaling_key_count, node_idx] = frame_packet.node_anim_data[
+        node_anim_begin_local_idx + i];
 
-      Vector3 pos{};
-      Quaternion rot{};
-      Vector3 scale{1};
+      auto const pos = SampleKeys(
+        std::span{frame_packet.anim_pos_keys}.subspan(pos_key_begin_local_idx, pos_key_count),
+        cur_animation_time, Vector3{}, [](auto const& lhs, auto const& rhs, auto const factor) {
+          return Lerp(lhs, rhs, factor);
+        });
 
-      auto const calc_interpolation_factor{
-        [](float const from_time, float const to_time, float const current_time) {
-          return (current_time - from_time) / (to_time - from_time);
-        }
-      };
+      auto const rot = SampleKeys(
+        std::span{frame_packet.anim_rot_keys}.subspan(rot_key_begin_local_idx, rot_key_count),
+        cur_animation_time, Quaternion{}, [](auto const& lhs, auto const& rhs, auto const factor) {
+          return Slerp(lhs, rhs, factor);
+        });
 
-      if (pos_key_count == 1) {
-        pos = frame_packet.anim_pos_keys[pos_key_begin_local_idx].value;
-      } else {
-        for (unsigned j{0}; j < pos_key_count; j++) {
-          if (auto const& [timestamp, value]{frame_packet.anim_pos_keys[pos_key_begin_local_idx + j]};
-            timestamp > cur_animation_time) {
-            auto const& [prev_timestamp, prev_value]{
-              pos_key_begin_local_idx + j == 0
-                ? frame_packet.anim_pos_keys.back()
-                : frame_packet.anim_pos_keys[pos_key_begin_local_idx + j - 1]
-            };
-            pos = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, cur_animation_time));
-            break;
-          }
-        }
-      }
-
-      if (rot_key_count == 1) {
-        rot = frame_packet.anim_rot_keys[rot_key_begin_local_idx].value;
-      } else {
-        for (unsigned j{0}; j < rot_key_count; j++) {
-          if (auto const& [timestamp, value]{frame_packet.anim_rot_keys[rot_key_begin_local_idx + j]};
-            timestamp > cur_animation_time) {
-            auto const& [prev_timestamp, prev_value]{
-              rot_key_begin_local_idx + j == 0
-                ? frame_packet.anim_rot_keys.back()
-                : frame_packet.anim_rot_keys[rot_key_begin_local_idx + j - 1]
-            };
-            rot = Slerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, cur_animation_time));
-            break;
-          }
-        }
-      }
-
-      if (scaling_key_count == 1) {
-        scale = frame_packet.anim_scaling_keys[scaling_key_begin_local_idx].value;
-      } else {
-        for (unsigned j{0}; j < scaling_key_count; j++) {
-          if (auto const& [timestamp, value]{frame_packet.anim_scaling_keys[scaling_key_begin_local_idx + j]};
-            timestamp > cur_animation_time) {
-            auto const& [prev_timestamp, prev_value]{
-              scaling_key_begin_local_idx + j == 0
-                ? frame_packet.anim_scaling_keys.back()
-                : frame_packet.anim_scaling_keys[scaling_key_begin_local_idx + j - 1]
-            };
-            scale = Lerp(prev_value, value, calc_interpolation_factor(prev_timestamp, timestamp, cur_animation_time));
-            break;
-          }
-        }
-      }
+      auto const scale = SampleKeys(
+        std::span{frame_packet.anim_scaling_keys}.subspan(scaling_key_begin_local_idx, scaling_key_count),
+        cur_animation_time, Vector3{1}, [](auto const& lhs, auto const& rhs, auto const factor) {
+          return Lerp(lhs, rhs, factor);
+        });
 
       frame_packet.skeleton_node_data[skeleton_begin_local_idx + node_idx].transform =
         Matrix4::Scale(scale) * static_cast<Matrix4>(rot) * Matrix4::Translate(pos);
