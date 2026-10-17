@@ -80,7 +80,13 @@ auto SkinnedMeshComponent::GetCurrentAnimationIndex() const -> std::optional<std
 
 
 auto SkinnedMeshComponent::SetCurrentAnimationIndex(std::optional<size_t> const idx) -> void {
-  if (!idx || *idx < GetMesh()->GetAnimations().size()) {
+  auto const mesh = GetMesh().Observe();
+
+  if (!mesh) {
+    return;
+  }
+
+  if (!idx || *idx < mesh->GetAnimations().size()) {
     cur_animation_idx_ = idx;
   }
 }
