@@ -98,16 +98,16 @@ void MsMain(uint const gid : SV_GroupID,
 
 
 void PsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out float2 out1 : SV_Target1,
-            out float2 out2 : SV_Target2, out float2 out3 : SV_Target3) {
+            out float2 out2 : SV_Target2, out float3 out3 : SV_Target3, out float2 out4 : SV_Target4) {
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
   SamplerState const mtl_samp = SamplerDescriptorHeap[g_params.mtl_samp_idx];
 
   // Read materials
 
-  if (mtl.blendMode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {
+  if (mtl.blend_mode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {
     Texture2D<float> const opacity_map = ResourceDescriptorHeap[mtl.opacity_map_idx];
 
-    if (opacity_map.Sample(mtl_samp, ps_in.uv) < mtl.alphaThreshold) {
+    if (opacity_map.Sample(mtl_samp, ps_in.uv) < mtl.alpha_threshold) {
       discard;
     }
   }
@@ -150,6 +150,13 @@ void PsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out floa
     norm_ws = normalize(mul(normalize(norm_ws), ps_in.tbn_mtx_ws));
   }
 
+  float3 emissive = mtl.emissive;
+
+  if (mtl.emissive_map_idx != INVALID_RES_IDX) {
+    Texture2D<float3> const emissive_map = ResourceDescriptorHeap[mtl.emissive_map_idx];
+    emissive *= emissive_map.Sample(mtl_samp, ps_in.uv);
+  }
+
   // Calculate velocity
 
   float3 const cur_pos_ndc = ps_in.cur_pos_cs.xyz / ps_in.cur_pos_cs.w;
@@ -162,7 +169,8 @@ void PsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out floa
   out0 = PackGBuffer0(albedo, ao);
   out1 = PackGBuffer1(norm_ws);
   out2 = PackGBuffer2(roughness, metallic);
-  out3 = velocity;
+  out3 = PackGBuffer3(emissive);
+  out4 = velocity;
 }
 
 #endif

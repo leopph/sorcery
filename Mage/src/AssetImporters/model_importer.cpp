@@ -115,6 +115,14 @@ namespace {
 
   return nullptr;
 }
+
+
+[[nodiscard]] auto IsSrgb(aiTextureType const tex_type) -> bool {
+  return
+    tex_type == aiTextureType_BASE_COLOR ||
+    tex_type == aiTextureType_EMISSIVE ||
+    tex_type == aiTextureType_EMISSION_COLOR;
+}
 }
 
 
@@ -241,6 +249,14 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
         material_data[i].roughness = roughness;
       }
 
+      if (aiColor3D emissive_color; mtl->Get(AI_MATKEY_COLOR_EMISSIVE, emissive_color) == aiReturn_SUCCESS) {
+        material_data[i].emissive = Vector3{emissive_color.r, emissive_color.g, emissive_color.b};
+      }
+
+      if (float emissive_intensity; mtl->Get(AI_MATKEY_EMISSIVE_INTENSITY, emissive_intensity) == aiReturn_SUCCESS) {
+        material_data[i].emissive_intensity = emissive_intensity;
+      }
+
       auto mtl_not_opaque{false};
       auto mtl_alpha_threshold{0.5f};
 
@@ -279,6 +295,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
         discover_embedded_tex(aiTextureType_METALNESS, 0, material_data[i].metallic_map);
         discover_embedded_tex(aiTextureType_DIFFUSE_ROUGHNESS, 0, material_data[i].roughness_map);
         discover_embedded_tex(aiTextureType_AMBIENT_OCCLUSION, 0, material_data[i].ao_map);
+        discover_embedded_tex(aiTextureType_EMISSIVE, 0, material_data[i].emissive_map) ||
+          discover_embedded_tex(aiTextureType_EMISSION_COLOR, 0, material_data[i].emissive_map);
         discover_embedded_tex(aiTextureType_NORMALS, 0, material_data[i].normal_map);
         auto const has_opacity_map{discover_embedded_tex(aiTextureType_OPACITY, 0, material_data[i].opacity_map)};
 
@@ -316,6 +334,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     fix_up_tex_id(mtl_data.ao_map);
     fix_up_tex_id(mtl_data.normal_map);
     fix_up_tex_id(mtl_data.opacity_map);
+    fix_up_tex_id(mtl_data.emissive_map);
   }
 
   // Some textures may not be referenced by any material, but we still want to import them.
@@ -339,7 +358,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
         TextureImportSettings const default_import_settings{
           .type = TextureImportType::kTexture2D,
           .allow_block_compression = true,
-          .is_srgb = tex_info.type == aiTextureType_BASE_COLOR,
+          .is_srgb = IsSrgb(tex_info.type),
           .generate_mips = true
         };
 

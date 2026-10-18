@@ -17,8 +17,10 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
   Texture2D const gbuffer0 = ResourceDescriptorHeap[g_params.gbuffer0_idx];
   Texture2D<float2> const gbuffer1 = ResourceDescriptorHeap[g_params.gbuffer1_idx];
   Texture2D<float2> const gbuffer2 = ResourceDescriptorHeap[g_params.gbuffer2_idx];
+  Texture2D<float3> const gbuffer3 = ResourceDescriptorHeap[g_params.gbuffer3_idx];
 
   float3 albedo;
+  float3 emissive;
   float3 norm_ws;
   float roughness;
   float metallic;
@@ -27,6 +29,7 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
   UnpackGBuffer0(gbuffer0.Sample(point_clamp_samp, ps_in.uv.xy), albedo, ao);
   UnpackGBuffer1(gbuffer1.Sample(point_clamp_samp, ps_in.uv.xy), norm_ws);
   UnpackGBuffer2(gbuffer2.Sample(point_clamp_samp, ps_in.uv.xy), roughness, metallic);
+  UnpackGBuffer3(gbuffer3.Sample(point_clamp_samp, ps_in.uv.xy), emissive);
 
   Texture2D<float> const depth_tex = ResourceDescriptorHeap[g_params.depth_tex_idx];
   float const depth = depth_tex.Sample(point_clamp_samp, ps_in.uv.xy, 0, 0);
@@ -79,7 +82,7 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
     ambient = (diffuse_factor * diffuse + specular);
   }
 
-  float3 out_color = ambient * ao;
+  float3 out_color = ambient * ao + emissive;
 
   ConstantBuffer < ShaderCameraLightingData>
     const cam_light_data =

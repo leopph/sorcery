@@ -107,20 +107,23 @@ struct ShaderCameraLightingData {
 
 struct ShaderMaterial {
   float3 albedo;
-  float metallic;
-
-  float roughness;
-  float ao;
-  float alphaThreshold;
   uint albedo_map_idx;
 
+  float3 emissive;
+  uint emissive_map_idx;
+
+  float metallic;
   uint metallic_map_idx;
+  float roughness;
   uint roughness_map_idx;
+
+  float ao;
   uint ao_map_idx;
   uint normal_map_idx;
-
   uint opacity_map_idx;
-  int blendMode;
+
+  float alpha_threshold;
+  int blend_mode;
   float2 pad;
 };
 
@@ -247,26 +250,28 @@ struct DeferredLightingDrawParams {
   uint gbuffer0_idx;
   uint gbuffer1_idx;
   uint gbuffer2_idx;
-  uint depth_tex_idx;
+  uint gbuffer3_idx;
 
+  uint depth_tex_idx;
   uint ssao_tex_idx;
   uint per_view_cb_idx;
   uint cam_light_data_buf_idx;
-  uint pos_shadow_buf_idx;
 
+  uint pos_shadow_buf_idx;
   uint visible_light_buf_idx;
   uint light_buf_idx;
   uint pos_shadow_atlas_idx;
-  uint dir_shadow_arr_idx;
 
+  uint dir_shadow_arr_idx;
   uint per_frame_cb_idx;
   uint irradiance_map_idx;
   uint prefiltered_env_map_idx;
-  uint brdf_integration_map_idx;
 
+  uint brdf_integration_map_idx;
   uint shadow_samp_idx;
   uint point_clamp_samp_idx;
   uint bi_clamp_samp_idx;
+
   uint tri_clamp_samp_idx;
 };
 

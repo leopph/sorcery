@@ -66,4 +66,14 @@ void UnpackGBuffer2(float2 const packed, out float roughness, out float metallic
   metallic = packed.y;
 }
 
+
+float3 PackGBuffer3(float3 const emissive) {
+  return emissive;
+}
+
+
+void UnpackGBuffer3(float3 const packed, out float3 emissive) {
+  emissive = packed;
+}
+
 #endif

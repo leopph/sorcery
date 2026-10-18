@@ -1,9 +1,10 @@
 #include "material_editor_drawer.hpp"
 
+#include <limits>
+
 #include <imgui.h>
 
 #include "editor_drawer_registry.hpp"
-
 #include "../gui_helpers.hpp"
 
 
@@ -69,6 +70,28 @@ auto MaterialEditorDrawer::Draw(
     }
 
     ImGui::TableNextColumn();
+    ImGui::TextUnformatted("Emissive Color");
+    ImGui::TableNextColumn();
+
+    if (Vector3 emissive{mtl.GetEmissiveVector()}; ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::ColorEdit3("##matEmissiveColor", emissive.GetData());
+    })) {
+      mtl.SetEmissiveVector(emissive);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Emissive Intensity");
+    ImGui::TableNextColumn();
+
+    if (f32 intensity{mtl.GetEmissiveIntensity()}; ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::DragFloat("##matEmissiveIntensity", &intensity, 0.01f, 0.0f, std::numeric_limits<float>::max());
+    })) {
+      mtl.SetEmissiveIntensity(intensity);
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
     ImGui::Text("%s", "Albedo Map");
     ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> albedoMapPicker;
@@ -109,6 +132,17 @@ auto MaterialEditorDrawer::Draw(
       return aoMapPicker.Draw(aoMap);
     })) {
       mtl.SetAoMap(MakeAssetRef(aoMap.Get()));
+      changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Emissive Map");
+    ImGui::TableNextColumn();
+    static ObjectPicker<Texture2D> emissive_map_picker;
+    if (auto emissive_map = mtl.GetEmissiveMap().Get(); ImGuiDisabled(!allow_edit, [&] {
+      return emissive_map_picker.Draw(emissive_map);
+    })) {
+      mtl.SetEmissiveMap(MakeAssetRef(emissive_map.Get()));
       changed = true;
     }
 

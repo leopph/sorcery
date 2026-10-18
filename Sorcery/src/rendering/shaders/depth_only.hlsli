@@ -77,11 +77,11 @@ void MsMain(uint const gid : SV_GroupID,
 void PsMain(VertexAttributes const ps_in) {
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
 
-  if (mtl.blendMode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {
+  if (mtl.blend_mode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {
     Texture2D<float> const opacity_map = ResourceDescriptorHeap[mtl.opacity_map_idx];
     SamplerState const samp = SamplerDescriptorHeap[g_params.samp_idx];
 
-    if (opacity_map.Sample(samp, ps_in.uv) < mtl.alphaThreshold) {
+    if (opacity_map.Sample(samp, ps_in.uv) < mtl.alpha_threshold) {
       discard;
     }
   }

@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cassert>
-#include <cstddef>
 
 #include <spdlog/spdlog.h>
 
@@ -20,15 +19,39 @@ RTTR_REGISTRATION {
     .property("metallic", &sorcery::Material::GetMetallic, &sorcery::Material::SetMetallic)
     .property("roughness", &sorcery::Material::GetRoughness, &sorcery::Material::SetRoughness)
     .property("ao", &sorcery::Material::GetAo, &sorcery::Material::SetAo)
+    .property("emissive", &sorcery::Material::GetEmissiveVector, &sorcery::Material::SetEmissiveVector)
+    .property("emissive_intensity", &sorcery::Material::GetEmissiveIntensity, &sorcery::Material::SetEmissiveIntensity)
     .property("albedoMap", &sorcery::Material::GetAlbedoMap, &sorcery::Material::SetAlbedoMapRefl)
     .property("metallicMap", &sorcery::Material::GetMetallicMap, &sorcery::Material::SetMetallicMapRefl)
     .property("roughnessMap", &sorcery::Material::GetRoughnessMap, &sorcery::Material::SetRoughnessMapRefl)
     .property("aoMap", &sorcery::Material::GetAoMap, &sorcery::Material::SetAoMapRefl)
-    .property("normalMap", &sorcery::Material::GetNormalMap, &sorcery::Material::SetNormalMapRefl);
+    .property("normalMap", &sorcery::Material::GetNormalMap, &sorcery::Material::SetNormalMapRefl)
+    .property("emissive_map", &sorcery::Material::GetEmissiveMap, &sorcery::Material::SetEmissiveMapRefl);
 }
 
 
 namespace sorcery {
+namespace {
+[[nodiscard]]
+auto ToColor(Vector3 const& v) -> Color {
+  auto const mul_color_vec = v * 255;
+  return Color{
+    static_cast<std::uint8_t>(mul_color_vec[0]), static_cast<std::uint8_t>(mul_color_vec[1]),
+    static_cast<std::uint8_t>(mul_color_vec[2]), 255
+  };
+}
+
+
+[[nodiscard]]
+auto ToVector(Color const c) -> Vector3 {
+  return Vector3{
+    static_cast<float>(c.red) / 255.f, static_cast<float>(c.green) / 255.f,
+    static_cast<float>(c.blue) / 255.f
+  };
+}
+}
+
+
 auto Material::Serialize() const noexcept -> YAML::Node {
   auto const get_asset_id = [](AssetRef<Texture2D> const& tex) -> AssetId {
     return tex ? tex->GetAssetId() : AssetId::Invalid();
@@ -39,6 +62,8 @@ auto Material::Serialize() const noexcept -> YAML::Node {
     .metallic = GetMetallic(),
     .roughness = GetRoughness(),
     .ao = GetAo(),
+    .emissive = GetEmissiveVector(),
+    .emissive_intensity = GetEmissiveIntensity(),
     .blend_mode = GetBlendMode(),
     .alpha_threshold = GetAlphaThreshold(),
     .base_color_map = get_asset_id(GetAlbedoMap()),
@@ -46,7 +71,8 @@ auto Material::Serialize() const noexcept -> YAML::Node {
     .roughness_map = get_asset_id(GetRoughnessMap()),
     .ao_map = get_asset_id(GetAoMap()),
     .normal_map = get_asset_id(GetNormalMap()),
-    .opacity_map = get_asset_id(GetOpacityMask())
+    .opacity_map = get_asset_id(GetOpacityMask()),
+    .emissive_map = get_asset_id(GetEmissiveMap())
   }, AssetRefSerialization::kGlobal);
 }
 
@@ -64,6 +90,8 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   SetMetallic(data->metallic);
   SetRoughness(data->roughness);
   SetAo(data->ao);
+  SetEmissiveVector(data->emissive);
+  SetEmissiveIntensity(data->emissive_intensity);
   SetBlendMode(data->blend_mode);
   SetAlphaThreshold(data->alpha_threshold);
 
@@ -84,16 +112,19 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   JobData ao_map_job_data{};
   JobData normal_map_job_data{};
   JobData opacity_mask_job_data{};
+  JobData emissive_map_job_data{};
 
-  std::array<ObserverPtr<Job>, 6> jobs{};
+  std::array<ObserverPtr<Job>, 7> jobs{};
   auto job_count = 0uz;
+
+  auto& job_system = App::Instance().GetJobSystem();
 
   if (data->base_color_map.IsValid()) {
     albedo_map_job_data.asset_id = data->base_color_map;
 
     auto& albedo_map_job = jobs[job_count];
-    albedo_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &albedo_map_job_data);
-    App::Instance().GetJobSystem().Submit(albedo_map_job);
+    albedo_map_job = job_system.CreateJob(loader_job_func, &albedo_map_job_data);
+    job_system.Submit(albedo_map_job);
 
     ++job_count;
   }
@@ -102,8 +133,8 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
     metallic_map_job_data.asset_id = data->metallic_map;
 
     auto& metallic_map_job = jobs[job_count];
-    metallic_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &metallic_map_job_data);
-    App::Instance().GetJobSystem().Submit(metallic_map_job);
+    metallic_map_job = job_system.CreateJob(loader_job_func, &metallic_map_job_data);
+    job_system.Submit(metallic_map_job);
 
     ++job_count;
   }
@@ -112,8 +143,8 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
     roughness_map_job_data.asset_id = data->roughness_map;
 
     auto& roughness_map_job = jobs[job_count];
-    roughness_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &roughness_map_job_data);
-    App::Instance().GetJobSystem().Submit(roughness_map_job);
+    roughness_map_job = job_system.CreateJob(loader_job_func, &roughness_map_job_data);
+    job_system.Submit(roughness_map_job);
 
     ++job_count;
   }
@@ -122,8 +153,8 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
     ao_map_job_data.asset_id = data->ao_map;
 
     auto& ao_map_job = jobs[job_count];
-    ao_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &ao_map_job_data);
-    App::Instance().GetJobSystem().Submit(ao_map_job);
+    ao_map_job = job_system.CreateJob(loader_job_func, &ao_map_job_data);
+    job_system.Submit(ao_map_job);
 
     ++job_count;
   }
@@ -132,8 +163,8 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
     normal_map_job_data.asset_id = data->normal_map;
 
     auto& normal_map_job = jobs[job_count];
-    normal_map_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &normal_map_job_data);
-    App::Instance().GetJobSystem().Submit(normal_map_job);
+    normal_map_job = job_system.CreateJob(loader_job_func, &normal_map_job_data);
+    job_system.Submit(normal_map_job);
 
     ++job_count;
   }
@@ -142,14 +173,23 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
     opacity_mask_job_data.asset_id = data->opacity_map;
 
     auto& opacity_mask_job = jobs[job_count];
-    opacity_mask_job = App::Instance().GetJobSystem().CreateJob(loader_job_func, &opacity_mask_job_data);
-    App::Instance().GetJobSystem().Submit(opacity_mask_job);
+    opacity_mask_job = job_system.CreateJob(loader_job_func, &opacity_mask_job_data);
+    job_system.Submit(opacity_mask_job);
 
     ++job_count;
   }
 
-  LogException("Failed to load material texture",
-    App::Instance().GetJobSystem().TryWaitAll(std::span{jobs}.first(job_count)));
+  if (data->emissive_map.IsValid()) {
+    emissive_map_job_data.asset_id = data->emissive_map;
+
+    auto& emissive_map_job = jobs[job_count];
+    emissive_map_job = job_system.CreateJob(loader_job_func, &emissive_map_job_data);
+    job_system.Submit(emissive_map_job);
+
+    ++job_count;
+  }
+
+  LogException("Failed to load material texture", job_system.TryWaitAll(std::span{jobs}.first(job_count)));
 
   SetAlbedoMap(albedo_map_job_data.tex);
   SetMetallicMap(metallic_map_job_data.tex);
@@ -157,6 +197,7 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   SetAoMap(ao_map_job_data.tex);
   SetNormalMap(normal_map_job_data.tex);
   SetOpacityMask(opacity_mask_job_data.tex);
+  SetEmissiveMap(emissive_map_job_data.tex);
 }
 
 
@@ -172,19 +213,12 @@ auto Material::SetAlbedoVector(Vector3 const& albedo_vector) -> void {
 
 
 auto Material::GetAlbedoColor() const -> Color {
-  auto const mul_color_vec{GetAlbedoVector() * 255};
-  return Color{
-    static_cast<std::uint8_t>(mul_color_vec[0]), static_cast<std::uint8_t>(mul_color_vec[1]),
-    static_cast<std::uint8_t>(mul_color_vec[2]), 255
-  };
+  return ToColor(GetAlbedoVector());
 }
 
 
 auto Material::SetAlbedoColor(Color const albedo_color) -> void {
-  SetAlbedoVector(Vector3{
-    static_cast<float>(albedo_color.red) / 255.f, static_cast<float>(albedo_color.green) / 255.f,
-    static_cast<float>(albedo_color.blue) / 255.f
-  });
+  SetAlbedoVector(ToVector(albedo_color));
 }
 
 
@@ -218,6 +252,40 @@ auto Material::GetAo() const -> f32 {
 auto Material::SetAo(f32 const ao) -> void {
   ao_ = ao;
   ++revision_;
+}
+
+
+auto Material::GetEmissiveVector() const -> Vector3 const& {
+  return emissive_;
+}
+
+
+auto Material::SetEmissiveVector(Vector3 const& emissive_vector) -> void {
+  emissive_ = emissive_vector;
+  ++revision_;
+}
+
+
+auto Material::GetEmissiveColor() const -> Color {
+  return ToColor(GetEmissiveVector());
+}
+
+
+auto Material::SetEmissiveColor(Color const emissive_color) -> void {
+  SetEmissiveVector(ToVector(emissive_color));
+}
+
+
+auto Material::GetEmissiveIntensity() const -> float {
+  return emissive_intensity_;
+}
+
+
+auto Material::SetEmissiveIntensity(float const intensity) -> void {
+  if (intensity >= 0) {
+    emissive_intensity_ = intensity;
+    ++revision_;
+  }
 }
 
 
@@ -309,6 +377,17 @@ auto Material::SetOpacityMask(AssetRef<Texture2D> const& opacity_mask) -> void {
 }
 
 
+auto Material::GetEmissiveMap() const -> AssetRef<Texture2D> {
+  return emissive_map_;
+}
+
+
+auto Material::SetEmissiveMap(AssetRef<Texture2D> const& tex) -> void {
+  emissive_map_ = tex;
+  ++revision_;
+}
+
+
 auto Material::GetRevision() const -> std::uint64_t {
   return revision_;
 }
@@ -353,6 +432,11 @@ auto Material::SetAlphaThresholdRefl(float const threshold) -> void {
 
 auto Material::SetOpacityMaskRefl(AssetRef<Texture2D> const opacity_mask) -> void {
   SetOpacityMask(opacity_mask);
+}
+
+
+auto Material::SetEmissiveMapRefl(AssetRef<Texture2D> const tex) -> void {
+  SetEmissiveMap(tex);
 }
 
 

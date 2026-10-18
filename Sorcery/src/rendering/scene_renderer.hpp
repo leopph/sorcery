@@ -453,8 +453,8 @@ private:
 
 
   struct ResolvedMaterialTextures {
-    std::array<ObjectId, 6> obj_ids{};
-    std::array<std::uint32_t, 6> srv_indices{};
+    std::array<ObjectId, 7> obj_ids{};
+    std::array<std::uint32_t, 7> srv_indices{};
   };
 
 
@@ -685,6 +685,7 @@ private:
   static DXGI_FORMAT constexpr gbuffer0_format_{DXGI_FORMAT_R8G8B8A8_UNORM};
   static DXGI_FORMAT constexpr gbuffer1_format_{DXGI_FORMAT_R16G16_FLOAT};
   static DXGI_FORMAT constexpr gbuffer2_format_{DXGI_FORMAT_R8G8_UNORM};
+  static DXGI_FORMAT constexpr gbuffer3_format_{DXGI_FORMAT_R11G11B10_FLOAT};
   static DXGI_FORMAT constexpr velocity_format_{DXGI_FORMAT_R16G16_FLOAT};
   static DXGI_FORMAT constexpr irradiance_map_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};
   static DXGI_FORMAT constexpr prefiltered_env_map_format_{DXGI_FORMAT_R16G16B16A16_FLOAT};

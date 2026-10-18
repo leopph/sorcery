@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
+#include <sorcery/asset_ref.hpp>
 #include <sorcery/Color.hpp>
 #include <sorcery/material_blend_mode.hpp>
-#include <sorcery/asset_ref.hpp>
 #include <sorcery/assets/NativeAsset.hpp>
 #include <sorcery/assets/Texture2D.hpp>
 
@@ -55,6 +55,21 @@ public:
   auto SetAo(f32 ao) -> void;
 
   [[nodiscard]] SORCERYAPI
+  auto GetEmissiveVector() const -> Vector3 const&;
+  SORCERYAPI
+  auto SetEmissiveVector(Vector3 const& emissive_vector) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetEmissiveColor() const -> Color;
+  SORCERYAPI
+  auto SetEmissiveColor(Color emissive_color) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetEmissiveIntensity() const -> float;
+  SORCERYAPI
+  auto SetEmissiveIntensity(float intensity) -> void;
+
+  [[nodiscard]] SORCERYAPI
   auto GetAlbedoMap() const -> AssetRef<Texture2D>;
   SORCERYAPI
   auto SetAlbedoMap(AssetRef<Texture2D> const& tex) -> void;
@@ -95,6 +110,11 @@ public:
   auto SetOpacityMask(AssetRef<Texture2D> const& opacity_mask) -> void;
 
   [[nodiscard]] SORCERYAPI
+  auto GetEmissiveMap() const -> AssetRef<Texture2D>;
+  SORCERYAPI
+  auto SetEmissiveMap(AssetRef<Texture2D> const& tex) -> void;
+
+  [[nodiscard]] SORCERYAPI
   auto GetRevision() const -> std::uint64_t;
 
 private:
@@ -106,12 +126,15 @@ private:
   auto SetBlendModeRefl(MaterialBlendMode blend_mode) -> void;
   auto SetAlphaThresholdRefl(float threshold) -> void;
   auto SetOpacityMaskRefl(AssetRef<Texture2D> opacity_mask) -> void;
+  auto SetEmissiveMapRefl(AssetRef<Texture2D> tex) -> void;
 
   Vector3 albedo_{1.0f, 1.0f, 1.0f};
   float metallic_{0.0f};
   float roughness_{0.5f};
   float ao_{1.0f};
   float alpha_threshold_{1.0f};
+  Vector3 emissive_{0.0f, 0.0f, 0.0f};
+  float emissive_intensity_{1.0f};
 
   MaterialBlendMode blend_mode_{MaterialBlendMode::kOpaque};
 
@@ -121,6 +144,7 @@ private:
   AssetRef<Texture2D> ao_map_{nullptr};
   AssetRef<Texture2D> normal_map_{nullptr};
   AssetRef<Texture2D> opacity_mask_{nullptr};
+  AssetRef<Texture2D> emissive_map_{nullptr};
 
   std::uint64_t revision_{0};
 };

@@ -1250,6 +1250,11 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       L"Camera GBuffer2 RenderTarget", false, {0.0f, 0.0f, 0.0f, 0.0f}
     };
 
+    RenderTarget::Desc const gbuffer3_rt_desc{
+      transient_rt_width, transient_rt_height, gbuffer3_format_, std::nullopt, 1,
+      L"Camera GBuffer3 RenderTarget", false, {0.0f, 0.0f, 0.0f, 0.0f}
+    };
+
     RenderTarget::Desc const velocity_rt_desc{
       transient_rt_width, transient_rt_height, velocity_format_, std::nullopt, 1,
       L"Camera Velocity RenderTarget", true, {0.0f, 0.0f, 0.0f, 0.0f}
@@ -1265,6 +1270,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     auto const gbuffer0_rt = rt_pool_->Acquire(gbuffer0_rt_desc, frame);
     auto const gbuffer1_rt = rt_pool_->Acquire(gbuffer1_rt_desc, frame);
     auto const gbuffer2_rt = rt_pool_->Acquire(gbuffer2_rt_desc, frame);
+    auto const gbuffer3_rt = rt_pool_->Acquire(gbuffer3_rt_desc, frame);
     auto const velocity_rt = rt_pool_->Acquire(velocity_rt_desc, frame);
     auto const color_hdr_rt = rt_pool_->Acquire(color_hdr_rt_desc, frame);
 
@@ -1305,9 +1311,9 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 
     cam_cmd.SetPipelineState(*frame_packet.gbuffer_velocity_pso);
 
-    std::array<wand::Texture const*, 4> const gbuffer_velocity_textures{
+    std::array<wand::Texture const*, 5> const gbuffer_velocity_textures{
       gbuffer0_rt->GetColorTex().get(), gbuffer1_rt->GetColorTex().get(), gbuffer2_rt->GetColorTex().get(),
-      velocity_rt->GetColorTex().get()
+      gbuffer3_rt->GetColorTex().get(), velocity_rt->GetColorTex().get()
     };
     cam_cmd.SetRenderTargets(std::span{gbuffer_velocity_textures},
       depth_rt->GetDepthStencilTex().get());
@@ -1315,6 +1321,7 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     cam_cmd.ClearRenderTarget(*gbuffer0_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cam_cmd.ClearRenderTarget(*gbuffer1_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cam_cmd.ClearRenderTarget(*gbuffer2_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
+    cam_cmd.ClearRenderTarget(*gbuffer3_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cam_cmd.ClearRenderTarget(*velocity_rt->GetColorTex(), std::array{0.0f, 0.0f, 0.0f, 0.0f}, {});
     cam_cmd.ClearDepthStencil(*depth_rt->GetDepthStencilTex(), D3D12_CLEAR_FLAG_DEPTH, DEPTH_CLEAR_VALUE, 0, {});
 
@@ -1426,6 +1433,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
       *gbuffer1_rt->GetColorTex());
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, gbuffer2_idx),
       *gbuffer2_rt->GetColorTex());
+    cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, gbuffer3_idx),
+      *gbuffer3_rt->GetColorTex());
     cam_cmd.SetShaderResource(PIPELINE_PARAM_INDEX(DeferredLightingDrawParams, depth_tex_idx),
       *depth_sample_rt->GetDepthStencilTex());
 
@@ -1972,7 +1981,8 @@ auto SceneRenderer::AddMeshComponentToPacket(
       mtl->GetRoughnessMap().Observe(),
       mtl->GetAoMap().Observe(),
       mtl->GetNormalMap().Observe(),
-      mtl->GetOpacityMask().Observe()
+      mtl->GetOpacityMask().Observe(),
+      mtl->GetEmissiveMap().Observe()
     };
 
     ResolvedMaterialTextures resolved;
@@ -2040,17 +2050,19 @@ auto SceneRenderer::SyncMaterial(
 ) -> void {
   ShaderMaterial const shader_mtl{
     .albedo = mtl.GetAlbedoVector(),
-    .metallic = mtl.GetMetallic(),
-    .roughness = mtl.GetRoughness(),
-    .ao = mtl.GetAo(),
-    .alphaThreshold = mtl.GetAlphaThreshold(),
     .albedo_map_idx = textures.srv_indices[0],
+    .emissive = mtl.GetEmissiveVector() * mtl.GetEmissiveIntensity(),
+    .emissive_map_idx = textures.srv_indices[6],
+    .metallic = mtl.GetMetallic(),
     .metallic_map_idx = textures.srv_indices[1],
+    .roughness = mtl.GetRoughness(),
     .roughness_map_idx = textures.srv_indices[2],
+    .ao = mtl.GetAo(),
     .ao_map_idx = textures.srv_indices[3],
     .normal_map_idx = textures.srv_indices[4],
     .opacity_map_idx = textures.srv_indices[5],
-    .blendMode = ToShaderBlendMode(mtl.GetBlendMode()),
+    .alpha_threshold = mtl.GetAlphaThreshold(),
+    .blend_mode = ToShaderBlendMode(mtl.GetBlendMode()),
     .pad = {}
   };
 
@@ -2932,7 +2944,8 @@ auto SceneRenderer::RecreatePipelines() -> void {
   };
   CD3DX12_RT_FORMAT_ARRAY const gbuffer_velocity_format{
     D3D12_RT_FORMAT_ARRAY{
-      .RTFormats = {gbuffer0_format_, gbuffer1_format_, gbuffer2_format_, velocity_format_}, .NumRenderTargets = 4
+      .RTFormats = {gbuffer0_format_, gbuffer1_format_, gbuffer2_format_, gbuffer3_format_, velocity_format_},
+      .NumRenderTargets = 5
     }
   };
 

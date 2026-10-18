@@ -28,12 +28,12 @@ public:
   auto SetRevision(std::uint64_t rev) -> void;
 
   [[nodiscard]]
-  auto GetTextureIds() const -> std::array<ObjectId, 6> const&;
-  auto SetTextureIds(std::array<ObjectId, 6> const& ids) -> void;
+  auto GetTextureIds() const -> std::array<ObjectId, 7> const&;
+  auto SetTextureIds(std::array<ObjectId, 7> const& ids) -> void;
 
 private:
   wand::SharedDeviceHandle<wand::BufferView> cb_;
   std::uint64_t revision_{0};
-  std::array<ObjectId, 6> tex_ids_;
+  std::array<ObjectId, 7> tex_ids_;
 };
 }

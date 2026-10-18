@@ -8,11 +8,11 @@
 #include <yaml-cpp/yaml.h>
 #pragma warning (pop)
 
+#include <sorcery/asset_id.hpp>
+#include <sorcery/asset_reference.hpp>
 #include <sorcery/Core.hpp>
 #include <sorcery/material_blend_mode.hpp>
 #include <sorcery/Math.hpp>
-#include <sorcery/asset_id.hpp>
-#include <sorcery/asset_reference.hpp>
 
 
 namespace sorcery {
@@ -21,6 +21,8 @@ struct MaterialAssetData {
   float metallic{0.0f};
   float roughness{0.5f};
   float ao{1.0f};
+  Vector3 emissive{0.0f, 0.0f, 0.0f};
+  float emissive_intensity{1.0f};
 
   MaterialBlendMode blend_mode{MaterialBlendMode::kOpaque};
   float alpha_threshold{0.5f};
@@ -31,6 +33,7 @@ struct MaterialAssetData {
   AssetId ao_map{AssetId::Invalid()};
   AssetId normal_map{AssetId::Invalid()};
   AssetId opacity_map{AssetId::Invalid()};
+  AssetId emissive_map{AssetId::Invalid()};
 };
 
 
