@@ -8,6 +8,7 @@
 #include <wrl/client.h>
 
 #include "mesh_generation.hpp"
+#include "sorcery/mesh_utils.hpp"
 #include "sorcery/reflection.hpp"
 #include "sorcery/util.hpp"
 #include "sorcery/assets/prefab.hpp"

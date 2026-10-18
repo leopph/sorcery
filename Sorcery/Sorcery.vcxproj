@@ -215,6 +215,7 @@
     <ClInclude Include="include\sorcery\host\app.hpp" />
     <ClInclude Include="include\sorcery\host\command_line_args.hpp" />
     <ClInclude Include="include\sorcery\host\game_module.hpp" />
+    <ClInclude Include="include\sorcery\mesh_utils.hpp" />
     <ClInclude Include="src\rendering\ssao_params.hpp" />
     <ClInclude Include="include\sorcery\io_helpers.hpp" />
     <ClInclude Include="include\sorcery\material_blend_mode.hpp" />
@@ -351,7 +352,7 @@
     <None Include="include\sorcery\host\assets\asset_manager.inl" />
     <None Include="include\sorcery\asset_ref.inl" />
     <None Include="include\sorcery\scene\entity.inl" />
-    <None Include="include\sorcery\assets\mesh.inl" />
+    <None Include="include\sorcery\mesh_utils.inl" />
     <None Include="include\sorcery\serialization.inl" />
     <None Include="include\sorcery\util.inl" />
     <None Include="include\sorcery\viewport.inl" />

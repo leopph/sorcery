@@ -521,6 +521,9 @@
     <ClInclude Include="include\sorcery\host\command_line_args.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\sorcery\mesh_utils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\shader_interop.h" />
@@ -564,7 +567,7 @@
     </None>
     <None Include="src\rendering\shaders\taa_resolve.hlsli" />
     <None Include="src\rendering\shaders\CatmullRom.hlsli" />
-    <None Include="include\sorcery\assets\mesh.inl">
+    <None Include="include\sorcery\mesh_utils.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\rendering\shaders\meshlet_culling.hlsli" />

@@ -22,15 +22,16 @@
 
 #include "sorcery/char_encoding_helpers.hpp"
 #include "sorcery/entity_serialization.hpp"
+#include "sorcery/mesh_utils.hpp"
 #include "sorcery/Serialization.hpp"
 #include "sorcery/util.hpp"
+#include "sorcery/assets/Mesh.hpp"
+#include "sorcery/assets/prefab.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/job_system.hpp"
 #include "sorcery/host/platform.hpp"
 #include "sorcery/host/assets/material_import.hpp"
 #include "sorcery/host/assets/texture_import.hpp"
-#include "sorcery/assets/Mesh.hpp"
-#include "sorcery/assets/prefab.hpp"
 #include "sorcery/scene/Entity.hpp"
 #include "sorcery/scene/StaticMeshComponent.hpp"
 
