@@ -1,5 +1,6 @@
 #include "material_editor_drawer.hpp"
 
+#include <functional>
 #include <limits>
 
 #include <imgui.h>
@@ -9,6 +10,36 @@
 
 
 namespace sorcery::mage {
+namespace {
+template<typename F>
+auto DrawSection(char const* const name, F&& draw_rows) -> void {
+  ImGui::SeparatorText(name);
+
+  if (ImGui::BeginTable(name, 2, ImGuiTableFlags_SizingStretchSame)) {
+    std::invoke(std::forward<F>(draw_rows));
+    ImGui::EndTable();
+  }
+}
+
+
+// Returns whether the value was edited.
+template<typename F>
+auto DrawRow(char const* const label, bool const allow_edit, F&& draw_widget) -> bool {
+  ImGui::TableNextColumn();
+  ImGui::TextUnformatted(label);
+  ImGui::TableNextColumn();
+
+  // Rows share widget IDs, so scope them by label
+  ImGui::PushID(label);
+  ImGui::PushItemWidth(-FLT_MIN);
+  auto const edited = ImGuiDisabled(!allow_edit, std::forward<F>(draw_widget));
+  ImGui::PopItemWidth();
+  ImGui::PopID();
+  return edited;
+}
+}
+
+
 auto MaterialEditorDrawer::Draw(
   EditorDrawerContext const& ctx,
   Material& mtl,
@@ -17,186 +48,111 @@ auto MaterialEditorDrawer::Draw(
 ) -> void {
   ctx.registry->DrawAs<NativeAsset>(mtl, allow_edit, changed);
 
-  if (ImGui::BeginTable(std::format("{}", mtl.GetAssetId().GetGuid().ToString()).c_str(), 2,
-    ImGuiTableFlags_SizingStretchSame)) {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::PushItemWidth(FLT_MIN);
-    ImGui::TableSetColumnIndex(1);
-    ImGui::PushItemWidth(-FLT_MIN);
+  auto const draw_map_row = [&](
+    char const* const label,
+    ObjectPicker<Texture2D>& picker,
+    AssetRef<Texture2D> (Material::*const getter)() const,
+    void (Material::*const setter)(AssetRef<Texture2D> const&)
+  ) {
+    if (auto map{(mtl.*getter)().Get()}; DrawRow(label, allow_edit, [&] {
+      return picker.Draw(map);
+    })) {
+      (mtl.*setter)(MakeAssetRef(map.Get()));
+      changed = true;
+    }
+  };
 
-    ImGui::TableSetColumnIndex(0);
-    ImGui::Text("Base Color");
-    ImGui::TableNextColumn();
+  auto const draw_unorm_row = [&](
+    char const* const label,
+    f32 (Material::*const getter)() const,
+    void (Material::*const setter)(f32)
+  ) {
+    if (auto value{(mtl.*getter)()}; DrawRow(label, allow_edit, [&] {
+      return ImGui::SliderFloat("##value", &value, 0.0f, 1.0f);
+    })) {
+      (mtl.*setter)(value);
+      changed = true;
+    }
+  };
 
-    if (Vector3 base_color{mtl.GetBaseColorVector()}; ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::ColorEdit3("##matBaseColor", base_color.GetData());
+  ImGui::PushID(mtl.GetAssetId().GetGuid().ToString().c_str());
+
+  DrawSection("Base Color", [&] {
+    if (Vector3 base_color{mtl.GetBaseColorVector()}; DrawRow("Color", allow_edit, [&] {
+      return ImGui::ColorEdit3("##value", base_color.GetData());
     })) {
       mtl.SetBaseColorVector(base_color);
       changed = true;
     }
 
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Metallic");
-    ImGui::TableNextColumn();
+    static ObjectPicker<Texture2D> base_color_map_picker;
+    draw_map_row("Map", base_color_map_picker, &Material::GetBaseColorMap, &Material::SetBaseColorMap);
+  });
 
-    if (f32 metallic{mtl.GetMetallic()}; ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::SliderFloat("##matMetallic", &metallic, 0.0f, 1.0f);
-    })) {
-      mtl.SetMetallic(metallic);
-      changed = true;
-    }
+  DrawSection("Metallic", [&] {
+    draw_unorm_row("Value", &Material::GetMetallic, &Material::SetMetallic);
+    static ObjectPicker<Texture2D> metallic_map_picker;
+    draw_map_row("Map", metallic_map_picker, &Material::GetMetallicMap, &Material::SetMetallicMap);
+  });
 
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Roughness");
-    ImGui::TableNextColumn();
+  DrawSection("Roughness", [&] {
+    draw_unorm_row("Value", &Material::GetRoughness, &Material::SetRoughness);
+    static ObjectPicker<Texture2D> roughness_map_picker;
+    draw_map_row("Map", roughness_map_picker, &Material::GetRoughnessMap, &Material::SetRoughnessMap);
+  });
 
-    if (f32 roughness{mtl.GetRoughness()}; ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::SliderFloat("##matRoughness", &roughness, 0.0f, 1.0f);
-    })) {
-      mtl.SetRoughness(roughness);
-      changed = true;
-    }
+  DrawSection("Ambient Occlusion", [&] {
+    draw_unorm_row("Value", &Material::GetAo, &Material::SetAo);
+    static ObjectPicker<Texture2D> ao_map_picker;
+    draw_map_row("Map", ao_map_picker, &Material::GetAoMap, &Material::SetAoMap);
+  });
 
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Ambient Occlusion");
-    ImGui::TableNextColumn();
-
-    if (f32 ao{mtl.GetAo()}; ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::SliderFloat("##matAo", &ao, 0.0f, 1.0f);
-    })) {
-      mtl.SetAo(ao);
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::TextUnformatted("Emissive Color");
-    ImGui::TableNextColumn();
-
-    if (Vector3 emissive{mtl.GetEmissiveColorVector()}; ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::ColorEdit3("##matEmissiveColor", emissive.GetData());
+  DrawSection("Emissive", [&] {
+    if (Vector3 emissive{mtl.GetEmissiveColorVector()}; DrawRow("Color", allow_edit, [&] {
+      return ImGui::ColorEdit3("##value", emissive.GetData());
     })) {
       mtl.SetEmissiveColorVector(emissive);
       changed = true;
     }
 
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Emissive Intensity");
-    ImGui::TableNextColumn();
-
-    if (f32 intensity{mtl.GetEmissiveIntensity()}; ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::DragFloat("##matEmissiveIntensity", &intensity, 0.01f, 0.0f, std::numeric_limits<float>::max());
+    if (auto intensity{mtl.GetEmissiveIntensity()}; DrawRow("Intensity", allow_edit, [&] {
+      return ImGui::DragFloat("##value", &intensity, 0.01f, 0.0f, std::numeric_limits<float>::max());
     })) {
       mtl.SetEmissiveIntensity(intensity);
       changed = true;
     }
 
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Base Color Map");
-    ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> base_color_map_picker;
-    if (auto base_color_map = mtl.GetBaseColorMap().Get(); ImGuiDisabled(!allow_edit, [&] {
-      return base_color_map_picker.Draw(base_color_map);
-    })) {
-      mtl.SetBaseColorMap(MakeAssetRef(base_color_map.Get()));
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Metallic Map");
-    ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> metallicMapPicker;
-    if (auto metallicMap{mtl.GetMetallicMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
-      return metallicMapPicker.Draw(metallicMap);
-    })) {
-      mtl.SetMetallicMap(MakeAssetRef(metallicMap.Get()));
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Roughness Map");
-    ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> roughnessMapPicker;
-    if (auto roughnessMap{mtl.GetRoughnessMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
-      return roughnessMapPicker.Draw(roughnessMap);
-    })) {
-      mtl.SetRoughnessMap(MakeAssetRef(roughnessMap.Get()));
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Ambient Occlusion Map");
-    ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> aoMapPicker;
-    if (auto aoMap{mtl.GetAoMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
-      return aoMapPicker.Draw(aoMap);
-    })) {
-      mtl.SetAoMap(MakeAssetRef(aoMap.Get()));
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Emissive Map");
-    ImGui::TableNextColumn();
     static ObjectPicker<Texture2D> emissive_map_picker;
-    if (auto emissive_map = mtl.GetEmissiveMap().Get(); ImGuiDisabled(!allow_edit, [&] {
-      return emissive_map_picker.Draw(emissive_map);
+    draw_map_row("Map", emissive_map_picker, &Material::GetEmissiveMap, &Material::SetEmissiveMap);
+  });
+
+  DrawSection("Normal", [&] {
+    static ObjectPicker<Texture2D> normal_map_picker;
+    draw_map_row("Map", normal_map_picker, &Material::GetNormalMap, &Material::SetNormalMap);
+  });
+
+  DrawSection("Blending", [&] {
+    if (auto blend_mode{static_cast<int>(mtl.GetBlendMode())}; DrawRow("Blend Mode", allow_edit, [&] {
+      char const* const blend_mode_names[]{"Opaque", "Alpha Clipping"};
+      return ImGui::Combo("##value", &blend_mode, blend_mode_names, IM_ARRAYSIZE(blend_mode_names));
     })) {
-      mtl.SetEmissiveMap(MakeAssetRef(emissive_map.Get()));
+      mtl.SetBlendMode(static_cast<MaterialBlendMode>(blend_mode));
       changed = true;
     }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Normal Map");
-    ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> normalMapPicker;
-    if (auto normalMap{mtl.GetNormalMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
-      return normalMapPicker.Draw(normalMap);
-    })) {
-      mtl.SetNormalMap(MakeAssetRef(normalMap.Get()));
-      changed = true;
-    }
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Blend Mode");
-    ImGui::TableNextColumn();
-    ImGui::BeginDisabled(!allow_edit);
-    if (char const* blendModeNames[]{"Opaque", "Alpha Clipping"}; ImGui::BeginCombo("##blendMode",
-      blendModeNames[static_cast<int>(mtl.GetBlendMode())])) {
-      for (auto i = 0; i < 2; i++) {
-        if (ImGui::Selectable(blendModeNames[i], i == static_cast<int>(mtl.GetBlendMode()))) {
-          mtl.SetBlendMode(static_cast<MaterialBlendMode>(i));
-          changed = true;
-        }
-      }
-      ImGui::EndCombo();
-    }
-    ImGui::EndDisabled();
 
     if (mtl.GetBlendMode() == MaterialBlendMode::kAlphaClip) {
-      ImGui::TableNextColumn();
-      ImGui::Text("%s", "Alpha Threshold");
-      ImGui::TableNextColumn();
-      if (auto thresh{mtl.GetAlphaThreshold()}; ImGuiDisabled(!allow_edit, [&] {
-        return ImGui::SliderFloat("##AlphaThresh", &thresh, 0, 1);
+      if (auto thresh{mtl.GetAlphaThreshold()}; DrawRow("Alpha Threshold", allow_edit, [&] {
+        return ImGui::SliderFloat("##value", &thresh, 0.0f, 1.0f);
       })) {
         mtl.SetAlphaThreshold(thresh);
         changed = true;
       }
 
-      ImGui::TableNextColumn();
-      ImGui::Text("%s", "Opacity Mask");
-      ImGui::TableNextColumn();
-      static ObjectPicker<Texture2D> opacityMaskPicker;
-      if (auto opacityMask{mtl.GetOpacityMask().Get()}; ImGuiDisabled(!allow_edit, [&] {
-        return opacityMaskPicker.Draw(opacityMask);
-      })) {
-        mtl.SetOpacityMask(MakeAssetRef(opacityMask.Get()));
-        changed = true;
-      }
+      static ObjectPicker<Texture2D> opacity_mask_picker;
+      draw_map_row("Opacity Mask", opacity_mask_picker, &Material::GetOpacityMask, &Material::SetOpacityMask);
     }
+  });
 
-    ImGui::EndTable();
-  }
+  ImGui::PopID();
 }
 }
