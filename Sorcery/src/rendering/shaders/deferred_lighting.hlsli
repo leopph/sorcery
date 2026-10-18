@@ -19,14 +19,14 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
   Texture2D<float2> const gbuffer2 = ResourceDescriptorHeap[g_params.gbuffer2_idx];
   Texture2D<float3> const gbuffer3 = ResourceDescriptorHeap[g_params.gbuffer3_idx];
 
-  float3 albedo;
+  float3 base_color;
   float3 emissive;
   float3 norm_ws;
   float roughness;
   float metallic;
   float ao;
 
-  UnpackGBuffer0(gbuffer0.Sample(point_clamp_samp, ps_in.uv.xy), albedo, ao);
+  UnpackGBuffer0(gbuffer0.Sample(point_clamp_samp, ps_in.uv.xy), base_color, ao);
   UnpackGBuffer1(gbuffer1.Sample(point_clamp_samp, ps_in.uv.xy), norm_ws);
   UnpackGBuffer2(gbuffer2.Sample(point_clamp_samp, ps_in.uv.xy), roughness, metallic);
   UnpackGBuffer3(gbuffer3.Sample(point_clamp_samp, ps_in.uv.xy), emissive);
@@ -47,14 +47,15 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
 
   const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_params.per_frame_cb_idx];
 
-  float3 ambient = per_frame_cb.ambient_light_color * albedo;
+  float3 const diffuse_albedo = CalcDiffuseAlbedo(base_color, metallic);
+  float3 ambient = per_frame_cb.ambient_light_color * diffuse_albedo;
 
   if (g_params.irradiance_map_idx != INVALID_RES_IDX && g_params.prefiltered_env_map_idx != INVALID_RES_IDX) {
     TextureCube const irradiance_map = GetResource(g_params.irradiance_map_idx);
     SamplerState const bi_clamp_samp = GetSampler(g_params.bi_clamp_samp_idx);
 
     float3 const irradiance = irradiance_map.Sample(bi_clamp_samp, norm_ws).rgb;
-    float3 const diffuse = irradiance * albedo;
+    float3 const diffuse = irradiance * diffuse_albedo;
 
     TextureCube const prefiltered_env_map = GetResource(g_params.prefiltered_env_map_idx);
     SamplerState const tri_clamp_samp = GetSampler(g_params.tri_clamp_samp_idx);
@@ -73,11 +74,11 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
       tri_clamp_samp, in_light_dir_ws, roughness * (prefiltered_env_map_mip_count - 1)).rgb;
     float2 const env_brdf = brdf_lut.Sample(bi_clamp_samp, float2(n_dot_v, roughness));
 
-    float3 const f0 = CalcF0(albedo, metallic);
+    float3 const f0 = CalcF0(base_color, metallic);
     float3 const fresnel = FresnelSchlickRoughness(n_dot_v, f0, roughness);
     float3 const specular = prefiltered_color * (fresnel * env_brdf.x + env_brdf.y);
 
-    float3 const diffuse_factor = (1 - fresnel) * (1 - metallic);
+    float3 const diffuse_factor = 1 - fresnel;
 
     ambient = (diffuse_factor * diffuse + specular);
   }
@@ -104,7 +105,7 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
 
       switch (light.type) {
         case LIGHT_DIRECTIONAL: {
-          light_contrib = EvaluateDirectionalLight(light, norm_ws, dir_to_cam_ws, albedo, metallic, roughness);
+          light_contrib = EvaluateDirectionalLight(light, norm_ws, dir_to_cam_ws, base_color, metallic, roughness);
 
           if (visible_light.light_idx == cam_light_data.dir_shadow.light_idx) {
             if (per_frame_cb.visualize_dir_shadow_cascades) {
@@ -120,7 +121,7 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
         }
 
         case LIGHT_SPOT: {
-          light_contrib = EvaluateSpotLight(light, pos_ws, norm_ws, dir_to_cam_ws, albedo, metallic, roughness);
+          light_contrib = EvaluateSpotLight(light, pos_ws, norm_ws, dir_to_cam_ws, base_color, metallic, roughness);
 
           if (visible_light.positional_shadow_idx != INVALID_IDX) {
             StructuredBuffer<ShaderPositionalLightShadow> const pos_shadows = ResourceDescriptorHeap[g_params.
@@ -133,7 +134,7 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
         }
 
         case LIGHT_POINT: {
-          light_contrib = EvaluatePointLight(light, pos_ws, norm_ws, dir_to_cam_ws, albedo, metallic, roughness);
+          light_contrib = EvaluatePointLight(light, pos_ws, norm_ws, dir_to_cam_ws, base_color, metallic, roughness);
 
           if (visible_light.positional_shadow_idx != INVALID_IDX) {
             StructuredBuffer<ShaderPositionalLightShadow> const pos_shadows = ResourceDescriptorHeap[g_params.

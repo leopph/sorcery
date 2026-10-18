@@ -54,12 +54,12 @@ float3 EvaluateDirectionalLight(
   ShaderLight const light,
   float3 const normal_ws,
   float3 const dir_to_cam_ws,
-  float3 const albedo,
+  float3 const base_color,
   float const metallic,
   float const roughness
 ) {
   float3 const dir_to_light_ws = -light.direction;
-  return CookTorrance(normal_ws, dir_to_cam_ws, dir_to_light_ws, albedo, metallic, roughness, light.color,
+  return CookTorrance(normal_ws, dir_to_cam_ws, dir_to_light_ws, base_color, metallic, roughness, light.color,
     light.intensity, 1);
 }
 
@@ -74,7 +74,7 @@ float3 EvaluateSpotLight(
   float3 const pos_ws,
   float3 const normal_ws,
   float3 const dir_to_cam_ws,
-  float3 const albedo,
+  float3 const base_color,
   float const metallic,
   float const roughness
 ) {
@@ -87,8 +87,8 @@ float3 EvaluateSpotLight(
   float const eps = light.half_inner_angle_cos - light.half_outer_angle_cos;
   float const intensity = saturate((theta_cos - light.half_outer_angle_cos) / eps);
 
-  float3 lighting = CookTorrance(normal_ws, dir_to_cam_ws, dir_to_light_ws, albedo, metallic, roughness, light.color,
-    light.intensity, CalculateAttenuation(dist));
+  float3 lighting = CookTorrance(normal_ws, dir_to_cam_ws, dir_to_light_ws, base_color, metallic, roughness,
+    light.color, light.intensity, CalculateAttenuation(dist));
   lighting *= intensity;
   lighting *= range_mul;
 
@@ -101,7 +101,7 @@ float3 EvaluatePointLight(
   float3 const pos_ws,
   float3 const normal_ws,
   float3 const dir_to_cam_ws,
-  float3 const albedo,
+  float3 const base_color,
   float const metallic,
   float const roughness
 ) {
@@ -111,8 +111,8 @@ float3 EvaluatePointLight(
 
   float const range_mul = float(dist <= light.range);
 
-  float3 lighting = CookTorrance(normal_ws, dir_to_cam_ws, dir_to_light_ws, albedo, metallic, roughness, light.color,
-    light.intensity, CalculateAttenuation(dist));
+  float3 lighting = CookTorrance(normal_ws, dir_to_cam_ws, dir_to_light_ws, base_color, metallic, roughness,
+    light.color, light.intensity, CalculateAttenuation(dist));
   lighting *= range_mul;
 
   return lighting;

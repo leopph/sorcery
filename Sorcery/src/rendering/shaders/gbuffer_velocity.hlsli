@@ -112,11 +112,11 @@ void PsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out floa
     }
   }
 
-  float3 albedo = mtl.albedo;
+  float3 base_color = mtl.base_color;
 
-  if (mtl.albedo_map_idx != INVALID_RES_IDX) {
-    Texture2D const albedo_map = ResourceDescriptorHeap[mtl.albedo_map_idx];
-    albedo *= albedo_map.Sample(mtl_samp, ps_in.uv).rgb;
+  if (mtl.base_color_map_idx != INVALID_RES_IDX) {
+    Texture2D const base_color_map = ResourceDescriptorHeap[mtl.base_color_map_idx];
+    base_color *= base_color_map.Sample(mtl_samp, ps_in.uv).rgb;
   }
 
   float metallic = mtl.metallic;
@@ -166,7 +166,7 @@ void PsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out floa
 
   // Write output
 
-  out0 = PackGBuffer0(albedo, ao);
+  out0 = PackGBuffer0(base_color, ao);
   out1 = PackGBuffer1(norm_ws);
   out2 = PackGBuffer2(roughness, metallic);
   out3 = PackGBuffer3(emissive);

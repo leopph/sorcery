@@ -1976,7 +1976,7 @@ auto SceneRenderer::AddMeshComponentToPacket(
     }
 
     std::array const textures{
-      mtl->GetAlbedoMap().Observe(),
+      mtl->GetBaseColorMap().Observe(),
       mtl->GetMetallicMap().Observe(),
       mtl->GetRoughnessMap().Observe(),
       mtl->GetAoMap().Observe(),
@@ -2049,9 +2049,9 @@ auto SceneRenderer::SyncMaterial(
   wand::CommandList& cmd
 ) -> void {
   ShaderMaterial const shader_mtl{
-    .albedo = mtl.GetAlbedoVector(),
-    .albedo_map_idx = textures.srv_indices[0],
-    .emissive = mtl.GetEmissiveVector() * mtl.GetEmissiveIntensity(),
+    .base_color = mtl.GetBaseColorVector(),
+    .base_color_map_idx = textures.srv_indices[0],
+    .emissive = mtl.GetEmissiveColorVector() * mtl.GetEmissiveIntensity(),
     .emissive_map_idx = textures.srv_indices[6],
     .metallic = mtl.GetMetallic(),
     .metallic_map_idx = textures.srv_indices[1],

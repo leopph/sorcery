@@ -15,13 +15,13 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Material>{"Material"}
-    .property("albedo", &sorcery::Material::GetAlbedoVector, &sorcery::Material::SetAlbedoVector)
+    .property("base_color", &sorcery::Material::GetBaseColorVector, &sorcery::Material::SetBaseColorVector)
     .property("metallic", &sorcery::Material::GetMetallic, &sorcery::Material::SetMetallic)
     .property("roughness", &sorcery::Material::GetRoughness, &sorcery::Material::SetRoughness)
     .property("ao", &sorcery::Material::GetAo, &sorcery::Material::SetAo)
-    .property("emissive", &sorcery::Material::GetEmissiveVector, &sorcery::Material::SetEmissiveVector)
+    .property("emissive", &sorcery::Material::GetEmissiveColorVector, &sorcery::Material::SetEmissiveColorVector)
     .property("emissive_intensity", &sorcery::Material::GetEmissiveIntensity, &sorcery::Material::SetEmissiveIntensity)
-    .property("albedoMap", &sorcery::Material::GetAlbedoMap, &sorcery::Material::SetAlbedoMapRefl)
+    .property("base_color_map", &sorcery::Material::GetBaseColorMap, &sorcery::Material::SetBaseColorMapRefl)
     .property("metallicMap", &sorcery::Material::GetMetallicMap, &sorcery::Material::SetMetallicMapRefl)
     .property("roughnessMap", &sorcery::Material::GetRoughnessMap, &sorcery::Material::SetRoughnessMapRefl)
     .property("aoMap", &sorcery::Material::GetAoMap, &sorcery::Material::SetAoMapRefl)
@@ -58,15 +58,15 @@ auto Material::Serialize() const noexcept -> YAML::Node {
   };
 
   return SerializeMaterialAssetData(MaterialAssetData{
-    .base_color = GetAlbedoVector(),
+    .base_color = GetBaseColorVector(),
     .metallic = GetMetallic(),
     .roughness = GetRoughness(),
     .ao = GetAo(),
-    .emissive = GetEmissiveVector(),
+    .emissive = GetEmissiveColorVector(),
     .emissive_intensity = GetEmissiveIntensity(),
     .blend_mode = GetBlendMode(),
     .alpha_threshold = GetAlphaThreshold(),
-    .base_color_map = get_asset_id(GetAlbedoMap()),
+    .base_color_map = get_asset_id(GetBaseColorMap()),
     .metallic_map = get_asset_id(GetMetallicMap()),
     .roughness_map = get_asset_id(GetRoughnessMap()),
     .ao_map = get_asset_id(GetAoMap()),
@@ -86,11 +86,11 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
     return;
   }
 
-  SetAlbedoVector(data->base_color);
+  SetBaseColorVector(data->base_color);
   SetMetallic(data->metallic);
   SetRoughness(data->roughness);
   SetAo(data->ao);
-  SetEmissiveVector(data->emissive);
+  SetEmissiveColorVector(data->emissive);
   SetEmissiveIntensity(data->emissive_intensity);
   SetBlendMode(data->blend_mode);
   SetAlphaThreshold(data->alpha_threshold);
@@ -106,7 +106,7 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
     }
   };
 
-  JobData albedo_map_job_data{};
+  JobData base_color_map_job_data{};
   JobData metallic_map_job_data{};
   JobData roughness_map_job_data{};
   JobData ao_map_job_data{};
@@ -120,11 +120,11 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   auto& job_system = App::Instance().GetJobSystem();
 
   if (data->base_color_map.IsValid()) {
-    albedo_map_job_data.asset_id = data->base_color_map;
+    base_color_map_job_data.asset_id = data->base_color_map;
 
-    auto& albedo_map_job = jobs[job_count];
-    albedo_map_job = job_system.CreateJob(loader_job_func, &albedo_map_job_data);
-    job_system.Submit(albedo_map_job);
+    auto& base_color_map_job = jobs[job_count];
+    base_color_map_job = job_system.CreateJob(loader_job_func, &base_color_map_job_data);
+    job_system.Submit(base_color_map_job);
 
     ++job_count;
   }
@@ -191,7 +191,7 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
 
   LogException("Failed to load material texture", job_system.TryWaitAll(std::span{jobs}.first(job_count)));
 
-  SetAlbedoMap(albedo_map_job_data.tex);
+  SetBaseColorMap(base_color_map_job_data.tex);
   SetMetallicMap(metallic_map_job_data.tex);
   SetRoughnessMap(roughness_map_job_data.tex);
   SetAoMap(ao_map_job_data.tex);
@@ -201,24 +201,24 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
 }
 
 
-auto Material::GetAlbedoVector() const -> Vector3 const& {
-  return albedo_;
+auto Material::GetBaseColorVector() const -> Vector3 const& {
+  return base_color_;
 }
 
 
-auto Material::SetAlbedoVector(Vector3 const& albedo_vector) -> void {
-  albedo_ = albedo_vector;
+auto Material::SetBaseColorVector(Vector3 const& base_color_vector) -> void {
+  base_color_ = base_color_vector;
   ++revision_;
 }
 
 
-auto Material::GetAlbedoColor() const -> Color {
-  return ToColor(GetAlbedoVector());
+auto Material::GetBaseColor() const -> Color {
+  return ToColor(GetBaseColorVector());
 }
 
 
-auto Material::SetAlbedoColor(Color const albedo_color) -> void {
-  SetAlbedoVector(ToVector(albedo_color));
+auto Material::SetBaseColor(Color const base_color) -> void {
+  SetBaseColorVector(ToVector(base_color));
 }
 
 
@@ -255,24 +255,24 @@ auto Material::SetAo(f32 const ao) -> void {
 }
 
 
-auto Material::GetEmissiveVector() const -> Vector3 const& {
+auto Material::GetEmissiveColorVector() const -> Vector3 const& {
   return emissive_;
 }
 
 
-auto Material::SetEmissiveVector(Vector3 const& emissive_vector) -> void {
-  emissive_ = emissive_vector;
+auto Material::SetEmissiveColorVector(Vector3 const& emissive_color_vector) -> void {
+  emissive_ = emissive_color_vector;
   ++revision_;
 }
 
 
 auto Material::GetEmissiveColor() const -> Color {
-  return ToColor(GetEmissiveVector());
+  return ToColor(GetEmissiveColorVector());
 }
 
 
 auto Material::SetEmissiveColor(Color const emissive_color) -> void {
-  SetEmissiveVector(ToVector(emissive_color));
+  SetEmissiveColorVector(ToVector(emissive_color));
 }
 
 
@@ -289,13 +289,13 @@ auto Material::SetEmissiveIntensity(float const intensity) -> void {
 }
 
 
-auto Material::GetAlbedoMap() const -> AssetRef<Texture2D> {
-  return albedo_map_;
+auto Material::GetBaseColorMap() const -> AssetRef<Texture2D> {
+  return base_color_map_;
 }
 
 
-auto Material::SetAlbedoMap(AssetRef<Texture2D> const& tex) -> void {
-  albedo_map_ = tex;
+auto Material::SetBaseColorMap(AssetRef<Texture2D> const& tex) -> void {
+  base_color_map_ = tex;
   ++revision_;
 }
 
@@ -395,8 +395,8 @@ auto Material::GetRevision() const -> std::uint64_t {
 
 // ReSharper disable CppPassValueParameterByConstReference
 // Reflection needs getter and setter to be the same type so no ref here
-auto Material::SetAlbedoMapRefl(AssetRef<Texture2D> const tex) -> void {
-  SetAlbedoMap(tex);
+auto Material::SetBaseColorMapRefl(AssetRef<Texture2D> const tex) -> void {
+  SetBaseColorMap(tex);
 }
 
 

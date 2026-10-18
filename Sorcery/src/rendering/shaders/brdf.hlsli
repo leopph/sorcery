@@ -52,17 +52,23 @@ float3 FresnelSchlickRoughness(float const v_dot_h, float3 const f0, float rough
 }
 
 
-float3 CalcF0(float3 const albedo, float const metallic) {
-  // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
-  // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
-  return lerp((float3)0.04, albedo, metallic);
+float3 CalcF0(float3 const base_color, float const metallic) {
+  // calculate reflectance at normal incidence; if dielectric (like plastic) use F0 
+  // of 0.04 and if it's a metal, use the base color as F0 (metallic workflow)
+  return lerp((float3)0.04, base_color, metallic);
 }
 
 
-float3 CookTorrance(float3 const N, float3 const V, float3 const L, float3 const albedo, float const metallic,
+float3 CalcDiffuseAlbedo(float3 const base_color, float const metallic) {
+  // metals have no diffuse reflection (metallic workflow)
+  return base_color * (1.0 - metallic);
+}
+
+
+float3 CookTorrance(float3 const N, float3 const V, float3 const L, float3 const base_color, float const metallic,
                     float const roughness, float3 const lightColor, float const lightIntensity,
                     float const lightAtten) {
-  float3 const F0 = CalcF0(albedo, metallic);
+  float3 const F0 = CalcF0(base_color, metallic);
 
   // calculate per-light radiance
   float3 const H = normalize(V + L);
@@ -80,12 +86,11 @@ float3 CookTorrance(float3 const N, float3 const V, float3 const L, float3 const
 
   float3 const specular = (D * G * F) / (4.0 * n_dot_v * n_dot_l + 0.0001);
 
-  float3 const kS = F;
-  float3 kD = 1.0 - kS;
-  kD *= 1.0 - metallic;
+  float3 const kD = 1.0 - F;
+  float3 const diffuse_albedo = CalcDiffuseAlbedo(base_color, metallic);
 
   // outgoing radiance
-  return (kD * albedo / kPi + specular) * radiance * n_dot_l;
+  return (kD * diffuse_albedo / kPi + specular) * radiance * n_dot_l;
 }
 
 

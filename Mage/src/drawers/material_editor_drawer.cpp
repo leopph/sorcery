@@ -26,13 +26,13 @@ auto MaterialEditorDrawer::Draw(
     ImGui::PushItemWidth(-FLT_MIN);
 
     ImGui::TableSetColumnIndex(0);
-    ImGui::Text("Albedo Color");
+    ImGui::Text("Base Color");
     ImGui::TableNextColumn();
 
-    if (Vector3 albedoColor{mtl.GetAlbedoVector()}; ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::ColorEdit3("##matAlbedoColor", albedoColor.GetData());
+    if (Vector3 base_color{mtl.GetBaseColorVector()}; ImGuiDisabled(!allow_edit, [&] {
+      return ImGui::ColorEdit3("##matBaseColor", base_color.GetData());
     })) {
-      mtl.SetAlbedoVector(albedoColor);
+      mtl.SetBaseColorVector(base_color);
       changed = true;
     }
 
@@ -73,10 +73,10 @@ auto MaterialEditorDrawer::Draw(
     ImGui::TextUnformatted("Emissive Color");
     ImGui::TableNextColumn();
 
-    if (Vector3 emissive{mtl.GetEmissiveVector()}; ImGuiDisabled(!allow_edit, [&] {
+    if (Vector3 emissive{mtl.GetEmissiveColorVector()}; ImGuiDisabled(!allow_edit, [&] {
       return ImGui::ColorEdit3("##matEmissiveColor", emissive.GetData());
     })) {
-      mtl.SetEmissiveVector(emissive);
+      mtl.SetEmissiveColorVector(emissive);
       changed = true;
     }
 
@@ -92,13 +92,13 @@ auto MaterialEditorDrawer::Draw(
     }
 
     ImGui::TableNextColumn();
-    ImGui::Text("%s", "Albedo Map");
+    ImGui::Text("%s", "Base Color Map");
     ImGui::TableNextColumn();
-    static ObjectPicker<Texture2D> albedoMapPicker;
-    if (auto albedoMap{mtl.GetAlbedoMap().Get()}; ImGuiDisabled(!allow_edit, [&] {
-      return albedoMapPicker.Draw(albedoMap);
+    static ObjectPicker<Texture2D> base_color_map_picker;
+    if (auto base_color_map = mtl.GetBaseColorMap().Get(); ImGuiDisabled(!allow_edit, [&] {
+      return base_color_map_picker.Draw(base_color_map);
     })) {
-      mtl.SetAlbedoMap(MakeAssetRef(albedoMap.Get()));
+      mtl.SetBaseColorMap(MakeAssetRef(base_color_map.Get()));
       changed = true;
     }
 

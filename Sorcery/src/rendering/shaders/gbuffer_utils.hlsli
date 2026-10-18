@@ -35,13 +35,13 @@ float3 DecodeNormal(float2 f) {
 }
 
 
-float4 PackGBuffer0(float3 const albedo, float const ao) {
-  return float4(albedo, ao);
+float4 PackGBuffer0(float3 const base_color, float const ao) {
+  return float4(base_color, ao);
 }
 
 
-void UnpackGBuffer0(float4 const packed, out float3 albedo, out float ao) {
-  albedo = packed.rgb;
+void UnpackGBuffer0(float4 const packed, out float3 base_color, out float ao) {
+  base_color = packed.rgb;
   ao = packed.a;
 }
 

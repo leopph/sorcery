@@ -106,8 +106,8 @@ struct ShaderCameraLightingData {
 
 
 struct ShaderMaterial {
-  float3 albedo;
-  uint albedo_map_idx;
+  float3 base_color;
+  uint base_color_map_idx;
 
   float3 emissive;
   uint emissive_map_idx;

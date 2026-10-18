@@ -30,14 +30,14 @@ public:
   auto operator=(Material&&) noexcept -> void = delete;
 
   [[nodiscard]] SORCERYAPI
-  auto GetAlbedoVector() const -> Vector3 const&;
+  auto GetBaseColorVector() const -> Vector3 const&;
   SORCERYAPI
-  auto SetAlbedoVector(Vector3 const& albedo_vector) -> void;
+  auto SetBaseColorVector(Vector3 const& base_color_vector) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetAlbedoColor() const -> Color;
+  auto GetBaseColor() const -> Color;
   SORCERYAPI
-  auto SetAlbedoColor(Color albedo_color) -> void;
+  auto SetBaseColor(Color base_color) -> void;
 
   [[nodiscard]] SORCERYAPI
   auto GetMetallic() const -> f32;
@@ -55,9 +55,9 @@ public:
   auto SetAo(f32 ao) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetEmissiveVector() const -> Vector3 const&;
+  auto GetEmissiveColorVector() const -> Vector3 const&;
   SORCERYAPI
-  auto SetEmissiveVector(Vector3 const& emissive_vector) -> void;
+  auto SetEmissiveColorVector(Vector3 const& emissive_color_vector) -> void;
 
   [[nodiscard]] SORCERYAPI
   auto GetEmissiveColor() const -> Color;
@@ -70,9 +70,9 @@ public:
   auto SetEmissiveIntensity(float intensity) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetAlbedoMap() const -> AssetRef<Texture2D>;
+  auto GetBaseColorMap() const -> AssetRef<Texture2D>;
   SORCERYAPI
-  auto SetAlbedoMap(AssetRef<Texture2D> const& tex) -> void;
+  auto SetBaseColorMap(AssetRef<Texture2D> const& tex) -> void;
 
   [[nodiscard]] SORCERYAPI
   auto GetMetallicMap() const -> AssetRef<Texture2D>;
@@ -118,7 +118,7 @@ public:
   auto GetRevision() const -> std::uint64_t;
 
 private:
-  auto SetAlbedoMapRefl(AssetRef<Texture2D> tex) -> void;
+  auto SetBaseColorMapRefl(AssetRef<Texture2D> tex) -> void;
   auto SetMetallicMapRefl(AssetRef<Texture2D> tex) -> void;
   auto SetRoughnessMapRefl(AssetRef<Texture2D> tex) -> void;
   auto SetAoMapRefl(AssetRef<Texture2D> tex) -> void;
@@ -128,7 +128,7 @@ private:
   auto SetOpacityMaskRefl(AssetRef<Texture2D> opacity_mask) -> void;
   auto SetEmissiveMapRefl(AssetRef<Texture2D> tex) -> void;
 
-  Vector3 albedo_{1.0f, 1.0f, 1.0f};
+  Vector3 base_color_{1.0f, 1.0f, 1.0f};
   float metallic_{0.0f};
   float roughness_{0.5f};
   float ao_{1.0f};
@@ -138,7 +138,7 @@ private:
 
   MaterialBlendMode blend_mode_{MaterialBlendMode::kOpaque};
 
-  AssetRef<Texture2D> albedo_map_{nullptr};
+  AssetRef<Texture2D> base_color_map_{nullptr};
   AssetRef<Texture2D> metallic_map_{nullptr};
   AssetRef<Texture2D> roughness_map_{nullptr};
   AssetRef<Texture2D> ao_map_{nullptr};
