@@ -2,6 +2,7 @@
 #define DEPTH_ONLY_HLSLI
 
 #include "common.hlsli"
+#include "material_helpers.hlsli"
 #include "mesh_shader_core.hlsli"
 #include "shader_interop.h"
 
@@ -77,13 +78,15 @@ void MsMain(uint const gid : SV_GroupID,
 void PsMain(VertexAttributes const ps_in) {
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
 
-  if (mtl.blend_mode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {
-    Texture2D<float> const opacity_map = ResourceDescriptorHeap[mtl.opacity_map_idx];
-    SamplerState const samp = SamplerDescriptorHeap[g_params.samp_idx];
+  if (mtl.blend_mode != BLEND_MODE_ALPHA_CLIP) {
+    return;
+  }
 
-    if (opacity_map.Sample(samp, ps_in.uv) < mtl.alpha_threshold) {
-      discard;
-    }
+  SamplerState const samp = SamplerDescriptorHeap[g_params.samp_idx];
+  float const base_color_opacity = SampleBaseColorOpacity(mtl, samp, ps_in.uv).a;
+
+  if (IsClipped(mtl, CalculateOpacity(mtl, samp, ps_in.uv, base_color_opacity))) {
+    discard;
   }
 }
 #endif

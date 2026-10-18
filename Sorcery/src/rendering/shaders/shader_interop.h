@@ -124,7 +124,8 @@ struct ShaderMaterial {
 
   float alpha_threshold;
   int blend_mode;
-  float2 pad;
+  float opacity;
+  uint opacity_channel;
 };
 
 

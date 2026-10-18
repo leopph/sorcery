@@ -19,11 +19,20 @@ enum class TextureImportType : std::uint32_t {
 };
 
 
+enum class AlphaCoverageMode : std::uint32_t {
+  kAuto     = 0, // Model import: derived from the clip materials using the texture. Standalone: off.
+  kDisabled = 1,
+  kCustom   = 2 // Uses alpha_coverage_threshold.
+};
+
+
 struct TextureImportSettings {
   TextureImportType type{TextureImportType::kTexture2D};
   bool allow_block_compression{true};
   bool is_srgb{true};
   bool generate_mips{true};
+  AlphaCoverageMode alpha_coverage_mode{AlphaCoverageMode::kAuto};
+  float alpha_coverage_threshold{0.5f};
 };
 
 

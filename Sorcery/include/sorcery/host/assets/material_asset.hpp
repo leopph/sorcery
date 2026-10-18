@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <optional>
 
 // yaml-cpp incorrectly uses dllexport specifiers so we silence their warnings
@@ -23,6 +24,8 @@ struct MaterialAssetData {
   float ao{1.0f};
   Vector3 emissive{0.0f, 0.0f, 0.0f};
   float emissive_intensity{1.0f};
+  float opacity{1.0f};
+  std::uint32_t opacity_channel{0};
 
   MaterialBlendMode blend_mode{MaterialBlendMode::kOpaque};
   float alpha_threshold{0.5f};

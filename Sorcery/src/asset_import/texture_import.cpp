@@ -7,6 +7,8 @@
 #define NOMINMAX
 #include <DirectXTex.h>
 
+#include <spdlog/spdlog.h>
+
 #include "sorcery/assets/Cubemap.hpp"
 #include "sorcery/assets/Texture2D.hpp"
 
@@ -16,12 +18,20 @@ RTTR_REGISTRATION {
     rttr::value("Cubemap", sorcery::TextureImportType::kCubemap)
   );
 
+  rttr::registration::enumeration<sorcery::AlphaCoverageMode>("Alpha Coverage Mode")(
+    rttr::value("Auto", sorcery::AlphaCoverageMode::kAuto),
+    rttr::value("Disabled", sorcery::AlphaCoverageMode::kDisabled),
+    rttr::value("Custom", sorcery::AlphaCoverageMode::kCustom)
+  );
+
   rttr::registration::class_<sorcery::TextureImportSettings>("Texture Import Settings")
     .constructor<>()(rttr::policy::ctor::as_object)
     .property("Texture Type", &sorcery::TextureImportSettings::type)
     .property("Allow Block Compression", &sorcery::TextureImportSettings::allow_block_compression)
     .property("Color Texture (sRGB)", &sorcery::TextureImportSettings::is_srgb)
-    .property("Generate Mipmaps", &sorcery::TextureImportSettings::generate_mips);
+    .property("Generate Mipmaps", &sorcery::TextureImportSettings::generate_mips)
+    .property("Alpha Coverage Mode", &sorcery::TextureImportSettings::alpha_coverage_mode)
+    .property("Alpha Coverage Threshold", &sorcery::TextureImportSettings::alpha_coverage_threshold);
 }
 
 
@@ -203,6 +213,22 @@ auto ImportTexture(
       GenerateMipMaps(img.GetImages(), img.GetImageCount(), img.GetMetadata(), DirectX::TEX_FILTER_DEFAULT, 0, mipChain
       ))) {
       return std::nullopt;
+    }
+
+    if (settings.alpha_coverage_mode == AlphaCoverageMode::kCustom) {
+      if (settings.alpha_coverage_threshold > 0.0f && settings.alpha_coverage_threshold < 1.0f) {
+        for (auto i = 0uz; i < mipChain.GetMetadata().arraySize; ++i) {
+          if (FAILED(
+            DirectX::ScaleMipMapsAlphaForCoverage(mipChain.GetImages(), mipChain.GetImageCount(),
+              mipChain.GetMetadata(), i, settings.alpha_coverage_threshold, mipChain))) {
+            return std::nullopt;
+          }
+        }
+      } else {
+        spdlog::warn(
+          "Tried importing texture with an out-of-range alpha coverage threshold {}. Skipping mipmap alpha scaling.",
+          settings.alpha_coverage_threshold);
+      }
     }
 
     img = std::move(mipChain);

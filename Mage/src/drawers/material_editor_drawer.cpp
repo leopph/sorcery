@@ -148,8 +148,18 @@ auto MaterialEditorDrawer::Draw(
         changed = true;
       }
 
+      draw_unorm_row("Opacity", &Material::GetOpacity, &Material::SetOpacity);
+
       static ObjectPicker<Texture2D> opacity_mask_picker;
-      draw_map_row("Opacity Mask", opacity_mask_picker, &Material::GetOpacityMask, &Material::SetOpacityMask);
+      draw_map_row("Opacity Mask", opacity_mask_picker, &Material::GetOpacityMap, &Material::SetOpacityMap);
+
+      if (auto channel = static_cast<int>(mtl.GetOpacityChannel()); DrawRow("Opacity Mask Channel", allow_edit, [&] {
+        char const* const channels[]{"R", "G", "B", "A"};
+        return ImGui::Combo("##value", &channel, channels, IM_ARRAYSIZE(channels));
+      })) {
+        mtl.SetOpacityChannel(static_cast<std::uint32_t>(channel));
+        changed = true;
+      }
     }
   });
 

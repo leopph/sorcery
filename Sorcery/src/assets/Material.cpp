@@ -26,7 +26,10 @@ RTTR_REGISTRATION {
     .property("roughnessMap", &sorcery::Material::GetRoughnessMap, &sorcery::Material::SetRoughnessMapRefl)
     .property("aoMap", &sorcery::Material::GetAoMap, &sorcery::Material::SetAoMapRefl)
     .property("normalMap", &sorcery::Material::GetNormalMap, &sorcery::Material::SetNormalMapRefl)
-    .property("emissive_map", &sorcery::Material::GetEmissiveMap, &sorcery::Material::SetEmissiveMapRefl);
+    .property("opacity_map", &sorcery::Material::GetOpacityMap, &sorcery::Material::SetOpacityMapRefl)
+    .property("emissive_map", &sorcery::Material::GetEmissiveMap, &sorcery::Material::SetEmissiveMapRefl)
+    .property("opacity", &sorcery::Material::GetOpacity, &sorcery::Material::SetOpacity)
+    .property("opacity_channel", &sorcery::Material::GetOpacityChannel, &sorcery::Material::SetOpacityChannel);
 }
 
 
@@ -64,6 +67,8 @@ auto Material::Serialize() const noexcept -> YAML::Node {
     .ao = GetAo(),
     .emissive = GetEmissiveColorVector(),
     .emissive_intensity = GetEmissiveIntensity(),
+    .opacity = GetOpacity(),
+    .opacity_channel = GetOpacityChannel(),
     .blend_mode = GetBlendMode(),
     .alpha_threshold = GetAlphaThreshold(),
     .base_color_map = get_asset_id(GetBaseColorMap()),
@@ -71,7 +76,7 @@ auto Material::Serialize() const noexcept -> YAML::Node {
     .roughness_map = get_asset_id(GetRoughnessMap()),
     .ao_map = get_asset_id(GetAoMap()),
     .normal_map = get_asset_id(GetNormalMap()),
-    .opacity_map = get_asset_id(GetOpacityMask()),
+    .opacity_map = get_asset_id(GetOpacityMap()),
     .emissive_map = get_asset_id(GetEmissiveMap())
   }, AssetRefSerialization::kGlobal);
 }
@@ -92,6 +97,8 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   SetAo(data->ao);
   SetEmissiveColorVector(data->emissive);
   SetEmissiveIntensity(data->emissive_intensity);
+  SetOpacity(data->opacity);
+  SetOpacityChannel(data->opacity_channel);
   SetBlendMode(data->blend_mode);
   SetAlphaThreshold(data->alpha_threshold);
 
@@ -111,7 +118,7 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   JobData roughness_map_job_data{};
   JobData ao_map_job_data{};
   JobData normal_map_job_data{};
-  JobData opacity_mask_job_data{};
+  JobData opacity_map_job_data{};
   JobData emissive_map_job_data{};
 
   std::array<ObserverPtr<Job>, 7> jobs{};
@@ -170,11 +177,11 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   }
 
   if (data->opacity_map.IsValid()) {
-    opacity_mask_job_data.asset_id = data->opacity_map;
+    opacity_map_job_data.asset_id = data->opacity_map;
 
-    auto& opacity_mask_job = jobs[job_count];
-    opacity_mask_job = job_system.CreateJob(loader_job_func, &opacity_mask_job_data);
-    job_system.Submit(opacity_mask_job);
+    auto& opacity_map_job = jobs[job_count];
+    opacity_map_job = job_system.CreateJob(loader_job_func, &opacity_map_job_data);
+    job_system.Submit(opacity_map_job);
 
     ++job_count;
   }
@@ -196,7 +203,7 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   SetRoughnessMap(roughness_map_job_data.tex);
   SetAoMap(ao_map_job_data.tex);
   SetNormalMap(normal_map_job_data.tex);
-  SetOpacityMask(opacity_mask_job_data.tex);
+  SetOpacityMap(opacity_map_job_data.tex);
   SetEmissiveMap(emissive_map_job_data.tex);
 }
 
@@ -366,13 +373,13 @@ auto Material::SetAlphaThreshold(float const threshold) -> void {
 }
 
 
-auto Material::GetOpacityMask() const -> AssetRef<Texture2D> {
-  return opacity_mask_;
+auto Material::GetOpacityMap() const -> AssetRef<Texture2D> {
+  return opacity_map_;
 }
 
 
-auto Material::SetOpacityMask(AssetRef<Texture2D> const& opacity_mask) -> void {
-  opacity_mask_ = opacity_mask;
+auto Material::SetOpacityMap(AssetRef<Texture2D> const& opacity_map) -> void {
+  opacity_map_ = opacity_map;
   ++revision_;
 }
 
@@ -385,6 +392,30 @@ auto Material::GetEmissiveMap() const -> AssetRef<Texture2D> {
 auto Material::SetEmissiveMap(AssetRef<Texture2D> const& tex) -> void {
   emissive_map_ = tex;
   ++revision_;
+}
+
+
+auto Material::GetOpacity() const -> float {
+  return opacity_;
+}
+
+
+auto Material::SetOpacity(float const opacity) -> void {
+  opacity_ = opacity;
+  ++revision_;
+}
+
+
+auto Material::GetOpacityChannel() const -> std::uint32_t {
+  return opacity_channel_;
+}
+
+
+auto Material::SetOpacityChannel(std::uint32_t const channel) -> void {
+  if (channel <= 3) {
+    opacity_channel_ = channel;
+    ++revision_;
+  }
 }
 
 
@@ -430,8 +461,8 @@ auto Material::SetAlphaThresholdRefl(float const threshold) -> void {
 }
 
 
-auto Material::SetOpacityMaskRefl(AssetRef<Texture2D> const opacity_mask) -> void {
-  SetOpacityMask(opacity_mask);
+auto Material::SetOpacityMapRefl(AssetRef<Texture2D> const opacity_map) -> void {
+  SetOpacityMap(opacity_map);
 }
 
 

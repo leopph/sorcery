@@ -105,14 +105,24 @@ public:
   auto SetAlphaThreshold(float threshold) -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto GetOpacityMask() const -> AssetRef<Texture2D>;
+  auto GetOpacityMap() const -> AssetRef<Texture2D>;
   SORCERYAPI
-  auto SetOpacityMask(AssetRef<Texture2D> const& opacity_mask) -> void;
+  auto SetOpacityMap(AssetRef<Texture2D> const& opacity_map) -> void;
 
   [[nodiscard]] SORCERYAPI
   auto GetEmissiveMap() const -> AssetRef<Texture2D>;
   SORCERYAPI
   auto SetEmissiveMap(AssetRef<Texture2D> const& tex) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetOpacity() const -> float;
+  SORCERYAPI
+  auto SetOpacity(float opacity) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetOpacityChannel() const -> std::uint32_t;
+  SORCERYAPI
+  auto SetOpacityChannel(std::uint32_t channel) -> void;
 
   [[nodiscard]] SORCERYAPI
   auto GetRevision() const -> std::uint64_t;
@@ -125,16 +135,18 @@ private:
   auto SetNormalMapRefl(AssetRef<Texture2D> tex) -> void;
   auto SetBlendModeRefl(MaterialBlendMode blend_mode) -> void;
   auto SetAlphaThresholdRefl(float threshold) -> void;
-  auto SetOpacityMaskRefl(AssetRef<Texture2D> opacity_mask) -> void;
+  auto SetOpacityMapRefl(AssetRef<Texture2D> opacity_map) -> void;
   auto SetEmissiveMapRefl(AssetRef<Texture2D> tex) -> void;
 
   Vector3 base_color_{1.0f, 1.0f, 1.0f};
   float metallic_{0.0f};
   float roughness_{0.5f};
   float ao_{1.0f};
-  float alpha_threshold_{1.0f};
+  float alpha_threshold_{0.5f};
   Vector3 emissive_{0.0f, 0.0f, 0.0f};
   float emissive_intensity_{1.0f};
+  float opacity_{1.0f};
+  std::uint32_t opacity_channel_{0};
 
   MaterialBlendMode blend_mode_{MaterialBlendMode::kOpaque};
 
@@ -143,7 +155,7 @@ private:
   AssetRef<Texture2D> roughness_map_{nullptr};
   AssetRef<Texture2D> ao_map_{nullptr};
   AssetRef<Texture2D> normal_map_{nullptr};
-  AssetRef<Texture2D> opacity_mask_{nullptr};
+  AssetRef<Texture2D> opacity_map_{nullptr};
   AssetRef<Texture2D> emissive_map_{nullptr};
 
   std::uint64_t revision_{0};

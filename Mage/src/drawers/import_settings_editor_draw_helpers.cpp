@@ -1,5 +1,7 @@
 #include "import_settings_editor_draw_helpers.hpp"
 
+#include <array>
+
 #include <imgui.h>
 
 #include "../gui_helpers.hpp"
@@ -67,6 +69,35 @@ auto DrawTextureImportSettings(
       return ImGui::Checkbox("##generateMips", &settings.generate_mips);
     })) {
       this_func_changed = true;
+    }
+
+    ImGui::TableNextColumn();
+
+    ImGui::Text("Alpha coverage");
+    ImGui::TableNextColumn();
+
+    std::array constexpr coverage_mode_strs{"Auto", "Disabled", "Custom"};
+    auto coverage_mode_idx{static_cast<int>(settings.alpha_coverage_mode)};
+
+    if (ImGuiDisabled(!allow_edit || !settings.generate_mips, [&] {
+      return ImGui::Combo("##alphaCoverageModeCombo", &coverage_mode_idx, coverage_mode_strs.data(),
+        clamp_cast<int>(coverage_mode_strs.size()));
+    })) {
+      settings.alpha_coverage_mode = static_cast<AlphaCoverageMode>(coverage_mode_idx);
+      this_func_changed = true;
+    }
+
+    if (settings.alpha_coverage_mode == AlphaCoverageMode::kCustom) {
+      ImGui::TableNextColumn();
+
+      ImGui::Text("Alpha coverage threshold");
+      ImGui::TableNextColumn();
+
+      if (ImGuiDisabled(!allow_edit || !settings.generate_mips, [&] {
+        return ImGui::SliderFloat("##alphaCoverageThreshold", &settings.alpha_coverage_threshold, 0.01f, 0.99f);
+      })) {
+        this_func_changed = true;
+      }
     }
 
     ImGui::EndTable();

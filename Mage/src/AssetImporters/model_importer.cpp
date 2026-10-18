@@ -23,6 +23,7 @@
 #include "sorcery/char_encoding_helpers.hpp"
 #include "sorcery/entity_serialization.hpp"
 #include "sorcery/mesh_utils.hpp"
+#include "sorcery/observer_ptr.hpp"
 #include "sorcery/Serialization.hpp"
 #include "sorcery/util.hpp"
 #include "sorcery/assets/Mesh.hpp"
@@ -69,6 +70,9 @@ struct Node {
 
 
 namespace {
+constexpr auto kBlendFallbackAlphaThreshold = 0.1f;
+
+
 [[nodiscard]] auto Convert(aiVector3D const& ai_vec) noexcept -> Vector3 {
   return Vector3{ai_vec.x, ai_vec.y, ai_vec.z};
 }
@@ -238,8 +242,11 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
       // We don't use this yet, but we may want to in the future.
       [[maybe_unused]] auto const& import_settings = subasset_import_settings_[i].material_settings;
 
-      if (aiColor3D base_color; mtl->Get(AI_MATKEY_BASE_COLOR, base_color) == aiReturn_SUCCESS) {
+      if (aiColor4D base_color; mtl->Get(AI_MATKEY_BASE_COLOR, base_color) == aiReturn_SUCCESS) {
         material_data[i].base_color = Vector3{base_color.r, base_color.g, base_color.b};
+        material_data[i].opacity = base_color.a;
+      } else if (float opacity; mtl->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS) {
+        material_data[i].opacity = opacity;
       }
 
       if (float metallic; mtl->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == aiReturn_SUCCESS) {
@@ -258,43 +265,64 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
         material_data[i].emissive_intensity = emissive_intensity;
       }
 
-      auto mtl_not_opaque{false};
-      auto mtl_alpha_threshold{0.5f};
+      std::optional<MaterialBlendMode> explicit_blend_mode;
+      auto mtl_alpha_threshold = 0.5f;
 
       if (aiString alpha_mode; mtl->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode) == AI_SUCCESS) {
-        if (std::strcmp(alpha_mode.C_Str(), "MASK") == 0) {
-          mtl_not_opaque = true;
+        if (std::string_view const mode{alpha_mode.C_Str()}; mode == "MASK") {
+          explicit_blend_mode = MaterialBlendMode::kAlphaClip;
           mtl->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mtl_alpha_threshold);
+        } else if (mode == "BLEND") {
+          // TODO add alpha blending support
+          // Clip only near-invisible texels so semi-transparent surfaces render opaque instead of vanishing.
+          spdlog::warn("Material \"{}\" uses alpha blending, which is not supported. Falling back to alpha clipping.",
+            mtl->GetName().C_Str());
+          explicit_blend_mode = MaterialBlendMode::kAlphaClip;
+          mtl_alpha_threshold = kBlendFallbackAlphaThreshold;
+        } else {
+          explicit_blend_mode = MaterialBlendMode::kOpaque;
         }
       }
 
+      auto has_opacity_override = false;
+      auto base_color_uses_alpha = false;
+
       if (import_textures_) {
-        auto const discover_embedded_tex = [scene, mtl, &try_emplace_tex](
-          aiTextureType const type, unsigned const idx, AssetId& id_to_set) {
+        auto const find_embedded_tex = [scene, mtl]
+        (aiTextureType const type, unsigned const idx) -> ObserverPtr<aiTexture const> {
           aiString tex_path;
 
           if (mtl->GetTexture(type, idx, &tex_path) != aiReturn_SUCCESS) {
-            return false;
+            return nullptr;
           }
 
-          auto const tex{scene->GetEmbeddedTexture(tex_path.C_Str())};
+          return MakeObserver(scene->GetEmbeddedTexture(tex_path.C_Str()));
+        };
 
-          if (!tex) {
-            return false;
-          }
-
+        auto const register_tex = [&try_emplace_tex]
+        (aiTexture const& tex, aiTextureType const type, AssetId& id_to_set) {
           // We store the textures' array index now as their package index.
           // Later we will patch this when we're creating the final subasset order in the package.
-          auto const arr_idx{try_emplace_tex(*tex, type)};
+          auto const arr_idx = try_emplace_tex(tex, type);
           id_to_set = AssetId{Guid::Invalid(), static_cast<int>(arr_idx)};
-          return true;
+        };
+
+        auto const discover_embedded_tex = [&]
+        (aiTextureType const type, unsigned const idx, AssetId& id_to_set) {
+          auto const tex = find_embedded_tex(type, idx);
+
+          if (tex) {
+            register_tex(*tex, type, id_to_set);
+          }
+
+          return tex;
         };
 
         auto base_color_tex_type = aiTextureType_BASE_COLOR;
-        auto has_base_color_map = discover_embedded_tex(aiTextureType_BASE_COLOR, 0, material_data[i].base_color_map);
+        auto base_color_tex = discover_embedded_tex(aiTextureType_BASE_COLOR, 0, material_data[i].base_color_map);
 
-        if (!has_base_color_map && discover_embedded_tex(aiTextureType_DIFFUSE, 0, material_data[i].base_color_map)) {
-          has_base_color_map = true;
+        if (!base_color_tex) {
+          base_color_tex = discover_embedded_tex(aiTextureType_DIFFUSE, 0, material_data[i].base_color_map);
           base_color_tex_type = aiTextureType_DIFFUSE;
         }
 
@@ -304,23 +332,66 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
         discover_embedded_tex(aiTextureType_EMISSIVE, 0, material_data[i].emissive_map) ||
           discover_embedded_tex(aiTextureType_EMISSION_COLOR, 0, material_data[i].emissive_map);
         discover_embedded_tex(aiTextureType_NORMALS, 0, material_data[i].normal_map);
-        auto const has_opacity_map{discover_embedded_tex(aiTextureType_OPACITY, 0, material_data[i].opacity_map)};
 
-        mtl_not_opaque = mtl_not_opaque || has_opacity_map;
+        auto const opacity_tex = find_embedded_tex(aiTextureType_OPACITY, 0);
 
+        // The opacity source may be the base color tex itself, in which case we don't want to double-import it
+        auto const opacity_is_base_color_alpha = opacity_tex && opacity_tex == base_color_tex;
+        has_opacity_override = opacity_tex && !opacity_is_base_color_alpha;
 
-        if (int flags; has_base_color_map &&
+        if (has_opacity_override) {
+          register_tex(*opacity_tex, aiTextureType_OPACITY, material_data[i].opacity_map);
+          // We consider separate opacity maps grayscale
+          material_data[i].opacity_channel = 0;
+        }
+
+        base_color_uses_alpha = opacity_is_base_color_alpha;
+
+        if (int flags; base_color_tex &&
                        mtl->Get(AI_MATKEY_TEXFLAGS(base_color_tex_type, 0), flags) == aiReturn_SUCCESS) {
-          mtl_not_opaque = mtl_not_opaque || flags & aiTextureFlags_UseAlpha;
+          base_color_uses_alpha = base_color_uses_alpha || flags & aiTextureFlags_UseAlpha;
         }
       }
 
-      if (mtl_not_opaque) {
-        // If the material is not opaque, set its blend mode to threshold
+      if (explicit_blend_mode) {
+        material_data[i].blend_mode = *explicit_blend_mode;
+      } else if (has_opacity_override || base_color_uses_alpha) {
         material_data[i].blend_mode = MaterialBlendMode::kAlphaClip;
-        material_data[i].alpha_threshold = mtl_alpha_threshold;
+      }
+
+      material_data[i].alpha_threshold = mtl_alpha_threshold;
+
+      if (!explicit_blend_mode && material_data[i].blend_mode == MaterialBlendMode::kOpaque &&
+          material_data[i].opacity < 1.0f) {
+        spdlog::info("Material \"{}\" has an opacity factor of {} but no opacity texture. Importing as opaque.",
+          mtl->GetName().C_Str(), material_data[i].opacity);
       }
     }
+  }
+
+  // Map texture indices are still raw tex_infos indices here, before the fix-up below.
+  // Collect the alpha threshold each texture should preserve coverage for. 0 means no clip material uses it.
+  std::vector tex_coverage_thresholds(tex_infos.size(), 0.0f);
+
+  for (auto const& mtl_data : material_data) {
+    // A factor at or below the threshold clips everything regardless of the texture
+    if (mtl_data.blend_mode != MaterialBlendMode::kAlphaClip || mtl_data.opacity <= mtl_data.alpha_threshold) {
+      continue;
+    }
+
+    // We consider the final opacity mtl opacity * tex opacity, so compute tex threshold here
+    auto const tex_threshold = mtl_data.alpha_threshold / mtl_data.opacity;
+
+    auto const set_threshold = [&](AssetId const& id) {
+      // When materials share a texture, the highest threshold wins: scaling for it errs towards slightly
+      // thicker cutouts for the others, rather than letting them thin out faster than without scaling.
+      if (auto const idx = id.GetIdxInFile(); idx >= 0) {
+        tex_coverage_thresholds[idx] = std::max(tex_coverage_thresholds[idx], tex_threshold);
+      }
+    };
+
+    set_threshold(mtl_data.base_color_map);
+    set_threshold(mtl_data.opacity_map);
   }
 
   // Now we know how many materials we have so we can determine the final texture indices for the materials
@@ -377,8 +448,6 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
         }
       }
 
-      auto const& import_settings = subasset_import_settings_[subasset_idx].texture_settings;
-
       // The texture is compressed
       if (tex_info.tex->mHeight == 0) {
         auto const ext{std::u8string{u8'.'} += reinterpret_cast<char8_t const*>(&tex_info.tex->achFormatHint)};
@@ -387,6 +456,22 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
           .file_bytes = std::span{reinterpret_cast<std::byte const*>(tex_info.tex->pcData), tex_info.tex->mWidth},
           .ext = ext
         };
+
+        auto const& saved_settings = subasset_import_settings_[subasset_idx].texture_settings;
+
+        // Resolve Auto into a concrete choice for this import; the saved settings keep Auto
+        auto import_settings = saved_settings;
+
+        if (import_settings.alpha_coverage_mode == AlphaCoverageMode::kAuto) {
+          auto const derived = std::cmp_less(idx, tex_coverage_thresholds.size()) ? tex_coverage_thresholds[idx] : 0.0f;
+
+          if (derived > 0.0f) {
+            import_settings.alpha_coverage_mode = AlphaCoverageMode::kCustom;
+            import_settings.alpha_coverage_threshold = derived;
+          } else {
+            import_settings.alpha_coverage_mode = AlphaCoverageMode::kDisabled;
+          }
+        }
 
         auto tex_result{ImportTexture(import_src, import_settings)};
 

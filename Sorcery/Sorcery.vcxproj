@@ -334,6 +334,7 @@
     <None Include="src\rendering\shaders\gizmos.hlsli" />
     <None Include="src\rendering\shaders\irradiance.hlsli" />
     <None Include="src\rendering\shaders\lighting.hlsli" />
+    <None Include="src\rendering\shaders\material_helpers.hlsli" />
     <None Include="src\rendering\shaders\meshlet_culling.hlsli" />
     <None Include="src\rendering\shaders\mesh_shader_core.hlsli" />
     <None Include="src\rendering\shaders\deferred_lighting.hlsli" />

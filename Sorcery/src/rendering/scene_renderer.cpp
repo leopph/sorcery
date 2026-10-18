@@ -1981,7 +1981,7 @@ auto SceneRenderer::AddMeshComponentToPacket(
       mtl->GetRoughnessMap().Observe(),
       mtl->GetAoMap().Observe(),
       mtl->GetNormalMap().Observe(),
-      mtl->GetOpacityMask().Observe(),
+      mtl->GetOpacityMap().Observe(),
       mtl->GetEmissiveMap().Observe()
     };
 
@@ -2063,7 +2063,8 @@ auto SceneRenderer::SyncMaterial(
     .opacity_map_idx = textures.srv_indices[5],
     .alpha_threshold = mtl.GetAlphaThreshold(),
     .blend_mode = ToShaderBlendMode(mtl.GetBlendMode()),
-    .pad = {}
+    .opacity = mtl.GetOpacity(),
+    .opacity_channel = mtl.GetOpacityChannel()
   };
 
   upload_arena.UploadBuffer(cmd, render_mtl.GetBufferView(), 0, std::span{

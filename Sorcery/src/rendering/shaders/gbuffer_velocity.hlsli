@@ -6,6 +6,7 @@
 
 #include "common.hlsli"
 #include "gbuffer_utils.hlsli"
+#include "material_helpers.hlsli"
 #include "shader_interop.h"
 
 
@@ -104,20 +105,14 @@ void PsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out floa
 
   // Read materials
 
-  if (mtl.blend_mode == BLEND_MODE_ALPHA_CLIP && mtl.opacity_map_idx != INVALID_RES_IDX) {
-    Texture2D<float> const opacity_map = ResourceDescriptorHeap[mtl.opacity_map_idx];
+  float4 const base_color_opacity = SampleBaseColorOpacity(mtl, mtl_samp, ps_in.uv);
 
-    if (opacity_map.Sample(mtl_samp, ps_in.uv) < mtl.alpha_threshold) {
-      discard;
-    }
+  if (mtl.blend_mode == BLEND_MODE_ALPHA_CLIP &&
+      IsClipped(mtl, CalculateOpacity(mtl, mtl_samp, ps_in.uv, base_color_opacity.a))) {
+    discard;
   }
 
-  float3 base_color = mtl.base_color;
-
-  if (mtl.base_color_map_idx != INVALID_RES_IDX) {
-    Texture2D const base_color_map = ResourceDescriptorHeap[mtl.base_color_map_idx];
-    base_color *= base_color_map.Sample(mtl_samp, ps_in.uv).rgb;
-  }
+  float3 base_color = base_color_opacity.rgb;
 
   float metallic = mtl.metallic;
 
