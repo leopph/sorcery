@@ -12,8 +12,14 @@
 
 #define LEOPPHAPI SORCERYAPI
 
+#include <cstddef>
+
 
 namespace sorcery {
+// Fixed instead of std::hardware_destructive_interference_size so that layouts don't depend on compiler flags
+// across the DLL boundary. 64 bytes is correct for every supported (x64) target.
+constexpr std::size_t kCacheLineSize{64};
+
 static_assert(sizeof(float) == 4);
 using f32 = float;
 

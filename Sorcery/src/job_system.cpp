@@ -28,10 +28,11 @@ JobSystem::JobSystem(std::uint32_t const max_thread_count) :
       auto const preferred_thread_count = std::max(std::jthread::hardware_concurrency(), 2u);
       return max_thread_count == 0 ? preferred_thread_count : std::min(preferred_thread_count, max_thread_count);
     }()
-  } {
+  },
+  job_storage_{std::make_unique<ThreadJobStorage[]>(thread_count_)},
+  job_queues_{std::make_unique<WorkStealingQueue<ObserverPtr<Job>>[]>(thread_count_)},
+  workers_{std::make_unique<std::jthread[]>(worker_count_)} {
   this_thread_idx_ = 0; // main thread is thread 0
-  job_queues_ = std::make_unique<WorkStealingQueue<ObserverPtr<Job>>[]>(thread_count_);
-  workers_ = std::make_unique<std::jthread[]>(worker_count_);
 
   for (auto i = 0u; i < worker_count_; i++) {
     workers_[i] = std::jthread{
@@ -55,9 +56,12 @@ JobSystem::~JobSystem() {
 
 
 auto JobSystem::CreateJob(JobFuncType const func) -> ObserverPtr<Job> {
-  // kJobSlotsPerThread must be a power of two.
-  assert(std::has_single_bit(kJobSlotsPerThread));
-  ObserverPtr const job{&job_slots_[next_job_slot_++ & kJobSlotsPerThread - 1]};
+  static_assert(std::has_single_bit(kJobSlotsPerThread) && "Job slot count must be a power of two");
+  assert(this_thread_idx_ != kInvalidThreadIdx && this_thread_idx_ < thread_count_ &&
+    "JobSystem used from unknown thread!");
+
+  auto& job_storage = job_storage_[this_thread_idx_];
+  ObserverPtr const job{&job_storage.slots[job_storage.next_slot++ & kJobSlotsPerThread - 1]};
 
   auto const job_state = job->state.load(std::memory_order_acquire);
 
@@ -209,7 +213,14 @@ auto JobSystem::NotifyCompletion() noexcept -> void {
 }
 
 
-thread_local std::size_t JobSystem::next_job_slot_{0};
-thread_local std::array<Job, JobSystem::kJobSlotsPerThread> JobSystem::job_slots_{};
+JobSystem::ThreadJobStorage::~ThreadJobStorage() {
+  for (auto& job : slots) {
+    if (job.state.load(std::memory_order_acquire) == JobState::kFailed) {
+      std::destroy_at(ErrorSlot(job));
+    }
+  }
+}
+
+
 thread_local std::uint32_t JobSystem::this_thread_idx_{kInvalidThreadIdx};
 }

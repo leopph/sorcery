@@ -36,7 +36,7 @@ enum class JobState : std::uint8_t {
 auto IsFinished(JobState const state) noexcept { return state >= JobState::kCompleted; }
 
 
-struct Job {
+struct alignas(kCacheLineSize) Job {
   JobFuncType func{nullptr};
   alignas(std::exception_ptr) std::array<char, kJobPayloadCapacity> payload{};
   std::atomic<JobState> state{JobState::kCompleted};
@@ -69,22 +69,22 @@ public:
   auto operator=(JobSystem const&) -> void = delete;
   auto operator=(JobSystem&&) -> void = delete;
 
-  [[nodiscard]] SORCERYAPI static
+  [[nodiscard]] SORCERYAPI
   auto CreateJob(JobFuncType func) -> ObserverPtr<Job>;
 
   template<JobPayload Payload>
-  [[nodiscard]] static
+  [[nodiscard]]
   auto CreateJob(JobFuncType func, Payload&& payload) -> ObserverPtr<Job>;
 
   template<JobCallable Callable>
-  [[nodiscard]] static
+  [[nodiscard]]
   auto CreateJob(Callable&& callable) -> ObserverPtr<Job>;
 
   template<JobPayload Callable, JobPayload Payload>
     requires (std::invocable<Callable, Payload> &&
               !std::convertible_to<Callable, JobFuncType> &&
               sizeof(Callable) + sizeof(Payload) <= kJobPayloadCapacity)
-  [[nodiscard]] static
+  [[nodiscard]]
   auto CreateJob(Callable&& callable, Payload&& payload) -> ObserverPtr<Job>;
 
   template<typename T>
@@ -123,17 +123,35 @@ private:
   auto NotifyWork() noexcept -> void;
   auto NotifyCompletion() noexcept -> void;
 
+  constexpr static std::uint32_t kJobSlotsPerThread{4096};
+  constexpr static std::uint32_t kInvalidThreadIdx{std::numeric_limits<std::uint32_t>::max()};
+
+
+  // Each thread's storage starts on its own cache line and next_slot doesn't share one with the slots
+  struct alignas(kCacheLineSize) ThreadJobStorage {
+    std::size_t next_slot{0};
+    std::array<std::byte, kCacheLineSize - sizeof(std::size_t)> padding{};
+    std::array<Job, kJobSlotsPerThread> slots{};
+
+    ThreadJobStorage() = default;
+    ThreadJobStorage(ThreadJobStorage const& other) = delete;
+    ThreadJobStorage(ThreadJobStorage&& other) noexcept = delete;
+
+    ~ThreadJobStorage();
+
+    auto operator=(ThreadJobStorage const& other) -> ThreadJobStorage& = delete;
+    auto operator=(ThreadJobStorage&& other) noexcept -> ThreadJobStorage& = delete;
+  };
+
+
   std::uint32_t thread_count_;
   std::uint32_t worker_count_{thread_count_ - 1};
   std::atomic_uint64_t work_epoch_{0};
   std::atomic_uint64_t wait_epoch_{0};
+  std::unique_ptr<ThreadJobStorage[]> job_storage_;
   std::unique_ptr<WorkStealingQueue<ObserverPtr<Job>>[]> job_queues_;
   std::unique_ptr<std::jthread[]> workers_;
 
-  constexpr static std::uint32_t kJobSlotsPerThread{4096};
-  constexpr static std::uint32_t kInvalidThreadIdx{std::numeric_limits<std::uint32_t>::max()};
-  thread_local static std::size_t next_job_slot_;
-  thread_local static std::array<Job, kJobSlotsPerThread> job_slots_;
   thread_local static std::uint32_t this_thread_idx_;
 };
 }
