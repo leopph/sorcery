@@ -120,6 +120,7 @@ namespace {
 [[nodiscard]] auto IsSrgb(aiTextureType const tex_type) -> bool {
   return
     tex_type == aiTextureType_BASE_COLOR ||
+    tex_type == aiTextureType_DIFFUSE ||
     tex_type == aiTextureType_EMISSIVE ||
     tex_type == aiTextureType_EMISSION_COLOR;
 }
@@ -289,9 +290,14 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
           return true;
         };
 
-        auto const has_base_color_map{
-          discover_embedded_tex(aiTextureType_BASE_COLOR, 0, material_data[i].base_color_map)
-        };
+        auto base_color_tex_type = aiTextureType_BASE_COLOR;
+        auto has_base_color_map = discover_embedded_tex(aiTextureType_BASE_COLOR, 0, material_data[i].base_color_map);
+
+        if (!has_base_color_map && discover_embedded_tex(aiTextureType_DIFFUSE, 0, material_data[i].base_color_map)) {
+          has_base_color_map = true;
+          base_color_tex_type = aiTextureType_DIFFUSE;
+        }
+
         discover_embedded_tex(aiTextureType_METALNESS, 0, material_data[i].metallic_map);
         discover_embedded_tex(aiTextureType_DIFFUSE_ROUGHNESS, 0, material_data[i].roughness_map);
         discover_embedded_tex(aiTextureType_AMBIENT_OCCLUSION, 0, material_data[i].ao_map);
@@ -303,8 +309,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
         mtl_not_opaque = mtl_not_opaque || has_opacity_map;
 
 
-        if (int flags; has_base_color_map && mtl->Get(AI_MATKEY_TEXFLAGS(aiTextureType_BASE_COLOR, 0), flags) ==
-                       aiReturn_SUCCESS) {
+        if (int flags; has_base_color_map &&
+                       mtl->Get(AI_MATKEY_TEXFLAGS(base_color_tex_type, 0), flags) == aiReturn_SUCCESS) {
           mtl_not_opaque = mtl_not_opaque || flags & aiTextureFlags_UseAlpha;
         }
       }
