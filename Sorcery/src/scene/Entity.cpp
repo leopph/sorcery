@@ -4,12 +4,14 @@
 #include <format>
 #include <functional>
 #include <iterator>
+#include <string>
+#include <string_view>
 #include <utility>
 
 #include "sorcery/util.hpp"
+#include "sorcery/assets/Scene.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/object_registry.hpp"
-#include "sorcery/assets/Scene.hpp"
 
 
 RTTR_REGISTRATION {
@@ -38,28 +40,48 @@ auto Entity::Clone() -> std::unique_ptr<SceneObject> {
 auto Entity::OnAfterEnteringScene(Scene const& scene) -> void {
   scene_.Reset(&scene);
 
-  auto const entities{scene.GetEntities()};
+  auto const entities = scene.GetEntities();
 
-  auto name{GetName()};
+  auto const is_name_taken = [this, entities](std::string_view const name) {
+    return std::ranges::any_of(entities, [this, name](auto const& entity) {
+      return entity.get() != this && entity->GetName() == name;
+    });
+  };
 
-  for (std::size_t i{2}; true; i++) {
-    auto name_is_unique{true};
+  // Base name is a name without an " (N)" suffix. Base name of "Foo (2)" is "Foo"
+  auto const find_base_name = [](std::string_view const name) {
+    std::string_view base_name = name;
+    if (base_name.ends_with(')')) {
+      if (auto const paren_open = base_name.rfind(" ("); paren_open != std::string_view::npos) {
+        auto const digits = base_name.substr(paren_open + 2, base_name.size() - paren_open - 3);
 
-    for (auto const& entity : entities) {
-      if (entity.get() != this && entity->GetName() == name) {
-        name_is_unique = false;
+        if (!digits.empty() && std::ranges::all_of(digits, [](char const c) { return c >= '0' && c <= '9'; })) {
+          base_name = base_name.substr(0, paren_open);
+        }
+      }
+    }
+
+    return base_name;
+  };
+
+  if (is_name_taken(GetName())) {
+    // Strip an existing " (N)" suffix so duplicates of "Foo (2)" become "Foo (3)", not "Foo (2) (2)"
+    auto base_name = find_base_name(GetName());
+
+    std::string name;
+
+    // If name is already taken, append " (N)" suffix, so a duplicate of "Foo" becomes "Foo (2)".
+    // Due to the stripping above, the duplicate of "Foo (2)" will be "Foo (3)"
+    for (auto i = 2u; true; ++i) {
+      name = std::format("{} ({})", base_name, i);
+
+      if (!is_name_taken(name)) {
         break;
       }
     }
 
-    if (name_is_unique) {
-      break;
-    }
-
-    name = std::format("{} ({})", GetName(), i);
+    SetName(name);
   }
-
-  SetName(name);
 
   for (auto const& component : components_) {
     component->OnAfterEnteringScene(scene);
