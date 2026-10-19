@@ -10,6 +10,12 @@
 DECLARE_PARAMS(PostProcessDrawParams);
 
 
+// Interleaved gradient noise (Jimenez 2014)
+float InterleavedGradientNoise(float2 const pixel) {
+  return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+}
+
+
 float4 PsMain(PsIn const ps_in) : SV_TARGET {
   Texture2D const in_tex = ResourceDescriptorHeap[g_params.in_tex_idx];
   SamplerState const bi_clamp_samp = SamplerDescriptorHeap[g_params.bi_clamp_samp_idx];
@@ -20,6 +26,10 @@ float4 PsMain(PsIn const ps_in) : SV_TARGET {
 
   // Gamma correction
   pixel_color = pow(pixel_color, g_params.inv_gamma);
+
+  // Dither
+  float const noise = InterleavedGradientNoise(ps_in.pos_cs.xy) + InterleavedGradientNoise(ps_in.pos_cs.xy + 0.5) - 1.0;
+  pixel_color += noise / 255.0;
 
   return float4(pixel_color, 1);
 }
