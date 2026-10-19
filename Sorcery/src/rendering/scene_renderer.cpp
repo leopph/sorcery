@@ -1278,8 +1278,8 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
     // Underlying vector may be reallocated and this reference can dangle.
     auto& cam_per_view_cb = AcquirePerViewConstantBuffer(frame_idx);
     SetPerViewConstants(cam_per_view_cb, cam_view.view_mtx, cam_view.proj_mtx, cam_view.view_proj_mtx,
-      prepared_cam.prev_view_proj_mtx, cam_view.frustum_ws, extracted_cam.position, cam_view.near_plane,
-      cam_view.far_plane, static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
+      prepared_cam.prev_view_proj_mtx, cam_view.frustum_ws, cam_view.near_plane, cam_view.far_plane,
+      static_cast<int>(transient_rt_width), static_cast<int>(transient_rt_height));
 
     ViewContext const view_ctx{
       .width = transient_rt_width,
@@ -2850,7 +2850,6 @@ auto SceneRenderer::SetPerViewConstants(
   Matrix4 const& view_proj_mtx,
   Matrix4 const& prev_view_proj_mtx,
   Frustum const& frustum_ws,
-  Vector3 const& view_pos,
   float const near_clip_plane,
   float const far_clip_plane,
   int const rt_width,
@@ -2869,7 +2868,10 @@ auto SceneRenderer::SetPerViewConstants(
     data.frustum_planes_ws[i] = frustum_ws.GetPlanes()[i];
   }
 
-  data.viewPos = view_pos;
+  // View-space camera center: (0,0,0,1) for perspective, (0,0,-1,0) for ortho,
+  // i.e. the direction back toward the viewer (the view looks down +Z).
+  Vector4 const eye_vs{0, 0, -proj_mtx[3][3], proj_mtx[2][3]};
+  data.eye_ws = eye_vs * data.invViewMtx;
   data.near_clip_plane = near_clip_plane;
   data.far_clip_plane = far_clip_plane;
   data.screenSize = Vector2{rt_width, rt_height};
@@ -3187,8 +3189,7 @@ auto SceneRenderer::RecordDepthOnlyPass(ExtractedFrameData const& frame_packet, 
 
   auto& per_view_cb{AcquirePerViewConstantBuffer(frame.GetIndex())};
   SetPerViewConstants(per_view_cb, view.view_mtx, view.proj_mtx, view.view_proj_mtx, {}, view.frustum_ws,
-    Vector3{}, view.near_plane, view.far_plane, static_cast<int>(view.viewport.Width),
-    static_cast<int>(view.viewport.Height));
+    view.near_plane, view.far_plane, static_cast<int>(view.viewport.Width), static_cast<int>(view.viewport.Height));
   cmd.SetConstantBuffer(PIPELINE_PARAM_INDEX(DepthOnlyDrawParams, per_view_cb_idx), *per_view_cb.GetBufferView());
 
   for (auto const& geom_batch : frame_packet.geom_batches) {

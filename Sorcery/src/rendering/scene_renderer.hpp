@@ -621,7 +621,6 @@ private:
     Matrix4 const& view_proj_mtx,
     Matrix4 const& prev_view_proj_mtx,
     Frustum const& frustum_ws,
-    Vector3 const& view_pos,
     float near_clip_plane,
     float far_clip_plane,
     int rt_width,

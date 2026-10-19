@@ -29,7 +29,7 @@ float4 UnpackCone(uint const packed) {
 
 
 bool IsMeshletVisible(MeshletCullData c, float4x4 const local_to_world_mtx, float4 const frustum_planes_ws[6],
-                      float const scale, float3 const view_pos) {
+                      float const scale, float4 const eye_ws) {
   // Do a cull test of the bounding sphere against the view frustum planes.
   float4 center = mul(float4(c.bounding_sphere.xyz, 1), local_to_world_mtx);
   float radius = c.bounding_sphere.w * scale;
@@ -53,7 +53,8 @@ bool IsMeshletVisible(MeshletCullData c, float4x4 const local_to_world_mtx, floa
 
   // Offset the normal cone axis from the meshlet center-point - make sure to account for world scaling
   float3 apex = center.xyz - axis * c.apex_offset * scale;
-  float3 view = normalize(view_pos - apex);
+  // W is 0 for ortho views and 1 for perspective views
+  float3 view = normalize(eye_ws.xyz - apex * eye_ws.w);
 
   // The normal cone w-component stores -cos(angle + 90 deg)
   // This is the min dot product along the inverted axis from which all the meshlet's triangles are backface

@@ -43,7 +43,7 @@ float4 PsMain(PsIn const ps_in) : SV_Target {
   float4 pos4_ws = mul(pos_ndc, per_view_cb.invViewProjMtx);
   float3 const pos_ws = pos4_ws.xyz / pos4_ws.w;
   float3 const pos_vs = mul(float4(pos_ws, 1), per_view_cb.viewMtx).xyz;
-  float3 const dir_to_cam_ws = normalize(per_view_cb.viewPos - pos_ws);
+  float3 const dir_to_cam_ws = normalize(per_view_cb.eye_ws.xyz - pos_ws * per_view_cb.eye_ws.w);
 
   const ConstantBuffer<ShaderPerFrameConstants> per_frame_cb = ResourceDescriptorHeap[g_params.per_frame_cb_idx];
 

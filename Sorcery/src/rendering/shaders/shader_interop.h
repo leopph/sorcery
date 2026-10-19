@@ -159,12 +159,13 @@ struct ShaderPerViewConstants {
 
   float4 frustum_planes_ws[6];
 
-  float3 viewPos;
-  float near_clip_plane;
+  // w = 0 means direction toward the viewer
+  // relevant for ortho projection
+  float4 eye_ws;
 
+  float near_clip_plane;
   float far_clip_plane;
   float2 screenSize;
-  float pad;
 };
 
 
