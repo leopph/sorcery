@@ -15,8 +15,8 @@ class Object {
 
 protected:
   SORCERYAPI Object();
-  Object(Object const& other) = default;
-  Object(Object&& other) noexcept = default;
+  SORCERYAPI Object(Object const& other);
+  Object(Object&& other) = delete;
 
 public:
   SORCERYAPI virtual ~Object();

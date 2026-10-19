@@ -14,6 +14,12 @@ Object::Object() :
   id_{App::Instance().GetObjectRegistry().Register(ObserverPtr{this})} {}
 
 
+Object::Object(Object const& other) :
+  name_{other.name_},
+  // ID is unique so we're not copying it.
+  id_{App::Instance().GetObjectRegistry().Register(ObserverPtr{this})} {}
+
+
 Object::~Object() {
   App::Instance().GetObjectRegistry().Unregister(id_);
 }
