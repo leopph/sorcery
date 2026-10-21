@@ -105,7 +105,7 @@ auto AssetManager::GetInfoForAssetsOfType(rttr::type const& type, std::vector<As
   // Default assets
   for (auto const& asset : default_assets_) {
     if (auto const asset_type{rttr::type::get(*asset)}; asset_type.is_derived_from(type)) {
-      out.emplace_back(asset->GetAssetId(), asset->GetName(), asset_type);
+      out.emplace_back(asset->GetAssetId(), std::string{asset->GetName()}, asset_type);
     }
   }
 
@@ -127,7 +127,7 @@ auto AssetManager::GetInfoForAssetsOfType(rttr::type const& type, std::vector<As
     }
 
     if (!contains && rttr::type::get(*asset).is_derived_from(type)) {
-      out.emplace_back(asset->GetAssetId(), asset->GetName(), asset->get_type());
+      out.emplace_back(asset->GetAssetId(), std::string{asset->GetName()}, asset->get_type());
     }
   }
 }

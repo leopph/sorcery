@@ -7,14 +7,14 @@
 #include <string_view>
 #include <vector>
 
+#include <sorcery/asset_ref.hpp>
 #include <sorcery/Core.hpp>
 #include <sorcery/mutex.hpp>
 #include <sorcery/object_ptr.hpp>
 #include <sorcery/observer_ptr.hpp>
-#include <sorcery/asset_ref.hpp>
+#include <sorcery/assets/Asset.hpp>
 #include <sorcery/assets/Material.hpp>
 #include <sorcery/assets/Mesh.hpp>
-#include <sorcery/assets/Asset.hpp>
 
 
 namespace sorcery {
@@ -103,7 +103,7 @@ private:
 
 
   [[nodiscard]] SORCERYAPI auto InternalLoadAsset(AssetId const& asset_id,
-                                                     AssetDescription const& desc) -> ObjectPtr<Asset>;
+                                                  AssetDescription const& desc) -> ObjectPtr<Asset>;
   [[nodiscard]] static
   auto LoadTexture(std::span<std::byte const> bytes) -> MaybeNull<std::unique_ptr<Asset>>;
 

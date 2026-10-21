@@ -25,12 +25,12 @@ Object::~Object() {
 }
 
 
-auto Object::GetName() const noexcept -> std::string const& {
+auto Object::GetName() const noexcept -> std::string_view {
   return name_;
 }
 
 
-auto Object::SetName(std::string const& name) -> void {
+auto Object::SetName(std::string_view const name) -> void {
   name_ = name;
 }
 

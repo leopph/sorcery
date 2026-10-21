@@ -1149,7 +1149,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     std::ranges::copy(yaml_str | std::views::transform([](char c) { return static_cast<std::byte>(c); }),
       prefab_bytes.begin());
 
-    results.emplace_back(AssetPackagePayloadKind::kPrefab, rttr::type::get<Prefab>(), entity->GetName(),
+    results.emplace_back(AssetPackagePayloadKind::kPrefab, rttr::type::get<Prefab>(), std::string{entity->GetName()},
       std::move(prefab_bytes));
   }
 
