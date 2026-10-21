@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <utility>
 
+#include <sorcery/not_null.hpp>
 #include <sorcery/reflection.hpp>
 
 
@@ -86,6 +87,10 @@ struct rttr::wrapper_mapper<sorcery::ObserverPtr<T>> {
   template<typename U>
   static auto convert(type const& obj_ptr, bool& ok) -> sorcery::ObserverPtr<U>;
 };
+
+
+template<class T>
+inline constexpr auto sorcery::kEnableNotNull<sorcery::ObserverPtr<T>> = true;
 
 
 #include <sorcery/observer_ptr.inl>
