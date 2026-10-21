@@ -524,6 +524,9 @@
     <ClInclude Include="include\sorcery\mesh_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\sorcery\not_null.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\shader_interop.h" />
@@ -598,6 +601,9 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="src\rendering\shaders\material_helpers.hlsli" />
+    <None Include="include\sorcery\not_null.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\rendering\shaders\post_process_ps.hlsl" />

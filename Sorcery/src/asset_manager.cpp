@@ -364,7 +364,7 @@ auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
 }
 
 
-auto AssetManager::LoadTexture(std::span<std::byte const> const bytes) -> MaybeNull<std::unique_ptr<Asset>> {
+auto AssetManager::LoadTexture(std::span<std::byte const> const bytes) -> std::unique_ptr<Asset> {
   DirectX::TexMetadata meta;
   DirectX::ScratchImage img;
   if (FAILED(LoadFromDDSMemory(bytes.data(), bytes.size(), DirectX::DDS_FLAGS_NONE, &meta, img))) {
@@ -387,7 +387,7 @@ auto AssetManager::LoadTexture(std::span<std::byte const> const bytes) -> MaybeN
 }
 
 
-auto AssetManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeNull<std::unique_ptr<Asset>> {
+auto AssetManager::LoadMesh(std::span<std::byte const> const bytes) -> std::unique_ptr<Asset> {
   auto cur_bytes{as_bytes(std::span{bytes})};
 
   // Element counts
@@ -709,7 +709,7 @@ auto AssetManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeNull
 auto AssetManager::LoadMaterial(
   std::span<std::byte const> const bytes,
   YamlDeserializeContext const& ctx
-) -> MaybeNull<std::unique_ptr<Asset>> {
+) -> std::unique_ptr<Asset> {
   // TODO rewrite this to spanstream when upgrading to C++23
   auto mtl = std::make_unique<Material>();
   mtl->Deserialize(YAML::Load(std::string{
@@ -722,7 +722,7 @@ auto AssetManager::LoadMaterial(
 auto AssetManager::LoadPrefab(
   std::span<std::byte const> const bytes,
   YamlDeserializeContext const& ctx
-) -> MaybeNull<std::unique_ptr<Asset>> {
+) -> std::unique_ptr<Asset> {
   // TODO rewrite this to spanstream when upgrading to C++23
   auto prefab = std::make_unique<Prefab>();
   prefab->Deserialize(YAML::Load(std::string{

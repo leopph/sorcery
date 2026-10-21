@@ -216,6 +216,7 @@
     <ClInclude Include="include\sorcery\host\command_line_args.hpp" />
     <ClInclude Include="include\sorcery\host\game_module.hpp" />
     <ClInclude Include="include\sorcery\mesh_utils.hpp" />
+    <ClInclude Include="include\sorcery\not_null.hpp" />
     <ClInclude Include="src\rendering\ssao_params.hpp" />
     <ClInclude Include="include\sorcery\io_helpers.hpp" />
     <ClInclude Include="include\sorcery\material_blend_mode.hpp" />
@@ -316,6 +317,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="include\sorcery\host\job_system.inl" />
+    <None Include="include\sorcery\not_null.inl" />
     <None Include="include\sorcery\object.inl" />
     <None Include="include\sorcery\object_ptr.inl" />
     <None Include="include\sorcery\host\object_registry.inl" />

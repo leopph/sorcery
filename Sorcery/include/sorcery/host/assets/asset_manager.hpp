@@ -105,18 +105,18 @@ private:
   [[nodiscard]] SORCERYAPI auto InternalLoadAsset(AssetId const& asset_id,
                                                   AssetDescription const& desc) -> ObjectPtr<Asset>;
   [[nodiscard]] static
-  auto LoadTexture(std::span<std::byte const> bytes) -> MaybeNull<std::unique_ptr<Asset>>;
+  auto LoadTexture(std::span<std::byte const> bytes) -> std::unique_ptr<Asset>;
 
   [[nodiscard]] static
-  auto LoadMesh(std::span<std::byte const> bytes) -> MaybeNull<std::unique_ptr<Asset>>;
+  auto LoadMesh(std::span<std::byte const> bytes) -> std::unique_ptr<Asset>;
 
   [[nodiscard]] static
   auto LoadMaterial(std::span<std::byte const> bytes,
-                    YamlDeserializeContext const& ctx) -> MaybeNull<std::unique_ptr<Asset>>;
+                    YamlDeserializeContext const& ctx) -> std::unique_ptr<Asset>;
 
   [[nodiscard]] static
   auto LoadPrefab(std::span<std::byte const> bytes,
-                  YamlDeserializeContext const& ctx) -> MaybeNull<std::unique_ptr<Asset>>;
+                  YamlDeserializeContext const& ctx) -> std::unique_ptr<Asset>;
 
   ObserverPtr<JobSystem> job_system_;
 
