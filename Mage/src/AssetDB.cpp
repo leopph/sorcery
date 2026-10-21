@@ -97,7 +97,8 @@ auto AssetDB::Refresh() -> void {
         continue;
       }
 
-      if (!InternalImportAsset(asset_path_abs, new_guid_by_src_abs_path, new_asset_file_info_by_guid, new_asset_info_by_id,
+      if (!InternalImportAsset(asset_path_abs, new_guid_by_src_abs_path, new_asset_file_info_by_guid,
+        new_asset_info_by_id,
         *importer, guid)) {
         spdlog::trace("Failed to import asset at file [{}]. Removing asset and meta files.",
           ToUntypedSv(asset_path_abs.u8string()));
@@ -326,7 +327,7 @@ auto AssetDB::SaveAssetToFile(
   asset_file_info_by_guid_.insert_or_assign(asset->GetAssetId().GetGuid(), file_info);
   // Update asset record
   asset_info_by_id_.insert_or_assign(asset->GetAssetId(), AssetInfo{
-    .id = asset->GetAssetId(), .type = rttr::type::get(asset), .name = asset->GetName()
+    .id = asset->GetAssetId(), .type = rttr::type::get(asset), .name = std::string{asset->GetName()}
   });
   // Update guid-source path mapping
   guid_by_src_abs_path_.insert_or_assign(asset_path_abs, asset->GetAssetId().GetGuid());
@@ -348,7 +349,8 @@ auto AssetDB::SaveAssetToFile(NativeAsset const& asset) -> void {
     return;
   }
 
-  if (auto const it{asset_file_info_by_guid_.find(asset.GetAssetId().GetGuid())}; it != std::end(asset_file_info_by_guid_)) {
+  if (auto const it{asset_file_info_by_guid_.find(asset.GetAssetId().GetGuid())};
+    it != std::end(asset_file_info_by_guid_)) {
     std::ofstream out_stream{asset_dir_abs_ / it->second.src_path_asset_dir_rel};
     YAML::Emitter emitter{out_stream};
     emitter << asset.Serialize();
@@ -357,7 +359,7 @@ auto AssetDB::SaveAssetToFile(NativeAsset const& asset) -> void {
 
 
 auto AssetDB::ImportAssetFile(std::filesystem::path const& asset_path_asset_dir_rel,
-                                    AssetImporter* importer) -> bool {
+                              AssetImporter* importer) -> bool {
   // Temporary to keep a potentially freshly created importer alive in this stack frame.
   // Use the observer ptr, do not access this directly.
   std::unique_ptr<AssetImporter> ownedImporter;
@@ -424,7 +426,7 @@ auto AssetDB::MoveAssetFile(Guid const& guid, std::filesystem::path const& targe
 
 
 auto AssetDB::MoveDirectory(std::filesystem::path const& src_path_asset_dir_rel,
-                               std::filesystem::path const& dst_path_asset_dir_rel) -> bool {
+                            std::filesystem::path const& dst_path_asset_dir_rel) -> bool {
   auto const srcPathAbs{weakly_canonical(GetAssetDirectoryAbsolutePath() / src_path_asset_dir_rel)};
   auto const dstPathAbs{weakly_canonical(GetAssetDirectoryAbsolutePath() / dst_path_asset_dir_rel)};
 
@@ -603,7 +605,7 @@ auto AssetDB::MakeMetaPath(std::filesystem::path const& path) -> std::filesystem
 
 
 auto AssetDB::ReadMeta(std::filesystem::path const& asset_path_abs, Guid* const guid,
-                          std::unique_ptr<AssetImporter>* const importer) noexcept -> bool {
+                       std::unique_ptr<AssetImporter>* const importer) noexcept -> bool {
   auto const metaPathAbs{MakeMetaPath(asset_path_abs)};
 
   if (!exists(metaPathAbs)) {
@@ -679,7 +681,7 @@ auto AssetDB::ReadMeta(std::filesystem::path const& asset_path_abs, Guid* const 
 
 
 auto AssetDB::WriteMeta(std::filesystem::path const& asset_path_abs, Guid const& guid,
-                           AssetImporter const& importer) noexcept -> bool {
+                        AssetImporter const& importer) noexcept -> bool {
   if (!guid.IsValid()) {
     return false;
   }
@@ -713,10 +715,10 @@ auto AssetDB::WriteMeta(std::filesystem::path const& asset_path_abs, Guid const&
 
 
 auto AssetDB::InternalImportAsset(std::filesystem::path const& asset_path_abs,
-                                        std::map<std::filesystem::path, Guid>& guid_by_src_abs_path,
-                                        std::map<Guid, AssetFileInfo>& asset_file_info_by_guid,
-                                        std::map<AssetId, AssetInfo>& asset_info_by_id, AssetImporter& importer,
-                                        Guid const& guid) const -> bool {
+                                  std::map<std::filesystem::path, Guid>& guid_by_src_abs_path,
+                                  std::map<Guid, AssetFileInfo>& asset_file_info_by_guid,
+                                  std::map<AssetId, AssetInfo>& asset_info_by_id, AssetImporter& importer,
+                                  Guid const& guid) const -> bool {
   std::vector<AssetImportResult> import_results;
 
   if (!importer.Import(asset_path_abs, import_results)) {

@@ -1274,10 +1274,10 @@ auto SerializePrefab(Entity const& entity) -> std::vector<std::byte> {
 // Creates a prefab of a single entity that renders the mesh with the materials.
 // Placeholder mesh and material objects carry the package indices the prefab's asset references serialize to.
 [[nodiscard]]
-auto CreateSingleEntityPrefab(std::string name, MeshData const& mesh_data,
+auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh_data,
                               std::size_t const material_count) -> AssetImportResult {
   auto const entity{std::make_unique<Entity>()};
-  entity->SetName(std::move(name));
+  entity->SetName(name);
 
   auto mesh_component{std::make_unique<StaticMeshComponent>()};
 
@@ -1299,7 +1299,8 @@ auto CreateSingleEntityPrefab(std::string name, MeshData const& mesh_data,
   entity->AddComponent(std::move(mesh_component));
 
   return AssetImportResult{
-    AssetPackagePayloadKind::kPrefab, rttr::type::get<Prefab>(), entity->GetName(), SerializePrefab(*entity)
+    AssetPackagePayloadKind::kPrefab, rttr::type::get<Prefab>(), std::string{entity->GetName()},
+    SerializePrefab(*entity)
   };
 }
 

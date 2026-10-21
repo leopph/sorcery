@@ -52,9 +52,9 @@ auto ObjectPicker<T>::Draw(ObjectPtr<T>& target_obj, bool const allow_null) noex
   }
 
   ImGui::SameLine();
-  ImGui::Text("%s", target_obj
-                      ? target_obj->GetName().c_str()
-                      : kNullDisplayName.data());
+
+  auto const label = target_obj ? target_obj->GetName() : kNullDisplayName;
+  ImGui::TextUnformatted(label.data(), label.data() + label.size());
 
   if (ImGui::BeginDragDropTarget()) {
     if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data())}) {

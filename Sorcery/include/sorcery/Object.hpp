@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include <sorcery/Core.hpp>
 #include <sorcery/object_id.hpp>
@@ -25,9 +26,9 @@ public:
   auto operator=(Object&& other) -> void = delete;
 
   [[nodiscard]] SORCERYAPI
-  auto GetName() const noexcept -> std::string const&;
+  auto GetName() const noexcept -> std::string_view;
   SORCERYAPI
-  auto SetName(std::string const& name) -> void;
+  auto SetName(std::string_view name) -> void;
 
   [[nodiscard]] SORCERYAPI
   auto GetId() const -> ObjectId const&;
