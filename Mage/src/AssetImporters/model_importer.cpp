@@ -2,19 +2,25 @@
 
 #include <algorithm>
 #include <cassert>
+#include <concepts>
+#include <cstddef>
 #include <filesystem>
 #include <format>
+#include <functional>
 #include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <queue>
 #include <ranges>
 #include <span>
+#include <stack>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -66,6 +72,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery::mage {
+namespace {
 struct Node {
   std::string name;
   Matrix4 transform;
@@ -75,7 +82,6 @@ struct Node {
 };
 
 
-namespace {
 constexpr auto kBlendFallbackAlphaThreshold = 0.1f;
 
 
@@ -86,32 +92,37 @@ using SubassetKind = ModelImporter::SubassetKind;
 /******************************************************
  WE WANT TO IMPORT SUBASSETS IN THE FOLLOWING ORDER:
  1. Prefab
- 2. Mesh
+ 2. Meshes
  3. Materials
  4. Textures
  *******************************************************/
 
 // Maps subassets to their package indices and to their indices in the subasset import settings.
 // The subasset import settings only hold materials and textures.
-struct SubassetLayout {
-  std::size_t material_count;
+class SubassetLayout {
+public:
+  SubassetLayout(std::size_t const mesh_count, std::size_t const material_count) :
+    mesh_count_{mesh_count},
+    material_count_{material_count} {}
 
 
-  [[nodiscard]] static
-  auto GetMeshIdx() -> int {
-    return 1 /* prefab is first */;
-  }
-
-
-  [[nodiscard]] static
-  auto GetMaterialIdx(std::size_t const mtl_idx) -> int {
-    return 2 /* prefab + mesh */ + clamp_cast<int>(mtl_idx);
+  [[nodiscard]]
+  auto GetMeshIdx(std::size_t const mesh_idx) const -> std::size_t {
+    assert(mesh_idx < mesh_count_);
+    return 1uz /* prefab is first */ + mesh_idx;
   }
 
 
   [[nodiscard]]
-  auto GetTextureIdx(int const tex_idx) const -> int {
-    return tex_idx + 2 /* prefab + mesh */ + clamp_cast<int>(material_count);
+  auto GetMaterialIdx(std::size_t const mtl_idx) const -> std::size_t {
+    assert(mtl_idx < material_count_);
+    return 1uz /* prefab */ + mesh_count_ + mtl_idx;
+  }
+
+
+  [[nodiscard]]
+  auto GetTextureIdx(std::size_t const tex_idx) const -> std::size_t {
+    return 1uz /* prefab */ + mesh_count_ + material_count_ + tex_idx;
   }
 
 
@@ -123,8 +134,24 @@ struct SubassetLayout {
 
   [[nodiscard]]
   auto GetTextureSettingsIdx(std::size_t const tex_idx) const -> std::size_t {
-    return material_count + tex_idx;
+    return material_count_ + tex_idx;
   }
+
+
+  [[nodiscard]]
+  auto GetMeshCount() const -> std::size_t {
+    return mesh_count_;
+  }
+
+
+  [[nodiscard]]
+  auto GetMaterialCount() const -> std::size_t {
+    return material_count_;
+  }
+
+private:
+  std::size_t mesh_count_;
+  std::size_t material_count_;
 };
 
 
@@ -139,8 +166,8 @@ struct TextureLoadInfo {
 
 struct CollectedMaterials {
   std::vector<MaterialSlotInfo> slots;
-  std::vector<MaterialAssetData> data;
-  std::vector<TextureLoadInfo> tex_infos;
+  std::vector<MaterialAssetData> assets;
+  std::vector<TextureLoadInfo> tex_deps;
 };
 
 
@@ -232,7 +259,7 @@ auto LoadScene(std::filesystem::path const& src) -> std::unique_ptr<Assimp::Impo
     Assimp::DefaultLogger::create("", Assimp::Logger::VERBOSE, aiDefaultLogStream_STDOUT | aiDefaultLogStream_DEBUGGER);
   }
 
-  auto importer{std::make_unique<Assimp::Importer>()};
+  auto importer = std::make_unique<Assimp::Importer>();
 
   // We don't need these scene objects
   importer->SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
@@ -240,6 +267,9 @@ auto LoadScene(std::filesystem::path const& src) -> std::unique_ptr<Assimp::Impo
   importer->SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
   // Smoothing angle for smooth normal generation
   importer->SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
+  // By default, assimp’s FBX importer keeps pivot transforms as extra nodes named …$AssimpFbx$_Translation, …_Rotation and so on.
+  // The hierarchy would show them as clutter. This flag folds them into a single transform per node.
+  importer->SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
 
   auto const scene{
     importer->ReadFile(std::string{ToUntypedSv(src.u8string())},
@@ -253,7 +283,7 @@ auto LoadScene(std::filesystem::path const& src) -> std::unique_ptr<Assimp::Impo
     return nullptr;
   }
 
-  return importer;
+  return std::move(importer);
 }
 
 
@@ -417,8 +447,8 @@ auto ExtractMaterial(aiScene const& scene, aiMaterial const& mtl, bool const imp
 }
 
 
-// Material slots are always collected. Material data is only collected if material import is enabled,
-// and textures are only discovered if both material and texture import are enabled.
+// Slot info for each material is always collected. If material import is enabled, asset data is also collected.
+// Texture dependencies are also collected if both material and texture import are enabled.
 [[nodiscard]]
 auto CollectMaterials(aiScene const& scene, bool const import_materials, bool const import_textures,
                       std::vector<SubassetImportSettings>& subasset_settings) -> CollectedMaterials {
@@ -426,20 +456,17 @@ auto CollectMaterials(aiScene const& scene, bool const import_materials, bool co
   ret.slots.resize(scene.mNumMaterials);
 
   if (import_materials) {
-    ret.data.reserve(scene.mNumMaterials);
+    ret.assets.resize(scene.mNumMaterials);
   }
 
-  for (unsigned i{0}; i < scene.mNumMaterials; i++) {
-    auto const& mtl{*scene.mMaterials[i]};
+  for (auto i = 0u; i < scene.mNumMaterials; i++) {
+    auto const& mtl = *scene.mMaterials[i];
 
-    if (auto const& mtl_name{mtl.GetName()}; mtl_name.length > 0) {
-      ret.slots[i].name = mtl_name.C_Str();
-    } else {
-      ret.slots[i].name = std::format("Material_{}", i);
-    }
+    auto const& mtl_name = mtl.GetName();
+    ret.slots[i].name = mtl_name.Empty() ? std::format("Material_{}", i) : std::string{mtl_name.C_Str()};
 
     if (import_materials) {
-      auto const settings_idx{SubassetLayout::GetMaterialSettingsIdx(i)};
+      auto const settings_idx = SubassetLayout::GetMaterialSettingsIdx(i);
 
       if (subasset_settings.size() <= settings_idx) {
         subasset_settings.emplace_back(MaterialImportSettings{}, TextureImportSettings{}, SubassetKind::kMaterial);
@@ -451,7 +478,7 @@ auto CollectMaterials(aiScene const& scene, bool const import_materials, bool co
       // We don't use this yet, but we may want to in the future.
       [[maybe_unused]] auto const& import_settings = subasset_settings[settings_idx].material_settings;
 
-      ret.data.emplace_back(ExtractMaterial(scene, mtl, import_textures, ret.tex_infos));
+      ret.assets[i] = ExtractMaterial(scene, mtl, import_textures, ret.tex_deps);
     }
   }
 
@@ -462,18 +489,18 @@ auto CollectMaterials(aiScene const& scene, bool const import_materials, bool co
 // Map texture indices must still be raw tex_infos indices, before the fix-up.
 // Returns the alpha threshold each texture should preserve coverage for. 0 means no clip material uses it.
 [[nodiscard]]
-auto ComputeTextureCoverageThresholds(std::span<MaterialAssetData const> const material_data,
+auto ComputeTextureCoverageThresholds(std::span<MaterialAssetData const> const materials,
                                       std::size_t const tex_count) -> std::vector<float> {
   std::vector tex_coverage_thresholds(tex_count, 0.0f);
 
-  for (auto const& mtl_data : material_data) {
+  for (auto const& mtl : materials) {
     // A factor at or below the threshold clips everything regardless of the texture
-    if (mtl_data.blend_mode != MaterialBlendMode::kAlphaClip || mtl_data.opacity <= mtl_data.alpha_threshold) {
+    if (mtl.blend_mode != MaterialBlendMode::kAlphaClip || mtl.opacity <= mtl.alpha_threshold) {
       continue;
     }
 
     // We consider the final opacity mtl opacity * tex opacity, so compute tex threshold here
-    auto const tex_threshold = mtl_data.alpha_threshold / mtl_data.opacity;
+    auto const tex_threshold = mtl.alpha_threshold / mtl.opacity;
 
     auto const set_threshold = [&](AssetId const& id) {
       // When materials share a texture, the highest threshold wins: scaling for it errs towards slightly
@@ -483,8 +510,8 @@ auto ComputeTextureCoverageThresholds(std::span<MaterialAssetData const> const m
       }
     };
 
-    set_threshold(mtl_data.base_color_map);
-    set_threshold(mtl_data.opacity_map);
+    set_threshold(mtl.base_color_map);
+    set_threshold(mtl.opacity_map);
   }
 
   return tex_coverage_thresholds;
@@ -495,7 +522,7 @@ auto ComputeTextureCoverageThresholds(std::span<MaterialAssetData const> const m
 auto FixUpTextureIds(std::span<MaterialAssetData> const material_data, SubassetLayout const& layout) -> void {
   auto const fix_up_tex_id = [&layout](AssetId& id) {
     if (id.GetIdxInFile() >= 0) {
-      id = AssetId{id.GetGuid(), layout.GetTextureIdx(id.GetIdxInFile())};
+      id = AssetId{id.GetGuid(), static_cast<int>(layout.GetTextureIdx(id.GetIdxInFile()))};
     }
   };
 
@@ -603,29 +630,62 @@ auto ImportEmbeddedTextures(std::filesystem::path const& src,
 }
 
 
+struct NodeProcessingData {
+  NotNull<ObserverPtr<aiNode const>> ptr;
+  std::optional<std::size_t> parent_idx; // Root node has no parent
+};
+
+
+using NodeListPreorderDfs = std::vector<NodeProcessingData>;
+
+
+[[nodiscard]]
+auto BuildNodeListPreorderDfs(aiScene const& scene) -> NodeListPreorderDfs {
+  NodeListPreorderDfs list;
+
+  std::stack<NodeProcessingData> stack;
+  stack.emplace(MakeObserver(scene.mRootNode), std::nullopt);
+
+  while (!stack.empty()) {
+    auto const node = stack.top();
+    stack.pop();
+
+    list.emplace_back(node);
+
+    for (auto const* const child : std::views::reverse(std::span{node.ptr->mChildren, node.ptr->mNumChildren})) {
+      // Already placed at least one node in the list, so minus one is safe
+      stack.emplace(MakeObserver(child), list.size() - 1);
+    }
+  }
+
+  return list;
+}
+
+
 // Extracts the vertex attributes, indices and material index of a mesh. Bone weights are left zeroed.
 // Returns nullopt if the mesh is missing required vertex attributes.
 [[nodiscard]]
-auto ExtractAiMesh(aiMesh const& mesh, unsigned const idx_in_node, aiNode const& node,
-                   std::filesystem::path const& src, Matrix4 const& transform,
-                   Matrix4 const& normal_transform) -> std::optional<MeshProcessingData> {
+auto ExtractAiMesh(aiMesh const& mesh, unsigned idx_in_scene,
+                   std::filesystem::path const& src) -> std::optional<MeshProcessingData> {
   // These meshes are always triangle-only, because
   // AI_CONFIG_PP_SBP_REMOVE is set to remove points and lines,
   // aiProcess_Triangulate splits up primitives with more than 3 vertices
   // aiProcess_SortByPType splits up meshes with more than 1 primitive type into homogeneous ones
   // TODO Implement non-triangle rendering support
 
+  std::string const name{mesh.mName.Empty() ? std::format("Mesh {}", idx_in_scene) : mesh.mName.C_Str()};
+
   if (!mesh.HasPositions()) {
     OutputDebugStringA(
-      std::format("Skipping mesh {} in node \"{}\" of file \"{}\" because it is missing vertex positions.\n",
-        idx_in_node, node.mName.C_Str(), src.string()).c_str());
+      std::format("Skipping mesh \"{}\" in file \"{}\" because it is missing vertex positions.\n", name,
+        ToUntypedSv(src.u8string())).c_str());
     return std::nullopt;
   }
 
   if (!mesh.HasNormals()) {
     OutputDebugStringA(
-      std::format("Skipping mesh {} in node \"{}\" of file \"{}\" because it is missing vertex normals.\n",
-        idx_in_node, node.mName.C_Str(), src.string()).c_str());
+      std::format("Skipping mesh \"{}\" in file \"{}\" because it is missing vertex normals.\n", name,
+        ToUntypedSv(src.u8string())).c_str());
     return std::nullopt;
   }
 
@@ -633,16 +693,16 @@ auto ExtractAiMesh(aiMesh const& mesh, unsigned const idx_in_node, aiNode const&
 
   if (!has_uvs) {
     OutputDebugStringA(
-      std::format("Mesh {} in node \"{}\" of file \"{}\" is missing texture coordinates. Filling in zeroes.\n",
-        idx_in_node, node.mName.C_Str(), src.string()).c_str());
+      std::format("Mesh \"{}\" in file \"{}\" is missing texture coordinates. Filling in zeroes.\n", name,
+        ToUntypedSv(src.u8string())).c_str());
   }
 
   auto const has_tangents{mesh.HasTangentsAndBitangents()};
 
   if (!has_tangents) {
     OutputDebugStringA(
-      std::format("Mesh {} in node \"{}\" of file \"{}\" is missing tangents. Filling in zeroes.\n", idx_in_node,
-        node.mName.C_Str(), src.string()).c_str());
+      std::format("Mesh \"{}\" in file \"{}\" is missing tangents. Filling in zeroes.\n", name,
+        ToUntypedSv(src.u8string())).c_str());
   }
 
   MeshProcessingData ret;
@@ -656,11 +716,9 @@ auto ExtractAiMesh(aiMesh const& mesh, unsigned const idx_in_node, aiNode const&
   bone_indices.resize(mesh.mNumVertices);
 
   for (unsigned j = 0; j < mesh.mNumVertices; j++) {
-    vertices.emplace_back(Vector4{Convert(mesh.mVertices[j]), 1} * transform);
-    normals.emplace_back(Vector4{Normalized(Convert(mesh.mNormals[j])), 0} * normal_transform);
-    tangents.emplace_back(has_tangents
-                            ? Vector4{Convert(mesh.mTangents[j]), 0} * normal_transform
-                            : Vector4{});
+    vertices.emplace_back(Convert(mesh.mVertices[j]));
+    normals.emplace_back(Normalized(Convert(mesh.mNormals[j])));
+    tangents.emplace_back(has_tangents ? Convert(mesh.mTangents[j]) : Vector3{});
     uvs.emplace_back(has_uvs ? Vector2{Convert(mesh.mTextureCoords[0][j])} : Vector2{});
   }
 
@@ -725,12 +783,26 @@ auto CollectBakedMeshes(aiScene const& scene, std::filesystem::path const& src,
     auto const abs_transform_inv_transp{abs_transform_inv.Transpose()};
 
     for (unsigned i = 0; i < node->mNumMeshes; ++i) {
-      auto const mesh{scene.mMeshes[node->mMeshes[i]]};
+      auto const mesh_scene_idx = node->mMeshes[i];
+      auto const mesh = scene.mMeshes[mesh_scene_idx];
 
-      auto mesh_proc_data{ExtractAiMesh(*mesh, i, *node, src, abs_transform, abs_transform_inv_transp)};
+      auto mesh_proc_data = ExtractAiMesh(*mesh, mesh_scene_idx, src);
 
       if (!mesh_proc_data) {
         continue;
+      }
+
+      for (auto j = 0uz; j < mesh_proc_data->positions.size(); ++j) {
+        // Position, normal, and tangent lists are guaranteed to be same size
+
+        auto& pos = mesh_proc_data->positions[j];
+        pos = Vector3{Vector4{pos, 1} * abs_transform};
+
+        auto& norm = mesh_proc_data->normals[j];
+        norm = Vector3{Vector4{norm, 0} * abs_transform_inv_transp};
+
+        auto& tangent = mesh_proc_data->tangents[j];
+        tangent = Vector3{Vector4{tangent, 0} * abs_transform_inv_transp};
       }
 
       ExtractBoneWeights(*mesh, abs_transform_inv, out_bone_proc_info, *mesh_proc_data);
@@ -743,6 +815,164 @@ auto CollectBakedMeshes(aiScene const& scene, std::filesystem::path const& src,
 
     node_transform_queue.pop();
   }
+}
+
+
+// Collects every mesh of the scene without any modification
+[[nodiscard]]
+auto CollectRawMeshes(aiScene const& scene,
+                      std::filesystem::path const& src) -> std::vector<std::optional<MeshProcessingData>> {
+  std::vector<std::optional<MeshProcessingData>> meshes(scene.mNumMeshes);
+
+  for (auto i = 0u; i < scene.mNumMeshes; ++i) {
+    meshes[i] = ExtractAiMesh(*scene.mMeshes[i], i, src);
+  }
+
+  return meshes;
+}
+
+
+using MeshIndex = std::size_t;
+using NodeIndex = std::size_t;
+using NodesByMesh = std::vector<std::vector<NodeIndex>>;
+
+// SplitMix64 finalizer: a bijective 64-bit mixer with strong avalanche.
+constexpr auto Mix64(std::uint64_t x) noexcept -> std::uint64_t {
+  x ^= x >> 30;
+  x *= 0xbf58476d1ce4e5b9ULL;
+  x ^= x >> 27;
+  x *= 0x94d049bb133111ebULL;
+  x ^= x >> 31;
+  return x;
+}
+
+
+struct NodeListHash {
+  auto operator()(std::span<NodeIndex const> const nodes) const noexcept -> std::size_t {
+    auto h = Mix64(nodes.size());
+
+    for (NodeIndex const n : nodes) {
+      h = Mix64(h ^ n);
+    }
+
+    return h;
+  }
+};
+
+
+struct NodeListEq {
+  auto operator()(std::span<NodeIndex const> const lhs, std::span<NodeIndex const> const rhs) const noexcept -> bool {
+    return std::ranges::equal(lhs, rhs);
+  }
+};
+
+
+[[nodiscard]]
+auto CollectReferringNodesPerMesh(std::span<NodeProcessingData const> const nodes,
+                                  std::size_t const mesh_count) -> NodesByMesh {
+  NodesByMesh nodes_by_mesh(mesh_count);
+
+  for (auto const [node_idx, node] : std::views::enumerate(nodes)) {
+    for (auto j = 0u; j < node.ptr->mNumMeshes; ++j) {
+      // Guard against the case where a node lists the same mesh multiple times
+      if (auto& this_mesh_nodes = nodes_by_mesh[node.ptr->mMeshes[j]];
+        this_mesh_nodes.empty() || std::cmp_not_equal(this_mesh_nodes.back(), node_idx)) {
+        this_mesh_nodes.emplace_back(node_idx);
+      }
+    }
+  }
+
+  return nodes_by_mesh;
+}
+
+
+using MeshGroupIndex = std::size_t;
+using MeshesByGroup = std::vector<std::vector<MeshIndex>>;
+
+
+[[nodiscard]]
+auto CollectMeshesByGroup(NodesByMesh const& nodes_by_mesh,
+                          std::span<std::optional<MeshProcessingData> const> const meshes) -> MeshesByGroup {
+  std::unordered_map<std::span<NodeIndex const>, MeshGroupIndex, NodeListHash, NodeListEq> groups_by_node_list;
+  MeshesByGroup meshes_by_group;
+
+  for (auto const [mesh_idx, node_list] : std::views::enumerate(nodes_by_mesh)) {
+    // Meshes that failed to convert are just simply not added to any group
+    // Saves us some extra bookkeeping later
+    if (!meshes[mesh_idx]) {
+      continue;
+    }
+
+    auto const [it, inserted] = groups_by_node_list.try_emplace(node_list, meshes_by_group.size());
+
+    // If inserted, the group / node list pattern is first visited, so create a new group for it
+    if (inserted) {
+      meshes_by_group.emplace_back();
+    }
+
+    meshes_by_group[it->second].emplace_back(mesh_idx);
+  }
+
+  return meshes_by_group;
+}
+
+
+using GroupsByNode = std::vector<std::vector<MeshGroupIndex>>;
+
+
+[[nodiscard]]
+auto CollectGroupsByNode(MeshesByGroup const& meshes_by_group, NodesByMesh const& nodes_by_mesh,
+                         std::size_t const node_count) -> GroupsByNode {
+  GroupsByNode groups_by_node(node_count);
+
+  for (auto const [group_idx, mesh_indices] : std::views::enumerate(meshes_by_group)) {
+    // For each node, we generate the list of groups that the node references.
+    // All meshes in the same group have the same node pattern so it doesnt matter which one we use, front is good.
+    for (auto const node_idx : nodes_by_mesh[mesh_indices.front()]) {
+      groups_by_node[node_idx].emplace_back(group_idx);
+    }
+  }
+
+  return groups_by_node;
+}
+
+
+using SceneMaterialIndex = std::size_t;
+using MaterialSlotsByMesh = std::vector<std::vector<SceneMaterialIndex>>;
+
+
+// Fill mesh material slots and remap submesh material slot indices to point into the mesh-local slots.
+// A table that describes the remap is returned.
+[[nodiscard]]
+auto FixUpMaterialIds(std::span<MeshData> const imported_meshes,
+                      std::span<MaterialSlotInfo const> const mtl_slots) -> MaterialSlotsByMesh {
+  MaterialSlotsByMesh mtl_slots_by_mesh(imported_meshes.size());
+
+  for (auto [mesh_idx, mesh] : std::views::enumerate(imported_meshes)) {
+    auto& slots = mtl_slots_by_mesh[mesh_idx];
+
+    for (auto const& submesh : mesh.submeshes) {
+      slots.emplace_back(submesh.material_idx);
+    }
+
+    std::ranges::sort(slots);
+    auto const [first, last] = std::ranges::unique(slots);
+    slots.erase(first, last);
+
+    mesh.material_slots.reserve(slots.size());
+
+    for (auto const slot_idx : slots) {
+      mesh.material_slots.emplace_back(mtl_slots[slot_idx].name);
+    }
+
+    for (auto& submesh : mesh.submeshes) {
+      auto const it = std::ranges::lower_bound(slots, submesh.material_idx);
+      auto const remapped_idx = std::ranges::distance(slots.begin(), it);
+      submesh.material_idx = static_cast<std::uint32_t>(remapped_idx);
+    }
+  }
+
+  return mtl_slots_by_mesh;
 }
 
 
@@ -865,10 +1095,17 @@ auto FuseByMaterial(std::span<MeshProcessingData const> const meshes) -> std::ve
 }
 
 
+template<class R, class T>
+concept SizedRangeOf =
+  std::ranges::forward_range<R> &&
+  std::ranges::sized_range<R> &&
+  std::same_as<std::ranges::range_const_reference_t<R>, T const&>;
+
+
 // Meshletizes the meshes and appends them to the mesh data as submeshes, one per mesh.
 // Fills in the geometry, the submeshes, the bounds and the index format.
 [[nodiscard]]
-auto BuildMeshGeometry(std::span<MeshProcessingData const> const meshes, bool const force_idx32,
+auto BuildMeshGeometry(SizedRangeOf<MeshProcessingData const> auto&& meshes, bool const force_idx32,
                        JobSystem& job_system, MeshData& mesh_data) -> bool {
   // Determine index format
 
@@ -888,14 +1125,14 @@ auto BuildMeshGeometry(std::span<MeshProcessingData const> const meshes, bool co
     std::vector<MeshletCullData> cull_data;
   };
 
-  std::vector<std::optional<MeshletizedMesh>> meshletized_meshes(meshes.size());
+  std::vector<std::optional<MeshletizedMesh>> meshletized_meshes(std::ranges::size(meshes));
   std::vector<ObserverPtr<Job>> meshletize_jobs;
-  meshletize_jobs.reserve(meshes.size());
+  meshletize_jobs.reserve(std::ranges::size(meshes));
 
-  for (std::size_t i{0}; i < meshes.size(); i++) {
+  for (auto const [i, mesh] : std::views::enumerate(meshes)) {
     meshletize_jobs.emplace_back(job_system.CreateJob(
-      [i, &meshes, &meshletized_meshes, idx32 = mesh_data.idx32] {
-        auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtl_idx]{meshes[i]};
+      [i, &mesh, &meshletized_meshes, idx32 = mesh_data.idx32] {
+        auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtl_idx]{mesh};
         auto [meshlets, unique_vertex_indices, primitive_indices, cull_data]{MeshletizedMesh{}};
 
         bool success;
@@ -929,22 +1166,22 @@ auto BuildMeshGeometry(std::span<MeshProcessingData const> const meshes, bool co
   // Combine geometry
 
   std::vector<SubmeshMeshletRange> submesh_meshlet_ranges;
-  submesh_meshlet_ranges.reserve(meshes.size());
+  submesh_meshlet_ranges.reserve(std::ranges::size(meshes));
 
   std::vector<AABB> submesh_bounds;
-  submesh_bounds.reserve(meshes.size());
+  submesh_bounds.reserve(std::ranges::size(meshes));
 
   std::vector<std::uint32_t> submesh_base_vertices;
-  submesh_base_vertices.reserve(meshes.size());
+  submesh_base_vertices.reserve(std::ranges::size(meshes));
 
-  for (std::size_t i{0}; i < meshes.size(); i++) {
+  for (auto const [i, mesh] : std::views::enumerate(meshes)) {
     if (!meshletized_meshes[i]) {
       DisplayError(std::format("Failed to compute meshlets for submesh {}.", i));
       return false;
     }
 
     auto& [meshlets, unique_vertex_indices, primitive_indices, cull_data]{*meshletized_meshes[i]};
-    auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx]{meshes[i]};
+    auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx]{mesh};
 
     submesh_base_vertices.emplace_back(static_cast<std::uint32_t>(mesh_data.positions.size()));
 
@@ -995,13 +1232,13 @@ auto BuildMeshGeometry(std::span<MeshProcessingData const> const meshes, bool co
 
   // Create and store submeshes
 
-  mesh_data.submeshes.reserve(meshes.size());
-  for (std::size_t i{0}; i < meshes.size(); i++) {
+  mesh_data.submeshes.reserve(std::ranges::size(meshes));
+  for (auto const [i, mesh] : std::views::enumerate(meshes)) {
     mesh_data.submeshes.emplace_back(SubmeshData{
       .first_meshlet = static_cast<std::uint32_t>(submesh_meshlet_ranges[i].first_meshlet),
       .meshlet_count = static_cast<std::uint32_t>(submesh_meshlet_ranges[i].meshlet_count),
       .base_vertex = submesh_base_vertices[i],
-      .material_idx = meshes[i].mtl_idx,
+      .material_idx = mesh.mtl_idx,
       .bounds = submesh_bounds[i],
     });
   }
@@ -1252,10 +1489,13 @@ auto SerializeMesh(MeshData const& mesh_data) -> std::vector<std::byte> {
 
 
 [[nodiscard]]
-auto SerializePrefab(Entity const& entity) -> std::vector<std::byte> {
-  auto const* const entity_ptr{&entity};
+auto SerializePrefab(std::span<std::unique_ptr<Entity> const> const entities) -> std::vector<std::byte> {
+  auto entity_ptrs = entities |
+                     std::views::transform([](auto const& ptr) { return ptr.get(); }) |
+                     std::ranges::to<std::vector<Entity const*>>();
+
   auto const prefab_node{
-    SerializeEntitySet(std::span{&entity_ptr, 1}, EntitySerializationContext{
+    SerializeEntitySet(entity_ptrs, EntitySerializationContext{
       .asset_ref_serialization = AssetRefSerialization::kLocal
     })
   };
@@ -1274,33 +1514,144 @@ auto SerializePrefab(Entity const& entity) -> std::vector<std::byte> {
 // Creates a prefab of a single entity that renders the mesh with the materials.
 // Placeholder mesh and material objects carry the package indices the prefab's asset references serialize to.
 [[nodiscard]]
-auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh_data,
-                              std::size_t const material_count) -> AssetImportResult {
+auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh,
+                              SubassetLayout const& layout,
+                              std::span<SceneMaterialIndex const> const mesh_mtl_slot_remap) -> AssetImportResult {
   auto const entity{std::make_unique<Entity>()};
   entity->SetName(name);
 
   auto mesh_component{std::make_unique<StaticMeshComponent>()};
 
-  auto const dummy_mesh = std::make_unique<Mesh>(mesh_data, CpuResidencyPolicy::kKeepResident);
-  dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), SubassetLayout::GetMeshIdx()});
+  auto const dummy_mesh = std::make_unique<Mesh>(mesh, CpuResidencyPolicy::kKeepResident);
+  dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), static_cast<int>(layout.GetMeshIdx(0))});
 
   mesh_component->SetMesh(MakeAssetRef(MakeObserver(dummy_mesh.get())));
 
   std::vector<std::unique_ptr<Material>> dummy_materials;
-  dummy_materials.reserve(material_count);
+  dummy_materials.reserve(layout.GetMaterialCount());
 
-  for (std::size_t i{0}; i < material_count; i++) {
+  for (auto i = 0uz; i < layout.GetMaterialCount(); i++) {
     auto dummy_mtl{std::make_unique<Material>()};
-    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), SubassetLayout::GetMaterialIdx(i)});
-    mesh_component->SetMaterial(clamp_cast<int>(i), MakeAssetRef(MakeObserver(dummy_mtl.get())));
+    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), static_cast<int>(layout.GetMaterialIdx(i))});
     dummy_materials.emplace_back(std::move(dummy_mtl));
+  }
+
+  if (!dummy_materials.empty()) {
+    for (auto i = 0uz; i < mesh.material_slots.size(); ++i) {
+      mesh_component->SetMaterial(static_cast<int>(i),
+        MakeAssetRef(MakeObserver(dummy_materials.at(mesh_mtl_slot_remap[i]).get())));
+    }
   }
 
   entity->AddComponent(std::move(mesh_component));
 
   return AssetImportResult{
     AssetPackagePayloadKind::kPrefab, rttr::type::get<Prefab>(), std::string{entity->GetName()},
-    SerializePrefab(*entity)
+    SerializePrefab(std::span{&entity, 1})
+  };
+}
+
+
+[[nodiscard]]
+auto CreatePrefab(
+  std::string_view const name,
+  std::span<MeshData const> const mesh_groups,
+  GroupsByNode const& groups_by_node,
+  MaterialSlotsByMesh const& mtl_slots_by_mesh,
+  NodeListPreorderDfs const& node_list,
+  SubassetLayout const& layout
+) -> AssetImportResult {
+  // Create dummies for all mesh groups
+
+  std::vector<std::unique_ptr<Mesh>> dummy_meshes(mesh_groups.size());
+  for (auto const [group_idx, group] : std::views::enumerate(mesh_groups)) {
+    // The only thing we care about in a dummy mesh is its material slot count
+    MeshData const mesh_data{
+      .positions = {},
+      .normals = {},
+      .tangents = {},
+      .uvs = {},
+      .bone_weights = {},
+      .bone_indices = {},
+      .meshlets = {},
+      .vertex_indices = {},
+      .triangle_indices = {},
+      .cull_data = {},
+      .material_slots = mesh_groups[group_idx].material_slots,
+      .submeshes = {},
+      .animations = {},
+      .skeleton = {},
+      .bones = {},
+      .bounds = {},
+      .idx32 = {}
+    };
+
+    auto dummy_mesh = std::make_unique<Mesh>(mesh_data, CpuResidencyPolicy::kKeepResident);
+    dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), static_cast<int>(layout.GetMeshIdx(group_idx))});
+    dummy_meshes[group_idx] = std::move(dummy_mesh);
+  }
+
+  // Create dummies for all materials
+
+  std::vector<std::unique_ptr<Material>> dummy_materials(layout.GetMaterialCount());
+  for (auto i = 0uz; i < layout.GetMaterialCount(); ++i) {
+    auto dummy_mtl = std::make_unique<Material>();
+    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), static_cast<int>(layout.GetMaterialIdx(i))});
+    dummy_materials[i] = std::move(dummy_mtl);
+  }
+
+  // Create the entity hierarchy
+
+  std::vector<std::unique_ptr<Entity>> entities(node_list.size());
+
+  for (auto const [node_idx, node] : std::views::enumerate(node_list)) {
+    auto entity = std::make_unique<Entity>();
+
+    auto const entity_name = node.ptr->mName.Empty()
+                               ? std::format("Node {}", node_idx)
+                               : std::string{node.ptr->mName.C_Str()};
+    entity->SetName(entity_name);
+
+    aiVector3f position;
+    aiQuaternion rotation;
+    aiVector3f scaling;
+    node.ptr->mTransformation.Decompose(scaling, rotation, position);
+
+    auto& transform = entity->GetTransform();
+    transform.SetLocalPosition(Convert(position));
+    transform.SetLocalRotation(Convert(rotation));
+    transform.SetLocalScale(Convert(scaling));
+
+    if (node.parent_idx) {
+      transform.SetParent(&entities[*node.parent_idx]->GetTransform());
+    }
+
+    for (auto const& group_idx : groups_by_node[node_idx]) {
+      auto mesh_component{std::make_unique<StaticMeshComponent>()};
+
+      mesh_component->SetMesh(MakeAssetRef(MakeObserver(dummy_meshes[group_idx].get())));
+
+      if (!dummy_materials.empty()) {
+        for (auto i = 0uz; i < mesh_groups[group_idx].material_slots.size(); ++i) {
+          mesh_component->SetMaterial(static_cast<int>(i),
+            MakeAssetRef(MakeObserver(dummy_materials.at(mtl_slots_by_mesh.at(group_idx).at(i)).get())));
+        }
+      }
+
+      entity->AddComponent(std::move(mesh_component));
+    }
+
+    entities[node_idx] = std::move(entity);
+  }
+
+  if (!entities.empty()) {
+    // Rename the root of the prefab to the prefab asset name
+    entities[0]->SetName(name);
+  }
+
+  return AssetImportResult{
+    AssetPackagePayloadKind::kPrefab, rttr::type::get<Prefab>(), std::string{name},
+    SerializePrefab(entities)
   };
 }
 
@@ -1338,64 +1689,104 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   auto const& scene{*importer->GetScene()};
 
-  // Materials and textures
+  // Import meshes
 
-  auto [material_slots, material_data, tex_infos]{
-    CollectMaterials(scene, import_materials_, import_textures_, subasset_import_settings_)
-  };
+  auto const import_as_skinned_mesh = std::ranges::any_of(std::span{scene.mMeshes, scene.mNumMeshes},
+    [](auto const* const mesh) { return mesh->HasBones(); });
 
-  auto const tex_coverage_thresholds{ComputeTextureCoverageThresholds(material_data, tex_infos.size())};
+  std::vector<MeshData> imported_meshes;
+  std::vector<NodeProcessingData> nodes;
+  NodesByMesh nodes_by_mesh;
+  MeshesByGroup meshes_by_group;
+  GroupsByNode groups_by_node;
 
-  // Now we know how many materials we have so we can determine the final texture indices for the materials
-  SubassetLayout const layout{.material_count = material_data.size()};
-  FixUpTextureIds(material_data, layout);
+  if (import_as_skinned_mesh) {
+    auto& mesh_data = imported_meshes.emplace_back();
+
+    std::vector<MeshProcessingData> meshes;
+    std::vector<BoneProcessingInfo> bone_proc_info;
+    CollectBakedMeshes(scene, src, meshes, bone_proc_info);
+
+    auto const skeleton_node_name_to_idx = BuildSkeleton(*scene.mRootNode, bone_proc_info, mesh_data.skeleton,
+      mesh_data.bones);
+
+    if (mesh_import_settings_.fuse_submeshes) {
+      meshes = FuseByMaterial(meshes);
+    }
+
+    if (!BuildMeshGeometry(meshes, mesh_import_settings_.force_idx32, App::Instance().GetJobSystem(), mesh_data)) {
+      return false;
+    }
+
+    mesh_data.animations = CollectAnimations(scene, skeleton_node_name_to_idx);
+  } else {
+    auto const meshes = CollectRawMeshes(scene, src);
+    nodes = BuildNodeListPreorderDfs(scene);
+    nodes_by_mesh = CollectReferringNodesPerMesh(nodes, meshes.size());
+    meshes_by_group = CollectMeshesByGroup(nodes_by_mesh, meshes);
+    groups_by_node = CollectGroupsByNode(meshes_by_group, nodes_by_mesh, nodes.size());
+
+    for (auto const [group_idx, mesh_indices] : std::views::enumerate(meshes_by_group)) {
+      auto const group_meshes = mesh_indices | std::views::transform([&meshes](auto const mesh_idx) -> auto const& {
+        return meshes[mesh_idx].value();
+      });
+
+      MeshData mesh_data;
+
+      if (!BuildMeshGeometry(group_meshes, mesh_import_settings_.force_idx32, App::Instance().GetJobSystem(),
+        mesh_data)) {
+        return false;
+      }
+
+      imported_meshes.emplace_back(std::move(mesh_data));
+    }
+  }
+
+  // Import materials and gather info to load textures
+
+  auto [mtl_slots, mtl_assets, texes_to_load] = CollectMaterials(scene, import_materials_, import_textures_,
+    subasset_import_settings_);
+  auto const tex_coverage_thresholds = ComputeTextureCoverageThresholds(mtl_assets, texes_to_load.size());
+
+  //  At this point, the submeshes inside each imported mesh have absolute material indices, not local to their parent mesh.
+  // We can fix those up now and generate a table that describes the remap. Useful later.
+  auto const mtl_slots_by_mesh = FixUpMaterialIds(imported_meshes, mtl_slots);
+
+  // Now we know how many meshes and materials we have so patch material->texture references
+  SubassetLayout const layout{imported_meshes.size(), mtl_assets.size()};
+  FixUpTextureIds(mtl_assets, layout);
+
+  // Nothing depends on the actual texture assets so we can load them last
 
   std::vector<AssetImportResult> texture_import_results;
 
   if (import_textures_) {
-    CollectUnreferencedTextures(scene, tex_infos);
+    CollectUnreferencedTextures(scene, texes_to_load);
 
-    if (!ImportEmbeddedTextures(src, tex_infos, tex_coverage_thresholds, layout, subasset_import_settings_,
+    if (!ImportEmbeddedTextures(src, texes_to_load, tex_coverage_thresholds, layout, subasset_import_settings_,
       texture_import_results)) {
       return false;
     }
   }
 
-  // Mesh
-
-  std::vector<MeshProcessingData> meshes;
-  std::vector<BoneProcessingInfo> bone_proc_info;
-  CollectBakedMeshes(scene, src, meshes, bone_proc_info);
-
-  MeshData mesh_data;
-  mesh_data.material_slots = std::move(material_slots);
-
-  auto const skeleton_node_name_to_idx{
-    BuildSkeleton(*scene.mRootNode, bone_proc_info, mesh_data.skeleton, mesh_data.bones)
-  };
-
-  if (mesh_import_settings_.fuse_submeshes) {
-    meshes = FuseByMaterial(meshes);
-  }
-
-  if (!BuildMeshGeometry(meshes, mesh_import_settings_.force_idx32, App::Instance().GetJobSystem(), mesh_data)) {
-    return false;
-  }
-
-  mesh_data.animations = CollectAnimations(scene, skeleton_node_name_to_idx);
-
-  auto mesh_bytes{SerializeMesh(mesh_data)};
-
   // Write subassets to output in package order
 
-  results.emplace_back(CreateSingleEntityPrefab(std::string{ToUntypedSv(src.filename().stem().u8string())},
-    mesh_data, material_data.size()));
+  if (import_as_skinned_mesh) {
+    results.emplace_back(CreateSingleEntityPrefab(std::string{ToUntypedSv(src.filename().stem().u8string())},
+      imported_meshes.at(0), layout, mtl_slots_by_mesh.at(0)));
+  } else {
+    results.emplace_back(CreatePrefab(std::string{ToUntypedSv(src.filename().stem().u8string())}, imported_meshes,
+      groups_by_node, mtl_slots_by_mesh, nodes, layout));
+  }
 
-  results.emplace_back(AssetPackagePayloadKind::kMesh, rttr::type::get<Mesh>(),
-    std::string{ToUntypedSv(src.stem().u8string())}, std::move(mesh_bytes));
+  for (auto const& mesh_data : imported_meshes) {
+    auto mesh_bytes = SerializeMesh(mesh_data);
+    results.emplace_back(AssetPackagePayloadKind::kMesh, rttr::type::get<Mesh>(),
+      std::string{ToUntypedSv(src.stem().u8string())}, std::move(mesh_bytes));
+  }
 
   if (import_materials_) {
-    ImportMaterials(material_data, mesh_data.material_slots, results);
+    ImportMaterials(mtl_assets, mtl_slots, results);
   }
 
   if (import_textures_) {
