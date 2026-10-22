@@ -74,11 +74,21 @@ auto TransformComponent::GetWorldPosition() const -> Vector3 const& {
 
 
 auto TransformComponent::SetWorldPosition(Vector3 const& newPos) -> void {
-  if (mParent != nullptr) {
-    SetLocalPosition(mParent->mWorldRotation.Conjugate().Rotate(newPos - mParent->mWorldPosition));
-  } else {
+  if (!mParent) {
     SetLocalPosition(newPos);
+    return;
   }
+
+  auto const scaled_local = mParent->mWorldRotation.Conjugate().Rotate(newPos - mParent->mWorldPosition);
+  auto new_local = mLocalPosition;
+
+  for (auto i = 0; i < 3; ++i) {
+    if (mParent->mWorldScale[i] != 0.0f) {
+      new_local[i] = scaled_local[i] / mParent->mWorldScale[i];
+    }
+  }
+
+  SetLocalPosition(new_local);
 }
 
 
@@ -137,11 +147,20 @@ auto TransformComponent::GetWorldScale() const -> Vector3 const& {
 
 
 auto TransformComponent::SetWorldScale(Vector3 const& newScale) -> void {
-  if (mParent != nullptr) {
-    SetLocalScale(newScale / mParent->mWorldScale);
-  } else {
+  if (!mParent) {
     SetLocalScale(newScale);
+    return;
   }
+
+  auto new_local = mLocalScale;
+
+  for (auto i = 0; i < 3; ++i) {
+    if (mParent->mWorldScale[i] != 0.0f) {
+      new_local[i] = newScale[i] / mParent->mWorldScale[i];
+    }
+  }
+
+  SetLocalScale(new_local);
 }
 
 
@@ -160,7 +179,7 @@ auto TransformComponent::Translate(Vector3 const& vector, Space const base) -> v
   if (base == Space::World) {
     SetWorldPosition(mWorldPosition + vector);
   } else if (base == Space::Local) {
-    SetLocalPosition(mLocalPosition + mLocalRotation.Rotate(vector));
+    SetWorldPosition(mWorldPosition + mWorldRotation.Rotate(vector));
   }
 }
 
@@ -172,7 +191,7 @@ auto TransformComponent::Translate(f32 const x, f32 const y, f32 const z, Space 
 
 auto TransformComponent::Rotate(Quaternion const& rotation, Space const base) -> void {
   if (base == Space::World) {
-    SetLocalRotation(rotation * mLocalRotation);
+    SetLocalRotation(rotation * mWorldRotation);
   } else if (base == Space::Local) {
     SetLocalRotation(mLocalRotation * rotation);
   }
@@ -269,7 +288,7 @@ auto TransformComponent::UpdateWorldDataRecursive() -> void {
   SetChanged(true);
 
   mWorldPosition = mParent != nullptr
-                     ? mParent->mWorldPosition + mParent->mWorldRotation.Rotate(mLocalPosition)
+                     ? mParent->mWorldPosition + mParent->mWorldRotation.Rotate(mParent->mWorldScale * mLocalPosition)
                      : mLocalPosition;
   mWorldRotation = mParent != nullptr
                      ? mParent->mWorldRotation * mLocalRotation
