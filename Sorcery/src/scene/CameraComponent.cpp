@@ -12,15 +12,18 @@ RTTR_REGISTRATION {
     rttr::value("Orthographic", sorcery::CameraComponent::Type::Orthographic),
     rttr::value("Perspective", sorcery::CameraComponent::Type::Perspective));
 
-  rttr::registration::class_<sorcery::CameraComponent>{"Camera Component"}.REFLECT_REGISTER_SCENE_OBJECT_CTOR.
-    property("fov", &sorcery::CameraComponent::GetVerticalPerspectiveFov,
-      &sorcery::CameraComponent::SetVerticalPerspectiveFov).property("size",
-      &sorcery::CameraComponent::GetVerticalOrthographicSize,
-      &sorcery::CameraComponent::SetVerticalOrthographicSize).property("near",
-      &sorcery::CameraComponent::GetNearClipPlane, &sorcery::CameraComponent::SetNearClipPlane).property("far",
-      &sorcery::CameraComponent::GetFarClipPlane, &sorcery::CameraComponent::SetFarClipPlane).property("background",
-      &sorcery::CameraComponent::GetBackgroundColor, &sorcery::CameraComponent::SetBackgroundColor).property("viewport",
-      &sorcery::CameraComponent::GetViewport, &sorcery::CameraComponent::SetViewport);
+  rttr::registration::class_<sorcery::CameraComponent>{"Camera Component"}
+    .REFLECT_REGISTER_SCENE_OBJECT_CTOR
+    .property("type", &sorcery::CameraComponent::GetType, &sorcery::CameraComponent::SetType)
+    .property("fov", &sorcery::CameraComponent::GetVerticalPerspectiveFov,
+      &sorcery::CameraComponent::SetVerticalPerspectiveFov)
+    .property("size", &sorcery::CameraComponent::GetVerticalOrthographicSize,
+      &sorcery::CameraComponent::SetVerticalOrthographicSize)
+    .property("near", &sorcery::CameraComponent::GetNearClipPlane, &sorcery::CameraComponent::SetNearClipPlane)
+    .property("far", &sorcery::CameraComponent::GetFarClipPlane, &sorcery::CameraComponent::SetFarClipPlane)
+    .property("background", &sorcery::CameraComponent::GetBackgroundColor,
+      &sorcery::CameraComponent::SetBackgroundColor)
+    .property("viewport", &sorcery::CameraComponent::GetViewport, &sorcery::CameraComponent::SetViewport);
 }
 
 
