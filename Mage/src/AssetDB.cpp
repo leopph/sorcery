@@ -88,7 +88,14 @@ auto AssetDB::Refresh() -> void {
         continue;
       }
 
-      guid = Guid::Generate();
+      // A meta file with a bad importer can still have a usable GUID. We try to reuse it to save asset references.
+      guid = Guid::Invalid();
+
+      if (!ReadMeta(asset_path_abs, &guid, nullptr) || !guid.IsValid()) {
+        guid = Guid::Generate();
+      } else {
+        spdlog::trace("Guid for asset at [{}] is still valid. Reusing guid.", ToUntypedSv(asset_path_abs.u8string()));
+      }
 
       if (!WriteMeta(asset_path_abs, guid, *importer)) {
         spdlog::trace("Failed to write new meta file for asset file at [{}]. Removing asset and meta files.",
@@ -612,11 +619,19 @@ auto AssetDB::ReadMeta(std::filesystem::path const& asset_path_abs, Guid* const 
     return false;
   }
 
-  auto const meta_node{YAML::LoadFile(metaPathAbs.string())};
+  YAML::Node meta_node;
+
+  try {
+    meta_node = YAML::LoadFile(metaPathAbs.string());
+  } catch (...) {
+    return false;
+  }
 
   if (!meta_node || !meta_node.IsMap()) {
     return false;
   }
+
+  auto parsed_guid{Guid::Invalid()};
 
   if (guid) {
     auto const guid_node{meta_node["guid"]};
@@ -625,13 +640,11 @@ auto AssetDB::ReadMeta(std::filesystem::path const& asset_path_abs, Guid* const 
       return false;
     }
 
-    auto const parsed_guid{Guid::Parse(guid_node.as<std::string>(""))};
+    parsed_guid = Guid::Parse(guid_node.as<std::string>(""));
 
     if (!parsed_guid.IsValid()) {
       return false;
     }
-
-    *guid = parsed_guid;
   }
 
   if (importer) {
@@ -674,6 +687,10 @@ auto AssetDB::ReadMeta(std::filesystem::path const& asset_path_abs, Guid* const 
 
     ReflectionDeserializeFromYaml(importer_props_node, *importer_ptr, {});
     importer->reset(importer_ptr);
+  }
+
+  if (guid) {
+    *guid = parsed_guid;
   }
 
   return true;
