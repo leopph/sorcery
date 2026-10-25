@@ -2,7 +2,7 @@
 
 namespace sorcery {
 struct MeshImportSettings {
-  bool fuse_submeshes{false};
+  bool import_as_single_mesh{false};
   bool force_idx32{false};
 };
 }

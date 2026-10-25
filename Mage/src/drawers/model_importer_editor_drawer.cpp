@@ -23,11 +23,11 @@ auto ModelImporterEditorDrawer::Draw(
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
 
-    ImGui::Text("Fuse submeshes");
+    ImGui::Text("Import as single mesh");
     ImGui::TableNextColumn();
 
     if (ImGuiDisabled(!allow_edit, [&] {
-      return ImGui::Checkbox("##FuseSubmeshesCheckbox", &mesh_settings.fuse_submeshes);
+      return ImGui::Checkbox("##ImportAsSingleMeshCheckbox", &mesh_settings.import_as_single_mesh);
     })) {
       obj.SetMeshImportSettings(mesh_settings);
       changed = true;

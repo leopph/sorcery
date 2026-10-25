@@ -1691,8 +1691,10 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   // Import meshes
 
-  auto const import_as_skinned_mesh = std::ranges::any_of(std::span{scene.mMeshes, scene.mNumMeshes},
+  auto const has_bones = std::ranges::any_of(std::span{scene.mMeshes, scene.mNumMeshes},
     [](auto const* const mesh) { return mesh->HasBones(); });
+
+  auto const bake_into_single_mesh = has_bones || mesh_import_settings_.import_as_single_mesh;
 
   std::vector<MeshData> imported_meshes;
   std::vector<NodeProcessingData> nodes;
@@ -1700,7 +1702,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   MeshesByGroup meshes_by_group;
   GroupsByNode groups_by_node;
 
-  if (import_as_skinned_mesh) {
+  if (bake_into_single_mesh) {
     auto& mesh_data = imported_meshes.emplace_back();
 
     std::vector<MeshProcessingData> meshes;
@@ -1710,9 +1712,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     auto const skeleton_node_name_to_idx = BuildSkeleton(*scene.mRootNode, bone_proc_info, mesh_data.skeleton,
       mesh_data.bones);
 
-    if (mesh_import_settings_.fuse_submeshes) {
-      meshes = FuseByMaterial(meshes);
-    }
+    meshes = FuseByMaterial(meshes);
 
     if (!BuildMeshGeometry(meshes, mesh_import_settings_.force_idx32, App::Instance().GetJobSystem(), mesh_data)) {
       return false;
@@ -1771,7 +1771,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   // Write subassets to output in package order
 
-  if (import_as_skinned_mesh) {
+  if (bake_into_single_mesh) {
     results.emplace_back(CreateSingleEntityPrefab(ToUntypedSv(src.filename().stem().u8string()), imported_meshes.at(0),
       layout, mtl_slots_by_mesh.at(0)));
   } else {
