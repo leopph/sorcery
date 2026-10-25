@@ -15,6 +15,8 @@
 #include "sorcery/host/platform.hpp"
 #include "sorcery/host/window.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
+#include "sorcery/scene/Entity.hpp"
+#include "sorcery/scene/environment_component.hpp"
 #include "windows/PerformanceCounterWindow.hpp"
 
 
@@ -120,7 +122,6 @@ auto EditorApp::OpenScene(AssetId const& asset_id) -> void {
     }
 
     scene_ = MakeAssetRef(new_scene.Get());
-    scene_->SetActive();
     selected_object_ = nullptr;
   }
 }
@@ -132,9 +133,13 @@ auto EditorApp::OpenNewScene() -> void {
   }
 
   scene_ = GetAssetManager().Add(std::make_unique<Scene>());
-  scene_->SetActive();
   selected_object_ = nullptr;
   edit_world_.Clear();
+
+  auto env_entity = std::make_unique<Entity>();
+  env_entity->SetName("Environment");
+  env_entity->AddComponent(std::make_unique<EnvironmentComponent>());
+  edit_world_.AddEntity(std::move(env_entity));
 }
 
 

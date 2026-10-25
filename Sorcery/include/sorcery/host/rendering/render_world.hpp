@@ -11,6 +11,7 @@ namespace sorcery {
 class StaticMeshComponent;
 class SkinnedMeshComponent;
 class LightComponent;
+class EnvironmentComponent;
 
 
 namespace rendering {
@@ -39,6 +40,11 @@ public:
   SORCERYAPI
   auto Unregister(Camera const& cam) noexcept -> void;
 
+  SORCERYAPI
+  auto Register(EnvironmentComponent& env_component) noexcept -> void;
+  SORCERYAPI
+  auto Unregister(EnvironmentComponent const& env_component) noexcept -> void;
+
   [[nodiscard]]
   auto GetStaticMeshComponents() const -> std::span<ObserverPtr<StaticMeshComponent> const>;
   [[nodiscard]]
@@ -47,6 +53,8 @@ public:
   auto GetLightComponents() const -> std::span<ObserverPtr<LightComponent const> const>;
   [[nodiscard]]
   auto GetCameras() const -> std::span<ObserverPtr<Camera> const>;
+  [[nodiscard]]
+  auto GetEnvironmentComponent() const -> ObserverPtr<EnvironmentComponent>;
 
   RenderWorld() = default;
   RenderWorld(RenderWorld const& other) = delete;
@@ -62,6 +70,7 @@ private:
   std::vector<ObserverPtr<SkinnedMeshComponent>> skinned_mesh_components_;
   std::vector<ObserverPtr<LightComponent const>> light_components_;
   std::vector<ObserverPtr<Camera>> cameras_;
+  std::vector<ObserverPtr<EnvironmentComponent>> environment_components_;
 };
 }
 }

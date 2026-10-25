@@ -191,6 +191,7 @@
     <ClCompile Include="src\rendering\render_target.cpp" />
     <ClCompile Include="src\assets\Asset.cpp" />
     <ClCompile Include="src\asset_manager.cpp" />
+    <ClCompile Include="src\scene\environment_component.cpp" />
     <ClCompile Include="src\scene\OscillateComponent.cpp" />
     <ClCompile Include="src\scene\SceneObject.cpp" />
     <ClCompile Include="src\scene\SkinnedMeshComponent.cpp" />
@@ -207,6 +208,7 @@
     <ClCompile Include="src\assets\Mesh.cpp" />
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\assets\Scene.cpp" />
+    <ClCompile Include="src\sky_mode.cpp" />
     <ClCompile Include="src\util.cpp" />
     <ClCompile Include="src\vector_stream.cpp" />
     <ClCompile Include="src\viewport.cpp" />
@@ -218,6 +220,7 @@
     <ClInclude Include="include\sorcery\host\game_module.hpp" />
     <ClInclude Include="include\sorcery\mesh_utils.hpp" />
     <ClInclude Include="include\sorcery\not_null.hpp" />
+    <ClInclude Include="include\sorcery\scene\environment_component.hpp" />
     <ClInclude Include="include\sorcery\world.hpp" />
     <ClInclude Include="src\rendering\ssao_params.hpp" />
     <ClInclude Include="include\sorcery\io_helpers.hpp" />
@@ -284,7 +287,7 @@
     <ClCompile Include="src\Timing.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\scene\TransformComponent.cpp" />
-    <ClInclude Include="include\sorcery\SkyMode.hpp" />
+    <ClInclude Include="include\sorcery\sky_mode.hpp" />
     <ClInclude Include="include\sorcery\util.hpp" />
     <ClInclude Include="src\rendering\view_context.hpp" />
     <ClInclude Include="src\vector_stream.hpp" />

@@ -11,8 +11,10 @@
 #include "sorcery/mesh_utils.hpp"
 #include "sorcery/reflection.hpp"
 #include "sorcery/util.hpp"
+#include "sorcery/assets/Cubemap.hpp"
 #include "sorcery/assets/prefab.hpp"
 #include "sorcery/assets/Scene.hpp"
+#include "sorcery/assets/Texture2D.hpp"
 #include "sorcery/host/job_system.hpp"
 #include "sorcery/host/assets/asset_package.hpp"
 

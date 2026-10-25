@@ -1,107 +1,28 @@
 #include "sorcery/assets/Scene.hpp"
 
 #include <algorithm>
-#include <ranges>
-
-#include "wand/wand.hpp"
 
 #include "sorcery/asset_reference.hpp"
 #include "sorcery/entity_serialization.hpp"
 #include "sorcery/reflection.hpp"
 #include "sorcery/world.hpp"
-#include "sorcery/host/app.hpp"
-#include "sorcery/host/job_system.hpp"
-#include "sorcery/host/assets/asset_manager.hpp"
 #include "sorcery/scene/Entity.hpp"
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Scene>{"Scene"}
-    .property("skybox", &sorcery::Scene::GetSkybox, &sorcery::Scene::SetSkyboxRefl);
+  rttr::registration::class_<sorcery::Scene>{"Scene"};
 }
 
 
 namespace sorcery {
-auto detail::GetIrradianceMap(Scene const& scene) -> wand::SharedDeviceHandle<wand::Texture> const& {
-  return scene.irradiance_map_;
-}
-
-
-auto detail::RecreateIrradianceMap(Scene& scene, wand::GraphicsDevice& device, DXGI_FORMAT const format,
-                                   UINT const size) -> void {
-  if (!scene.skybox_) {
-    return;
-  }
-
-  scene.irradiance_map_ = device.CreateTexture(wand::TextureDesc{
-      .dimension = wand::TextureDimension::kCube,
-      .width = size,
-      .height = size,
-      .depth_or_array_size = 6,
-      .mip_levels = 1,
-      .format = format,
-      .sample_count = 1,
-      .depth_stencil = false,
-      .render_target = true,
-      .shader_resource = true,
-      .unordered_access = false
-    }, wand::CpuAccess::kNone,
-    std::array{D3D12_CLEAR_VALUE{.Format = format, .Color = {0.0F, 0.0F, 0.0F, 1.0F}}}.data());
-}
-
-
-auto detail::GetPrefilteredEnvMap(Scene const& scene) -> wand::SharedDeviceHandle<wand::Texture> const& {
-  return scene.prefiltered_env_map_;
-}
-
-
-auto detail::RecreatePrefilteredEnvMap(Scene& scene, wand::GraphicsDevice& device, DXGI_FORMAT const format,
-                                       UINT const size) -> void {
-  scene.prefiltered_env_map_ = device.CreateTexture(wand::TextureDesc{
-      .dimension = wand::TextureDimension::kCube,
-      .width = size,
-      .height = size,
-      .depth_or_array_size = 6,
-      .mip_levels = 0,
-      .format = format,
-      .sample_count = 1,
-      .depth_stencil = false,
-      .render_target = true,
-      .shader_resource = true,
-      .unordered_access = false
-    }, wand::CpuAccess::kNone,
-    std::array{D3D12_CLEAR_VALUE{.Format = format, .Color = {0.0F, 0.0F, 0.0F, 1.0F}}}.data());
-}
-
-
-auto Scene::GetActiveScene() noexcept -> Scene* {
-  return active_scene_;
-}
-
-
 Scene::Scene() {
-  all_scenes_.emplace_back(this);
-
-  if (!active_scene_) {
-    active_scene_ = this;
-  }
-
-  SaveSceneParams();
-}
-
-
-Scene::~Scene() {
-  if (active_scene_ == this) {
-    active_scene_ = all_scenes_.empty() ? nullptr : all_scenes_.back();
-  }
-
-  std::erase(all_scenes_, this);
+  SaveVersionNumber();
 }
 
 
 auto Scene::Save(World const& world) -> void {
   yaml_data_.reset();
-  SaveSceneParams();
+  SaveVersionNumber();
 
   auto const world_entities = world.GetEntities();
 
@@ -122,56 +43,11 @@ auto Scene::Load(World& world) -> void {
     };
   }
 
-  // Load scene settings
-
-  if (auto const node{yaml_data_["ambientLight"]}) {
-    ambient_light_ = node.as<Vector3>(ambient_light_);
-  }
-
-  if (auto const node{yaml_data_["skyMode"]}) {
-    sky_mode_ = static_cast<SkyMode>(node.as<int>(static_cast<int>(sky_mode_)));
-  }
-
-  if (auto const node{yaml_data_["skyColor"]}) {
-    sky_color_ = node.as<Vector3>(sky_color_);
-  }
-
-  // Start a job to load the skybox
-
-  struct SkyboxJobData {
-    AssetId asset_id;
-    AssetRef<Cubemap> cubemap;
-  } skybox_job_data;
-
-  ObserverPtr<Job> skybox_job;
-
-  if (auto const node{yaml_data_["skybox"]}) {
-    if (auto const asset_id{DeserializeAssetId(node, yaml_ctx_).value_or(AssetId::Invalid())}; asset_id.IsValid()) {
-      skybox_job_data.asset_id = asset_id;
-
-      skybox_job = App::Instance().GetJobSystem().CreateJob([](SkyboxJobData* const data) {
-        data->cubemap = MakeAssetRef(App::Instance().GetAssetManager().Resolve<Cubemap>(data->asset_id).Get());
-      }, &skybox_job_data);
-
-      App::Instance().GetJobSystem().Submit(skybox_job);
-    }
-  }
-
   // Add the new entities to the scene
 
   for (auto& entity_ptr : DeserializeEntitySet(yaml_data_["sceneObjects"], yaml_ctx_)) {
     world.AddEntity(std::move(entity_ptr));
   }
-
-  if (skybox_job) {
-    App::Instance().GetJobSystem().Wait(skybox_job);
-    skybox_ = skybox_job_data.cubemap;
-  }
-}
-
-
-auto Scene::SetActive() -> void {
-  active_scene_ = this;
 }
 
 
@@ -189,76 +65,7 @@ auto Scene::Deserialize(
 }
 
 
-auto Scene::GetAmbientLightVector() const noexcept -> Vector3 const& {
-  return ambient_light_;
-}
-
-
-auto Scene::SetAmbientLightVector(Vector3 const& vector) noexcept -> void {
-  ambient_light_ = vector;
-}
-
-
-auto Scene::GetAmbientLight() const noexcept -> Color {
-  return Color{Vector4{ambient_light_, 1}};
-}
-
-
-auto Scene::SetAmbientLight(Color const& color) noexcept -> void {
-  ambient_light_ = Vector3{static_cast<Vector4>(color)};
-}
-
-
-auto Scene::GetSkyMode() const noexcept -> SkyMode {
-  return sky_mode_;
-}
-
-
-auto Scene::SetSkyMode(SkyMode const skyMode) noexcept -> void {
-  sky_mode_ = skyMode;
-}
-
-
-auto Scene::GetSkyColor() const noexcept -> Vector3 const& {
-  return sky_color_;
-}
-
-
-auto Scene::SetSkyColor(Vector3 const& skyColor) noexcept -> void {
-  sky_color_ = skyColor;
-}
-
-
-auto Scene::GetSkybox() const noexcept -> AssetRef<Cubemap> {
-  return skybox_;
-}
-
-
-auto Scene::SetSkybox(AssetRef<Cubemap> const& skybox) noexcept -> void {
-  skybox_ = skybox;
-  irradiance_map_ = nullptr;
-  prefiltered_env_map_ = nullptr;
-}
-
-
-// ReSharper disable once CppPassValueParameterByConstReference
-// Reflection requires matching getter and setter types
-auto Scene::SetSkyboxRefl(AssetRef<Cubemap> const skybox) noexcept -> void {
-  SetSkybox(skybox);
-}
-
-
-auto Scene::SaveSceneParams() -> void {
+auto Scene::SaveVersionNumber() -> void {
   yaml_data_["version"] = 1;
-  yaml_data_["ambientLight"] = ambient_light_;
-  yaml_data_["skyMode"] = static_cast<int>(sky_mode_);
-  yaml_data_["skyColor"] = sky_color_;
-  yaml_data_["skybox"] = SerializeGlobalAssetId(skybox_ ? skybox_->GetAssetId() : AssetId::Invalid());
 }
-
-
-Scene* Scene::active_scene_{nullptr};
-
-
-std::vector<Scene*> Scene::all_scenes_;
 }

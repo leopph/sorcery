@@ -64,11 +64,6 @@ auto SettingsWindow::Draw() -> void {
   }
 
   if (ImGui::TreeNode("Lighting")) {
-    if (auto color{Scene::GetActiveScene()->GetAmbientLightVector()}; ImGui::ColorEdit3("Ambient Light",
-      color.GetData())) {
-      Scene::GetActiveScene()->SetAmbientLightVector(color);
-    }
-
     if (auto ssaoEnabled{App::Instance().GetSceneRenderer().IsSsaoEnabled()}; ImGui::Checkbox(
       "Screen Space Ambient Occlusion", &ssaoEnabled)) {
       App::Instance().GetSceneRenderer().SetSsaoEnabled(ssaoEnabled);
@@ -188,43 +183,6 @@ auto SettingsWindow::Draw() -> void {
       "Visualize Shadow Cascades", &visualizeShadowCascades)) {
       App::Instance().GetSceneRenderer().VisualizeShadowCascades(visualizeShadowCascades);
     }
-    ImGui::TreePop();
-  }
-
-  if (ImGui::TreeNode("Sky")) {
-    auto& activeScene{*Scene::GetActiveScene()};
-    std::array constexpr static skyModeLabels{
-      [] {
-        std::array<char const*, 2> ret;
-        ret[static_cast<int>(SkyMode::Color)] = "Color";
-        ret[static_cast<int>(SkyMode::Skybox)] = "Skybox";
-        return ret;
-      }()
-    };
-
-    if (auto skyMode{activeScene.GetSkyMode()};
-      ImGui::BeginCombo("Sky Mode", skyModeLabels[static_cast<int>(skyMode)])) {
-      for (auto i{0}; i < std::ssize(skyModeLabels); i++) {
-        if (ImGui::Selectable(skyModeLabels[i], i == static_cast<int>(skyMode))) {
-          activeScene.SetSkyMode(static_cast<SkyMode>(i));
-        }
-      }
-      ImGui::EndCombo();
-    }
-
-    if (activeScene.GetSkyMode() == SkyMode::Color) {
-      if (auto sky_color_srgb{Pow(activeScene.GetSkyColor(), 1.0f / App::Instance().GetSceneRenderer().GetGamma())};
-        ImGui::ColorEdit3("##skyColor", sky_color_srgb.GetData())) {
-        activeScene.SetSkyColor(Pow(sky_color_srgb, App::Instance().GetSceneRenderer().GetGamma()));
-      }
-    } else if (activeScene.GetSkyMode() == SkyMode::Skybox) {
-      if (auto skybox{activeScene.GetSkybox().Get()}; mSkyboxPicker.Draw(skybox)) {
-        activeScene.SetSkybox(MakeAssetRef(skybox.Get()));
-      }
-    } else {
-      ImGui::TextColored(ImVec4{1, 1, 0, 1}, "%s", "Unknown sky mode.");
-    }
-
     ImGui::TreePop();
   }
 

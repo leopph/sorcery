@@ -42,6 +42,16 @@ auto RenderWorld::Unregister(Camera const& cam) noexcept -> void {
 }
 
 
+auto RenderWorld::Register(EnvironmentComponent& env_component) noexcept -> void {
+  environment_components_.emplace_back(&env_component);
+}
+
+
+auto RenderWorld::Unregister(EnvironmentComponent const& env_component) noexcept -> void {
+  std::erase(environment_components_, MakeObserver(&env_component));
+}
+
+
 auto RenderWorld::GetStaticMeshComponents() const -> std::span<ObserverPtr<StaticMeshComponent> const> {
   return static_mesh_components_;
 }
@@ -59,5 +69,10 @@ auto RenderWorld::GetLightComponents() const -> std::span<ObserverPtr<LightCompo
 
 auto RenderWorld::GetCameras() const -> std::span<ObserverPtr<Camera> const> {
   return cameras_;
+}
+
+
+auto RenderWorld::GetEnvironmentComponent() const -> ObserverPtr<EnvironmentComponent> {
+  return environment_components_.empty() ? nullptr : environment_components_.front();
 }
 }

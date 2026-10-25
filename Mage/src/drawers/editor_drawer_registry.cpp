@@ -6,6 +6,7 @@
 #include "camera_controller_component_editor_drawer.hpp"
 #include "component_editor_drawer.hpp"
 #include "entity_editor_drawer.hpp"
+#include "environment_component_editor_drawer.hpp"
 #include "light_component_editor_drawer.hpp"
 #include "material_editor_drawer.hpp"
 #include "mesh_component_base_editor_drawer.hpp"
@@ -42,6 +43,7 @@ EditorDrawerRegistry::EditorDrawerRegistry(ImGuiTextureReferences& tex_refs) :
   RegisterDrawer(std::make_unique<TransformComponentEditorDrawer>());
   RegisterDrawer(std::make_unique<TextureImporterEditorDrawer>());
   RegisterDrawer(std::make_unique<ModelImporterEditorDrawer>());
+  RegisterDrawer(std::make_unique<EnvironmentComponentEditorDrawer>());
 
   // TODO add reflection-based auto query
 }

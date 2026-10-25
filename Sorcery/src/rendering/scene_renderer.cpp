@@ -20,12 +20,12 @@
 #include "rendering/view_context.hpp"
 #include "rendering/shaders/shader_interop.h"
 #include "rendering/shaders/shadow_filtering_modes.h"
-#include "sorcery/assets/Scene.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
 #include "sorcery/host/rendering/render_world.hpp"
 #include "sorcery/host/rendering/texture_resolver.hpp"
 #include "sorcery/scene/Entity.hpp"
+#include "sorcery/scene/environment_component.hpp"
 #include "sorcery/scene/SkinnedMeshComponent.hpp"
 #include "sorcery/scene/StaticMeshComponent.hpp"
 #include "sorcery/scene/TransformComponent.hpp"
@@ -338,7 +338,6 @@ SceneRenderer::~SceneRenderer() {
 
 
 auto SceneRenderer::ExtractFrame(RenderFrame& frame, RenderWorld const& render_world) -> void {
-
   auto& cmd = frame.AcquireCommandList();
   cmd.Begin(nullptr);
 
@@ -629,39 +628,39 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame, RenderWorld const& render_w
   packet.draw_irradiance_map = false;
   packet.draw_prefiltered_env_map = false;
 
-  if (auto* const active_scene{Scene::GetActiveScene()}) {
-    packet.ambient_light = active_scene->GetAmbientLightVector();
+  if (auto const env_comp = render_world.GetEnvironmentComponent()) {
+    packet.ambient_light = env_comp->GetAmbientLightVector();
 
-    if (active_scene->GetSkyMode() == SkyMode::Color) {
-      auto const sky_color{active_scene->GetSkyColor()};
+    if (env_comp->GetSkyMode() == SkyMode::kColor) {
+      auto const sky_color{env_comp->GetSkyColor()};
       packet.background_color = {sky_color[0], sky_color[1], sky_color[2], 1.0F};
     }
 
-    if (active_scene->GetSkyMode() == SkyMode::Skybox) {
-      if (auto const cubemap{active_scene->GetSkybox().Observe()}) {
+    if (env_comp->GetSkyMode() == SkyMode::kSkybox) {
+      if (auto const cubemap{env_comp->GetSkybox().Observe()}) {
         packet.skybox_cubemap = tex_resolver_->Resolve(*cubemap, frame.GetUploadArena(), cmd);
 
-        if (auto const irradiance_map{sorcery::detail::GetIrradianceMap(*active_scene)};
+        if (auto const irradiance_map{sorcery::detail::GetIrradianceMap(*env_comp)};
           !irradiance_map ||
           irradiance_map->GetDesc().format != irradiance_map_format_ ||
           irradiance_map->GetDesc().width != irradiance_map_size_ ||
           irradiance_map->GetDesc().height != irradiance_map_size_) {
-          sorcery::detail::RecreateIrradianceMap(*active_scene, *device_, irradiance_map_format_, irradiance_map_size_);
+          sorcery::detail::RecreateIrradianceMap(*env_comp, *device_, irradiance_map_format_, irradiance_map_size_);
           packet.draw_irradiance_map = true;
         }
 
-        if (auto const prefiltered_env_map{sorcery::detail::GetPrefilteredEnvMap(*active_scene)};
+        if (auto const prefiltered_env_map{sorcery::detail::GetPrefilteredEnvMap(*env_comp)};
           !prefiltered_env_map ||
           prefiltered_env_map->GetDesc().format != prefiltered_env_map_format_ ||
           prefiltered_env_map->GetDesc().width != prefiltered_env_map_size_ ||
           prefiltered_env_map->GetDesc().height != prefiltered_env_map_size_) {
-          sorcery::detail::RecreatePrefilteredEnvMap(*active_scene, *device_, prefiltered_env_map_format_,
+          sorcery::detail::RecreatePrefilteredEnvMap(*env_comp, *device_, prefiltered_env_map_format_,
             prefiltered_env_map_size_);
           packet.draw_prefiltered_env_map = true;
         }
 
-        packet.irradiance_map = sorcery::detail::GetIrradianceMap(*active_scene);
-        packet.prefiltered_env_map = sorcery::detail::GetPrefilteredEnvMap(*active_scene);
+        packet.irradiance_map = sorcery::detail::GetIrradianceMap(*env_comp);
+        packet.prefiltered_env_map = sorcery::detail::GetPrefilteredEnvMap(*env_comp);
       }
     }
   }
