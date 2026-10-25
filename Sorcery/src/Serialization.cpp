@@ -1,11 +1,12 @@
 #include "sorcery/Serialization.hpp"
 
 #include <cassert>
+#include <string>
 
 #include "sorcery/asset_reference.hpp"
+#include "sorcery/assets/Asset.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
-#include "sorcery/assets/Asset.hpp"
 
 
 static_assert(
@@ -138,11 +139,10 @@ auto ReflectionSerializeToYaml(
   }
 
   if (variant_type.is_enumeration()) {
-    auto const enumeration{variant_type.get_enumeration()};
-    auto underlying{v};
-    [[maybe_unused]] auto const success{underlying.convert(enumeration.get_underlying_type())};
-    assert(success);
-    return ReflectionSerializeToYaml(underlying, ctx, extension_func);
+    auto const enumeration = variant_type.get_enumeration();
+    auto const str_value = enumeration.value_to_name(v).to_string();
+    assert(!str_value.empty() && "Failed to serialize enum: value name not defined!");
+    return ReflectionSerializeToYaml(rttr::variant{str_value}, ctx, extension_func);
   }
 
   // T*, ObserverPtr<T>, etc.
@@ -365,17 +365,13 @@ auto ReflectionDeserializeFromYaml(
   }
 
   if (variant_type.is_enumeration()) {
-    auto const enumeration{variant_type.get_enumeration()};
+    auto const enumeration = variant_type.get_enumeration();
     assert(enumeration.is_valid());
-    auto copy{v};
-    assert(copy.is_valid());
-    auto success{copy.convert(enumeration.get_underlying_type())};
-    assert(success);
-    ReflectionDeserializeFromYaml(node, copy, ctx, extension_func);
-    assert(copy.is_valid());
-    success = copy.convert(enumeration.get_type());
-    assert(success);
-    v = copy;
+    rttr::variant str_value{std::string{}};
+    ReflectionDeserializeFromYaml(node, str_value, ctx, extension_func);
+    assert(str_value.is_valid() && "Failed to deserialize enum. Was it serialized as integer rather than string?");
+    v = enumeration.name_to_value(str_value.to_string());
+    assert(v.is_valid());
     return;
   }
 
