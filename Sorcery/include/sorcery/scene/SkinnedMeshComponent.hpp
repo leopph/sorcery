@@ -18,9 +18,9 @@ public:
   auto Clone() -> std::unique_ptr<SceneObject> override;
 
   SORCERYAPI
-  auto OnAfterEnteringScene(Scene const& scene) -> void override;
+  auto OnAfterEnteringWorld(World& world) -> void override;
   SORCERYAPI
-  auto OnBeforeExitingScene(Scene const& scene) -> void override;
+  auto OnBeforeExitingWorld(World& world) -> void override;
 
   SORCERYAPI
   auto SetMesh(AssetRef<Mesh> mesh) noexcept -> void override;

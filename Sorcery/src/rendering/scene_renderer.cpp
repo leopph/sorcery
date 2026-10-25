@@ -23,7 +23,7 @@
 #include "sorcery/assets/Scene.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
-#include "sorcery/host/rendering/render_scene.hpp"
+#include "sorcery/host/rendering/render_world.hpp"
 #include "sorcery/host/rendering/texture_resolver.hpp"
 #include "sorcery/scene/Entity.hpp"
 #include "sorcery/scene/SkinnedMeshComponent.hpp"
@@ -249,8 +249,7 @@ SceneRenderer::SceneRenderer(
   TemporaryRenderTargetPool& rt_pool,
   RenderResourceRegistry& render_resource_registry,
   RenderInstanceRegistry& render_instance_registry,
-  TextureResolver& tex_resolver,
-  RenderScene const& render_scene
+  TextureResolver& tex_resolver
 ) :
   window_{&window},
   device_{&device},
@@ -258,7 +257,6 @@ SceneRenderer::SceneRenderer(
   resource_registry_{&render_resource_registry},
   instance_registry_{&render_instance_registry},
   tex_resolver_{&tex_resolver},
-  render_scene_{&render_scene},
   ssao_pass_{*device_, *rt_pool_} {
   main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
     static_cast<UINT>(window_->GetClientAreaSize().width), static_cast<UINT>(window_->GetClientAreaSize().height),
@@ -339,7 +337,8 @@ SceneRenderer::~SceneRenderer() {
 }
 
 
-auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
+auto SceneRenderer::ExtractFrame(RenderFrame& frame, RenderWorld const& render_world) -> void {
+
   auto& cmd = frame.AcquireCommandList();
   cmd.Begin(nullptr);
 
@@ -365,7 +364,7 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
 
   // Extract lights
 
-  auto const lights = render_scene_->GetLightComponents();
+  auto const lights = render_world.GetLightComponents();
   packet.light_data.reserve(lights.size());
 
   for (auto const light : lights) {
@@ -387,7 +386,7 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   // Because they're static, we can batch them for better performance.
 
   {
-    auto static_meshes = render_scene_->GetStaticMeshComponents();
+    auto static_meshes = render_world.GetStaticMeshComponents();
     sorted_static_mesh_comps_.assign(static_meshes.begin(), static_meshes.end());
   }
 
@@ -430,7 +429,7 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
   // Now come the skinned mesh components. Because their geometry is individually animated, we cannot batch them like static meshes.
   // Each component will have its own batch.
 
-  for (auto const comp : render_scene_->GetSkinnedMeshComponents()) {
+  for (auto const comp : render_world.GetSkinnedMeshComponents()) {
     auto const mesh = comp->GetMesh().Observe();
 
     if (!mesh) {
@@ -554,7 +553,7 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame) -> void {
 
   // Extract camera data
 
-  auto const cameras = render_scene_->GetCameras();
+  auto const cameras = render_world.GetCameras();
   packet.cam_data.reserve(cameras.size());
 
   for (auto const cam : cameras) {

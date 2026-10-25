@@ -5,15 +5,18 @@
 #include <wand/device_object.hpp>
 #include <wand/texture.hpp>
 
-#include <sorcery/Color.hpp>
 #include <sorcery/asset_ref.hpp>
+#include <sorcery/Color.hpp>
 #include <sorcery/SkyMode.hpp>
 #include <sorcery/assets/Cubemap.hpp>
 #include <sorcery/assets/NativeAsset.hpp>
-#include <sorcery/scene/Entity.hpp>
 
 
 namespace sorcery {
+class Scene;
+class World;
+
+
 namespace detail {
 [[nodiscard]]
 auto GetIrradianceMap(Scene const& scene) -> wand::SharedDeviceHandle<wand::Texture> const&;
@@ -52,14 +55,9 @@ public:
   auto operator=(Scene const& other) -> void = delete;
   auto operator=(Scene&& other) -> void = delete;
 
-  SORCERYAPI auto AddEntity(std::unique_ptr<Entity> entity) -> void;
-  SORCERYAPI auto RemoveEntity(Entity const& entity) -> std::unique_ptr<Entity>;
-  [[nodiscard]] SORCERYAPI auto GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const>;
-
-  SORCERYAPI auto Save() -> void;
-  SORCERYAPI auto Load() -> void;
+  SORCERYAPI auto Save(World const& world) -> void;
+  SORCERYAPI auto Load(World& world) -> void;
   SORCERYAPI auto SetActive() -> void;
-  SORCERYAPI auto Clear() -> void;
 
   [[nodiscard]] SORCERYAPI auto Serialize() const noexcept -> YAML::Node override;
   SORCERYAPI auto Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext const& ctx) noexcept -> void override;
@@ -83,10 +81,10 @@ private:
   // This is just for reflection
   auto SetSkyboxRefl(AssetRef<Cubemap> skybox) noexcept -> void;
 
+  auto SaveSceneParams() -> void;
+
   static Scene* active_scene_;
   static std::vector<Scene*> all_scenes_;
-
-  std::vector<std::unique_ptr<Entity>> entities_;
 
   YAML::Node yaml_data_;
   YamlDeserializeContext yaml_ctx_;

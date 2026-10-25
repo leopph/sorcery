@@ -4,11 +4,13 @@
 
 #include "../editor_app.hpp"
 #include "sorcery/assets/prefab.hpp"
+#include "sorcery/scene/Entity.hpp"
 
 
 namespace sorcery::mage {
-EntityHierarchyWindow::EntityHierarchyWindow(EditorApp& app) :
-  mApp{std::addressof(app)} {}
+EntityHierarchyWindow::EntityHierarchyWindow(EditorApp& app, World& edit_world) :
+  app_{std::addressof(app)},
+  edit_world_{&edit_world} {}
 
 
 auto EntityHierarchyWindow::Draw() -> void {
@@ -26,7 +28,7 @@ auto EntityHierarchyWindow::Draw() -> void {
 
       if (ImGui::BeginPopup(contextId)) {
         if (ImGui::MenuItem("Create New Entity")) {
-          mApp->GetScene().AddEntity(std::make_unique<Entity>());
+          edit_world_->AddEntity(std::make_unique<Entity>());
         }
 
         ImGui::EndPopup();
@@ -42,7 +44,7 @@ auto EntityHierarchyWindow::Draw() -> void {
         }
       }
 
-      std::span entities{mApp->GetScene().GetEntities()};
+      std::span entities{edit_world_->GetEntities()};
 
       std::function<void(Entity&)> displayEntityRecursive;
       displayEntityRecursive = [this, &entities, &displayEntityRecursive](Entity& entity) -> void {
@@ -54,7 +56,7 @@ auto EntityHierarchyWindow::Draw() -> void {
           nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
         }
 
-        if (mApp->GetSelectedObject() && mApp->GetSelectedObject().Get().Get() == &entity) {
+        if (app_->GetSelectedObject() && app_->GetSelectedObject().Get().Get() == &entity) {
           nodeFlags |= ImGuiTreeNodeFlags_Selected;
         }
 
@@ -74,26 +76,26 @@ auto EntityHierarchyWindow::Draw() -> void {
         }
 
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-          mApp->SetSelectedObject(MakeObjectPtr(MakeObserver(&entity)));
+          app_->SetSelectedObject(MakeObjectPtr(MakeObserver(&entity)));
         }
 
         auto deleted{false};
 
         if (ImGui::BeginPopupContextItem()) {
-          mApp->SetSelectedObject(MakeObjectPtr(MakeObserver(&entity)));
+          app_->SetSelectedObject(MakeObjectPtr(MakeObserver(&entity)));
 
           if (ImGui::MenuItem("Duplicate")) {
             auto clone{static_unique_ptr_cast<Entity>(entity.Clone())};
-            mApp->SetSelectedObject(MakeObjectPtr(MakeObserver(clone.get())));
-            mApp->GetScene().AddEntity(std::move(clone));
-            entities = mApp->GetScene().GetEntities();
+            app_->SetSelectedObject(MakeObjectPtr(MakeObserver(clone.get())));
+            edit_world_->AddEntity(std::move(clone));
+            entities = edit_world_->GetEntities();
             ImGui::CloseCurrentPopup();
           }
 
           if (ImGui::MenuItem("Delete")) {
-            mApp->SetSelectedObject(nullptr);
-            mApp->GetScene().RemoveEntity(entity);
-            entities = mApp->GetScene().GetEntities();
+            app_->SetSelectedObject(nullptr);
+            edit_world_->RemoveEntity(entity);
+            entities = edit_world_->GetEntities();
             deleted = true;
             ImGui::CloseCurrentPopup();
           }
@@ -132,7 +134,7 @@ auto EntityHierarchyWindow::Draw() -> void {
             ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
             if (payload->IsDelivery()) {
               for (auto& entity : prefab->Instantiate()) {
-                mApp->GetScene().AddEntity(std::move(entity));
+                edit_world_->AddEntity(std::move(entity));
               }
             }
           }

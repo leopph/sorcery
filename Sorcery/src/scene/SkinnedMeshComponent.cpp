@@ -3,8 +3,8 @@
 #include <cmath>
 
 #include "sorcery/timing.hpp"
-#include "sorcery/host/app.hpp"
-#include "sorcery/host/rendering/render_scene.hpp"
+#include "sorcery/world.hpp"
+#include "sorcery/host/rendering/render_world.hpp"
 
 
 RTTR_REGISTRATION {
@@ -24,15 +24,15 @@ auto SkinnedMeshComponent::Clone() -> std::unique_ptr<SceneObject> {
 }
 
 
-auto SkinnedMeshComponent::OnAfterEnteringScene(Scene const& scene) -> void {
-  Component::OnAfterEnteringScene(scene);
-  App::Instance().GetRenderScene().Register(*this);
+auto SkinnedMeshComponent::OnAfterEnteringWorld(World& world) -> void {
+  Component::OnAfterEnteringWorld(world);
+  world.GetRenderWorld().Register(*this);
 }
 
 
-auto SkinnedMeshComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  App::Instance().GetRenderScene().Unregister(*this);
-  Component::OnBeforeExitingScene(scene);
+auto SkinnedMeshComponent::OnBeforeExitingWorld(World& world) -> void {
+  world.GetRenderWorld().Unregister(*this);
+  Component::OnBeforeExitingWorld(world);
 }
 
 

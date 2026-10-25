@@ -45,9 +45,9 @@ class RenderTexture;
 class StaticRenderMeshInstance;
 class SkinnedRenderMeshInstance;
 class TextureResolver;
-class RenderScene;
 class RenderFrame;
 class UploadArena;
+class RenderWorld;
 
 
 enum class ShadowFilteringMode : std::uint8_t {
@@ -85,8 +85,7 @@ public:
     TemporaryRenderTargetPool& rt_pool,
     RenderResourceRegistry& render_resource_registry,
     RenderInstanceRegistry& render_instance_registry,
-    TextureResolver& tex_resolver,
-    RenderScene const& render_scene
+    TextureResolver& tex_resolver
   );
   SceneRenderer(SceneRenderer const&) = delete;
   SceneRenderer(SceneRenderer&&) = delete;
@@ -96,7 +95,7 @@ public:
   auto operator=(SceneRenderer const&) -> void = delete;
   auto operator=(SceneRenderer&&) -> void = delete;
 
-  SORCERYAPI auto ExtractFrame(RenderFrame& frame) -> void;
+  SORCERYAPI auto ExtractFrame(RenderFrame& frame, RenderWorld const& render_world) -> void;
   SORCERYAPI auto PrepareFrame(RenderFrame& frame) -> void;
   SORCERYAPI auto RecordFrame(RenderFrame& frame) -> void;
 
@@ -702,7 +701,6 @@ private:
   ObserverPtr<RenderResourceRegistry> resource_registry_;
   ObserverPtr<RenderInstanceRegistry> instance_registry_;
   ObserverPtr<TextureResolver> tex_resolver_;
-  ObserverPtr<RenderScene const> render_scene_;
 
   std::array<MappedConstantBuffer<ShaderPerFrameConstants>, kFramesInFlight> per_frame_cbs_{
     MappedConstantBuffer<ShaderPerFrameConstants>{*device_},

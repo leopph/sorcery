@@ -112,7 +112,8 @@ auto EditorApp::OpenScene(AssetId const& asset_id) -> void {
   }
 
   if (auto const new_scene{GetAssetManager().Resolve<Scene>(asset_id)}) {
-    new_scene->Load();
+    edit_world_.Clear();
+    new_scene->Load(edit_world_);
 
     if (scene_) {
       GetAssetManager().Unload(scene_->GetAssetId());
@@ -133,12 +134,13 @@ auto EditorApp::OpenNewScene() -> void {
   scene_ = GetAssetManager().Add(std::make_unique<Scene>());
   scene_->SetActive();
   selected_object_ = nullptr;
+  edit_world_.Clear();
 }
 
 
 auto EditorApp::SaveCurrentSceneToFile() -> void {
   assert(scene_);
-  scene_->Save();
+  scene_->Save(edit_world_);
   if (asset_db_.IsSavedAsset(*scene_)) {
     asset_db_.SaveAssetToFile(*scene_);
   } else {
@@ -292,6 +294,12 @@ auto EditorApp::SetGuiDarkMode(bool const darkMode) noexcept -> void {
 }
 
 
+auto EditorApp::GetRenderedWorld() -> World& {
+  return edit_world_;
+  //return game_is_running_ ? play_world_ : edit_world_;
+}
+
+
 auto EditorApp::BeginFrame() -> void {
   App::BeginFrame();
   tex_refs_.Reset();
@@ -308,12 +316,7 @@ auto EditorApp::Update() -> void {
     int static targetFrameRate{timing::GetTargetFrameRate()};
 
     if (game_is_running_) {
-      for (std::vector<ObjectPtr<SceneObject>> scene_objects;
-           auto const so : GetObjectRegistry().FindObjectsOfType(scene_objects)) {
-        if (so->IsUpdatable()) {
-          so->Update();
-        }
-      }
+      edit_world_.Update();
 
       if (GetKeyDown(Key::Escape)) {
         game_is_running_ = false;
@@ -321,23 +324,18 @@ auto EditorApp::Update() -> void {
         GetWindow().SetCursorLock(std::nullopt);
         GetWindow().SetCursorHiding(false);
         timing::SetTargetFrameRate(targetFrameRate);
-        GetScene().Load();
+        edit_world_.Clear();
+        GetScene().Load(edit_world_);
         SetSelectedObject(nullptr);
       }
     } else {
       if (GetKeyDown(Key::F5)) {
         game_is_running_ = true;
         GetWindow().SetEventHandler(nullptr);
-        GetScene().Save();
+        GetScene().Save(edit_world_);
         targetFrameRate = timing::GetTargetFrameRate();
         timing::SetTargetFrameRate(-1);
-
-        for (std::vector<ObjectPtr<SceneObject>> scene_objects;
-             auto const so : GetObjectRegistry().FindObjectsOfType(scene_objects)) {
-          if (so->IsUpdatable()) {
-            so->Start();
-          }
-        }
+        edit_world_.Start();
       }
     }
 

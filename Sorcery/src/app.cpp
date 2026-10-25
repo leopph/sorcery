@@ -13,6 +13,7 @@
 #include "rendering/temporary_render_target_pool.hpp"
 #include "sorcery/timing.hpp"
 #include "sorcery/util.hpp"
+#include "sorcery/world.hpp"
 #include "sorcery/host/command_line_args.hpp"
 #include "sorcery/host/game_module.hpp"
 #include "sorcery/host/job_system.hpp"
@@ -20,7 +21,6 @@
 #include "sorcery/host/platform.hpp"
 #include "sorcery/host/window.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
-#include "sorcery/host/rendering/render_scene.hpp"
 #include "sorcery/host/rendering/texture_resolver.hpp"
 
 
@@ -63,9 +63,8 @@ struct App::Data {
   rendering::RenderResourceRegistry render_resource_registry{graphics_device, object_registry};
   rendering::RenderInstanceRegistry render_instance_registry{object_registry};
   rendering::TextureResolver texture_resolver{graphics_device, render_resource_registry};
-  rendering::RenderScene render_scene;
   rendering::SceneRenderer scene_renderer{
-    window, graphics_device, rt_pool, render_resource_registry, render_instance_registry, texture_resolver, render_scene
+    window, graphics_device, rt_pool, render_resource_registry, render_instance_registry, texture_resolver
   };
   AssetManager asset_manager{job_system};
   ObserverPtr<Job> render_job;
@@ -118,11 +117,6 @@ auto App::GetSwapChain() -> wand::SwapChain& {
 
 auto App::GetSceneRenderer() -> rendering::SceneRenderer& {
   return data_->scene_renderer;
-}
-
-
-auto App::GetRenderScene() -> rendering::RenderScene& {
-  return data_->render_scene;
 }
 
 
@@ -223,7 +217,7 @@ auto App::BeginFrame() -> void {
 
 
 auto App::ExtractRenderFrame(rendering::RenderFrame& frame) -> void {
-  data_->scene_renderer.ExtractFrame(frame);
+  data_->scene_renderer.ExtractFrame(frame, GetRenderedWorld().GetRenderWorld());
 }
 
 

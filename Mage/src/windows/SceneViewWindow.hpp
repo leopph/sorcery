@@ -10,14 +10,18 @@
 #include "sorcery/observer_ptr.hpp"
 
 
-namespace sorcery::mage {
+namespace sorcery {
+class World;
+
+
+namespace mage {
 class EditorApp;
 class ImGuiTextureReferences;
 
 
 class SceneViewWindow {
 public:
-  explicit SceneViewWindow(ImGuiTextureReferences& tex_refs);
+  SceneViewWindow(ImGuiTextureReferences& tex_refs, World& edit_world);
   SceneViewWindow(SceneViewWindow const&) = delete;
   SceneViewWindow(SceneViewWindow&&) = delete;
 
@@ -59,6 +63,7 @@ private:
   };
 
   ObserverPtr<ImGuiTextureReferences> tex_refs_;
+  ObserverPtr<World> edit_world_;
   StandaloneCamera cam_{Vector3{}, Quaternion{}, 5.0f, 0.1f, 1000.0f, 60};
   std::optional<FocusMoveInfo> focus_target_;
   int gizmo_op_idx_{0};
@@ -67,4 +72,5 @@ private:
   bool show_grid_{false};
   bool was_visible_{false};
 };
+}
 }

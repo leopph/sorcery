@@ -225,7 +225,7 @@
     <ClCompile Include="src\rendering\projection_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\render_scene.cpp">
+    <ClCompile Include="src\rendering\render_world.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\ssao_pass.cpp">
@@ -235,6 +235,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\command_line_args.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\world.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -503,7 +506,7 @@
     <ClInclude Include="src\rendering\projection_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\host\rendering\render_scene.hpp">
+    <ClInclude Include="include\sorcery\host\rendering\render_world.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\ssao_pass.hpp">
@@ -525,6 +528,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\not_null.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sorcery\world.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,7 +1,7 @@
 #include "sorcery/scene/StaticMeshComponent.hpp"
 
-#include "sorcery/host/app.hpp"
-#include "sorcery/host/rendering/render_scene.hpp"
+#include "sorcery/world.hpp"
+#include "sorcery/host/rendering/render_world.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::StaticMeshComponent>{"Static Mesh Component"}
@@ -15,14 +15,14 @@ auto StaticMeshComponent::Clone() -> std::unique_ptr<SceneObject> {
 }
 
 
-auto StaticMeshComponent::OnAfterEnteringScene(Scene const& scene) -> void {
-  Component::OnAfterEnteringScene(scene);
-  App::Instance().GetRenderScene().Register(*this);
+auto StaticMeshComponent::OnAfterEnteringWorld(World& world) -> void {
+  Component::OnAfterEnteringWorld(world);
+  world.GetRenderWorld().Register(*this);
 }
 
 
-auto StaticMeshComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  App::Instance().GetRenderScene().Unregister(*this);
-  Component::OnBeforeExitingScene(scene);
+auto StaticMeshComponent::OnBeforeExitingWorld(World& world) -> void {
+  world.GetRenderWorld().Unregister(*this);
+  Component::OnBeforeExitingWorld(world);
 }
 }

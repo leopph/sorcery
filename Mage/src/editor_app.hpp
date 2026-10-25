@@ -7,15 +7,16 @@
 #include <string>
 #include <string_view>
 
+#include "AssetDB.hpp"
 #include "gui_helpers.hpp"
 #include "imgui_texture_references.hpp"
 #include "MainMenuBar.hpp"
-#include "AssetDB.hpp"
 #include "drawers/editor_drawer_registry.hpp"
 #include "rendering/imgui_renderer.hpp"
 #include "sorcery/event.hpp"
-#include "sorcery/host/app.hpp"
+#include "sorcery/world.hpp"
 #include "sorcery/assets/Scene.hpp"
+#include "sorcery/host/app.hpp"
 #include "windows/EntityHierarchyWindow.hpp"
 #include "windows/GameViewWindow.hpp"
 #include "windows/ProjectWindow.hpp"
@@ -62,6 +63,9 @@ public:
   auto ExecuteInBusyEditor(Callable&& callable) -> void;
 
 protected:
+  [[nodiscard]]
+  auto GetRenderedWorld() -> World& override;
+
   auto BeginFrame() -> void override;
   auto Update() -> void override;
   auto EndFrame() -> void override;
@@ -98,18 +102,21 @@ private:
 
   bool game_is_running_{false};
 
+  World edit_world_;
+  World play_world_;
+
   ImGuiTextureReferences tex_refs_;
   ImGuiRenderer imgui_renderer_{
     GetGraphicsDevice(), GetSwapChain(), GetTextureResolver(), tex_refs_
   };
   EditorDrawerRegistry drawer_registry_{tex_refs_};
   ProjectWindow project_window_{*this, asset_db_, drawer_registry_};
-  SceneViewWindow scene_view_window_{tex_refs_};
+  SceneViewWindow scene_view_window_{tex_refs_, edit_world_};
   GameViewWindow game_view_window_{tex_refs_};
   PropertiesWindow properties_window_{*this, drawer_registry_};
   SettingsWindow editor_settings_window_{*this, scene_view_window_.GetCamera()};
   MainMenuBar main_menu_bar_{*this, editor_settings_window_, GetGameModule()};
-  EntityHierarchyWindow entity_hierarchy_window_{*this};
+  EntityHierarchyWindow entity_hierarchy_window_{*this, edit_world_};
 
   static std::string_view const window_title_base_;
 };

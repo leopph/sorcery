@@ -4,7 +4,7 @@
 
 
 namespace sorcery {
-class Scene;
+class World;
 
 
 class SceneObject : public Object {
@@ -22,8 +22,8 @@ public:
   auto operator=(SceneObject&& other) -> void = delete;
 
   [[nodiscard]] LEOPPHAPI virtual auto Clone() -> std::unique_ptr<SceneObject> = 0;
-  LEOPPHAPI virtual auto OnAfterEnteringScene(Scene const& scene) -> void {}
-  LEOPPHAPI virtual auto OnBeforeExitingScene(Scene const& scene) -> void {}
+  LEOPPHAPI virtual auto OnAfterEnteringWorld(World& world) -> void {}
+  LEOPPHAPI virtual auto OnBeforeExitingWorld(World& world) -> void {}
 
   [[nodiscard]] LEOPPHAPI auto IsUpdatable() const -> bool;
   LEOPPHAPI auto SetUpdatable(bool updatable) -> void;

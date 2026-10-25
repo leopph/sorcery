@@ -3,19 +3,22 @@
 #include "../editor_app.hpp"
 #include "../StandaloneCamera.hpp"
 #include "sorcery/timing.hpp"
+#include "sorcery/world.hpp"
+#include "sorcery/assets/prefab.hpp"
 #include "sorcery/host/platform.hpp"
 #include "sorcery/host/window.hpp"
-#include "sorcery/host/rendering/render_scene.hpp"
-#include "sorcery/assets/prefab.hpp"
+#include "sorcery/host/rendering/render_world.hpp"
+#include "sorcery/scene/Entity.hpp"
 
 
 namespace sorcery::mage {
-SceneViewWindow::SceneViewWindow(ImGuiTextureReferences& tex_refs) :
-  tex_refs_{&tex_refs} {}
+SceneViewWindow::SceneViewWindow(ImGuiTextureReferences& tex_refs, World& edit_world) :
+  tex_refs_{&tex_refs},
+  edit_world_{&edit_world} {}
 
 
 SceneViewWindow::~SceneViewWindow() {
-  App::Instance().GetRenderScene().Unregister(cam_);
+  edit_world_->GetRenderWorld().Unregister(cam_);
 }
 
 
@@ -28,9 +31,9 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
   auto const is_visible{ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)};
 
   if (is_visible && !was_visible_) {
-    App::Instance().GetRenderScene().Register(cam_);
+    edit_world_->GetRenderWorld().Register(cam_);
   } else if (!is_visible && was_visible_) {
-    App::Instance().GetRenderScene().Unregister(cam_);
+    edit_world_->GetRenderWorld().Unregister(cam_);
   }
 
   if (is_visible) {
@@ -175,7 +178,7 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
             ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
             if (payload->IsDelivery()) {
               for (auto& entity : prefab->Instantiate()) {
-                context.GetScene().AddEntity(std::move(entity));
+                edit_world_->AddEntity(std::move(entity));
               }
             }
           }

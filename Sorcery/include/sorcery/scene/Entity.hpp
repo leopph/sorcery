@@ -13,9 +13,6 @@
 
 
 namespace sorcery {
-class Scene;
-
-
 class Entity final : public SceneObject {
   RTTR_ENABLE(SceneObject)
   RTTR_REGISTRATION_FRIEND
@@ -24,8 +21,8 @@ public:
   SORCERYAPI auto OnDrawGizmosSelected() -> void override;
 
   [[nodiscard]] SORCERYAPI auto Clone() -> std::unique_ptr<SceneObject> override;
-  SORCERYAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
-  SORCERYAPI auto OnBeforeExitingScene(Scene const& scene) -> void override;
+  SORCERYAPI auto OnAfterEnteringWorld(World& world) -> void override;
+  SORCERYAPI auto OnBeforeExitingWorld(World& world) -> void override;
 
   SORCERYAPI Entity();
   SORCERYAPI Entity(Entity const& other);
@@ -38,7 +35,7 @@ public:
 
   [[nodiscard]] SORCERYAPI auto GetTransform() const -> TransformComponent&;
 
-  [[nodiscard]] SORCERYAPI auto GetScene() const -> ObserverPtr<Scene const>;
+  [[nodiscard]] SORCERYAPI auto GetWorld() const -> ObserverPtr<World const>;
 
   SORCERYAPI auto AddComponent(std::unique_ptr<Component> component) -> void;
   SORCERYAPI auto RemoveComponent(Component& component) -> std::unique_ptr<Component>;
@@ -58,7 +55,7 @@ private:
   [[nodiscard]] auto GetComponentsForSerialization() const -> std::vector<Component*>;
   auto SetComponentFromDeserialization(std::vector<Component*> components) -> void;
 
-  ObserverPtr<Scene const> scene_{nullptr};
+  ObserverPtr<World> world_{nullptr};
   mutable TransformComponent* transform_{nullptr};
   std::vector<std::unique_ptr<Component>> components_;
 };

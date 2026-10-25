@@ -11,8 +11,8 @@ class CameraComponent final : public Component, public rendering::Camera {
 
 public:
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
-  LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
-  LEOPPHAPI auto OnBeforeExitingScene(Scene const& scene) -> void override;
+  LEOPPHAPI auto OnAfterEnteringWorld(World& world) -> void override;
+  LEOPPHAPI auto OnBeforeExitingWorld(World& world) -> void override;
 
   [[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const -> Vector4 const&;
   LEOPPHAPI auto SetBackgroundColor(Vector4 const& color) -> void;

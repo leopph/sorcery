@@ -17,7 +17,7 @@ namespace rendering {
 class Camera;
 
 
-class RenderScene {
+class RenderWorld {
 public:
   SORCERYAPI
   auto Register(StaticMeshComponent& static_mesh_component) noexcept -> void;
@@ -48,14 +48,14 @@ public:
   [[nodiscard]]
   auto GetCameras() const -> std::span<ObserverPtr<Camera> const>;
 
-  RenderScene() = default;
-  RenderScene(RenderScene const& other) = delete;
-  RenderScene(RenderScene&& other) noexcept = delete;
+  RenderWorld() = default;
+  RenderWorld(RenderWorld const& other) = delete;
+  RenderWorld(RenderWorld&& other) noexcept = delete;
 
-  ~RenderScene() = default;
+  ~RenderWorld() = default;
 
-  auto operator=(RenderScene const& other) -> RenderScene& = delete;
-  auto operator=(RenderScene&& other) noexcept -> RenderScene& = delete;
+  auto operator=(RenderWorld const& other) -> RenderWorld& = delete;
+  auto operator=(RenderWorld&& other) noexcept -> RenderWorld& = delete;
 
 private:
   std::vector<ObserverPtr<StaticMeshComponent>> static_mesh_components_;

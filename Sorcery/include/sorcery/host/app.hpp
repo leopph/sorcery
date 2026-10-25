@@ -19,6 +19,7 @@ class JobSystem;
 class ObjectRegistry;
 class AssetManager;
 class GameModule;
+class World;
 
 
 namespace rendering {
@@ -26,7 +27,6 @@ class TemporaryRenderTargetPool;
 class SceneRenderer;
 class RenderFrame;
 class TextureResolver;
-class RenderScene;
 }
 
 
@@ -57,9 +57,6 @@ public:
   auto GetSceneRenderer() -> rendering::SceneRenderer&;
 
   [[nodiscard]] SORCERYAPI
-  auto GetRenderScene() -> rendering::RenderScene&;
-
-  [[nodiscard]] SORCERYAPI
   auto GetObjectRegistry() -> ObjectRegistry&;
 
   [[nodiscard]] SORCERYAPI
@@ -83,6 +80,9 @@ protected:
 
   SORCERYAPI
   auto WaitRenderJobNoThrow() noexcept -> void;
+
+  [[nodiscard]] SORCERYAPI virtual
+  auto GetRenderedWorld() -> World& = 0;
 
   SORCERYAPI virtual
   auto BeginFrame() -> void;

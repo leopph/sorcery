@@ -14,8 +14,8 @@ public:
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
-  LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
-  LEOPPHAPI auto OnBeforeExitingScene(Scene const& scene) -> void override;
+  LEOPPHAPI auto OnAfterEnteringWorld(World& world) -> void override;
+  LEOPPHAPI auto OnBeforeExitingWorld(World& world) -> void override;
 
   [[nodiscard]] LEOPPHAPI auto GetColor() const -> Vector3 const&;
   LEOPPHAPI auto SetColor(Vector3 const& color) -> void;

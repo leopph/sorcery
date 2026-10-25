@@ -158,7 +158,7 @@
     <ClCompile Include="src\rendering\Camera.cpp" />
     <ClCompile Include="src\rendering\command_list_pool.cpp" />
     <ClCompile Include="src\rendering\projection_utils.cpp" />
-    <ClCompile Include="src\rendering\render_scene.cpp" />
+    <ClCompile Include="src\rendering\render_world.cpp" />
     <ClCompile Include="src\rendering\render_texture.cpp" />
     <ClCompile Include="src\rendering\shadow_map_array.cpp" />
     <ClCompile Include="src\rendering\frame_scheduler.cpp" />
@@ -212,11 +212,13 @@
     <ClCompile Include="src\viewport.cpp" />
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
+    <ClCompile Include="src\world.cpp" />
     <ClInclude Include="include\sorcery\host\app.hpp" />
     <ClInclude Include="include\sorcery\host\command_line_args.hpp" />
     <ClInclude Include="include\sorcery\host\game_module.hpp" />
     <ClInclude Include="include\sorcery\mesh_utils.hpp" />
     <ClInclude Include="include\sorcery\not_null.hpp" />
+    <ClInclude Include="include\sorcery\world.hpp" />
     <ClInclude Include="src\rendering\ssao_params.hpp" />
     <ClInclude Include="include\sorcery\io_helpers.hpp" />
     <ClInclude Include="include\sorcery\material_blend_mode.hpp" />
@@ -236,7 +238,7 @@
     <ClInclude Include="include\sorcery\host\rendering\command_list_pool.hpp" />
     <ClInclude Include="include\sorcery\rendering\config.hpp" />
     <ClInclude Include="src\rendering\projection_utils.hpp" />
-    <ClInclude Include="include\sorcery\host\rendering\render_scene.hpp" />
+    <ClInclude Include="include\sorcery\host\rendering\render_world.hpp" />
     <ClInclude Include="src\rendering\render_texture.hpp" />
     <ClInclude Include="src\rendering\shadow_map_array.hpp" />
     <ClInclude Include="src\rendering\frame_scheduler.hpp" />

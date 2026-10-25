@@ -9,7 +9,7 @@ class StaticMeshComponent final : public MeshComponentBase {
 
 public:
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
-  LEOPPHAPI auto OnAfterEnteringScene(Scene const& scene) -> void override;
-  LEOPPHAPI auto OnBeforeExitingScene(Scene const& scene) -> void override;
+  LEOPPHAPI auto OnAfterEnteringWorld(World& world) -> void override;
+  LEOPPHAPI auto OnBeforeExitingWorld(World& world) -> void override;
 };
 }

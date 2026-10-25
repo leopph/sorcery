@@ -5,8 +5,9 @@
 
 #include "rendering/scene_renderer.hpp"
 #include "sorcery/Color.hpp"
+#include "sorcery/world.hpp"
 #include "sorcery/host/app.hpp"
-#include "sorcery/host/rendering/render_scene.hpp"
+#include "sorcery/host/rendering/render_world.hpp"
 #include "sorcery/scene/Entity.hpp"
 #include "sorcery/scene/TransformComponent.hpp"
 
@@ -64,15 +65,15 @@ auto LightComponent::Clone() -> std::unique_ptr<SceneObject> {
 }
 
 
-auto LightComponent::OnAfterEnteringScene(Scene const& scene) -> void {
-  Component::OnAfterEnteringScene(scene);
-  App::Instance().GetRenderScene().Register(*this);
+auto LightComponent::OnAfterEnteringWorld(World& world) -> void {
+  Component::OnAfterEnteringWorld(world);
+  world.GetRenderWorld().Register(*this);
 }
 
 
-auto LightComponent::OnBeforeExitingScene(Scene const& scene) -> void {
-  App::Instance().GetRenderScene().Unregister(*this);
-  Component::OnBeforeExitingScene(scene);
+auto LightComponent::OnBeforeExitingWorld(World& world) -> void {
+  world.GetRenderWorld().Unregister(*this);
+  Component::OnBeforeExitingWorld(world);
 }
 
 

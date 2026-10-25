@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "sorcery/util.hpp"
-#include "sorcery/assets/Scene.hpp"
+#include "sorcery/world.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/object_registry.hpp"
 
@@ -37,10 +37,10 @@ auto Entity::Clone() -> std::unique_ptr<SceneObject> {
 }
 
 
-auto Entity::OnAfterEnteringScene(Scene const& scene) -> void {
-  scene_.Reset(&scene);
+auto Entity::OnAfterEnteringWorld(World& world) -> void {
+  world_.Reset(&world);
 
-  auto const entities = scene.GetEntities();
+  auto const entities = world.GetEntities();
 
   auto const is_name_taken = [this, entities](std::string_view const name) {
     return std::ranges::any_of(entities, [this, name](auto const& entity) {
@@ -84,17 +84,17 @@ auto Entity::OnAfterEnteringScene(Scene const& scene) -> void {
   }
 
   for (auto const& component : components_) {
-    component->OnAfterEnteringScene(scene);
+    component->OnAfterEnteringWorld(world);
   }
 }
 
 
-auto Entity::OnBeforeExitingScene(Scene const& scene) -> void {
+auto Entity::OnBeforeExitingWorld(World& world) -> void {
   for (auto const& component : components_) {
-    component->OnBeforeExitingScene(scene);
+    component->OnBeforeExitingWorld(world);
   }
 
-  scene_.Reset();
+  world_.Reset();
 }
 
 
@@ -144,8 +144,8 @@ auto Entity::GetTransform() const -> TransformComponent& {
 }
 
 
-auto Entity::GetScene() const -> ObserverPtr<Scene const> {
-  return scene_;
+auto Entity::GetWorld() const -> ObserverPtr<World const> {
+  return world_;
 }
 
 
@@ -154,8 +154,8 @@ auto Entity::AddComponent(std::unique_ptr<Component> component) -> void {
     components_.emplace_back(std::move(component));
     components_.back()->OnAfterAttachedToEntity(*this);
 
-    if (scene_) {
-      components_.back()->OnAfterEnteringScene(*scene_);
+    if (world_) {
+      components_.back()->OnAfterEnteringWorld(*world_);
     }
   }
 }
@@ -167,8 +167,8 @@ auto Entity::RemoveComponent(Component& component) -> std::unique_ptr<Component>
       return owned_component.get() == std::addressof(component);
     })
   }; it != std::end(components_)) {
-    if (scene_) {
-      (*it)->OnBeforeExitingScene(*scene_);
+    if (world_) {
+      (*it)->OnBeforeExitingWorld(*world_);
     }
 
     (*it)->OnBeforeDetachedFromEntity(*this);

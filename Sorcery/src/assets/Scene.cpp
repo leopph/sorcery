@@ -5,12 +5,14 @@
 
 #include "wand/wand.hpp"
 
+#include "sorcery/asset_reference.hpp"
 #include "sorcery/entity_serialization.hpp"
 #include "sorcery/reflection.hpp"
-#include "sorcery/asset_reference.hpp"
+#include "sorcery/world.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/job_system.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
+#include "sorcery/scene/Entity.hpp"
 
 
 RTTR_REGISTRATION {
@@ -84,15 +86,11 @@ Scene::Scene() {
     active_scene_ = this;
   }
 
-  Save();
+  SaveSceneParams();
 }
 
 
 Scene::~Scene() {
-  for (auto const& entity : entities_) {
-    entity->OnBeforeExitingScene(*this);
-  }
-
   if (active_scene_ == this) {
     active_scene_ = all_scenes_.empty() ? nullptr : all_scenes_.back();
   }
@@ -101,46 +99,15 @@ Scene::~Scene() {
 }
 
 
-auto Scene::AddEntity(std::unique_ptr<Entity> entity) -> void {
-  if (entity) {
-    entities_.emplace_back(std::move(entity));
-    entities_.back()->OnAfterEnteringScene(*this);
-  }
-}
-
-
-auto Scene::RemoveEntity(Entity const& entity) -> std::unique_ptr<Entity> {
-  if (auto const it{
-    std::ranges::find_if(entities_, [&entity](std::unique_ptr<Entity> const& owned_entity) {
-      return owned_entity.get() == std::addressof(entity);
-    })
-  }; it != std::end(entities_)) {
-    (*it)->OnBeforeExitingScene(*this);
-    auto ret{std::move(*it)};
-    entities_.erase(it);
-    return ret;
-  }
-
-  return nullptr;
-}
-
-
-auto Scene::GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const> {
-  return entities_;
-}
-
-
-auto Scene::Save() -> void {
+auto Scene::Save(World const& world) -> void {
   yaml_data_.reset();
-  yaml_data_["version"] = 1;
-  yaml_data_["ambientLight"] = ambient_light_;
-  yaml_data_["skyMode"] = static_cast<int>(sky_mode_);
-  yaml_data_["skyColor"] = sky_color_;
-  yaml_data_["skybox"] = SerializeGlobalAssetId(skybox_ ? skybox_->GetAssetId() : AssetId::Invalid());
+  SaveSceneParams();
+
+  auto const world_entities = world.GetEntities();
 
   std::vector<Entity const*> entities;
-  entities.reserve(entities_.size());
-  std::ranges::transform(entities_, std::back_inserter(entities), &std::unique_ptr<Entity>::get);
+  entities.reserve(world_entities.size());
+  std::ranges::transform(world_entities, std::back_inserter(entities), [](auto const& ptr) { return ptr.get(); });
 
   yaml_data_["sceneObjects"] = SerializeEntitySet(entities, EntitySerializationContext{
     .asset_ref_serialization = AssetRefSerialization::kGlobal
@@ -148,14 +115,12 @@ auto Scene::Save() -> void {
 }
 
 
-auto Scene::Load() -> void {
+auto Scene::Load(World& world) -> void {
   if (auto const version{yaml_data_["version"]}; !version || !version.IsScalar() || version.as<int>(1) != 1) {
     throw std::runtime_error{
       std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName())
     };
   }
-
-  Clear();
 
   // Load scene settings
 
@@ -195,7 +160,7 @@ auto Scene::Load() -> void {
   // Add the new entities to the scene
 
   for (auto& entity_ptr : DeserializeEntitySet(yaml_data_["sceneObjects"], yaml_ctx_)) {
-    AddEntity(std::move(entity_ptr));
+    world.AddEntity(std::move(entity_ptr));
   }
 
   if (skybox_job) {
@@ -207,15 +172,6 @@ auto Scene::Load() -> void {
 
 auto Scene::SetActive() -> void {
   active_scene_ = this;
-}
-
-
-auto Scene::Clear() -> void {
-  for (auto const& entity : entities_) {
-    entity->OnBeforeExitingScene(*this);
-  }
-
-  entities_.clear();
 }
 
 
@@ -289,6 +245,15 @@ auto Scene::SetSkybox(AssetRef<Cubemap> const& skybox) noexcept -> void {
 // Reflection requires matching getter and setter types
 auto Scene::SetSkyboxRefl(AssetRef<Cubemap> const skybox) noexcept -> void {
   SetSkybox(skybox);
+}
+
+
+auto Scene::SaveSceneParams() -> void {
+  yaml_data_["version"] = 1;
+  yaml_data_["ambientLight"] = ambient_light_;
+  yaml_data_["skyMode"] = static_cast<int>(sky_mode_);
+  yaml_data_["skyColor"] = sky_color_;
+  yaml_data_["skybox"] = SerializeGlobalAssetId(skybox_ ? skybox_->GetAssetId() : AssetId::Invalid());
 }
 
 
