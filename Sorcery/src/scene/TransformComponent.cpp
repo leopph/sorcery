@@ -191,7 +191,7 @@ auto TransformComponent::Translate(f32 const x, f32 const y, f32 const z, Space 
 
 auto TransformComponent::Rotate(Quaternion const& rotation, Space const base) -> void {
   if (base == Space::World) {
-    SetLocalRotation(rotation * mWorldRotation);
+    SetWorldRotation(rotation * mWorldRotation);
   } else if (base == Space::Local) {
     SetLocalRotation(mLocalRotation * rotation);
   }
