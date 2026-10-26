@@ -12,14 +12,10 @@ class Component : public SceneObject {
   RTTR_REGISTRATION_FRIEND
   RTTR_ENABLE(SceneObject)
 
-public:
-  LEOPPHAPI virtual auto OnAfterAttachedToEntity(Entity& entity) -> void;
-  LEOPPHAPI virtual auto OnBeforeDetachedFromEntity(Entity& entity) -> void;
-
 protected:
   Component() = default;
   Component(Component const& other) = default;
-  Component(Component&& other) noexcept = default;
+  Component(Component&& other) noexcept = delete;
 
 public:
   ~Component() override = default;
@@ -31,5 +27,7 @@ public:
 
 private:
   ObserverPtr<Entity> entity_{nullptr};
+
+  friend class Entity;
 };
 }

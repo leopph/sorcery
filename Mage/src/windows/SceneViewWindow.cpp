@@ -177,9 +177,8 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
           if (auto const* const prefab{ReflCast<Prefab*>(data->ptr)}) {
             ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
             if (payload->IsDelivery()) {
-              for (auto& entity : prefab->Instantiate()) {
-                edit_world_->AddEntity(std::move(entity));
-              }
+              auto prefab_entities = prefab->Instantiate();
+              edit_world_->AddEntities(prefab_entities);
             }
           }
         }

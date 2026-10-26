@@ -111,21 +111,6 @@ Entity::Entity(Entity const& other) :
   for (auto const& component : other.components_) {
     AddComponent(static_unique_ptr_cast<Component>(component->Clone()));
   }
-
-  auto const transform{GetComponent<TransformComponent>()};
-  transform->SetParent(other.GetComponent<TransformComponent>()->GetParent());
-}
-
-
-Entity::Entity(Entity&& other) noexcept :
-  SceneObject{std::move(other)} {
-  SetName(other.GetName());
-
-  while (!other.components_.empty()) {
-    AddComponent(other.RemoveComponent(*other.components_.back()));
-  }
-
-  other.AddComponent(std::make_unique<TransformComponent>());
 }
 
 
@@ -149,10 +134,20 @@ auto Entity::GetWorld() const -> ObserverPtr<World const> {
 }
 
 
+auto Entity::GetSceneInstance() const -> SceneInstanceId {
+  return scene_instance_;
+}
+
+
+auto Entity::SetSceneInstance(SceneInstanceId const instance) -> void {
+  scene_instance_ = instance;
+}
+
+
 auto Entity::AddComponent(std::unique_ptr<Component> component) -> void {
   if (component) {
     components_.emplace_back(std::move(component));
-    components_.back()->OnAfterAttachedToEntity(*this);
+    components_.back()->entity_ = MakeObserver(this);
 
     if (world_) {
       components_.back()->OnAfterEnteringWorld(*world_);
@@ -162,18 +157,15 @@ auto Entity::AddComponent(std::unique_ptr<Component> component) -> void {
 
 
 auto Entity::RemoveComponent(Component& component) -> std::unique_ptr<Component> {
-  if (auto const it{
-    std::ranges::find_if(components_, [&component](std::unique_ptr<Component> const& owned_component) {
-      return owned_component.get() == std::addressof(component);
-    })
-  }; it != std::end(components_)) {
+  if (auto const it = std::ranges::find(components_, &component, [](auto const& ptr) { return ptr.get(); });
+    it != std::end(components_)) {
     if (world_) {
       (*it)->OnBeforeExitingWorld(*world_);
     }
 
-    (*it)->OnBeforeDetachedFromEntity(*this);
+    (*it)->entity_ = nullptr;
 
-    auto ret{std::move(*it)};
+    auto ret = std::move(*it);
     components_.erase(it);
     return ret;
   }

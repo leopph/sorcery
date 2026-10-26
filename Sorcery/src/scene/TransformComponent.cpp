@@ -1,8 +1,12 @@
 #include "sorcery/scene/TransformComponent.hpp"
 
+#include <stdexcept>
 #include <utility>
 
+#include <spdlog/spdlog.h>
+
 #include "sorcery/Serialization.hpp"
+#include "sorcery/scene/Entity.hpp"
 
 
 RTTR_REGISTRATION {
@@ -20,29 +24,7 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 auto TransformComponent::Clone() -> std::unique_ptr<SceneObject> {
-  auto clone{std::make_unique<TransformComponent>(*this)};
-  clone->mChildren.clear();
-  clone->mParent = nullptr;
-  clone->SetParent(mParent);
-
-  return clone;
-}
-
-
-auto TransformComponent::OnAfterAttachedToEntity(Entity& entity) -> void {
-  Component::OnAfterAttachedToEntity(entity);
-  UpdateWorldDataRecursive();
-}
-
-
-auto TransformComponent::OnBeforeDetachedFromEntity(Entity& entity) -> void {
-  // SetParent(nullptr) on child removes it from this->mChildren so we cannot iterate
-  while (!mChildren.empty()) {
-    mChildren.back()->SetParent(nullptr);
-  }
-
-  SetParent(nullptr);
-  Component::OnBeforeDetachedFromEntity(entity);
+  return std::make_unique<TransformComponent>(*this);
 }
 
 
@@ -57,14 +39,17 @@ TransformComponent::TransformComponent(TransformComponent const& other) :
 }
 
 
-TransformComponent::TransformComponent(TransformComponent&& other) noexcept :
-  Component{std::move(other)},
-  mLocalPosition{std::move(other.mLocalPosition)},
-  mLocalRotation{std::move(other.mLocalRotation)},
-  mLocalEulerAnglesHelp{std::move(other.mLocalEulerAnglesHelp)},
-  mLocalScale{std::move(other.mLocalScale)} {
-  UpdateWorldDataRecursive();
-  // Explicitly not copying parent and children
+TransformComponent::~TransformComponent() {
+  // We're doing this in the dtor because we expect transforms to not exist outside an entity.
+  // A a transform is created when an entity is created (with no parent, hence no custom ctor),
+  // and a transform is destroyed when the entity is destroyed (hence this piece).
+
+  // SetParent(nullptr) on child removes it from this->mChildren so we cannot iterate
+  while (!mChildren.empty()) {
+    mChildren.back()->SetParent(nullptr);
+  }
+
+  SetParent(nullptr);
 }
 
 
@@ -238,6 +223,39 @@ auto TransformComponent::GetParent() const -> TransformComponent* {
 
 
 auto TransformComponent::SetParent(TransformComponent* parent) -> void {
+  auto const world_of = [](TransformComponent const& transform) {
+    auto const entity = transform.GetEntity();
+    return entity ? entity->GetWorld().Get() : nullptr;
+  };
+
+  // Parent-child relationships cannot be cross-world. Either both are in the same world, or they're both in none.
+  if (parent && world_of(*parent) != world_of(*this)) {
+    auto constexpr msg = "Failed to set transform parent: parent entity is from a different world.";
+    spdlog::error(msg);
+    throw std::runtime_error{msg};
+  }
+
+  if (parent == this) {
+    auto constexpr msg = "Failed to set transform parent: tried to set self as parent.";
+    spdlog::error(msg);
+    throw std::runtime_error{msg};
+  }
+
+  // Cycle check
+  if (parent) {
+    auto p = parent->GetParent();
+
+    while (p) {
+      if (p == this) {
+        auto constexpr msg = "Failed to set transform parent: cycle detected.";
+        spdlog::error(msg);
+        throw std::runtime_error{msg};
+      }
+
+      p = p->GetParent();
+    }
+  }
+
   if (mParent) {
     std::erase(mParent->mChildren, this);
   }

@@ -7,6 +7,7 @@
 #include <sorcery/object_ptr.hpp>
 #include <sorcery/observer_ptr.hpp>
 #include <sorcery/reflection.hpp>
+#include <sorcery/scene_instance.hpp>
 #include <sorcery/scene/Component.hpp>
 #include <sorcery/scene/SceneObject.hpp>
 #include <sorcery/scene/TransformComponent.hpp>
@@ -26,7 +27,7 @@ public:
 
   SORCERYAPI Entity();
   SORCERYAPI Entity(Entity const& other);
-  SORCERYAPI Entity(Entity&& other) noexcept;
+  Entity(Entity&& other) noexcept = delete;
 
   SORCERYAPI ~Entity() override;
 
@@ -36,6 +37,11 @@ public:
   [[nodiscard]] SORCERYAPI auto GetTransform() const -> TransformComponent&;
 
   [[nodiscard]] SORCERYAPI auto GetWorld() const -> ObserverPtr<World const>;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetSceneInstance() const -> SceneInstanceId;
+  SORCERYAPI
+  auto SetSceneInstance(SceneInstanceId instance) -> void;
 
   SORCERYAPI auto AddComponent(std::unique_ptr<Component> component) -> void;
   SORCERYAPI auto RemoveComponent(Component& component) -> std::unique_ptr<Component>;
@@ -58,6 +64,7 @@ private:
   ObserverPtr<World> world_{nullptr};
   mutable TransformComponent* transform_{nullptr};
   std::vector<std::unique_ptr<Component>> components_;
+  SceneInstanceId scene_instance_{};
 };
 }
 

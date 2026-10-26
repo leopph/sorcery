@@ -13,7 +13,7 @@ class SceneObject : public Object {
 protected:
   SceneObject() = default;
   SceneObject(SceneObject const& other) = default;
-  SceneObject(SceneObject&& other) noexcept = default;
+  SceneObject(SceneObject&& other) noexcept = delete;
 
 public:
   ~SceneObject() override = default;

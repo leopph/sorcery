@@ -18,14 +18,11 @@ class TransformComponent : public Component {
 public:
   [[nodiscard]] LEOPPHAPI auto Clone() -> std::unique_ptr<SceneObject> override;
 
-  LEOPPHAPI auto OnAfterAttachedToEntity(Entity& entity) -> void override;
-  LEOPPHAPI auto OnBeforeDetachedFromEntity(Entity& entity) -> void override;
-
   TransformComponent() = default;
   LEOPPHAPI TransformComponent(TransformComponent const& other);
-  LEOPPHAPI TransformComponent(TransformComponent&& other) noexcept;
+  TransformComponent(TransformComponent&& other) noexcept = delete;
 
-  ~TransformComponent() override = default;
+  LEOPPHAPI ~TransformComponent() override;
 
   auto operator=(TransformComponent const& other) -> void = delete;
   auto operator=(TransformComponent&& other) -> void = delete;

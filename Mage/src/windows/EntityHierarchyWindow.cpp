@@ -85,9 +85,14 @@ auto EntityHierarchyWindow::Draw() -> void {
           app_->SetSelectedObject(MakeObjectPtr(MakeObserver(&entity)));
 
           if (ImGui::MenuItem("Duplicate")) {
-            auto clone{static_unique_ptr_cast<Entity>(entity.Clone())};
-            app_->SetSelectedObject(MakeObjectPtr(MakeObserver(clone.get())));
+            auto clone = static_unique_ptr_cast<Entity>(entity.Clone());
+            auto const obs = MakeObserver(clone.get());
+
             edit_world_->AddEntity(std::move(clone));
+            obs->GetTransform().SetParent(entity.GetTransform().GetParent());
+
+            app_->SetSelectedObject(MakeObjectPtr(obs));
+
             entities = edit_world_->GetEntities();
             ImGui::CloseCurrentPopup();
           }
@@ -133,9 +138,8 @@ auto EntityHierarchyWindow::Draw() -> void {
           if (auto const* const prefab{ReflCast<Prefab*>(data->ptr)}) {
             ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
             if (payload->IsDelivery()) {
-              for (auto& entity : prefab->Instantiate()) {
-                edit_world_->AddEntity(std::move(entity));
-              }
+              auto prefab_entities = prefab->Instantiate();
+              edit_world_->AddEntities(prefab_entities);
             }
           }
         }

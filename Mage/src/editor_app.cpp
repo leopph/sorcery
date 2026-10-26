@@ -423,14 +423,13 @@ auto EditorApp::LoadSceneIntoWorld(Scene const& scene, World& world, bool const 
     world.Clear();
   }
 
-  std::ranges::for_each(scene.Instantiate(), [&world](auto& entity) {
-    world.AddEntity(std::move(entity));
-  });
+  // TODO do not ignore this once scene instances are online
+  std::ignore = world.Instantiate(scene);
 }
 
 
 auto EditorApp::SaveWorldIntoScene(World const& world, Scene& scene) -> void {
-  scene.SetEntityHierarchy(
+  scene.SetEntities(
     world.GetEntities() |
     std::views::transform([](auto const& ptr) { return ptr.get(); }) |
     std::ranges::to<std::vector<Entity const*>>());

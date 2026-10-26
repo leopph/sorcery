@@ -4,8 +4,11 @@
 #include <span>
 #include <vector>
 
+#include <sorcery/asset_ref.hpp>
 #include <sorcery/Core.hpp>
 #include <sorcery/observer_ptr.hpp>
+#include <sorcery/scene_instance.hpp>
+#include "sorcery/assets/Scene.hpp"
 
 
 namespace sorcery {
@@ -27,11 +30,20 @@ public:
   auto Update() -> void;
 
   [[nodiscard]] SORCERYAPI
+  auto Instantiate(Scene const& scene) -> SceneInstanceId;
+  SORCERYAPI
+  auto Unload(SceneInstanceId scene_instance) -> void;
+
+  [[nodiscard]] SORCERYAPI
   auto GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const>;
   SORCERYAPI
-  auto AddEntity(std::unique_ptr<Entity> entity) -> void;
+  auto AddEntities(std::span<std::unique_ptr<Entity>> entities, SceneInstanceId scene_instance = {}) -> void;
   SORCERYAPI
-  auto RemoveEntity(Entity const& entity) -> std::unique_ptr<Entity>;
+  auto AddEntity(std::unique_ptr<Entity> entity, SceneInstanceId scene_instance = {}) -> void;
+  SORCERYAPI
+  auto RemoveEntities(std::span<ObserverPtr<Entity const> const> entities) -> std::vector<std::unique_ptr<Entity>>;
+  SORCERYAPI
+  auto RemoveEntity(Entity const& entity) -> std::vector<std::unique_ptr<Entity>>;
   SORCERYAPI
   auto Clear() -> void;
 
@@ -58,10 +70,18 @@ public:
   auto operator=(World&& other) noexcept -> World& = delete;
 
 private:
+  struct SceneInstance {
+    SceneInstanceId id;
+    AssetRef<Scene> src_asset;
+  };
+
+
   std::unique_ptr<rendering::RenderWorld> render_world_;
   std::vector<std::unique_ptr<Entity>> entities_;
   std::vector<ObserverPtr<CameraComponent>> cameras_;
   std::vector<Component*> component_query_memory_;
   std::vector<ObserverPtr<Entity>> entity_query_memory_;
+  std::vector<SceneInstance> scene_instances_;
+  SceneInstanceId next_scene_instance_id_{1};
 };
 }
