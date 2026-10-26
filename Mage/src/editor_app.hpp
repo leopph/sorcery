@@ -85,6 +85,11 @@ private:
   static auto HandleBackgroundThreadException(std::exception const& ex) -> void;
   static auto HandleUnknownBackgroundThreadException() -> void;
 
+  static
+  auto LoadSceneIntoWorld(Scene const& scene, World& world, bool clear_world) -> void;
+  static
+  auto SaveWorldIntoScene(World const& world, Scene& scene) -> void;
+
   ObserverPtr<ImGuiContext> imgui_ctx_;
   ObserverPtr<ImGuiIO> imgui_io_;
   std::string imgui_io_ini_path_;

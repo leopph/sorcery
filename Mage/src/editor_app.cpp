@@ -1,5 +1,9 @@
 #include "editor_app.hpp"
 
+#include <algorithm>
+#include <ranges>
+#include <vector>
+
 #include <ImGuizmo.h>
 #include <imgui_impl_win32.h>
 #include <implot.h>
@@ -114,8 +118,7 @@ auto EditorApp::OpenScene(AssetId const& asset_id) -> void {
   }
 
   if (auto const new_scene{GetAssetManager().Resolve<Scene>(asset_id)}) {
-    edit_world_.Clear();
-    new_scene->Load(edit_world_);
+    LoadSceneIntoWorld(*new_scene, edit_world_, true);
 
     if (scene_) {
       GetAssetManager().Unload(scene_->GetAssetId());
@@ -145,7 +148,7 @@ auto EditorApp::OpenNewScene() -> void {
 
 auto EditorApp::SaveCurrentSceneToFile() -> void {
   assert(scene_);
-  scene_->Save(edit_world_);
+  SaveWorldIntoScene(edit_world_, *scene_);
   if (asset_db_.IsSavedAsset(*scene_)) {
     asset_db_.SaveAssetToFile(*scene_);
   } else {
@@ -329,15 +332,14 @@ auto EditorApp::Update() -> void {
         GetWindow().SetCursorLock(std::nullopt);
         GetWindow().SetCursorHiding(false);
         timing::SetTargetFrameRate(targetFrameRate);
-        edit_world_.Clear();
-        GetScene().Load(edit_world_);
+        LoadSceneIntoWorld(GetScene(), edit_world_, true);
         SetSelectedObject(nullptr);
       }
     } else {
       if (GetKeyDown(Key::F5)) {
         game_is_running_ = true;
         GetWindow().SetEventHandler(nullptr);
-        GetScene().Save(edit_world_);
+        SaveWorldIntoScene(edit_world_, GetScene());
         targetFrameRate = timing::GetTargetFrameRate();
         timing::SetTargetFrameRate(-1);
         edit_world_.Start();
@@ -413,6 +415,25 @@ auto EditorApp::HandleBackgroundThreadException(std::exception const& ex) -> voi
 
 auto EditorApp::HandleUnknownBackgroundThreadException() -> void {
   DisplayError("Unknown error.");
+}
+
+
+auto EditorApp::LoadSceneIntoWorld(Scene const& scene, World& world, bool const clear_world) -> void {
+  if (clear_world) {
+    world.Clear();
+  }
+
+  std::ranges::for_each(scene.Instantiate(), [&world](auto& entity) {
+    world.AddEntity(std::move(entity));
+  });
+}
+
+
+auto EditorApp::SaveWorldIntoScene(World const& world, Scene& scene) -> void {
+  scene.SetEntityHierarchy(
+    world.GetEntities() |
+    std::views::transform([](auto const& ptr) { return ptr.get(); }) |
+    std::ranges::to<std::vector<Entity const*>>());
 }
 
 
