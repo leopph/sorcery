@@ -262,25 +262,18 @@ auto SampleKeys(
 
 
 SceneRenderer::SceneRenderer(
-  Window& window,
   wand::GraphicsDevice& device,
   TemporaryRenderTargetPool& rt_pool,
   RenderResourceRegistry& render_resource_registry,
   RenderInstanceRegistry& render_instance_registry,
   TextureResolver& tex_resolver
 ) :
-  window_{&window},
   device_{&device},
   rt_pool_{&rt_pool},
   resource_registry_{&render_resource_registry},
   instance_registry_{&render_instance_registry},
   tex_resolver_{&tex_resolver},
   ssao_pass_{*device_, *rt_pool_} {
-  main_rt_ = RenderTarget::New(*device_, RenderTarget::Desc{
-    static_cast<UINT>(window_->GetClientAreaSize().width), static_cast<UINT>(window_->GetClientAreaSize().height),
-    DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Main RT", false
-  });
-
   dir_shadow_map_arr_ = std::make_unique<ShadowMapArray>(device_.Get(), depth_format_, 4096, MAX_CASCADE_COUNT);
   dir_shadow_map_arr_->GetTex()->SetDebugName(L"Directional Shadow Map Array");
 
@@ -333,10 +326,6 @@ SceneRenderer::SceneRenderer(
     D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0, 1, D3D12_COMPARISON_FUNC_NEVER, {}, 0, std::numeric_limits<float>::max()
   });
 
-  window_size_event_listener_ = window_->OnWindowSize.add_listener([this](Extent2D<unsigned> const size) {
-    OnWindowSize(size);
-  });
-
   white_tex_ = device_->CreateTexture(wand::TextureDesc{
     wand::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
   }, wand::CpuAccess::kNone, nullptr);
@@ -350,9 +339,7 @@ SceneRenderer::SceneRenderer(
 }
 
 
-SceneRenderer::~SceneRenderer() {
-  window_->OnWindowSize.remove_listener(window_size_event_listener_);
-}
+SceneRenderer::~SceneRenderer() = default;
 
 
 auto SceneRenderer::ExtractFrame(RenderFrame& frame, RenderWorld const& render_world,
@@ -1704,11 +1691,6 @@ auto SceneRenderer::RecordFrame(RenderFrame& frame) -> void {
 auto SceneRenderer::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void {
   gizmo_colors_.emplace_back(color);
   line_gizmo_vertex_data_.emplace_back(from, static_cast<std::uint32_t>(gizmo_colors_.size() - 1), to, 0.0f);
-}
-
-
-auto SceneRenderer::GetMainRenderTarget() const -> std::shared_ptr<RenderTarget> const& {
-  return main_rt_;
 }
 
 
@@ -3138,16 +3120,6 @@ auto SceneRenderer::ReleaseUnusedViewHistories(RenderFrame const& frame) -> void
   std::erase_if(view_histories_, [&frame](auto const& entry) {
     return frame.GetNumber() - entry.second.last_used_frame > kViewHistoryMaxUnusedFrames;
   });
-}
-
-
-auto SceneRenderer::OnWindowSize(Extent2D<std::uint32_t> const size) -> void {
-  if (size.width != 0 && size.height != 0) {
-    RenderTarget::Desc desc{main_rt_->GetDesc()};
-    desc.width = size.width;
-    desc.height = size.height;
-    main_rt_ = RenderTarget::New(*device_, desc);
-  }
 }
 
 

@@ -65,7 +65,7 @@ struct App::Data {
   rendering::RenderInstanceRegistry render_instance_registry{object_registry};
   rendering::TextureResolver texture_resolver{graphics_device, render_resource_registry};
   rendering::SceneRenderer scene_renderer{
-    window, graphics_device, rt_pool, render_resource_registry, render_instance_registry, texture_resolver
+    graphics_device, rt_pool, render_resource_registry, render_instance_registry, texture_resolver
   };
   AssetManager asset_manager{job_system};
   rendering::ViewList views;

@@ -22,7 +22,6 @@
 #include "sorcery/Math.hpp"
 #include "sorcery/mesh_data.hpp"
 #include "sorcery/object_id.hpp"
-#include "sorcery/host/window.hpp"
 #include "sorcery/host/rendering/view.hpp"
 #include "sorcery/rendering/Camera.hpp"
 #include "sorcery/rendering/config.hpp"
@@ -83,7 +82,6 @@ struct SsrParams {
 class SceneRenderer {
 public:
   SORCERYAPI SceneRenderer(
-    Window& window,
     wand::GraphicsDevice& device,
     TemporaryRenderTargetPool& rt_pool,
     RenderResourceRegistry& render_resource_registry,
@@ -104,8 +102,6 @@ public:
   SORCERYAPI auto RecordFrame(RenderFrame& frame) -> void;
 
   SORCERYAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
-
-  [[nodiscard]] SORCERYAPI auto GetMainRenderTarget() const -> std::shared_ptr<RenderTarget> const&;
 
   [[nodiscard]] SORCERYAPI auto IsUsingPreciseColorFormat() const noexcept -> bool;
   SORCERYAPI auto SetUsePreciseColorFormat(bool precise) noexcept -> void;
@@ -646,7 +642,6 @@ private:
   auto AcquirePerViewConstantBuffer(std::uint32_t frame_idx) -> MappedConstantBuffer<ShaderPerViewConstants>&;
   auto AcquirePerInstanceConstantBuffer(std::uint32_t frame_idx) -> MappedConstantBuffer<ShaderPerInstanceConstants>&;
 
-  auto OnWindowSize(Extent2D<std::uint32_t> size) -> void;
 
   auto RecordGpuInitUploadWork(RenderFrame& frame, wand::CommandList& cmd) const -> void;
   auto RecordGpuInitWork(RenderFrame& frame) const -> void;
@@ -699,7 +694,6 @@ private:
   static constexpr std::uint64_t kViewHistoryMaxUnusedFrames{10};
   static_assert(kViewHistoryMaxUnusedFrames >= kFramesInFlight && "View history lifetime too short!");
 
-  ObserverPtr<Window> window_;
   ObserverPtr<wand::GraphicsDevice> device_;
   ObserverPtr<TemporaryRenderTargetPool> rt_pool_;
   ObserverPtr<RenderResourceRegistry> resource_registry_;
@@ -785,11 +779,7 @@ private:
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
-  std::shared_ptr<RenderTarget> main_rt_;
-
   std::unordered_map<ViewHistoryKey, ViewHistory> view_histories_;
-
-  EventListenerHandle<Extent2D<unsigned>> window_size_event_listener_{};
 
   bool gpu_init_upload_work_recorded_{false};
   bool gpu_init_work_recorded_{false};
