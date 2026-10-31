@@ -58,11 +58,13 @@ public:
 private:
   auto SetWorldGroup(WorldEntityGroup group) -> void;
 
+  auto RemoveComponentUnchecked(Component& component) -> std::unique_ptr<Component>;
+
   [[nodiscard]] auto GetComponentsForSerialization() const -> std::vector<Component*>;
   auto SetComponentFromDeserialization(std::vector<Component*> components) -> void;
 
   ObserverPtr<World> world_{nullptr};
-  mutable TransformComponent* transform_{nullptr};
+  mutable ObserverPtr<TransformComponent> transform_{nullptr};
   std::vector<std::unique_ptr<Component>> components_;
   WorldEntityGroup world_group_{};
 

@@ -4,6 +4,7 @@
 #include <format>
 #include <functional>
 #include <iterator>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -116,14 +117,14 @@ Entity::Entity(Entity const& other) :
 
 Entity::~Entity() {
   while (!components_.empty()) {
-    RemoveComponent(*components_.back());
+    RemoveComponentUnchecked(*components_.back());
   }
 }
 
 
 auto Entity::GetTransform() const -> TransformComponent& {
   if (!transform_) {
-    transform_ = GetComponent<TransformComponent>();
+    transform_.Reset(GetComponent<TransformComponent>());
   }
   return *transform_;
 }
@@ -157,6 +158,15 @@ auto Entity::AddComponent(std::unique_ptr<Component> component) -> void {
 
 
 auto Entity::RemoveComponent(Component& component) -> std::unique_ptr<Component> {
+  if (ReflCast<TransformComponent*>(&component)) {
+    throw std::invalid_argument{"Cannot remove the TransformComponent of an entity."};
+  }
+
+  return RemoveComponentUnchecked(component);
+}
+
+
+auto Entity::RemoveComponentUnchecked(Component& component) -> std::unique_ptr<Component> {
   if (auto const it = std::ranges::find(components_, &component, [](auto const& ptr) { return ptr.get(); });
     it != std::end(components_)) {
     if (world_) {
@@ -164,6 +174,10 @@ auto Entity::RemoveComponent(Component& component) -> std::unique_ptr<Component>
     }
 
     (*it)->entity_ = nullptr;
+
+    if (it->get() == transform_.Get()) {
+      transform_.Reset();
+    }
 
     auto ret = std::move(*it);
     components_.erase(it);
@@ -198,7 +212,7 @@ auto Entity::GetComponentsForSerialization() const -> std::vector<Component*> {
 
 auto Entity::SetComponentFromDeserialization(std::vector<Component*> components) -> void {
   while (!components_.empty()) {
-    RemoveComponent(*components_.back());
+    RemoveComponentUnchecked(*components_.back());
   }
 
   for (auto* const component : components) {

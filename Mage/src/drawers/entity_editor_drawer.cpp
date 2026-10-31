@@ -62,7 +62,8 @@ auto EntityEditorDrawer::Draw(
     }
 
     if (ImGui::BeginPopupContextItem(treeNodeId.c_str())) {
-      if (ImGui::MenuItem("Delete", nullptr, false, allow_edit)) {
+      if (ImGui::MenuItem("Delete", nullptr, false,
+        allow_edit && !ReflCast<TransformComponent*>(components[i]))) {
         obj.RemoveComponent(*components[i]);
         ImGui::EndPopup();
         break;
