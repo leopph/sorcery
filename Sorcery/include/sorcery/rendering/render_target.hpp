@@ -34,7 +34,7 @@ public:
     wand::TextureDimension dimension{wand::TextureDimension::k2D};
     UINT16 depth_or_array_size{1};
 
-    LEOPPHAPI [[nodiscard]] auto operator==(Desc const& other) const -> bool;
+    [[nodiscard]] SORCERYAPI auto operator==(Desc const& other) const -> bool;
   };
 
 
