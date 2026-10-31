@@ -56,28 +56,6 @@ auto World::Update() -> void {
 }
 
 
-auto World::Instantiate(Scene const& scene) -> WorldEntityGroup {
-  auto const group = CreateGroup();
-  auto entities = scene.Instantiate();
-  AddEntities(entities, group);
-  scene_instances_.emplace_back(group, AssetRef<Scene>{scene.GetAssetId()});
-  return group;
-}
-
-
-auto World::Unload(WorldEntityGroup const group) -> void {
-  assert(
-    std::ranges::find(scene_instances_, group, &SceneInstance::group) != std::ranges::end(scene_instances_) &&
-    "Scene instance not in this world!");
-
-  DestroyGroup(group);
-
-  std::erase_if(scene_instances_, [group](auto const& inst) {
-    return inst.group == group;
-  });
-}
-
-
 auto World::CreateGroup() -> WorldEntityGroup {
   WorldEntityGroup const group{next_group_id_++};
   live_groups_.emplace(group);
@@ -276,7 +254,6 @@ auto World::Clear() -> void {
   }
 
   entities_.clear();
-  scene_instances_.clear();
   live_groups_.clear();
 }
 

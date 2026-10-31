@@ -249,6 +249,9 @@
     <ClCompile Include="src\world_entity_group.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\scene_loader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\sorcery\scene\Entity.hpp">
@@ -546,6 +549,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\world_entity_group.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sorcery\scene_loader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

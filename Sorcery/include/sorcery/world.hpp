@@ -5,11 +5,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include <sorcery/asset_ref.hpp>
 #include <sorcery/Core.hpp>
 #include <sorcery/observer_ptr.hpp>
 #include <sorcery/world_entity_group.hpp>
-#include "sorcery/assets/Scene.hpp"
 
 
 namespace sorcery {
@@ -29,11 +27,6 @@ public:
   auto Start() -> void;
   SORCERYAPI
   auto Update() -> void;
-
-  [[nodiscard]] SORCERYAPI
-  auto Instantiate(Scene const& scene) -> WorldEntityGroup;
-  SORCERYAPI
-  auto Unload(WorldEntityGroup group) -> void;
 
   [[nodiscard]] SORCERYAPI
   auto CreateGroup() -> WorldEntityGroup;
@@ -80,18 +73,11 @@ public:
   auto operator=(World&& other) noexcept -> World& = delete;
 
 private:
-  struct SceneInstance {
-    WorldEntityGroup group;
-    AssetRef<Scene> src_asset;
-  };
-
-
   std::unique_ptr<rendering::RenderWorld> render_world_;
   std::vector<std::unique_ptr<Entity>> entities_;
   std::vector<ObserverPtr<CameraComponent>> cameras_;
   std::vector<Component*> component_query_memory_;
   std::vector<ObserverPtr<Entity>> entity_query_memory_;
-  std::vector<SceneInstance> scene_instances_;
   std::unordered_set<WorldEntityGroup> live_groups_;
   std::uint32_t next_group_id_{1};
 };

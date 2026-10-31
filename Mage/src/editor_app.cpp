@@ -118,7 +118,7 @@ auto EditorApp::OpenScene(AssetId const& asset_id) -> void {
   }
 
   if (auto const new_scene{GetAssetManager().Resolve<Scene>(asset_id)}) {
-    LoadSceneIntoWorld(*new_scene, edit_world_, true);
+    LoadSceneIntoEditWorld(*new_scene, true);
 
     if (scene_) {
       GetAssetManager().Unload(scene_->GetAssetId());
@@ -332,7 +332,7 @@ auto EditorApp::Update() -> void {
         GetWindow().SetCursorLock(std::nullopt);
         GetWindow().SetCursorHiding(false);
         timing::SetTargetFrameRate(targetFrameRate);
-        LoadSceneIntoWorld(GetScene(), edit_world_, true);
+        LoadSceneIntoEditWorld(GetScene(), true);
         SetSelectedObject(nullptr);
       }
     } else {
@@ -418,13 +418,13 @@ auto EditorApp::HandleUnknownBackgroundThreadException() -> void {
 }
 
 
-auto EditorApp::LoadSceneIntoWorld(Scene const& scene, World& world, bool const clear_world) -> void {
+auto EditorApp::LoadSceneIntoEditWorld(Scene const& scene, bool const clear_world) -> void {
   if (clear_world) {
-    world.Clear();
+    edit_world_.Clear();
   }
 
-  // TODO do not ignore this once scene instances are online
-  std::ignore = world.Instantiate(scene);
+  // The editor saves the whole edit world back into the scene, so the group is not needed yet.
+  std::ignore = edit_scene_loader_.Load(scene);
 }
 
 

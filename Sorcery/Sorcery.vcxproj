@@ -198,6 +198,7 @@
     <ClCompile Include="src\scene\StaticMeshComponent.cpp" />
     <ClCompile Include="src\entity_serialization.cpp" />
     <ClCompile Include="src\world_entity_group.cpp" />
+    <ClCompile Include="src\scene_loader.cpp" />
     <ClCompile Include="src\serialization.cpp" />
     <ClCompile Include="src\rendering\shadow_atlas.cpp" />
     <ClCompile Include="src\scene\MeshComponentBase.cpp" />
@@ -223,6 +224,7 @@
     <ClInclude Include="include\sorcery\not_null.hpp" />
     <ClInclude Include="include\sorcery\scene\environment_component.hpp" />
     <ClInclude Include="include\sorcery\world_entity_group.hpp" />
+    <ClInclude Include="include\sorcery\scene_loader.hpp" />
     <ClInclude Include="include\sorcery\world.hpp" />
     <ClInclude Include="src\rendering\ssao_params.hpp" />
     <ClInclude Include="include\sorcery\io_helpers.hpp" />

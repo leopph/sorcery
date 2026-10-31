@@ -14,6 +14,7 @@
 #include "drawers/editor_drawer_registry.hpp"
 #include "rendering/imgui_renderer.hpp"
 #include "sorcery/event.hpp"
+#include "sorcery/scene_loader.hpp"
 #include "sorcery/world.hpp"
 #include "sorcery/assets/Scene.hpp"
 #include "sorcery/host/app.hpp"
@@ -85,8 +86,7 @@ private:
   static auto HandleBackgroundThreadException(std::exception const& ex) -> void;
   static auto HandleUnknownBackgroundThreadException() -> void;
 
-  static
-  auto LoadSceneIntoWorld(Scene const& scene, World& world, bool clear_world) -> void;
+  auto LoadSceneIntoEditWorld(Scene const& scene, bool clear_world) -> void;
   static
   auto SaveWorldIntoScene(World const& world, Scene& scene) -> void;
 
@@ -108,6 +108,7 @@ private:
   bool game_is_running_{false};
 
   World edit_world_;
+  SceneLoader edit_scene_loader_{edit_world_};
   World play_world_;
 
   ImGuiTextureReferences tex_refs_;
