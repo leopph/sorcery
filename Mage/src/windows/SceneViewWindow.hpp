@@ -22,7 +22,7 @@ class ImGuiTextureReferences;
 
 class SceneViewWindow {
 public:
-  SceneViewWindow(ImGuiTextureReferences& tex_refs, World& edit_world);
+  explicit SceneViewWindow(ImGuiTextureReferences& tex_refs);
   SceneViewWindow(SceneViewWindow const&) = delete;
   SceneViewWindow(SceneViewWindow&&) = delete;
 
@@ -65,7 +65,6 @@ private:
   };
 
   ObserverPtr<ImGuiTextureReferences> tex_refs_;
-  ObserverPtr<World> edit_world_;
   StandaloneCamera cam_{Vector3{}, Quaternion{}, 5.0f, 0.1f, 1000.0f, 60};
   std::shared_ptr<rendering::RenderTarget> rt_;
   rendering::ViewHistoryKey view_history_{rendering::ViewHistoryKey::MakeUnique()};

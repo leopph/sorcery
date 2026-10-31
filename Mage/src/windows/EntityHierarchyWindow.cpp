@@ -8,15 +8,16 @@
 
 
 namespace sorcery::mage {
-EntityHierarchyWindow::EntityHierarchyWindow(EditorApp& app, World& edit_world) :
-  app_{std::addressof(app)},
-  edit_world_{&edit_world} {}
+EntityHierarchyWindow::EntityHierarchyWindow(EditorApp& app) :
+  app_{std::addressof(app)} {}
 
 
 auto EntityHierarchyWindow::Draw() -> void {
   ImGui::SetNextWindowSizeConstraints(ImVec2{150, 150}, ImVec2{
     std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
   });
+
+  auto& world = app_->GetActiveWorld();
 
   if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
     if (ImGui::BeginChild("EntityHierarchyContent", ImVec2{0, 0}, ImGuiChildFlags_None, ImGuiWindowFlags_None)) {
@@ -28,7 +29,7 @@ auto EntityHierarchyWindow::Draw() -> void {
 
       if (ImGui::BeginPopup(contextId)) {
         if (ImGui::MenuItem("Create New Entity")) {
-          edit_world_->AddEntity(std::make_unique<Entity>());
+          world.AddEntity(std::make_unique<Entity>());
         }
 
         ImGui::EndPopup();
@@ -44,10 +45,10 @@ auto EntityHierarchyWindow::Draw() -> void {
         }
       }
 
-      std::span entities{edit_world_->GetEntities()};
+      std::span entities{world.GetEntities()};
 
       std::function<void(Entity&)> displayEntityRecursive;
-      displayEntityRecursive = [this, &entities, &displayEntityRecursive](Entity& entity) -> void {
+      displayEntityRecursive = [this, &world, &entities, &displayEntityRecursive](Entity& entity) -> void {
         ImGuiTreeNodeFlags nodeFlags{baseFlags};
 
         if (entity.GetTransform().GetChildren().empty()) {
@@ -88,19 +89,19 @@ auto EntityHierarchyWindow::Draw() -> void {
             auto clone = static_unique_ptr_cast<Entity>(entity.Clone());
             auto const obs = MakeObserver(clone.get());
 
-            edit_world_->AddEntity(std::move(clone));
+            world.AddEntity(std::move(clone));
             obs->GetTransform().SetParent(entity.GetTransform().GetParent());
 
             app_->SetSelectedObject(MakeObjectPtr(obs));
 
-            entities = edit_world_->GetEntities();
+            entities = world.GetEntities();
             ImGui::CloseCurrentPopup();
           }
 
           if (ImGui::MenuItem("Delete")) {
             app_->SetSelectedObject(nullptr);
-            edit_world_->RemoveEntity(entity);
-            entities = edit_world_->GetEntities();
+            world.RemoveEntity(entity);
+            entities = world.GetEntities();
             deleted = true;
             ImGui::CloseCurrentPopup();
           }
@@ -139,7 +140,7 @@ auto EntityHierarchyWindow::Draw() -> void {
             ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
             if (payload->IsDelivery()) {
               auto prefab_entities = prefab->Instantiate();
-              edit_world_->AddEntities(prefab_entities);
+              world.AddEntities(prefab_entities);
             }
           }
         }

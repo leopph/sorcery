@@ -48,6 +48,8 @@ public:
   auto SaveCurrentSceneToFile() -> void;
   [[nodiscard]] auto GetScene() const noexcept -> Scene&;
 
+  [[nodiscard]] auto GetActiveWorld() noexcept -> World&;
+
   [[nodiscard]] auto GetSelectedObject() const noexcept -> ObjectPtr<Object>;
   auto SetSelectedObject(ObjectPtr<Object> obj) noexcept -> void;
 
@@ -87,6 +89,9 @@ private:
   static auto HandleUnknownBackgroundThreadException() -> void;
 
   auto LoadSceneIntoEditWorld(Scene const& scene, bool clear_world) -> void;
+
+  auto StartGame() -> void;
+  auto StopGame() -> void;
   static
   auto SaveWorldIntoScene(World const& world, Scene& scene) -> void;
 
@@ -106,6 +111,7 @@ private:
   EventListenerHandle<void> window_focus_gain_listener_{};
 
   bool game_is_running_{false};
+  int saved_target_frame_rate_{0};
 
   World edit_world_;
   SceneLoader edit_scene_loader_{edit_world_};
@@ -117,12 +123,12 @@ private:
   };
   EditorDrawerRegistry drawer_registry_{tex_refs_};
   ProjectWindow project_window_{*this, asset_db_, drawer_registry_};
-  SceneViewWindow scene_view_window_{tex_refs_, edit_world_};
+  SceneViewWindow scene_view_window_{tex_refs_};
   GameViewWindow game_view_window_{tex_refs_};
   PropertiesWindow properties_window_{*this, drawer_registry_};
   SettingsWindow editor_settings_window_{*this, scene_view_window_.GetCamera()};
   MainMenuBar main_menu_bar_{*this, editor_settings_window_, GetGameModule()};
-  EntityHierarchyWindow entity_hierarchy_window_{*this, edit_world_};
+  EntityHierarchyWindow entity_hierarchy_window_{*this};
 
   static std::string_view const window_title_base_;
 };

@@ -13,6 +13,7 @@
 #include "LoadingScreen.hpp"
 #include "StartupScreen.hpp"
 #include "sorcery/char_encoding_helpers.hpp"
+#include "sorcery/entity_serialization.hpp"
 #include "sorcery/timing.hpp"
 #include "sorcery/host/command_line_args.hpp"
 #include "sorcery/host/game_module.hpp"
@@ -118,6 +119,7 @@ auto EditorApp::OpenScene(AssetId const& asset_id) -> void {
   }
 
   if (auto const new_scene{GetAssetManager().Resolve<Scene>(asset_id)}) {
+    StopGame();
     LoadSceneIntoEditWorld(*new_scene, true);
 
     if (scene_) {
@@ -131,6 +133,8 @@ auto EditorApp::OpenScene(AssetId const& asset_id) -> void {
 
 
 auto EditorApp::OpenNewScene() -> void {
+  StopGame();
+
   if (scene_) {
     GetAssetManager().Unload(scene_->GetAssetId());
   }
@@ -173,6 +177,11 @@ auto EditorApp::SaveCurrentSceneToFile() -> void {
 auto EditorApp::GetScene() const noexcept -> Scene& {
   assert(scene_);
   return *scene_;
+}
+
+
+auto EditorApp::GetActiveWorld() noexcept -> World& {
+  return game_is_running_ ? play_world_ : edit_world_;
 }
 
 
@@ -303,8 +312,7 @@ auto EditorApp::SetGuiDarkMode(bool const darkMode) noexcept -> void {
 
 
 auto EditorApp::GetRenderedWorld() -> World& {
-  return edit_world_;
-  //return game_is_running_ ? play_world_ : edit_world_;
+  return GetActiveWorld();
 }
 
 
@@ -321,29 +329,14 @@ auto EditorApp::Update() -> void {
   if (GetProjectDirectoryAbsolute().empty()) {
     DrawStartupScreen(*this);
   } else {
-    int static targetFrameRate{timing::GetTargetFrameRate()};
-
     if (game_is_running_) {
-      edit_world_.Update();
+      play_world_.Update();
 
       if (GetKeyDown(Key::Escape)) {
-        game_is_running_ = false;
-        GetWindow().SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
-        GetWindow().SetCursorLock(std::nullopt);
-        GetWindow().SetCursorHiding(false);
-        timing::SetTargetFrameRate(targetFrameRate);
-        LoadSceneIntoEditWorld(GetScene(), true);
-        SetSelectedObject(nullptr);
+        StopGame();
       }
-    } else {
-      if (GetKeyDown(Key::F5)) {
-        game_is_running_ = true;
-        GetWindow().SetEventHandler(nullptr);
-        SaveWorldIntoScene(edit_world_, GetScene());
-        targetFrameRate = timing::GetTargetFrameRate();
-        timing::SetTargetFrameRate(-1);
-        edit_world_.Start();
-      }
+    } else if (GetKeyDown(Key::F5)) {
+      StartGame();
     }
 
     ImGui::DockSpaceOverViewport();
@@ -432,6 +425,51 @@ auto EditorApp::LoadSceneIntoEditWorld(Scene const& scene, bool const clear_worl
 
   // The editor saves the whole edit world back into the scene, so the group is not needed yet.
   std::ignore = edit_scene_loader_.Load(scene);
+}
+
+
+auto EditorApp::StartGame() -> void {
+  if (game_is_running_) {
+    return;
+  }
+
+  // A StopGame interrupted by a failed render job can leave play entities behind.
+  play_world_.Clear();
+
+  // Copy the edit world by round-tripping its entities through serialization,
+  // so the game can never modify the edit world.
+  auto const edit_entities = edit_world_.GetEntities() |
+                             std::views::transform([](auto const& ptr) -> Entity const* { return ptr.get(); }) |
+                             std::ranges::to<std::vector>();
+  auto play_entities = DeserializeEntitySet(SerializeEntitySet(edit_entities), YamlDeserializeContext{});
+  play_world_.AddEntities(play_entities);
+
+  SetSelectedObject(nullptr);
+
+  game_is_running_ = true;
+  GetWindow().SetEventHandler(nullptr);
+  saved_target_frame_rate_ = timing::GetTargetFrameRate();
+  timing::SetTargetFrameRate(-1);
+  play_world_.Start();
+}
+
+
+auto EditorApp::StopGame() -> void {
+  if (!game_is_running_) {
+    return;
+  }
+
+  game_is_running_ = false;
+  GetWindow().SetEventHandler(static_cast<void const*>(&ImGui_ImplWin32_WndProcHandler));
+  GetWindow().SetCursorLock(std::nullopt);
+  GetWindow().SetCursorHiding(false);
+  timing::SetTargetFrameRate(saved_target_frame_rate_);
+
+  // The in-flight render job only reads its frame packet, which holds no pointers into the world,
+  // but waiting keeps destroying the play world independent of what the render job touches.
+  WaitRenderJob();
+  SetSelectedObject(nullptr);
+  play_world_.Clear();
 }
 
 

@@ -13,13 +13,12 @@ class EditorApp;
 
 class EntityHierarchyWindow {
 public:
-  EntityHierarchyWindow(EditorApp& app, World& edit_world);
+  explicit EntityHierarchyWindow(EditorApp& app);
 
   auto Draw() -> void;
 
 private:
   ObserverPtr<EditorApp> app_;
-  ObserverPtr<World> edit_world_;
 };
 }
 }

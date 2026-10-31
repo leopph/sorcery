@@ -12,9 +12,8 @@
 
 
 namespace sorcery::mage {
-SceneViewWindow::SceneViewWindow(ImGuiTextureReferences& tex_refs, World& edit_world) :
-  tex_refs_{&tex_refs},
-  edit_world_{&edit_world} {}
+SceneViewWindow::SceneViewWindow(ImGuiTextureReferences& tex_refs) :
+  tex_refs_{&tex_refs} {}
 
 
 auto SceneViewWindow::Draw(EditorApp& context) -> void {
@@ -167,7 +166,7 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
             ImGui::AcceptDragDropPayload(ObjectDragDropPayload::kTypeStr.data());
             if (payload->IsDelivery()) {
               auto prefab_entities = prefab->Instantiate();
-              edit_world_->AddEntities(prefab_entities);
+              context.GetActiveWorld().AddEntities(prefab_entities);
             }
           }
         }
