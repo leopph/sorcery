@@ -91,6 +91,25 @@
 
 namespace sorcery::rendering {
 namespace {
+[[nodiscard]] auto CreateIblCubemap(wand::GraphicsDevice& device, DXGI_FORMAT const format, UINT const size,
+                                    UINT16 const mip_levels) -> wand::SharedDeviceHandle<wand::Texture> {
+  return device.CreateTexture(wand::TextureDesc{
+      .dimension = wand::TextureDimension::kCube,
+      .width = size,
+      .height = size,
+      .depth_or_array_size = 6,
+      .mip_levels = mip_levels,
+      .format = format,
+      .sample_count = 1,
+      .depth_stencil = false,
+      .render_target = true,
+      .shader_resource = true,
+      .unordered_access = false
+    }, wand::CpuAccess::kNone,
+    std::array{D3D12_CLEAR_VALUE{.Format = format, .Color = {0.0F, 0.0F, 0.0F, 1.0F}}}.data());
+}
+
+
 [[nodiscard]] auto MakeTaaAccumulationRtDesc(Extent2D<unsigned> const size, DXGI_FORMAT const format) {
   return RenderTarget::Desc{
     .width = size.width,
@@ -648,30 +667,27 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame, RenderWorld const& render_w
       if (auto const cubemap{env_comp->GetSkybox().Observe()}) {
         packet.skybox_cubemap = tex_resolver_->Resolve(*cubemap, frame.GetUploadArena(), cmd);
 
-        if (auto const irradiance_map{sorcery::detail::GetIrradianceMap(*env_comp)};
-          !irradiance_map ||
-          irradiance_map->GetDesc().format != irradiance_map_format_ ||
-          irradiance_map->GetDesc().width != irradiance_map_size_ ||
-          irradiance_map->GetDesc().height != irradiance_map_size_) {
-          sorcery::detail::RecreateIrradianceMap(*env_comp, *device_, irradiance_map_format_, irradiance_map_size_);
-          packet.draw_irradiance_map = true;
-        }
+        if (packet.skybox_cubemap) {
+          auto& lighting = env_lighting_cache_[MakeObserver<wand::Texture const>(packet.skybox_cubemap.get())];
 
-        if (auto const prefiltered_env_map{sorcery::detail::GetPrefilteredEnvMap(*env_comp)};
-          !prefiltered_env_map ||
-          prefiltered_env_map->GetDesc().format != prefiltered_env_map_format_ ||
-          prefiltered_env_map->GetDesc().width != prefiltered_env_map_size_ ||
-          prefiltered_env_map->GetDesc().height != prefiltered_env_map_size_) {
-          sorcery::detail::RecreatePrefilteredEnvMap(*env_comp, *device_, prefiltered_env_map_format_,
-            prefiltered_env_map_size_);
-          packet.draw_prefiltered_env_map = true;
-        }
+          if (!lighting.irradiance_map) {
+            lighting.source = packet.skybox_cubemap;
+            lighting.irradiance_map = CreateIblCubemap(*device_, irradiance_map_format_, irradiance_map_size_, 1);
+            lighting.prefiltered_env_map = CreateIblCubemap(*device_, prefiltered_env_map_format_,
+              prefiltered_env_map_size_, 0);
+            packet.draw_irradiance_map = true;
+            packet.draw_prefiltered_env_map = true;
+          }
 
-        packet.irradiance_map = sorcery::detail::GetIrradianceMap(*env_comp);
-        packet.prefiltered_env_map = sorcery::detail::GetPrefilteredEnvMap(*env_comp);
+          lighting.last_used_frame = frame.GetNumber();
+          packet.irradiance_map = lighting.irradiance_map;
+          packet.prefiltered_env_map = lighting.prefiltered_env_map;
+        }
       }
     }
   }
+
+  ReleaseUnusedEnvironmentLighting(frame);
 
   // Passes
 
@@ -3119,6 +3135,13 @@ auto SceneRenderer::AcquirePerInstanceConstantBuffer(
 auto SceneRenderer::ReleaseUnusedViewHistories(RenderFrame const& frame) -> void {
   std::erase_if(view_histories_, [&frame](auto const& entry) {
     return frame.GetNumber() - entry.second.last_used_frame > kViewHistoryMaxUnusedFrames;
+  });
+}
+
+
+auto SceneRenderer::ReleaseUnusedEnvironmentLighting(RenderFrame const& frame) -> void {
+  std::erase_if(env_lighting_cache_, [&frame](auto const& entry) {
+    return frame.GetNumber() - entry.second.last_used_frame > kEnvironmentLightingMaxUnusedFrames;
   });
 }
 

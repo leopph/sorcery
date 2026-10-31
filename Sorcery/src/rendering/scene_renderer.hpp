@@ -441,6 +441,15 @@ private:
   };
 
 
+  struct EnvironmentLighting {
+    // Keeps the source alive so its address, the cache key, cannot be reused by another texture.
+    wand::SharedDeviceHandle<wand::Texture> source;
+    wand::SharedDeviceHandle<wand::Texture> irradiance_map;
+    wand::SharedDeviceHandle<wand::Texture> prefiltered_env_map;
+    std::uint64_t last_used_frame;
+  };
+
+
   struct ViewHistory {
     std::unique_ptr<RenderTarget> taa_accum_rt;
     std::uint64_t last_used_frame;
@@ -635,6 +644,7 @@ private:
   auto RecreatePipelines() -> void;
 
   auto ReleaseUnusedViewHistories(RenderFrame const& frame) -> void;
+  auto ReleaseUnusedEnvironmentLighting(RenderFrame const& frame) -> void;
 
   auto CreatePerViewConstantBuffers(UINT count) -> void;
   auto CreatePerInstanceConstantBuffers(UINT count) -> void;
@@ -691,6 +701,8 @@ private:
   static constexpr UINT prefiltered_env_map_size_{1024};
   static constexpr UINT brdf_integration_map_size_{128};
   static constexpr unsigned frame_packet_invalid_idx{~0u};
+  static constexpr std::uint64_t kEnvironmentLightingMaxUnusedFrames{10};
+  static_assert(kEnvironmentLightingMaxUnusedFrames >= kFramesInFlight && "Environment lighting lifetime too short!");
   static constexpr std::uint64_t kViewHistoryMaxUnusedFrames{10};
   static_assert(kViewHistoryMaxUnusedFrames >= kFramesInFlight && "View history lifetime too short!");
 
@@ -780,6 +792,7 @@ private:
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
   std::unordered_map<ViewHistoryKey, ViewHistory> view_histories_;
+  std::unordered_map<ObserverPtr<wand::Texture const>, EnvironmentLighting> env_lighting_cache_;
 
   bool gpu_init_upload_work_recorded_{false};
   bool gpu_init_work_recorded_{false};

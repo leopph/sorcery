@@ -1,8 +1,5 @@
 #pragma once
 
-#include <wand/device_object.hpp>
-#include <wand/texture.hpp>
-
 #include <sorcery/asset_ref.hpp>
 #include <sorcery/Color.hpp>
 #include <sorcery/Math.hpp>
@@ -12,22 +9,6 @@
 
 
 namespace sorcery {
-class EnvironmentComponent;
-
-
-namespace detail {
-[[nodiscard]]
-auto GetIrradianceMap(EnvironmentComponent const& env) -> wand::SharedDeviceHandle<wand::Texture> const&;
-auto RecreateIrradianceMap(EnvironmentComponent& env, wand::GraphicsDevice& device, DXGI_FORMAT format,
-                           UINT size) -> void;
-
-[[nodiscard]]
-auto GetPrefilteredEnvMap(EnvironmentComponent const& env) -> wand::SharedDeviceHandle<wand::Texture> const&;
-auto RecreatePrefilteredEnvMap(EnvironmentComponent& env, wand::GraphicsDevice& device, DXGI_FORMAT format,
-                               UINT size) -> void;
-}
-
-
 class EnvironmentComponent : public Component {
 public:
   [[nodiscard]] SORCERYAPI
@@ -60,20 +41,8 @@ private:
   AssetRef<Cubemap> skybox_{nullptr};
   SkyMode sky_mode_{SkyMode::kColor};
   Vector3 sky_color_{0.F, 36.F / 255.F, 1.F};
-  wand::SharedDeviceHandle<wand::Texture> irradiance_map_{};
-  wand::SharedDeviceHandle<wand::Texture> prefiltered_env_map_{};
 
   RTTR_ENABLE(Component)
   RTTR_REGISTRATION_FRIEND
-
-  friend auto detail::GetIrradianceMap(EnvironmentComponent const& env)
-    -> wand::SharedDeviceHandle<wand::Texture> const&;
-  friend auto detail::RecreateIrradianceMap(EnvironmentComponent& env, wand::GraphicsDevice& device, DXGI_FORMAT format,
-                                            UINT size) -> void;
-
-  friend auto detail::GetPrefilteredEnvMap(EnvironmentComponent const& env)
-    -> wand::SharedDeviceHandle<wand::Texture> const&;
-  friend auto detail::RecreatePrefilteredEnvMap(EnvironmentComponent& env, wand::GraphicsDevice& device,
-                                                DXGI_FORMAT format, UINT size) -> void;
 };
 }

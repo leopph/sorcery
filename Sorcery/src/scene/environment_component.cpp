@@ -2,7 +2,6 @@
 
 #include "sorcery/world.hpp"
 #include "sorcery/host/rendering/render_world.hpp"
-#include "wand/wand.hpp"
 
 
 RTTR_REGISTRATION {
@@ -17,58 +16,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto detail::GetIrradianceMap(EnvironmentComponent const& env) -> wand::SharedDeviceHandle<wand::Texture> const& {
-  return env.irradiance_map_;
-}
-
-
-auto detail::RecreateIrradianceMap(EnvironmentComponent& env, wand::GraphicsDevice& device, DXGI_FORMAT const format,
-                                   UINT const size) -> void {
-  if (!env.skybox_) {
-    return;
-  }
-
-  env.irradiance_map_ = device.CreateTexture(wand::TextureDesc{
-      .dimension = wand::TextureDimension::kCube,
-      .width = size,
-      .height = size,
-      .depth_or_array_size = 6,
-      .mip_levels = 1,
-      .format = format,
-      .sample_count = 1,
-      .depth_stencil = false,
-      .render_target = true,
-      .shader_resource = true,
-      .unordered_access = false
-    }, wand::CpuAccess::kNone,
-    std::array{D3D12_CLEAR_VALUE{.Format = format, .Color = {0.0F, 0.0F, 0.0F, 1.0F}}}.data());
-}
-
-
-auto detail::GetPrefilteredEnvMap(EnvironmentComponent const& env) -> wand::SharedDeviceHandle<wand::Texture> const& {
-  return env.prefiltered_env_map_;
-}
-
-
-auto detail::RecreatePrefilteredEnvMap(EnvironmentComponent& env, wand::GraphicsDevice& device,
-                                       DXGI_FORMAT const format, UINT const size) -> void {
-  env.prefiltered_env_map_ = device.CreateTexture(wand::TextureDesc{
-      .dimension = wand::TextureDimension::kCube,
-      .width = size,
-      .height = size,
-      .depth_or_array_size = 6,
-      .mip_levels = 0,
-      .format = format,
-      .sample_count = 1,
-      .depth_stencil = false,
-      .render_target = true,
-      .shader_resource = true,
-      .unordered_access = false
-    }, wand::CpuAccess::kNone,
-    std::array{D3D12_CLEAR_VALUE{.Format = format, .Color = {0.0F, 0.0F, 0.0F, 1.0F}}}.data());
-}
-
-
 auto EnvironmentComponent::Clone() -> std::unique_ptr<SceneObject> {
   return std::make_unique<EnvironmentComponent>(*this);
 }
@@ -133,8 +80,6 @@ auto EnvironmentComponent::GetSkybox() const -> AssetRef<Cubemap> {
 
 auto EnvironmentComponent::SetSkybox(AssetRef<Cubemap> const& skybox) -> void {
   skybox_ = skybox;
-  irradiance_map_ = nullptr;
-  prefiltered_env_map_ = nullptr;
 }
 
 
