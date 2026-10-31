@@ -246,7 +246,7 @@
     <ClCompile Include="src\sky_mode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene_instance.cpp">
+    <ClCompile Include="src\world_entity_group.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -545,7 +545,7 @@
     <ClInclude Include="include\sorcery\scene\environment_component.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sorcery\scene_instance.hpp">
+    <ClInclude Include="include\sorcery\world_entity_group.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -604,6 +604,9 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="include\sorcery\object_ptr.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="include\sorcery\world_entity_group.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="include\sorcery\observer_ptr.inl">

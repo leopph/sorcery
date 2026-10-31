@@ -134,13 +134,13 @@ auto Entity::GetWorld() const -> ObserverPtr<World const> {
 }
 
 
-auto Entity::GetSceneInstance() const -> SceneInstanceId {
-  return scene_instance_;
+auto Entity::GetWorldGroup() const -> WorldEntityGroup {
+  return world_group_;
 }
 
 
-auto Entity::SetSceneInstance(SceneInstanceId const instance) -> void {
-  scene_instance_ = instance;
+auto Entity::SetWorldGroup(WorldEntityGroup const group) -> void {
+  world_group_ = group;
 }
 
 

@@ -7,10 +7,10 @@
 #include <sorcery/object_ptr.hpp>
 #include <sorcery/observer_ptr.hpp>
 #include <sorcery/reflection.hpp>
-#include <sorcery/scene_instance.hpp>
 #include <sorcery/scene/Component.hpp>
 #include <sorcery/scene/SceneObject.hpp>
 #include <sorcery/scene/TransformComponent.hpp>
+#include <sorcery/world_entity_group.hpp>
 
 
 namespace sorcery {
@@ -39,9 +39,7 @@ public:
   [[nodiscard]] SORCERYAPI auto GetWorld() const -> ObserverPtr<World const>;
 
   [[nodiscard]] SORCERYAPI
-  auto GetSceneInstance() const -> SceneInstanceId;
-  SORCERYAPI
-  auto SetSceneInstance(SceneInstanceId instance) -> void;
+  auto GetWorldGroup() const -> WorldEntityGroup;
 
   SORCERYAPI auto AddComponent(std::unique_ptr<Component> component) -> void;
   SORCERYAPI auto RemoveComponent(Component& component) -> std::unique_ptr<Component>;
@@ -58,13 +56,17 @@ public:
   [[nodiscard]] SORCERYAPI static auto FindEntityByName(std::string_view name) -> ObjectPtr<Entity>;
 
 private:
+  auto SetWorldGroup(WorldEntityGroup group) -> void;
+
   [[nodiscard]] auto GetComponentsForSerialization() const -> std::vector<Component*>;
   auto SetComponentFromDeserialization(std::vector<Component*> components) -> void;
 
   ObserverPtr<World> world_{nullptr};
   mutable TransformComponent* transform_{nullptr};
   std::vector<std::unique_ptr<Component>> components_;
-  SceneInstanceId scene_instance_{};
+  WorldEntityGroup world_group_{};
+
+  friend class World;
 };
 }
 

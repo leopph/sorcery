@@ -2,12 +2,13 @@
 
 #include <memory>
 #include <span>
+#include <unordered_set>
 #include <vector>
 
 #include <sorcery/asset_ref.hpp>
 #include <sorcery/Core.hpp>
 #include <sorcery/observer_ptr.hpp>
-#include <sorcery/scene_instance.hpp>
+#include <sorcery/world_entity_group.hpp>
 #include "sorcery/assets/Scene.hpp"
 
 
@@ -30,16 +31,25 @@ public:
   auto Update() -> void;
 
   [[nodiscard]] SORCERYAPI
-  auto Instantiate(Scene const& scene) -> SceneInstanceId;
+  auto Instantiate(Scene const& scene) -> WorldEntityGroup;
   SORCERYAPI
-  auto Unload(SceneInstanceId scene_instance) -> void;
+  auto Unload(WorldEntityGroup group) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto CreateGroup() -> WorldEntityGroup;
+  SORCERYAPI
+  auto DestroyGroup(WorldEntityGroup group) -> void;
+  [[nodiscard]] SORCERYAPI
+  auto IsGroupAlive(WorldEntityGroup group) const -> bool;
+  [[nodiscard]] SORCERYAPI
+  auto GetEntitiesInGroup(WorldEntityGroup group) const -> std::vector<ObserverPtr<Entity>>;
 
   [[nodiscard]] SORCERYAPI
   auto GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const>;
   SORCERYAPI
-  auto AddEntities(std::span<std::unique_ptr<Entity>> entities, SceneInstanceId scene_instance = {}) -> void;
+  auto AddEntities(std::span<std::unique_ptr<Entity>> entities, WorldEntityGroup group = {}) -> void;
   SORCERYAPI
-  auto AddEntity(std::unique_ptr<Entity> entity, SceneInstanceId scene_instance = {}) -> void;
+  auto AddEntity(std::unique_ptr<Entity> entity, WorldEntityGroup group = {}) -> void;
   SORCERYAPI
   auto RemoveEntities(std::span<ObserverPtr<Entity const> const> entities) -> std::vector<std::unique_ptr<Entity>>;
   SORCERYAPI
@@ -71,7 +81,7 @@ public:
 
 private:
   struct SceneInstance {
-    SceneInstanceId id;
+    WorldEntityGroup group;
     AssetRef<Scene> src_asset;
   };
 
@@ -82,6 +92,7 @@ private:
   std::vector<Component*> component_query_memory_;
   std::vector<ObserverPtr<Entity>> entity_query_memory_;
   std::vector<SceneInstance> scene_instances_;
-  SceneInstanceId next_scene_instance_id_{1};
+  std::unordered_set<WorldEntityGroup> live_groups_;
+  std::uint32_t next_group_id_{1};
 };
 }

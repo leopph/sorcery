@@ -56,37 +56,70 @@ auto World::Update() -> void {
 }
 
 
-auto World::Instantiate(Scene const& scene) -> SceneInstanceId {
-  auto const scene_instance_id = next_scene_instance_id_;
-  next_scene_instance_id_ = SceneInstanceId{next_scene_instance_id_.Value() + 1};
-
+auto World::Instantiate(Scene const& scene) -> WorldEntityGroup {
+  auto const group = CreateGroup();
   auto entities = scene.Instantiate();
-  AddEntities(entities, scene_instance_id);
-
-  scene_instances_.emplace_back(scene_instance_id, AssetRef<Scene>{scene.GetAssetId()});
-
-  return scene_instance_id;
+  AddEntities(entities, group);
+  scene_instances_.emplace_back(group, AssetRef<Scene>{scene.GetAssetId()});
+  return group;
 }
 
 
-auto World::Unload(SceneInstanceId const scene_instance) -> void {
+auto World::Unload(WorldEntityGroup const group) -> void {
   assert(
-    std::ranges::find(scene_instances_, scene_instance, &SceneInstance::id) != std::ranges::end(scene_instances_) &&
+    std::ranges::find(scene_instances_, group, &SceneInstance::group) != std::ranges::end(scene_instances_) &&
     "Scene instance not in this world!");
+
+  DestroyGroup(group);
+
+  std::erase_if(scene_instances_, [group](auto const& inst) {
+    return inst.group == group;
+  });
+}
+
+
+auto World::CreateGroup() -> WorldEntityGroup {
+  WorldEntityGroup const group{next_group_id_++};
+  live_groups_.emplace(group);
+  return group;
+}
+
+
+auto World::DestroyGroup(WorldEntityGroup const group) -> void {
+  assert(IsGroupAlive(group) && "Group is not alive in this world!");
 
   std::vector<ObserverPtr<Entity const>> entities;
 
   for (auto const& entity : entities_) {
-    if (entity->GetSceneInstance() == scene_instance) {
+    if (entity->GetWorldGroup() == group) {
       entities.emplace_back(entity.get());
     }
   }
 
   RemoveEntities(entities);
+  live_groups_.erase(group);
+}
 
-  std::erase_if(scene_instances_, [scene_instance](auto const& inst) {
-    return inst.id == scene_instance;
-  });
+
+auto World::IsGroupAlive(WorldEntityGroup const group) const -> bool {
+  return live_groups_.contains(group);
+}
+
+
+auto World::GetEntitiesInGroup(WorldEntityGroup const group) const -> std::vector<ObserverPtr<Entity>> {
+  std::vector<ObserverPtr<Entity>> ret;
+
+  if (group.IsNone()) {
+    return ret;
+  }
+
+  for (auto const& entity : entities_) {
+    if (entity->GetWorldGroup() == group) {
+      ret.emplace_back(entity.get());
+    }
+  }
+
+  return ret;
 }
 
 
@@ -95,7 +128,9 @@ auto World::GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> co
 }
 
 
-auto World::AddEntities(std::span<std::unique_ptr<Entity>> entities, SceneInstanceId const scene_instance) -> void {
+auto World::AddEntities(std::span<std::unique_ptr<Entity>> const entities, WorldEntityGroup const group) -> void {
+  assert((group.IsNone() || IsGroupAlive(group)) && "Group must be none or alive in this world!");
+
   // If any of the entities is null, we ignore the whole set.
   // Strong precondition but safe.
   if (std::ranges::any_of(entities, [](auto const& entity) { return !entity; })) {
@@ -147,15 +182,15 @@ auto World::AddEntities(std::span<std::unique_ptr<Entity>> entities, SceneInstan
   }
 
   for (auto& entity : entities) {
-    entity->SetSceneInstance(scene_instance);
+    entity->SetWorldGroup(group);
     entities_.emplace_back(std::move(entity));
     entities_.back()->OnAfterEnteringWorld(*this);
   }
 }
 
 
-auto World::AddEntity(std::unique_ptr<Entity> entity, SceneInstanceId const scene_instance) -> void {
-  AddEntities(std::span{&entity, 1}, scene_instance);
+auto World::AddEntity(std::unique_ptr<Entity> entity, WorldEntityGroup const group) -> void {
+  AddEntities(std::span{&entity, 1}, group);
 }
 
 
@@ -180,14 +215,16 @@ auto World::RemoveEntities(
     auto const q_entity = queue.front();
     queue.pop();
 
-    entities_to_remove.emplace(q_entity);
+    // Skip entities reached twice, e.g. when both a parent and its child were passed in.
+    if (!entities_to_remove.emplace(q_entity).second) {
+      continue;
+    }
 
     for (auto const* const child : q_entity->GetTransform().GetChildren()) {
       assert(child && "Child transform cannot be null!");
       auto const child_entity = child->GetEntity();
       assert(child_entity && "Child entity cannot be null!");
       assert(child_entity->GetWorld().Get() == this && "Child entity must be in this world!");
-      entities_to_remove.emplace(child_entity);
       queue.emplace(child_entity);
     }
   }
@@ -198,7 +235,7 @@ auto World::RemoveEntities(
 
   for (auto it = first; it != last; ++it) {
     (*it)->OnBeforeExitingWorld(*this);
-    (*it)->SetSceneInstance(SceneInstanceId{});
+    (*it)->SetWorldGroup(WorldEntityGroup{});
   }
 
   std::vector<std::unique_ptr<Entity>> removed_entities;
@@ -240,6 +277,7 @@ auto World::Clear() -> void {
 
   entities_.clear();
   scene_instances_.clear();
+  live_groups_.clear();
 }
 
 
