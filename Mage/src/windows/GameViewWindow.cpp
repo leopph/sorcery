@@ -1,20 +1,23 @@
 #include "GameViewWindow.hpp"
 
+#include <algorithm>
+
 #include "../gui_helpers.hpp"
 #include "../imgui_texture_references.hpp"
 #include "rendering/scene_renderer.hpp"
 #include "sorcery/util.hpp"
+#include "sorcery/world.hpp"
 #include "sorcery/host/app.hpp"
+#include "sorcery/host/game_views.hpp"
+#include "sorcery/scene/CameraComponent.hpp"
 
 
 namespace sorcery::mage {
 GameViewWindow::GameViewWindow(ImGuiTextureReferences& tex_refs) :
-  tex_refs_{&tex_refs} {
-  App::Instance().GetSceneRenderer().SetRenderGlobalCameras(was_visible_);
-}
+  tex_refs_{&tex_refs} {}
 
 
-auto GameViewWindow::Draw(bool const game_is_running) -> void {
+auto GameViewWindow::Draw(World const& world, bool const game_is_running) -> void {
   ImVec2 static constexpr game_viewport_min_size{480, 270};
 
   ImGui::SetNextWindowSizeConstraints(game_viewport_min_size, ImVec2{
@@ -30,21 +33,10 @@ auto GameViewWindow::Draw(bool const game_is_running) -> void {
 
   auto const is_visible{ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)};
 
-  if (is_visible && !was_visible_) {
-    App::Instance().GetSceneRenderer().SetRenderGlobalCameras(true);
-  } else if (!is_visible && was_visible_) {
-    App::Instance().GetSceneRenderer().SetRenderGlobalCameras(false);
-  }
-
   was_visible_ = is_visible;
 
   if (!is_visible) {
     ImGui::PopStyleVar();
-
-    if (App::Instance().GetSceneRenderer().GetRenderTargetOverride() == rt_override_) {
-      App::Instance().GetSceneRenderer().SetRenderTargetOverride(nullptr);
-    }
-
     ImGui::End();
     return;
   }
@@ -80,27 +72,40 @@ auto GameViewWindow::Draw(bool const game_is_running) -> void {
 
   static_assert(std::size(resolution_labels) == std::size(resolution_values));
 
-  if (!rt_override_ || resolution_values[resolution_mode_idx_].width != rt_override_->GetDesc().width ||
-      resolution_values[resolution_mode_idx_].height != rt_override_->GetDesc().height) {
-    rt_override_ = rendering::RenderTarget::New(App::Instance().GetGraphicsDevice(), rendering::RenderTarget::Desc{
+  if (!rt_ || resolution_values[resolution_mode_idx_].width != rt_->GetDesc().width ||
+      resolution_values[resolution_mode_idx_].height != rt_->GetDesc().height) {
+    rt_ = rendering::RenderTarget::New(App::Instance().GetGraphicsDevice(), rendering::RenderTarget::Desc{
       resolution_values[resolution_mode_idx_].width, resolution_values[resolution_mode_idx_].height,
       DXGI_FORMAT_R8G8B8A8_UNORM, std::nullopt, 1, L"Game View RT"
     });
   }
 
-  if (App::Instance().GetSceneRenderer().GetRenderTargetOverride() != rt_override_) {
-    App::Instance().GetSceneRenderer().SetRenderTargetOverride(rt_override_);
+  // Nothing clears the target when no view renders into it, so it would show a stale frame.
+  if (std::ranges::none_of(world.GetCameras(), [](auto const cam) { return !cam->GetRenderTarget(); })) {
+    constexpr auto no_camera_text{"No cameras rendering"};
+    auto const text_size{ImGui::CalcTextSize(no_camera_text)};
+    ImGui::SetCursorPos(ImVec2{
+      ImGui::GetCursorPosX() + (content_region_size.x - text_size.x) * 0.5f,
+      ImGui::GetCursorPosY() + (content_region_size.y - text_size.y) * 0.5f
+    });
+    ImGui::TextDisabled("%s", no_camera_text);
+  } else {
+    ImGui::Image(tex_refs_->Reference(rt_), [content_region_size, this] {
+      auto const& desc{rt_->GetDesc()};
+      auto const scale{
+        std::min(content_region_size.x / static_cast<float>(desc.width),
+          content_region_size.y / static_cast<float>(desc.height))
+      };
+      return ImVec2{static_cast<float>(desc.width) * scale, static_cast<float>(desc.height) * scale};
+    }());
   }
 
-  ImGui::Image(tex_refs_->Reference(rt_override_), [content_region_size, this] {
-    auto const& desc{rt_override_->GetDesc()};
-    auto const scale{
-      std::min(content_region_size.x / static_cast<float>(desc.width),
-        content_region_size.y / static_cast<float>(desc.height))
-    };
-    return ImVec2{static_cast<float>(desc.width) * scale, static_cast<float>(desc.height) * scale};
-  }());
-
   ImGui::End();
+}
+
+
+auto GameViewWindow::AddViews(World const& world, rendering::ViewList& views) const -> void {
+  // Cameras with their own target always render, since their output can be shown outside the game view.
+  CollectGameViews(world, was_visible_ ? rt_ : nullptr, views);
 }
 }

@@ -353,7 +353,6 @@ auto EditorApp::Update() -> void {
     }
 
     entity_hierarchy_window_.Draw();
-    game_view_window_.Draw(game_is_running_);
     scene_view_window_.Draw(*this);
 
     main_menu_bar_.Draw();
@@ -361,6 +360,8 @@ auto EditorApp::Update() -> void {
     properties_window_.Draw();
     project_window_.Draw();
     DrawPerformanceCounterWindow();
+    // Drawn after every window that can change the world, so it decides from this frame's final cameras.
+    game_view_window_.Draw(GetRenderedWorld(), game_is_running_);
   }
 }
 
@@ -371,6 +372,12 @@ auto EditorApp::EndFrame() -> void {
 
 
 auto EditorApp::ExtractRenderFrame(rendering::RenderFrame& frame) -> void {
+  // Views are gathered here, after Update, so no camera they point to can be destroyed before extraction.
+  if (!GetProjectDirectoryAbsolute().empty()) {
+    scene_view_window_.AddViews(GetViews());
+    game_view_window_.AddViews(GetRenderedWorld(), GetViews());
+  }
+
   App::ExtractRenderFrame(frame);
   imgui_renderer_.ExtractFrame(frame);
 }

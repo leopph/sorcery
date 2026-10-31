@@ -11,23 +11,7 @@
 
 
 namespace sorcery::rendering {
-class Camera;
-
-
-namespace detail {
-[[nodiscard]]
-auto GetTaaAccumulationRt(Camera const& cam) -> RenderTarget const*;
-auto RecreateTaaAccumulationRt(Camera& cam, wand::GraphicsDevice& device, Extent2D<unsigned> size,
-                               DXGI_FORMAT format) -> void;
-}
-
-
 class Camera {
-  [[nodiscard]]
-  friend auto detail::GetTaaAccumulationRt(Camera const& cam) -> RenderTarget const*;
-  friend auto detail::RecreateTaaAccumulationRt(Camera& cam, wand::GraphicsDevice& device, Extent2D<unsigned> size,
-                                                DXGI_FORMAT format) -> void;
-
 public:
   enum class Type : std::uint8_t {
     Perspective  = 0,
@@ -36,13 +20,13 @@ public:
 
 
   Camera() = default;
-  Camera(Camera const& other);
-  Camera(Camera&& other) noexcept;
+  Camera(Camera const& other) = default;
+  Camera(Camera&& other) noexcept = default;
 
   virtual ~Camera() = default;
 
-  auto operator=(Camera const& other) -> Camera&;
-  auto operator=(Camera&& other) noexcept -> Camera&;
+  auto operator=(Camera const& other) -> Camera& = default;
+  auto operator=(Camera&& other) noexcept -> Camera& = default;
 
   [[nodiscard]] virtual auto GetPosition() const noexcept -> Vector3 = 0;
   [[nodiscard]] virtual auto GetRightAxis() const noexcept -> Vector3 = 0;
@@ -91,8 +75,6 @@ private:
   constexpr static auto MINIMUM_ORTHOGRAPHIC_VERTICAL_SIZE{0.1f};
 
   std::shared_ptr<RenderTarget> render_target_{nullptr};
-  std::unique_ptr<RenderTarget> taa_accum_target_{nullptr};
-  wand::GraphicsDevice* taa_rt_device_{nullptr};
   float near_{MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE};
   float far_{100.f};
   float vert_orho_size_{10};

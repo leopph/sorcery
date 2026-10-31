@@ -249,6 +249,12 @@
     <ClCompile Include="src\world_entity_group.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\rendering\view_history_key.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_views.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\scene_loader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -551,6 +557,15 @@
     <ClInclude Include="include\sorcery\world_entity_group.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\sorcery\host\rendering\view.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sorcery\host\rendering\view_history_key.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sorcery\host\game_views.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\sorcery\scene_loader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -613,6 +628,9 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="include\sorcery\world_entity_group.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="include\sorcery\host\rendering\view_history_key.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="include\sorcery\observer_ptr.inl">

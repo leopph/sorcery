@@ -22,6 +22,7 @@
 #include "sorcery/host/window.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
 #include "sorcery/host/rendering/texture_resolver.hpp"
+#include "sorcery/host/rendering/view.hpp"
 
 
 namespace sorcery {
@@ -67,6 +68,7 @@ struct App::Data {
     window, graphics_device, rt_pool, render_resource_registry, render_instance_registry, texture_resolver
   };
   AssetManager asset_manager{job_system};
+  rendering::ViewList views;
   ObserverPtr<Job> render_job;
 };
 
@@ -211,13 +213,19 @@ auto App::WaitRenderJobNoThrow() noexcept -> void {
 }
 
 
+auto App::GetViews() -> std::vector<rendering::View>& {
+  return data_->views;
+}
+
+
 auto App::BeginFrame() -> void {
   ProcessEvents();
+  data_->views.clear();
 }
 
 
 auto App::ExtractRenderFrame(rendering::RenderFrame& frame) -> void {
-  data_->scene_renderer.ExtractFrame(frame, GetRenderedWorld().GetRenderWorld());
+  data_->scene_renderer.ExtractFrame(frame, GetRenderedWorld().GetRenderWorld(), data_->views);
 }
 
 

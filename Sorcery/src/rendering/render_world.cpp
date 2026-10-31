@@ -32,16 +32,6 @@ auto RenderWorld::Unregister(LightComponent const& light_component) noexcept -> 
 }
 
 
-auto RenderWorld::Register(Camera& cam) noexcept -> void {
-  cameras_.emplace_back(&cam);
-}
-
-
-auto RenderWorld::Unregister(Camera const& cam) noexcept -> void {
-  std::erase(cameras_, MakeObserver(&cam));
-}
-
-
 auto RenderWorld::Register(EnvironmentComponent& env_component) noexcept -> void {
   environment_components_.emplace_back(&env_component);
 }
@@ -64,11 +54,6 @@ auto RenderWorld::GetSkinnedMeshComponents() const -> std::span<ObserverPtr<Skin
 
 auto RenderWorld::GetLightComponents() const -> std::span<ObserverPtr<LightComponent const> const> {
   return light_components_;
-}
-
-
-auto RenderWorld::GetCameras() const -> std::span<ObserverPtr<Camera> const> {
-  return cameras_;
 }
 
 

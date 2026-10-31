@@ -198,6 +198,8 @@
     <ClCompile Include="src\scene\StaticMeshComponent.cpp" />
     <ClCompile Include="src\entity_serialization.cpp" />
     <ClCompile Include="src\world_entity_group.cpp" />
+    <ClCompile Include="src\rendering\view_history_key.cpp" />
+    <ClCompile Include="src\game_views.cpp" />
     <ClCompile Include="src\scene_loader.cpp" />
     <ClCompile Include="src\serialization.cpp" />
     <ClCompile Include="src\rendering\shadow_atlas.cpp" />
@@ -224,6 +226,9 @@
     <ClInclude Include="include\sorcery\not_null.hpp" />
     <ClInclude Include="include\sorcery\scene\environment_component.hpp" />
     <ClInclude Include="include\sorcery\world_entity_group.hpp" />
+    <ClInclude Include="include\sorcery\host\rendering\view.hpp" />
+    <ClInclude Include="include\sorcery\host\rendering\view_history_key.hpp" />
+    <ClInclude Include="include\sorcery\host\game_views.hpp" />
     <ClInclude Include="include\sorcery\scene_loader.hpp" />
     <ClInclude Include="include\sorcery\world.hpp" />
     <ClInclude Include="src\rendering\ssao_params.hpp" />
@@ -331,6 +336,7 @@
     <None Include="include\sorcery\object_ptr.inl" />
     <None Include="include\sorcery\host\object_registry.inl" />
     <None Include="include\sorcery\world_entity_group.inl" />
+    <None Include="include\sorcery\host\rendering\view_history_key.inl" />
     <None Include="include\sorcery\observer_ptr.inl" />
     <None Include="include\sorcery\reflection.inl" />
     <None Include="src\rendering\shaders\brdf.hlsli" />

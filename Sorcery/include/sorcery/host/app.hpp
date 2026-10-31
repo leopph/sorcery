@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include <sorcery/Core.hpp>
 #include <sorcery/observer_ptr.hpp>
@@ -27,6 +28,7 @@ class TemporaryRenderTargetPool;
 class SceneRenderer;
 class RenderFrame;
 class TextureResolver;
+struct View;
 }
 
 
@@ -83,6 +85,9 @@ protected:
 
   [[nodiscard]] SORCERYAPI virtual
   auto GetRenderedWorld() -> World& = 0;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetViews() -> std::vector<rendering::View>&;
 
   SORCERYAPI virtual
   auto BeginFrame() -> void;

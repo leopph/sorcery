@@ -2,7 +2,6 @@
 
 #include "sorcery/reflection.hpp"
 #include "sorcery/world.hpp"
-#include "sorcery/host/rendering/render_world.hpp"
 #include "sorcery/scene/Entity.hpp"
 #include "sorcery/scene/TransformComponent.hpp"
 
@@ -36,12 +35,12 @@ auto CameraComponent::Clone() -> std::unique_ptr<SceneObject> {
 
 auto CameraComponent::OnAfterEnteringWorld(World& world) -> void {
   Component::OnAfterEnteringWorld(world);
-  world.GetRenderWorld().Register(*this);
+  world.RegisterCamera(*this);
 }
 
 
 auto CameraComponent::OnBeforeExitingWorld(World& world) -> void {
-  world.GetRenderWorld().Unregister(*this);
+  world.UnregisterCamera(*this);
   Component::OnBeforeExitingWorld(world);
 }
 

@@ -8,6 +8,7 @@
 
 #include "../StandaloneCamera.hpp"
 #include "sorcery/observer_ptr.hpp"
+#include "sorcery/host/rendering/view.hpp"
 
 
 namespace sorcery {
@@ -25,12 +26,13 @@ public:
   SceneViewWindow(SceneViewWindow const&) = delete;
   SceneViewWindow(SceneViewWindow&&) = delete;
 
-  ~SceneViewWindow();
+  ~SceneViewWindow() = default;
 
   auto operator=(SceneViewWindow const&) -> void = delete;
   auto operator=(SceneViewWindow&&) -> void = delete;
 
   auto Draw(EditorApp& context) -> void;
+  auto AddViews(rendering::ViewList& views) const -> void;
   [[nodiscard]] auto GetCamera() noexcept -> StandaloneCamera&;
 
 private:
@@ -65,6 +67,8 @@ private:
   ObserverPtr<ImGuiTextureReferences> tex_refs_;
   ObserverPtr<World> edit_world_;
   StandaloneCamera cam_{Vector3{}, Quaternion{}, 5.0f, 0.1f, 1000.0f, 60};
+  std::shared_ptr<rendering::RenderTarget> rt_;
+  rendering::ViewHistoryKey view_history_{rendering::ViewHistoryKey::MakeUnique()};
   std::optional<FocusMoveInfo> focus_target_;
   int gizmo_op_idx_{0};
   int gizmo_mode_idx_{0};

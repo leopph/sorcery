@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
+#include <unordered_map>
 
 #include <wand/wand.hpp>
 
@@ -21,6 +23,7 @@
 #include "sorcery/mesh_data.hpp"
 #include "sorcery/object_id.hpp"
 #include "sorcery/host/window.hpp"
+#include "sorcery/host/rendering/view.hpp"
 #include "sorcery/rendering/Camera.hpp"
 #include "sorcery/rendering/config.hpp"
 #include "sorcery/rendering/render_target.hpp"
@@ -95,23 +98,14 @@ public:
   auto operator=(SceneRenderer const&) -> void = delete;
   auto operator=(SceneRenderer&&) -> void = delete;
 
-  SORCERYAPI auto ExtractFrame(RenderFrame& frame, RenderWorld const& render_world) -> void;
+  SORCERYAPI auto ExtractFrame(RenderFrame& frame, RenderWorld const& render_world,
+                              std::span<View const> views) -> void;
   SORCERYAPI auto PrepareFrame(RenderFrame& frame) -> void;
   SORCERYAPI auto RecordFrame(RenderFrame& frame) -> void;
 
   SORCERYAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
 
-  // Global cameras are the ones without a set render target.
-  [[nodiscard]] SORCERYAPI auto IsRenderingGlobalCameras() const noexcept -> bool;
-  // Global cameras are the ones without a set render target.
-  SORCERYAPI auto SetRenderGlobalCameras(bool render) noexcept -> void;
-
-  // If a render target override is set, all cameras not targeting a specific render target
-  // will render into the override RT.
-  [[nodiscard]] SORCERYAPI auto GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> const&;
-  SORCERYAPI auto SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void;
-
-  [[nodiscard]] SORCERYAPI auto GetCurrentRenderTarget() const -> RenderTarget const&;
+  [[nodiscard]] SORCERYAPI auto GetMainRenderTarget() const -> std::shared_ptr<RenderTarget> const&;
 
   [[nodiscard]] SORCERYAPI auto IsUsingPreciseColorFormat() const noexcept -> bool;
   SORCERYAPI auto SetUsePreciseColorFormat(bool precise) noexcept -> void;
@@ -242,7 +236,7 @@ private:
     unsigned rt_local_idx;
     unsigned accum_tex_local_idx;
 
-    void const* id; // Used to identify cameras between frames, e.g. for TAA accumulation
+    ViewHistoryKey history;
 
     bool accum_tex_empty;
 
@@ -451,6 +445,12 @@ private:
   };
 
 
+  struct ViewHistory {
+    std::unique_ptr<RenderTarget> taa_accum_rt;
+    std::uint64_t last_used_frame;
+  };
+
+
   struct ResolvedMaterialTextures {
     std::array<ObjectId, 7> obj_ids{};
     std::array<std::uint32_t, 7> srv_indices{};
@@ -638,6 +638,8 @@ private:
 
   auto RecreatePipelines() -> void;
 
+  auto ReleaseUnusedViewHistories(RenderFrame const& frame) -> void;
+
   auto CreatePerViewConstantBuffers(UINT count) -> void;
   auto CreatePerInstanceConstantBuffers(UINT count) -> void;
 
@@ -694,6 +696,8 @@ private:
   static constexpr UINT prefiltered_env_map_size_{1024};
   static constexpr UINT brdf_integration_map_size_{128};
   static constexpr unsigned frame_packet_invalid_idx{~0u};
+  static constexpr std::uint64_t kViewHistoryMaxUnusedFrames{10};
+  static_assert(kViewHistoryMaxUnusedFrames >= kFramesInFlight && "View history lifetime too short!");
 
   ObserverPtr<Window> window_;
   ObserverPtr<wand::GraphicsDevice> device_;
@@ -778,12 +782,12 @@ private:
 
   bool ssao_enabled_{true};
   bool ssr_enabled_{false};
-  bool render_global_cameras_{true};
 
   DXGI_FORMAT color_buffer_format_{imprecise_color_buffer_format_};
 
   std::shared_ptr<RenderTarget> main_rt_;
-  std::shared_ptr<RenderTarget> rt_override_;
+
+  std::unordered_map<ViewHistoryKey, ViewHistory> view_histories_;
 
   EventListenerHandle<Extent2D<unsigned>> window_size_event_listener_{};
 

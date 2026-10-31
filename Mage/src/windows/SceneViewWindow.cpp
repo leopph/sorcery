@@ -17,11 +17,6 @@ SceneViewWindow::SceneViewWindow(ImGuiTextureReferences& tex_refs, World& edit_w
   edit_world_{&edit_world} {}
 
 
-SceneViewWindow::~SceneViewWindow() {
-  edit_world_->GetRenderWorld().Unregister(cam_);
-}
-
-
 auto SceneViewWindow::Draw(EditorApp& context) -> void {
   ImGui::SetNextWindowSizeConstraints(ImVec2{480, 270}, ImVec2{
     std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
@@ -29,12 +24,6 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
   auto const is_visible{ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)};
-
-  if (is_visible && !was_visible_) {
-    edit_world_->GetRenderWorld().Register(cam_);
-  } else if (!is_visible && was_visible_) {
-    edit_world_->GetRenderWorld().Unregister(cam_);
-  }
 
   if (is_visible) {
     ImGui::PopStyleVar();
@@ -108,13 +97,13 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
 
     auto const contentRegionSize{ImGui::GetContentRegionAvail()};
 
-    if (!cam_.GetRenderTarget() || cam_.GetRenderTarget()->GetDesc().width != static_cast<UINT>(contentRegionSize.x) ||
-        cam_.GetRenderTarget()->GetDesc().height != static_cast<UINT>(contentRegionSize.y)) {
-      cam_.SetRenderTarget(rendering::RenderTarget::New(App::Instance().GetGraphicsDevice(),
+    if (!rt_ || rt_->GetDesc().width != static_cast<UINT>(contentRegionSize.x) ||
+        rt_->GetDesc().height != static_cast<UINT>(contentRegionSize.y)) {
+      rt_ = rendering::RenderTarget::New(App::Instance().GetGraphicsDevice(),
         rendering::RenderTarget::Desc{
           static_cast<UINT>(contentRegionSize.x), static_cast<UINT>(contentRegionSize.y), DXGI_FORMAT_R8G8B8A8_UNORM,
           std::nullopt, 1, L"Scene View RT"
-        }));
+        });
     }
 
     auto const wasCamMoving{cam_moving_};
@@ -168,7 +157,7 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
       selectedObject->OnDrawGizmosSelected();
     }
 
-    ImGui::Image(tex_refs_->Reference(cam_.GetRenderTarget()), contentRegionSize);
+    ImGui::Image(tex_refs_->Reference(rt_), contentRegionSize);
 
     if (ImGui::BeginDragDropTarget()) {
       if (auto const* const payload{ImGui::GetDragDropPayload()};
@@ -271,6 +260,13 @@ auto SceneViewWindow::Draw(EditorApp& context) -> void {
   was_visible_ = is_visible;
 
   ImGui::End();
+}
+
+
+auto SceneViewWindow::AddViews(rendering::ViewList& views) const -> void {
+  if (was_visible_ && rt_) {
+    views.emplace_back(MakeObserver(&cam_), rt_, NormalizedViewport{0, 0, 1, 1}, view_history_);
+  }
 }
 
 

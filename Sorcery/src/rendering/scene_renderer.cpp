@@ -91,6 +91,24 @@
 
 namespace sorcery::rendering {
 namespace {
+[[nodiscard]] auto MakeTaaAccumulationRtDesc(Extent2D<unsigned> const size, DXGI_FORMAT const format) {
+  return RenderTarget::Desc{
+    .width = size.width,
+    .height = size.height,
+    .color_format = format,
+    .depth_stencil_format = std::nullopt,
+    .sample_count = 1,
+    .debug_name = L"View TAA Accumulation RT",
+    .enable_unordered_access = true,
+    .color_clear_value = std::array{0.0f, 0.0f, 0.0f, 1.0f},
+    .depth_clear_value = 0.0f,
+    .stencil_clear_value = 0,
+    .dimension = wand::TextureDimension::k2D,
+    .depth_or_array_size = 1
+  };
+}
+
+
 // Returns view matrices looking at each face of a cube from the specified origin.
 // The order of faces is +X, -X, +Y, -Y, +Z, -Z.
 [[nodiscard]] auto MakeCubeFaceViewMatrices(Vector3 const& origin) noexcept {
@@ -337,7 +355,8 @@ SceneRenderer::~SceneRenderer() {
 }
 
 
-auto SceneRenderer::ExtractFrame(RenderFrame& frame, RenderWorld const& render_world) -> void {
+auto SceneRenderer::ExtractFrame(RenderFrame& frame, RenderWorld const& render_world,
+                                 std::span<View const> const views) -> void {
   auto& cmd = frame.AcquireCommandList();
   cmd.Begin(nullptr);
 
@@ -546,49 +565,51 @@ auto SceneRenderer::ExtractFrame(RenderFrame& frame, RenderWorld const& render_w
     render_inst->SetLastSkinningFrame(frame.GetNumber());
   }
 
-  // Add global render target
-  auto const& global_rt{rt_override_ ? rt_override_ : main_rt_};
-  packet.render_targets.emplace_back(global_rt); // The global RT is always at index 0!
+  // Extract view data
 
-  // Extract camera data
+  packet.cam_data.reserve(views.size());
 
-  auto const cameras = render_world.GetCameras();
-  packet.cam_data.reserve(cameras.size());
+  for (auto const& view : views) {
+    assert(view.camera && "View camera cannot be null!");
+    assert(view.target && "View target cannot be null!");
 
-  for (auto const cam : cameras) {
-    auto const& cam_rt{cam->GetRenderTarget()};
-
-    if (!cam_rt && !render_global_cameras_) {
-      continue;
-    }
-
-    auto const& normalized_vp = cam->GetViewport();
+    auto const& cam = *view.camera;
+    auto const& rt_desc = view.target->GetDesc();
+    Extent2D const vp_size{
+      .width = std::max(static_cast<unsigned>(static_cast<float>(rt_desc.width) * GetWidth(view.viewport)), 1u),
+      .height = std::max(static_cast<unsigned>(static_cast<float>(rt_desc.height) * GetHeight(view.viewport)), 1u)
+    };
 
     auto accum_tex_empty = false;
+    ObserverPtr<RenderTarget const> accum_rt;
 
-    auto const& actual_rt = cam_rt ? cam_rt : global_rt;
-    auto const& rt_desc = actual_rt->GetDesc();
-    auto const vp_width = static_cast<unsigned>(static_cast<float>(rt_desc.width) * GetWidth(normalized_vp));
-    auto const vp_height = static_cast<unsigned>(static_cast<float>(rt_desc.height) * GetHeight(normalized_vp));
-
-    if (auto const history_rt = detail::GetTaaAccumulationRt(*cam);
-      !history_rt || history_rt->GetDesc().width != vp_width || history_rt->GetDesc().height != vp_height) {
-      detail::RecreateTaaAccumulationRt(*cam, *device_, Extent2D{
-        .width = vp_width, .height = vp_height
-      }, kTaaHistoryFormat);
+    if (view.history.IsNone()) {
+      // Views without a history key get a fresh target every frame, so TAA never blends in earlier frames.
+      accum_rt = rt_pool_->Acquire(MakeTaaAccumulationRtDesc(vp_size, kTaaHistoryFormat), frame);
       accum_tex_empty = true;
+    } else {
+      auto& history = view_histories_[view.history];
+
+      if (!history.taa_accum_rt || history.taa_accum_rt->GetDesc().width != vp_size.width ||
+          history.taa_accum_rt->GetDesc().height != vp_size.height) {
+        history.taa_accum_rt = RenderTarget::New(*device_, MakeTaaAccumulationRtDesc(vp_size, kTaaHistoryFormat));
+        accum_tex_empty = true;
+      }
+
+      history.last_used_frame = frame.GetNumber();
+      accum_rt = MakeObserver(history.taa_accum_rt.get());
     }
 
-    auto const history_rt_local_idx = FindOrAddTextureInPacket(
-      detail::GetTaaAccumulationRt(*cam)->GetColorTex(), packet);
+    auto const history_rt_local_idx = FindOrAddTextureInPacket(accum_rt->GetColorTex(), packet);
+    auto const rt_local_idx = FindOrAddRenderTargetInPacket(view.target, packet);
 
-    auto const rt_local_idx = FindOrAddRenderTargetInPacket(actual_rt, packet);
-
-    packet.cam_data.emplace_back(cam->GetPosition(), cam->GetRightAxis(), cam->GetUpAxis(), cam->GetForwardAxis(),
-      cam->GetNearClipPlane(), cam->GetFarClipPlane(), cam->GetType(), cam->GetVerticalPerspectiveFov(),
-      cam->GetVerticalOrthographicSize(), cam->GetViewport(), rt_local_idx, history_rt_local_idx, cam.Get(),
+    packet.cam_data.emplace_back(cam.GetPosition(), cam.GetRightAxis(), cam.GetUpAxis(), cam.GetForwardAxis(),
+      cam.GetNearClipPlane(), cam.GetFarClipPlane(), cam.GetType(), cam.GetVerticalPerspectiveFov(),
+      cam.GetVerticalOrthographicSize(), view.viewport, rt_local_idx, history_rt_local_idx, view.history,
       accum_tex_empty);
   }
+
+  ReleaseUnusedViewHistories(frame);
 
   // Add gizmo draw data
 
@@ -797,10 +818,15 @@ auto SceneRenderer::PrepareFrame(RenderFrame& frame) -> void {
   for (auto cam_idx = 0uz; cam_idx < frame_packet.cam_data.size(); ++cam_idx) {
     auto& cam_data = frame_packet.cam_data[cam_idx];
     auto const prev_cam_data = [&] {
-      auto const prev_cam_it = std::ranges::find(prev_frame_packet.cam_data, cam_data.id, &CameraData::id);
+      if (cam_data.history.IsNone()) {
+        return ObserverPtr<CameraData const>{};
+      }
+
+      auto const prev_cam_it = std::ranges::find(prev_frame_packet.cam_data, cam_data.history,
+        &CameraData::history);
       return prev_cam_it != std::ranges::end(prev_frame_packet.cam_data)
-               ? &*prev_cam_it
-               : nullptr;
+               ? MakeObserver(&*prev_cam_it)
+               : ObserverPtr<CameraData const>{};
     }();
 
     auto& target_rt{*frame_packet.render_targets[cam_data.rt_local_idx]};
@@ -1681,28 +1707,8 @@ auto SceneRenderer::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to,
 }
 
 
-auto SceneRenderer::IsRenderingGlobalCameras() const noexcept -> bool {
-  return render_global_cameras_;
-}
-
-
-auto SceneRenderer::SetRenderGlobalCameras(bool const render) noexcept -> void {
-  render_global_cameras_ = render;
-}
-
-
-auto SceneRenderer::GetRenderTargetOverride() -> std::shared_ptr<RenderTarget> const& {
-  return rt_override_;
-}
-
-
-auto SceneRenderer::SetRenderTargetOverride(std::shared_ptr<RenderTarget> rt_override) -> void {
-  rt_override_ = std::move(rt_override);
-}
-
-
-auto SceneRenderer::GetCurrentRenderTarget() const -> RenderTarget const& {
-  return rt_override_ ? *rt_override_ : *main_rt_;
+auto SceneRenderer::GetMainRenderTarget() const -> std::shared_ptr<RenderTarget> const& {
+  return main_rt_;
 }
 
 
@@ -3125,6 +3131,13 @@ auto SceneRenderer::AcquirePerInstanceConstantBuffer(
   }
 
   return per_inst_cbs_[next_per_instance_cb_idx_++][frame_idx];
+}
+
+
+auto SceneRenderer::ReleaseUnusedViewHistories(RenderFrame const& frame) -> void {
+  std::erase_if(view_histories_, [&frame](auto const& entry) {
+    return frame.GetNumber() - entry.second.last_used_frame > kViewHistoryMaxUnusedFrames;
+  });
 }
 
 
