@@ -133,5 +133,15 @@ auto CameraComponentEditorDrawer::Draw(
   })) {
     obj.SetBackgroundColor(color);
   }
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Order");
+  ImGui::TableNextColumn();
+
+  if (int order{obj.GetOrder()}; ImGuiDisabled(!allow_edit, [&] {
+    return ImGui::DragInt("##CameraOrder", &order);
+  })) {
+    obj.SetOrder(order);
+  }
 }
 }

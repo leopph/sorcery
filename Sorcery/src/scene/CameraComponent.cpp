@@ -23,7 +23,8 @@ RTTR_REGISTRATION {
     .property("far", &sorcery::CameraComponent::GetFarClipPlane, &sorcery::CameraComponent::SetFarClipPlane)
     .property("background", &sorcery::CameraComponent::GetBackgroundColor,
       &sorcery::CameraComponent::SetBackgroundColor)
-    .property("viewport", &sorcery::CameraComponent::GetViewport, &sorcery::CameraComponent::SetViewport);
+    .property("viewport", &sorcery::CameraComponent::GetViewport, &sorcery::CameraComponent::SetViewport)
+    .property("order", &sorcery::CameraComponent::GetOrder, &sorcery::CameraComponent::SetOrder);
 }
 
 
@@ -54,6 +55,16 @@ auto CameraComponent::SetBackgroundColor(Vector4 const& color) -> void {
   for (auto i = 0; i < 4; i++) {
     background_color_[i] = std::clamp(color[i], 0.f, 1.f);
   }
+}
+
+
+auto CameraComponent::GetOrder() const noexcept -> int {
+  return order_;
+}
+
+
+auto CameraComponent::SetOrder(int const order) noexcept -> void {
+  order_ = order;
 }
 
 
