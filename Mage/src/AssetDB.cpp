@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <ranges>
+#include <string_view>
 #include <utility>
 
 #include <spdlog/spdlog.h>
@@ -53,7 +54,7 @@ auto AssetDB::Refresh() -> void {
 
   for (auto const& meta_path_abs : meta_file_paths) {
     if (auto const asset_path_abs{std::filesystem::path{meta_path_abs}.replace_extension()}; !exists(asset_path_abs)) {
-      spdlog::trace("Removing orphaned meta file at [{}].", ToUntypedSv(meta_path_abs.u8string()));
+      spdlog::info("Removing orphaned meta file at [{}].", ToUntypedSv(meta_path_abs.u8string()));
       remove(meta_path_abs);
     }
   }
@@ -61,30 +62,22 @@ auto AssetDB::Refresh() -> void {
   // Process asset files.
 
   for (auto const& asset_path_abs : asset_file_paths) {
-    auto const meta_path_abs{MakeMetaPath(asset_path_abs)};
+    auto const meta_path_abs = MakeMetaPath(asset_path_abs);
 
     Guid guid;
     std::unique_ptr<AssetImporter> importer;
 
-    auto const cleanup_asset_and_meta_files{
-      [&] {
-        remove(meta_path_abs);
-        remove(asset_path_abs);
-      }
-    };
-
     // If there is no meta file, or we couldn't read it, we attempt to reimport the asset as new.
 
     if (!exists(meta_path_abs) || !ReadMeta(asset_path_abs, &guid, &importer)) {
-      spdlog::trace("Couldn't read meta file for asset at [{}]. Attempting to import as new.",
+      spdlog::info("Couldn't read meta file for asset at [{}]. Attempting to import as new.",
         ToUntypedSv(asset_path_abs.u8string()));
 
       importer = CreateNewImporterForAssetFile(asset_path_abs);
 
       if (!importer) {
-        spdlog::trace("Couldn't create importer for asset file at [{}]. Removing asset and meta files.",
+        spdlog::warn("Couldn't create importer for asset file at [{}]. Skipping asset.",
           ToUntypedSv(asset_path_abs.u8string()));
-        cleanup_asset_and_meta_files();
         continue;
       }
 
@@ -98,22 +91,20 @@ auto AssetDB::Refresh() -> void {
       }
 
       if (!WriteMeta(asset_path_abs, guid, *importer)) {
-        spdlog::trace("Failed to write new meta file for asset file at [{}]. Removing asset and meta files.",
+        spdlog::error("Failed to write new meta file for asset file at [{}]. Skipping asset.",
           ToUntypedSv(asset_path_abs.u8string()));
-        cleanup_asset_and_meta_files();
         continue;
       }
 
       if (!InternalImportAsset(asset_path_abs, new_guid_by_src_abs_path, new_asset_file_info_by_guid,
         new_asset_info_by_id,
         *importer, guid)) {
-        spdlog::trace("Failed to import asset at file [{}]. Removing asset and meta files.",
+        spdlog::warn("Failed to import asset at file [{}]. Skipping asset.",
           ToUntypedSv(asset_path_abs.u8string()));
-        cleanup_asset_and_meta_files();
         continue;
       }
 
-      spdlog::trace("Imported asset file [{}] with guid [{}] as new.", ToUntypedSv(asset_path_abs.u8string()),
+      spdlog::info("Imported asset file [{}] with guid [{}] as new.", ToUntypedSv(asset_path_abs.u8string()),
         new_guid_by_src_abs_path[asset_path_abs].ToString());
 
       // We reimported the source, the database is up-to-date, nothing else to do for this asset file.
@@ -126,30 +117,21 @@ auto AssetDB::Refresh() -> void {
       spdlog::trace("Asset at file [{}] is not a native asset. Checking for binary cache.",
         ToUntypedSv(asset_path_abs.u8string()));
 
-      auto const cache_file_path_abs{MakeExternalAssetBinaryPathAbs(guid)};
-
-      auto const cleanup_asset_meta_and_cache_files{
-        [&] {
-          cleanup_asset_and_meta_files();
-          remove(cache_file_path_abs);
-        }
-      };
+      auto const cache_file_path_abs = MakeExternalAssetBinaryPathAbs(guid);
 
       if (!exists(cache_file_path_abs) || last_write_time(asset_path_abs) > last_write_time(cache_file_path_abs) ||
           last_write_time(meta_path_abs) > last_write_time(cache_file_path_abs)) {
-        spdlog::trace("Binary cache for external asset at file [{}] is out of date. Attempting to reimport.",
+        spdlog::info("Binary cache for external asset at file [{}] is out of date. Attempting to reimport.",
           ToUntypedSv(asset_path_abs.u8string()));
 
         if (!InternalImportAsset(asset_path_abs, new_guid_by_src_abs_path, new_asset_file_info_by_guid,
           new_asset_info_by_id, *importer, guid)) {
-          spdlog::trace(
-            "Failed to reimport external asset at file [{}]. Removing asset, meta, and binary cache files.",
+          spdlog::warn("Failed to reimport external asset at file [{}]. Skipping asset.",
             ToUntypedSv(asset_path_abs.u8string()));
-          cleanup_asset_meta_and_cache_files();
           continue;
         }
 
-        spdlog::trace("Reimported asset file [{}] with guid [{}] due to out-of-date binary cache.",
+        spdlog::info("Reimported asset file [{}] with guid [{}] due to out-of-date binary cache.",
           ToUntypedSv(asset_path_abs.u8string()), new_guid_by_src_abs_path[asset_path_abs].ToString());
 
         // We reimported the source, the database is up-to-date, nothing else to do for this asset file.
@@ -157,19 +139,52 @@ auto AssetDB::Refresh() -> void {
       }
     }
 
-    // The meta file was read successfully, the asset is up-to-date, we can just store the information in the database.
+    // The meta file was read successfully and the asset is up-to-date.
 
     std::optional<AssetPackageInfo> package_info;
 
     if (!importer->IsNativeImporter()) {
-      package_info = PeekBinaryAssetPackage(MakeExternalAssetBinaryPathAbs(guid));
+      auto const cache_file_path_abs = MakeExternalAssetBinaryPathAbs(guid);
+      auto peek_result = PeekBinaryAssetPackage(cache_file_path_abs);
 
-      if (!package_info) {
-        spdlog::error("Failed to peek binary asset package for external asset at file [{}].",
-          ToUntypedSv(asset_path_abs.u8string()));
-        cleanup_asset_and_meta_files();
+      if (!peek_result) {
+        auto const [reason, level] = [&] -> std::pair<std::string_view, spdlog::level::level_enum> {
+          switch (peek_result.error()) {
+            case AssetPackageReadError::kException:
+              return {"an exception", spdlog::level::warn};
+            case AssetPackageReadError::kPackageVersionMismatch:
+              return {"version mismatch", spdlog::level::info};
+            case AssetPackageReadError::kEntryOutOfRange:
+              return {"an out of range error", spdlog::level::warn};
+            case AssetPackageReadError::kFileError:
+              return {"a file error", spdlog::level::warn};
+            case AssetPackageReadError::kInvalidData:
+              return {"invalid data", spdlog::level::warn};
+          }
+
+          return {"an unknown error", spdlog::level::warn};
+        }();
+
+        spdlog::log(level, "Failed to peek binary asset package for external asset at file [{}] due to {}."
+          " Attempting to reimport.", ToUntypedSv(asset_path_abs.u8string()), reason);
+
+        if (!InternalImportAsset(asset_path_abs, new_guid_by_src_abs_path, new_asset_file_info_by_guid,
+          new_asset_info_by_id, *importer, guid)) {
+          spdlog::warn(
+            "Failed to reimport external asset at file [{}]. Removing binary cache and ignoring asset.",
+            ToUntypedSv(asset_path_abs.u8string()));
+          remove(cache_file_path_abs);
+          continue;
+        }
+
+        spdlog::info("Reimported asset file [{}] with guid [{}] after previous error.",
+          ToUntypedSv(asset_path_abs.u8string()), new_guid_by_src_abs_path[asset_path_abs].ToString());
+
+        // We reimported the source, the database is up-to-date, nothing else to do for this asset file.
         continue;
       }
+
+      package_info = std::move(peek_result).value();
     }
 
     AssetFileInfo const file_info{

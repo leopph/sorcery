@@ -16,6 +16,11 @@
 namespace sorcery {
 namespace asset_package {
 std::uint32_t const kMagic{0x19991108};
+
+
+namespace {
+std::uint32_t constexpr kCurrentVersion{1};
+}
 }
 
 
@@ -85,15 +90,7 @@ struct HeaderSerializer {
       return std::nullopt;
     }
 
-    if (header.magic != asset_package::kMagic) {
-      return std::nullopt;
-    }
-
     if (!is.read(reinterpret_cast<char*>(&header.version), sizeof(header.version))) {
-      return std::nullopt;
-    }
-
-    if (header.version != 1) {
       return std::nullopt;
     }
 
@@ -174,6 +171,25 @@ struct EntrySerializer {
            entry.data_offset > package_size ||
            entry.data_size > package_size - entry.data_offset);
 }
+
+
+[[nodiscard]] auto ReadHeader(std::istream& is) -> std::expected<asset_package::Header, AssetPackageReadError> {
+  auto const header = HeaderSerializer::Read(is);
+
+  if (!header) {
+    return std::unexpected{AssetPackageReadError::kFileError};
+  }
+
+  if (header->magic != asset_package::kMagic) {
+    return std::unexpected{AssetPackageReadError::kInvalidData};
+  }
+
+  if (header->version != asset_package::kCurrentVersion) {
+    return std::unexpected{AssetPackageReadError::kPackageVersionMismatch};
+  }
+
+  return *header;
+}
 }
 
 
@@ -185,7 +201,7 @@ auto PackBinaryAssetPackage(
 
   asset_package::Header const header{
     .magic = asset_package::kMagic,
-    .version = 1,
+    .version = asset_package::kCurrentVersion,
     .asset_count = static_cast<std::uint32_t>(imports.size())
   };
 
@@ -240,25 +256,29 @@ auto PackBinaryAssetPackage(
 
 
 auto UnpackBinaryAssetPackageEntries(
-  std::span<std::byte const> file_bytes
-) -> std::optional<std::vector<asset_package::Entry>> {
+  std::span<std::byte const> const file_bytes
+) -> std::expected<std::vector<asset_package::Entry>, AssetPackageReadError> {
   auto const package_size{file_bytes.size()};
   ByteSpanIstream is{file_bytes};
 
-  auto const header{HeaderSerializer::Read(is)};
+  auto const header = ReadHeader(is);
 
   if (!header) {
-    return std::nullopt;
+    return std::unexpected{header.error()};
   }
 
   std::vector<asset_package::Entry> entries;
   entries.reserve(header->asset_count);
 
-  for (std::size_t i{0}; i < header->asset_count; ++i) {
-    auto const entry{EntrySerializer::Read(is, i)};
+  for (auto i = 0uz; i < header->asset_count; ++i) {
+    auto const entry = EntrySerializer::Read(is, i);
 
-    if (!entry || !IsEntryValid(*entry, package_size)) {
-      return std::nullopt;
+    if (!entry) {
+      return std::unexpected{AssetPackageReadError::kFileError};
+    }
+
+    if (!IsEntryValid(*entry, package_size)) {
+      return std::unexpected{AssetPackageReadError::kInvalidData};
     }
 
     entries.push_back(*entry);
@@ -270,50 +290,55 @@ auto UnpackBinaryAssetPackageEntries(
 
 auto PeekBinaryAssetPackage(
   std::filesystem::path const& file_path_abs
-) -> std::optional<AssetPackageInfo> {
+) -> std::expected<AssetPackageInfo, AssetPackageReadError> {
   try {
     auto const package_size{std::filesystem::file_size(file_path_abs)};
     std::ifstream is{file_path_abs, std::ios::binary};
 
     if (!is) {
-      return std::nullopt;
+      return std::unexpected{AssetPackageReadError::kFileError};
     }
 
-    auto const header{HeaderSerializer::Read(is)};
+    auto const header = ReadHeader(is);
 
     if (!header) {
-      return std::nullopt;
+      return std::unexpected{header.error()};
     }
 
     AssetPackageInfo package_info;
     package_info.entries.reserve(header->asset_count);
 
-    for (std::size_t i{0}; i < header->asset_count; i++) {
-      auto const entry{EntrySerializer::Read(is, i)};
+    for (auto i = 0uz; i < header->asset_count; i++) {
+      auto const entry = EntrySerializer::Read(is, i);
 
-      if (!entry || !IsEntryValid(*entry, package_size)) {
-        return std::nullopt;
+      if (!entry) {
+        return std::unexpected{AssetPackageReadError::kFileError};
       }
 
-      auto const type{ToRttrType(entry->runtime_type)};
+      if (!IsEntryValid(*entry, package_size)) {
+        return std::unexpected{AssetPackageReadError::kInvalidData};
+      }
+
+      auto const type = ToRttrType(entry->runtime_type);
 
       if (!type) {
-        return std::nullopt;
+        return std::unexpected{AssetPackageReadError::kInvalidData};
       }
 
       auto const last_pos = is.tellg();
+
       if (!is.seekg(entry->name_offset, std::ios::beg)) {
-        return std::nullopt;
+        return std::unexpected{AssetPackageReadError::kFileError};
       }
 
       std::string name(entry->name_size, '\0');
 
       if (!is.read(name.data(), entry->name_size)) {
-        return std::nullopt;
+        return std::unexpected{AssetPackageReadError::kFileError};
       }
 
       if (!is.seekg(last_pos, std::ios::beg)) {
-        return std::nullopt;
+        return std::unexpected{AssetPackageReadError::kFileError};
       }
 
       package_info.entries.emplace_back(*type, std::move(name));
@@ -321,7 +346,7 @@ auto PeekBinaryAssetPackage(
 
     return package_info;
   } catch (...) {
-    return std::nullopt;
+    return std::unexpected{AssetPackageReadError::kException};
   }
 }
 
@@ -329,48 +354,56 @@ auto PeekBinaryAssetPackage(
 auto LoadBinaryAssetPackageSubasset(
   std::filesystem::path const& file_path_abs,
   std::size_t const entry_idx
-) -> std::optional<AssetPackageSubasset> {
+) -> std::expected<AssetPackageSubasset, AssetPackageReadError> {
   std::ifstream is{file_path_abs, std::ios::binary};
 
   if (!is || !is.seekg(0, std::ios::end)) {
-    return std::nullopt;
+    return std::unexpected{AssetPackageReadError::kFileError};
   }
 
-  auto const package_size{is.tellg()};
+  auto const package_size = is.tellg();
 
-  auto const header{HeaderSerializer::Read(is)};
+  auto const header = ReadHeader(is);
 
-  if (!header || header->asset_count <= entry_idx) {
-    return std::nullopt;
+  if (!header) {
+    return std::unexpected{header.error()};
   }
 
-  auto const entry{EntrySerializer::Read(is, entry_idx)};
+  if (header->asset_count <= entry_idx) {
+    return std::unexpected{AssetPackageReadError::kEntryOutOfRange};
+  }
 
-  if (!entry || !IsEntryValid(*entry, package_size)) {
-    return std::nullopt;
+  auto const entry = EntrySerializer::Read(is, entry_idx);
+
+  if (!entry) {
+    return std::unexpected{AssetPackageReadError::kFileError};
+  }
+
+  if (!IsEntryValid(*entry, package_size)) {
+    return std::unexpected{AssetPackageReadError::kInvalidData};
   }
 
   AssetPackageSubasset subasset;
   subasset.payload_kind = entry->payload_kind;
 
   if (!is.seekg(entry->name_offset, std::ios::beg)) {
-    return std::nullopt;
+    return std::unexpected{AssetPackageReadError::kFileError};
   }
 
   subasset.name.resize(entry->name_size);
   if (!is.read(subasset.name.data(), static_cast<std::streamsize>(subasset.name.size()))) {
-    return std::nullopt;
+    return std::unexpected{AssetPackageReadError::kFileError};
   }
 
 
   if (!is.seekg(entry->data_offset, std::ios::beg)) {
-    return std::nullopt;
+    return std::unexpected{AssetPackageReadError::kFileError};
   }
 
   subasset.bytes.resize(entry->data_size);
   if (!is.read(reinterpret_cast<char*>(subasset.bytes.data()),
     static_cast<std::streamsize>(subasset.bytes.size()))) {
-    return std::nullopt;
+    return std::unexpected{AssetPackageReadError::kFileError};
   }
 
   return subasset;

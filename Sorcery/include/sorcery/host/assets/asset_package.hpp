@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <expected>
 #include <filesystem>
 #include <optional>
 #include <span>
@@ -82,6 +83,15 @@ struct AssetPackageSubasset {
 };
 
 
+enum class AssetPackageReadError : std::uint8_t {
+  kException,
+  kFileError,
+  kPackageVersionMismatch,
+  kInvalidData,
+  kEntryOutOfRange
+};
+
+
 [[nodiscard]] SORCERYAPI
 auto PackBinaryAssetPackage(
   std::span<AssetImportResult const> imports
@@ -90,16 +100,16 @@ auto PackBinaryAssetPackage(
 [[nodiscard]] SORCERYAPI
 auto UnpackBinaryAssetPackageEntries(
   std::span<std::byte const> file_bytes
-) -> std::optional<std::vector<asset_package::Entry>>;
+) -> std::expected<std::vector<asset_package::Entry>, AssetPackageReadError>;
 
 [[nodiscard]] SORCERYAPI
 auto PeekBinaryAssetPackage(
   std::filesystem::path const& file_path_abs
-) -> std::optional<AssetPackageInfo>;
+) -> std::expected<AssetPackageInfo, AssetPackageReadError>;
 
 [[nodiscard]] SORCERYAPI
 auto LoadBinaryAssetPackageSubasset(
   std::filesystem::path const& file_path_abs,
   std::size_t entry_idx
-) -> std::optional<AssetPackageSubasset>;
+) -> std::expected<AssetPackageSubasset, AssetPackageReadError>;
 }
