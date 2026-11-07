@@ -838,6 +838,21 @@ auto AssetDB::WriteBinaryAssetPackage(
   auto const package_bytes = PackBinaryAssetPackage(imports);
 
   if (!package_bytes) {
+    auto const reason = [&] {
+      switch (package_bytes.error()) {
+        case AssetPackageWriteError::kDuplicateEntryIds:
+          return "duplicate entry IDs";
+        case AssetPackageWriteError::kUnknownRuntimeType:
+          return "an unknown runtime type";
+        case AssetPackageWriteError::kIoError:
+          return "an I/O error";
+      }
+      return "an unknown error";
+    }();
+
+    spdlog::error(
+      "Failed to write binary asset package for asset with guid [{}]: packing failed due to {}.",
+      guid.ToString(), reason);
     return false;
   }
 

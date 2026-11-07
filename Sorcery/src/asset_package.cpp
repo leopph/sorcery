@@ -268,7 +268,7 @@ auto GetCurrentPayloadVersion(AssetPackagePayloadKind const payload_kind) -> std
 
 auto PackBinaryAssetPackage(
   std::span<AssetImportResult const> const imports
-) -> std::optional<std::vector<std::byte>> {
+) -> std::expected<std::vector<std::byte>, AssetPackageWriteError> {
   // Sort imports by id
   std::vector<std::size_t> import_indices(imports.size());
   std::ranges::iota(import_indices, 0uz);
@@ -280,7 +280,7 @@ auto PackBinaryAssetPackage(
   // Make sure there are no duplicate ids
   if (std::ranges::adjacent_find(import_indices, {}, [imports](auto const idx) { return imports[idx].id; }) !=
       import_indices.end()) {
-    return std::nullopt;
+    return std::unexpected{AssetPackageWriteError::kDuplicateEntryIds};
   }
 
   std::vector<std::byte> package_bytes;
@@ -297,7 +297,7 @@ auto PackBinaryAssetPackage(
   // Write header
 
   if (!HeaderSerializer::Write(header, os)) {
-    return std::nullopt;
+    return std::unexpected{AssetPackageWriteError::kIoError};
   }
 
   // Generate entires
@@ -311,8 +311,7 @@ auto PackBinaryAssetPackage(
     auto const runtime_type = ToRuntimeType(import_data.runtime_type);
 
     if (!runtime_type) {
-      // TODO log error
-      return std::nullopt;
+      return std::unexpected{AssetPackageWriteError::kUnknownRuntimeType};
     }
 
     // Data offsets will be filled in later when we know the size of the name table
@@ -333,7 +332,7 @@ auto PackBinaryAssetPackage(
 
   for (auto const& entry : entries) {
     if (!EntrySerializer::Write(entry, os)) {
-      return std::nullopt;
+      return std::unexpected{AssetPackageWriteError::kIoError};
     }
   }
 

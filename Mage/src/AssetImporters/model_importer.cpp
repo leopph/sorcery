@@ -90,47 +90,10 @@ using SubassetImportSettings = ModelImporter::SubassetImportSettings;
 using SubassetKind = ModelImporter::SubassetKind;
 
 
-/******************************************************
- WE WANT TO IMPORT SUBASSETS IN THE FOLLOWING ORDER:
- 1. Prefab
- 2. Meshes
- 3. Materials
- 4. Textures
- *******************************************************/
-
-// Maps subassets to their package indices and to their indices in the subasset import settings.
-// The subasset import settings only hold materials and textures.
-class SubassetLayout {
+class SettingsLayout {
 public:
-  SubassetLayout(std::size_t const mesh_count, std::size_t const material_count) :
-    mesh_count_{mesh_count},
+  explicit SettingsLayout(std::size_t const material_count) :
     material_count_{material_count} {}
-
-
-  [[nodiscard]]
-  auto GetPrefabIdx() const -> std::size_t {
-    return 0uz;
-  }
-
-
-  [[nodiscard]]
-  auto GetMeshIdx(std::size_t const mesh_idx) const -> std::size_t {
-    assert(mesh_idx < mesh_count_);
-    return 1uz /* prefab is first */ + mesh_idx;
-  }
-
-
-  [[nodiscard]]
-  auto GetMaterialIdx(std::size_t const mtl_idx) const -> std::size_t {
-    assert(mtl_idx < material_count_);
-    return 1uz /* prefab */ + mesh_count_ + mtl_idx;
-  }
-
-
-  [[nodiscard]]
-  auto GetTextureIdx(std::size_t const tex_idx) const -> std::size_t {
-    return 1uz /* prefab */ + mesh_count_ + material_count_ + tex_idx;
-  }
 
 
   [[nodiscard]] static
@@ -144,21 +107,80 @@ public:
     return material_count_ + tex_idx;
   }
 
+private:
+  std::size_t material_count_;
+};
+
+
+class SubassetIds {
+public:
+  [[nodiscard]] static
+  auto MakePositional(std::size_t const mesh_count, std::size_t const material_count,
+                      std::size_t const texture_count) -> SubassetIds {
+    SubassetIds ids;
+    ids.prefab_id_ = std::uint64_t{0};
+
+    ids.mesh_ids_.resize(mesh_count);
+    std::ranges::iota(ids.mesh_ids_, std::uint64_t{1} /* prefab */);
+
+    ids.mtl_ids_.resize(material_count);
+    std::ranges::iota(ids.mtl_ids_, std::uint64_t{1} /* prefab */ + mesh_count);
+
+    ids.tex_ids_.resize(texture_count);
+    std::ranges::iota(ids.tex_ids_, std::uint64_t{1} /* prefab */ + mesh_count + material_count);
+    return ids;
+  }
+
+
+  [[nodiscard]]
+  auto GetPrefabId() const -> std::uint64_t {
+    return prefab_id_;
+  }
+
+
+  [[nodiscard]]
+  auto GetMeshId(std::size_t const mesh_idx) const -> std::uint64_t {
+    assert(mesh_idx < mesh_ids_.size());
+    return mesh_ids_[mesh_idx];
+  }
+
+
+  [[nodiscard]]
+  auto GetMaterialId(std::size_t const mtl_idx) const -> std::uint64_t {
+    assert(mtl_idx < mtl_ids_.size());
+    return mtl_ids_[mtl_idx];
+  }
+
+
+  [[nodiscard]]
+  auto GetTextureId(std::size_t const tex_idx) const -> std::uint64_t {
+    assert(tex_idx < tex_ids_.size());
+    return tex_ids_[tex_idx];
+  }
+
 
   [[nodiscard]]
   auto GetMeshCount() const -> std::size_t {
-    return mesh_count_;
+    return mesh_ids_.size();
   }
 
 
   [[nodiscard]]
   auto GetMaterialCount() const -> std::size_t {
-    return material_count_;
+    return mtl_ids_.size();
+  }
+
+
+  [[nodiscard]]
+  auto GetTextureCount() const -> std::size_t {
+    return tex_ids_.size();
   }
 
 private:
-  std::size_t mesh_count_;
-  std::size_t material_count_;
+  std::uint64_t prefab_id_{};
+  std::vector<std::uint64_t> mesh_ids_;
+  std::vector<std::uint64_t> mtl_ids_;
+  std::vector<std::uint64_t> tex_ids_;
 };
 
 
@@ -473,7 +495,7 @@ auto CollectMaterials(aiScene const& scene, bool const import_materials, bool co
     ret.slots[i].name = mtl_name.Empty() ? std::format("Material_{}", i) : std::string{mtl_name.C_Str()};
 
     if (import_materials) {
-      auto const settings_idx = SubassetLayout::GetMaterialSettingsIdx(i);
+      auto const settings_idx = SettingsLayout::GetMaterialSettingsIdx(i);
 
       if (subasset_settings.size() <= settings_idx) {
         subasset_settings.emplace_back(MaterialImportSettings{}, TextureImportSettings{}, SubassetKind::kMaterial);
@@ -526,10 +548,10 @@ auto ComputeTextureCoverageThresholds(std::span<MaterialAssetData const> const m
 
 
 // Converts the raw tex_infos indices of the materials' texture maps into package indices
-auto FixUpTextureIds(std::span<MaterialAssetData> const material_data, SubassetLayout const& layout) -> void {
-  auto const fix_up_tex_id = [&layout](AssetId& id) {
+auto FixUpTextureIds(std::span<MaterialAssetData> const material_data, SubassetIds const& ids) -> void {
+  auto const fix_up_tex_id = [&ids](AssetId& id) {
     if (auto const id_in_file = id.GetIdInFile()) {
-      id = AssetId{id.GetGuid(), layout.GetTextureIdx(*id_in_file)};
+      id = AssetId{id.GetGuid(), ids.GetTextureId(*id_in_file)};
     }
   };
 
@@ -558,11 +580,12 @@ auto CollectUnreferencedTextures(aiScene const& scene, std::vector<TextureLoadIn
 auto ImportEmbeddedTextures(std::filesystem::path const& src,
                             std::span<TextureLoadInfo const> const tex_infos,
                             std::span<float const> const tex_coverage_thresholds,
-                            SubassetLayout const& layout,
+                            SettingsLayout const& settings_layout,
+                            SubassetIds const& subasset_ids,
                             std::vector<SubassetImportSettings>& subasset_settings,
                             std::vector<AssetImportResult>& out_results) -> bool {
   for (auto const [idx, tex_info] : tex_infos | std::views::enumerate) {
-    auto const subasset_idx{layout.GetTextureSettingsIdx(static_cast<std::size_t>(idx))};
+    auto const subasset_idx = settings_layout.GetTextureSettingsIdx(static_cast<std::size_t>(idx));
 
     {
       TextureImportSettings const default_import_settings{
@@ -616,7 +639,7 @@ auto ImportEmbeddedTextures(std::filesystem::path const& src,
           ? std::string{ToUntypedSv(src.filename().stem().u8string())} += std::format(" Texture {}", idx)
           : std::string{tex_info.tex->mFilename.C_Str()};
 
-      out_results.emplace_back(layout.GetTextureIdx(idx), GetCurrentPayloadVersion(tex_result->payload_kind),
+      out_results.emplace_back(subasset_ids.GetTextureId(idx), GetCurrentPayloadVersion(tex_result->payload_kind),
         tex_result->payload_kind, tex_result->runtime_type, tex_name, std::move(tex_result->bytes));
     } else {
       // TODO implement this path
@@ -1652,7 +1675,7 @@ auto SerializePrefab(std::span<std::unique_ptr<Entity> const> const entities) ->
 // Placeholder mesh and material objects carry the package indices the prefab's asset references serialize to.
 [[nodiscard]]
 auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh,
-                              SubassetLayout const& layout,
+                              SubassetIds const& ids,
                               std::span<SceneMaterialIndex const> const mesh_mtl_slot_remap) -> AssetImportResult {
   auto const entity{std::make_unique<Entity>()};
   entity->SetName(name);
@@ -1660,16 +1683,16 @@ auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh,
   auto mesh_component{std::make_unique<StaticMeshComponent>()};
 
   auto const dummy_mesh = std::make_unique<Mesh>(mesh, CpuResidencyPolicy::kKeepResident);
-  dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), layout.GetMeshIdx(0)});
+  dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), ids.GetMeshId(0)});
 
   mesh_component->SetMesh(MakeAssetRef(MakeObserver(dummy_mesh.get())));
 
   std::vector<std::unique_ptr<Material>> dummy_materials;
-  dummy_materials.reserve(layout.GetMaterialCount());
+  dummy_materials.reserve(ids.GetMaterialCount());
 
-  for (auto i = 0uz; i < layout.GetMaterialCount(); i++) {
+  for (auto i = 0uz; i < ids.GetMaterialCount(); i++) {
     auto dummy_mtl{std::make_unique<Material>()};
-    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), layout.GetMaterialIdx(i)});
+    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), ids.GetMaterialId(i)});
     dummy_materials.emplace_back(std::move(dummy_mtl));
   }
 
@@ -1683,7 +1706,7 @@ auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh,
   entity->AddComponent(std::move(mesh_component));
 
   return AssetImportResult{
-    .id = layout.GetPrefabIdx(),
+    .id = ids.GetPrefabId(),
     .version = GetCurrentPayloadVersion(AssetPackagePayloadKind::kPrefab),
     .payload_kind = AssetPackagePayloadKind::kPrefab,
     .runtime_type = rttr::type::get<Prefab>(),
@@ -1700,7 +1723,7 @@ auto CreatePrefab(
   GroupsByNode const& groups_by_node,
   MaterialSlotsByMesh const& mtl_slots_by_mesh,
   NodeListPreorderDfs const& node_list,
-  SubassetLayout const& layout
+  SubassetIds const& ids
 ) -> AssetImportResult {
   // Create dummies for all mesh groups
 
@@ -1728,16 +1751,16 @@ auto CreatePrefab(
     };
 
     auto dummy_mesh = std::make_unique<Mesh>(mesh_data, CpuResidencyPolicy::kKeepResident);
-    dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), layout.GetMeshIdx(group_idx)});
+    dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), ids.GetMeshId(group_idx)});
     dummy_meshes[group_idx] = std::move(dummy_mesh);
   }
 
   // Create dummies for all materials
 
-  std::vector<std::unique_ptr<Material>> dummy_materials(layout.GetMaterialCount());
-  for (auto i = 0uz; i < layout.GetMaterialCount(); ++i) {
+  std::vector<std::unique_ptr<Material>> dummy_materials(ids.GetMaterialCount());
+  for (auto i = 0uz; i < ids.GetMaterialCount(); ++i) {
     auto dummy_mtl = std::make_unique<Material>();
-    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), layout.GetMaterialIdx(i)});
+    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), ids.GetMaterialId(i)});
     dummy_materials[i] = std::move(dummy_mtl);
   }
 
@@ -1791,7 +1814,7 @@ auto CreatePrefab(
   }
 
   return AssetImportResult{
-    .id = layout.GetPrefabIdx(),
+    .id = ids.GetPrefabId(),
     .version = GetCurrentPayloadVersion(AssetPackagePayloadKind::kPrefab),
     .payload_kind = AssetPackagePayloadKind::kPrefab,
     .runtime_type = rttr::type::get<Prefab>(),
@@ -1803,10 +1826,10 @@ auto CreatePrefab(
 
 auto ImportMaterials(std::span<MaterialAssetData const> const material_data,
                      std::span<MaterialSlotInfo const> const material_slots,
-                     SubassetLayout const& layout, std::vector<AssetImportResult>& out_results) -> void {
+                     SubassetIds const& ids, std::vector<AssetImportResult>& out_results) -> void {
   for (auto const [mtl_idx, mtl_data] : std::views::enumerate(material_data)) {
     auto mtl_result = ImportMaterial(mtl_data, {});
-    out_results.emplace_back(layout.GetMaterialIdx(mtl_idx), GetCurrentPayloadVersion(mtl_result.payload_kind),
+    out_results.emplace_back(ids.GetMaterialId(mtl_idx), GetCurrentPayloadVersion(mtl_result.payload_kind),
       mtl_result.payload_kind, mtl_result.runtime_type, material_slots[mtl_idx].name, std::move(mtl_result.bytes));
   }
 }
@@ -1897,22 +1920,27 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   // We can fix those up now and generate a table that describes the remap. Useful later.
   auto const mtl_slots_by_mesh = FixUpMaterialIds(imported_meshes, mtl_slots);
 
-  // Now we know how many meshes and materials we have so patch material->texture references
-  SubassetLayout const layout{imported_meshes.size(), mtl_assets.size()};
-  FixUpTextureIds(mtl_assets, layout);
-
   // Nothing depends on the actual texture assets so we can load them last
+
+  if (import_textures_) {
+    CollectUnreferencedTextures(scene, texes_to_load);
+  }
+
+  SettingsLayout const settings_layout{mtl_assets.size()};
+  auto const subasset_ids = SubassetIds::MakePositional(imported_meshes.size(), mtl_assets.size(),
+    texes_to_load.size());
 
   std::vector<AssetImportResult> texture_import_results;
 
   if (import_textures_) {
-    CollectUnreferencedTextures(scene, texes_to_load);
-
-    if (!ImportEmbeddedTextures(src, texes_to_load, tex_coverage_thresholds, layout, subasset_import_settings_,
-      texture_import_results)) {
+    if (!ImportEmbeddedTextures(src, texes_to_load, tex_coverage_thresholds, settings_layout, subasset_ids,
+      subasset_import_settings_, texture_import_results)) {
       return false;
     }
   }
+
+  // Now we know how many meshes and materials we have so patch material->texture references
+  FixUpTextureIds(mtl_assets, subasset_ids);
 
   // Stable subasset identities. Not used for the package layout yet, only logged for verification.
 
@@ -1938,21 +1966,21 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   if (bake_into_single_mesh) {
     results.emplace_back(CreateSingleEntityPrefab(ToUntypedSv(src.filename().stem().u8string()), imported_meshes.at(0),
-      layout, mtl_slots_by_mesh.at(0)));
+      subasset_ids, mtl_slots_by_mesh.at(0)));
   } else {
     results.emplace_back(CreatePrefab(ToUntypedSv(src.filename().stem().u8string()), imported_meshes, groups_by_node,
-      mtl_slots_by_mesh, nodes, layout));
+      mtl_slots_by_mesh, nodes, subasset_ids));
   }
 
   for (auto const [mesh_idx, mesh_data] : std::views::enumerate(imported_meshes)) {
     auto mesh_bytes = SerializeMesh(mesh_data);
-    results.emplace_back(layout.GetMeshIdx(mesh_idx), GetCurrentPayloadVersion(AssetPackagePayloadKind::kMesh),
+    results.emplace_back(subasset_ids.GetMeshId(mesh_idx), GetCurrentPayloadVersion(AssetPackagePayloadKind::kMesh),
       AssetPackagePayloadKind::kMesh, rttr::type::get<Mesh>(), std::string{ToUntypedSv(src.stem().u8string())},
       std::move(mesh_bytes));
   }
 
   if (import_materials_) {
-    ImportMaterials(mtl_assets, mtl_slots, layout, results);
+    ImportMaterials(mtl_assets, mtl_slots, subasset_ids, results);
   }
 
   if (import_textures_) {

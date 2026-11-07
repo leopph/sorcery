@@ -99,6 +99,13 @@ enum class AssetPackageReadError : std::uint8_t {
 };
 
 
+enum class AssetPackageWriteError : std::uint8_t {
+  kDuplicateEntryIds,
+  kUnknownRuntimeType,
+  kIoError,
+};
+
+
 [[nodiscard]] SORCERYAPI
 auto GetCurrentPayloadVersion(
   AssetPackagePayloadKind payload_kind
@@ -107,7 +114,7 @@ auto GetCurrentPayloadVersion(
 [[nodiscard]] SORCERYAPI
 auto PackBinaryAssetPackage(
   std::span<AssetImportResult const> imports
-) -> std::optional<std::vector<std::byte>>;
+) -> std::expected<std::vector<std::byte>, AssetPackageWriteError>;
 
 [[nodiscard]] SORCERYAPI
 auto UnpackBinaryAssetPackageEntries(
