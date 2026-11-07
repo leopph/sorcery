@@ -297,9 +297,13 @@ auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
           };
 
           if (job_data.path_abs.extension() == EXTERNAL_ASSET_EXT) {
-            auto const subasset{
-              LoadBinaryAssetPackageSubasset(job_data.path_abs, job_data.asset_id->GetIdxInFile())
-            };
+            auto const id_in_file = job_data.asset_id->GetIdInFile();
+
+            if (!id_in_file) {
+              return;
+            }
+
+            auto const subasset = LoadBinaryAssetPackageSubasset(job_data.path_abs, *id_in_file);
 
             if (!subasset) {
               return;

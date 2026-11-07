@@ -7,9 +7,9 @@
 #include "sorcery/event.hpp"
 #include "sorcery/Guid.hpp"
 #include "sorcery/observer_ptr.hpp"
+#include "sorcery/assets/NativeAsset.hpp"
 #include "sorcery/host/assets/asset_manager.hpp"
 #include "sorcery/host/assets/asset_package.hpp"
-#include "sorcery/assets/NativeAsset.hpp"
 
 
 namespace sorcery::mage {

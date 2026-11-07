@@ -9,9 +9,9 @@
 #include <yaml-cpp/yaml.h>
 #pragma warning (pop)
 
+#include "asset_id.hpp"
 #include "Core.hpp"
 #include "Guid.hpp"
-#include "asset_id.hpp"
 
 
 namespace sorcery {
@@ -35,7 +35,7 @@ struct YamlDeserializeContext {
 auto SerializeGlobalAssetId(AssetId const& id) -> YAML::Node;
 
 [[nodiscard]] SORCERYAPI
-auto SerializeLocalAssetId(int idx) -> YAML::Node;
+auto SerializeLocalAssetId(std::optional<std::uint64_t> id_in_file) -> YAML::Node;
 
 [[nodiscard]] SORCERYAPI
 auto SerializeNullAssetId() -> YAML::Node;

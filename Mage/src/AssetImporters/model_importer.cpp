@@ -108,6 +108,12 @@ public:
 
 
   [[nodiscard]]
+  auto GetPrefabIdx() const -> std::size_t {
+    return 0uz;
+  }
+
+
+  [[nodiscard]]
   auto GetMeshIdx(std::size_t const mesh_idx) const -> std::size_t {
     assert(mesh_idx < mesh_count_);
     return 1uz /* prefab is first */ + mesh_idx;
@@ -381,7 +387,7 @@ auto ExtractMaterial(aiScene const& scene, aiMaterial const& mtl, bool const imp
       // We store the textures' array index now as their package index.
       // Later we will patch this when we're creating the final subasset order in the package.
       auto const arr_idx = TryEmplaceTexture(tex_infos, tex, type);
-      id_to_set = AssetId{Guid::Invalid(), static_cast<int>(arr_idx)};
+      id_to_set = AssetId{Guid::Invalid(), arr_idx};
     };
 
     auto const discover_embedded_tex = [&]
@@ -506,8 +512,8 @@ auto ComputeTextureCoverageThresholds(std::span<MaterialAssetData const> const m
     auto const set_threshold = [&](AssetId const& id) {
       // When materials share a texture, the highest threshold wins: scaling for it errs towards slightly
       // thicker cutouts for the others, rather than letting them thin out faster than without scaling.
-      if (auto const idx = id.GetIdxInFile(); idx >= 0) {
-        tex_coverage_thresholds[idx] = std::max(tex_coverage_thresholds[idx], tex_threshold);
+      if (auto const idx = id.GetIdInFile()) {
+        tex_coverage_thresholds[*idx] = std::max(tex_coverage_thresholds[*idx], tex_threshold);
       }
     };
 
@@ -522,8 +528,8 @@ auto ComputeTextureCoverageThresholds(std::span<MaterialAssetData const> const m
 // Converts the raw tex_infos indices of the materials' texture maps into package indices
 auto FixUpTextureIds(std::span<MaterialAssetData> const material_data, SubassetLayout const& layout) -> void {
   auto const fix_up_tex_id = [&layout](AssetId& id) {
-    if (id.GetIdxInFile() >= 0) {
-      id = AssetId{id.GetGuid(), static_cast<int>(layout.GetTextureIdx(id.GetIdxInFile()))};
+    if (auto const id_in_file = id.GetIdInFile()) {
+      id = AssetId{id.GetGuid(), layout.GetTextureIdx(*id_in_file)};
     }
   };
 
@@ -610,8 +616,8 @@ auto ImportEmbeddedTextures(std::filesystem::path const& src,
           ? std::string{ToUntypedSv(src.filename().stem().u8string())} += std::format(" Texture {}", idx)
           : std::string{tex_info.tex->mFilename.C_Str()};
 
-      out_results.emplace_back(tex_result->payload_kind, tex_result->runtime_type,
-        tex_name, std::move(tex_result->bytes));
+      out_results.emplace_back(layout.GetTextureIdx(idx), GetCurrentPayloadVersion(tex_result->payload_kind),
+        tex_result->payload_kind, tex_result->runtime_type, tex_name, std::move(tex_result->bytes));
     } else {
       // TODO implement this path
       assert("Found uncompressed embedded texture." && false);
@@ -1654,7 +1660,7 @@ auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh,
   auto mesh_component{std::make_unique<StaticMeshComponent>()};
 
   auto const dummy_mesh = std::make_unique<Mesh>(mesh, CpuResidencyPolicy::kKeepResident);
-  dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), static_cast<int>(layout.GetMeshIdx(0))});
+  dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), layout.GetMeshIdx(0)});
 
   mesh_component->SetMesh(MakeAssetRef(MakeObserver(dummy_mesh.get())));
 
@@ -1663,7 +1669,7 @@ auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh,
 
   for (auto i = 0uz; i < layout.GetMaterialCount(); i++) {
     auto dummy_mtl{std::make_unique<Material>()};
-    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), static_cast<int>(layout.GetMaterialIdx(i))});
+    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), layout.GetMaterialIdx(i)});
     dummy_materials.emplace_back(std::move(dummy_mtl));
   }
 
@@ -1677,8 +1683,12 @@ auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh,
   entity->AddComponent(std::move(mesh_component));
 
   return AssetImportResult{
-    AssetPackagePayloadKind::kPrefab, rttr::type::get<Prefab>(), std::string{entity->GetName()},
-    SerializePrefab(std::span{&entity, 1})
+    .id = layout.GetPrefabIdx(),
+    .version = GetCurrentPayloadVersion(AssetPackagePayloadKind::kPrefab),
+    .payload_kind = AssetPackagePayloadKind::kPrefab,
+    .runtime_type = rttr::type::get<Prefab>(),
+    .name = std::string{entity->GetName()},
+    .bytes = SerializePrefab(std::span{&entity, 1})
   };
 }
 
@@ -1718,7 +1728,7 @@ auto CreatePrefab(
     };
 
     auto dummy_mesh = std::make_unique<Mesh>(mesh_data, CpuResidencyPolicy::kKeepResident);
-    dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), static_cast<int>(layout.GetMeshIdx(group_idx))});
+    dummy_mesh->SetAssetId(AssetId{Guid::Invalid(), layout.GetMeshIdx(group_idx)});
     dummy_meshes[group_idx] = std::move(dummy_mesh);
   }
 
@@ -1727,7 +1737,7 @@ auto CreatePrefab(
   std::vector<std::unique_ptr<Material>> dummy_materials(layout.GetMaterialCount());
   for (auto i = 0uz; i < layout.GetMaterialCount(); ++i) {
     auto dummy_mtl = std::make_unique<Material>();
-    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), static_cast<int>(layout.GetMaterialIdx(i))});
+    dummy_mtl->SetAssetId(AssetId{Guid::Invalid(), layout.GetMaterialIdx(i)});
     dummy_materials[i] = std::move(dummy_mtl);
   }
 
@@ -1781,19 +1791,23 @@ auto CreatePrefab(
   }
 
   return AssetImportResult{
-    AssetPackagePayloadKind::kPrefab, rttr::type::get<Prefab>(), std::string{name},
-    SerializePrefab(entities)
+    .id = layout.GetPrefabIdx(),
+    .version = GetCurrentPayloadVersion(AssetPackagePayloadKind::kPrefab),
+    .payload_kind = AssetPackagePayloadKind::kPrefab,
+    .runtime_type = rttr::type::get<Prefab>(),
+    .name = std::string{name},
+    .bytes = SerializePrefab(entities)
   };
 }
 
 
 auto ImportMaterials(std::span<MaterialAssetData const> const material_data,
                      std::span<MaterialSlotInfo const> const material_slots,
-                     std::vector<AssetImportResult>& out_results) -> void {
-  for (std::size_t i{0}; i < material_data.size(); i++) {
-    auto mtl_result{ImportMaterial(material_data[i], {})};
-    out_results.emplace_back(mtl_result.payload_kind, mtl_result.runtime_type, material_slots[i].name,
-      std::move(mtl_result.bytes));
+                     SubassetLayout const& layout, std::vector<AssetImportResult>& out_results) -> void {
+  for (auto const [mtl_idx, mtl_data] : std::views::enumerate(material_data)) {
+    auto mtl_result = ImportMaterial(mtl_data, {});
+    out_results.emplace_back(layout.GetMaterialIdx(mtl_idx), GetCurrentPayloadVersion(mtl_result.payload_kind),
+      mtl_result.payload_kind, mtl_result.runtime_type, material_slots[mtl_idx].name, std::move(mtl_result.bytes));
   }
 }
 }
@@ -1930,14 +1944,15 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
       mtl_slots_by_mesh, nodes, layout));
   }
 
-  for (auto const& mesh_data : imported_meshes) {
+  for (auto const [mesh_idx, mesh_data] : std::views::enumerate(imported_meshes)) {
     auto mesh_bytes = SerializeMesh(mesh_data);
-    results.emplace_back(AssetPackagePayloadKind::kMesh, rttr::type::get<Mesh>(),
-      std::string{ToUntypedSv(src.stem().u8string())}, std::move(mesh_bytes));
+    results.emplace_back(layout.GetMeshIdx(mesh_idx), GetCurrentPayloadVersion(AssetPackagePayloadKind::kMesh),
+      AssetPackagePayloadKind::kMesh, rttr::type::get<Mesh>(), std::string{ToUntypedSv(src.stem().u8string())},
+      std::move(mesh_bytes));
   }
 
   if (import_materials_) {
-    ImportMaterials(mtl_assets, mtl_slots, results);
+    ImportMaterials(mtl_assets, mtl_slots, layout, results);
   }
 
   if (import_textures_) {

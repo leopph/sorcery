@@ -9,9 +9,9 @@ auto AssetId::Invalid() noexcept -> AssetId {
 }
 
 
-AssetId::AssetId(Guid const guid, int const idx_in_file) :
+AssetId::AssetId(Guid const guid, std::uint64_t const id_in_file) :
   guid_{guid},
-  idx_in_file_{idx_in_file} {}
+  id_in_file_{id_in_file} {}
 
 
 auto AssetId::GetGuid() const noexcept -> Guid {
@@ -19,19 +19,26 @@ auto AssetId::GetGuid() const noexcept -> Guid {
 }
 
 
-auto AssetId::GetIdxInFile() const noexcept -> int {
-  return idx_in_file_;
+auto AssetId::GetIdInFile() const noexcept -> std::optional<uint64_t> {
+  return id_in_file_;
 }
 
 
 auto AssetId::IsValid() const noexcept -> bool {
-  return guid_.IsValid() && idx_in_file_ >= 0;
+  return guid_.IsValid() && id_in_file_.has_value();
 }
 
 
 AssetId::operator std::string() const {
   std::stringstream str_stream;
-  str_stream << std::string{guid_} << ":" << idx_in_file_;
+  str_stream << std::string{guid_} << ":";
+
+  if (id_in_file_) {
+    str_stream << *id_in_file_;
+  } else {
+    str_stream << "-1"; // -1 as backwards compatibility
+  }
+
   return str_stream.str();
 }
 
@@ -44,11 +51,11 @@ auto AssetId::ToString() const -> std::string {
 auto operator<=>(AssetId const& lhs, AssetId const& rhs) noexcept -> std::strong_ordering {
   return lhs.GetGuid() <=> rhs.GetGuid() != std::strong_ordering::equivalent
            ? lhs.GetGuid() <=> rhs.GetGuid()
-           : lhs.GetIdxInFile() <=> rhs.GetIdxInFile();
+           : lhs.GetIdInFile() <=> rhs.GetIdInFile();
 }
 
 
 auto operator==(AssetId const& lhs, AssetId const& rhs) noexcept -> bool {
-  return lhs.GetGuid() == rhs.GetGuid() && lhs.GetIdxInFile() == rhs.GetIdxInFile();
+  return lhs.GetGuid() == rhs.GetGuid() && lhs.GetIdInFile() == rhs.GetIdInFile();
 }
 }

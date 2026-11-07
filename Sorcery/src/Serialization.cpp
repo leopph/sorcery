@@ -163,7 +163,7 @@ auto ReflectionSerializeToYaml(
         case AssetRefSerialization::kGlobal:
           return SerializeGlobalAssetId(asset_id);
         case AssetRefSerialization::kLocal:
-          return SerializeLocalAssetId(asset_id.GetIdxInFile());
+          return SerializeLocalAssetId(asset_id.GetIdInFile());
       }
     }
   }

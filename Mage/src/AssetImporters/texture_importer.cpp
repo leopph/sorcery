@@ -43,7 +43,7 @@ auto TextureImporter::Import(
     return false;
   }
 
-  results.emplace_back(result->payload_kind, result->runtime_type,
+  results.emplace_back(0, GetCurrentPayloadVersion(result->payload_kind), result->payload_kind, result->runtime_type,
     std::string{ToUntypedSv(src.filename().stem().u8string())}, std::move(result->bytes));
   return true;
 }

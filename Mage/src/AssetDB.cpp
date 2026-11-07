@@ -153,9 +153,11 @@ auto AssetDB::Refresh() -> void {
             case AssetPackageReadError::kException:
               return {"an exception", spdlog::level::warn};
             case AssetPackageReadError::kPackageVersionMismatch:
-              return {"version mismatch", spdlog::level::info};
-            case AssetPackageReadError::kEntryOutOfRange:
-              return {"an out of range error", spdlog::level::warn};
+              return {"package version mismatch", spdlog::level::info};
+            case AssetPackageReadError::kPayloadVersionMismatch:
+              return {"an asset version mismatch", spdlog::level::info};
+            case AssetPackageReadError::kSubassetNotFound:
+              return {"a missing subasset", spdlog::level::warn};
             case AssetPackageReadError::kFileError:
               return {"a file error", spdlog::level::warn};
             case AssetPackageReadError::kInvalidData:
@@ -215,14 +217,14 @@ auto AssetDB::Refresh() -> void {
         spdlog::error("Failed to query native asset type from file [{}].", ToUntypedSv(asset_path_abs.u8string()));
       }
     } else {
-      for (std::size_t i{0}; i < package_info->entries.size(); ++i) {
+      for (auto const& entry : package_info->entries) {
         // Store the asset information in the new database.
-        new_asset_info_by_id.insert_or_assign(AssetId{guid, static_cast<int>(i)},
-          AssetInfo{
-            .id = AssetId{guid, static_cast<int>(i)},
-            .type = package_info->entries[i].runtime_type,
-            .name = package_info->entries[i].name
-          });
+        AssetId const asset_id{guid, entry.id};
+        new_asset_info_by_id.insert_or_assign(asset_id, AssetInfo{
+          .id = asset_id,
+          .type = entry.runtime_type,
+          .name = entry.name
+        });
       }
     }
 
@@ -784,12 +786,12 @@ auto AssetDB::InternalImportAsset(std::filesystem::path const& asset_path_abs,
     return pair.first.GetGuid() == guid;
   });
 
-  for (std::size_t i{0}; i < import_results.size(); ++i) {
-    AssetId const asset_id{guid, static_cast<int>(i)};
+  for (auto const& result : import_results) {
+    AssetId const asset_id{guid, result.id};
     asset_info_by_id.insert_or_assign(asset_id, AssetInfo{
       .id = asset_id,
-      .type = import_results[i].runtime_type,
-      .name = import_results[i].name
+      .type = result.runtime_type,
+      .name = result.name
     });
   }
   return true;
@@ -808,7 +810,7 @@ auto AssetDB::CreateMappings() const noexcept -> std::pair<
       asset_mappings.emplace(id, AssetManager::AssetDescription{entry.name, entry.type});
     } else {
       spdlog::error("Asset with ID [{}, {}] has no source path in the asset database.",
-        guid.ToString(), id.GetIdxInFile());
+        guid.ToString(), id.GetIdInFile() ? std::to_string(*id.GetIdInFile()) : "null");
     }
   }
 
@@ -833,7 +835,7 @@ auto AssetDB::WriteBinaryAssetPackage(
     return false;
   }
 
-  auto const package_bytes{PackBinaryAssetPackage(imports)};
+  auto const package_bytes = PackBinaryAssetPackage(imports);
 
   if (!package_bytes) {
     return false;

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <optional>
+
 #include <sorcery/Core.hpp>
 #include <sorcery/Guid.hpp>
 
@@ -10,10 +13,10 @@ public:
   [[nodiscard]] LEOPPHAPI static auto Invalid() noexcept -> AssetId;
 
   AssetId() = default;
-  LEOPPHAPI AssetId(Guid guid, int idx_in_file);
+  LEOPPHAPI AssetId(Guid guid, std::uint64_t id_in_file);
 
   [[nodiscard]] LEOPPHAPI auto GetGuid() const noexcept -> Guid;
-  [[nodiscard]] LEOPPHAPI auto GetIdxInFile() const noexcept -> int;
+  [[nodiscard]] LEOPPHAPI auto GetIdInFile() const noexcept -> std::optional<uint64_t>;
 
   [[nodiscard]] LEOPPHAPI auto IsValid() const noexcept -> bool;
 
@@ -22,7 +25,7 @@ public:
 
 private:
   Guid guid_{Guid::Invalid()};
-  int idx_in_file_{-1};
+  std::optional<std::uint64_t> id_in_file_;
 };
 
 

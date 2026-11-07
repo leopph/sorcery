@@ -61,7 +61,7 @@ auto SerializeMaterialAssetData(
       case AssetRefSerialization::kGlobal:
         return SerializeGlobalAssetId(id);
       case AssetRefSerialization::kLocal:
-        return SerializeLocalAssetId(id.GetIdxInFile());
+        return SerializeLocalAssetId(id.GetIdInFile());
     }
 
     spdlog::error("Failed to serialize asset reference: unknown mode.");

@@ -39,12 +39,15 @@ extern SORCERYAPI std::uint32_t const kMagic;
 
 struct Header {
   std::uint32_t magic;
-  std::uint32_t version;
+  std::uint32_t package_version;
   std::uint32_t asset_count;
 };
 
 
 struct Entry {
+  std::uint64_t id;
+  std::uint32_t version;
+
   AssetPackagePayloadKind payload_kind;
   AssetRuntimeType runtime_type;
 
@@ -58,6 +61,8 @@ struct Entry {
 
 
 struct AssetImportResult {
+  std::uint64_t id;
+  std::uint32_t version;
   AssetPackagePayloadKind payload_kind;
   rttr::type runtime_type;
   std::string name;
@@ -68,6 +73,7 @@ struct AssetImportResult {
 struct AssetEntryInfo {
   rttr::type runtime_type;
   std::string name;
+  std::uint64_t id;
 };
 
 
@@ -87,10 +93,16 @@ enum class AssetPackageReadError : std::uint8_t {
   kException,
   kFileError,
   kPackageVersionMismatch,
+  kPayloadVersionMismatch,
   kInvalidData,
-  kEntryOutOfRange
+  kSubassetNotFound
 };
 
+
+[[nodiscard]] SORCERYAPI
+auto GetCurrentPayloadVersion(
+  AssetPackagePayloadKind payload_kind
+) -> std::uint32_t;
 
 [[nodiscard]] SORCERYAPI
 auto PackBinaryAssetPackage(
@@ -110,6 +122,6 @@ auto PeekBinaryAssetPackage(
 [[nodiscard]] SORCERYAPI
 auto LoadBinaryAssetPackageSubasset(
   std::filesystem::path const& file_path_abs,
-  std::size_t entry_idx
+  std::uint64_t subasset_id
 ) -> std::expected<AssetPackageSubasset, AssetPackageReadError>;
 }

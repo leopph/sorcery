@@ -12,19 +12,19 @@ auto SerializeGlobalAssetId(AssetId const& id) -> YAML::Node {
   YAML::Node node;
   node["scope"] = "Global";
   node["guid"] = id.GetGuid();
-  node["fileIdx"] = id.GetIdxInFile();
+  node["fileIdx"] = *id.GetIdInFile();
   return node;
 }
 
 
-auto SerializeLocalAssetId(int const idx) -> YAML::Node {
-  if (idx < 0) {
+auto SerializeLocalAssetId(std::optional<std::uint64_t> const id_in_file) -> YAML::Node {
+  if (!id_in_file) {
     return SerializeNullAssetId();
   }
 
   YAML::Node node;
   node["scope"] = "Local";
-  node["fileIdx"] = idx;
+  node["fileIdx"] = *id_in_file;
   return node;
 }
 
@@ -52,36 +52,35 @@ auto DeserializeAssetId(YAML::Node const& node, YamlDeserializeContext const& ct
 
     if (scope == "Global") {
       auto const guid_node = node["guid"];
-      auto const file_idx_node = node["fileIdx"];
+      auto const file_id_node = node["fileIdx"];
 
-      if (!guid_node || !file_idx_node) {
+      if (!guid_node || !file_id_node) {
         return std::nullopt;
       }
 
       auto const guid = guid_node.as<Guid>();
-      auto const file_idx = file_idx_node.as<int>();
 
-      if (!guid.IsValid() || file_idx < 0) {
+      if (!guid.IsValid()) {
         return std::nullopt;
       }
 
-      return AssetId{guid, file_idx};
+      auto const file_id = file_id_node.as<std::uint64_t>();
+      return AssetId{guid, file_id};
     }
 
     if (scope == "Local") {
+      if (!ctx.current_guid.IsValid()) {
+        return std::nullopt;
+      }
+
       auto const file_idx_node = node["fileIdx"];
 
       if (!file_idx_node) {
         return std::nullopt;
       }
 
-      auto const file_idx = file_idx_node.as<int>();
-
-      if (!ctx.current_guid.IsValid() || file_idx < 0) {
-        return std::nullopt;
-      }
-
-      return AssetId{ctx.current_guid, file_idx};
+      auto const file_id = file_idx_node.as<std::uint64_t>();
+      return AssetId{ctx.current_guid, file_id};
     }
 
     if (scope == "Null") {
