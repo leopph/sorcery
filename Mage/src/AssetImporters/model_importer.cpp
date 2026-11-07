@@ -89,6 +89,15 @@ constexpr auto kBlendFallbackAlphaThreshold = 0.1f;
 using SubassetImportSettings = ModelImporter::SubassetImportSettings;
 using SubassetKind = ModelImporter::SubassetKind;
 
+// Stable identities of the subassets, independent of their order in the package.
+// Keys carry a kind prefix ("mesh:", "material:", ...) so they never collide across kinds.
+struct SubassetKeys {
+  std::string prefab;
+  std::vector<std::string> meshes;
+  std::vector<std::string> materials;
+  std::vector<std::string> textures;
+};
+
 
 class SettingsLayout {
 public:
@@ -112,22 +121,89 @@ private:
 };
 
 
+[[nodiscard]]
+constexpr auto Fnv1a64(std::span<std::byte const> const bytes) noexcept -> std::uint64_t {
+  auto hash = 0xcbf29ce484222325ULL;
+
+  for (auto const byte : bytes) {
+    hash ^= static_cast<std::uint64_t>(byte);
+    hash *= 0x100000001b3ULL;
+  }
+
+  return hash;
+}
+
+
+// SplitMix64 finalizer: a bijective 64-bit mixer with strong avalanche.
+[[nodiscard]] constexpr auto Mix64(std::uint64_t x) noexcept -> std::uint64_t {
+  x ^= x >> 30;
+  x *= 0xbf58476d1ce4e5b9ULL;
+  x ^= x >> 27;
+  x *= 0x94d049bb133111ebULL;
+  x ^= x >> 31;
+  return x;
+}
+
+
+auto HashKey(std::string_view const key) -> std::uint64_t {
+  return Mix64(Fnv1a64(std::as_bytes(std::span{key})));
+}
+
+
 class SubassetIds {
 public:
   [[nodiscard]] static
-  auto MakePositional(std::size_t const mesh_count, std::size_t const material_count,
-                      std::size_t const texture_count) -> SubassetIds {
+  auto FromKeys(SubassetKeys const& keys, std::filesystem::path const& src) -> SubassetIds {
     SubassetIds ids;
-    ids.prefab_id_ = std::uint64_t{0};
+    constexpr std::uint64_t prefab_id{0};
 
-    ids.mesh_ids_.resize(mesh_count);
-    std::ranges::iota(ids.mesh_ids_, std::uint64_t{1} /* prefab */);
+    std::vector<std::string_view> flat_keys;
+    flat_keys.append_range(keys.meshes);
+    flat_keys.append_range(keys.materials);
+    flat_keys.append_range(keys.textures);
 
-    ids.mtl_ids_.resize(material_count);
-    std::ranges::iota(ids.mtl_ids_, std::uint64_t{1} /* prefab */ + mesh_count);
+    std::vector<std::uint64_t> flat_ids(flat_keys.size());
 
-    ids.tex_ids_.resize(texture_count);
-    std::ranges::iota(ids.tex_ids_, std::uint64_t{1} /* prefab */ + mesh_count + material_count);
+    std::vector<std::size_t> order(flat_keys.size());
+    std::ranges::iota(order, 0uz);
+    std::ranges::sort(order, {}, [&](auto const idx) { return flat_keys[idx]; });
+
+    std::unordered_map<std::uint64_t, std::size_t> key_idx_by_id;
+
+    auto const is_id_taken = [&](auto const id) {
+      return id == prefab_id || key_idx_by_id.contains(id);
+    };
+
+    for (auto const i : order) {
+      auto const key = flat_keys[i];
+      auto const base = HashKey(key);
+      auto id = base;
+
+      for (std::uint64_t salt{1}; is_id_taken(id); ++salt) {
+        id = Mix64(base ^ salt);
+      }
+
+      if (id != base) {
+        auto const kept_key = base == prefab_id
+                                ? std::string_view{keys.prefab}
+                                : flat_keys.at(key_idx_by_id.at(base));
+
+        spdlog::warn(
+          "Subasset key hash collision in [{}]: \"{}\" collides with \"{}\". "
+          "Assigned salted ID {:#018x} to \"{}\"; its ID may change if keys are added or removed.",
+          ToUntypedSv(src.u8string()), key, kept_key, id, key);
+      }
+
+      key_idx_by_id.emplace(id, i);
+      flat_ids[i] = id;
+    }
+
+    ids.prefab_id_ = prefab_id;
+    ids.mesh_ids_.assign_range(std::span{flat_ids}.subspan(0, keys.meshes.size()));
+    ids.mtl_ids_.assign_range(std::span{flat_ids}.subspan(keys.meshes.size(), keys.materials.size()));
+    ids.tex_ids_.assign_range(std::span{flat_ids}.subspan(keys.meshes.size() + keys.materials.size(),
+      keys.textures.size()));
+
     return ids;
   }
 
@@ -866,16 +942,6 @@ using MeshIndex = std::size_t;
 using NodeIndex = std::size_t;
 using NodesByMesh = std::vector<std::vector<NodeIndex>>;
 
-// SplitMix64 finalizer: a bijective 64-bit mixer with strong avalanche.
-constexpr auto Mix64(std::uint64_t x) noexcept -> std::uint64_t {
-  x ^= x >> 30;
-  x *= 0xbf58476d1ce4e5b9ULL;
-  x ^= x >> 27;
-  x *= 0x94d049bb133111ebULL;
-  x ^= x >> 31;
-  return x;
-}
-
 
 struct NodeListHash {
   auto operator()(std::span<NodeIndex const> const nodes) const noexcept -> std::size_t {
@@ -967,16 +1033,6 @@ auto CollectGroupsByNode(MeshesByGroup const& meshes_by_group, NodesByMesh const
 }
 
 
-// Stable identities of the subassets, independent of their order in the package.
-// Keys carry a kind prefix ("mesh:", "material:", ...) so they never collide across kinds.
-struct SubassetKeys {
-  std::string prefab;
-  std::vector<std::string> meshes;
-  std::vector<std::string> materials;
-  std::vector<std::string> textures;
-};
-
-
 // Appends "#n" to repeated keys so that every key is unique. The first occurrence keeps its key.
 auto MakeKeysUnique(std::span<std::string> const keys) -> void {
   std::unordered_set<std::string> used;
@@ -994,19 +1050,6 @@ auto MakeKeysUnique(std::span<std::string> const keys) -> void {
       }
     }
   }
-}
-
-
-[[nodiscard]]
-constexpr auto Fnv1a64(std::span<std::byte const> const bytes) noexcept -> std::uint64_t {
-  auto hash = 0xcbf29ce484222325ULL;
-
-  for (auto const byte : bytes) {
-    hash ^= static_cast<std::uint64_t>(byte);
-    hash *= 0x100000001b3ULL;
-  }
-
-  return hash;
 }
 
 
@@ -1926,30 +1969,15 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     CollectUnreferencedTextures(scene, texes_to_load);
   }
 
-  SettingsLayout const settings_layout{mtl_assets.size()};
-  auto const subasset_ids = SubassetIds::MakePositional(imported_meshes.size(), mtl_assets.size(),
-    texes_to_load.size());
-
-  std::vector<AssetImportResult> texture_import_results;
-
-  if (import_textures_) {
-    if (!ImportEmbeddedTextures(src, texes_to_load, tex_coverage_thresholds, settings_layout, subasset_ids,
-      subasset_import_settings_, texture_import_results)) {
-      return false;
-    }
-  }
-
-  // Now we know how many meshes and materials we have so patch material->texture references
-  FixUpTextureIds(mtl_assets, subasset_ids);
-
-  // Stable subasset identities. Not used for the package layout yet, only logged for verification.
-
-  SubassetKeys subasset_keys{
+  // Stable subasset identities.
+  SubassetKeys const subasset_keys{
     .prefab = "prefab",
     .meshes = bake_into_single_mesh
                 ? std::vector<std::string>{"mesh:baked"}
                 : MakeMeshGroupKeys(nodes, nodes_by_mesh, meshes_by_group),
-    .materials = MakeMaterialKeys(mtl_slots),
+    .materials = import_materials_
+                   ? MakeMaterialKeys(mtl_slots)
+                   : std::vector<std::string>{},
     .textures = MakeTextureKeys(texes_to_load),
   };
 
@@ -1960,6 +1988,23 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
          std::span{subasset_keys.meshes}, std::span{subasset_keys.materials}, std::span{subasset_keys.textures}
        })) {
     spdlog::debug("  {}", key);
+  }
+
+  SettingsLayout const settings_layout{mtl_assets.size()};
+  auto const subasset_ids = SubassetIds::FromKeys(subasset_keys, src);
+
+  // Now we have subasset ids so we can patch material->texture references
+  FixUpTextureIds(mtl_assets, subasset_ids);
+
+  // Import all textures
+
+  std::vector<AssetImportResult> texture_import_results;
+
+  if (import_textures_) {
+    if (!ImportEmbeddedTextures(src, texes_to_load, tex_coverage_thresholds, settings_layout, subasset_ids,
+      subasset_import_settings_, texture_import_results)) {
+      return false;
+    }
   }
 
   // Write subassets to output in package order

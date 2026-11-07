@@ -23,7 +23,7 @@ std::uint32_t const kMagic{0x19991108};
 
 
 namespace {
-std::uint32_t constexpr kCurrentPackageVersion{2};
+std::uint32_t constexpr kCurrentPackageVersion{3};
 }
 }
 
