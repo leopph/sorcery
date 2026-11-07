@@ -1,6 +1,7 @@
 #include "model_importer.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -937,6 +938,136 @@ auto CollectGroupsByNode(MeshesByGroup const& meshes_by_group, NodesByMesh const
 }
 
 
+// Stable identities of the subassets, independent of their order in the package.
+// Keys carry a kind prefix ("mesh:", "material:", ...) so they never collide across kinds.
+struct SubassetKeys {
+  std::string prefab;
+  std::vector<std::string> meshes;
+  std::vector<std::string> materials;
+  std::vector<std::string> textures;
+};
+
+
+// Appends "#n" to repeated keys so that every key is unique. The first occurrence keeps its key.
+auto MakeKeysUnique(std::span<std::string> const keys) -> void {
+  std::unordered_set<std::string> used;
+  used.reserve(keys.size());
+
+  for (auto& key : keys) {
+    if (used.insert(key).second) {
+      continue;
+    }
+
+    for (auto n = 1uz;; ++n) {
+      if (auto candidate = std::format("{}#{}", key, n); used.insert(candidate).second) {
+        key = std::move(candidate);
+        break;
+      }
+    }
+  }
+}
+
+
+[[nodiscard]]
+constexpr auto Fnv1a64(std::span<std::byte const> const bytes) noexcept -> std::uint64_t {
+  auto hash = 0xcbf29ce484222325ULL;
+
+  for (auto const byte : bytes) {
+    hash ^= static_cast<std::uint64_t>(byte);
+    hash *= 0x100000001b3ULL;
+  }
+
+  return hash;
+}
+
+
+// Gives every mesh group a key derived from the node hierarchy, so that a group keeps its key
+// as long as the node it hangs on keeps its place in the hierarchy.
+[[nodiscard]]
+auto MakeMeshGroupKeys(NodeListPreorderDfs const& nodes, NodesByMesh const& nodes_by_mesh,
+                       MeshesByGroup const& meshes_by_group) -> std::vector<std::string> {
+  // The absolute path of node i
+  std::vector<std::string> node_paths(nodes.size());
+  // How many children does node i have with a specific name
+  std::vector<std::unordered_map<std::string_view, std::size_t>> name_counts(nodes.size());
+  // How many groups does node i reference
+  std::vector<std::size_t> group_counts(nodes.size());
+
+  // Build the absolute path of each node, and count how many children of each name each node has.
+  // The root path is "", every other path is "/grandparent/parent/child[n]", where n deduplicates
+  // children with the same name.
+  for (auto const [i, node] : std::views::enumerate(nodes)) {
+    // Leave the root node's path empty as it is fairly volatile.
+    // For example, some importers change it based on the input file name.
+    if (!node.parent_idx) {
+      continue;
+    }
+
+    std::string_view const node_name{node.ptr->mName.C_Str()};
+    auto const name_count = name_counts[*node.parent_idx][node_name]++;
+    auto const& parent_path = node_paths[*node.parent_idx];
+    node_paths[i] = std::format("{}/{}{}", parent_path, node_name,
+      name_count == 0 ? std::string{} : std::format("[{}]", name_count));
+  }
+
+  auto keys = meshes_by_group | std::views::transform([&](auto const& meshes) {
+    auto const first_mesh_idx = meshes.front();
+    auto const& mesh_nodes = nodes_by_mesh.at(first_mesh_idx);
+
+    if (mesh_nodes.empty()) {
+      // Every unreferenced mesh is grouped into a single group,
+      // so at most one group is unreferenced. This is for that case.
+      return std::string{"mesh:unreferenced"};
+    }
+
+    auto const first_node_idx = mesh_nodes.front();
+    auto const group_count = group_counts[first_node_idx]++;
+
+    return group_count == 0
+             ? std::format("mesh:{}", node_paths[first_node_idx])
+             : std::format("mesh:{}:{}", node_paths[first_node_idx], group_count);
+  }) | std::ranges::to<std::vector<std::string>>();
+  MakeKeysUnique(keys);
+  return keys;
+}
+
+
+[[nodiscard]]
+auto MakeMaterialKeys(std::span<MaterialSlotInfo const> const mtl_slots) -> std::vector<std::string> {
+  auto keys = mtl_slots |
+              std::views::transform([](MaterialSlotInfo const& slot) {
+                return std::format("material:{}", slot.name);
+              }) |
+              std::ranges::to<std::vector>();
+  MakeKeysUnique(keys);
+  return keys;
+}
+
+
+// Textures are keyed by their file name, or by a hash of their contents if they have none
+[[nodiscard]]
+auto MakeTextureKeys(std::span<TextureLoadInfo const> const tex_infos) -> std::vector<std::string> {
+  auto keys = tex_infos | std::views::transform([](TextureLoadInfo const& info) {
+    auto const& tex = *info.tex;
+
+    if (!tex.mFilename.Empty()) {
+      return std::format("texture:{}", tex.mFilename.C_Str());
+    }
+
+    // Compressed textures store their byte count in mWidth, uncompressed ones are mWidth * mHeight texels
+    auto const byte_count = tex.mHeight == 0
+                              ? std::size_t{tex.mWidth}
+                              : std::size_t{tex.mWidth} * tex.mHeight * sizeof(aiTexel);
+
+    return std::format("texture:{:016x}",
+      Fnv1a64(std::span{reinterpret_cast<std::byte const*>(tex.pcData), byte_count}));
+  }) | std::ranges::to<std::vector>();
+
+  MakeKeysUnique(keys);
+  return keys;
+}
+
+
 using SceneMaterialIndex = std::size_t;
 using MaterialSlotsByMesh = std::vector<std::vector<SceneMaterialIndex>>;
 
@@ -1767,6 +1898,26 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
       texture_import_results)) {
       return false;
     }
+  }
+
+  // Stable subasset identities. Not used for the package layout yet, only logged for verification.
+
+  SubassetKeys subasset_keys{
+    .prefab = "prefab",
+    .meshes = bake_into_single_mesh
+                ? std::vector<std::string>{"mesh:baked"}
+                : MakeMeshGroupKeys(nodes, nodes_by_mesh, meshes_by_group),
+    .materials = MakeMaterialKeys(mtl_slots),
+    .textures = MakeTextureKeys(texes_to_load),
+  };
+
+  spdlog::debug("Subasset keys of \"{}\":", ToUntypedSv(src.u8string()));
+  spdlog::debug("  {}", subasset_keys.prefab);
+
+  for (auto const& key : std::views::join(std::array{
+         std::span{subasset_keys.meshes}, std::span{subasset_keys.materials}, std::span{subasset_keys.textures}
+       })) {
+    spdlog::debug("  {}", key);
   }
 
   // Write subassets to output in package order
