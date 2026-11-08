@@ -38,12 +38,10 @@
 #include "sorcery/mesh_utils.hpp"
 #include "sorcery/observer_ptr.hpp"
 #include "sorcery/Serialization.hpp"
-#include "sorcery/util.hpp"
 #include "sorcery/assets/Mesh.hpp"
 #include "sorcery/assets/prefab.hpp"
 #include "sorcery/host/app.hpp"
 #include "sorcery/host/job_system.hpp"
-#include "sorcery/host/platform.hpp"
 #include "sorcery/host/assets/material_import.hpp"
 #include "sorcery/host/assets/texture_import.hpp"
 #include "sorcery/scene/Entity.hpp"
@@ -51,21 +49,20 @@
 
 
 RTTR_REGISTRATION {
-  rttr::registration::enumeration<sorcery::mage::ModelImporter::SubassetKind>("ModelImporterSubassetKind")(
-    rttr::value("Material", sorcery::mage::ModelImporter::SubassetKind::kMaterial),
-    rttr::value("Texture", sorcery::mage::ModelImporter::SubassetKind::kTexture)
-  );
-
-  rttr::registration::class_<sorcery::mage::ModelImporter::SubassetImportSettings>(
-      "ModelImporterSubassetImportSettings")
+  rttr::registration::class_<sorcery::mage::ModelImporter::MaterialSettingsEntry>("ModelImporterMaterialSettingsEntry")
     .constructor<>()(rttr::policy::ctor::as_object)
-    .property("Subasset Kind", &sorcery::mage::ModelImporter::SubassetImportSettings::kind)
-    .property("Material Import Settings", &sorcery::mage::ModelImporter::SubassetImportSettings::material_settings)
-    .property("Texture Import Settings", &sorcery::mage::ModelImporter::SubassetImportSettings::texture_settings);
+    .property("Key", &sorcery::mage::ModelImporter::MaterialSettingsEntry::key)
+    .property("Settings", &sorcery::mage::ModelImporter::MaterialSettingsEntry::settings);
+
+  rttr::registration::class_<sorcery::mage::ModelImporter::TextureSettingsEntry>("ModelImporterTextureSettingsEntry")
+    .constructor<>()(rttr::policy::ctor::as_object)
+    .property("Key", &sorcery::mage::ModelImporter::TextureSettingsEntry::key)
+    .property("Settings", &sorcery::mage::ModelImporter::TextureSettingsEntry::settings);
 
   rttr::registration::class_<sorcery::mage::ModelImporter>{"Model Importer"}
     .REFLECT_REGISTER_ASSET_IMPORTER_CTOR
-    .property("Subassets", &sorcery::mage::ModelImporter::subasset_import_settings_)
+    .property("Materials", &sorcery::mage::ModelImporter::material_settings_)
+    .property("Textures", &sorcery::mage::ModelImporter::texture_settings_)
     .property("Mesh Import Settings", &sorcery::mage::ModelImporter::mesh_import_settings_)
     .property("Import materials", &sorcery::mage::ModelImporter::import_materials_)
     .property("Import textures", &sorcery::mage::ModelImporter::import_textures_);
@@ -85,10 +82,6 @@ struct Node {
 
 constexpr auto kBlendFallbackAlphaThreshold = 0.1f;
 
-
-using SubassetImportSettings = ModelImporter::SubassetImportSettings;
-using SubassetKind = ModelImporter::SubassetKind;
-
 // Stable identities of the subassets, independent of their order in the package.
 // Keys carry a kind prefix ("mesh:", "material:", ...) so they never collide across kinds.
 struct SubassetKeys {
@@ -96,28 +89,6 @@ struct SubassetKeys {
   std::vector<std::string> meshes;
   std::vector<std::string> materials;
   std::vector<std::string> textures;
-};
-
-
-class SettingsLayout {
-public:
-  explicit SettingsLayout(std::size_t const material_count) :
-    material_count_{material_count} {}
-
-
-  [[nodiscard]] static
-  auto GetMaterialSettingsIdx(std::size_t const mtl_idx) -> std::size_t {
-    return mtl_idx;
-  }
-
-
-  [[nodiscard]]
-  auto GetTextureSettingsIdx(std::size_t const tex_idx) const -> std::size_t {
-    return material_count_ + tex_idx;
-  }
-
-private:
-  std::size_t material_count_;
 };
 
 
@@ -236,20 +207,8 @@ public:
 
 
   [[nodiscard]]
-  auto GetMeshCount() const -> std::size_t {
-    return mesh_ids_.size();
-  }
-
-
-  [[nodiscard]]
   auto GetMaterialCount() const -> std::size_t {
     return mtl_ids_.size();
-  }
-
-
-  [[nodiscard]]
-  auto GetTextureCount() const -> std::size_t {
-    return tex_ids_.size();
   }
 
 private:
@@ -383,8 +342,7 @@ auto LoadScene(std::filesystem::path const& src) -> std::unique_ptr<Assimp::Impo
   };
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    DisplayError(std::format("Failed to import model at {}: {}.", ToUntypedSv(src.u8string()),
-      importer->GetErrorString()));
+    spdlog::error("Failed to import model at {}: {}.", ToUntypedSv(src.u8string()), importer->GetErrorString());
     return nullptr;
   }
 
@@ -555,8 +513,8 @@ auto ExtractMaterial(aiScene const& scene, aiMaterial const& mtl, bool const imp
 // Slot info for each material is always collected. If material import is enabled, asset data is also collected.
 // Texture dependencies are also collected if both material and texture import are enabled.
 [[nodiscard]]
-auto CollectMaterials(aiScene const& scene, bool const import_materials, bool const import_textures,
-                      std::vector<SubassetImportSettings>& subasset_settings) -> CollectedMaterials {
+auto CollectMaterials(aiScene const& scene, bool const import_materials,
+                      bool const import_textures) -> CollectedMaterials {
   CollectedMaterials ret;
   ret.slots.resize(scene.mNumMaterials);
 
@@ -571,18 +529,6 @@ auto CollectMaterials(aiScene const& scene, bool const import_materials, bool co
     ret.slots[i].name = mtl_name.Empty() ? std::format("Material_{}", i) : std::string{mtl_name.C_Str()};
 
     if (import_materials) {
-      auto const settings_idx = SettingsLayout::GetMaterialSettingsIdx(i);
-
-      if (subasset_settings.size() <= settings_idx) {
-        subasset_settings.emplace_back(MaterialImportSettings{}, TextureImportSettings{}, SubassetKind::kMaterial);
-      } else if (subasset_settings[settings_idx].kind != SubassetKind::kMaterial) {
-        subasset_settings[settings_idx].kind = SubassetKind::kMaterial;
-        subasset_settings[settings_idx].material_settings = MaterialImportSettings{};
-      }
-
-      // We don't use this yet, but we may want to in the future.
-      [[maybe_unused]] auto const& import_settings = subasset_settings[settings_idx].material_settings;
-
       ret.assets[i] = ExtractMaterial(scene, mtl, import_textures, ret.tex_deps);
     }
   }
@@ -656,29 +602,10 @@ auto CollectUnreferencedTextures(aiScene const& scene, std::vector<TextureLoadIn
 auto ImportEmbeddedTextures(std::filesystem::path const& src,
                             std::span<TextureLoadInfo const> const tex_infos,
                             std::span<float const> const tex_coverage_thresholds,
-                            SettingsLayout const& settings_layout,
+                            std::span<TextureImportSettings const> const tex_import_settings,
                             SubassetIds const& subasset_ids,
-                            std::vector<SubassetImportSettings>& subasset_settings,
                             std::vector<AssetImportResult>& out_results) -> bool {
   for (auto const [idx, tex_info] : tex_infos | std::views::enumerate) {
-    auto const subasset_idx = settings_layout.GetTextureSettingsIdx(static_cast<std::size_t>(idx));
-
-    {
-      TextureImportSettings const default_import_settings{
-        .type = TextureImportType::kTexture2D,
-        .allow_block_compression = true,
-        .is_srgb = IsSrgb(tex_info.type),
-        .generate_mips = true
-      };
-
-      if (subasset_settings.size() <= subasset_idx) {
-        subasset_settings.emplace_back(MaterialImportSettings{}, default_import_settings, SubassetKind::kTexture);
-      } else if (subasset_settings[subasset_idx].kind != SubassetKind::kTexture) {
-        subasset_settings[subasset_idx].kind = SubassetKind::kTexture;
-        subasset_settings[subasset_idx].texture_settings = default_import_settings;
-      }
-    }
-
     // The texture is compressed
     if (tex_info.tex->mHeight == 0) {
       auto const ext{std::u8string{u8'.'} += reinterpret_cast<char8_t const*>(&tex_info.tex->achFormatHint)};
@@ -688,7 +615,7 @@ auto ImportEmbeddedTextures(std::filesystem::path const& src,
         .ext = ext
       };
 
-      auto const& saved_settings = subasset_settings[subasset_idx].texture_settings;
+      auto const& saved_settings = tex_import_settings[idx];
 
       // Resolve Auto into a concrete choice for this import; the saved settings keep Auto
       auto import_settings = saved_settings;
@@ -704,7 +631,7 @@ auto ImportEmbeddedTextures(std::filesystem::path const& src,
         }
       }
 
-      auto tex_result{ImportTexture(import_src, import_settings)};
+      auto tex_result = ImportTexture(import_src, import_settings);
 
       if (!tex_result) {
         return false;
@@ -782,33 +709,29 @@ auto ExtractAiMesh(aiMesh const& mesh, unsigned idx_in_scene,
   std::string const name{mesh.mName.Empty() ? std::format("Mesh {}", idx_in_scene) : mesh.mName.C_Str()};
 
   if (!mesh.HasPositions()) {
-    OutputDebugStringA(
-      std::format("Skipping mesh \"{}\" in file \"{}\" because it is missing vertex positions.\n", name,
-        ToUntypedSv(src.u8string())).c_str());
+    spdlog::warn("Skipping mesh \"{}\" in file \"{}\" because it is missing vertex positions.", name,
+      ToUntypedSv(src.u8string()));
     return std::nullopt;
   }
 
   if (!mesh.HasNormals()) {
-    OutputDebugStringA(
-      std::format("Skipping mesh \"{}\" in file \"{}\" because it is missing vertex normals.\n", name,
-        ToUntypedSv(src.u8string())).c_str());
+    spdlog::warn("Skipping mesh \"{}\" in file \"{}\" because it is missing vertex normals.", name,
+      ToUntypedSv(src.u8string()));
     return std::nullopt;
   }
 
   auto const has_uvs{mesh.HasTextureCoords(0)};
 
   if (!has_uvs) {
-    OutputDebugStringA(
-      std::format("Mesh \"{}\" in file \"{}\" is missing texture coordinates. Filling in zeroes.\n", name,
-        ToUntypedSv(src.u8string())).c_str());
+    spdlog::warn("Mesh \"{}\" in file \"{}\" is missing texture coordinates. Filling in zeroes.", name,
+      ToUntypedSv(src.u8string()));
   }
 
   auto const has_tangents{mesh.HasTangentsAndBitangents()};
 
   if (!has_tangents) {
-    OutputDebugStringA(
-      std::format("Mesh \"{}\" in file \"{}\" is missing tangents. Filling in zeroes.\n", name,
-        ToUntypedSv(src.u8string())).c_str());
+    spdlog::warn("Mesh \"{}\" in file \"{}\" is missing tangents. Filling in zeroes.", name,
+      ToUntypedSv(src.u8string()));
   }
 
   MeshProcessingData ret;
@@ -1379,7 +1302,7 @@ auto BuildMeshGeometry(SizedRangeOf<MeshProcessingData const> auto&& meshes, boo
 
   for (auto const [i, mesh] : std::views::enumerate(meshes)) {
     if (!meshletized_meshes[i]) {
-      DisplayError(std::format("Failed to compute meshlets for submesh {}.", i));
+      spdlog::error("Failed to compute meshlets for submesh {}.", i);
       return false;
     }
 
@@ -1498,9 +1421,8 @@ auto CollectAnimations(aiScene const& scene,
         auto const node{mesh_search_queue.front()};
 
         if (node->mNumMeshes > 0) {
-          // TODO log this properly
-          OutputDebugStringA(
-            "Animated node is an ancestor of a submesh node. Animations on submesh nodes are currently not supported.\n");
+          spdlog::warn(
+            "Animated node is an ancestor of a submesh node. Animations on submesh nodes are currently not supported.");
           break;
         }
 
@@ -1515,7 +1437,7 @@ auto CollectAnimations(aiScene const& scene,
 
       if (!skeleton_node_name_to_idx.contains(channel->mNodeName.C_Str())) {
         // TODO log this properly
-        OutputDebugStringA("Animated node is not part of the skeleton. Such animations are currently not supported.\n");
+        spdlog::warn("Animated node is not part of the skeleton. Such animations are currently not supported.");
         continue;
       }
 
@@ -1955,8 +1877,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   // Import materials and gather info to load textures
 
-  auto [mtl_slots, mtl_assets, texes_to_load] = CollectMaterials(scene, import_materials_, import_textures_,
-    subasset_import_settings_);
+  auto [mtl_slots, mtl_assets, texes_to_load] = CollectMaterials(scene, import_materials_, import_textures_);
   auto const tex_coverage_thresholds = ComputeTextureCoverageThresholds(mtl_assets, texes_to_load.size());
 
   //  At this point, the submeshes inside each imported mesh have absolute material indices, not local to their parent mesh.
@@ -1990,7 +1911,56 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     spdlog::debug("  {}", key);
   }
 
-  SettingsLayout const settings_layout{mtl_assets.size()};
+  // Sync settings with current import keys
+
+  if (import_materials_) {
+    std::vector<MaterialSettingsEntry> new_settings_entries;
+    new_settings_entries.reserve(subasset_keys.materials.size());
+
+    std::ranges::sort(material_settings_, {}, &MaterialSettingsEntry::key);
+
+    for (auto const& key : subasset_keys.materials) {
+      auto const it = std::ranges::lower_bound(material_settings_, key, {}, &MaterialSettingsEntry::key);
+      auto const settings =
+        it != material_settings_.end() && it->key == key
+          ? it->settings
+          : MaterialImportSettings{};
+      new_settings_entries.emplace_back(key, settings);
+    }
+
+    std::ranges::sort(new_settings_entries, {}, &MaterialSettingsEntry::key);
+    material_settings_ = std::move(new_settings_entries);
+  }
+
+  std::vector<TextureImportSettings> tex_settings;
+
+  if (import_textures_) {
+    tex_settings.reserve(subasset_keys.textures.size());
+
+    std::vector<TextureSettingsEntry> new_settings_entries;
+    new_settings_entries.reserve(subasset_keys.textures.size());
+
+    std::ranges::sort(texture_settings_, {}, &TextureSettingsEntry::key);
+
+    for (auto const [i, key] : std::views::enumerate(subasset_keys.textures)) {
+      auto const it = std::ranges::lower_bound(texture_settings_, key, {}, &TextureSettingsEntry::key);
+      auto const settings =
+        it != texture_settings_.end() && it->key == key
+          ? it->settings
+          : TextureImportSettings{
+            .type = TextureImportType::kTexture2D,
+            .allow_block_compression = true,
+            .is_srgb = IsSrgb(texes_to_load[i].type),
+            .generate_mips = true
+          };
+      new_settings_entries.emplace_back(key, settings);
+      tex_settings.emplace_back(settings);
+    }
+
+    std::ranges::sort(new_settings_entries, {}, &TextureSettingsEntry::key);
+    texture_settings_ = std::move(new_settings_entries);
+  }
+
   auto const subasset_ids = SubassetIds::FromKeys(subasset_keys, src);
 
   // Now we have subasset ids so we can patch material->texture references
@@ -2001,8 +1971,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   std::vector<AssetImportResult> texture_import_results;
 
   if (import_textures_) {
-    if (!ImportEmbeddedTextures(src, texes_to_load, tex_coverage_thresholds, settings_layout, subasset_ids,
-      subasset_import_settings_, texture_import_results)) {
+    if (!ImportEmbeddedTextures(src, texes_to_load, tex_coverage_thresholds, tex_settings, subasset_ids,
+      texture_import_results)) {
       return false;
     }
   }
@@ -2046,13 +2016,25 @@ auto ModelImporter::SetMeshImportSettings(MeshImportSettings const& settings) ->
 }
 
 
-auto ModelImporter::GetSubassetImportSettings() const -> std::span<SubassetImportSettings const> {
-  return subasset_import_settings_;
+auto ModelImporter::GetMaterialImportSettings() const -> std::span<MaterialSettingsEntry const> {
+  return material_settings_;
 }
 
 
-auto ModelImporter::SetSubassetImportSettings(std::span<SubassetImportSettings const> settings) -> void {
-  subasset_import_settings_.assign(settings.begin(), settings.end());
+auto ModelImporter::SetMaterialImportSettings(std::span<MaterialSettingsEntry const> const settings) -> void {
+  material_settings_.assign_range(settings);
+  std::ranges::sort(material_settings_, {}, &MaterialSettingsEntry::key);
+}
+
+
+auto ModelImporter::GetTextureImportSettings() const -> std::span<TextureSettingsEntry const> {
+  return texture_settings_;
+}
+
+
+auto ModelImporter::SetTextureImportSettings(std::span<TextureSettingsEntry const> const settings) -> void {
+  texture_settings_.assign_range(settings);
+  std::ranges::sort(texture_settings_, {}, &TextureSettingsEntry::key);
 }
 
 
@@ -2062,18 +2044,6 @@ auto ModelImporter::IsMaterialImportEnabled() const -> bool {
 
 
 auto ModelImporter::SetMaterialImportEnabled(bool const enabled) -> void {
-  // If we're turning off material import, we remove material subasset settings
-  if (import_materials_ && !enabled) {
-    std::erase_if(subasset_import_settings_, [](SubassetImportSettings const& settings) {
-      return settings.kind == SubassetKind::kMaterial;
-    });
-  }
-
-  // If we're turning on material import, we reset the entire subresouce settings set
-  if (!import_materials_ && enabled) {
-    subasset_import_settings_.clear();
-  }
-
   import_materials_ = enabled;
 }
 
@@ -2084,18 +2054,6 @@ auto ModelImporter::IsTextureImportEnabled() const -> bool {
 
 
 auto ModelImporter::SetTextureImportEnabled(bool const enabled) -> void {
-  // If we're turning off texture import, we remove texture subasset settings
-  if (import_textures_ && !enabled) {
-    std::erase_if(subasset_import_settings_, [](SubassetImportSettings const& settings) {
-      return settings.kind == SubassetKind::kTexture;
-    });
-  }
-
-  // If we're turning on texture import, we reset the entire subasset settings set
-  if (!import_textures_ && enabled) {
-    subasset_import_settings_.clear();
-  }
-
   import_textures_ = enabled;
 }
 }

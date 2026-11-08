@@ -79,35 +79,42 @@ auto ModelImporterEditorDrawer::Draw(
     ImGui::EndTable();
   }
 
-  ImGui::Separator();
+  if (obj.IsMaterialImportEnabled()) {
+    ImGui::Separator();
 
-  auto subres_settings{
-    std::ranges::to<std::vector<ModelImporter::SubassetImportSettings>>(obj.GetSubassetImportSettings())
-  };
+    auto material_entries = obj.GetMaterialImportSettings() | std::ranges::to<std::vector<
+                              ModelImporter::MaterialSettingsEntry>>();
 
-  for (auto idx{0}; auto& settings : subres_settings) {
-    ImGui::SeparatorText(std::format("Subasset {} ({})", idx,
-      settings.kind == ModelImporter::SubassetKind::kMaterial ? "Material" : "Texture").c_str());
+    for (auto& [key, settings] : material_entries) {
+      ImGui::SeparatorText(key.c_str());
 
-    ImGui::PushID(idx++);
+      ImGui::PushID(key.c_str());
 
-    switch (settings.kind) {
-      case ModelImporter::SubassetKind::kMaterial: {
-        if (DrawMaterialImportSettings(settings.material_settings, allow_edit, changed)) {
-          obj.SetSubassetImportSettings(subres_settings);
-        }
-        break;
+      if (DrawMaterialImportSettings(settings, allow_edit, changed)) {
+        obj.SetMaterialImportSettings(material_entries);
       }
 
-      case ModelImporter::SubassetKind::kTexture: {
-        if (DrawTextureImportSettings(settings.texture_settings, allow_edit, changed)) {
-          obj.SetSubassetImportSettings(subres_settings);
-        }
-        break;
-      }
+      ImGui::PopID();
     }
+  }
 
-    ImGui::PopID();
+  if (obj.IsTextureImportEnabled()) {
+    ImGui::Separator();
+
+    auto texture_entries = obj.GetTextureImportSettings() | std::ranges::to<std::vector<
+                             ModelImporter::TextureSettingsEntry>>();
+
+    for (auto& [key, settings] : texture_entries) {
+      ImGui::SeparatorText(key.c_str());
+
+      ImGui::PushID(key.c_str());
+
+      if (DrawTextureImportSettings(settings, allow_edit, changed)) {
+        obj.SetTextureImportSettings(texture_entries);
+      }
+
+      ImGui::PopID();
+    }
   }
 }
 }

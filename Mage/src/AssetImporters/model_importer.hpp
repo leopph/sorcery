@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 #include "asset_importer.hpp"
 #include "sorcery/host/assets/material_import.hpp"
 #include "sorcery/host/assets/mesh_import.hpp"
@@ -14,16 +12,15 @@ class ModelImporter final : public AssetImporter {
   RTTR_REGISTRATION_FRIEND
 
 public:
-  enum class SubassetKind : std::uint32_t {
-    kMaterial = 1,
-    kTexture  = 2
+  struct MaterialSettingsEntry {
+    std::string key;
+    MaterialImportSettings settings;
   };
 
 
-  struct SubassetImportSettings {
-    MaterialImportSettings material_settings;
-    TextureImportSettings texture_settings;
-    SubassetKind kind{SubassetKind::kMaterial};
+  struct TextureSettingsEntry {
+    std::string key;
+    TextureImportSettings settings;
   };
 
 
@@ -43,9 +40,12 @@ public:
   auto SetMeshImportSettings(MeshImportSettings const& settings) -> void;
 
   [[nodiscard]]
-  auto GetSubassetImportSettings() const -> std::span<SubassetImportSettings const>;
+  auto GetMaterialImportSettings() const -> std::span<MaterialSettingsEntry const>;
+  auto SetMaterialImportSettings(std::span<MaterialSettingsEntry const> settings) -> void;
 
-  auto SetSubassetImportSettings(std::span<SubassetImportSettings const> settings) -> void;
+  [[nodiscard]]
+  auto GetTextureImportSettings() const -> std::span<TextureSettingsEntry const>;
+  auto SetTextureImportSettings(std::span<TextureSettingsEntry const> settings) -> void;
 
   [[nodiscard]]
   auto IsMaterialImportEnabled() const -> bool;
@@ -58,7 +58,9 @@ public:
   auto SetTextureImportEnabled(bool enabled) -> void;
 
 private:
-  std::vector<SubassetImportSettings> subasset_import_settings_;
+  std::vector<MaterialSettingsEntry> material_settings_; // sorted by key
+  std::vector<TextureSettingsEntry> texture_settings_; // sorted by key
+
   MeshImportSettings mesh_import_settings_;
   bool import_materials_{true};
   bool import_textures_{true};
