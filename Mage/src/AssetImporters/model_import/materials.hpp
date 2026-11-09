@@ -64,14 +64,13 @@ auto BuildTextureResults(
   std::span<SourceTexture const> src_texes,
   std::span<float const> tex_coverage_thresholds,
   std::span<TextureImportSettings const> tex_import_settings,
-  SubassetIds const& subasset_ids,
-  std::vector<AssetImportResult>& out_results
-) -> bool;
+  SubassetIds const& subasset_ids
+) -> std::optional<std::vector<AssetImportResult>>;
 
 
 auto BuildMaterialResults(
   std::span<MaterialAssetData const> material_data,
   std::span<MaterialSlotInfo const> material_slots,
-  SubassetIds const& ids, std::vector<AssetImportResult>& out_results
-) -> void;
+  SubassetIds const& ids
+) -> std::vector<AssetImportResult>;
 }

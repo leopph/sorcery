@@ -295,11 +295,15 @@ auto AssignMeshMaterialSlots(std::span<MeshData> const imported_meshes,
 }
 
 
-auto BuildTextureResults(std::filesystem::path const& src, std::span<SourceTexture const> const src_texes,
-                         std::span<float const> const tex_coverage_thresholds,
-                         std::span<TextureImportSettings const> const tex_import_settings,
-                         SubassetIds const& subasset_ids,
-                         std::vector<AssetImportResult>& out_results) -> bool {
+auto BuildTextureResults(
+  std::filesystem::path const& src,
+  std::span<SourceTexture const> const src_texes,
+  std::span<float const> const tex_coverage_thresholds,
+  std::span<TextureImportSettings const> const tex_import_settings,
+  SubassetIds const& subasset_ids
+) -> std::optional<std::vector<AssetImportResult>> {
+  std::vector<AssetImportResult> results;
+
   for (auto const [idx, tex_info] : src_texes | std::views::enumerate) {
     // The texture is compressed
     if (tex_info.tex->mHeight == 0) {
@@ -329,7 +333,7 @@ auto BuildTextureResults(std::filesystem::path const& src, std::span<SourceTextu
       auto tex_result = ImportTexture(import_src, import_settings);
 
       if (!tex_result) {
-        return false;
+        return std::nullopt;
       }
 
       auto const tex_name =
@@ -337,12 +341,12 @@ auto BuildTextureResults(std::filesystem::path const& src, std::span<SourceTextu
           ? std::string{ToUntypedSv(src.filename().stem().u8string())} += std::format(" Texture {}", idx)
           : std::string{tex_info.tex->mFilename.C_Str()};
 
-      out_results.emplace_back(subasset_ids.GetTextureId(idx), GetCurrentPayloadVersion(tex_result->payload_kind),
+      results.emplace_back(subasset_ids.GetTextureId(idx), GetCurrentPayloadVersion(tex_result->payload_kind),
         tex_result->payload_kind, tex_result->runtime_type, tex_name, std::move(tex_result->bytes));
     } else {
       // TODO implement this path
       assert("Found uncompressed embedded texture." && false);
-      return false;
+      return std::nullopt;
       //auto& tex_data{
       //  scene_data.textures.emplace_back(tex->mWidth, tex->mHeight,
       //    std::make_unique_for_overwrite<
@@ -354,17 +358,24 @@ auto BuildTextureResults(std::filesystem::path const& src, std::span<SourceTextu
     }
   }
 
-  return true;
+  return results;
 }
 
 
-auto BuildMaterialResults(std::span<MaterialAssetData const> const material_data,
-                          std::span<MaterialSlotInfo const> const material_slots, SubassetIds const& ids,
-                          std::vector<AssetImportResult>& out_results) -> void {
+auto BuildMaterialResults(
+  std::span<MaterialAssetData const> const material_data,
+  std::span<MaterialSlotInfo const> const material_slots,
+  SubassetIds const& ids
+) -> std::vector<AssetImportResult> {
+  std::vector<AssetImportResult> out_results;
+  out_results.reserve(material_data.size());
+
   for (auto const [mtl_idx, mtl_data] : std::views::enumerate(material_data)) {
     auto mtl_result = ImportMaterial(mtl_data, {});
     out_results.emplace_back(ids.GetMaterialId(mtl_idx), GetCurrentPayloadVersion(mtl_result.payload_kind),
       mtl_result.payload_kind, mtl_result.runtime_type, material_slots[mtl_idx].name, std::move(mtl_result.bytes));
   }
+
+  return out_results;
 }
 }

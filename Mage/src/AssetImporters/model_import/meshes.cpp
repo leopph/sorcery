@@ -479,16 +479,17 @@ auto ImportBakedMesh(aiScene const& scene, std::filesystem::path const& src, Mes
   MeshImport mesh_import;
   auto& mesh_data = mesh_import.meshes.emplace_back();
 
-  auto const skeleton_node_name_to_idx = BuildSkeleton(*scene.mRootNode, bones, mesh_data.skeleton,
-    mesh_data.bones);
-
   meshes = FuseByMaterial(meshes);
 
   if (!BuildMeshGeometry(meshes, settings.force_idx32, job_system, mesh_data)) {
     return std::nullopt;
   }
 
-  mesh_data.animations = CollectAnimations(scene, skeleton_node_name_to_idx);
+  auto skeleton = BuildSkeleton(*scene.mRootNode, bones);
+  mesh_data.animations = CollectAnimations(scene, skeleton.node_idx_by_name);
+  mesh_data.bones = std::move(skeleton.bones);
+  mesh_data.skeleton = std::move(skeleton.nodes);
+
   mesh_import.keys.emplace_back("mesh:baked");
 
   return mesh_import;

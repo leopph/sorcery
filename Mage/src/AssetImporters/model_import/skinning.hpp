@@ -15,15 +15,20 @@ auto ExtractBoneWeights(
   SourceMesh& mesh
 ) -> void;
 
+
+struct BuiltSkeleton {
+  std::vector<SkeletonNode> nodes;
+  std::vector<Bone> bones;
+  std::unordered_map<std::string, std::uint32_t> node_idx_by_name;
+};
+
+
 // Builds the skeleton from the bones' nodes and all of their ancestors, then creates the final bone data.
-// Returns the skeleton node index of each skeleton node name.
 [[nodiscard]]
 auto BuildSkeleton(
   aiNode const& root,
-  std::span<SourceBone const> bones,
-  std::vector<SkeletonNode>& out_skeleton,
-  std::vector<Bone>& out_bones
-) -> std::unordered_map<std::string, std::uint32_t>;
+  std::span<SourceBone const> bones
+) -> BuiltSkeleton;
 
 // Collects the animations of skeleton nodes. Channels animating other nodes are skipped.
 [[nodiscard]]

@@ -81,9 +81,9 @@ auto ExtractBoneWeights(aiMesh const& ai_mesh, Matrix4 const& transform_inv,
 }
 
 
-auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const bones,
-                   std::vector<SkeletonNode>& out_skeleton,
-                   std::vector<Bone>& out_bones) -> std::unordered_map<std::string, std::uint32_t> {
+auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const bones) -> BuiltSkeleton {
+  BuiltSkeleton built;
+
   // Convert node hierarchy
 
   auto root_node{ConvertHierarchy(&root, nullptr)};
@@ -104,7 +104,6 @@ auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const bones,
   // Flatten visited hierarchy to a BFS list
 
   // Indices are needed for node animations. It is guaranteed that animated nodes have unique names.
-  std::unordered_map<std::string, std::uint32_t> skeleton_node_name_to_idx;
 
   struct NodeAndParentIdx {
     Node* node;
@@ -121,9 +120,9 @@ auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const bones,
 
   while (!node_queue.empty()) {
     auto const& [node, parent_idx]{node_queue.front()};
-    auto const this_node_idx{static_cast<std::uint32_t>(out_skeleton.size())};
-    out_skeleton.emplace_back(node->name, node->transform, parent_idx);
-    skeleton_node_name_to_idx.try_emplace(node->name, this_node_idx);
+    auto const this_node_idx{static_cast<std::uint32_t>(built.nodes.size())};
+    built.nodes.emplace_back(node->name, node->transform, parent_idx);
+    built.node_idx_by_name.try_emplace(node->name, this_node_idx);
 
     for (auto const& child : node->children) {
       if (child->visited) {
@@ -136,15 +135,15 @@ auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const bones,
 
   // Create final bone data
 
-  out_bones.reserve(bones.size());
-  std::ranges::transform(bones, std::back_inserter(out_bones),
-    [&skeleton_node_name_to_idx](SourceBone const& src_bone) {
+  built.bones.reserve(bones.size());
+  std::ranges::transform(bones, std::back_inserter(built.bones),
+    [&built](SourceBone const& src_bone) {
       return Bone{
-        .offset_mtx = src_bone.offset_matrix, .skeleton_node_idx = skeleton_node_name_to_idx.at(src_bone.node_name)
+        .offset_mtx = src_bone.offset_matrix, .skeleton_node_idx = built.node_idx_by_name.at(src_bone.node_name)
       };
     });
 
-  return skeleton_node_name_to_idx;
+  return built;
 }
 
 

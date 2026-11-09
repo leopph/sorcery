@@ -47,6 +47,23 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery::mage {
+namespace {
+template<class Entry>
+auto FindSettings(
+  std::span<Entry const> const entries,
+  std::string_view const key
+) -> std::optional<decltype(Entry::settings)> {
+  auto const it = std::ranges::lower_bound(entries, key, {}, &Entry::key);
+
+  if (it != entries.end() && it->key == key) {
+    return std::make_optional(it->settings);
+  }
+
+  return std::nullopt;
+}
+}
+
+
 auto ModelImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
   std::string extensions;
   Assimp::Importer const importer;
@@ -121,11 +138,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     std::ranges::sort(material_settings_, {}, &MaterialSettingsEntry::key);
 
     for (auto const& key : subasset_keys.materials) {
-      auto const it = std::ranges::lower_bound(material_settings_, key, {}, &MaterialSettingsEntry::key);
-      auto const settings =
-        it != material_settings_.end() && it->key == key
-          ? it->settings
-          : MaterialImportSettings{};
+      auto const settings = FindSettings<MaterialSettingsEntry>(material_settings_, key).value_or(
+        MaterialImportSettings{});
       new_settings_entries.emplace_back(key, settings);
     }
 
@@ -144,16 +158,13 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     std::ranges::sort(texture_settings_, {}, &TextureSettingsEntry::key);
 
     for (auto const [i, key] : std::views::enumerate(subasset_keys.textures)) {
-      auto const it = std::ranges::lower_bound(texture_settings_, key, {}, &TextureSettingsEntry::key);
-      auto const settings =
-        it != texture_settings_.end() && it->key == key
-          ? it->settings
-          : TextureImportSettings{
-            .type = TextureImportType::kTexture2D,
-            .allow_block_compression = true,
-            .is_srgb = model_import::IsSrgb(texes_to_load[i].type),
-            .generate_mips = true
-          };
+      auto const settings = FindSettings<TextureSettingsEntry>(texture_settings_, key).value_or(
+        TextureImportSettings{
+          .type = TextureImportType::kTexture2D,
+          .allow_block_compression = true,
+          .is_srgb = model_import::IsSrgb(texes_to_load[i].type),
+          .generate_mips = true
+        });
       new_settings_entries.emplace_back(key, settings);
       tex_settings.emplace_back(settings);
     }
@@ -166,17 +177,6 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   // Now we have subasset ids so we can patch material->texture references
   ResolveTextureIds(mtl_assets, subasset_ids);
-
-  // Import all textures
-
-  std::vector<AssetImportResult> texture_import_results;
-
-  if (import_textures_) {
-    if (!BuildTextureResults(src, texes_to_load, tex_coverage_thresholds, tex_settings, subasset_ids,
-      texture_import_results)) {
-      return false;
-    }
-  }
 
   // Write subassets to output in package order
 
@@ -196,11 +196,17 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   }
 
   if (import_materials_) {
-    BuildMaterialResults(mtl_assets, mtl_slots, subasset_ids, results);
+    std::ranges::move(BuildMaterialResults(mtl_assets, mtl_slots, subasset_ids), std::back_inserter(results));
   }
 
   if (import_textures_) {
-    std::ranges::move(texture_import_results, std::back_inserter(results));
+    auto tex_results = BuildTextureResults(src, texes_to_load, tex_coverage_thresholds, tex_settings, subasset_ids);
+
+    if (!tex_results) {
+      return false;
+    }
+
+    std::ranges::move(*tex_results, std::back_inserter(results));
   }
 
   return true;
