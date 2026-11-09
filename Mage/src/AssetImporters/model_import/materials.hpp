@@ -39,13 +39,13 @@ auto ComputeTextureCoverageThresholds(
 
 // Some textures may not be referenced by any material, but we still want to import them.
 // Or we could be skipping materials altogether but still want textures.
-auto CollectUnreferencedTextures(
+auto AppendUnreferencedTextures(
   aiScene const& scene,
-  std::vector<TextureLoadInfo>& tex_infos
+  std::vector<SourceTexture>& src_texes
 ) -> void;
 
 // Converts the raw tex_infos indices of the materials' texture maps into package indices
-auto FixUpTextureIds(
+auto ResolveTextureIds(
   std::span<MaterialAssetData> material_data,
   SubassetIds const& ids
 ) -> void;
@@ -53,15 +53,15 @@ auto FixUpTextureIds(
 // Fill mesh material slots and remap submesh material slot indices to point into the mesh-local slots.
 // A table that describes the remap is returned.
 [[nodiscard]]
-auto FixUpMaterialIds(
+auto AssignMeshMaterialSlots(
   std::span<MeshData> imported_meshes,
   std::span<MaterialSlotInfo const> mtl_slots
 ) -> MaterialSlotsByMesh;
 
 [[nodiscard]]
-auto ImportEmbeddedTextures(
+auto BuildTextureResults(
   std::filesystem::path const& src,
-  std::span<TextureLoadInfo const> tex_infos,
+  std::span<SourceTexture const> src_texes,
   std::span<float const> tex_coverage_thresholds,
   std::span<TextureImportSettings const> tex_import_settings,
   SubassetIds const& subasset_ids,
@@ -69,7 +69,7 @@ auto ImportEmbeddedTextures(
 ) -> bool;
 
 
-auto ImportMaterials(
+auto BuildMaterialResults(
   std::span<MaterialAssetData const> material_data,
   std::span<MaterialSlotInfo const> material_slots,
   SubassetIds const& ids, std::vector<AssetImportResult>& out_results

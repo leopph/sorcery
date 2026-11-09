@@ -38,20 +38,20 @@ auto LoadScene(
 ) -> std::unique_ptr<Assimp::Importer>;
 
 [[nodiscard]]
-auto BuildNodeListPreorderDfs(
+auto FlattenNodeHierarchy(
   aiScene const& scene
-) -> NodeListPreorderDfs;
+) -> SceneNodeList;
 
 [[nodiscard]]
-auto CollectReferringNodesPerMesh(
-  std::span<NodeProcessingData const> nodes,
+auto CollectNodesByMesh(
+  std::span<SceneNode const> nodes,
   std::size_t mesh_count
 ) -> NodesByMesh;
 
 [[nodiscard]]
 auto CollectMeshesByGroup(
   NodesByMesh const& nodes_by_mesh,
-  std::span<std::optional<MeshProcessingData> const> meshes
+  std::span<std::optional<SourceMesh> const> meshes
 ) -> MeshesByGroup;
 
 [[nodiscard]]

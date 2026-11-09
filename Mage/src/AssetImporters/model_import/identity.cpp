@@ -124,7 +124,7 @@ auto SubassetIds::GetMaterialCount() const -> std::size_t {
 }
 
 
-auto MakeMeshGroupKeys(NodeListPreorderDfs const& nodes, NodesByMesh const& nodes_by_mesh,
+auto MakeMeshGroupKeys(SceneNodeList const& nodes, NodesByMesh const& nodes_by_mesh,
                        MeshesByGroup const& meshes_by_group) -> std::vector<std::string> {
   // The absolute path of node i
   std::vector<std::string> node_paths(nodes.size());
@@ -183,9 +183,9 @@ auto MakeMaterialKeys(std::span<MaterialSlotInfo const> const mtl_slots) -> std:
 }
 
 
-auto MakeTextureKeys(std::span<TextureLoadInfo const> const tex_infos) -> std::vector<std::string> {
-  auto keys = tex_infos | std::views::transform([](TextureLoadInfo const& info) {
-    auto const& tex = *info.tex;
+auto MakeTextureKeys(std::span<SourceTexture const> const tex_infos) -> std::vector<std::string> {
+  auto keys = tex_infos | std::views::transform([](SourceTexture const& src_tex) {
+    auto const& tex = *src_tex.tex;
 
     if (!tex.mFilename.Empty()) {
       return std::format("texture:{}", tex.mFilename.C_Str());

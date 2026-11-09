@@ -6,12 +6,12 @@
 
 
 namespace sorcery::mage::model_import {
-auto BuildMeshGeometry(SizedRangeOf<MeshProcessingData const> auto&& meshes, bool const force_idx32,
+auto BuildMeshGeometry(SizedRangeOf<SourceMesh const> auto&& meshes, bool const force_idx32,
                        JobSystem& job_system, MeshData& mesh_data) -> bool {
   // Determine index format
 
   mesh_data.idx32 = force_idx32 || std::ranges::any_of(meshes,
-                      [](MeshProcessingData const& mesh) {
+                      [](SourceMesh const& mesh) {
                         return std::ranges::any_of(mesh.indices, [](unsigned const idx) {
                           return idx > std::numeric_limits<std::uint16_t>::max();
                         });

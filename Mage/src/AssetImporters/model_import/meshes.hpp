@@ -16,24 +16,24 @@
 namespace sorcery::mage::model_import {
 // Collects every mesh of the scene without any modification
 [[nodiscard]]
-auto CollectRawMeshes(
+auto CollectSourceMeshes(
   aiScene const& scene,
   std::filesystem::path const& src
-) -> std::vector<std::optional<MeshProcessingData>>;
+) -> std::vector<std::optional<SourceMesh>>;
 
 // Collects every mesh of the scene with its node's absolute transform baked into its vertices
 auto CollectBakedMeshes(
   aiScene const& scene,
   std::filesystem::path const& src,
-  std::vector<MeshProcessingData>& out_meshes,
-  std::vector<BoneProcessingInfo>& out_bone_proc_info
+  std::vector<SourceMesh>& out_meshes,
+  std::vector<SourceBone>& out_bone_proc_info
 ) -> void;
 
 // Fuses meshes that share materials
 [[nodiscard]]
 auto FuseByMaterial(
-  std::span<MeshProcessingData const> meshes
-) -> std::vector<MeshProcessingData>;
+  std::span<SourceMesh const> meshes
+) -> std::vector<SourceMesh>;
 
 
 template<class R, class T>
@@ -47,7 +47,7 @@ concept SizedRangeOf =
 // Fills in the geometry, the submeshes, the bounds and the index format.
 [[nodiscard]]
 auto BuildMeshGeometry(
-  SizedRangeOf<MeshProcessingData const> auto&& meshes,
+  SizedRangeOf<SourceMesh const> auto&& meshes,
   bool force_idx32,
   JobSystem& job_system,
   MeshData& mesh_data

@@ -18,23 +18,23 @@
 
 
 namespace sorcery::mage::model_import {
-struct TextureLoadInfo {
+struct SourceTexture {
   aiTexture const* tex;
   aiTextureType type;
 
   [[nodiscard]]
-  auto operator==(TextureLoadInfo const& other) const -> bool = default;
+  auto operator==(SourceTexture const& other) const -> bool = default;
 };
 
 
 struct CollectedMaterials {
   std::vector<MaterialSlotInfo> slots;
   std::vector<MaterialAssetData> assets;
-  std::vector<TextureLoadInfo> tex_deps;
+  std::vector<SourceTexture> textures;
 };
 
 
-struct MeshProcessingData {
+struct SourceMesh {
   std::vector<Vector3> positions;
   std::vector<Vector3> normals;
   std::vector<Vector2> uvs;
@@ -46,19 +46,20 @@ struct MeshProcessingData {
 };
 
 
-struct BoneProcessingInfo {
+struct SourceBone {
   Matrix4 offset_matrix;
   std::string node_name;
 };
 
 
-struct NodeProcessingData {
+struct SceneNode {
   NotNull<ObserverPtr<aiNode const>> ptr;
   std::optional<std::size_t> parent_idx; // Root node has no parent
 };
 
 
-using NodeListPreorderDfs = std::vector<NodeProcessingData>;
+// In preorder.
+using SceneNodeList = std::vector<SceneNode>;
 
 using MeshIndex = std::size_t;
 using NodeIndex = std::size_t;

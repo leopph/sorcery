@@ -11,12 +11,12 @@
 
 namespace sorcery::mage::model_import {
 [[nodiscard]]
-auto CreatePrefab(
+auto CreateHierarchyPrefab(
   std::string_view name,
   std::span<MeshData const> mesh_groups,
   GroupsByNode const& groups_by_node,
   MaterialSlotsByMesh const& mtl_slots_by_mesh,
-  NodeListPreorderDfs const& node_list,
+  SceneNodeList const& node_list,
   SubassetIds const& ids
 ) -> AssetImportResult;
 

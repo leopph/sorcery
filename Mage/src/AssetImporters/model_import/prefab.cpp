@@ -37,9 +37,9 @@ auto SerializePrefab(std::span<std::unique_ptr<Entity> const> const entities) ->
 }
 
 
-auto CreatePrefab(std::string_view const name, std::span<MeshData const> const mesh_groups,
-                  GroupsByNode const& groups_by_node, MaterialSlotsByMesh const& mtl_slots_by_mesh,
-                  NodeListPreorderDfs const& node_list, SubassetIds const& ids) -> AssetImportResult {
+auto CreateHierarchyPrefab(std::string_view const name, std::span<MeshData const> const mesh_groups,
+                           GroupsByNode const& groups_by_node, MaterialSlotsByMesh const& mtl_slots_by_mesh,
+                           SceneNodeList const& node_list, SubassetIds const& ids) -> AssetImportResult {
   // Create dummies for all mesh groups
 
   std::vector<std::unique_ptr<Mesh>> dummy_meshes(mesh_groups.size());

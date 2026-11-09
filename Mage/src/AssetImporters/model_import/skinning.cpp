@@ -54,7 +54,7 @@ auto FindInHierarchyByName(Node& root_node, std::string_view const name) -> Node
 
 
 auto ExtractBoneWeights(aiMesh const& mesh, Matrix4 const& transform_inv,
-                        std::vector<BoneProcessingInfo>& bone_proc_info, MeshProcessingData& mesh_data) -> void {
+                        std::vector<SourceBone>& bone_proc_info, SourceMesh& mesh_data) -> void {
   for (unsigned j{0}; j < mesh.mNumBones; j++) {
     auto const bone{mesh.mBones[j]};
 
@@ -81,7 +81,7 @@ auto ExtractBoneWeights(aiMesh const& mesh, Matrix4 const& transform_inv,
 }
 
 
-auto BuildSkeleton(aiNode const& root, std::span<BoneProcessingInfo const> const bone_proc_info,
+auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const src_bones,
                    std::vector<SkeletonNode>& out_skeleton,
                    std::vector<Bone>& out_bones) -> std::unordered_map<std::string, std::uint32_t> {
   // Convert node hierarchy
@@ -90,9 +90,9 @@ auto BuildSkeleton(aiNode const& root, std::span<BoneProcessingInfo const> const
 
   // Mark nodes that are part of the skeleton (but not necessarily bones!)
 
-  std::ranges::for_each(bone_proc_info, [&root_node](BoneProcessingInfo const& bone_info) {
+  std::ranges::for_each(src_bones, [&root_node](SourceBone const& src_bone) {
     // We look for the node corresponding to the bone and mark it along with all of its ancestors
-    auto node{FindInHierarchyByName(*root_node, bone_info.node_name)};
+    auto node{FindInHierarchyByName(*root_node, src_bone.node_name)};
     assert(node);
 
     while (node) {
@@ -136,11 +136,11 @@ auto BuildSkeleton(aiNode const& root, std::span<BoneProcessingInfo const> const
 
   // Create final bone data
 
-  out_bones.reserve(bone_proc_info.size());
-  std::ranges::transform(bone_proc_info, std::back_inserter(out_bones),
-    [&skeleton_node_name_to_idx](BoneProcessingInfo const& bone_info) {
+  out_bones.reserve(src_bones.size());
+  std::ranges::transform(src_bones, std::back_inserter(out_bones),
+    [&skeleton_node_name_to_idx](SourceBone const& src_bone) {
       return Bone{
-        .offset_mtx = bone_info.offset_matrix, .skeleton_node_idx = skeleton_node_name_to_idx.at(bone_info.node_name)
+        .offset_mtx = src_bone.offset_matrix, .skeleton_node_idx = skeleton_node_name_to_idx.at(src_bone.node_name)
       };
     });
 

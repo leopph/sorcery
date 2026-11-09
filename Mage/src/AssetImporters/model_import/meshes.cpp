@@ -1,7 +1,7 @@
 #include "meshes.hpp"
 
-#include <queue>
 #include <map>
+#include <queue>
 
 #include <spdlog/spdlog.h>
 
@@ -16,10 +16,10 @@ namespace {
 // Extracts the vertex attributes, indices and material index of a mesh. Bone weights are left zeroed.
 // Returns nullopt if the mesh is missing required vertex attributes.
 [[nodiscard]]
-auto ExtractAiMesh(
+auto ExtractSourceMesh(
   aiMesh const& mesh, unsigned idx_in_scene,
   std::filesystem::path const& src
-) -> std::optional<MeshProcessingData> {
+) -> std::optional<SourceMesh> {
   // These meshes are always triangle-only, because
   // AI_CONFIG_PP_SBP_REMOVE is set to remove points and lines,
   // aiProcess_Triangulate splits up primitives with more than 3 vertices
@@ -54,7 +54,7 @@ auto ExtractAiMesh(
       ToUntypedSv(src.u8string()));
   }
 
-  MeshProcessingData ret;
+  SourceMesh ret;
   auto& [vertices, normals, uvs, tangents, indices, bone_weights, bone_indices, mtlIdx]{ret};
 
   vertices.reserve(mesh.mNumVertices);
@@ -83,12 +83,12 @@ auto ExtractAiMesh(
 }
 
 
-auto CollectRawMeshes(aiScene const& scene,
-                      std::filesystem::path const& src) -> std::vector<std::optional<MeshProcessingData>> {
-  std::vector<std::optional<MeshProcessingData>> meshes(scene.mNumMeshes);
+auto CollectSourceMeshes(aiScene const& scene,
+                         std::filesystem::path const& src) -> std::vector<std::optional<SourceMesh>> {
+  std::vector<std::optional<SourceMesh>> meshes(scene.mNumMeshes);
 
   for (auto i = 0u; i < scene.mNumMeshes; ++i) {
-    meshes[i] = ExtractAiMesh(*scene.mMeshes[i], i, src);
+    meshes[i] = ExtractSourceMesh(*scene.mMeshes[i], i, src);
   }
 
   return meshes;
@@ -96,8 +96,8 @@ auto CollectRawMeshes(aiScene const& scene,
 
 
 auto CollectBakedMeshes(aiScene const& scene, std::filesystem::path const& src,
-                        std::vector<MeshProcessingData>& out_meshes,
-                        std::vector<BoneProcessingInfo>& out_bone_proc_info) -> void {
+                        std::vector<SourceMesh>& out_meshes,
+                        std::vector<SourceBone>& out_bone_proc_info) -> void {
   out_meshes.reserve(scene.mNumMeshes);
 
   struct NodeAndAccumTrafo {
@@ -118,7 +118,7 @@ auto CollectBakedMeshes(aiScene const& scene, std::filesystem::path const& src,
       auto const mesh_scene_idx = node->mMeshes[i];
       auto const mesh = scene.mMeshes[mesh_scene_idx];
 
-      auto mesh_proc_data = ExtractAiMesh(*mesh, mesh_scene_idx, src);
+      auto mesh_proc_data = ExtractSourceMesh(*mesh, mesh_scene_idx, src);
 
       if (!mesh_proc_data) {
         continue;
@@ -150,14 +150,14 @@ auto CollectBakedMeshes(aiScene const& scene, std::filesystem::path const& src,
 }
 
 
-auto FuseByMaterial(std::span<MeshProcessingData const> const meshes) -> std::vector<MeshProcessingData> {
-  std::map<std::uint32_t, std::vector<MeshProcessingData const*>> meshes_per_mtl_idx;
+auto FuseByMaterial(std::span<SourceMesh const> const meshes) -> std::vector<SourceMesh> {
+  std::map<std::uint32_t, std::vector<SourceMesh const*>> meshes_per_mtl_idx;
 
   for (auto const& mesh : meshes) {
     meshes_per_mtl_idx[mesh.mtl_idx].push_back(&mesh);
   }
 
-  std::vector<MeshProcessingData> fused_meshes;
+  std::vector<SourceMesh> fused_meshes;
   fused_meshes.reserve(meshes_per_mtl_idx.size());
 
   for (auto const& [mtl_idx, mtl_meshes] : meshes_per_mtl_idx) {

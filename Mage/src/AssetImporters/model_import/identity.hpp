@@ -53,7 +53,7 @@ private:
 // as long as the node it hangs on keeps its place in the hierarchy.
 [[nodiscard]]
 auto MakeMeshGroupKeys(
-  NodeListPreorderDfs const& nodes,
+  SceneNodeList const& nodes,
   NodesByMesh const& nodes_by_mesh,
   MeshesByGroup const& meshes_by_group
 ) -> std::vector<std::string>;
@@ -66,6 +66,6 @@ auto MakeMaterialKeys(
 // Textures are keyed by their file name, or by a hash of their contents if they have none
 [[nodiscard]]
 auto MakeTextureKeys(
-  std::span<TextureLoadInfo const> tex_infos
+  std::span<SourceTexture const> tex_infos
 ) -> std::vector<std::string>;
 }

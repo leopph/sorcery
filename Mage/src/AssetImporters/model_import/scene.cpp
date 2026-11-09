@@ -88,10 +88,10 @@ auto LoadScene(std::filesystem::path const& src) -> std::unique_ptr<Assimp::Impo
 }
 
 
-auto BuildNodeListPreorderDfs(aiScene const& scene) -> NodeListPreorderDfs {
-  NodeListPreorderDfs list;
+auto FlattenNodeHierarchy(aiScene const& scene) -> SceneNodeList {
+  SceneNodeList list;
 
-  std::stack<NodeProcessingData> stack;
+  std::stack<SceneNode> stack;
   stack.emplace(MakeObserver(scene.mRootNode), std::nullopt);
 
   while (!stack.empty()) {
@@ -110,8 +110,8 @@ auto BuildNodeListPreorderDfs(aiScene const& scene) -> NodeListPreorderDfs {
 }
 
 
-auto CollectReferringNodesPerMesh(std::span<NodeProcessingData const> const nodes,
-                                  std::size_t const mesh_count) -> NodesByMesh {
+auto CollectNodesByMesh(std::span<SceneNode const> const nodes,
+                        std::size_t const mesh_count) -> NodesByMesh {
   NodesByMesh nodes_by_mesh(mesh_count);
 
   for (auto const [node_idx, node] : std::views::enumerate(nodes)) {
@@ -129,7 +129,7 @@ auto CollectReferringNodesPerMesh(std::span<NodeProcessingData const> const node
 
 
 auto CollectMeshesByGroup(NodesByMesh const& nodes_by_mesh,
-                          std::span<std::optional<MeshProcessingData> const> const meshes) -> MeshesByGroup {
+                          std::span<std::optional<SourceMesh> const> const meshes) -> MeshesByGroup {
   std::unordered_map<std::span<NodeIndex const>, MeshGroupIndex, NodeListHash, NodeListEq> groups_by_node_list;
   MeshesByGroup meshes_by_group;
 

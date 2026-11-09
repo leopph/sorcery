@@ -15,34 +15,34 @@ constexpr auto kBlendFallbackAlphaThreshold = 0.1f;
 
 
 // Store the texture or return the index of the existing one if it is already stored.
-auto TryEmplaceTexture(std::vector<TextureLoadInfo>& tex_infos, aiTexture const& tex,
+auto TryEmplaceTexture(std::vector<SourceTexture>& src_texes, aiTexture const& tex,
                        aiTextureType const type) -> std::size_t {
   // If type is unknown, be only place it if we don't already have it.
   // Otherwise we just return the first one we find, since we don't care about the type.
   if (type == aiTextureType_UNKNOWN) {
-    if (auto const it{std::ranges::find(tex_infos, &tex, &TextureLoadInfo::tex)}; it != tex_infos.end()) {
-      return std::distance(tex_infos.begin(), it);
+    if (auto const it{std::ranges::find(src_texes, &tex, &SourceTexture::tex)}; it != src_texes.end()) {
+      return std::distance(src_texes.begin(), it);
     }
 
-    tex_infos.emplace_back(&tex, type);
-    return tex_infos.size() - 1;
+    src_texes.emplace_back(&tex, type);
+    return src_texes.size() - 1;
   }
 
   // If type is concrete, we only look for exact matches, and if that fails, then we store.
-  if (auto const it{std::ranges::find(tex_infos, TextureLoadInfo{.tex = &tex, .type = type})};
-    it != tex_infos.end()) {
-    return std::distance(tex_infos.begin(), it);
+  if (auto const it{std::ranges::find(src_texes, SourceTexture{.tex = &tex, .type = type})};
+    it != src_texes.end()) {
+    return std::distance(src_texes.begin(), it);
   }
 
-  tex_infos.emplace_back(&tex, type);
-  return tex_infos.size() - 1;
+  src_texes.emplace_back(&tex, type);
+  return src_texes.size() - 1;
 }
 
 
 // Texture map ids of the returned material hold raw tex_infos indices. They must be fixed up later.
 [[nodiscard]]
 auto ExtractMaterial(aiScene const& scene, aiMaterial const& mtl, bool const import_textures,
-                     std::vector<TextureLoadInfo>& tex_infos) -> MaterialAssetData {
+                     std::vector<SourceTexture>& src_texes) -> MaterialAssetData {
   MaterialAssetData mtl_data;
 
   if (aiColor4D base_color; mtl.Get(AI_MATKEY_BASE_COLOR, base_color) == aiReturn_SUCCESS) {
@@ -102,11 +102,11 @@ auto ExtractMaterial(aiScene const& scene, aiMaterial const& mtl, bool const imp
       return MakeObserver(scene.GetEmbeddedTexture(tex_path.C_Str()));
     };
 
-    auto const register_tex = [&tex_infos]
+    auto const register_tex = [&src_texes]
     (aiTexture const& tex, aiTextureType const type, AssetId& id_to_set) {
       // We store the textures' array index now as their package index.
       // Later we will patch this when we're creating the final subasset order in the package.
-      auto const arr_idx = TryEmplaceTexture(tex_infos, tex, type);
+      auto const arr_idx = TryEmplaceTexture(src_texes, tex, type);
       id_to_set = AssetId{Guid::Invalid(), arr_idx};
     };
 
@@ -200,7 +200,7 @@ auto CollectMaterials(aiScene const& scene, bool const import_materials,
     ret.slots[i].name = mtl_name.Empty() ? std::format("Material_{}", i) : std::string{mtl_name.C_Str()};
 
     if (import_materials) {
-      ret.assets[i] = ExtractMaterial(scene, mtl, import_textures, ret.tex_deps);
+      ret.assets[i] = ExtractMaterial(scene, mtl, import_textures, ret.textures);
     }
   }
 
@@ -237,14 +237,14 @@ auto ComputeTextureCoverageThresholds(std::span<MaterialAssetData const> const m
 }
 
 
-auto CollectUnreferencedTextures(aiScene const& scene, std::vector<TextureLoadInfo>& tex_infos) -> void {
+auto AppendUnreferencedTextures(aiScene const& scene, std::vector<SourceTexture>& src_texes) -> void {
   for (std::size_t i{0}; i < scene.mNumTextures; ++i) {
-    TryEmplaceTexture(tex_infos, *scene.mTextures[i], aiTextureType_UNKNOWN);
+    TryEmplaceTexture(src_texes, *scene.mTextures[i], aiTextureType_UNKNOWN);
   }
 }
 
 
-auto FixUpTextureIds(std::span<MaterialAssetData> const material_data, SubassetIds const& ids) -> void {
+auto ResolveTextureIds(std::span<MaterialAssetData> const material_data, SubassetIds const& ids) -> void {
   auto const fix_up_tex_id = [&ids](AssetId& id) {
     if (auto const id_in_file = id.GetIdInFile()) {
       id = AssetId{id.GetGuid(), ids.GetTextureId(*id_in_file)};
@@ -263,8 +263,8 @@ auto FixUpTextureIds(std::span<MaterialAssetData> const material_data, SubassetI
 }
 
 
-auto FixUpMaterialIds(std::span<MeshData> const imported_meshes,
-                      std::span<MaterialSlotInfo const> const mtl_slots) -> MaterialSlotsByMesh {
+auto AssignMeshMaterialSlots(std::span<MeshData> const imported_meshes,
+                             std::span<MaterialSlotInfo const> const mtl_slots) -> MaterialSlotsByMesh {
   MaterialSlotsByMesh mtl_slots_by_mesh(imported_meshes.size());
 
   for (auto [mesh_idx, mesh] : std::views::enumerate(imported_meshes)) {
@@ -295,12 +295,12 @@ auto FixUpMaterialIds(std::span<MeshData> const imported_meshes,
 }
 
 
-auto ImportEmbeddedTextures(std::filesystem::path const& src, std::span<TextureLoadInfo const> const tex_infos,
-                            std::span<float const> const tex_coverage_thresholds,
-                            std::span<TextureImportSettings const> const tex_import_settings,
-                            SubassetIds const& subasset_ids,
-                            std::vector<AssetImportResult>& out_results) -> bool {
-  for (auto const [idx, tex_info] : tex_infos | std::views::enumerate) {
+auto BuildTextureResults(std::filesystem::path const& src, std::span<SourceTexture const> const src_texes,
+                         std::span<float const> const tex_coverage_thresholds,
+                         std::span<TextureImportSettings const> const tex_import_settings,
+                         SubassetIds const& subasset_ids,
+                         std::vector<AssetImportResult>& out_results) -> bool {
+  for (auto const [idx, tex_info] : src_texes | std::views::enumerate) {
     // The texture is compressed
     if (tex_info.tex->mHeight == 0) {
       auto const ext{std::u8string{u8'.'} += reinterpret_cast<char8_t const*>(&tex_info.tex->achFormatHint)};
@@ -358,9 +358,9 @@ auto ImportEmbeddedTextures(std::filesystem::path const& src, std::span<TextureL
 }
 
 
-auto ImportMaterials(std::span<MaterialAssetData const> const material_data,
-                     std::span<MaterialSlotInfo const> const material_slots, SubassetIds const& ids,
-                     std::vector<AssetImportResult>& out_results) -> void {
+auto BuildMaterialResults(std::span<MaterialAssetData const> const material_data,
+                          std::span<MaterialSlotInfo const> const material_slots, SubassetIds const& ids,
+                          std::vector<AssetImportResult>& out_results) -> void {
   for (auto const [mtl_idx, mtl_data] : std::views::enumerate(material_data)) {
     auto mtl_result = ImportMaterial(mtl_data, {});
     out_results.emplace_back(ids.GetMaterialId(mtl_idx), GetCurrentPayloadVersion(mtl_result.payload_kind),

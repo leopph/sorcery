@@ -77,7 +77,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   auto const bake_into_single_mesh = has_bones || mesh_import_settings_.import_as_single_mesh;
 
   std::vector<MeshData> imported_meshes;
-  std::vector<model_import::NodeProcessingData> nodes;
+  std::vector<model_import::SceneNode> nodes;
   model_import::NodesByMesh nodes_by_mesh;
   model_import::MeshesByGroup meshes_by_group;
   model_import::GroupsByNode groups_by_node;
@@ -85,8 +85,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   if (bake_into_single_mesh) {
     auto& mesh_data = imported_meshes.emplace_back();
 
-    std::vector<model_import::MeshProcessingData> meshes;
-    std::vector<model_import::BoneProcessingInfo> bone_proc_info;
+    std::vector<model_import::SourceMesh> meshes;
+    std::vector<model_import::SourceBone> bone_proc_info;
     CollectBakedMeshes(scene, src, meshes, bone_proc_info);
 
     auto const skeleton_node_name_to_idx = BuildSkeleton(*scene.mRootNode, bone_proc_info, mesh_data.skeleton,
@@ -100,9 +100,9 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
     mesh_data.animations = model_import::CollectAnimations(scene, skeleton_node_name_to_idx);
   } else {
-    auto const meshes = model_import::CollectRawMeshes(scene, src);
-    nodes = model_import::BuildNodeListPreorderDfs(scene);
-    nodes_by_mesh = CollectReferringNodesPerMesh(nodes, meshes.size());
+    auto const meshes = model_import::CollectSourceMeshes(scene, src);
+    nodes = model_import::FlattenNodeHierarchy(scene);
+    nodes_by_mesh = CollectNodesByMesh(nodes, meshes.size());
     meshes_by_group = CollectMeshesByGroup(nodes_by_mesh, meshes);
     groups_by_node = model_import::CollectGroupsByNode(meshes_by_group, nodes_by_mesh, nodes.size());
 
@@ -131,12 +131,12 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   //  At this point, the submeshes inside each imported mesh have absolute material indices, not local to their parent mesh.
   // We can fix those up now and generate a table that describes the remap. Useful later.
-  auto const mtl_slots_by_mesh = model_import::FixUpMaterialIds(imported_meshes, mtl_slots);
+  auto const mtl_slots_by_mesh = model_import::AssignMeshMaterialSlots(imported_meshes, mtl_slots);
 
   // Nothing depends on the actual texture assets so we can load them last
 
   if (import_textures_) {
-    CollectUnreferencedTextures(scene, texes_to_load);
+    AppendUnreferencedTextures(scene, texes_to_load);
   }
 
   // Stable subasset identities.
@@ -213,14 +213,14 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   auto const subasset_ids = model_import::SubassetIds::FromKeys(subasset_keys, src);
 
   // Now we have subasset ids so we can patch material->texture references
-  FixUpTextureIds(mtl_assets, subasset_ids);
+  ResolveTextureIds(mtl_assets, subasset_ids);
 
   // Import all textures
 
   std::vector<AssetImportResult> texture_import_results;
 
   if (import_textures_) {
-    if (!ImportEmbeddedTextures(src, texes_to_load, tex_coverage_thresholds, tex_settings, subasset_ids,
+    if (!BuildTextureResults(src, texes_to_load, tex_coverage_thresholds, tex_settings, subasset_ids,
       texture_import_results)) {
       return false;
     }
@@ -232,7 +232,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     results.emplace_back(CreateSingleEntityPrefab(ToUntypedSv(src.filename().stem().u8string()), imported_meshes.at(0),
       subasset_ids, mtl_slots_by_mesh.at(0)));
   } else {
-    results.emplace_back(CreatePrefab(ToUntypedSv(src.filename().stem().u8string()), imported_meshes, groups_by_node,
+    results.emplace_back(CreateHierarchyPrefab(ToUntypedSv(src.filename().stem().u8string()), imported_meshes, groups_by_node,
       mtl_slots_by_mesh, nodes, subasset_ids));
   }
 
@@ -244,7 +244,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   }
 
   if (import_materials_) {
-    ImportMaterials(mtl_assets, mtl_slots, subasset_ids, results);
+    BuildMaterialResults(mtl_assets, mtl_slots, subasset_ids, results);
   }
 
   if (import_textures_) {
