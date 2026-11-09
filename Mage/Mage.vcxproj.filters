@@ -168,9 +168,6 @@
     <None Include="src\drawers\editor_drawer_registry.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="src\AssetImporters\model_import\meshes.inl">
-      <Filter>Header Files</Filter>
-    </None>
     <None Include="src\AssetImporters\model_import\hash.inl">
       <Filter>Source Files</Filter>
     </None>

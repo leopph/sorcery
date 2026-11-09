@@ -41,23 +41,4 @@ auto LoadScene(
 auto FlattenNodeHierarchy(
   aiScene const& scene
 ) -> SceneNodeList;
-
-[[nodiscard]]
-auto CollectNodesByMesh(
-  std::span<SceneNode const> nodes,
-  std::size_t mesh_count
-) -> NodesByMesh;
-
-[[nodiscard]]
-auto CollectMeshesByGroup(
-  NodesByMesh const& nodes_by_mesh,
-  std::span<std::optional<SourceMesh> const> meshes
-) -> MeshesByGroup;
-
-[[nodiscard]]
-auto CollectGroupsByNode(
-  MeshesByGroup const& meshes_by_group,
-  NodesByMesh const& nodes_by_mesh,
-  std::size_t node_count
-) -> GroupsByNode;
 }

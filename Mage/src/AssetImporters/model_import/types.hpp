@@ -71,4 +71,10 @@ using GroupsByNode = std::vector<std::vector<MeshGroupIndex>>;
 
 using SceneMaterialIndex = std::size_t;
 using MaterialSlotsByMesh = std::vector<std::vector<SceneMaterialIndex>>;
+
+
+struct HierarchyLayout {
+  SceneNodeList nodes;
+  GroupsByNode groups_by_node;
+};
 }

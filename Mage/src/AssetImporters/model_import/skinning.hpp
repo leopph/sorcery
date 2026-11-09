@@ -7,12 +7,12 @@
 
 
 namespace sorcery::mage::model_import {
-// Appends the mesh's bones to bone_proc_info and writes their weights and indices into the mesh data
+// Appends the bones of the assimp mesh to bones and writes their weights and indices into the mesh
 auto ExtractBoneWeights(
-  aiMesh const& mesh,
+  aiMesh const& ai_mesh,
   Matrix4 const& transform_inv,
-  std::vector<SourceBone>& bone_proc_info,
-  SourceMesh& mesh_data
+  std::vector<SourceBone>& bones,
+  SourceMesh& mesh
 ) -> void;
 
 // Builds the skeleton from the bones' nodes and all of their ancestors, then creates the final bone data.
@@ -20,7 +20,7 @@ auto ExtractBoneWeights(
 [[nodiscard]]
 auto BuildSkeleton(
   aiNode const& root,
-  std::span<SourceBone const> const src_bones,
+  std::span<SourceBone const> bones,
   std::vector<SkeletonNode>& out_skeleton,
   std::vector<Bone>& out_bones
 ) -> std::unordered_map<std::string, std::uint32_t>;

@@ -38,8 +38,8 @@ auto SerializePrefab(std::span<std::unique_ptr<Entity> const> const entities) ->
 
 
 auto CreateHierarchyPrefab(std::string_view const name, std::span<MeshData const> const mesh_groups,
-                           GroupsByNode const& groups_by_node, MaterialSlotsByMesh const& mtl_slots_by_mesh,
-                           SceneNodeList const& node_list, SubassetIds const& ids) -> AssetImportResult {
+                           MaterialSlotsByMesh const& mtl_slots_by_mesh,
+                           HierarchyLayout const& hierarchy, SubassetIds const& ids) -> AssetImportResult {
   // Create dummies for all mesh groups
 
   std::vector<std::unique_ptr<Mesh>> dummy_meshes(mesh_groups.size());
@@ -81,9 +81,9 @@ auto CreateHierarchyPrefab(std::string_view const name, std::span<MeshData const
 
   // Create the entity hierarchy
 
-  std::vector<std::unique_ptr<Entity>> entities(node_list.size());
+  std::vector<std::unique_ptr<Entity>> entities(hierarchy.nodes.size());
 
-  for (auto const [node_idx, node] : std::views::enumerate(node_list)) {
+  for (auto const [node_idx, node] : std::views::enumerate(hierarchy.nodes)) {
     auto entity = std::make_unique<Entity>();
 
     auto const entity_name = node.ptr->mName.Empty()
@@ -105,7 +105,7 @@ auto CreateHierarchyPrefab(std::string_view const name, std::span<MeshData const
       transform.SetParent(&entities[*node.parent_idx]->GetTransform());
     }
 
-    for (auto const& group_idx : groups_by_node[node_idx]) {
+    for (auto const& group_idx : hierarchy.groups_by_node[node_idx]) {
       auto mesh_component{std::make_unique<StaticMeshComponent>()};
 
       mesh_component->SetMesh(MakeAssetRef(MakeObserver(dummy_meshes[group_idx].get())));
@@ -139,8 +139,9 @@ auto CreateHierarchyPrefab(std::string_view const name, std::span<MeshData const
 }
 
 
-auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh, SubassetIds const& ids,
-                              std::span<SceneMaterialIndex const> const mesh_mtl_slot_remap) -> AssetImportResult {
+auto CreateSingleEntityPrefab(std::string_view const name, MeshData const& mesh,
+                              std::span<SceneMaterialIndex const> const mesh_mtl_slot_remap,
+                              SubassetIds const& ids) -> AssetImportResult {
   auto const entity{std::make_unique<Entity>()};
   entity->SetName(name);
 

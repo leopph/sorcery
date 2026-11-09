@@ -53,13 +53,13 @@ auto FindInHierarchyByName(Node& root_node, std::string_view const name) -> Node
 }
 
 
-auto ExtractBoneWeights(aiMesh const& mesh, Matrix4 const& transform_inv,
-                        std::vector<SourceBone>& bone_proc_info, SourceMesh& mesh_data) -> void {
-  for (unsigned j{0}; j < mesh.mNumBones; j++) {
-    auto const bone{mesh.mBones[j]};
+auto ExtractBoneWeights(aiMesh const& ai_mesh, Matrix4 const& transform_inv,
+                        std::vector<SourceBone>& bones, SourceMesh& mesh) -> void {
+  for (unsigned j{0}; j < ai_mesh.mNumBones; j++) {
+    auto const bone{ai_mesh.mBones[j]};
 
-    auto const bone_idx{static_cast<std::uint32_t>(bone_proc_info.size())};
-    bone_proc_info.emplace_back(transform_inv * Convert(bone->mOffsetMatrix).Transpose(), bone->mName.C_Str());
+    auto const bone_idx{static_cast<std::uint32_t>(bones.size())};
+    bones.emplace_back(transform_inv * Convert(bone->mOffsetMatrix).Transpose(), bone->mName.C_Str());
 
     for (unsigned k{0}; k < bone->mNumWeights; k++) {
       auto const& weight{bone->mWeights[k]};
@@ -67,9 +67,9 @@ auto ExtractBoneWeights(aiMesh const& mesh, Matrix4 const& transform_inv,
       auto found_free_weight_slot{false};
 
       for (auto l{0}; l < 4; l++) {
-        if (mesh_data.bone_weights[weight.mVertexId][l] == 0.0f) {
-          mesh_data.bone_weights[weight.mVertexId][l] = weight.mWeight;
-          mesh_data.bone_indices[weight.mVertexId][l] = bone_idx;
+        if (mesh.bone_weights[weight.mVertexId][l] == 0.0f) {
+          mesh.bone_weights[weight.mVertexId][l] = weight.mWeight;
+          mesh.bone_indices[weight.mVertexId][l] = bone_idx;
           found_free_weight_slot = true;
           break;
         }
@@ -81,7 +81,7 @@ auto ExtractBoneWeights(aiMesh const& mesh, Matrix4 const& transform_inv,
 }
 
 
-auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const src_bones,
+auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const bones,
                    std::vector<SkeletonNode>& out_skeleton,
                    std::vector<Bone>& out_bones) -> std::unordered_map<std::string, std::uint32_t> {
   // Convert node hierarchy
@@ -90,9 +90,9 @@ auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const src_bon
 
   // Mark nodes that are part of the skeleton (but not necessarily bones!)
 
-  std::ranges::for_each(src_bones, [&root_node](SourceBone const& src_bone) {
+  std::ranges::for_each(bones, [&root_node](SourceBone const& bone) {
     // We look for the node corresponding to the bone and mark it along with all of its ancestors
-    auto node{FindInHierarchyByName(*root_node, src_bone.node_name)};
+    auto node{FindInHierarchyByName(*root_node, bone.node_name)};
     assert(node);
 
     while (node) {
@@ -136,8 +136,8 @@ auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const src_bon
 
   // Create final bone data
 
-  out_bones.reserve(src_bones.size());
-  std::ranges::transform(src_bones, std::back_inserter(out_bones),
+  out_bones.reserve(bones.size());
+  std::ranges::transform(bones, std::back_inserter(out_bones),
     [&skeleton_node_name_to_idx](SourceBone const& src_bone) {
       return Bone{
         .offset_mtx = src_bone.offset_matrix, .skeleton_node_idx = skeleton_node_name_to_idx.at(src_bone.node_name)

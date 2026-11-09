@@ -14,9 +14,8 @@ namespace sorcery::mage::model_import {
 auto CreateHierarchyPrefab(
   std::string_view name,
   std::span<MeshData const> mesh_groups,
-  GroupsByNode const& groups_by_node,
   MaterialSlotsByMesh const& mtl_slots_by_mesh,
-  SceneNodeList const& node_list,
+  HierarchyLayout const& hierarchy,
   SubassetIds const& ids
 ) -> AssetImportResult;
 
@@ -26,7 +25,7 @@ auto CreateHierarchyPrefab(
 auto CreateSingleEntityPrefab(
   std::string_view name,
   MeshData const& mesh,
-  SubassetIds const& ids,
-  std::span<SceneMaterialIndex const> mesh_mtl_slot_remap
+  std::span<SceneMaterialIndex const> mesh_mtl_slot_remap,
+  SubassetIds const& ids
 ) -> AssetImportResult;
 }

@@ -8,34 +8,11 @@
 #include <assimp/scene.h>
 #include <spdlog/spdlog.h>
 
-#include "hash.hpp"
 #include "types.hpp"
 #include "sorcery/char_encoding_helpers.hpp"
 
 
 namespace sorcery::mage::model_import {
-namespace {
-struct NodeListHash {
-  auto operator()(std::span<NodeIndex const> const nodes) const noexcept -> std::size_t {
-    auto h = Mix64(nodes.size());
-
-    for (NodeIndex const n : nodes) {
-      h = Mix64(h ^ n);
-    }
-
-    return h;
-  }
-};
-
-
-struct NodeListEq {
-  auto operator()(std::span<NodeIndex const> const lhs, std::span<NodeIndex const> const rhs) const noexcept -> bool {
-    return std::ranges::equal(lhs, rhs);
-  }
-};
-}
-
-
 auto Convert(aiVector3D const& ai_vec) noexcept -> Vector3 {
   return Vector3{ai_vec.x, ai_vec.y, ai_vec.z};
 }
@@ -107,66 +84,5 @@ auto FlattenNodeHierarchy(aiScene const& scene) -> SceneNodeList {
   }
 
   return list;
-}
-
-
-auto CollectNodesByMesh(std::span<SceneNode const> const nodes,
-                        std::size_t const mesh_count) -> NodesByMesh {
-  NodesByMesh nodes_by_mesh(mesh_count);
-
-  for (auto const [node_idx, node] : std::views::enumerate(nodes)) {
-    for (auto j = 0u; j < node.ptr->mNumMeshes; ++j) {
-      // Guard against the case where a node lists the same mesh multiple times
-      if (auto& this_mesh_nodes = nodes_by_mesh[node.ptr->mMeshes[j]];
-        this_mesh_nodes.empty() || std::cmp_not_equal(this_mesh_nodes.back(), node_idx)) {
-        this_mesh_nodes.emplace_back(node_idx);
-      }
-    }
-  }
-
-  return nodes_by_mesh;
-}
-
-
-auto CollectMeshesByGroup(NodesByMesh const& nodes_by_mesh,
-                          std::span<std::optional<SourceMesh> const> const meshes) -> MeshesByGroup {
-  std::unordered_map<std::span<NodeIndex const>, MeshGroupIndex, NodeListHash, NodeListEq> groups_by_node_list;
-  MeshesByGroup meshes_by_group;
-
-  for (auto const [mesh_idx, node_list] : std::views::enumerate(nodes_by_mesh)) {
-    // Meshes that failed to convert are just simply not added to any group
-    // Saves us some extra bookkeeping later
-    if (!meshes[mesh_idx]) {
-      continue;
-    }
-
-    auto const [it, inserted] = groups_by_node_list.try_emplace(node_list, meshes_by_group.size());
-
-    // If inserted, the group / node list pattern is first visited, so create a new group for it
-    if (inserted) {
-      meshes_by_group.emplace_back();
-    }
-
-    meshes_by_group[it->second].emplace_back(mesh_idx);
-  }
-
-  return meshes_by_group;
-}
-
-
-[[nodiscard]]
-auto CollectGroupsByNode(MeshesByGroup const& meshes_by_group, NodesByMesh const& nodes_by_mesh,
-                         std::size_t const node_count) -> GroupsByNode {
-  GroupsByNode groups_by_node(node_count);
-
-  for (auto const [group_idx, mesh_indices] : std::views::enumerate(meshes_by_group)) {
-    // For each node, we generate the list of groups that the node references.
-    // All meshes in the same group have the same node pattern so it doesnt matter which one we use, front is good.
-    for (auto const node_idx : nodes_by_mesh[mesh_indices.front()]) {
-      groups_by_node[node_idx].emplace_back(group_idx);
-    }
-  }
-
-  return groups_by_node;
 }
 }

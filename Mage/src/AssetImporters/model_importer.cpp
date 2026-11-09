@@ -19,7 +19,6 @@
 #include "model_import/meshes.hpp"
 #include "model_import/prefab.hpp"
 #include "model_import/scene.hpp"
-#include "model_import/skinning.hpp"
 #include "model_import/types.hpp"
 #include "sorcery/char_encoding_helpers.hpp"
 #include "sorcery/assets/Mesh.hpp"
@@ -71,56 +70,11 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   // Import meshes
 
-  auto const has_bones = std::ranges::any_of(std::span{scene.mMeshes, scene.mNumMeshes},
-    [](auto const* const mesh) { return mesh->HasBones(); });
+  auto mesh_import = model_import::ImportMeshes(scene, src, mesh_import_settings_, App::Instance().GetJobSystem());
 
-  auto const bake_into_single_mesh = has_bones || mesh_import_settings_.import_as_single_mesh;
-
-  std::vector<MeshData> imported_meshes;
-  std::vector<model_import::SceneNode> nodes;
-  model_import::NodesByMesh nodes_by_mesh;
-  model_import::MeshesByGroup meshes_by_group;
-  model_import::GroupsByNode groups_by_node;
-
-  if (bake_into_single_mesh) {
-    auto& mesh_data = imported_meshes.emplace_back();
-
-    std::vector<model_import::SourceMesh> meshes;
-    std::vector<model_import::SourceBone> bone_proc_info;
-    CollectBakedMeshes(scene, src, meshes, bone_proc_info);
-
-    auto const skeleton_node_name_to_idx = BuildSkeleton(*scene.mRootNode, bone_proc_info, mesh_data.skeleton,
-      mesh_data.bones);
-
-    meshes = FuseByMaterial(meshes);
-
-    if (!BuildMeshGeometry(meshes, mesh_import_settings_.force_idx32, App::Instance().GetJobSystem(), mesh_data)) {
-      return false;
-    }
-
-    mesh_data.animations = model_import::CollectAnimations(scene, skeleton_node_name_to_idx);
-  } else {
-    auto const meshes = model_import::CollectSourceMeshes(scene, src);
-    nodes = model_import::FlattenNodeHierarchy(scene);
-    nodes_by_mesh = CollectNodesByMesh(nodes, meshes.size());
-    meshes_by_group = CollectMeshesByGroup(nodes_by_mesh, meshes);
-    groups_by_node = model_import::CollectGroupsByNode(meshes_by_group, nodes_by_mesh, nodes.size());
-
-    for (auto const [group_idx, mesh_indices] : std::views::enumerate(meshes_by_group)) {
-      auto const group_meshes = mesh_indices | std::views::transform([&meshes](auto const mesh_idx) -> auto const& {
-        return meshes[mesh_idx].value();
-      });
-
-      MeshData mesh_data;
-
-      if (!model_import::BuildMeshGeometry(group_meshes, mesh_import_settings_.force_idx32,
-        App::Instance().GetJobSystem(),
-        mesh_data)) {
-        return false;
-      }
-
-      imported_meshes.emplace_back(std::move(mesh_data));
-    }
+  if (!mesh_import) {
+    spdlog::error("Failed to import meshes from \"{}\".", ToUntypedSv(src.u8string()));
+    return false;
   }
 
   // Import materials and gather info to load textures
@@ -131,7 +85,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   //  At this point, the submeshes inside each imported mesh have absolute material indices, not local to their parent mesh.
   // We can fix those up now and generate a table that describes the remap. Useful later.
-  auto const mtl_slots_by_mesh = model_import::AssignMeshMaterialSlots(imported_meshes, mtl_slots);
+  auto const mtl_slots_by_mesh = model_import::AssignMeshMaterialSlots(mesh_import->meshes, mtl_slots);
 
   // Nothing depends on the actual texture assets so we can load them last
 
@@ -142,9 +96,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   // Stable subasset identities.
   model_import::SubassetKeys const subasset_keys{
     .prefab = "prefab",
-    .meshes = bake_into_single_mesh
-                ? std::vector<std::string>{"mesh:baked"}
-                : MakeMeshGroupKeys(nodes, nodes_by_mesh, meshes_by_group),
+    .meshes = std::move(mesh_import->keys),
     .materials = import_materials_
                    ? model_import::MakeMaterialKeys(mtl_slots)
                    : std::vector<std::string>{},
@@ -228,15 +180,15 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   // Write subassets to output in package order
 
-  if (bake_into_single_mesh) {
-    results.emplace_back(CreateSingleEntityPrefab(ToUntypedSv(src.filename().stem().u8string()), imported_meshes.at(0),
-      subasset_ids, mtl_slots_by_mesh.at(0)));
+  if (mesh_import->hierarchy) {
+    results.emplace_back(CreateHierarchyPrefab(ToUntypedSv(src.filename().stem().u8string()), mesh_import->meshes,
+      mtl_slots_by_mesh, *mesh_import->hierarchy, subasset_ids));
   } else {
-    results.emplace_back(CreateHierarchyPrefab(ToUntypedSv(src.filename().stem().u8string()), imported_meshes, groups_by_node,
-      mtl_slots_by_mesh, nodes, subasset_ids));
+    results.emplace_back(CreateSingleEntityPrefab(ToUntypedSv(src.filename().stem().u8string()),
+      mesh_import->meshes.at(0), mtl_slots_by_mesh.at(0), subasset_ids));
   }
 
-  for (auto const [mesh_idx, mesh_data] : std::views::enumerate(imported_meshes)) {
+  for (auto const [mesh_idx, mesh_data] : std::views::enumerate(mesh_import->meshes)) {
     auto mesh_bytes = model_import::SerializeMesh(mesh_data);
     results.emplace_back(subasset_ids.GetMeshId(mesh_idx), GetCurrentPayloadVersion(AssetPackagePayloadKind::kMesh),
       AssetPackagePayloadKind::kMesh, rttr::type::get<Mesh>(), std::string{ToUntypedSv(src.stem().u8string())},
