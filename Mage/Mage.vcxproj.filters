@@ -135,6 +135,24 @@
     <ClCompile Include="src\drawers\environment_component_editor_drawer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\AssetImporters\model_import\identity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AssetImporters\model_import\scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AssetImporters\model_import\skinning.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AssetImporters\model_import\meshes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AssetImporters\model_import\materials.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AssetImporters\model_import\prefab.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\imgui.hlsli" />
@@ -149,6 +167,12 @@
     </None>
     <None Include="src\drawers\editor_drawer_registry.inl">
       <Filter>Header Files</Filter>
+    </None>
+    <None Include="src\AssetImporters\model_import\meshes.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="src\AssetImporters\model_import\hash.inl">
+      <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -273,6 +297,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\drawers\environment_component_editor_drawer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AssetImporters\model_import\types.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AssetImporters\model_import\identity.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AssetImporters\model_import\scene.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AssetImporters\model_import\hash.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AssetImporters\model_import\skinning.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AssetImporters\model_import\meshes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AssetImporters\model_import\materials.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AssetImporters\model_import\prefab.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

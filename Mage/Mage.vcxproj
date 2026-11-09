@@ -124,6 +124,15 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="src\AssetImporters\model_import\hash.inl">
+      <FileType>Document</FileType>
+    </None>
+    <ClCompile Include="src\AssetImporters\model_import\identity.cpp" />
+    <ClCompile Include="src\AssetImporters\model_import\materials.cpp" />
+    <ClCompile Include="src\AssetImporters\model_import\meshes.cpp" />
+    <ClCompile Include="src\AssetImporters\model_import\prefab.cpp" />
+    <ClCompile Include="src\AssetImporters\model_import\scene.cpp" />
+    <ClCompile Include="src\AssetImporters\model_import\skinning.cpp" />
     <ClCompile Include="src\drawers\camera_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\camera_controller_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\component_editor_drawer.cpp" />
@@ -166,6 +175,7 @@
     <ClCompile Include="src\gui_helpers.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\AssetImporters\model_import\meshes.inl" />
     <None Include="src\drawers\editor_drawer.inl" />
     <None Include="src\drawers\editor_drawer_registry.inl" />
     <None Include="src\editor_app.inl" />
@@ -173,6 +183,14 @@
     <None Include="src\rendering\shaders\imgui.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AssetImporters\model_import\hash.hpp" />
+    <ClInclude Include="src\AssetImporters\model_import\identity.hpp" />
+    <ClInclude Include="src\AssetImporters\model_import\materials.hpp" />
+    <ClInclude Include="src\AssetImporters\model_import\meshes.hpp" />
+    <ClInclude Include="src\AssetImporters\model_import\prefab.hpp" />
+    <ClInclude Include="src\AssetImporters\model_import\scene.hpp" />
+    <ClInclude Include="src\AssetImporters\model_import\skinning.hpp" />
+    <ClInclude Include="src\AssetImporters\model_import\types.hpp" />
     <ClInclude Include="src\drawers\camera_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\camera_controller_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\component_editor_drawer.hpp" />

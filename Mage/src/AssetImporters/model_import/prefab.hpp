@@ -1,0 +1,32 @@
+#pragma once
+
+#include <span>
+#include <string_view>
+
+#include "identity.hpp"
+#include "types.hpp"
+#include "sorcery/mesh_data.hpp"
+#include "sorcery/host/assets/asset_package.hpp"
+
+
+namespace sorcery::mage::model_import {
+[[nodiscard]]
+auto CreatePrefab(
+  std::string_view name,
+  std::span<MeshData const> mesh_groups,
+  GroupsByNode const& groups_by_node,
+  MaterialSlotsByMesh const& mtl_slots_by_mesh,
+  NodeListPreorderDfs const& node_list,
+  SubassetIds const& ids
+) -> AssetImportResult;
+
+// Creates a prefab of a single entity that renders the mesh with the materials.
+// Placeholder mesh and material objects carry the package indices the prefab's asset references serialize to.
+[[nodiscard]]
+auto CreateSingleEntityPrefab(
+  std::string_view name,
+  MeshData const& mesh,
+  SubassetIds const& ids,
+  std::span<SceneMaterialIndex const> mesh_mtl_slot_remap
+) -> AssetImportResult;
+}
