@@ -21,6 +21,10 @@
 
 namespace sorcery::mage::model_import {
 namespace {
+using NodesByMesh = std::vector<std::vector<NodeIndex>>;
+using MeshesByGroup = std::vector<std::vector<MeshIndex>>;
+
+
 [[nodiscard]]
 auto CollectNodesByMesh(
   std::span<SceneNode const> const nodes,
@@ -50,7 +54,7 @@ auto CollectMeshesByGroup(
   auto hash_node_list = [](std::span<NodeIndex const> const nodes) {
     auto h = Mix64(nodes.size());
 
-    for (NodeIndex const n : nodes) {
+    for (auto const n : nodes) {
       h = Mix64(h ^ n);
     }
 
@@ -106,6 +110,26 @@ auto CollectGroupsByNode(
 }
 
 
+[[nodiscard]]
+auto CollectAnchorNodeByGroup(
+  NodesByMesh const& nodes_by_mesh,
+  MeshesByGroup const& meshes_by_group
+) -> AnchorNodeByGroup {
+  return meshes_by_group | std::views::transform([&](auto const& meshes) -> std::optional<NodeIndex> {
+    auto const first_mesh_idx = meshes.front();
+    auto const& mesh_nodes = nodes_by_mesh.at(first_mesh_idx);
+
+    if (mesh_nodes.empty()) {
+      // Every unreferenced mesh is grouped into a single group,
+      // so at most one group is unreferenced. This is for that case.
+      return std::nullopt;
+    }
+
+    return mesh_nodes.front();
+  }) | std::ranges::to<std::vector<std::optional<NodeIndex>>>();
+}
+
+
 // Extracts the vertex attributes, indices and material index of a mesh. Bone weights are left zeroed.
 // Returns nullopt if the mesh is missing required vertex attributes.
 [[nodiscard]]
@@ -120,7 +144,7 @@ auto ExtractSourceMesh(
   // aiProcess_SortByPType splits up meshes with more than 1 primitive type into homogeneous ones
   // TODO Implement non-triangle rendering support
 
-  std::string const name{mesh.mName.Empty() ? std::format("Mesh {}", idx_in_scene) : mesh.mName.C_Str()};
+  auto const name{mesh.mName.Empty() ? std::format("Mesh {}", idx_in_scene) : mesh.mName.C_Str()};
 
   if (!mesh.HasPositions()) {
     spdlog::warn("Skipping mesh \"{}\" in file \"{}\" because it is missing vertex positions.", name,
@@ -490,7 +514,8 @@ auto ImportBakedMesh(aiScene const& scene, std::filesystem::path const& src, Mes
   mesh_data.bones = std::move(skeleton.bones);
   mesh_data.skeleton = std::move(skeleton.nodes);
 
-  mesh_import.keys.emplace_back("mesh:baked");
+  mesh_import.labels.keys.emplace_back("mesh:baked");
+  mesh_import.labels.names.emplace_back(ToUntypedSv(src.stem().u8string()));
 
   return mesh_import;
 }
@@ -522,7 +547,8 @@ auto ImportMeshGroups(aiScene const& scene, std::filesystem::path const& src, Me
     mesh_import.meshes.emplace_back(std::move(mesh_data));
   }
 
-  mesh_import.keys = MakeMeshGroupKeys(nodes, nodes_by_mesh, meshes_by_group);
+  auto const anchor_node_by_group = CollectAnchorNodeByGroup(nodes_by_mesh, meshes_by_group);
+  mesh_import.labels = MakeMeshGroupLabels(nodes, anchor_node_by_group, src);
   return mesh_import;
 }
 }

@@ -63,11 +63,10 @@ using SceneNodeList = std::vector<SceneNode>;
 
 using MeshIndex = std::size_t;
 using NodeIndex = std::size_t;
-using NodesByMesh = std::vector<std::vector<NodeIndex>>;
 
 using MeshGroupIndex = std::size_t;
-using MeshesByGroup = std::vector<std::vector<MeshIndex>>;
 using GroupsByNode = std::vector<std::vector<MeshGroupIndex>>;
+using AnchorNodeByGroup = std::vector<std::optional<NodeIndex>>;
 
 using SceneMaterialIndex = std::size_t;
 using MaterialSlotsByMesh = std::vector<std::vector<SceneMaterialIndex>>;
@@ -76,5 +75,11 @@ using MaterialSlotsByMesh = std::vector<std::vector<SceneMaterialIndex>>;
 struct HierarchyLayout {
   SceneNodeList nodes;
   GroupsByNode groups_by_node;
+};
+
+
+struct SubassetLabels {
+  std::vector<std::string> keys;
+  std::vector<std::string> names;
 };
 }

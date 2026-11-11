@@ -51,12 +51,13 @@ private:
 
 // Gives every mesh group a key derived from the node hierarchy, so that a group keeps its key
 // as long as the node it hangs on keeps its place in the hierarchy.
+// It also computes names derived from the same data.
 [[nodiscard]]
-auto MakeMeshGroupKeys(
+auto MakeMeshGroupLabels(
   SceneNodeList const& nodes,
-  NodesByMesh const& nodes_by_mesh,
-  MeshesByGroup const& meshes_by_group
-) -> std::vector<std::string>;
+  AnchorNodeByGroup const& anchor_node_by_group,
+  std::filesystem::path const& src
+) -> SubassetLabels;
 
 [[nodiscard]]
 auto MakeMaterialKeys(

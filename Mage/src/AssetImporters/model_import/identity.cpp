@@ -124,14 +124,21 @@ auto SubassetIds::GetMaterialCount() const -> std::size_t {
 }
 
 
-auto MakeMeshGroupKeys(SceneNodeList const& nodes, NodesByMesh const& nodes_by_mesh,
-                       MeshesByGroup const& meshes_by_group) -> std::vector<std::string> {
+auto MakeMeshGroupLabels(
+  SceneNodeList const& nodes,
+  AnchorNodeByGroup const& anchor_node_by_group,
+  std::filesystem::path const& src
+) -> SubassetLabels {
   // The absolute path of node i
-  std::vector<std::string> node_paths(nodes.size());
+  auto node_paths = std::vector<std::string>(nodes.size());
+  // The last segment of node i's path, for example "child[2]" in "/grandparent/parent/child[2]"
+  auto node_segments = std::vector<std::string>(nodes.size());
   // How many children does node i have with a specific name
-  std::vector<std::unordered_map<std::string_view, std::size_t>> name_counts(nodes.size());
+  auto name_counts = std::vector<std::unordered_map<std::string_view, std::size_t>>(nodes.size());
   // How many groups does node i reference
-  std::vector<std::size_t> group_counts(nodes.size());
+  auto group_counts = std::vector<std::size_t>(nodes.size());
+
+  auto const stem = ToUntypedStr(src.stem().u8string());
 
   // Build the absolute path of each node, and count how many children of each name each node has.
   // The root path is "", every other path is "/grandparent/parent/child[n]", where n deduplicates
@@ -143,32 +150,64 @@ auto MakeMeshGroupKeys(SceneNodeList const& nodes, NodesByMesh const& nodes_by_m
       continue;
     }
 
-    std::string_view const node_name{node.ptr->mName.C_Str()};
+    auto const node_name = std::string_view{node.ptr->mName.C_Str()};
     auto const name_count = name_counts[*node.parent_idx][node_name]++;
     auto const& parent_path = node_paths[*node.parent_idx];
-    node_paths[i] = std::format("{}/{}{}", parent_path, node_name,
-      name_count == 0 ? std::string{} : std::format("[{}]", name_count));
+    node_segments[i] = name_count == 0
+                         ? std::string{node_name}
+                         : std::format("{}[{}]", node_name, name_count);
+    node_paths[i] = std::format("{}/{}", parent_path, node_segments[i]);
   }
 
-  auto keys = meshes_by_group | std::views::transform([&](auto const& meshes) {
-    auto const first_mesh_idx = meshes.front();
-    auto const& mesh_nodes = nodes_by_mesh.at(first_mesh_idx);
+  auto labels = SubassetLabels{};
 
-    if (mesh_nodes.empty()) {
+  for (auto const& anchor_node_opt : anchor_node_by_group) {
+    if (!anchor_node_opt) {
       // Every unreferenced mesh is grouped into a single group,
       // so at most one group is unreferenced. This is for that case.
-      return std::string{"mesh:unreferenced"};
+      labels.keys.emplace_back("mesh:unreferenced");
+      labels.names.emplace_back(std::format("{} ({})", stem, "unreferenced"));
+      continue;
     }
 
-    auto const first_node_idx = mesh_nodes.front();
-    auto const group_count = group_counts[first_node_idx]++;
+    auto const anchor_node_idx = *anchor_node_opt;
+    auto const group_count = group_counts[anchor_node_idx]++;
+    auto const anchor_node_path = std::string_view{node_paths[anchor_node_idx]};
 
-    return group_count == 0
-             ? std::format("mesh:{}", node_paths[first_node_idx])
-             : std::format("mesh:{}:{}", node_paths[first_node_idx], group_count);
-  }) | std::ranges::to<std::vector<std::string>>();
-  MakeKeysUnique(keys);
-  return keys;
+    labels.keys.emplace_back(group_count == 0
+                               ? std::format("mesh:{}", anchor_node_path)
+                               : std::format("mesh:{}:{}", anchor_node_path, group_count));
+
+    auto const& node = nodes[anchor_node_idx];
+
+    // Groups on the root node get the file stem as their name.
+    // If the root references multiple groups, they will be delimited using stem (1), stem (2), etc.
+    if (!node.parent_idx) {
+      labels.names.emplace_back(group_count == 0
+                                  ? std::string{stem}
+                                  : std::format("{} ({})", stem, group_count));
+      continue;
+    }
+
+    // Groups on the non-root nodes get the last segment of the node path as their name.
+    // Also deduped using (1), (2), etc.
+
+    auto const node_segment = std::string_view{node_segments[anchor_node_idx]};
+
+    // If the node name was empty, we append its last segment (which is only a dedup index) to the file stem for the name.
+    // Otherwise the last segment is used as the name. A dedup suffix is added if the node references multiple groups.
+
+    auto const base_name = node.ptr->mName.length == 0
+                             ? std::format("{}{}", stem, node_segment)
+                             : std::string{node_segment};
+
+    labels.names.emplace_back(group_count == 0
+                                ? base_name
+                                : std::format("{} ({})", base_name, group_count));
+  }
+
+  MakeKeysUnique(labels.keys);
+  return labels;
 }
 
 

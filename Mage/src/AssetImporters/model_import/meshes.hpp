@@ -16,7 +16,7 @@
 namespace sorcery::mage::model_import {
 struct MeshImport {
   std::vector<MeshData> meshes;
-  std::vector<std::string> keys;
+  SubassetLabels labels;
   std::optional<HierarchyLayout> hierarchy;
 };
 

@@ -113,7 +113,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   // Stable subasset identities.
   model_import::SubassetKeys const subasset_keys{
     .prefab = "prefab",
-    .meshes = std::move(mesh_import->keys),
+    .meshes = std::move(mesh_import->labels.keys),
     .materials = import_materials_
                    ? model_import::MakeMaterialKeys(mtl_slots)
                    : std::vector<std::string>{},
@@ -180,6 +180,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
   // Write subassets to output in package order
 
+  // Prefab
+
   if (mesh_import->hierarchy) {
     results.emplace_back(CreateHierarchyPrefab(ToUntypedSv(src.filename().stem().u8string()), mesh_import->meshes,
       mtl_slots_by_mesh, *mesh_import->hierarchy, subasset_ids));
@@ -188,16 +190,22 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
       mesh_import->meshes.at(0), mtl_slots_by_mesh.at(0), subasset_ids));
   }
 
+  // Meshes
+
   for (auto const [mesh_idx, mesh_data] : std::views::enumerate(mesh_import->meshes)) {
     auto mesh_bytes = model_import::SerializeMesh(mesh_data);
     results.emplace_back(subasset_ids.GetMeshId(mesh_idx), GetCurrentPayloadVersion(AssetPackagePayloadKind::kMesh),
-      AssetPackagePayloadKind::kMesh, rttr::type::get<Mesh>(), std::string{ToUntypedSv(src.stem().u8string())},
+      AssetPackagePayloadKind::kMesh, rttr::type::get<Mesh>(), mesh_import->labels.names[mesh_idx],
       std::move(mesh_bytes));
   }
+
+  // Materials
 
   if (import_materials_) {
     std::ranges::move(BuildMaterialResults(mtl_assets, mtl_slots, subasset_ids), std::back_inserter(results));
   }
+
+  // Textures
 
   if (import_textures_) {
     auto tex_results = BuildTextureResults(src, texes_to_load, tex_coverage_thresholds, tex_settings, subasset_ids);
