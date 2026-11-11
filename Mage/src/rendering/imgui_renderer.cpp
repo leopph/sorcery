@@ -10,11 +10,11 @@
 #include "../imgui_texture_references.hpp"
 #include "shaders/imgui_shader_interop.h"
 #include "sorcery/object_ptr.hpp"
+#include "sorcery/assets/Cubemap.hpp"
+#include "sorcery/assets/Texture2D.hpp"
 #include "sorcery/host/rendering/render_frame.hpp"
 #include "sorcery/host/rendering/texture_resolver.hpp"
 #include "sorcery/rendering/render_target.hpp"
-#include "sorcery/assets/Cubemap.hpp"
-#include "sorcery/assets/Texture2D.hpp"
 
 #ifndef NDEBUG
 #include "shaders/generated/Debug/imgui_ps.h"
@@ -140,8 +140,11 @@ auto ImGuiRenderer::ExtractFrame(rendering::RenderFrame& frame) -> void {
     ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&fonts_tex_pixel_data, &fonts_tex_width, &fonts_tex_height);
 
     font_tex_ = device_->CreateTexture(wand::TextureDesc{
-      wand::TextureDimension::k2D, static_cast<UINT>(fonts_tex_width), static_cast<UINT>(fonts_tex_height), 1, 1,
-      DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
+      .dimension = wand::TextureDimension::k2D, .width = static_cast<UINT>(fonts_tex_width),
+      .height = static_cast<UINT>(fonts_tex_height), .depth_or_array_size = 1, .mip_levels = 1,
+      .format = DXGI_FORMAT_R8G8B8A8_UNORM, .sample_count = 1,
+      .component_mapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING, .depth_stencil = false, .render_target = false,
+      .shader_resource = true, .unordered_access = false
     }, wand::CpuAccess::kNone, nullptr);
     font_tex_->SetDebugName(L"UI Font Texture");
 

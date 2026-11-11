@@ -157,6 +157,7 @@
     <ClCompile Include="src\random.cpp" />
     <ClCompile Include="src\rendering\Camera.cpp" />
     <ClCompile Include="src\rendering\command_list_pool.cpp" />
+    <ClCompile Include="src\rendering\dxgi_format.cpp" />
     <ClCompile Include="src\rendering\projection_utils.cpp" />
     <ClCompile Include="src\rendering\render_world.cpp" />
     <ClCompile Include="src\rendering\render_texture.cpp" />
@@ -224,6 +225,7 @@
     <ClInclude Include="include\sorcery\host\game_module.hpp" />
     <ClInclude Include="include\sorcery\mesh_utils.hpp" />
     <ClInclude Include="include\sorcery\not_null.hpp" />
+    <ClInclude Include="include\sorcery\rendering\dxgi_format.hpp" />
     <ClInclude Include="include\sorcery\scene\environment_component.hpp" />
     <ClInclude Include="include\sorcery\world_entity_group.hpp" />
     <ClInclude Include="include\sorcery\host\rendering\view.hpp" />

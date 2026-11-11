@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include "sorcery/rendering/dxgi_format.hpp"
+
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Texture2D>{"Texture2D"};
@@ -17,30 +19,7 @@ auto detail::ClearTex2DCpuData(Texture2D& tex) -> void {
 Texture2D::Texture2D(DirectX::ScratchImage image, CpuResidencyPolicy const cpu_data_policy) :
   data_{std::make_unique<DirectX::ScratchImage>(std::move(image))},
   metadata_{data_->GetMetadata()},
-  channel_count_{
-    DirectX::IsCompressed(metadata_.format)
-      ? [](DXGI_FORMAT const format) {
-        switch (DirectX::MakeTypeless(format)) {
-          case DXGI_FORMAT_BC1_TYPELESS:
-            return 3;
-          case DXGI_FORMAT_BC2_TYPELESS:
-            [[fallthrough]];
-          case DXGI_FORMAT_BC3_TYPELESS:
-            return 4;
-          case DXGI_FORMAT_BC4_TYPELESS:
-            return 1;
-          case DXGI_FORMAT_BC5_TYPELESS:
-            return 2;
-          case DXGI_FORMAT_BC6H_TYPELESS:
-            return 3;
-          case DXGI_FORMAT_BC7_TYPELESS:
-            return 4;
-          default:
-            return 0;
-        }
-      }(metadata_.format)
-      : static_cast<unsigned>(DirectX::BitsPerPixel(metadata_.format) / DirectX::BitsPerColor(metadata_.format))
-  },
+  channel_count_{rendering::GetFormatChannelCount(metadata_.format)},
   cpu_policy_{cpu_data_policy} {}
 
 

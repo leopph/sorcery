@@ -346,12 +346,18 @@ SceneRenderer::SceneRenderer(
   });
 
   white_tex_ = device_->CreateTexture(wand::TextureDesc{
-    wand::TextureDimension::k2D, 1, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, 1, false, false, true, false
+    .dimension = wand::TextureDimension::k2D, .width = 1, .height = 1, .depth_or_array_size = 1, .mip_levels = 1,
+    .format = DXGI_FORMAT_R8G8B8A8_UNORM, .sample_count = 1,
+    .component_mapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING, .depth_stencil = false, .render_target = false,
+    .shader_resource = true, .unordered_access = false
   }, wand::CpuAccess::kNone, nullptr);
 
   brdf_integration_map_ = device_->CreateTexture(wand::TextureDesc{
-    wand::TextureDimension::k2D, brdf_integration_map_size_, brdf_integration_map_size_, 1, 1,
-    brdf_integration_map_format_, 1, false, true, true, false
+    .dimension = wand::TextureDimension::k2D, .width = brdf_integration_map_size_, .height = brdf_integration_map_size_,
+    .depth_or_array_size = 1, .mip_levels = 1,
+    .format = brdf_integration_map_format_, .sample_count = 1,
+    .component_mapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING, .depth_stencil = false, .render_target = true,
+    .shader_resource = true, .unordered_access = false
   }, wand::CpuAccess::kNone, std::array{
     D3D12_CLEAR_VALUE{.Format = brdf_integration_map_format_, .Color = {0.F, 0.F, 0.F, 1.F}}
   }.data());

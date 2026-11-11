@@ -26,8 +26,11 @@ auto RenderTarget::New(wand::GraphicsDevice& device, Desc const& desc) -> std::u
     CD3DX12_CLEAR_VALUE const clear_value{*desc.color_format, desc.color_clear_value.data()};
 
     color_tex = device.CreateTexture(wand::TextureDesc{
-      desc.dimension, desc.width, desc.height, desc.depth_or_array_size, 1, *desc.color_format, desc.sample_count,
-      false, true, true, desc.enable_unordered_access
+      .dimension = desc.dimension, .width = desc.width, .height = desc.height,
+      .depth_or_array_size = desc.depth_or_array_size, .mip_levels = 1, .format = *desc.color_format,
+      .sample_count = desc.sample_count,
+      .component_mapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING, .depth_stencil = false, .render_target = true,
+      .shader_resource = true, .unordered_access = desc.enable_unordered_access
     }, wand::CpuAccess::kNone, &clear_value);
 
     color_tex->SetDebugName(desc.debug_name + L" - Color Texture");
@@ -37,8 +40,11 @@ auto RenderTarget::New(wand::GraphicsDevice& device, Desc const& desc) -> std::u
     CD3DX12_CLEAR_VALUE const clear_value{*desc.depth_stencil_format, desc.depth_clear_value, desc.stencil_clear_value};
 
     depth_stencil_tex = device.CreateTexture(wand::TextureDesc{
-      desc.dimension, desc.width, desc.height, desc.depth_or_array_size, 1, *desc.depth_stencil_format,
-      desc.sample_count, true, false, true, false /* in DX12, depth-stencil textures cannot be unordered access */
+      .dimension = desc.dimension, .width = desc.width, .height = desc.height,
+      .depth_or_array_size = desc.depth_or_array_size, .mip_levels = 1, .format = *desc.depth_stencil_format,
+      .sample_count = desc.sample_count, .component_mapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+      .depth_stencil = true, .render_target = false, .shader_resource = true,
+      .unordered_access = false /* in DX12, depth-stencil textures cannot be unordered access */
     }, wand::CpuAccess::kNone, &clear_value);
 
     depth_stencil_tex->SetDebugName(desc.debug_name + L" - Depth-Stencil Texture");

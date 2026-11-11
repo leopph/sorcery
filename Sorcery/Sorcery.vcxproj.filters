@@ -258,6 +258,9 @@
     <ClCompile Include="src\scene_loader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\rendering\dxgi_format.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\sorcery\scene\Entity.hpp">
@@ -567,6 +570,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\scene_loader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sorcery\rendering\dxgi_format.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

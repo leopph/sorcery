@@ -1,5 +1,7 @@
 #include "render_texture.hpp"
 
+#include "sorcery/rendering/dxgi_format.hpp"
+
 
 namespace sorcery::rendering {
 auto RenderTexture::Init(wand::GraphicsDevice& device, DirectX::TexMetadata const& metadata) -> void {
@@ -12,6 +14,13 @@ auto RenderTexture::Init(wand::GraphicsDevice& device, DirectX::TexMetadata cons
   desc.render_target = false;
   desc.shader_resource = true;
   desc.unordered_access = false;
+  desc.component_mapping = GetFormatChannelCount(metadata.format) == 1
+                             ? D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(
+                               D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_0,
+                               D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_0,
+                               D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_0,
+                               D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1)
+                             : D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
   if (metadata.dimension == DirectX::TEX_DIMENSION_TEXTURE1D) {
     desc.dimension = wand::TextureDimension::k1D;

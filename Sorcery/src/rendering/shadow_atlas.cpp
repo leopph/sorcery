@@ -16,6 +16,7 @@ ShadowAtlas::ShadowAtlas(wand::GraphicsDevice* const device, DXGI_FORMAT const d
         .mip_levels = 1,
         .format = depth_format,
         .sample_count = 1,
+        .component_mapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
         .depth_stencil = true,
         .render_target = false,
         .shader_resource = true,

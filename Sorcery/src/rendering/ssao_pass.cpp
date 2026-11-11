@@ -27,8 +27,10 @@ SsaoPass::SsaoPass(wand::GraphicsDevice& device, TemporaryRenderTargetPool& rt_p
   device_{&device},
   rt_pool_{&rt_pool} {
   noise_tex_ = device_->CreateTexture(wand::TextureDesc{
-    wand::TextureDimension::k2D, SSAO_NOISE_TEX_DIM, SSAO_NOISE_TEX_DIM, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,
-    false, false, true, false
+    .dimension = wand::TextureDimension::k2D, .width = SSAO_NOISE_TEX_DIM, .height = SSAO_NOISE_TEX_DIM,
+    .depth_or_array_size = 1, .mip_levels = 1, .format = DXGI_FORMAT_R32G32B32A32_FLOAT, .sample_count = 1,
+    .component_mapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+    .depth_stencil = false, .render_target = false, .shader_resource = true, .unordered_access = false
   }, wand::CpuAccess::kNone, nullptr);
   noise_tex_->SetDebugName(L"SSAO Noise");
 }
