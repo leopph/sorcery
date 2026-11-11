@@ -64,9 +64,11 @@ auto MakeMaterialKeys(
   std::span<MaterialSlotInfo const> mtl_slots
 ) -> std::vector<std::string>;
 
-// Textures are keyed by their file name, or by a hash of their contents if they have none
+// Textures are keyed by their file name, or by a hash of their contents if they have none.
+// Their names are the file name, or “stem Texture n”.
 [[nodiscard]]
-auto MakeTextureKeys(
-  std::span<SourceTexture const> tex_infos
-) -> std::vector<std::string>;
+auto MakeTextureLabels(
+  std::span<SourceTexture const> source_texes,
+  std::filesystem::path const& src
+) -> SubassetLabels;
 }

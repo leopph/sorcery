@@ -222,12 +222,19 @@ auto MakeMaterialKeys(std::span<MaterialSlotInfo const> const mtl_slots) -> std:
 }
 
 
-auto MakeTextureKeys(std::span<SourceTexture const> const tex_infos) -> std::vector<std::string> {
-  auto keys = tex_infos | std::views::transform([](SourceTexture const& src_tex) {
+auto MakeTextureLabels(
+  std::span<SourceTexture const> const source_texes,
+  std::filesystem::path const& src
+) -> SubassetLabels {
+  SubassetLabels labels;
+
+  for (auto const [idx, src_tex] : std::views::enumerate(source_texes)) {
     auto const& tex = *src_tex.tex;
 
     if (!tex.mFilename.Empty()) {
-      return std::format("texture:{}", tex.mFilename.C_Str());
+      labels.keys.emplace_back(std::format("texture:{}", tex.mFilename.C_Str()));
+      labels.names.emplace_back(tex.mFilename.C_Str());
+      continue;
     }
 
     // Compressed textures store their byte count in mWidth, uncompressed ones are mWidth * mHeight texels
@@ -235,11 +242,12 @@ auto MakeTextureKeys(std::span<SourceTexture const> const tex_infos) -> std::vec
                               ? std::size_t{tex.mWidth}
                               : std::size_t{tex.mWidth} * tex.mHeight * sizeof(aiTexel);
 
-    return std::format("texture:{:016x}",
-      Fnv1a64(std::span{reinterpret_cast<std::byte const*>(tex.pcData), byte_count}));
-  }) | std::ranges::to<std::vector>();
+    labels.keys.emplace_back(std::format("texture:{:016x}",
+      Fnv1a64(std::span{reinterpret_cast<std::byte const*>(tex.pcData), byte_count})));
+    labels.names.emplace_back(std::format("{} Texture {}", ToUntypedSv(src.filename().stem().u8string()), idx));
+  }
 
-  MakeKeysUnique(keys);
-  return keys;
+  MakeKeysUnique(labels.keys);
+  return labels;
 }
 }

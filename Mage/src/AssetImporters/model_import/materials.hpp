@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <filesystem>
 #include <span>
 #include <vector>
 
@@ -60,8 +59,8 @@ auto AssignMeshMaterialSlots(
 
 [[nodiscard]]
 auto BuildTextureResults(
-  std::filesystem::path const& src,
   std::span<SourceTexture const> src_texes,
+  std::span<std::string const> tex_names,
   std::span<float const> tex_coverage_thresholds,
   std::span<TextureImportSettings const> tex_import_settings,
   SubassetIds const& subasset_ids

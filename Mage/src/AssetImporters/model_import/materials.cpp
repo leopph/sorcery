@@ -5,7 +5,6 @@
 #include <assimp/GltfMaterial.h>
 #include <spdlog/spdlog.h>
 
-#include "sorcery/char_encoding_helpers.hpp"
 #include "sorcery/host/assets/material_import.hpp"
 
 
@@ -296,8 +295,8 @@ auto AssignMeshMaterialSlots(std::span<MeshData> const imported_meshes,
 
 
 auto BuildTextureResults(
-  std::filesystem::path const& src,
   std::span<SourceTexture const> const src_texes,
+  std::span<std::string const> const tex_names,
   std::span<float const> const tex_coverage_thresholds,
   std::span<TextureImportSettings const> const tex_import_settings,
   SubassetIds const& subasset_ids
@@ -336,13 +335,8 @@ auto BuildTextureResults(
         return std::nullopt;
       }
 
-      auto const tex_name =
-        tex_info.tex->mFilename.Empty()
-          ? std::string{ToUntypedSv(src.filename().stem().u8string())} += std::format(" Texture {}", idx)
-          : std::string{tex_info.tex->mFilename.C_Str()};
-
       results.emplace_back(subasset_ids.GetTextureId(idx), GetCurrentPayloadVersion(tex_result->payload_kind),
-        tex_result->payload_kind, tex_result->runtime_type, tex_name, std::move(tex_result->bytes));
+        tex_result->payload_kind, tex_result->runtime_type, tex_names[idx], std::move(tex_result->bytes));
     } else {
       // TODO implement this path
       assert("Found uncompressed embedded texture." && false);

@@ -110,6 +110,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     AppendUnreferencedTextures(scene, texes_to_load);
   }
 
+  auto tex_labels = model_import::MakeTextureLabels(texes_to_load, src);
+
   // Stable subasset identities.
   model_import::SubassetKeys const subasset_keys{
     .prefab = "prefab",
@@ -117,7 +119,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     .materials = import_materials_
                    ? model_import::MakeMaterialKeys(mtl_slots)
                    : std::vector<std::string>{},
-    .textures = MakeTextureKeys(texes_to_load),
+    .textures = std::move(tex_labels.keys),
   };
 
   spdlog::debug("Subasset keys of \"{}\":", ToUntypedSv(src.u8string()));
@@ -208,7 +210,8 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   // Textures
 
   if (import_textures_) {
-    auto tex_results = BuildTextureResults(src, texes_to_load, tex_coverage_thresholds, tex_settings, subasset_ids);
+    auto tex_results = BuildTextureResults(texes_to_load, tex_labels.names, tex_coverage_thresholds, tex_settings,
+      subasset_ids);
 
     if (!tex_results) {
       return false;
