@@ -19,7 +19,7 @@
 
 namespace sorcery::mage::model_import {
 struct SourceTexture {
-  aiTexture const* tex;
+  NotNull<ObserverPtr<aiTexture const>> tex;
   aiTextureType type;
 
   [[nodiscard]]

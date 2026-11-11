@@ -19,7 +19,7 @@ template<NotNullable T>
 template<class U>
   requires std::convertible_to<U const&, T>
 constexpr NotNull<T>::NotNull(NotNull<U> const& other) noexcept(std::is_nothrow_constructible_v<T, U const&>) :
-  ptr_{other.get()} {}
+  ptr_{other.Get()} {}
 
 
 template<NotNullable T>
@@ -63,33 +63,33 @@ constexpr auto NotNull<T>::operator*() const noexcept(noexcept(*std::declval<T c
 template<class T, class U>
   requires detail::EqualityComparableWith<T, U>
 constexpr auto operator==(NotNull<T> const& lhs, NotNull<U> const& rhs) noexcept(detail::kIsNothrowEq<T, U>) -> bool {
-  return lhs.get() == rhs.get();
+  return lhs.Get() == rhs.Get();
 }
 
 
 template<class T, class U>
   requires std::three_way_comparable_with<T, U>
 constexpr auto operator<=>(NotNull<T> const& lhs, NotNull<U> const& rhs) noexcept(detail::kIsNothrowThreeWay<T, U>) {
-  return std::compare_three_way{}(lhs.get(), rhs.get());
+  return std::compare_three_way{}(lhs.Get(), rhs.Get());
 }
 
 
 template<class T, detail::PlainComparand U>
   requires detail::EqualityComparableWith<T, U>
 constexpr auto operator==(NotNull<T> const& lhs, U const& rhs) noexcept(detail::kIsNothrowEq<T, U>) -> bool {
-  return lhs.get() == rhs;
+  return lhs.Get() == rhs;
 }
 
 
 template<class T, detail::PlainComparand U>
   requires std::three_way_comparable_with<T, U>
 constexpr auto operator<=>(NotNull<T> const& lhs, U const& rhs) noexcept(detail::kIsNothrowThreeWay<T, U>) {
-  return std::compare_three_way{}(lhs.get(), rhs);
+  return std::compare_three_way{}(lhs.Get(), rhs);
 }
 }
 
 
 template<class T>
 auto std::hash<sorcery::NotNull<T>>::operator()(sorcery::NotNull<T> const& p) const noexcept -> std::size_t {
-  return std::hash<T>{}(p.get());
+  return std::hash<T>{}(p.Get());
 }

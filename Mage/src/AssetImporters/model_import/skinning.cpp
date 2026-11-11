@@ -15,21 +15,19 @@ namespace {
 struct Node {
   std::string name;
   Matrix4 transform;
-  Node* parent{nullptr};
+  ObserverPtr<Node> parent{nullptr};
   std::vector<std::unique_ptr<Node>> children;
   bool visited{false};
 };
 
 
 [[nodiscard]]
-auto ConvertHierarchy(aiNode const* node, Node* const converted_parent) -> std::unique_ptr<Node> {
-  auto converted_node{
-    std::make_unique<Node>(node->mName.C_Str(), Convert(node->mTransformation).Transpose(),
-      converted_parent)
-  };
+auto ConvertHierarchy(aiNode const& node, ObserverPtr<Node> const converted_parent) -> std::unique_ptr<Node> {
+  auto converted_node = std::make_unique<Node>(node.mName.C_Str(), Convert(node.mTransformation).Transpose(),
+    converted_parent);
 
-  for (unsigned i{0}; i < node->mNumChildren; i++) {
-    converted_node->children.emplace_back(ConvertHierarchy(node->mChildren[i], converted_node.get()));
+  for (unsigned i{0}; i < node.mNumChildren; i++) {
+    converted_node->children.emplace_back(ConvertHierarchy(*node.mChildren[i], MakeObserver(converted_node.get())));
   }
 
   return converted_node;
@@ -37,13 +35,13 @@ auto ConvertHierarchy(aiNode const* node, Node* const converted_parent) -> std::
 
 
 [[nodiscard]]
-auto FindInHierarchyByName(Node& root_node, std::string_view const name) -> Node* {
+auto FindInHierarchyByName(Node& root_node, std::string_view const name) -> ObserverPtr<Node> {
   if (root_node.name == name) {
-    return &root_node;
+    return MakeObserver(&root_node);
   }
 
   for (auto const& child : root_node.children) {
-    if (auto const found{FindInHierarchyByName(*child, name)}) {
+    if (auto const found = FindInHierarchyByName(*child, name)) {
       return found;
     }
   }
@@ -86,13 +84,13 @@ auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const bones) 
 
   // Convert node hierarchy
 
-  auto root_node{ConvertHierarchy(&root, nullptr)};
+  auto root_node{ConvertHierarchy(root, nullptr)};
 
   // Mark nodes that are part of the skeleton (but not necessarily bones!)
 
   std::ranges::for_each(bones, [&root_node](SourceBone const& bone) {
     // We look for the node corresponding to the bone and mark it along with all of its ancestors
-    auto node{FindInHierarchyByName(*root_node, bone.node_name)};
+    auto node = FindInHierarchyByName(*root_node, bone.node_name);
     assert(node);
 
     while (node) {
@@ -106,7 +104,7 @@ auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const bones) 
   // Indices are needed for node animations. It is guaranteed that animated nodes have unique names.
 
   struct NodeAndParentIdx {
-    Node* node;
+    ObserverPtr<Node> node;
     std::optional<std::uint32_t> parent_idx;
   };
 
@@ -115,7 +113,7 @@ auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const bones) 
   if (!root_node->visited) {
     root_node.reset();
   } else {
-    node_queue.emplace(root_node.get(), std::nullopt);
+    node_queue.emplace(MakeObserver(root_node.get()), std::nullopt);
   }
 
   while (!node_queue.empty()) {
@@ -126,7 +124,7 @@ auto BuildSkeleton(aiNode const& root, std::span<SourceBone const> const bones) 
 
     for (auto const& child : node->children) {
       if (child->visited) {
-        node_queue.emplace(child.get(), this_node_idx);
+        node_queue.emplace(MakeObserver(child.get()), this_node_idx);
       }
     }
 

@@ -162,4 +162,16 @@ struct std::hash<sorcery::NotNull<T>> {
 };
 
 
+template<class T, template<class> class TQual, template<class> class UQual>
+struct std::basic_common_reference<sorcery::NotNull<T>, T, TQual, UQual> {
+  using type = T;
+};
+
+
+template<class T, template<class> class TQual, template<class> class UQual>
+struct std::basic_common_reference<T, sorcery::NotNull<T>, TQual, UQual> {
+  using type = T;
+};
+
+
 #include <sorcery/not_null.inl>

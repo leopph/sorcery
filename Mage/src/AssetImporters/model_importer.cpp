@@ -1,7 +1,6 @@
 #include "model_importer.hpp"
 
 #include <algorithm>
-#include <array>
 #include <filesystem>
 #include <iterator>
 #include <ranges>
@@ -124,15 +123,6 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     .materials = std::move(mtl_labels.keys),
     .textures = std::move(tex_labels.keys),
   };
-
-  spdlog::debug("Subasset keys of \"{}\":", ToUntypedSv(src.u8string()));
-  spdlog::debug("  {}", subasset_keys.prefab);
-
-  for (auto const& key : std::views::join(std::array{
-         std::span{subasset_keys.meshes}, std::span{subasset_keys.materials}, std::span{subasset_keys.textures}
-       })) {
-    spdlog::debug("  {}", key);
-  }
 
   // Sync settings with current import keys
 

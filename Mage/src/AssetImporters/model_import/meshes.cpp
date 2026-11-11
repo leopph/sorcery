@@ -219,11 +219,11 @@ auto CollectBakedMeshes(
 
   struct NodeAndAccumTrafo {
     Matrix4 absolute_parent_transform;
-    aiNode const* node;
+    ObserverPtr<aiNode const> node;
   };
 
   std::queue<NodeAndAccumTrafo> node_transform_queue;
-  node_transform_queue.emplace(Matrix4::Identity(), scene.mRootNode);
+  node_transform_queue.emplace(Matrix4::Identity(), MakeObserver(scene.mRootNode));
 
   while (!node_transform_queue.empty()) {
     auto const& [absolute_parent_transform, node] = node_transform_queue.front();
@@ -259,7 +259,7 @@ auto CollectBakedMeshes(
     }
 
     for (unsigned i = 0; i < node->mNumChildren; ++i) {
-      node_transform_queue.emplace(abs_transform, node->mChildren[i]);
+      node_transform_queue.emplace(abs_transform, MakeObserver(node->mChildren[i]));
     }
 
     node_transform_queue.pop();
@@ -290,10 +290,10 @@ auto CollectSourceMeshes(
 auto FuseByMaterial(
   std::span<SourceMesh const> const meshes
 ) -> std::vector<SourceMesh> {
-  std::map<std::uint32_t, std::vector<SourceMesh const*>> meshes_per_mtl_idx;
+  std::map<std::uint32_t, std::vector<ObserverPtr<SourceMesh const>>> meshes_per_mtl_idx;
 
   for (auto const& mesh : meshes) {
-    meshes_per_mtl_idx[mesh.mtl_idx].push_back(&mesh);
+    meshes_per_mtl_idx[mesh.mtl_idx].emplace_back(&mesh);
   }
 
   std::vector<SourceMesh> fused_meshes;
@@ -304,7 +304,7 @@ auto FuseByMaterial(
 
     fused_mesh.mtl_idx = mtl_idx;
 
-    for (auto const& mesh : mtl_meshes) {
+    for (auto const mesh : mtl_meshes) {
       // Bake 'baseVertex' into indices
       fused_mesh.indices.reserve(fused_mesh.indices.size() + mesh->indices.size());
       std::ranges::transform(mesh->indices, std::back_inserter(fused_mesh.indices),

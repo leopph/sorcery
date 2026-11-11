@@ -19,21 +19,22 @@ auto TryEmplaceTexture(std::vector<SourceTexture>& src_texes, aiTexture const& t
   // If type is unknown, be only place it if we don't already have it.
   // Otherwise we just return the first one we find, since we don't care about the type.
   if (type == aiTextureType_UNKNOWN) {
-    if (auto const it{std::ranges::find(src_texes, &tex, &SourceTexture::tex)}; it != src_texes.end()) {
+    if (auto const it = std::ranges::find(src_texes, MakeObserver(&tex), &SourceTexture::tex);
+      it != src_texes.end()) {
       return std::distance(src_texes.begin(), it);
     }
 
-    src_texes.emplace_back(&tex, type);
+    src_texes.emplace_back(MakeObserver(&tex), type);
     return src_texes.size() - 1;
   }
 
   // If type is concrete, we only look for exact matches, and if that fails, then we store.
-  if (auto const it{std::ranges::find(src_texes, SourceTexture{.tex = &tex, .type = type})};
+  if (auto const it{std::ranges::find(src_texes, SourceTexture{.tex = MakeObserver(&tex), .type = type})};
     it != src_texes.end()) {
     return std::distance(src_texes.begin(), it);
   }
 
-  src_texes.emplace_back(&tex, type);
+  src_texes.emplace_back(MakeObserver(&tex), type);
   return src_texes.size() - 1;
 }
 
