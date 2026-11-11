@@ -211,14 +211,16 @@ auto MakeMeshGroupLabels(
 }
 
 
-auto MakeMaterialKeys(std::span<MaterialSlotInfo const> const mtl_slots) -> std::vector<std::string> {
-  auto keys = mtl_slots |
-              std::views::transform([](MaterialSlotInfo const& slot) {
-                return std::format("material:{}", slot.name);
-              }) |
-              std::ranges::to<std::vector>();
-  MakeKeysUnique(keys);
-  return keys;
+auto MakeMaterialLabels(std::span<MaterialSlotInfo const> const mtl_slots) -> SubassetLabels {
+  auto labels = SubassetLabels{};
+
+  for (auto const& slot : mtl_slots) {
+    labels.keys.emplace_back(std::format("material:{}", slot.name));
+    labels.names.emplace_back(slot.name);
+  }
+
+  MakeKeysUnique(labels.keys);
+  return labels;
 }
 
 

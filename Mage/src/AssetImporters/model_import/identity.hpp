@@ -60,9 +60,9 @@ auto MakeMeshGroupLabels(
 ) -> SubassetLabels;
 
 [[nodiscard]]
-auto MakeMaterialKeys(
+auto MakeMaterialLabels(
   std::span<MaterialSlotInfo const> mtl_slots
-) -> std::vector<std::string>;
+) -> SubassetLabels;
 
 // Textures are keyed by their file name, or by a hash of their contents if they have none.
 // Their names are the file name, or “stem Texture n”.

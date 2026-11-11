@@ -69,7 +69,7 @@ auto BuildTextureResults(
 
 auto BuildMaterialResults(
   std::span<MaterialAssetData const> material_data,
-  std::span<MaterialSlotInfo const> material_slots,
+  std::span<std::string const> material_names,
   SubassetIds const& ids
 ) -> std::vector<AssetImportResult>;
 }

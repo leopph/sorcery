@@ -85,8 +85,9 @@ auto ModelImporterEditorDrawer::Draw(
     auto material_entries = obj.GetMaterialImportSettings() | std::ranges::to<std::vector<
                               ModelImporter::MaterialSettingsEntry>>();
 
-    for (auto& [key, settings] : material_entries) {
-      ImGui::SeparatorText(key.c_str());
+    for (auto& [key, name, settings] : material_entries) {
+      ImGui::SeparatorText((name.empty() ? key : name).c_str());
+      ImGui::SetItemTooltip("%s", key.c_str());
 
       ImGui::PushID(key.c_str());
 
@@ -104,8 +105,9 @@ auto ModelImporterEditorDrawer::Draw(
     auto texture_entries = obj.GetTextureImportSettings() | std::ranges::to<std::vector<
                              ModelImporter::TextureSettingsEntry>>();
 
-    for (auto& [key, settings] : texture_entries) {
-      ImGui::SeparatorText(key.c_str());
+    for (auto& [key, name, settings] : texture_entries) {
+      ImGui::SeparatorText((name.empty() ? key : name).c_str());
+      ImGui::SetItemTooltip("%s", key.c_str());
 
       ImGui::PushID(key.c_str());
 

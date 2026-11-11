@@ -29,11 +29,13 @@ RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::mage::ModelImporter::MaterialSettingsEntry>("ModelImporterMaterialSettingsEntry")
     .constructor<>()(rttr::policy::ctor::as_object)
     .property("Key", &sorcery::mage::ModelImporter::MaterialSettingsEntry::key)
+    .property("Name", &sorcery::mage::ModelImporter::MaterialSettingsEntry::name)
     .property("Settings", &sorcery::mage::ModelImporter::MaterialSettingsEntry::settings);
 
   rttr::registration::class_<sorcery::mage::ModelImporter::TextureSettingsEntry>("ModelImporterTextureSettingsEntry")
     .constructor<>()(rttr::policy::ctor::as_object)
     .property("Key", &sorcery::mage::ModelImporter::TextureSettingsEntry::key)
+    .property("Name", &sorcery::mage::ModelImporter::TextureSettingsEntry::name)
     .property("Settings", &sorcery::mage::ModelImporter::TextureSettingsEntry::settings);
 
   rttr::registration::class_<sorcery::mage::ModelImporter>{"Model Importer"}
@@ -110,15 +112,16 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     AppendUnreferencedTextures(scene, texes_to_load);
   }
 
+  auto mtl_labels = import_materials_
+                      ? model_import::MakeMaterialLabels(mtl_slots)
+                      : model_import::SubassetLabels{};
   auto tex_labels = model_import::MakeTextureLabels(texes_to_load, src);
 
   // Stable subasset identities.
   model_import::SubassetKeys const subasset_keys{
     .prefab = "prefab",
     .meshes = std::move(mesh_import->labels.keys),
-    .materials = import_materials_
-                   ? model_import::MakeMaterialKeys(mtl_slots)
-                   : std::vector<std::string>{},
+    .materials = std::move(mtl_labels.keys),
     .textures = std::move(tex_labels.keys),
   };
 
@@ -139,10 +142,10 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
     std::ranges::sort(material_settings_, {}, &MaterialSettingsEntry::key);
 
-    for (auto const& key : subasset_keys.materials) {
+    for (auto const [key, name] : std::views::zip(subasset_keys.materials, mtl_labels.names)) {
       auto const settings = FindSettings<MaterialSettingsEntry>(material_settings_, key).value_or(
         MaterialImportSettings{});
-      new_settings_entries.emplace_back(key, settings);
+      new_settings_entries.emplace_back(key, name, settings);
     }
 
     std::ranges::sort(new_settings_entries, {}, &MaterialSettingsEntry::key);
@@ -159,15 +162,15 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
 
     std::ranges::sort(texture_settings_, {}, &TextureSettingsEntry::key);
 
-    for (auto const [i, key] : std::views::enumerate(subasset_keys.textures)) {
+    for (auto const [key, name, src_tex] : std::views::zip(subasset_keys.textures, tex_labels.names, texes_to_load)) {
       auto const settings = FindSettings<TextureSettingsEntry>(texture_settings_, key).value_or(
         TextureImportSettings{
           .type = TextureImportType::kTexture2D,
           .allow_block_compression = true,
-          .is_srgb = model_import::IsSrgb(texes_to_load[i].type),
+          .is_srgb = model_import::IsSrgb(src_tex.type),
           .generate_mips = true
         });
-      new_settings_entries.emplace_back(key, settings);
+      new_settings_entries.emplace_back(key, name, settings);
       tex_settings.emplace_back(settings);
     }
 
@@ -204,7 +207,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
   // Materials
 
   if (import_materials_) {
-    std::ranges::move(BuildMaterialResults(mtl_assets, mtl_slots, subasset_ids), std::back_inserter(results));
+    std::ranges::move(BuildMaterialResults(mtl_assets, mtl_labels.names, subasset_ids), std::back_inserter(results));
   }
 
   // Textures

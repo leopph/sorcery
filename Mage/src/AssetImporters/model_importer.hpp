@@ -14,12 +14,14 @@ class ModelImporter final : public AssetImporter {
 public:
   struct MaterialSettingsEntry {
     std::string key;
+    std::string name;
     MaterialImportSettings settings;
   };
 
 
   struct TextureSettingsEntry {
     std::string key;
+    std::string name;
     TextureImportSettings settings;
   };
 

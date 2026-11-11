@@ -358,7 +358,7 @@ auto BuildTextureResults(
 
 auto BuildMaterialResults(
   std::span<MaterialAssetData const> const material_data,
-  std::span<MaterialSlotInfo const> const material_slots,
+  std::span<std::string const> const material_names,
   SubassetIds const& ids
 ) -> std::vector<AssetImportResult> {
   std::vector<AssetImportResult> out_results;
@@ -367,7 +367,7 @@ auto BuildMaterialResults(
   for (auto const [mtl_idx, mtl_data] : std::views::enumerate(material_data)) {
     auto mtl_result = ImportMaterial(mtl_data, {});
     out_results.emplace_back(ids.GetMaterialId(mtl_idx), GetCurrentPayloadVersion(mtl_result.payload_kind),
-      mtl_result.payload_kind, mtl_result.runtime_type, material_slots[mtl_idx].name, std::move(mtl_result.bytes));
+      mtl_result.payload_kind, mtl_result.runtime_type, material_names[mtl_idx], std::move(mtl_result.bytes));
   }
 
   return out_results;
