@@ -142,6 +142,13 @@ namespace {
 }
 
 
+[[nodiscard]] auto CalculateShadowUpVector(Vector3 const& light_dir) noexcept -> Vector3 {
+  auto constexpr threshold = 0.99f;
+  auto const dot = Dot(light_dir, Vector3::Up());
+  return dot > threshold ? Vector3::Backward() : dot < -threshold ? Vector3::Forward() : Vector3::Up();
+}
+
+
 [[nodiscard]]
 auto ToShaderBlendMode(MaterialBlendMode const mode) -> int {
   switch (mode) {
@@ -2392,14 +2399,7 @@ auto SceneRenderer::PrepareDirectionalShadows(
 
         auto const world_units_per_texel = sphere_radius * 2.0f / static_cast<float>(shadow_map_size);
 
-        auto const up = [&light] {
-          auto const dot{Dot(light.direction, Vector3::Up())};
-          return Approximately(dot, 1.0F)
-                   ? Vector3::Backward()
-                   : Approximately(dot, -1.0F)
-                       ? Vector3::Forward()
-                       : Vector3::Up();
-        }();
+        auto const up = CalculateShadowUpVector(light.direction);
 
         auto shadow_view_mtx = Matrix4::LookTo(Vector3::Zero(), light.direction, up);
         cascade_center_ws = Vector3{Vector4{cascade_center_ws, 1} * shadow_view_mtx};
@@ -2732,7 +2732,8 @@ auto SceneRenderer::AllocatePositionalShadows(
         auto const& light = lights[cam_culled_light_indices[shadow.local_culled_light_idx]];
 
         if (light.type == LightComponent::Type::Spot) {
-          auto const shadow_view_mtx = Matrix4::LookTo(light.position, light.direction, Vector3::Up());
+          auto const shadow_view_mtx = Matrix4::LookTo(light.position, light.direction,
+            CalculateShadowUpVector(light.direction));
           auto const shadow_proj_mtx = TransformProjectionMatrixForRendering(
             Matrix4::PerspectiveFov(ToRadians(light.outer_angle), 1.0f, light.shadow_near_plane, light.range));
           add_shadow_view(res_class, shadow_view_mtx, shadow_proj_mtx, light.shadow_near_plane, light.range,
