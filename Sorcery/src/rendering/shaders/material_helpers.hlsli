@@ -39,4 +39,9 @@ bool IsClipped(ShaderMaterial const mtl, float const opacity) {
   return opacity < mtl.alpha_threshold;
 }
 
+
+float2 TransformMaterialUv(float2 const uv, ShaderMaterial const mtl) {
+  return uv * mtl.uv_scale + mtl.uv_offset;
+}
+
 #endif

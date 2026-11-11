@@ -126,6 +126,9 @@ struct ShaderMaterial {
   int blend_mode;
   float opacity;
   uint opacity_channel;
+
+  float2 uv_scale;
+  float2 uv_offset;
 };
 
 

@@ -78,7 +78,7 @@ auto MaterialEditorDrawer::Draw(
   ImGui::PushID(mtl.GetAssetId().GetGuid().ToString().c_str());
 
   DrawSection("Base Color", [&] {
-    if (Vector3 base_color{mtl.GetBaseColorVector()}; DrawRow("Color", allow_edit, [&] {
+    if (auto base_color{mtl.GetBaseColorVector()}; DrawRow("Color", allow_edit, [&] {
       return ImGui::ColorEdit3("##value", base_color.GetData());
     })) {
       mtl.SetBaseColorVector(base_color);
@@ -108,7 +108,7 @@ auto MaterialEditorDrawer::Draw(
   });
 
   DrawSection("Emissive", [&] {
-    if (Vector3 emissive{mtl.GetEmissiveColorVector()}; DrawRow("Color", allow_edit, [&] {
+    if (auto emissive{mtl.GetEmissiveColorVector()}; DrawRow("Color", allow_edit, [&] {
       return ImGui::ColorEdit3("##value", emissive.GetData());
     })) {
       mtl.SetEmissiveColorVector(emissive);
@@ -160,6 +160,34 @@ auto MaterialEditorDrawer::Draw(
         mtl.SetOpacityChannel(static_cast<std::uint32_t>(channel));
         changed = true;
       }
+    }
+  });
+
+  auto static uniform_scale = true;
+
+  DrawSection("Tiling", [&] {
+    if (auto uv_scale = mtl.GetUvScale(); DrawRow("UV Scale", allow_edit, [&] {
+      ImGui::TextUnformatted("Uniform");
+      ImGui::SameLine();
+      ImGui::Checkbox("##uniform", &uniform_scale);
+      ImGui::SameLine();
+      if (uniform_scale) {
+        auto const ret = ImGui::DragFloat("##value", uv_scale.GetData(), 0.01f, 0.0f,
+          std::numeric_limits<float>::max());
+        uv_scale[1] = uv_scale[0];
+        return ret;
+      }
+      return ImGui::DragFloat2("##value", uv_scale.GetData(), 0.01f, 0.0f, std::numeric_limits<float>::max());
+    })) {
+      mtl.SetUvScale(uv_scale);
+      changed = true;
+    }
+
+    if (auto uv_offset = mtl.GetUvOffset(); DrawRow("UV Offset", allow_edit, [&] {
+      return ImGui::DragFloat2("##value", uv_offset.GetData(), 0.01f, 0.0f, std::numeric_limits<float>::max());
+    })) {
+      mtl.SetUvOffset(uv_offset);
+      changed = true;
     }
   });
 

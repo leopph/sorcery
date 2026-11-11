@@ -125,6 +125,16 @@ public:
   auto SetOpacityChannel(std::uint32_t channel) -> void;
 
   [[nodiscard]] SORCERYAPI
+  auto GetUvScale() const -> Vector2 const&;
+  SORCERYAPI
+  auto SetUvScale(Vector2 const& scale) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetUvOffset() const -> Vector2 const&;
+  SORCERYAPI
+  auto SetUvOffset(Vector2 const& offset) -> void;
+
+  [[nodiscard]] SORCERYAPI
   auto GetRevision() const -> std::uint64_t;
 
 private:
@@ -147,6 +157,8 @@ private:
   float emissive_intensity_{1.0f};
   float opacity_{1.0f};
   std::uint32_t opacity_channel_{0};
+  Vector2 uv_scale_{1.0f, 1.0f};
+  Vector2 uv_offset_{0.0f, 0.0f};
 
   MaterialBlendMode blend_mode_{MaterialBlendMode::kOpaque};
 

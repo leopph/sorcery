@@ -26,6 +26,8 @@ struct MaterialAssetData {
   float emissive_intensity{1.0f};
   float opacity{1.0f};
   std::uint32_t opacity_channel{0};
+  Vector2 uv_scale{1.0f, 1.0f};
+  Vector2 uv_offset{0.0f, 0.0f};
 
   MaterialBlendMode blend_mode{MaterialBlendMode::kOpaque};
   float alpha_threshold{0.5f};

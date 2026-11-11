@@ -103,12 +103,14 @@ void PsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out floa
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
   SamplerState const mtl_samp = SamplerDescriptorHeap[g_params.mtl_samp_idx];
 
+  float2 const uv = TransformMaterialUv(ps_in.uv, mtl);
+
   // Read materials
 
-  float4 const base_color_opacity = SampleBaseColorOpacity(mtl, mtl_samp, ps_in.uv);
+  float4 const base_color_opacity = SampleBaseColorOpacity(mtl, mtl_samp, uv);
 
   if (mtl.blend_mode == BLEND_MODE_ALPHA_CLIP &&
-      IsClipped(mtl, CalculateOpacity(mtl, mtl_samp, ps_in.uv, base_color_opacity.a))) {
+      IsClipped(mtl, CalculateOpacity(mtl, mtl_samp, uv, base_color_opacity.a))) {
     discard;
   }
 
@@ -118,28 +120,28 @@ void PsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out floa
 
   if (mtl.metallic_map_idx != INVALID_RES_IDX) {
     Texture2D<float> const metallic_map = ResourceDescriptorHeap[mtl.metallic_map_idx];
-    metallic *= metallic_map.Sample(mtl_samp, ps_in.uv).r;
+    metallic *= metallic_map.Sample(mtl_samp, uv).r;
   }
 
   float roughness = mtl.roughness;
 
   if (mtl.roughness_map_idx != INVALID_RES_IDX) {
     Texture2D<float> const roughness_map = ResourceDescriptorHeap[mtl.roughness_map_idx];
-    roughness *= roughness_map.Sample(mtl_samp, ps_in.uv).r;
+    roughness *= roughness_map.Sample(mtl_samp, uv).r;
   }
 
   float ao = mtl.ao;
 
   if (mtl.ao_map_idx != INVALID_RES_IDX) {
     Texture2D<float> const ao_map = ResourceDescriptorHeap[mtl.ao_map_idx];
-    ao *= ao_map.Sample(mtl_samp, ps_in.uv).r;
+    ao *= ao_map.Sample(mtl_samp, uv).r;
   }
 
   float3 norm_ws = normalize(ps_in.norm_ws);
 
   if (mtl.normal_map_idx != INVALID_RES_IDX) {
     Texture2D<float3> const normal_map = ResourceDescriptorHeap[mtl.normal_map_idx];
-    norm_ws = normal_map.Sample(mtl_samp, ps_in.uv).rgb;
+    norm_ws = normal_map.Sample(mtl_samp, uv).rgb;
     norm_ws *= 2.0;
     norm_ws -= 1.0;
     norm_ws = normalize(mul(normalize(norm_ws), ps_in.tbn_mtx_ws));
@@ -149,7 +151,7 @@ void PsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out floa
 
   if (mtl.emissive_map_idx != INVALID_RES_IDX) {
     Texture2D<float3> const emissive_map = ResourceDescriptorHeap[mtl.emissive_map_idx];
-    emissive *= emissive_map.Sample(mtl_samp, ps_in.uv);
+    emissive *= emissive_map.Sample(mtl_samp, uv);
   }
 
   // Calculate velocity

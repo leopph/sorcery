@@ -15,7 +15,7 @@
 
 namespace sorcery {
 namespace {
-constexpr auto kCurrentVersion = 3u;
+constexpr auto kCurrentVersion = 4u;
 constexpr std::string_view kVersionPropName{"version"};
 constexpr std::string_view kBaseColorPropName{"baseColor"};
 constexpr std::string_view kMetallicPropName{"metallic"};
@@ -34,6 +34,8 @@ constexpr std::string_view kOpacityMapPropName{"opacityMask"};
 constexpr std::string_view kEmissiveMapPropName{"emissiveMap"};
 constexpr std::string_view kOpacityPropName{"opacity"};
 constexpr std::string_view kOpacityChannelPropName{"opacityChannel"};
+constexpr std::string_view kUvScalePropName{"uvScale"};
+constexpr std::string_view kUvOffsetPropName{"uvOffset"};
 }
 
 
@@ -55,6 +57,8 @@ auto SerializeMaterialAssetData(
   node[kEmissiveIntensityPropName] = data.emissive_intensity;
   node[kOpacityPropName] = data.opacity;
   node[kOpacityChannelPropName] = data.opacity_channel;
+  node[kUvScalePropName] = data.uv_scale;
+  node[kUvOffsetPropName] = data.uv_offset;
 
   auto const serialize_asset_id = [ref_serialization](AssetId const& id) -> YAML::Node {
     switch (ref_serialization) {
@@ -135,7 +139,9 @@ auto DeserializeMaterialAssetData(
     !deserialize_prop(kOpacityMapPropName, data.opacity_map, 1) ||
     !deserialize_prop(kEmissiveMapPropName, data.emissive_map, 2) ||
     !deserialize_prop(kOpacityPropName, data.opacity, 3) ||
-    !deserialize_prop(kOpacityChannelPropName, data.opacity_channel, 3)
+    !deserialize_prop(kOpacityChannelPropName, data.opacity_channel, 3) ||
+    !deserialize_prop(kUvScalePropName, data.uv_scale, 4) ||
+    !deserialize_prop(kUvOffsetPropName, data.uv_offset, 4)
   ) {
     return std::nullopt;
   }

@@ -29,7 +29,9 @@ RTTR_REGISTRATION {
     .property("opacity_map", &sorcery::Material::GetOpacityMap, &sorcery::Material::SetOpacityMapRefl)
     .property("emissive_map", &sorcery::Material::GetEmissiveMap, &sorcery::Material::SetEmissiveMapRefl)
     .property("opacity", &sorcery::Material::GetOpacity, &sorcery::Material::SetOpacity)
-    .property("opacity_channel", &sorcery::Material::GetOpacityChannel, &sorcery::Material::SetOpacityChannel);
+    .property("opacity_channel", &sorcery::Material::GetOpacityChannel, &sorcery::Material::SetOpacityChannel)
+    .property("uv_scale", &sorcery::Material::GetUvScale, &sorcery::Material::SetUvScale)
+    .property("uv_offset", &sorcery::Material::GetUvOffset, &sorcery::Material::SetUvOffset);
 }
 
 
@@ -69,6 +71,8 @@ auto Material::Serialize() const noexcept -> YAML::Node {
     .emissive_intensity = GetEmissiveIntensity(),
     .opacity = GetOpacity(),
     .opacity_channel = GetOpacityChannel(),
+    .uv_scale = GetUvScale(),
+    .uv_offset = GetUvOffset(),
     .blend_mode = GetBlendMode(),
     .alpha_threshold = GetAlphaThreshold(),
     .base_color_map = get_asset_id(GetBaseColorMap()),
@@ -99,6 +103,8 @@ auto Material::Deserialize(YAML::Node const& yaml_node, YamlDeserializeContext c
   SetEmissiveIntensity(data->emissive_intensity);
   SetOpacity(data->opacity);
   SetOpacityChannel(data->opacity_channel);
+  SetUvScale(data->uv_scale);
+  SetUvOffset(data->uv_offset);
   SetBlendMode(data->blend_mode);
   SetAlphaThreshold(data->alpha_threshold);
 
@@ -416,6 +422,28 @@ auto Material::SetOpacityChannel(std::uint32_t const channel) -> void {
     opacity_channel_ = channel;
     ++revision_;
   }
+}
+
+
+auto Material::GetUvScale() const -> Vector2 const& {
+  return uv_scale_;
+}
+
+
+auto Material::SetUvScale(Vector2 const& scale) -> void {
+  uv_scale_ = scale;
+  ++revision_;
+}
+
+
+auto Material::GetUvOffset() const -> Vector2 const& {
+  return uv_offset_;
+}
+
+
+auto Material::SetUvOffset(Vector2 const& offset) -> void {
+  uv_offset_ = offset;
+  ++revision_;
 }
 
 

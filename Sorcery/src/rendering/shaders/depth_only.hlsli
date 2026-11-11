@@ -82,10 +82,12 @@ void PsMain(VertexAttributes const ps_in) {
     return;
   }
 
-  SamplerState const samp = SamplerDescriptorHeap[g_params.samp_idx];
-  float const base_color_opacity = SampleBaseColorOpacity(mtl, samp, ps_in.uv).a;
+  float2 const uv = TransformMaterialUv(ps_in.uv, mtl);
 
-  if (IsClipped(mtl, CalculateOpacity(mtl, samp, ps_in.uv, base_color_opacity))) {
+  SamplerState const samp = SamplerDescriptorHeap[g_params.samp_idx];
+  float const base_color_opacity = SampleBaseColorOpacity(mtl, samp, uv).a;
+
+  if (IsClipped(mtl, CalculateOpacity(mtl, samp, uv, base_color_opacity))) {
     discard;
   }
 }

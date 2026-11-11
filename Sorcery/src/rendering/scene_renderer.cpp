@@ -1738,7 +1738,7 @@ auto SceneRenderer::GetShadowCascadeCount() const noexcept -> unsigned {
 
 auto SceneRenderer::SetShadowCascadeCount(unsigned cascade_count) noexcept -> void {
   shadow_params_.cascade_count = std::clamp(cascade_count, 1u, MAX_CASCADE_COUNT);
-  unsigned const splitCount{shadow_params_.cascade_count - 1};
+  auto const splitCount{shadow_params_.cascade_count - 1};
 
   for (auto i = 1u; i < splitCount; i++) {
     shadow_params_.normalized_cascade_splits[i] = std::max(shadow_params_.normalized_cascade_splits[i - 1],
@@ -1761,8 +1761,8 @@ auto SceneRenderer::SetNormalizedShadowCascadeSplit(int const idx, float const s
     return;
   }
 
-  float const clampMin{idx == 0 ? 0.0f : shadow_params_.normalized_cascade_splits[idx - 1]};
-  float const clampMax{
+  auto const clampMin{idx == 0 ? 0.0f : shadow_params_.normalized_cascade_splits[idx - 1]};
+  auto const clampMax{
     static_cast<unsigned>(idx) == splitCount - 1 ? 1.0f : shadow_params_.normalized_cascade_splits[idx + 1]
   };
 
@@ -2066,7 +2066,9 @@ auto SceneRenderer::SyncMaterial(
     .alpha_threshold = mtl.GetAlphaThreshold(),
     .blend_mode = ToShaderBlendMode(mtl.GetBlendMode()),
     .opacity = mtl.GetOpacity(),
-    .opacity_channel = mtl.GetOpacityChannel()
+    .opacity_channel = mtl.GetOpacityChannel(),
+    .uv_scale = mtl.GetUvScale(),
+    .uv_offset = mtl.GetUvOffset()
   };
 
   upload_arena.UploadBuffer(cmd, render_mtl.GetBufferView(), 0, std::span{
@@ -2543,7 +2545,7 @@ auto SceneRenderer::GeneratePositionalShadowCandidates(
     if (auto const& light = lights[cam_culled_light_indices[i]];
       light.casts_shadow && (light.type == LightComponent::Type::Spot || light.type == LightComponent::Type::Point)) {
       // Skip the light if its bounding sphere is farther than the shadow distance
-      if (Vector3 const cam_to_light_dir{Normalize(light.position - cam.position)};
+      if (auto const cam_to_light_dir{Normalize(light.position - cam.position)};
         Distance(light.position - cam_to_light_dir * light.range, cam.position) > shadow_distance) {
         continue;
       }
@@ -2635,7 +2637,7 @@ auto SceneRenderer::AllocatePositionalShadows(
   // ones go into smaller slots.
 
   std::uint32_t constexpr static atlas_subdiv{2};
-  std::uint32_t constexpr static num_res_classes{atlas_subdiv * atlas_subdiv};
+  auto constexpr static num_res_classes{atlas_subdiv * atlas_subdiv};
   std::array<std::uint32_t, num_res_classes> constexpr static quadrant_subdivs{1, 2, 4, 8};
   // ReSharper disable once CppTemplateArgumentsCanBeDeduced
   // Deliberately disabled to keep size and initializer in sync
@@ -3085,6 +3087,20 @@ auto SceneRenderer::RecreatePipelines() -> void {
 }
 
 
+auto SceneRenderer::ReleaseUnusedViewHistories(RenderFrame const& frame) -> void {
+  std::erase_if(view_histories_, [&frame](auto const& entry) {
+    return frame.GetNumber() - entry.second.last_used_frame > kViewHistoryMaxUnusedFrames;
+  });
+}
+
+
+auto SceneRenderer::ReleaseUnusedEnvironmentLighting(RenderFrame const& frame) -> void {
+  std::erase_if(env_lighting_cache_, [&frame](auto const& entry) {
+    return frame.GetNumber() - entry.second.last_used_frame > kEnvironmentLightingMaxUnusedFrames;
+  });
+}
+
+
 auto SceneRenderer::CreatePerViewConstantBuffers(UINT const count) -> void {
   per_view_cbs_.reserve(per_view_cbs_.size() + count);
 
@@ -3129,20 +3145,6 @@ auto SceneRenderer::AcquirePerInstanceConstantBuffer(
   }
 
   return per_inst_cbs_[next_per_instance_cb_idx_++][frame_idx];
-}
-
-
-auto SceneRenderer::ReleaseUnusedViewHistories(RenderFrame const& frame) -> void {
-  std::erase_if(view_histories_, [&frame](auto const& entry) {
-    return frame.GetNumber() - entry.second.last_used_frame > kViewHistoryMaxUnusedFrames;
-  });
-}
-
-
-auto SceneRenderer::ReleaseUnusedEnvironmentLighting(RenderFrame const& frame) -> void {
-  std::erase_if(env_lighting_cache_, [&frame](auto const& entry) {
-    return frame.GetNumber() - entry.second.last_used_frame > kEnvironmentLightingMaxUnusedFrames;
-  });
 }
 
 
@@ -3268,7 +3270,7 @@ auto SceneRenderer::DrawSubmesh(UINT const submesh_meshlet_count, UINT const sub
                                 std::optional<UINT> const base_vertex_param_idx,
                                 wand::CommandList const& cmd) -> void {
   UINT constexpr max_dispatch_thread_group_count{65535};
-  UINT constexpr max_meshlet_count_per_dispatch{AS_THREAD_GROUP_SIZE * max_dispatch_thread_group_count};
+  auto constexpr max_meshlet_count_per_dispatch{AS_THREAD_GROUP_SIZE * max_dispatch_thread_group_count};
 
   auto const submesh_meshlet_end{submesh_meshlet_offset + submesh_meshlet_count};
 
