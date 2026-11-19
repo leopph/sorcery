@@ -171,10 +171,16 @@ auto AssetManager::CreateDefaultAssets() -> void {
     CalculateTangents(kCubePositions, kCubeUvs, kCubeIndices, cube_data.tangents);
     cube_data.uvs = kCubeUvs;
 
-    if (!ComputeMeshlets<std::uint32_t, Vector3>(kCubeIndices, kCubePositions, cube_data.meshlets,
-      cube_data.vertex_indices, cube_data.triangle_indices, cube_data.cull_data)) {
+    auto meshlet_result = ComputeMeshlets<std::uint32_t, Vector3>(kCubeIndices, kCubePositions);
+
+    if (!meshlet_result) {
       throw std::runtime_error{"Failed to compute meshlets for default cube mesh."};
     }
+
+    cube_data.meshlets = std::move(meshlet_result->meshlets);
+    cube_data.vertex_indices = std::move(meshlet_result->unique_vertex_indices);
+    cube_data.triangle_indices = std::move(meshlet_result->primitive_indices);
+    cube_data.cull_data = std::move(meshlet_result->cull_data);
 
     cube_data.material_slots.emplace_back("Material");
     cube_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(cube_data.meshlets.size()), 0, 0,
@@ -196,10 +202,16 @@ auto AssetManager::CreateDefaultAssets() -> void {
     CalculateTangents(kQuadPositions, kQuadUvs, kQuadIndices, plane_data.tangents);
     plane_data.uvs = kQuadUvs;
 
-    if (!ComputeMeshlets<std::uint32_t, Vector3>(kQuadIndices, kQuadPositions, plane_data.meshlets,
-      plane_data.vertex_indices, plane_data.triangle_indices, plane_data.cull_data)) {
+    auto meshlet_result = ComputeMeshlets<std::uint32_t, Vector3>(kQuadIndices, kQuadPositions);
+
+    if (!meshlet_result) {
       throw std::runtime_error{"Failed to compute meshlets for default plane mesh."};
     }
+
+    plane_data.meshlets = std::move(meshlet_result->meshlets);
+    plane_data.vertex_indices = std::move(meshlet_result->unique_vertex_indices);
+    plane_data.triangle_indices = std::move(meshlet_result->primitive_indices);
+    plane_data.cull_data = std::move(meshlet_result->cull_data);
 
     plane_data.material_slots.emplace_back("Material");
     plane_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(plane_data.meshlets.size()), 0, 0,
@@ -220,10 +232,16 @@ auto AssetManager::CreateDefaultAssets() -> void {
     GenerateSphereMesh(1, 50, 50, sphere_data.positions, sphere_data.normals, sphere_data.uvs, sphere_indices);
     CalculateTangents(sphere_data.positions, sphere_data.uvs, sphere_indices, sphere_data.tangents);
 
-    if (!ComputeMeshlets<std::uint32_t, Vector3>(sphere_indices, sphere_data.positions, sphere_data.meshlets,
-      sphere_data.vertex_indices, sphere_data.triangle_indices, sphere_data.cull_data)) {
+    auto meshlet_result = ComputeMeshlets<std::uint32_t, Vector3>(sphere_indices, sphere_data.positions);
+
+    if (!meshlet_result) {
       throw std::runtime_error{"Failed to compute meshlets for default sphere mesh."};
     }
+
+    sphere_data.meshlets = std::move(meshlet_result->meshlets);
+    sphere_data.vertex_indices = std::move(meshlet_result->unique_vertex_indices);
+    sphere_data.triangle_indices = std::move(meshlet_result->primitive_indices);
+    sphere_data.cull_data = std::move(meshlet_result->cull_data);
 
     sphere_data.material_slots.emplace_back("Material");
     sphere_data.submeshes.emplace_back(0, static_cast<std::uint32_t>(sphere_data.meshlets.size()), 0, 0,

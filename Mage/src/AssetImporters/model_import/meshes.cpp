@@ -7,6 +7,7 @@
 #include <ranges>
 #include <span>
 #include <unordered_map>
+#include <utility>
 
 #include <spdlog/spdlog.h>
 
@@ -354,53 +355,57 @@ auto BuildMeshGeometry(
 ) -> bool {
   // Determine index format
 
-  mesh_data.idx32 = force_idx32 || std::ranges::any_of(meshes,
-                      [](SourceMesh const& mesh) {
-                        return std::ranges::any_of(mesh.indices, [](unsigned const idx) {
-                          return idx > std::numeric_limits<std::uint16_t>::max();
-                        });
-                      });
+  mesh_data.idx32 = force_idx32 || std::ranges::any_of(meshes, [](SourceMesh const& mesh) {
+    // Explicitly testing greater equal.
+    // Meshletization uses 0xFFFF as a signal value, not a valid index, so the max index value is 65534.
+    return mesh.positions.size() >= std::numeric_limits<std::uint16_t>::max();
+  });
 
   // Meshletize submeshes
 
-  struct MeshletizedMesh {
-    std::vector<MeshletData> meshlets;
-    std::vector<std::uint8_t> unique_vertex_indices;
-    std::vector<MeshletTriangleData> primitive_indices;
-    std::vector<MeshletCullData> cull_data;
-  };
-
-  std::vector<std::optional<MeshletizedMesh>> meshletized_meshes(std::ranges::size(meshes));
+  std::vector<std::optional<ComputeMeshletsResult>> meshletized_meshes(std::ranges::size(meshes));
   std::vector<ObserverPtr<Job>> meshletize_jobs;
   meshletize_jobs.reserve(std::ranges::size(meshes));
 
   for (auto const [i, mesh] : std::views::enumerate(meshes)) {
     meshletize_jobs.emplace_back(job_system.CreateJob(
-      [i, &mesh, &meshletized_meshes, idx32 = mesh_data.idx32] {
-        auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtl_idx]{mesh};
-        auto [meshlets, unique_vertex_indices, primitive_indices, cull_data]{MeshletizedMesh{}};
+      [&mesh, &meshletized = meshletized_meshes[i], idx32 = mesh_data.idx32, i] {
+        auto& [positions, normals, uvs, tangents, indices, bone_weights, bone_indices, mtl_idx] = mesh;
 
-        bool success;
+        auto const get_error_reason = [](ComputeMeshletsError const err) {
+          switch (err) {
+            case ComputeMeshletsError::kInvalidArg:
+              return "invalid argument";
+            case ComputeMeshletsError::kOutOfMemory:
+              return "out of memory";
+            case ComputeMeshletsError::kUnexpected:
+              return "unexpected error";
+            case ComputeMeshletsError::kUnknown:
+              return "unknown error";
+          }
 
-        if (idx32) {
-          success = ComputeMeshlets<std::uint32_t, Vector3>(indices, positions, meshlets, unique_vertex_indices,
-            primitive_indices, cull_data);
-        } else {
-          std::vector<std::uint16_t> indices16(indices.size());
+          return "unidentified error";
+        };
+
+        auto indices16 = std::vector<std::uint16_t>{};
+
+        if (!idx32) {
+          indices16.resize(indices.size());
           std::ranges::transform(indices, indices16.begin(), [](unsigned const idx) {
             return static_cast<std::uint16_t>(idx);
           });
-
-          success = ComputeMeshlets<std::uint16_t, Vector3>(indices16, positions, meshlets, unique_vertex_indices,
-            primitive_indices, cull_data);
         }
 
-        if (success) {
-          meshletized_meshes[i] = MeshletizedMesh{
-            std::move(meshlets), std::move(unique_vertex_indices),
-            std::move(primitive_indices), std::move(cull_data)
-          };
+        auto result = idx32
+                        ? ComputeMeshlets<std::uint32_t, Vector3>(indices, positions)
+                        : ComputeMeshlets<std::uint16_t, Vector3>(indices16, positions);
+
+        if (!result) {
+          spdlog::error("Failed to compute meshlets for submesh {}. Reason: {}.", i, get_error_reason(result.error()));
+          return;
         }
+
+        meshletized = std::move(*result);
       }));
 
     job_system.Submit(meshletize_jobs.back());
@@ -421,7 +426,6 @@ auto BuildMeshGeometry(
 
   for (auto const [i, mesh] : std::views::enumerate(meshes)) {
     if (!meshletized_meshes[i]) {
-      spdlog::error("Failed to compute meshlets for submesh {}.", i);
       return false;
     }
 
