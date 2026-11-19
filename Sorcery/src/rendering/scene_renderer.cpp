@@ -101,10 +101,11 @@ namespace {
       .mip_levels = mip_levels,
       .format = format,
       .sample_count = 1,
+      .component_mapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
       .depth_stencil = false,
       .render_target = true,
       .shader_resource = true,
-      .unordered_access = false
+      .unordered_access = false,
     }, wand::CpuAccess::kNone,
     std::array{D3D12_CLEAR_VALUE{.Format = format, .Color = {0.0F, 0.0F, 0.0F, 1.0F}}}.data());
 }
