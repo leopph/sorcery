@@ -28,10 +28,11 @@ typedef bool BOOL;
 #define INVALID_RES_IDX ((uint)-1)
 #define INVALID_IDX ((uint)-1)
 
-#define MESHLET_MAX_VERTS 128
-#define MESHLET_MAX_PRIMS 128
+#define MESHLET_MAX_VERTS 64
+#define MESHLET_MAX_PRIMS 84
 
 #define AS_THREAD_GROUP_SIZE 32
+#define MS_THREAD_GROUP_SIZE 32
 
 #define MAX_CASCADE_COUNT (uint) 4
 

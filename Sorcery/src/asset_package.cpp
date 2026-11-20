@@ -254,11 +254,10 @@ struct EntrySerializer {
 auto GetCurrentPayloadVersion(AssetPackagePayloadKind const payload_kind) -> std::uint32_t {
   switch (payload_kind) {
     case AssetPackagePayloadKind::kInvalid: [[fallthrough]];
-    case AssetPackagePayloadKind::kTexture: [[fallthrough]];
-    case AssetPackagePayloadKind::kMesh: [[fallthrough]];
+    case AssetPackagePayloadKind::kTexture: return 1;
+    case AssetPackagePayloadKind::kMesh: return 2;
     case AssetPackagePayloadKind::kMaterial: [[fallthrough]];
-    case AssetPackagePayloadKind::kPrefab:
-      return 1;
+    case AssetPackagePayloadKind::kPrefab: return 1;
   }
 
   assert(false && "Unhandled AssetPackagePayloadKind in GetCurrentPayloadVersion");
