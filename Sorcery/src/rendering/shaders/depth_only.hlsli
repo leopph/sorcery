@@ -22,6 +22,14 @@ struct PrimitiveAttributes {
 };
 
 
+// Match VertexAttributes!!!
+struct DepthOnlyVsOutput {
+  float4 pos_cs : SV_POSITION;
+  float2 uv : TEXCOORD;
+  uint rt_idx : SV_RenderTargetArrayIndex;
+};
+
+
 class VertexProcessor {
   static VertexAttributes GetVertexAttributes(uint const vertex_idx) {
     StructuredBuffer<float4> const positions = ResourceDescriptorHeap[g_params.pos_buf_idx];
@@ -54,7 +62,7 @@ class PrimitiveProcessor {
 
 
 [numthreads(AS_THREAD_GROUP_SIZE, 1, 1)]
-void AsMain(uint const dtid : SV_DispatchThreadID) {
+void DepthOnlyAsMain(uint const dtid : SV_DispatchThreadID) {
   AmpShaderCore(dtid, g_params.meshlet_offset, g_params.meshlet_count, g_params.cull_data_buf_idx,
     g_params.per_inst_cb_idx, g_params.per_view_cb_idx);
 }
@@ -62,12 +70,12 @@ void AsMain(uint const dtid : SV_DispatchThreadID) {
 
 [outputtopology("triangle")]
 [numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]
-void MsMain(uint const gid : SV_GroupID,
-            uint const gtid : SV_GroupThreadID,
-            in payload CullingPayload payload,
-            out vertices VertexAttributes out_vertices[MESHLET_MAX_VERTS],
-            out primitives PrimitiveAttributes out_primitives[MESHLET_MAX_PRIMS],
-            out indices uint3 out_indices[MESHLET_MAX_PRIMS]) {
+void DepthOnlyMsMain(uint const gid : SV_GroupID,
+                     uint const gtid : SV_GroupThreadID,
+                     in payload CullingPayload payload,
+                     out vertices VertexAttributes out_vertices[MESHLET_MAX_VERTS],
+                     out primitives PrimitiveAttributes out_primitives[MESHLET_MAX_PRIMS],
+                     out indices uint3 out_indices[MESHLET_MAX_PRIMS]) {
   MeshShaderCore<VertexProcessor, PrimitiveProcessor>(gtid, payload.GetMeshletIndex(gid) + g_params.meshlet_offset,
     g_params.base_vertex, g_params.idx32, GetResource(g_params.meshlet_buf_idx),
     GetResource(g_params.vertex_idx_buf_idx), GetResource(g_params.prim_idx_buf_idx), out_vertices, out_primitives,
@@ -75,7 +83,19 @@ void MsMain(uint const gid : SV_GroupID,
 }
 
 
-void PsMain(VertexAttributes const ps_in) {
+DepthOnlyVsOutput DepthOnlyVsMain(uint const vertex_id : SV_VertexID) {
+  VertexAttributes const vertex =
+    VertexProcessor::GetVertexAttributes(vertex_id + (uint)g_draw_call_params.base_vertex);
+
+  DepthOnlyVsOutput ret;
+  ret.pos_cs = vertex.pos_cs;
+  ret.uv = vertex.uv;
+  ret.rt_idx = g_params.rt_idx;
+  return ret;
+}
+
+
+void DepthOnlyPsMain(VertexAttributes const ps_in) {
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
 
   if (mtl.blend_mode != BLEND_MODE_ALPHA_CLIP) {

@@ -4,5 +4,6 @@
 
 
 namespace sorcery::rendering {
-inline constexpr uint32_t kFramesInFlight = 2;
+constexpr auto kFramesInFlight = std::uint32_t{2};
+constexpr auto kUseMeshShadersForSceneGeometry = true;
 }

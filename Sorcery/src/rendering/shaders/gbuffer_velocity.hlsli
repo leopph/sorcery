@@ -79,7 +79,7 @@ class VertexProcessor {
 
 
 [numthreads(AS_THREAD_GROUP_SIZE, 1, 1)]
-void AsMain(uint const dtid : SV_DispatchThreadID) {
+void GbufferVelocityAsMain(uint const dtid : SV_DispatchThreadID) {
   AmpShaderCore(dtid, g_params.meshlet_offset, g_params.meshlet_count, g_params.cull_data_buf_idx,
     g_params.per_inst_cb_idx, g_params.per_view_cb_idx);
 }
@@ -87,19 +87,24 @@ void AsMain(uint const dtid : SV_DispatchThreadID) {
 
 [outputtopology("triangle")]
 [numthreads(MS_THREAD_GROUP_SIZE, 1, 1)]
-void MsMain(uint const gid : SV_GroupID,
-            uint const gtid : SV_GroupThreadID,
-            in payload CullingPayload payload,
-            out vertices VertexAttributes out_vertices[MESHLET_MAX_VERTS],
-            out indices uint3 out_indices[MESHLET_MAX_PRIMS]) {
+void GbufferVelocityMsMain(uint const gid : SV_GroupID,
+                           uint const gtid : SV_GroupThreadID,
+                           in payload CullingPayload payload,
+                           out vertices VertexAttributes out_vertices[MESHLET_MAX_VERTS],
+                           out indices uint3 out_indices[MESHLET_MAX_PRIMS]) {
   MeshShaderCore<VertexProcessor>(gtid, payload.GetMeshletIndex(gid) + g_params.meshlet_offset, g_params.base_vertex,
     g_params.idx32, GetResource(g_params.meshlet_buf_idx), GetResource(g_params.vertex_idx_buf_idx),
     GetResource(g_params.prim_idx_buf_idx), out_vertices, out_indices);
 }
 
 
-void PsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out float2 out1 : SV_Target1,
-            out float2 out2 : SV_Target2, out float3 out3 : SV_Target3, out float2 out4 : SV_Target4) {
+VertexAttributes GbufferVelocityVsMain(uint const vertex_id : SV_VertexID) {
+  return VertexProcessor::GetVertexAttributes(vertex_id + (uint)g_draw_call_params.base_vertex);
+}
+
+
+void GbufferVelocityPsMain(VertexAttributes const ps_in, out float4 out0 : SV_Target0, out float2 out1 : SV_Target1,
+                           out float2 out2 : SV_Target2, out float3 out3 : SV_Target3, out float2 out4 : SV_Target4) {
   const ConstantBuffer<ShaderMaterial> mtl = ResourceDescriptorHeap[g_params.mtl_idx];
   SamplerState const mtl_samp = SamplerDescriptorHeap[g_params.mtl_samp_idx];
 

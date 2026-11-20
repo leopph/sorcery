@@ -105,4 +105,29 @@ auto ComputeMeshlets(
 
   return result;
 }
+
+
+template<typename IdxType>
+  requires std::same_as<IdxType, std::uint16_t> || std::same_as<IdxType, std::uint32_t>
+auto FlattenMeshlets(
+  std::span<MeshletData const> const meshlets,
+  std::span<uint8_t const> const unique_vertex_indices,
+  std::span<MeshletTriangleData const> const primitive_indices
+) -> std::vector<IdxType> {
+  std::vector<IdxType> flat_indices;
+
+  for (auto const& meshlet : meshlets) {
+    for (auto i = 0uz; i < meshlet.prim_count; ++i) {
+      auto const& prim = primitive_indices[meshlet.prim_offset + i];
+      flat_indices.emplace_back(
+        *reinterpret_cast<IdxType const*>(&unique_vertex_indices[(meshlet.vert_offset + prim.idx0) * sizeof(IdxType)]));
+      flat_indices.emplace_back(
+        *reinterpret_cast<IdxType const*>(&unique_vertex_indices[(meshlet.vert_offset + prim.idx1) * sizeof(IdxType)]));
+      flat_indices.emplace_back(
+        *reinterpret_cast<IdxType const*>(&unique_vertex_indices[(meshlet.vert_offset + prim.idx2) * sizeof(IdxType)]));
+    }
+  }
+
+  return flat_indices;
+}
 }

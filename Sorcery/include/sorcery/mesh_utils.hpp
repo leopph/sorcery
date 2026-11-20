@@ -50,6 +50,16 @@ auto ComputeMeshlets(
   std::uint16_t max_verts_per_meshlet = kMeshletMaxVerts,
   std::uint16_t max_prims_per_meshlet = kMeshletMaxPrims
 ) -> std::expected<ComputeMeshletsResult, ComputeMeshletsError>;
+
+
+template<typename IdxType>
+  requires std::same_as<IdxType, std::uint16_t> || std::same_as<IdxType, std::uint32_t>
+[[nodiscard]]
+auto FlattenMeshlets(
+  std::span<MeshletData const> meshlets,
+  std::span<uint8_t const> unique_vertex_indices,
+  std::span<MeshletTriangleData const> primitive_indices
+) -> std::vector<IdxType>;
 }
 
 
