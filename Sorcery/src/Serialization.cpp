@@ -3,6 +3,8 @@
 #include <cassert>
 #include <string>
 
+#include <spdlog/spdlog.h>
+
 #include "sorcery/asset_reference.hpp"
 #include "sorcery/assets/Asset.hpp"
 #include "sorcery/host/app.hpp"
@@ -148,16 +150,19 @@ auto ReflectionSerializeToYaml(
   // T*, ObserverPtr<T>, etc.
   if (variant_type.is_pointer() || (variant_type.is_wrapper() && variant_type.get_wrapped_type().is_pointer())) {
     // std::remove_pointer<T>
-    auto const ptr_type{variant_type.is_pointer() ? variant_type : variant_type.get_wrapped_type()};
+    auto const ptr_type = variant_type.is_pointer() ? variant_type : variant_type.get_wrapped_type();
+
+    // T*{}, ObserverPtr<T>::get()
+    auto const ptr_value = variant_type.is_pointer() ? v : v.extract_wrapped_value();
 
     // std::remove_cv<T>
-    auto const raw_type{ptr_type.get_raw_type()};
+    auto const raw_type = ptr_type.get_raw_type();
 
     // std::derived_from<T, Asset>
     if (raw_type.is_derived_from(rttr::type::get<Asset>())) {
       // if the original type is a wrapper, we extract the pointer here
-      auto const asset{(variant_type.is_pointer() ? v : v.extract_wrapped_value()).get_value<Asset*>()};
-      auto const asset_id{asset ? asset->GetAssetId() : AssetId::Invalid()};
+      auto const asset = ptr_value.get_value<Asset*>();
+      auto const asset_id = asset ? asset->GetAssetId() : AssetId::Invalid();
 
       switch (ctx.asset_ref_serialization) {
         case AssetRefSerialization::kGlobal:
@@ -165,7 +170,19 @@ auto ReflectionSerializeToYaml(
         case AssetRefSerialization::kLocal:
           return SerializeLocalAssetId(asset_id.GetIdInFile());
       }
+
+      assert(false && "Unhandled AssetRefSerialization value.");
+      return {};
     }
+
+    if (extension_func) {
+      return extension_func(ptr_value, ctx);
+    }
+
+    auto const type_name = variant_type.get_name();
+    spdlog::debug("Failed to serialize pointer: unhandled type {}.",
+      std::string_view{type_name.data(), type_name.size()});
+    return {};
   }
 
   if (v.is_sequential_container()) {
@@ -184,6 +201,7 @@ auto ReflectionSerializeToYaml(
   }
 
   if (v.is_associative_container()) {
+    spdlog::debug("Associative containers are not supported by reflection serialization. Skipping property.");
     return {};
   }
 
@@ -378,31 +396,51 @@ auto ReflectionDeserializeFromYaml(
   // T*, ObserverPtr<T>, etc.
   if (variant_type.is_pointer() || (variant_type.is_wrapper() && variant_type.get_wrapped_type().is_pointer())) {
     // std::remove_pointer<T>
-    auto const ptr_type{variant_type.is_pointer() ? variant_type : variant_type.get_wrapped_type()};
+    auto const ptr_type = variant_type.is_pointer() ? variant_type : variant_type.get_wrapped_type();
 
     // std::remove_cv<T>
-    auto const raw_type{ptr_type.get_raw_type()};
+    auto const raw_type = ptr_type.get_raw_type();
 
     // std::derived_from<T, Asset>
     if (raw_type.is_derived_from(rttr::type::get<Asset>())) {
-      auto const asset_id{DeserializeAssetId(node, ctx)};
+      auto const asset_id = DeserializeAssetId(node, ctx);
 
       if (asset_id->IsValid()) {
         auto const asset = App::Instance().GetAssetManager().Resolve(*asset_id);
 
         if (asset) {
-          rttr::variant asset_var{asset};
+          auto asset_var = rttr::variant{asset};
 
           // dynamic_cast<T*>(asset)
           if (asset_var.convert(ptr_type)) {
             // if the original type is a wrapper, we wrap the pointer here
             if (asset_var.convert(variant_type)) {
-              v = asset_var;
+              v = std::move(asset_var);
             }
           }
         }
       }
+
+      return;
     }
+
+    if (extension_func) {
+      // T*{}, ObserverPtr<T>::get()
+      auto ptr_value = variant_type.is_pointer() ? v : v.extract_wrapped_value();
+
+      extension_func(node, ptr_value, ctx);
+
+      if (ptr_value.convert(variant_type)) {
+        v = std::move(ptr_value);
+      }
+
+      return;
+    }
+
+    auto const type_name = variant_type.get_name();
+    spdlog::debug("Failed to deserialize pointer: unhandled type {}.",
+      std::string_view{type_name.data(), type_name.size()});
+    return;
   }
 
   if (v.is_sequential_container()) {
@@ -427,6 +465,7 @@ auto ReflectionDeserializeFromYaml(
   }
 
   if (v.is_associative_container()) {
+    spdlog::debug("Associative containers are not supported by reflection deserialization. Skipping property.");
     return;
   }
 
