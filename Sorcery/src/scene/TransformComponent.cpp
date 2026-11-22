@@ -160,6 +160,12 @@ auto TransformComponent::SetLocalScale(Vector3 const& newScale) -> void {
 }
 
 
+auto TransformComponent::SetLocalTransform(Vector3 const& pos, Quaternion const& rot, Vector3 const& scale) -> void {
+  AssignLocalTransform(pos, rot, scale);
+  UpdateWorldDataRecursive();
+}
+
+
 auto TransformComponent::Translate(Vector3 const& vector, Space const base) -> void {
   if (base == Space::World) {
     SetWorldPosition(mWorldPosition + vector);
@@ -329,5 +335,13 @@ auto TransformComponent::UpdateWorldDataRecursive() -> void {
   for (auto* const child : mChildren) {
     child->UpdateWorldDataRecursive();
   }
+}
+
+
+auto TransformComponent::AssignLocalTransform(Vector3 const& pos, Quaternion const& rot, Vector3 const& scale) -> void {
+  mLocalPosition = pos;
+  mLocalRotation = rot;
+  mLocalEulerAnglesHelp = rot.ToEulerAngles();
+  mLocalScale = scale;
 }
 }

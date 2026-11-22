@@ -48,6 +48,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetLocalScale() const -> Vector3 const&;
   LEOPPHAPI auto SetLocalScale(Vector3 const& newScale) -> void;
 
+  SORCERYAPI
+  auto SetLocalTransform(Vector3 const& pos, Quaternion const& rot, Vector3 const& scale) -> void;
+
   LEOPPHAPI auto Translate(Vector3 const& vector, Space base = Space::World) -> void;
   LEOPPHAPI auto Translate(f32 x, f32 y, f32 z, Space base = Space::World) -> void;
 
@@ -74,6 +77,7 @@ public:
 
 private:
   auto UpdateWorldDataRecursive() -> void;
+  auto AssignLocalTransform(Vector3 const& pos, Quaternion const& rot, Vector3 const& scale) -> void;
 
   Vector3 mLocalPosition{0, 0, 0};
   Quaternion mLocalRotation{1, 0, 0, 0};
