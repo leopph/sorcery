@@ -143,6 +143,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\app.cpp" />
+    <ClCompile Include="src\assets\animation_clip.cpp" />
+    <ClCompile Include="src\animation_clip_asset.cpp" />
     <ClCompile Include="src\Bounds.cpp" />
     <ClCompile Include="src\char_encoding_helpers.cpp" />
     <ClCompile Include="src\command_line_args.cpp" />
@@ -220,6 +222,8 @@
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\WindowImpl.cpp" />
     <ClCompile Include="src\world.cpp" />
+    <ClInclude Include="include\sorcery\animation_data.hpp" />
+    <ClInclude Include="include\sorcery\host\assets\animation_clip_asset.hpp" />
     <ClInclude Include="include\sorcery\host\app.hpp" />
     <ClInclude Include="include\sorcery\host\command_line_args.hpp" />
     <ClInclude Include="include\sorcery\host\game_module.hpp" />
@@ -233,6 +237,7 @@
     <ClInclude Include="include\sorcery\host\game_views.hpp" />
     <ClInclude Include="include\sorcery\scene_loader.hpp" />
     <ClInclude Include="include\sorcery\world.hpp" />
+    <ClInclude Include="include\sorcery\assets\animation_clip.hpp" />
     <ClInclude Include="src\rendering\ssao_params.hpp" />
     <ClInclude Include="include\sorcery\io_helpers.hpp" />
     <ClInclude Include="include\sorcery\material_blend_mode.hpp" />

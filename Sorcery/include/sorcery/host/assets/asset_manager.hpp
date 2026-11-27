@@ -118,6 +118,9 @@ private:
   auto LoadPrefab(std::span<std::byte const> bytes,
                   YamlDeserializeContext const& ctx) -> std::unique_ptr<Asset>;
 
+  [[nodiscard]] static
+  auto LoadAnimationClip(std::span<std::byte const> bytes) -> std::unique_ptr<Asset>;
+
   ObserverPtr<JobSystem> job_system_;
 
   Mutex<std::set<std::unique_ptr<Asset>, AssetIdLess>, true> loaded_assets_;

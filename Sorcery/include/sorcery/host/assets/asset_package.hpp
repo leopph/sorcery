@@ -15,21 +15,23 @@
 
 namespace sorcery {
 enum class AssetPackagePayloadKind: std::uint8_t {
-  kInvalid  = 0,
-  kTexture  = 1,
-  kMesh     = 2,
-  kMaterial = 3,
-  kPrefab   = 4,
+  kInvalid       = 0,
+  kTexture       = 1,
+  kMesh          = 2,
+  kMaterial      = 3,
+  kPrefab        = 4,
+  kAnimationClip = 5,
 };
 
 
 enum class AssetRuntimeType : std::uint8_t {
-  kCubemap   = 0,
-  kMaterial  = 1,
-  kMesh      = 2,
-  kScene     = 3,
-  kTexture2D = 4,
-  kPrefab    = 5,
+  kCubemap       = 0,
+  kMaterial      = 1,
+  kMesh          = 2,
+  kScene         = 3,
+  kTexture2D     = 4,
+  kPrefab        = 5,
+  kAnimationClip = 6,
 };
 
 

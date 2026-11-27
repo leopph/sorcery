@@ -16,12 +16,12 @@
 #undef FindResource
 #pragma warning (pop)
 
+#include "asset_reference.hpp"
 #include "Core.hpp"
 #include "Guid.hpp"
 #include "Math.hpp"
 #include "Object.hpp"
 #include "reflection.hpp"
-#include "asset_reference.hpp"
 
 
 namespace YAML {
@@ -109,9 +109,10 @@ auto ReflectionDeserializeFromYaml(
 // Serialization to binary
 
 template<typename T>
-  requires std::is_integral_v<T>
-           || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559)
-           || std::is_enum_v<T>
+concept TriviallyBinarySerializable =
+  std::is_integral_v<T> || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559) || std::is_enum_v<T>;
+
+template<TriviallyBinarySerializable T>
 auto SerializeToBinary(
   T val,
   std::vector<std::byte>& bytes
@@ -125,10 +126,7 @@ auto SerializeToBinary(
 
 // Deserialization from binary
 
-template<typename T>
-  requires std::is_integral_v<T>
-           || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559)
-           || std::is_enum_v<T>
+template<TriviallyBinarySerializable T>
 [[nodiscard]]
 auto DeserializeFromBinary(
   std::span<std::byte const> bytes,
@@ -140,6 +138,27 @@ auto DeserializeFromBinary(
   std::span<std::byte const> bytes,
   std::string& str
 ) noexcept -> bool;
+
+
+// Helpers to query serialized size.
+// Useful during both serialization and deserialization.
+
+template<TriviallyBinarySerializable T>
+constexpr
+auto GetSerializedSize() -> std::size_t;
+
+template<TriviallyBinarySerializable T>
+constexpr
+auto GetSerializedSize(T const& val) -> std::size_t;
+
+template<typename T>
+concept StringLikeBinarySerializable =
+  std::same_as<std::remove_cvref_t<T>, std::string_view> ||
+  std::same_as<std::remove_cvref_t<T>, std::string>;
+
+template<StringLikeBinarySerializable T>
+constexpr
+auto GetSerializedSize(T const& str) -> std::size_t;
 }
 
 

@@ -13,11 +13,13 @@
 #include "sorcery/mesh_utils.hpp"
 #include "sorcery/reflection.hpp"
 #include "sorcery/util.hpp"
+#include "sorcery/assets/animation_clip.hpp"
 #include "sorcery/assets/Cubemap.hpp"
 #include "sorcery/assets/prefab.hpp"
 #include "sorcery/assets/Scene.hpp"
 #include "sorcery/assets/Texture2D.hpp"
 #include "sorcery/host/job_system.hpp"
+#include "sorcery/host/assets/animation_clip_asset.hpp"
 #include "sorcery/host/assets/asset_package.hpp"
 
 using Microsoft::WRL::ComPtr;
@@ -373,6 +375,11 @@ auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
 
               case AssetPackagePayloadKind::kPrefab: {
                 asset = LoadPrefab(subasset->bytes, ctx);
+                break;
+              }
+
+              case AssetPackagePayloadKind::kAnimationClip: {
+                asset = LoadAnimationClip(subasset->bytes);
                 break;
               }
 
@@ -788,5 +795,17 @@ auto AssetManager::LoadPrefab(
     reinterpret_cast<char const*>(bytes.data()), bytes.size()
   }), ctx);
   return prefab;
+}
+
+
+auto AssetManager::LoadAnimationClip(std::span<std::byte const> const bytes) -> std::unique_ptr<Asset> {
+  auto data = DeserializeAnimationClipData(bytes);
+
+  if (!data) {
+    spdlog::error("Failed to deserialize animation clip data.");
+    return nullptr;
+  }
+
+  return std::make_unique<AnimationClip>(*std::move(data));
 }
 }

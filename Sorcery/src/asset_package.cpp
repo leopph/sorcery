@@ -9,6 +9,7 @@
 
 #include "vector_stream.hpp"
 #include "sorcery/Serialization.hpp"
+#include "sorcery/assets/animation_clip.hpp"
 #include "sorcery/assets/Cubemap.hpp"
 #include "sorcery/assets/Material.hpp"
 #include "sorcery/assets/Mesh.hpp"
@@ -48,6 +49,9 @@ namespace {
   if (type == rttr::type::get<Prefab>()) {
     return AssetRuntimeType::kPrefab;
   }
+  if (type == rttr::type::get<AnimationClip>()) {
+    return AssetRuntimeType::kAnimationClip;
+  }
 
   return std::nullopt;
 }
@@ -67,6 +71,8 @@ namespace {
       return rttr::type::get<Cubemap>();
     case AssetRuntimeType::kPrefab:
       return rttr::type::get<Prefab>();
+    case AssetRuntimeType::kAnimationClip:
+      return rttr::type::get<AnimationClip>();
   }
 
   return std::nullopt;
@@ -257,7 +263,8 @@ auto GetCurrentPayloadVersion(AssetPackagePayloadKind const payload_kind) -> std
     case AssetPackagePayloadKind::kTexture: return 1;
     case AssetPackagePayloadKind::kMesh: return 2;
     case AssetPackagePayloadKind::kMaterial: [[fallthrough]];
-    case AssetPackagePayloadKind::kPrefab: return 1;
+    case AssetPackagePayloadKind::kPrefab: [[fallthrough]];
+    case AssetPackagePayloadKind::kAnimationClip: return 1;
   }
 
   assert(false && "Unhandled AssetPackagePayloadKind in GetCurrentPayloadVersion");

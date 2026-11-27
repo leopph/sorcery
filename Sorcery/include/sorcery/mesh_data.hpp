@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include <sorcery/animation_data.hpp>
 #include <sorcery/Bounds.hpp>
 #include <sorcery/Core.hpp>
 #include <sorcery/Math.hpp>
@@ -24,18 +25,6 @@ struct Bone {
   Matrix4 offset_mtx;
   std::uint32_t skeleton_node_idx;
 };
-
-
-template<typename T>
-struct AnimationKey {
-  float timestamp;
-  T value;
-};
-
-
-using AnimPositionKey = AnimationKey<Vector3>;
-using AnimRotationKey = AnimationKey<Quaternion>;
-using AnimScalingKey = AnimationKey<Vector3>;
 
 
 // Node animations describe a transformation sequence for a specific skeleton node

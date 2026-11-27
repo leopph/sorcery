@@ -103,19 +103,13 @@ auto ReflectionDeserializeFromYaml(
 }
 
 
-template<typename T>
-  requires std::is_integral_v<T>
-           || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559)
-           || std::is_enum_v<T>
+template<TriviallyBinarySerializable T>
 auto SerializeToBinary(T const val, std::vector<std::byte>& bytes) noexcept -> void {
   std::ranges::copy_n(reinterpret_cast<std::byte const*>(&val), sizeof(val), std::back_inserter(bytes));
 }
 
 
-template<typename T>
-  requires std::is_integral_v<T>
-           || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559)
-           || std::is_enum_v<T>
+template<TriviallyBinarySerializable T>
 auto DeserializeFromBinary(std::span<std::byte const> bytes, T& val) noexcept -> bool {
   if (sizeof(T) > std::size(bytes)) {
     return false;
@@ -123,5 +117,24 @@ auto DeserializeFromBinary(std::span<std::byte const> bytes, T& val) noexcept ->
 
   std::ranges::copy_n(std::begin(bytes), sizeof(val), reinterpret_cast<std::byte*>(&val));
   return true;
+}
+
+
+template<TriviallyBinarySerializable T>
+constexpr
+auto GetSerializedSize() -> std::size_t {
+  return sizeof(T);
+}
+
+
+template<TriviallyBinarySerializable T>
+constexpr auto GetSerializedSize([[maybe_unused]] T const& val) -> std::size_t {
+  return GetSerializedSize<T>();
+}
+
+
+template<StringLikeBinarySerializable T>
+constexpr auto GetSerializedSize(T const& str) -> std::size_t {
+  return sizeof(std::size_t) + std::size(str);
 }
 }
