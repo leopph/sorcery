@@ -5,9 +5,11 @@
 #include <utility>
 
 #include <DirectXTex.h>
+#include <spdlog/spdlog.h>
 #include <wrl/client.h>
 
 #include "mesh_generation.hpp"
+#include "sorcery/char_encoding_helpers.hpp"
 #include "sorcery/mesh_utils.hpp"
 #include "sorcery/reflection.hpp"
 #include "sorcery/util.hpp"
@@ -277,10 +279,10 @@ auto AssetManager::AssetIdLess::operator()(AssetId const& lhs,
 
 auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
                                      AssetDescription const& desc) -> ObjectPtr<Asset> {
-  ObserverPtr<Job> loader_job;
-  auto created_job{false};
+  auto loader_job = ObserverPtr<Job>{};
+  auto created_job = false;
 
-  ScopedDefer const erase_created_job{
+  auto const erase_created_job = ScopedDefer{
     [&]() noexcept {
       if (created_job) { loader_jobs_.Lock()->erase(asset_id); }
     }
@@ -292,17 +294,17 @@ auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
     std::filesystem::path path_abs;
   };
 
-  JobData job_data;
+  auto job_data = JobData{};
 
   {
-    auto loader_jobs{loader_jobs_.Lock()};
+    auto loader_jobs = loader_jobs_.Lock();
 
-    if (auto const job_it{loader_jobs->find(asset_id)}; job_it != loader_jobs->end()) {
+    if (auto const job_it = loader_jobs->find(asset_id); job_it != loader_jobs->end()) {
       loader_job = job_it->second;
     } else {
-      auto const file_mappings{file_mappings_.LockShared()};
+      auto const file_mappings = file_mappings_.LockShared();
 
-      if (auto const file_it{file_mappings->find(asset_id.GetGuid())}; file_it != file_mappings->end()) {
+      if (auto const file_it = file_mappings->find(asset_id.GetGuid()); file_it != file_mappings->end()) {
         job_data.asset_id = &asset_id;
         job_data.desc = &desc;
         job_data.path_abs = file_it->second;
@@ -310,7 +312,7 @@ auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
         loader_job = job_system_->CreateJob([this, &job_data] {
           std::unique_ptr<Asset> asset;
 
-          YamlDeserializeContext const ctx{
+          auto const ctx = YamlDeserializeContext{
             .current_guid = job_data.asset_id->GetGuid()
           };
 
@@ -318,12 +320,38 @@ auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
             auto const id_in_file = job_data.asset_id->GetIdInFile();
 
             if (!id_in_file) {
+              spdlog::error("Failed to load asset [{}]: asset has no valid file ID.", job_data.asset_id->ToString());
               return;
             }
 
             auto const subasset = LoadBinaryAssetPackageSubasset(job_data.path_abs, *id_in_file);
 
             if (!subasset) {
+              auto reason = std::string_view{};
+
+              switch (subasset.error()) {
+                case AssetPackageReadError::kException:
+                  reason = "an exception";
+                  break;
+                case AssetPackageReadError::kFileError:
+                  reason = "a file error";
+                  break;
+                case AssetPackageReadError::kPackageVersionMismatch:
+                  reason = "a package version mismatch";
+                  break;
+                case AssetPackageReadError::kPayloadVersionMismatch:
+                  reason = "a payload version mismatch";
+                  break;
+                case AssetPackageReadError::kInvalidData:
+                  reason = "invalid data";
+                  break;
+                case AssetPackageReadError::kSubassetNotFound:
+                  reason = "invalid subasset ID";
+                  break;
+              }
+
+              spdlog::error("Failed to load asset [{}]: couldn't load subasset due to {}.",
+                job_data.asset_id->ToString(), reason);
               return;
             }
 
@@ -345,10 +373,11 @@ auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
 
               case AssetPackagePayloadKind::kPrefab: {
                 asset = LoadPrefab(subasset->bytes, ctx);
+                break;
               }
 
               case AssetPackagePayloadKind::kInvalid: {
-                // TODO Log error
+                spdlog::error("Failed to load asset [{}]: payload kind was invalid.", job_data.asset_id->ToString());
                 break;
               }
             }
@@ -360,29 +389,35 @@ auto AssetManager::InternalLoadAsset(AssetId const& asset_id,
             auto mtl = std::make_unique<Material>();
             mtl->Deserialize(YAML::LoadFile(job_data.path_abs.string()), ctx);
             asset = std::move(mtl);
+          } else {
+            spdlog::error("Failed to load asset [{}]: unknown file extension \"{}\".", job_data.asset_id->ToString(),
+              ToUntypedSv(job_data.path_abs.extension().u8string()));
           }
 
           if (asset) {
             asset->SetAssetId(*job_data.asset_id);
             asset->SetName(job_data.desc->name);
 
-            auto const [it, inserted]{loaded_assets_.Lock()->emplace(std::move(asset))};
-            assert(inserted);
+            auto const [it, inserted] = loaded_assets_.Lock()->emplace(std::move(asset));
+            assert(inserted && "This thread should be the one inserting. Thread sync error?");
           }
         });
         created_job = true;
         loader_jobs->emplace(asset_id, loader_job);
         job_system_->Submit(loader_job);
+      } else {
+        spdlog::error("Failed to load asset [{}]: no file is registered for this asset.", asset_id.ToString());
+        return nullptr;
       }
     }
   }
 
-  assert(loader_job);
+  assert(loader_job && "Load job should have been found or created. Thread sync error?");
   job_system_->Wait(loader_job);
 
   {
-    auto const assets{loaded_assets_.LockShared()};
-    auto const it{assets->find(asset_id)};
+    auto const assets = loaded_assets_.LockShared();
+    auto const it = assets->find(asset_id);
     return MakeObjectPtr(MakeObserver(it != assets->end() ? it->get() : nullptr));
   }
 }
