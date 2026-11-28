@@ -156,6 +156,9 @@
     <ClCompile Include="src\AssetImporters\model_import\animations.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\drawers\animator_component_editor_drawer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\imgui.hlsli" />
@@ -324,6 +327,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\AssetImporters\model_import\animations.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\drawers\animator_component_editor_drawer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

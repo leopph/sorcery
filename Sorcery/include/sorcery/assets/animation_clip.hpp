@@ -1,5 +1,7 @@
 #pragma once
 
+#include <span>
+
 #include <sorcery/animation_data.hpp>
 #include <sorcery/assets/Asset.hpp>
 
@@ -21,6 +23,12 @@ public:
 
   SORCERYAPI
   auto SetData(AnimationClipData&& data) -> void;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetDuration() const -> float;
+
+  [[nodiscard]] SORCERYAPI
+  auto GetChannels() const -> std::span<AnimationChannel const>;
 
 private:
   std::vector<AnimationChannel> channels_;

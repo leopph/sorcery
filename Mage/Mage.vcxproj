@@ -134,6 +134,7 @@
     <ClCompile Include="src\AssetImporters\model_import\prefab.cpp" />
     <ClCompile Include="src\AssetImporters\model_import\scene.cpp" />
     <ClCompile Include="src\AssetImporters\model_import\skinning.cpp" />
+    <ClCompile Include="src\drawers\animator_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\camera_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\camera_controller_component_editor_drawer.cpp" />
     <ClCompile Include="src\drawers\component_editor_drawer.cpp" />
@@ -192,6 +193,7 @@
     <ClInclude Include="src\AssetImporters\model_import\scene.hpp" />
     <ClInclude Include="src\AssetImporters\model_import\skinning.hpp" />
     <ClInclude Include="src\AssetImporters\model_import\types.hpp" />
+    <ClInclude Include="src\drawers\animator_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\camera_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\camera_controller_component_editor_drawer.hpp" />
     <ClInclude Include="src\drawers\component_editor_drawer.hpp" />

@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "animator_component_editor_drawer.hpp"
 #include "camera_component_editor_drawer.hpp"
 #include "camera_controller_component_editor_drawer.hpp"
 #include "component_editor_drawer.hpp"
@@ -44,6 +45,7 @@ EditorDrawerRegistry::EditorDrawerRegistry(ImGuiTextureReferences& tex_refs) :
   RegisterDrawer(std::make_unique<TextureImporterEditorDrawer>());
   RegisterDrawer(std::make_unique<ModelImporterEditorDrawer>());
   RegisterDrawer(std::make_unique<EnvironmentComponentEditorDrawer>());
+  RegisterDrawer(std::make_unique<AnimatorComponentEditorDrawer>());
 
   // TODO add reflection-based auto query
 }

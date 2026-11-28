@@ -185,6 +185,7 @@
     <ClCompile Include="src\asset_package.cpp" />
     <ClCompile Include="src\asset_ref.cpp" />
     <ClCompile Include="src\asset_reference.cpp" />
+    <ClCompile Include="src\scene\animator_component.cpp" />
     <ClCompile Include="src\scene\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\scene\CameraControllerComponent.cpp" />
@@ -230,6 +231,7 @@
     <ClInclude Include="include\sorcery\mesh_utils.hpp" />
     <ClInclude Include="include\sorcery\not_null.hpp" />
     <ClInclude Include="include\sorcery\rendering\dxgi_format.hpp" />
+    <ClInclude Include="include\sorcery\scene\animator_component.hpp" />
     <ClInclude Include="include\sorcery\scene\environment_component.hpp" />
     <ClInclude Include="include\sorcery\world_entity_group.hpp" />
     <ClInclude Include="include\sorcery\host\rendering\view.hpp" />
@@ -238,6 +240,7 @@
     <ClInclude Include="include\sorcery\scene_loader.hpp" />
     <ClInclude Include="include\sorcery\world.hpp" />
     <ClInclude Include="include\sorcery\assets\animation_clip.hpp" />
+    <ClInclude Include="src\animation_helpers.hpp" />
     <ClInclude Include="src\rendering\ssao_params.hpp" />
     <ClInclude Include="include\sorcery\io_helpers.hpp" />
     <ClInclude Include="include\sorcery\material_blend_mode.hpp" />

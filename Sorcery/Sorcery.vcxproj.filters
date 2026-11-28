@@ -267,6 +267,9 @@
     <ClCompile Include="src\animation_clip_asset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\scene\animator_component.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\sorcery\scene\Entity.hpp">
@@ -588,6 +591,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sorcery\host\assets\animation_clip_asset.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sorcery\scene\animator_component.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\animation_helpers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
