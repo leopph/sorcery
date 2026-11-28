@@ -55,6 +55,8 @@ struct SourceBone {
 struct SceneNode {
   NotNull<ObserverPtr<aiNode const>> ptr;
   std::optional<std::size_t> parent_idx; // Root node has no parent
+  std::string name; // never empty
+  std::uint32_t occurrence; // dedup between siblings of same name
 };
 
 

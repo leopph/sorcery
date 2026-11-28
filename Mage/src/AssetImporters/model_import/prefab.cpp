@@ -86,10 +86,7 @@ auto CreateHierarchyPrefab(std::string_view const name, std::span<MeshData const
   for (auto const [node_idx, node] : std::views::enumerate(hierarchy.nodes)) {
     auto entity = std::make_unique<Entity>();
 
-    auto const entity_name = node.ptr->mName.Empty()
-                               ? std::format("Node {}", node_idx)
-                               : std::string{node.ptr->mName.C_Str()};
-    entity->SetName(entity_name);
+    entity->SetName(node.name);
 
     aiVector3f position;
     aiQuaternion rotation;

@@ -1,10 +1,8 @@
 #pragma once
 
-#include <cstddef>
 #include <filesystem>
 #include <memory>
-#include <optional>
-#include <span>
+#include <vector>
 
 #include <assimp/Importer.hpp>
 #include <assimp/matrix4x4.h>

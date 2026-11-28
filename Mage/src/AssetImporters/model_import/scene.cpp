@@ -1,8 +1,13 @@
 #include "scene.hpp"
 
+#include <cstdint>
+#include <format>
 #include <ranges>
 #include <span>
 #include <stack>
+#include <string_view>
+#include <unordered_map>
+
 #include <assimp/DefaultLogger.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -69,18 +74,30 @@ auto FlattenNodeHierarchy(aiScene const& scene) -> SceneNodeList {
   SceneNodeList list;
 
   std::stack<SceneNode> stack;
-  stack.emplace(MakeObserver(scene.mRootNode), std::nullopt);
+  stack.emplace(MakeObserver(scene.mRootNode), std::nullopt, scene.mRootNode->mName.C_Str(), 0);
 
   while (!stack.empty()) {
-    auto const node = stack.top();
+    auto const& node = list.emplace_back(std::move(stack.top()));
     stack.pop();
-
-    list.emplace_back(node);
 
     for (auto const* const child : std::views::reverse(std::span{node.ptr->mChildren, node.ptr->mNumChildren})) {
       // Already placed at least one node in the list, so minus one is safe
-      stack.emplace(MakeObserver(child), list.size() - 1);
+      stack.emplace(MakeObserver(child), list.size() - 1, child->mName.C_Str(), 0);
     }
+  }
+
+  // How many children does node i have with a specific name
+  auto name_counts = std::vector<std::unordered_map<std::string_view, std::uint32_t>>(list.size());
+
+  for (auto [node_idx, node] : std::views::enumerate(list)) {
+    if (node.name.empty()) {
+      node.name = std::format("Node {}", node_idx);
+    }
+
+    // Root has no parent, but also no siblings so occurrence is always 0
+    node.occurrence = node.parent_idx
+                        ? name_counts[*node.parent_idx][node.name]++
+                        : 0;
   }
 
   return list;
