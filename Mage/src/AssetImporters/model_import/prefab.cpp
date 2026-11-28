@@ -7,6 +7,7 @@
 #include "sorcery/entity_serialization.hpp"
 #include "sorcery/assets/Material.hpp"
 #include "sorcery/assets/Mesh.hpp"
+#include "sorcery/scene/animator_component.hpp"
 #include "sorcery/scene/Entity.hpp"
 #include "sorcery/scene/StaticMeshComponent.hpp"
 
@@ -120,9 +121,30 @@ auto CreateHierarchyPrefab(std::string_view const name, std::span<MeshData const
     entities[node_idx] = std::move(entity);
   }
 
+  // Lives in this scope so that serialization at the end of the function can read it.
+  auto dummy_clip = std::unique_ptr<AnimationClip>{};
+
   if (!entities.empty()) {
-    // Rename the root of the prefab to the prefab asset name
-    entities[0]->SetName(name);
+    if (ids.GetAnimationClipCount() > 0) {
+      // If the imported file contains animations, create an outer container entity with the prefab asset's name and
+      // place an animator component on the root of the actual hierarchy.
+      auto container = std::make_unique<Entity>();
+      container->SetName(name);
+
+      dummy_clip = std::make_unique<AnimationClip>();
+      dummy_clip->SetAssetId(AssetId{Guid::Invalid(), ids.GetAnimationClipId(0)});
+
+      auto animator = std::make_unique<AnimatorComponent>();
+      animator->SetClip(MakeAssetRef(MakeObserver(dummy_clip.get())));
+
+      entities[0]->AddComponent(std::move(animator));
+      entities[0]->GetTransform().SetParent(&container->GetTransform());
+
+      entities.emplace(entities.begin(), std::move(container));
+    } else {
+      // Otherwise rename the root of the prefab to the prefab asset name
+      entities[0]->SetName(name);
+    }
   }
 
   return AssetImportResult{

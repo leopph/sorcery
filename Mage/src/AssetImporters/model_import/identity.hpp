@@ -45,6 +45,9 @@ public:
   [[nodiscard]]
   auto GetMaterialCount() const -> std::size_t;
 
+  [[nodiscard]]
+  auto GetAnimationClipCount() const -> std::size_t;
+
 private:
   std::uint64_t prefab_id_{};
   std::vector<std::uint64_t> mesh_ids_;

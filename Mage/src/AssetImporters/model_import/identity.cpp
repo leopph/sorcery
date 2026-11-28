@@ -134,6 +134,11 @@ auto SubassetIds::GetMaterialCount() const -> std::size_t {
 }
 
 
+auto SubassetIds::GetAnimationClipCount() const -> std::size_t {
+  return anim_ids_.size();
+}
+
+
 auto MakeMeshGroupLabels(
   SceneNodeList const& nodes,
   AnchorNodeByGroup const& anchor_node_by_group,
