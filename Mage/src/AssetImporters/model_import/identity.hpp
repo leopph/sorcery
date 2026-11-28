@@ -18,6 +18,7 @@ struct SubassetKeys {
   std::vector<std::string> meshes;
   std::vector<std::string> materials;
   std::vector<std::string> textures;
+  std::vector<std::string> animations;
 };
 
 
@@ -39,6 +40,9 @@ public:
   auto GetTextureId(std::size_t tex_idx) const -> std::uint64_t;
 
   [[nodiscard]]
+  auto GetAnimationClipId(std::size_t anim_idx) const -> std::uint64_t;
+
+  [[nodiscard]]
   auto GetMaterialCount() const -> std::size_t;
 
 private:
@@ -46,6 +50,7 @@ private:
   std::vector<std::uint64_t> mesh_ids_;
   std::vector<std::uint64_t> mtl_ids_;
   std::vector<std::uint64_t> tex_ids_;
+  std::vector<std::uint64_t> anim_ids_;
 };
 
 
@@ -69,6 +74,12 @@ auto MakeMaterialLabels(
 [[nodiscard]]
 auto MakeTextureLabels(
   std::span<SourceTexture const> source_texes,
+  std::filesystem::path const& src
+) -> SubassetLabels;
+
+[[nodiscard]]
+auto MakeAnimationClipLabels(
+  std::span<aiAnimation const* const> anims,
   std::filesystem::path const& src
 ) -> SubassetLabels;
 }

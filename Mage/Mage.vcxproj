@@ -127,6 +127,7 @@
     <None Include="src\AssetImporters\model_import\hash.inl">
       <FileType>Document</FileType>
     </None>
+    <ClCompile Include="src\AssetImporters\model_import\animations.cpp" />
     <ClCompile Include="src\AssetImporters\model_import\identity.cpp" />
     <ClCompile Include="src\AssetImporters\model_import\materials.cpp" />
     <ClCompile Include="src\AssetImporters\model_import\meshes.cpp" />
@@ -182,6 +183,7 @@
     <None Include="src\rendering\shaders\imgui.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AssetImporters\model_import\animations.hpp" />
     <ClInclude Include="src\AssetImporters\model_import\hash.hpp" />
     <ClInclude Include="src\AssetImporters\model_import\identity.hpp" />
     <ClInclude Include="src\AssetImporters\model_import\materials.hpp" />

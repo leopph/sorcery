@@ -49,6 +49,7 @@ auto SubassetIds::FromKeys(SubassetKeys const& keys, std::filesystem::path const
   flat_keys.append_range(keys.meshes);
   flat_keys.append_range(keys.materials);
   flat_keys.append_range(keys.textures);
+  flat_keys.append_range(keys.animations);
 
   std::vector<std::uint64_t> flat_ids(flat_keys.size());
 
@@ -91,6 +92,9 @@ auto SubassetIds::FromKeys(SubassetKeys const& keys, std::filesystem::path const
   ids.mtl_ids_.assign_range(std::span{flat_ids}.subspan(keys.meshes.size(), keys.materials.size()));
   ids.tex_ids_.assign_range(std::span{flat_ids}.subspan(keys.meshes.size() + keys.materials.size(),
     keys.textures.size()));
+  ids.anim_ids_.assign_range(
+    std::span{flat_ids}.subspan(keys.meshes.size() + keys.materials.size() + keys.textures.size(),
+      keys.animations.size()));
 
   return ids;
 }
@@ -116,6 +120,12 @@ auto SubassetIds::GetMaterialId(std::size_t const mtl_idx) const -> std::uint64_
 auto SubassetIds::GetTextureId(std::size_t const tex_idx) const -> std::uint64_t {
   assert(tex_idx < tex_ids_.size());
   return tex_ids_[tex_idx];
+}
+
+
+auto SubassetIds::GetAnimationClipId(std::size_t const anim_idx) const -> std::uint64_t {
+  assert(anim_idx < anim_ids_.size());
+  return anim_ids_[anim_idx];
 }
 
 
@@ -247,6 +257,28 @@ auto MakeTextureLabels(
     labels.keys.emplace_back(std::format("texture:{:016x}",
       Fnv1a64(std::span{reinterpret_cast<std::byte const*>(tex.pcData), byte_count})));
     labels.names.emplace_back(std::format("{} Texture {}", ToUntypedSv(src.filename().stem().u8string()), idx));
+  }
+
+  MakeKeysUnique(labels.keys);
+  return labels;
+}
+
+
+auto MakeAnimationClipLabels(
+  std::span<aiAnimation const* const> anims,
+  std::filesystem::path const& src
+) -> SubassetLabels {
+  SubassetLabels labels;
+
+  for (auto const [idx, anim] : std::views::enumerate(anims)) {
+    if (anim->mName.Empty()) {
+      labels.keys.emplace_back(std::format("animation:#{}", idx));
+      labels.names.emplace_back(std::format("{} Animation {}", ToUntypedSv(src.stem().u8string()), idx));
+      continue;
+    }
+
+    labels.keys.emplace_back(std::format("animation:{}", anim->mName.C_Str()));
+    labels.names.emplace_back(anim->mName.C_Str());
   }
 
   MakeKeysUnique(labels.keys);

@@ -13,6 +13,7 @@
 #include <assimp/Importer.hpp>
 #include <spdlog/spdlog.h>
 
+#include "model_import/animations.hpp"
 #include "model_import/identity.hpp"
 #include "model_import/materials.hpp"
 #include "model_import/meshes.hpp"
@@ -20,8 +21,10 @@
 #include "model_import/scene.hpp"
 #include "model_import/types.hpp"
 #include "sorcery/char_encoding_helpers.hpp"
+#include "sorcery/assets/animation_clip.hpp"
 #include "sorcery/assets/Mesh.hpp"
 #include "sorcery/host/app.hpp"
+#include "sorcery/host/assets/animation_clip_asset.hpp"
 
 
 RTTR_REGISTRATION {
@@ -111,10 +114,14 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     AppendUnreferencedTextures(scene, texes_to_load);
   }
 
+  auto const anims = model_import::ImportAnimationClips(scene, model_import::FlattenNodeHierarchy(scene));
+
   auto mtl_labels = import_materials_
                       ? model_import::MakeMaterialLabels(mtl_slots)
                       : model_import::SubassetLabels{};
   auto tex_labels = model_import::MakeTextureLabels(texes_to_load, src);
+  auto anim_labels = model_import::MakeAnimationClipLabels(std::span{scene.mAnimations, scene.mNumAnimations},
+    src);
 
   // Stable subasset identities.
   model_import::SubassetKeys const subasset_keys{
@@ -122,6 +129,7 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     .meshes = std::move(mesh_import->labels.keys),
     .materials = std::move(mtl_labels.keys),
     .textures = std::move(tex_labels.keys),
+    .animations = std::move(anim_labels.keys)
   };
 
   // Sync settings with current import keys
@@ -211,6 +219,14 @@ auto ModelImporter::Import(std::filesystem::path const& src, std::vector<AssetIm
     }
 
     std::ranges::move(*tex_results, std::back_inserter(results));
+  }
+
+  // Animations
+
+  for (auto const [anim_idx, anim] : std::views::enumerate(anims)) {
+    results.emplace_back(subasset_ids.GetAnimationClipId(anim_idx),
+      GetCurrentPayloadVersion(AssetPackagePayloadKind::kAnimationClip), AssetPackagePayloadKind::kAnimationClip,
+      rttr::type::get<AnimationClip>(), anim_labels.names[anim_idx], SerializeAnimationClipData(anim));
   }
 
   return true;
